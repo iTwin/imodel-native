@@ -68,16 +68,30 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct FileFormatCompatibilityTests : ECDbTestFixture
     {
+    protected:
+        enum class CompareOptions
+            {
+            None = 0,
+            DoNotComparePk = 1
+            };
+
     private:
-        BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder, DbCR benchmarkFile);
+        static ProfileVersion const* s_initialBim2ProfileVersion;
+
+        BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
         BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
 
     protected:
-        BentleyStatus SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder, DbCR benchmarkFile);
-        static bool CompareTable(DbCR benchmark, DbCR actual, Utf8CP tableName, Utf8CP selectSql);
+        BentleyStatus SetupTestFile(Utf8CP fileName);
+        static bool CompareTable(DbCR benchmark, DbCR actual, Utf8CP tableName, Utf8CP selectSql, CompareOptions options = CompareOptions::None);
 
-        static BeFileName GetBenchmarkFolder();
+        static Utf8String GetPkColumnName(DbCR db, Utf8CP tableName);
+        static BeFileName GetBenchmarkFileFolder(ProfileVersion const&);
+        static BeFileName GetBenchmarkSchemaFolder();
+
+        static ProfileVersion const& InitialBim2ProfileVersion() { return *s_initialBim2ProfileVersion; }
     };
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/17
@@ -928,18 +942,26 @@ TEST_F(FileFormatCompatibilityTests, PrimitiveDataTypeFormat)
     }
 
 //---------------------------------------------------------------------------------------
+//* quick check whether schema import works for benchmark schemas.
+//* Use this test to create a new benchmark file
+// @bsiclass                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ImportSchemas)
+    {
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2.ecdb"));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     {
-    BeFileName benchmarkFolder = GetBenchmarkFolder();
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibility_newfile_test.ecdb"));
 
     Db benchmarkFile;
-    BeFileName benchmarkFilePath(benchmarkFolder);
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ExpectedProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
-
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder, benchmarkFile));
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
 
     BeFileName artefactOutDir;
     BeTest::GetHost().GetOutputRoot(artefactOutDir);
@@ -953,7 +975,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     benchmarkDdlDumpFilePath.AppendToPath(L"benchmarkddl.txt");
 
     BeTextFilePtr benchmarkDdlDumpFile = BeTextFile::Open(stat, benchmarkDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath;
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath.GetNameUtf8();
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master ORDER BY name"));
@@ -968,7 +990,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     BeFileName actualDdlDumpFilePath(artefactOutDir);
     actualDdlDumpFilePath.AppendToPath(L"actualddl.txt");
     BeTextFilePtr actualDdlDumpFile = BeTextFile::Open(stat, actualDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath;
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath.GetNameUtf8();
 
     Statement benchmarkDdlLookupStmt;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master WHERE name=?"));
@@ -1001,17 +1023,44 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath.GetNameUtf8();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
+    {
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
+    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
+
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+    if (!artefactOutDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
+
+    BeFileName upgradedFilePath(artefactOutDir);
+    upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT Name FROM " BEDB_TABLE_Local " ORDER BY Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "First row";
+    ASSERT_STRCASEEQ("be_repositoryid", stmt.GetValueText(0)) << "First row";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Second row";
+    ASSERT_STRCASEEQ("ec_instanceidsequence", stmt.GetValueText(0)) << "Second row";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     {
-    BeFileName benchmarkFolder = GetBenchmarkFolder();
-
-    BeFileName benchmarkFilePath(benchmarkFolder);
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     Db benchmarkFile;
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
 
     BeFileName artefactOutDir;
     BeTest::GetHost().GetOutputRoot(artefactOutDir);
@@ -1033,7 +1082,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     benchmarkDdlDumpFilePath.AppendToPath(L"benchmarkddl.txt");
 
     BeTextFilePtr benchmarkDdlDumpFile = BeTextFile::Open(stat, benchmarkDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath;
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath.GetNameUtf8();
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master ORDER BY name"));
@@ -1048,7 +1097,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     BeFileName actualDdlDumpFilePath(artefactOutDir);
     actualDdlDumpFilePath.AppendToPath(L"upgradedfileddl.txt");
     BeTextFilePtr actualDdlDumpFile = BeTextFile::Open(stat, actualDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath;
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath.GetNameUtf8();
 
     Statement benchmarkDdlLookupStmt;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master WHERE name=?"));
@@ -1078,7 +1127,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
         benchmarkDdlLookupStmt.ClearBindings();
         }
 
-    ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath;
+    ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1086,14 +1135,12 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     {
-    BeFileName benchmarkFolder = GetBenchmarkFolder();
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibility_newfile_test.ecdb"));
 
     Db benchmarkFile;
-    BeFileName benchmarkFilePath(benchmarkFolder);
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(ExpectedProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
-
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder, benchmarkFile));
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
     
     //profile table count check
     {
@@ -1131,12 +1178,10 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, CompareProfileTables_UpgradedFile)
     {
-    BeFileName benchmarkFolder = GetBenchmarkFolder();
-
-    BeFileName benchmarkFilePath(benchmarkFolder);
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     Db benchmarkFile;
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
 
     BeFileName artefactOutDir;
     BeTest::GetHost().GetOutputRoot(artefactOutDir);
@@ -1158,37 +1203,43 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_UpgradedFile)
     }
 
     //schema profile tables
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Schema", PROFILETABLE_SELECT_Schema));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_SchemaReference", PROFILETABLE_SELECT_SchemaReference));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Class", PROFILETABLE_SELECT_Class));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassHasBaseClasses", PROFILETABLE_SELECT_ClassHasBaseClasses));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Enumeration", PROFILETABLE_SELECT_Enumeration));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_KindOfQuantity", PROFILETABLE_SELECT_KindOfQunatity));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyCategory", PROFILETABLE_SELECT_PropertyCategory));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Property", PROFILETABLE_SELECT_Property));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraint", PROFILETABLE_SELECT_RelationshipConstraint));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraintClass", PROFILETABLE_SELECT_RelationshipConstraintClass));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_CustomAttribute", PROFILETABLE_SELECT_CustomAttribute));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Schema", PROFILETABLE_SELECT_Schema, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_SchemaReference", PROFILETABLE_SELECT_SchemaReference, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Class", PROFILETABLE_SELECT_Class, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassHasBaseClasses", PROFILETABLE_SELECT_ClassHasBaseClasses, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Enumeration", PROFILETABLE_SELECT_Enumeration, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_KindOfQuantity", PROFILETABLE_SELECT_KindOfQunatity, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyCategory", PROFILETABLE_SELECT_PropertyCategory, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Property", PROFILETABLE_SELECT_Property, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraint", PROFILETABLE_SELECT_RelationshipConstraint, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraintClass", PROFILETABLE_SELECT_RelationshipConstraintClass, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_CustomAttribute", PROFILETABLE_SELECT_CustomAttribute, CompareOptions::DoNotComparePk));
 
     //mapping profile tables
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassMap", PROFILETABLE_SELECT_ClassMap));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyPath", PROFILETABLE_SELECT_PropertyPath));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyMap", PROFILETABLE_SELECT_PropertyMap));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Table", PROFILETABLE_SELECT_Table));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Column", PROFILETABLE_SELECT_Column));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Index", PROFILETABLE_SELECT_Index));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassMap", PROFILETABLE_SELECT_ClassMap, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyPath", PROFILETABLE_SELECT_PropertyPath, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyMap", PROFILETABLE_SELECT_PropertyMap, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Table", PROFILETABLE_SELECT_Table, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Column", PROFILETABLE_SELECT_Column, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Index", PROFILETABLE_SELECT_Index, CompareOptions::DoNotComparePk));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn, CompareOptions::DoNotComparePk));
     }
 
 //*****************************************************************************************
 // FileFormatCompatibilityTests
 //*****************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//no need to release a static non-POD variable (Bentley C++ coding standards)
+//static
+ProfileVersion const* FileFormatCompatibilityTests::s_initialBim2ProfileVersion = new ProfileVersion(4, 0, 0, 0);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualFile, Utf8CP tableName, Utf8CP selectSql)
+bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualFile, Utf8CP tableName, Utf8CP selectSql, CompareOptions options)
     {
     //compare row count
             {
@@ -1215,6 +1266,9 @@ bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualF
             EXPECT_EQ(benchmarkRowCount, actualRowCount) << tableName;
             }
 
+    Utf8String pkName = GetPkColumnName(benchmarkFile, tableName);
+    EXPECT_FALSE(pkName.empty()) << "Tables in this test are expected to always have a PK";
+
     Statement benchmarkTableStmt, actualTableStmt;
     if (BE_SQLITE_OK != benchmarkTableStmt.Prepare(benchmarkFile, selectSql) ||
         BE_SQLITE_OK != actualTableStmt.Prepare(actualFile, selectSql))
@@ -1239,6 +1293,9 @@ bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualF
             const DbValueType benchmarkColType = benchmarkTableStmt.GetColumnType(i);
             const DbValueType actualColType = actualTableStmt.GetColumnType(i);
             EXPECT_EQ(benchmarkColType, actualColType) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+
+            if (options == CompareOptions::DoNotComparePk && pkName.EqualsIAscii(colName))
+                continue;
 
             switch (benchmarkColType)
                 {
@@ -1325,38 +1382,21 @@ bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualF
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder, DbCR benchmarkFile)
+BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName)
     {
-    BeFileName bisSchemaFolder(benchmarkFolder);
-    bisSchemaFolder.AppendToPath(L"schemas").AppendToPath(L"dgndb");
+    BeFileName benchmarkSchemaFolder = GetBenchmarkSchemaFolder();
 
-    BeFileName domainSchemaFolder(benchmarkFolder);
-    domainSchemaFolder.AppendToPath(L"schemas").AppendToPath(L"domains");
+    BeFileName bisSchemaFolder(benchmarkSchemaFolder);
+    bisSchemaFolder.AppendToPath(L"dgndb");
 
-    if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder, benchmarkFile))
+    BeFileName domainSchemaFolder(benchmarkSchemaFolder);
+    domainSchemaFolder.AppendToPath(L"domains");
+
+    if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder))
         return ERROR;
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
-
-    {
-    Db db;
-    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
-        return ERROR;
-
-    uint64_t initialId;
-    if (BE_SQLITE_ROW != benchmarkFile.QueryProperty(&initialId, sizeof(uint64_t), PropertySpec("InitialClassId_BisDomains", "ECDb_FileFormatCompatiblity_Test")))
-        {
-        EXPECT_TRUE(false) << "Benchmark file " << benchmarkFile.GetDbFileName() << " must contain BeProp 'ECDb_FileFormatCompatiblity_Test:InitialClassId_BisDomains";
-        return ERROR;
-        }
-
-    if (BE_SQLITE_DONE != db.SaveBriefcaseLocalValue("ec_classidsequence", initialId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != db.SaveChanges())
-        return ERROR;
-    }
 
     if (BE_SQLITE_OK != OpenECDb(filePath))
         return ERROR;
@@ -1377,32 +1417,13 @@ BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFil
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus FileFormatCompatibilityTests::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder, DbCR benchmarkFile)
+BentleyStatus FileFormatCompatibilityTests::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
     {
     if (BE_SQLITE_OK != SetupECDb(fileName))
         return ERROR;
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
-
-    {
-    Db db;
-    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
-        return ERROR;
-
-    uint64_t initialId;
-    if (BE_SQLITE_ROW != benchmarkFile.QueryProperty(&initialId, sizeof(uint64_t), PropertySpec("InitialClassId_BisCore", "ECDb_FileFormatCompatiblity_Test")))
-        {
-        EXPECT_TRUE(false) << "Benchmark file " << benchmarkFile.GetDbFileName() << " must contain BeProp 'ECDb_FileFormatCompatiblity_Test:InitialClassId_BisCore";
-        return ERROR;
-        }
-
-    if (BE_SQLITE_DONE != db.SaveBriefcaseLocalValue("ec_classidsequence", initialId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != db.SaveChanges())
-        return ERROR;
-    }
 
     if (BE_SQLITE_OK != OpenECDb(filePath))
         return ERROR;
@@ -1458,15 +1479,61 @@ BentleyStatus FileFormatCompatibilityTests::ImportSchemasFromFolder(BeFileName c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      10/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8String FileFormatCompatibilityTests::GetPkColumnName(DbCR db, Utf8CP tableName)
+    {
+    CachedStatementPtr stmt = db.GetCachedStatement(Utf8PrintfString("pragma table_info('%s')", tableName).c_str());
+    if (stmt == nullptr)
+        {
+        EXPECT_TRUE(stmt != nullptr);
+        return Utf8String();
+        }
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        EXPECT_EQ(0, BeStringUtilities::StricmpAscii(stmt->GetColumnName(5), "pk"));
+        const int pkOrdinal = stmt->GetValueInt(5); //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
+
+        if (pkOrdinal == 1) //1 indicates first PK column. This method expects ECDb tables always have a single column PK.
+            {
+            EXPECT_EQ(0, BeStringUtilities::StricmpAscii(stmt->GetColumnName(1), "name") );
+            return stmt->GetValueText(1);
+            }
+        }
+
+    return Utf8String();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2017
 //---------------------------------------------------------------------------------------
 //static
-BeFileName FileFormatCompatibilityTests::GetBenchmarkFolder()
+BeFileName FileFormatCompatibilityTests::GetBenchmarkFileFolder(ProfileVersion const& profileVersion)
     {
     BeFileName benchmarkFilesDir;
     BeTest::GetHost().GetDocumentsRoot(benchmarkFilesDir);
     benchmarkFilesDir.AppendToPath(L"ECDb").AppendToPath(L"fileformatbenchmark");
+
+    Utf8String versionFolderName;
+    versionFolderName.Sprintf("%" PRIu16 "%" PRIu16 "%" PRIu16 "%" PRIu16, profileVersion.GetMajor(), profileVersion.GetMinor(),
+                              profileVersion.GetSub1(), profileVersion.GetSub2());
+
+    benchmarkFilesDir.AppendToPath(WString(versionFolderName.c_str(), BentleyCharEncoding::Utf8).c_str());
     return benchmarkFilesDir;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      10/2017
+//---------------------------------------------------------------------------------------
+//static
+BeFileName FileFormatCompatibilityTests::GetBenchmarkSchemaFolder()
+    {
+    BeFileName dir;
+    BeTest::GetHost().GetDocumentsRoot(dir);
+    dir.AppendToPath(L"ECDb").AppendToPath(L"fileformatbenchmark").AppendToPath(L"schemas");
+    return dir;
     }
 
 END_ECDBUNITTESTS_NAMESPACE

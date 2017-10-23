@@ -22,36 +22,80 @@ struct ECSqlParseContext final
     {
 public:
     typedef bmap<ECN::ECClassId, ECN::ECClassCP> ClassListById;
+    struct ParseArg
+        {
+        enum class Type
+            {
+            Default,
+            RangeClassArg,
+            UnionOrderByArg
+            };
+
+        private:
+            Type m_type;
+
+        public:
+            ParseArg(Type type)
+                :m_type(type)
+                {}
+            ParseArg()
+                :m_type(Type::Default)
+                {}
+            Type GetType() const { return m_type; }
+            ~ParseArg() {};
+        };
+
+    struct RangeClassArg : ParseArg
+        {
+        private:
+            RangeClassInfo::List const& m_arg;
+        public:
+            RangeClassArg(RangeClassInfo::List const& arg)
+                :ParseArg(Type::RangeClassArg), m_arg(arg)
+                {}
+            RangeClassInfo::List const& GetRangeClassInfos() const { return m_arg; }
+            ~RangeClassArg() {};
+        };
+
+    struct UnionOrderByArg : ParseArg
+        {
+        private:
+            std::vector<SingleSelectStatementExp const*> const& m_arg;
+        public:
+            UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg)
+                :ParseArg(Type::UnionOrderByArg), m_arg(arg)
+                {}
+            std::vector<SingleSelectStatementExp const*> const& GetUnionStmts() const { return m_arg; }
+            ~UnionOrderByArg() {};
+        };
 
 private:
     ECDbCR m_ecdb;
 
-    std::vector<void const*> m_finalizeParseArgs;
+    std::vector<std::unique_ptr<ParseArg>> m_finalizeParseArgs;
     bmap<Utf8CP, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
     int m_aliasCount;
-
 public:
     explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb), m_currentECSqlParameterIndex(0), m_aliasCount(0) {}
-
     BentleyStatus FinalizeParsing(Exp& rootExp);
-
-    void PushFinalizeParseArg(void const* const arg);
-    void const* const GetFinalizeParseArg() const;
-    void PopFinalizeParseArg();
-
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();
-
     int TrackECSqlParameter(ParameterExp& parameterExp);
-
     IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
+
+    //----------------------------------------------------]
+    void PushArg(std::unique_ptr<ParseArg> arg);
+    ParseArg const* CurrentArg() const;
+    void PopArg();
+    //----------------------------------------------------]
+
     };
 
 //=======================================================================================

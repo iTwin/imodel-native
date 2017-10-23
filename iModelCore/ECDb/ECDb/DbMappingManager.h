@@ -38,11 +38,10 @@ struct ForeignKeyPartitionView final : NonCopyableClass
 
             DbColumn const& GetIdColumn() const { return m_idColumn; }
             DbColumn const& GetRelECClassIdColumn() const { return m_relECClassIdColumn; }
-            bool operator == (NavigationInfo const& rhs) const
-                {
-                return GetIdColumn().GetId() == rhs.GetIdColumn().GetId() && GetRelECClassIdColumn().GetId() == rhs.GetRelECClassIdColumn().GetId();
-                }
+            bool operator==(NavigationInfo const& rhs) const { return GetIdColumn() == rhs.GetIdColumn() && GetRelECClassIdColumn() == rhs.GetRelECClassIdColumn(); }
+            bool operator!=(NavigationInfo const& rhs) const { return !(*this == rhs); }
         };
+
     //=======================================================================================
     // @bsiclass                                                Affan.Khan      07/2017
     //+===============+===============+===============+===============+===============+======
@@ -132,7 +131,10 @@ struct ForeignKeyPartitionView final : NonCopyableClass
         BentleyStatus Insert(std::unique_ptr<Partition> partition);
         static std::unique_ptr<ForeignKeyPartitionView> CreateReadonly(ECDbCR, ECN::ECRelationshipClassCR);
         static std::unique_ptr<ForeignKeyPartitionView> Create(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
-        static std::vector<DbTable const*> GetOtherEndTables(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
+        
+        //! param[out] otherEndTable Other end table or nullptr if not found.
+        //! @return SUCCESS in case of success (also if otherEndTable is returned as nullptr). ERROR in case of errors during the retrieval
+        static BentleyStatus TryGetOtherEndTable(DbTable const*& otherEndTable, ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
     };
 
 //=======================================================================================

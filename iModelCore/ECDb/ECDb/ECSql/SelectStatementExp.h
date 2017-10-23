@@ -185,12 +185,15 @@ struct OrderBySpecExp final : Exp
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
+struct SingleSelectStatementExp;
 struct OrderByExp final : Exp
     {
     private:
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override { return "OrderBy"; }
-
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        std::vector<SingleSelectStatementExp const*> m_unionStmts;
+        ComputedExp const* GetFirstNonePropertyNamExpression() const;
     public:
         explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs) : Exp(Type::OrderBy)
             {
@@ -272,7 +275,7 @@ struct SingleSelectStatementExp final : QueryExp
                                  std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
         explicit SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>&);
-        bool IsRowConstructor() const { return  m_fromClauseIndex == UNSET_CHILDINDEX;}
+        bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
 
@@ -380,7 +383,7 @@ struct SelectStatementExp final : QueryExp
         SelectClauseExp const* _GetSelection() const override { return GetFirstStatement().GetSelection(); }
 
         static Utf8CP OperatorToString(CompoundOperator);
-
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) override;
     public:
         explicit SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>);
         SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator, bool isAll, std::unique_ptr<SelectStatementExp> rhs);

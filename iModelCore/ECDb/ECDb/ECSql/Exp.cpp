@@ -33,7 +33,6 @@ Exp const* Exp::FindParent(Exp::Type type) const
     return p;
     }
 
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool Exp::Contains(Exp::Type candidateType) const

@@ -12,29 +12,18 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                07/2017
-//---------------+---------------+---------------+---------------+---------------+------
-//static
-//no need to release a static non-POD variable (Bentley C++ coding standards)
-bvector<Utf8CP> const* IdSequences::s_sequenceNames = new bvector<Utf8CP> {"ec_instanceidsequence", "ec_schemaidsequence","ec_schemarefidsequence", "ec_classidsequence","ec_classhasbaseclassesidsequence",
-"ec_propertyidsequence","ec_propertypathidsequence",
-"ec_relconstraintidsequence", "ec_relconstraintclassidsequence",
-"ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertycategoryidsequence", "ec_propertymapidsequence",
-"ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", "ec_indexcolumnidsequence"};
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
     RegisterBuiltinFunctions();
 
-    DbResult stat = m_idSequences.GetManager().InitializeSequences();
+    DbResult stat = m_idSequenceManager.InitializeSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //set initial value of sequence to current briefcase id.
-    stat = m_idSequences.GetManager().ResetSequences();
+    stat = m_idSequenceManager.ResetSequences();
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -48,7 +37,7 @@ DbResult ECDb::Impl::OnDbCreated() const
 DbResult ECDb::Impl::OnDbOpening() const
     {
     RegisterBuiltinFunctions();
-    return m_idSequences.GetManager().InitializeSequences();
+    return m_idSequenceManager.InitializeSequences();
     }
 
 //--------------------------------------------------------------------------------------
@@ -69,7 +58,7 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     if (m_ecdb.IsReadonly())
         return BE_SQLITE_READONLY;
 
-    const DbResult stat = m_idSequences.GetManager().ResetSequences(&newBriefcaseId);
+    const DbResult stat = m_idSequenceManager.ResetSequences(&newBriefcaseId);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("Changing briefcase id to %" PRIu32 " in file '%s' failed because ECDb's id sequences could not be reset.",
@@ -83,78 +72,34 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::ResetIdSequences(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
+BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
     {
     if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
         return ERROR;
 
     //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
     ECInstanceId maxECInstanceId;
-    if (SUCCESS != DetermineMaxECInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
+    if (SUCCESS != DetermineMaxInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
         {
         LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The maximum for the ECInstanceId sequence for the new BriefcaseId could not be determined.",
                    briefcaseId.GetValue());
         return ERROR;
         }
 
-    if (BE_SQLITE_OK != m_idSequences.GetSequence(IdSequences::Key::InstanceId).Reset(maxECInstanceId.GetValueUnchecked()))
+    if (BE_SQLITE_OK != GetInstanceIdSequence().Reset(maxECInstanceId.GetValueUnchecked()))
         {
         LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The ECInstanceId sequence could not be reset to the new BriefcaseId.",
                    briefcaseId.GetValue());
         return ERROR;
         }
-
-    //Profile table sequences
-    const std::vector<std::tuple<IdSequences::Key, Utf8CP, Utf8CP>> profileTableSequences
-        {{IdSequences::Key::SchemaId, TABLE_Schema, COL_PROFILETABLE_Id},
-        {IdSequences::Key::SchemaReferenceId, TABLE_SchemaReference, COL_PROFILETABLE_Id},
-        {IdSequences::Key::ClassId, TABLE_Class, COL_PROFILETABLE_Id},
-        {IdSequences::Key::ClassHasBaseClassesId, TABLE_ClassHasBaseClasses, COL_PROFILETABLE_Id},
-        {IdSequences::Key::PropertyId, TABLE_Property, COL_PROFILETABLE_Id},
-        {IdSequences::Key::PropertyPathId, TABLE_PropertyPath, COL_PROFILETABLE_Id},
-        {IdSequences::Key::RelationshipConstraintId, TABLE_RelationshipConstraint, COL_PROFILETABLE_Id},
-        {IdSequences::Key::RelationshipConstraintClassId, TABLE_RelationshipConstraintClass, COL_PROFILETABLE_Id},
-        {IdSequences::Key::CustomAttributeId, TABLE_CustomAttribute, COL_PROFILETABLE_Id},
-        {IdSequences::Key::EnumId, TABLE_Enumeration, COL_PROFILETABLE_Id},
-        {IdSequences::Key::KoqId, TABLE_KindOfQuantity, COL_PROFILETABLE_Id},
-        {IdSequences::Key::PropertyCategoryId, TABLE_PropertyCategory, COL_PROFILETABLE_Id},
-        {IdSequences::Key::PropertyMapId, TABLE_PropertyMap, COL_PROFILETABLE_Id},
-        {IdSequences::Key::TableId, TABLE_Table, COL_PROFILETABLE_Id},
-        {IdSequences::Key::ColumnId, TABLE_Column, COL_PROFILETABLE_Id},
-        {IdSequences::Key::IndexId, TABLE_Index, COL_PROFILETABLE_Id},
-        {IdSequences::Key::IndexColumnId, TABLE_IndexColumn, COL_PROFILETABLE_Id}
-        };
-
-
-    for (std::tuple<IdSequences::Key, Utf8CP, Utf8CP> const& profileTableSequence : profileTableSequences)
-        {
-        IdSequences::Key sequenceKey = std::get<0>(profileTableSequence);
-        Utf8CP tableName = std::get<1>(profileTableSequence);
-        Utf8CP idColName = std::get<2>(profileTableSequence);
-
-        BeBriefcaseBasedId newSequenceValue;
-        if (SUCCESS != DetermineMaxIdForBriefcase(newSequenceValue, briefcaseId, tableName, idColName))
-            {
-            LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The maximum id for sequence '%s' for the new BriefcaseId could not be determined.",
-                       briefcaseId.GetValue(), m_idSequences.GetSequence(sequenceKey).GetName());
-            return ERROR;
-            }
-
-        if (BE_SQLITE_OK != m_idSequences.GetSequence(sequenceKey).Reset(newSequenceValue.GetValueUnchecked()))
-            {
-            LOG.errorv("Changing BriefcaseId to %" PRIu32 " failed: The sequence '%s' could not be reset to the new BriefcaseId.",
-                       briefcaseId.GetValue(), m_idSequences.GetSequence(sequenceKey).GetName());
-            return ERROR;
-            }
-        }
-
+    
     return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::DetermineMaxECInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const
+BentleyStatus ECDb::Impl::DetermineMaxInstanceIdForBriefcase(ECInstanceId& maxId, BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) const
     {
     if (!briefcaseId.IsValid())
         return ERROR;
@@ -430,7 +375,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         }
 
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str(), GetSettings().GetCrudWriteToken()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str(), m_settingsManager.GetCrudWriteToken()))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt.Step())
@@ -439,7 +384,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     stmt.Finalize();
 
     //Step 2: Purge ownership class from records for which file info doesn't exist anymore
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)", GetSettings().GetCrudWriteToken()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)", m_settingsManager.GetCrudWriteToken()))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
@@ -543,18 +488,5 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
     return BE_SQLITE_OK;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                02/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void SettingsHolder::ApplySettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
-    {
-    if (requireECCrudTokenValidation)
-        m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken());
-
-    if (requireECSchemaImportTokenValidation)
-        m_ecSchemaImportToken = std::unique_ptr<SchemaImportToken>(new SchemaImportToken());
-
-    m_settings = ECDb::Settings(m_eccrudWriteToken.get(), m_ecSchemaImportToken.get(), allowChangesetMergingIncompatibleECSchemaImport);
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

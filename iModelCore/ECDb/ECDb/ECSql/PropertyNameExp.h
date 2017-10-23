@@ -43,9 +43,9 @@ struct PropertyNameExp final : ValueExp
         Utf8String m_classAlias;
         RangeClassRefExp const* m_classRefExp = nullptr;
         ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr; //will never be null, but cannot declare as ref as it is set after construction
-
+        BentleyStatus ResolveUnionOrderByArg(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
-        BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
+        BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath&);
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void SetClassRefExp(RangeClassRefExp const& classRefExp);

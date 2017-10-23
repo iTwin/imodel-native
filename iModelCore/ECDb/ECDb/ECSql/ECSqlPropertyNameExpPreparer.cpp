@@ -114,6 +114,22 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
 //static
 void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
+    static auto isPartOfWhereExp = [] (Exp const& exp)
+        {
+        Exp const* p = &exp;
+        while (p = p->GetParent())
+            {
+            if (p->GetType() == Exp::Type::Where)
+                return true;
+
+            if (p->GetType() == Exp::Type::SingleSelect || p->GetType() == Exp::Type::Select || p->GetType() == Exp::Type::Update || p->GetType() == Exp::Type::Delete)
+                return false;
+            }
+
+        return false;
+        };
+
+    const bool castSharedColumn = isPartOfWhereExp(exp);
     ToSqlPropertyMapVisitor::ECSqlScope scope;
     if (ecsqlType == ECSqlType::Select)
         scope = ToSqlPropertyMapVisitor::ECSqlScope::Select;
@@ -137,8 +153,15 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
         if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             continue;
-
-        nativeSqlSnippets.push_back(r.GetSqlBuilder());
+        
+        if (castSharedColumn && r.GetColumn().IsShared())
+            {
+            Utf8String castExp;
+            castExp.Sprintf("CAST(%s AS %s)", r.GetSqlBuilder().ToString(), DbColumn::TypeToSql(r.GetPropertyMap().GetColumnDataType()));
+            nativeSqlSnippets.push_back(NativeSqlBuilder(castExp.c_str()));
+            }
+        else
+            nativeSqlSnippets.push_back(r.GetSqlBuilder());
         }
     }
 

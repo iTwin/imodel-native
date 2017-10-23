@@ -34,40 +34,39 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
     switch (mode)
         {
             case FinalizeParseMode::BeforeFinalizingChildren:
-            {
-            ClassNameExp const* classNameExp = GetClassNameExp();
-
-            RangeClassInfo::List classList;
-            classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
-            m_finalizeParsingArgCache = move(classList);
-            ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
-
-            auto propNameListExp = GetPropertyNameListExpP();
-            if (IsOriginalPropertyNameListUnset())
                 {
-                auto addDelegate = [&propNameListExp] (std::unique_ptr<PropertyNameExp>& propNameExp)
+                ClassNameExp const* classNameExp = GetClassNameExp();
+
+                RangeClassInfo::List classList;
+                classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
+                m_finalizeParsingArgCache = move(classList);
+                ctx.PushArg(std::unique_ptr<ECSqlParseContext::RangeClassArg>(new ECSqlParseContext::RangeClassArg(m_finalizeParsingArgCache)));
+                auto propNameListExp = GetPropertyNameListExpP();
+                if (IsOriginalPropertyNameListUnset())
                     {
-                    //ECInstanceId is treated separately
-                    const PropertyMap::Type propMapKind = propNameExp->GetPropertyMap().GetType();
-                    if (propMapKind != PropertyMap::Type::ECInstanceId && propMapKind != PropertyMap::Type::ECClassId)
-                        propNameListExp->AddPropertyNameExp(propNameExp);
-                    };
+                    auto addDelegate = [&propNameListExp] (std::unique_ptr<PropertyNameExp>& propNameExp)
+                        {
+                        //ECInstanceId is treated separately
+                        const PropertyMap::Type propMapKind = propNameExp->GetPropertyMap().GetType();
+                        if (propMapKind != PropertyMap::Type::ECInstanceId && propMapKind != PropertyMap::Type::ECClassId)
+                            propNameListExp->AddPropertyNameExp(propNameExp);
+                        };
 
-                if (SUCCESS != classNameExp->CreatePropertyNameExpList(ctx, addDelegate))
-                    return FinalizeParseStatus::Error;
+                    if (SUCCESS != classNameExp->CreatePropertyNameExpList(ctx, addDelegate))
+                        return FinalizeParseStatus::Error;
 
+                    }
+
+                return FinalizeParseStatus::NotCompleted;
                 }
 
-            return FinalizeParseStatus::NotCompleted;
-            }
-
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
-            {
-            ctx.PopFinalizeParseArg();
-            m_finalizeParsingArgCache.clear();
+                {
+                ctx.PopArg();
+                m_finalizeParsingArgCache.clear();
 
-            return Validate(ctx);
-            }
+                return Validate(ctx);
+                }
 
             default:
                 BeAssert(false);

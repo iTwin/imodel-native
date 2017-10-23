@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementTestFixture.h"
+#include "ECDbPublishedTests.h"
 #include "NestedStructArrayTestSchemaHelper.h"
 #include <Bentley/Base64Utilities.h>
 #include <cmath>
@@ -15,6 +15,9 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+struct ECSqlStatementTestFixture : ECDbTestFixture {};
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1282,15 +1285,21 @@ TEST_F(ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
 TEST_F(ECSqlStatementTestFixture, ParametersInNestedSelectStatement)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("parametersinnestedselect.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    const int rowCountPerClass = 3;
-    ASSERT_EQ(SUCCESS, PopulateECDb( rowCountPerClass));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(L,I) VALUES(33,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(L,I) VALUES(123456789,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(L,I) VALUES(123456789,124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(L,I) VALUES(4444,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.P(I) VALUES(123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.P(I) VALUES(124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.P(I) VALUES(123)"));
 
 
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE L=123456789 AND I IN (SELECT I FROM ecsql.P WHERE I=123)"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(rowCountPerClass, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
 
@@ -1301,32 +1310,21 @@ TEST_F(ECSqlStatementTestFixture, ParametersInNestedSelectStatement)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 123)) << stmt.GetECSql();
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(rowCountPerClass, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
 
     //Case of Paul Daymond who reported this issue
 
     ECInstanceKey psaKey1, psaKey2, pKey;
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(L,S) VALUES(314,'Test PSA 1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(psaKey1)) << stmt.GetECSql();
-    stmt.Finalize();
-
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(psaKey1, "INSERT INTO ecsql.PSA(L,S) VALUES(314,'Test PSA 1')"));
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO ecsql.P(MyPSA.Id,S) VALUES(%s,'Test P')", psaKey1.GetInstanceId().ToString().c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(pKey)) << stmt.GetECSql();
-    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, ecsql.c_str()));
 
     ecsql.Sprintf("INSERT INTO ecsql.PSA(L,I,S) VALUES(314,%s,'Test PSA 2')", pKey.GetInstanceId().ToString().c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(psaKey2)) << stmt.GetECSql();
-    stmt.Finalize();
-
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(psaKey2, ecsql.c_str()));
     m_ecdb.SaveChanges();
-    }
 
     {
     Utf8String ecsqlWithoutParams;
@@ -2011,7 +2009,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.Base SET BaseProp=200"));
     stmt.Finalize();
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE ONLY ts.Base SET BaseProp=200"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ONLY ts.Base SET BaseProp=200"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT BaseProp FROM ts.Base WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, baseKey.GetInstanceId()));
@@ -2858,130 +2856,152 @@ TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
-    auto testFunction = [this] (Utf8CP insertECSql, bool bindExpectedToSucceed, int structParameterIndex, Utf8CP structValueJson, Utf8CP verifySelectECSql, int structValueIndex)
-        {
-        Json::Value expectedStructValue(Json::objectValue);
-        bool parseSucceeded = Json::Reader::Parse(structValueJson, expectedStructValue);
-        ASSERT_TRUE(parseSucceeded);
-
-        ECSqlStatement statement;
-        auto stat = statement.Prepare(m_ecdb, insertECSql);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
-
-        auto& binder = statement.GetBinder(structParameterIndex);
-
-        BentleyStatus bindStatus = SUCCESS;
-        BindFromJson(bindStatus, statement, expectedStructValue, binder);
-        ASSERT_EQ(bindExpectedToSucceed, bindStatus == SUCCESS);
-        if (!bindExpectedToSucceed)
-            return;
-
-        ECInstanceKey ecInstanceKey;
-        ASSERT_EQ(BE_SQLITE_DONE, statement.Step(ecInstanceKey));
-
-        statement.Finalize();
-        stat = statement.Prepare(m_ecdb, verifySelectECSql);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed";
-        statement.BindId(1, ecInstanceKey.GetInstanceId());
-
-        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-
-        IECSqlValue const& structValue = statement.GetValue(structValueIndex);
-        VerifyECSqlValue(statement, expectedStructValue, structValue);
-        };
+    ECClassCP pStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(pStructClass != nullptr && pStructClass->IsStructClass());
 
     //**** Test 1 *****
-    Utf8CP structValueJson = "{"
-        " \"b\" : true,"
-        " \"bi\" : null,"
-        " \"d\" : 3.1415,"
-        " \"dt\" : {"
-        "     \"type\" : \"datetime\","
-        "     \"datetime\" : \"2014-03-27T13:14:00.000\""
-        "     },"
-        " \"dtUtc\" : {"
-        "     \"type\" : \"datetime\","
-        "     \"datetime\" : \"2014-03-27T13:14:00.000Z\""
-        "     },"
-        " \"i\" : 44444,"
-        " \"l\" : 444444444,"
-        " \"s\" : \"Hello, world\","
-        " \"p2d\" : {"
-        "     \"type\" : \"point2d\","
-        "     \"x\" : 3.1415,"
-        "     \"y\" : 5.5555"
-        "     },"
-        " \"p3d\" : {"
-        "     \"type\" : \"point3d\","
-        "     \"x\" : 3.1415,"
-        "     \"y\" : 5.5555,"
-        "     \"z\" : -6.666"
-        "     }"
-        "}";
+    {
+    Json::Value expectedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
+         { "b" : true,
+         "d" : 3.1415,
+         "dt" : "2014-03-27T13:14:00.000",
+         "dtUtc" : "2014-03-27T13:14:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
+        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : -6.666}
+        })json"));
 
-    testFunction("INSERT INTO ecsql.PSA (I, PStructProp) VALUES (?, ?)", true, 2, structValueJson, "SELECT I, PStructProp FROM ecsql.PSA WHERE ECInstanceId = ?", 1);
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA (I, PStructProp) VALUES (?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(2), expectedJson, *pStructClass->GetStructClassCP())) << insertStmt.GetECSql();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Finalize();
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+    JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+    Json::Value actualJson;
+    ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+    ASSERT_TRUE(actualJson.isMember("PStructProp"));
+    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    }
 
     //**** Test 2 *****
-    structValueJson = "{"
-        " \"PStructProp\" : {"
-        "       \"b\" : true,"
-        "       \"bi\" : null,"
-        "       \"d\" : 3.1415,"
-        "       \"dt\" : {"
-        "           \"type\" : \"datetime\","
-        "           \"datetime\" : \"2014-03-27T13:14:00.000\""
-        "           },"
-        "       \"dtUtc\" : {"
-        "           \"type\" : \"datetime\","
-        "           \"datetime\" : \"2014-03-27T13:14:00.000Z\""
-        "           },"
-        "       \"i\" : 44444,"
-        "       \"l\" : 444444444,"
-        "       \"s\" : \"Hello, world\","
-        "       \"p2d\" : {"
-        "           \"type\" : \"point2d\","
-        "           \"x\" : 3.1415,"
-        "           \"y\" : 5.5555"
-        "           },"
-        "       \"p3d\" : {"
-        "           \"type\" : \"point3d\","
-        "           \"x\" : 3.1415,"
-        "           \"y\" : 5.5555,"
-        "           \"z\" : -6.666"
-        "           }"
-        "       }"
-        "}";
+    {
+    Json::Value expectedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
+        { "PStructProp" :
+        { "b" : true,
+         "d" : 3.1415,
+         "dt" : "2014-03-27T13:14:00.000",
+         "dtUtc" : "2014-03-27T13:14:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
+        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : -6.666}
+        }})json"));
+    ECClassCP saStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "SAStruct");
+    ASSERT_TRUE(saStructClass != nullptr && saStructClass->IsStructClass());
 
-    testFunction("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", true, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.SA(SAStructProp) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *saStructClass->GetStructClassCP())) << insertStmt.GetECSql();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Finalize();
 
-    //**** Type mismatch tests *****
-    //SQLite primitives are compatible to each other (test framework does not allow that yet)
-    /*structValueJson = "{\"PStructProp\" : {\"bi\" : 3.1415 }}";
-    testFunction ("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", true, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+    JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+    Json::Value actualJson;
+    ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+    ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["SAStructProp"]));
+    }
 
-    structValueJson = "{\"PStructProp\" : {\"s\" : 3.1415 }}";
-    testFunction ("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", true, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
-    */
-    //ECSQL primitives PointXD and DateTime are only compatible with themselves.
-    structValueJson = "{\"PStructProp\" : {\"p2d\" : 3.1415 }}";
-    testFunction("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", false, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    //Mismatching types
+    {
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(PStructProp) VALUES(?)"));
 
-    structValueJson = "{\"PStructProp\" : {\"p3d\" : 3.1415 }}";
-    testFunction("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", false, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    ECSqlStatement verifyStmt;
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
+    JsonECSqlSelectAdapter verifyAdapter(verifyStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
 
-    structValueJson = "{\"PStructProp\" : {\"dt\" : 3.1415 }}";
-    testFunction("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", false, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    Json::Value expectedJson, actualJson;
 
-    structValueJson = "{\"PStructProp\" : {\"dtUtc\" : 3.1415 }}";
-    testFunction("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", false, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    {
+    //mismatching types which are convertible to each other
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "i" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
 
-    structValueJson = "{\"PStructProp\" : {\"dtUtc\" : {"
-        "\"type\" : \"datetime\","
-        "\"datetime\" : \"2014-03-27T13:14:00.000\"}}}";
-    testFunction("INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", false, 1, structValueJson, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindId(1, key.GetInstanceId())) << verifyStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    ASSERT_EQ(SUCCESS, verifyAdapter.GetRow(actualJson)) << verifyStmt.GetECSql();
+    verifyStmt.Reset();
+    verifyStmt.ClearBindings();
+    ASSERT_TRUE(actualJson.isMember("PStructProp"));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "i" : 3 })json")) << "Double value in original JSON is converted to int during binding";
+    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    }
+
+    {
+    //mismatching types which are convertible to each other
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "l" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindId(1, key.GetInstanceId())) << verifyStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+    ASSERT_EQ(SUCCESS, verifyAdapter.GetRow(actualJson)) << verifyStmt.GetECSql();
+    verifyStmt.Reset();
+    verifyStmt.ClearBindings();
+
+    ASSERT_TRUE(actualJson.isMember("PStructProp"));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "l" : 3 })json")) << "Double value in original JSON is converted to int64 during binding";
+    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    }
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "b" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "s" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "bi" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "p2d" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "p3d" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "dt" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "dtUtc" : 3.1415 })json"));
+    ASSERT_EQ(ECSqlStatus::Error, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *pStructClass->GetStructClassCP())) << expectedJson.ToString();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2989,178 +3009,64 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
+    ECClassCP psaClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(psaClass != nullptr);
+    ECClassCP pStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(pStructClass != nullptr && pStructClass->IsStructClass());
 
-    //insert some test instances
-    auto insertFunction = [this] (ECInstanceKey& ecInstanceKey, Utf8CP insertECSql, int structParameterIndex, Utf8CP structValueToBindJson)
-        {
-        Json::Value structValue(Json::objectValue);
-        bool parseSucceeded = Json::Reader::Parse(structValueToBindJson, structValue);
-        ASSERT_TRUE(parseSucceeded);
+    JsonInserter jsonInserter(m_ecdb, *psaClass, nullptr);
+    ASSERT_TRUE(jsonInserter.IsValid());
 
-        ECSqlStatement statement;
-        auto stat = statement.Prepare(m_ecdb, insertECSql);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
+    ECSqlStatement updateStmt;
+    ASSERT_EQ(ECSqlStatus::Success, updateStmt.Prepare(m_ecdb, "UPDATE ecsql.PSA SET PStructProp=? WHERE ECInstanceId=?"));
 
-        IECSqlBinder& structBinder = statement.GetBinder(structParameterIndex);
+    ECSqlStatement verifyStmt;
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(m_ecdb, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?"));
+    JsonECSqlSelectAdapter verifyAdapter(verifyStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
 
-        BentleyStatus bindStatus = SUCCESS;
-        BindFromJson(bindStatus, statement, structValue, structBinder);
+    Json::Value initialJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(initialJson, R"json(
+       { "PStructProp" : { "b" : true,
+         "d" : 3.1415,
+         "dt" : "2014-03-27T13:14:00.000",
+         "dtUtc" : "2014-03-27T13:14:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
+        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : -6.666}
+        }})json"));
 
-        auto stepStat = statement.Step(ecInstanceKey);
-        ASSERT_EQ((int) BE_SQLITE_DONE, (int) stepStat) << "Execution of ECSQL '" << insertECSql << "' failed";
-        };
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_OK, jsonInserter.Insert(key, initialJson)) << initialJson.ToString();
 
-    auto testFunction = [this] (Utf8CP updateECSql, int structParameterIndex, Utf8CP structValueJson, int ecInstanceIdParameterIndex, ECInstanceKey ecInstanceKey, Utf8CP verifySelectECSql, int structValueIndex)
-        {
-        Json::Value expectedStructValue(Json::objectValue);
-        bool parseSucceeded = Json::Reader::Parse(structValueJson, expectedStructValue);
-        ASSERT_TRUE(parseSucceeded);
+    Json::Value expectedUpdatedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedUpdatedJson, R"json(
+       { "b" : false,
+         "d" : 6.1415,
+         "dt" : "2014-03-27T13:14:00.000",
+         "dtUtc" : "2017-03-27T13:14:00.000Z",
+         "i" : 8888,
+         "l" : 444444444,
+         "s" : "Hello, world!",
+         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
+        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : 6.666}
+        })json"));
 
-        ECSqlStatement statement;
-        auto stat = statement.Prepare(m_ecdb, updateECSql);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << updateECSql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(updateStmt.GetBinder(1), expectedUpdatedJson, *pStructClass->GetStructClassCP())) << expectedUpdatedJson.ToString();
+    ASSERT_EQ(ECSqlStatus::Success, updateStmt.BindId(2, key.GetInstanceId())) << expectedUpdatedJson.ToString();
+    ASSERT_EQ(BE_SQLITE_DONE, updateStmt.Step()) << expectedUpdatedJson.ToString();
+    updateStmt.Reset();
+    updateStmt.ClearBindings();
 
-        stat = statement.BindId(ecInstanceIdParameterIndex, ecInstanceKey.GetInstanceId());
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Binding ECInstanceId to ECSQL '" << updateECSql << "' failed";
-
-        auto& binder = statement.GetBinder(structParameterIndex);
-
-        BentleyStatus bindStatus = SUCCESS;
-        BindFromJson(bindStatus, statement, expectedStructValue, binder);
-        auto stepStat = statement.Step();
-
-        ASSERT_EQ((int) BE_SQLITE_DONE, (int) stepStat);
-
-        statement.Finalize();
-        stat = statement.Prepare(m_ecdb, verifySelectECSql);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed";
-        statement.BindId(1, ecInstanceKey.GetInstanceId());
-
-        stepStat = statement.Step();
-        ASSERT_EQ((int) BE_SQLITE_ROW, (int) stepStat);
-
-        IECSqlValue const& structValue = statement.GetValue(structValueIndex);
-        VerifyECSqlValue(statement, expectedStructValue, structValue);
-        };
-
-    //Insert test instances
-    ECInstanceKey psaECInstanceKey;
-    insertFunction(psaECInstanceKey, "INSERT INTO ecsql.PSA (PStructProp) VALUES (?)", 1,
-                   "{"
-                   " \"b\" : true,"
-                   " \"bi\" : null,"
-                   " \"d\" : 3.1415,"
-                   " \"dt\" : {"
-                   "     \"type\" : \"datetime\","
-                   "     \"datetime\" : \"2014-03-27T13:14:00.000\""
-                   "     },"
-                   " \"dtUtc\" : {"
-                   "     \"type\" : \"datetime\","
-                   "     \"datetime\" : \"2014-03-27T13:14:00.000Z\""
-                   "     },"
-                   " \"i\" : 44444,"
-                   " \"l\" : 444444444,"
-                   " \"s\" : \"Hello, world\","
-                   " \"p2d\" : {"
-                   "     \"type\" : \"point2d\","
-                   "     \"x\" : 3.1415,"
-                   "     \"y\" : 5.5555"
-                   "     },"
-                   " \"p3d\" : {"
-                   "     \"type\" : \"point3d\","
-                   "     \"x\" : 3.1415,"
-                   "     \"y\" : 5.5555,"
-                   "     \"z\" : -6.666"
-                   "     }"
-                   "}");
-
-    ECInstanceKey saECInstanceKey;
-    insertFunction(saECInstanceKey, "INSERT INTO ecsql.SA (SAStructProp) VALUES (?)", 1,
-                   "{"
-                   " \"PStructProp\" : {"
-                   "       \"b\" : true,"
-                   "       \"bi\" : null,"
-                   "       \"d\" : 3.1415,"
-                   "       \"dt\" : {"
-                   "           \"type\" : \"datetime\","
-                   "           \"datetime\" : \"2014-03-27T13:14:00.000\""
-                   "           },"
-                   "       \"dtUtc\" : {"
-                   "           \"type\" : \"datetime\","
-                   "           \"datetime\" : \"2014-03-27T13:14:00.000Z\""
-                   "           },"
-                   "       \"i\" : 44444,"
-                   "       \"l\" : 444444444,"
-                   "       \"s\" : \"Hello, world\","
-                   "       \"p2d\" : {"
-                   "           \"type\" : \"point2d\","
-                   "           \"x\" : 3.1415,"
-                   "           \"y\" : 5.5555"
-                   "           },"
-                   "       \"p3d\" : {"
-                   "           \"type\" : \"point3d\","
-                   "           \"x\" : 3.1415,"
-                   "           \"y\" : 5.5555,"
-                   "           \"z\" : -6.666"
-                   "           }"
-                   "       }"
-                   "}");
-
-    //**** Test 1 *****
-    Utf8CP newStructValueJson = "{"
-        " \"b\" : false,"
-        " \"bi\" : null,"
-        " \"d\" : -6.283,"
-        " \"dt\" : null,"
-        " \"dtUtc\" : {"
-        "     \"type\" : \"datetime\","
-        "     \"datetime\" : \"2014-04-01T14:30:00.000Z\""
-        "     },"
-        " \"i\" : -10,"
-        " \"l\" : -100000000000000,"
-        " \"s\" : \"Hello, world, once more\","
-        " \"p2d\" : {"
-        "     \"type\" : \"point2d\","
-        "     \"x\" : -2.5,"
-        "     \"y\" : 0.0."
-        "     },"
-        " \"p3d\" : {"
-        "     \"type\" : \"point3d\","
-        "     \"x\" : -1.0,"
-        "     \"y\" : 1.0,"
-        "     \"z\" : 0.0"
-        "     }"
-        "}";
-
-    testFunction("UPDATE ONLY ecsql.PSA SET PStructProp = ? WHERE ECInstanceId = ?", 1, newStructValueJson, 2, psaECInstanceKey, "SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId = ?", 0);
-
-    //**** Test 2 *****
-    newStructValueJson = "{"
-        " \"PStructProp\" : {"
-        "       \"b\" : false,"
-        "       \"bi\" : null,"
-        "       \"d\" : -6.55,"
-        "       \"dt\" : null,"
-        "       \"dtUtc\" : {"
-        "           \"type\" : \"datetime\","
-        "           \"datetime\" : \"2014-04-01T14:33:00.000Z\""
-        "           },"
-        "       \"i\" : -10,"
-        "       \"l\" : -1000000,"
-        "       \"s\" : \"Hello, world, once more\","
-        "       \"p2d\" : null,"
-        "       \"p3d\" : {"
-        "           \"type\" : \"point3d\","
-        "           \"x\" : -1.0,"
-        "           \"y\" : 1.0,"
-        "           \"z\" : 0.0"
-        "           }"
-        "       }"
-        "}";
-
-    testFunction("UPDATE ONLY ecsql.SA SET SAStructProp = ? WHERE ECInstanceId = ?", 1, newStructValueJson, 2, saECInstanceKey, "SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId = ?", 0);
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindId(1, key.GetInstanceId())) << verifyStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step()) << "Id: " << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
+    Json::Value actualJson;
+    ASSERT_EQ(SUCCESS, verifyAdapter.GetRow(actualJson)) << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
+    ASSERT_TRUE(actualJson.isMember("PStructProp"));
+    ASSERT_EQ(ComparableJsonCppValue(expectedUpdatedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
     }
 
 
@@ -3331,9 +3237,9 @@ TEST_F(ECSqlStatementTestFixture, ParameterInSelectClause)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
     {
-    const auto perClassRowCount = 10;
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
+    
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(I,L,S) VALUES(123,123456789,'Sample string')"));
 
     {
     ECSqlStatement statement;
@@ -5364,16 +5270,13 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
     InstanceReadStatus status = IECInstance::ReadFromXmlString(instance, instanceXml.c_str(), *instanceContext);
     ASSERT_TRUE(InstanceReadStatus::Success == status);
 
-    Savepoint s(m_ecdb, "Populate");
     ECClassCR ecClass = instance->GetClass();
     ECInstanceInserter inserter(m_ecdb, ecClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey id;
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
-    instance->SetInstanceId("");
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
-    instance->SetInstanceId("");
-    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *(instance.get())));
-    s.Commit();
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *instance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *instance));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, *instance));
     m_ecdb.SaveChanges();
 
     SqlPrintfString ecSql("SELECT * FROM ONLY [%s].[%s]", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
@@ -5382,12 +5285,18 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
     bvector<IECInstancePtr> instances;
     ECInstanceECSqlSelectAdapter adapter(ecStatement);
+
     while (BE_SQLITE_ROW == ecStatement.Step())
         {
         IECInstancePtr newInstance = adapter.GetInstance();
-        ASSERT_TRUE(ECDbTestUtility::CompareECInstances(*newInstance, *instance));
+
+        Json::Value newInstanceJson, instanceJson;
+        ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(newInstanceJson, *newInstance, nullptr, false));
+        ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, nullptr, false));
+        ASSERT_EQ(ComparableJsonCppValue(newInstanceJson), ComparableJsonCppValue(instanceJson));
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                     06/2016
 //+---------------+---------------+---------------+---------------+---------------+------

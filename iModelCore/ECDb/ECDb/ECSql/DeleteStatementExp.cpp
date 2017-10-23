@@ -37,13 +37,12 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
         RangeClassInfo::List classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
         m_finalizeParsingArgCache = move (classList);
-        ctx.PushFinalizeParseArg (&m_finalizeParsingArgCache);
-
+        ctx.PushArg (std::unique_ptr<ECSqlParseContext::RangeClassArg>(new ECSqlParseContext::RangeClassArg(m_finalizeParsingArgCache)));
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
-        ctx.PopFinalizeParseArg ();
+        ctx.PopArg ();
         m_finalizeParsingArgCache.clear();
         return FinalizeParseStatus::Completed;
         }

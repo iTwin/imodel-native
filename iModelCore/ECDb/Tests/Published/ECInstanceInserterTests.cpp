@@ -41,11 +41,9 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     bvector<IECInstancePtr> instances;
     for (int i = 0; i < numberOfInstances; i++)
         {
-        IECInstancePtr instance;
+        IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
         if (populateAllProperties)
-            instance = ECDbTestUtility::CreateArbitraryECInstance(*testClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-        else
-            instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstancePopulator::Populate(*instance);
 
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(*instance));
         instances.push_back(instance);
@@ -66,14 +64,16 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     ECSqlStatement queryStatement;
     queryStatement.Prepare(m_ecdb, ecSql.c_str());
     int i = 0;
-    bool areEqual;
     ECInstanceECSqlSelectAdapter dataAdapter(queryStatement);
     while ((result = queryStatement.Step()) == BE_SQLITE_ROW)
         {
         IECInstancePtr expected = instances[i];
         IECInstancePtr actual = dataAdapter.GetInstance();
-        areEqual = ECDbTestUtility::CompareECInstances(*expected, *actual);
-        ASSERT_TRUE(areEqual);
+
+        Json::Value expectedJson, actualJson;
+        ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedJson, *expected, nullptr, true));
+        ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJson, *actual, nullptr, true));
+        ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson));
         i++;
         }
     }
@@ -98,11 +98,14 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
 
     for (int sourceIndex = 0; sourceIndex < numberOfSourceInstances; sourceIndex++)
         {
-        IECInstancePtr sourceInstance = ECDbTestUtility::CreateArbitraryECInstance(*sourceClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+        IECInstancePtr sourceInstance = sourceClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+        ECInstancePopulator::Populate(*sourceInstance);
+
         ASSERT_EQ(BE_SQLITE_OK, sourceInserter.Insert(*sourceInstance));
         for (int targetIndex = 0; targetIndex < numberOfTargetInstancesPerSource; targetIndex++)
             {
-            IECInstancePtr targetInstance = ECDbTestUtility::CreateArbitraryECInstance(*targetClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+            IECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstancePopulator::Populate(*targetInstance);
             ECInstanceKey relationshipId;
             ASSERT_EQ(BE_SQLITE_OK, targetInserter.Insert(*targetInstance));
 
@@ -734,7 +737,8 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
 
     ECClassCP project = m_ecdb.Schemas().GetClass("StartupCompany", "Project");
     ASSERT_TRUE(project != nullptr);
-    IECInstancePtr projectInstance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+    IECInstancePtr projectInstance = project->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstancePopulator::Populate(*projectInstance);
 
     //ECInstance Adapters
     ECInstanceInserter inserter(m_ecdb, *employee, nullptr);
@@ -757,7 +761,7 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     BeTest::SetFailOnAssert(false);
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile));
+    ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonInputFile));
 
     JsonInserter jsonInserter(m_ecdb, *employee, nullptr);
     ASSERT_EQ(BE_SQLITE_ERROR, jsonInserter.Insert(instanceKey, jsonInput));
@@ -766,85 +770,6 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetInstanceId(), jsonInput));
 
     BeTest::SetFailOnAssert(true);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                           07/12
-//---------------------------------------------------------------------------------------
-TEST_F(ECSqlAdapterTestFixture, FindECInstances)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(3));
-    IECInstancePtr resultInstance = nullptr;
-    ECValue v;
-    int rows = 0;
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name FROM meta.ECClassDef c JOIN meta.ECSchemaDef s USING meta.SchemaOwnsClasses WHERE s.Name='StartupCompany'"));
-
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        Utf8CP className = stmt.GetValueText(0);
-        if (strcmp(className, "ClassWithPrimitiveProperties") == 0)
-            {
-            SqlPrintfString ecSql("SELECT * FROM [StartupCompany].[ClassWithPrimitiveProperties] WHERE intProp > 0");
-            ECSqlStatement ecStatement;
-            ECSqlStatus status = ecStatement.Prepare(m_ecdb, ecSql.GetUtf8CP());
-            ASSERT_TRUE(ECSqlStatus::Success == status);
-            ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
-
-            rows = 0;
-            while (ecStatement.Step() == BE_SQLITE_ROW)
-                {
-                resultInstance = dataAdapter.GetInstance();
-                ASSERT_TRUE(resultInstance.IsValid());
-                ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "intProp"));
-                ASSERT_TRUE(v.GetInteger() > 0);
-                rows++;
-                }
-            LOG.infov(L"Returned %d rows for '(intProp > 0)'", rows);
-            ASSERT_EQ(3, rows);
-            }
-        else if (strcmp(className, "AAA") == 0)
-            {
-            SqlPrintfString ecSql("SELECT * FROM [StartupCompany].[AAA] WHERE l = 123456789");
-            ECSqlStatement ecStatement;
-            ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(m_ecdb, ecSql.GetUtf8CP()));
-            ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
-
-            rows = 0;
-            while (ecStatement.Step() == BE_SQLITE_ROW)
-                {
-                resultInstance = dataAdapter.GetInstance();
-                ASSERT_TRUE(resultInstance.IsValid());
-                ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "l"));
-                ASSERT_TRUE(v.GetLong() == 123456789L);
-                rows++;
-                }
-            LOG.infov(L"Returned %d rows for '(l = 123456789)'", rows);
-            ASSERT_EQ(rows, 3);
-            }
-        else if (strcmp(className, "AAFoo") == 0)
-            {
-            SqlPrintfString ecSql("SELECT * FROM ONLY [StartupCompany].[AAFoo] WHERE doubleAAFoo BETWEEN 0 AND 100");
-            ECSqlStatement ecStatement;
-            ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(m_ecdb, ecSql.GetUtf8CP()));
-            ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
-
-            rows = 0;
-            while (ecStatement.Step() == BE_SQLITE_ROW)
-                {
-                resultInstance = dataAdapter.GetInstance();
-                ASSERT_TRUE(resultInstance.IsValid());
-                ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "doubleAAFoo"));
-                ASSERT_TRUE(v.GetDouble() >= 0 && v.GetDouble() <= 100);
-                rows++;
-                }
-            LOG.infov(L"Returned %d rows for '(doubleAAFoo BETWEEN 0 AND 100)' ", rows);
-            ASSERT_EQ(3, rows);
-            }
-        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

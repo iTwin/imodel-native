@@ -115,7 +115,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     
     DbTable* vtable = GetTables().front();
     {////////SourceECInstanceId
-    DbColumn const* sourceIdCol = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    DbColumn const* sourceIdCol = vtable->AddColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceIdCol});
     if (propMap == nullptr || sourceIdCol == nullptr)
         {
@@ -130,7 +130,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////SourceECClassId
-    DbColumn const* sourceClassIdCol = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    DbColumn const* sourceClassIdCol = vtable->AddColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceClassIdCol});
     if (propMap == nullptr || sourceClassIdCol == nullptr)
         {
@@ -145,7 +145,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECInstanceId
-    DbColumn const* targetIdCol = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    DbColumn const* targetIdCol = vtable->AddColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetIdCol});
     if (propMap == nullptr || targetIdCol == nullptr)
         {
@@ -160,7 +160,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECClassId
-    DbColumn const* targetEClassIdCol = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
+    DbColumn const* targetEClassIdCol = vtable->AddColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetEClassIdCol});
     if (propMap == nullptr || targetEClassIdCol == nullptr)
         {
@@ -454,13 +454,13 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
             DbTable const* sourceTable = *sourceTables.begin();
             DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
             DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
-            GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
+            GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
 
             //Create FK from Target-Primary to LinkTable
             DbTable const* targetTable = *targetTables.begin();
             fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
             referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
-            GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
+            GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
             }
         }
 
@@ -962,7 +962,7 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
         return nullptr;
         }
         
-    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, DbColumn::Kind::Default, persType);
+    column = table.AddColumn(Utf8String(columnName), DbColumn::Type::Integer, DbColumn::Kind::Default, persType);
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();

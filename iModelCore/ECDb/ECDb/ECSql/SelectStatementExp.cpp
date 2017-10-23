@@ -167,14 +167,15 @@ void FromExp::FindRangeClassRefs(RangeClassInfo::List& classRefs, ClassRefExp co
             case Type::NaturalJoin:
             case Type::CrossJoin:
             case Type::ECRelationshipJoin:
-            {
-            JoinExp const& join = classRef.GetAs<JoinExp>();
-            FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
-            FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
-            if (classRef.GetType() == Type::ECRelationshipJoin)
-                FindRangeClassRefs(classRefs, join.GetAs<ECRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
-            break;
-            }
+                {
+                JoinExp const& join = classRef.GetAs<JoinExp>();
+                FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
+                FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
+                if (classRef.GetType() == Type::ECRelationshipJoin)
+                    FindRangeClassRefs(classRefs, join.GetAs<ECRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
+
+                break;
+                }
             default:
                 BeAssert(false && "Case not handled");
         };
@@ -195,7 +196,6 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
     FindRangeClassRefs(existingRangeClassRefs);
 
     RangeClassInfo::List newRangeClassRefs;
-
     FindRangeClassRefs(newRangeClassRefs, *classRefExp, RangeClassInfo::Scope::Local);
     for (RangeClassInfo const& newRangeCRef : newRangeClassRefs)
         {
@@ -407,7 +407,6 @@ ValueExp const* LimitOffsetExp::GetOffsetExp() const
 void OrderByExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     ctx.AppendToECSql("ORDER BY ");
-
     bool isFirstItem = true;
     for (Exp const* childExp : GetChildren())
         {
@@ -417,6 +416,70 @@ void OrderByExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(*childExp);
         isFirstItem = false;
         }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       08/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+ComputedExp const* OrderByExp::GetFirstNonePropertyNamExpression() const
+    {
+    for (auto children : GetChildren())
+        {
+        ComputedExp const* exp = children->GetAs<OrderBySpecExp>().GetSortExpression();
+        if (exp->GetType() != Exp::Type::PropertyName && exp->GetType() != Exp::Type::FunctionCall)
+            return exp;
+        }
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       08/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) 
+    {
+    if (parseMode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        {
+        Exp const* exp = this;
+        while (exp->GetParent())
+            {
+            exp = exp->GetParent();
+
+            if (exp->GetType() == Exp::Type::Select)
+                m_unionStmts.push_back(&exp->GetAsCP<SelectStatementExp>()->GetFirstStatement());
+            else if (exp->GetType() == Exp::Type::SingleSelect)
+                {
+                continue;
+                }
+            else //SubQuery or other parent should not included here
+                {
+                m_unionStmts.clear();
+                break;
+                }
+            }
+
+        if (m_unionStmts.size() > 1)
+            {
+            if (ComputedExp const* exp = GetFirstNonePropertyNamExpression())
+                {
+                parseContext.Issues().Report("'%s' ORDER BY term does not match any column in the result set.", exp->ToECSql().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
+            parseContext.PushArg(std::unique_ptr<ECSqlParseContext::UnionOrderByArg>(new ECSqlParseContext::UnionOrderByArg(m_unionStmts)));
+            }
+        return FinalizeParseStatus::NotCompleted;
+        }
+    else
+        {
+        if (m_unionStmts.size() > 1)
+            {
+            parseContext.PopArg();
+            m_unionStmts.clear();
+            }
+        }
+
+    return FinalizeParseStatus::Completed;   
     }
 
 //************************* OrderBySpecExp *******************************************
@@ -569,11 +632,10 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         if (!GetParent()->GetAs<SingleSelectStatementExp>().IsRowConstructor())
             {
-            void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
-            BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-            RangeClassInfo::List const* rangeClassRefList = static_cast<RangeClassInfo::List const*> (finalizeParseArgs);
-            BeAssert(rangeClassRefList != nullptr);
-            if (SUCCESS != ReplaceAsteriskExpressions(ctx, *rangeClassRefList))
+            BeAssert(ctx.CurrentArg() != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
+            BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClassArg && "Expecting range class");
+            ECSqlParseContext::RangeClassArg const* arg = static_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
+            if (SUCCESS != ReplaceAsteriskExpressions(ctx, arg->GetRangeClassInfos()))
                 {
                 ctx.Issues().Report("Asterisk replacement in select clause failed unexpectedly.");
                 return FinalizeParseStatus::Error;
@@ -683,16 +745,21 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         if (!IsRowConstructor())
             {
             m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions();
-            ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
+            ctx.PushArg(std::unique_ptr<ECSqlParseContext::RangeClassArg>(new ECSqlParseContext::RangeClassArg(m_finalizeParsingArgCache)));
             }
+
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
-        ctx.PopFinalizeParseArg();
-        m_finalizeParsingArgCache.clear();
-        return FinalizeParseStatus::Completed;
+        if (!IsRowConstructor())
+            {
+            ctx.PopArg();
+            m_finalizeParsingArgCache.clear();
+            }
         }
+
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -892,7 +959,6 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
         }
 
     SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo());
-
     return FinalizeParseStatus::Completed;
     }
 
@@ -982,7 +1048,18 @@ Utf8CP SelectStatementExp::OperatorToString(CompoundOperator op)
                 return nullptr;
         }
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) 
+    {
+    if (GetRhsStatement() && GetFirstStatement().GetOrderBy())
+        {
+        parseContext.Issues().Report("ORDER BY clause must not be followed by UNION clause.");
+        return FinalizeParseStatus::Error;
+        }
 
-
+    return FinalizeParseStatus::Completed;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
