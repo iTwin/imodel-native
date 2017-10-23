@@ -36,11 +36,11 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        auto classNameExp = GetClassNameExp();
-        RangeClassInfo::List classList;
+        ClassNameExp const* classNameExp = GetClassNameExp();
+        std::vector<RangeClassInfo> classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
         m_finalizeParsingArgCache = classList;
-        ctx.PushArg(std::unique_ptr<ECSqlParseContext::RangeClassArg>(new ECSqlParseContext::RangeClassArg(m_finalizeParsingArgCache)));
+        ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_finalizeParsingArgCache));
         return FinalizeParseStatus::NotCompleted;
         }
     else

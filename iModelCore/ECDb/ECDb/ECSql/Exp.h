@@ -418,28 +418,5 @@ struct Exp : NonCopyableClass
 typedef Exp const* ExpCP;
 typedef Exp const& ExpCR;
 
-struct RangeClassRefExp;
-struct RangeClassInfo final
-    {
-    typedef std::vector<RangeClassInfo> List;
-    enum Scope
-        {
-        Nil,
-        Local,
-        Inherited
-        };
-    private:
-        RangeClassRefExp const* m_exp;
-        Scope m_scope;
-
-    public:
-        RangeClassInfo() :m_exp(nullptr), m_scope(Scope::Nil) {}
-        RangeClassInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
-        ~RangeClassInfo() {}
-        Scope GetScope() const { return m_scope; }
-        bool IsLocal() const { return m_scope == Scope::Local; }
-        bool IsInherited() const { return m_scope == Scope::Inherited; }
-        RangeClassRefExp const& GetExp() const { return *m_exp; }
-    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

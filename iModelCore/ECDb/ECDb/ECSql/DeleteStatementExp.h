@@ -23,7 +23,7 @@ struct DeleteStatementExp final : Exp
         int m_whereClauseIndex;
         int m_optionsClauseIndex;
 
-        RangeClassInfo::List m_finalizeParsingArgCache;
+        std::vector<RangeClassInfo> m_finalizeParsingArgCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;

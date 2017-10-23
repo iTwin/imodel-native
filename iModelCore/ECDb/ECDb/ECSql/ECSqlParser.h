@@ -26,47 +26,40 @@ public:
         {
         enum class Type
             {
-            Default,
-            RangeClassArg,
-            UnionOrderByArg
+            RangeClass,
+            UnionOrderBy
             };
 
         private:
             Type m_type;
 
+        protected:
+            explicit ParseArg(Type type) :m_type(type) {}
+
         public:
-            ParseArg(Type type)
-                :m_type(type)
-                {}
-            ParseArg()
-                :m_type(Type::Default)
-                {}
+            virtual ~ParseArg() {}
             Type GetType() const { return m_type; }
-            ~ParseArg() {};
         };
 
-    struct RangeClassArg : ParseArg
+    struct RangeClassArg final : ParseArg
         {
         private:
-            RangeClassInfo::List const& m_arg;
+            std::vector<RangeClassInfo> const& m_arg;
+
         public:
-            RangeClassArg(RangeClassInfo::List const& arg)
-                :ParseArg(Type::RangeClassArg), m_arg(arg)
-                {}
-            RangeClassInfo::List const& GetRangeClassInfos() const { return m_arg; }
-            ~RangeClassArg() {};
+            explicit RangeClassArg(std::vector<RangeClassInfo> const& arg) :ParseArg(Type::RangeClass), m_arg(arg) {}
+            ~RangeClassArg() {}
+            std::vector<RangeClassInfo> const& GetRangeClassInfos() const { return m_arg; }
         };
 
-    struct UnionOrderByArg : ParseArg
+    struct UnionOrderByArg final : ParseArg
         {
         private:
             std::vector<SingleSelectStatementExp const*> const& m_arg;
         public:
-            UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg)
-                :ParseArg(Type::UnionOrderByArg), m_arg(arg)
-                {}
-            std::vector<SingleSelectStatementExp const*> const& GetUnionStmts() const { return m_arg; }
-            ~UnionOrderByArg() {};
+            explicit UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg) :ParseArg(Type::UnionOrderBy), m_arg(arg) {}
+            ~UnionOrderByArg() {}
+            std::vector<SingleSelectStatementExp const*> const& GetUnionClauses() const { return m_arg; }
         };
 
 private:
@@ -74,13 +67,18 @@ private:
 
     std::vector<std::unique_ptr<ParseArg>> m_finalizeParseArgs;
     bmap<Utf8CP, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
-    int m_currentECSqlParameterIndex;
+    int m_currentECSqlParameterIndex = 0;
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
-    int m_aliasCount;
+    int m_aliasCount = 0;
+
 public:
-    explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb), m_currentECSqlParameterIndex(0), m_aliasCount(0) {}
+    explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
     BentleyStatus FinalizeParsing(Exp& rootExp);
+    void PushArg(std::unique_ptr<ParseArg>);
+    ParseArg const* CurrentArg() const;
+    void PopArg();
+
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
@@ -89,12 +87,6 @@ public:
     IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
-
-    //----------------------------------------------------]
-    void PushArg(std::unique_ptr<ParseArg> arg);
-    ParseArg const* CurrentArg() const;
-    void PopArg();
-    //----------------------------------------------------]
 
     };
 
