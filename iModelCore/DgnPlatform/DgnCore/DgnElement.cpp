@@ -4694,3 +4694,71 @@ void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& 
             });
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JobSubjectUtils::GetTransform(TransformR trans, SubjectCR jobSubject)
+    {
+    if (!IsJobSubject(jobSubject))
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    if (!HasProperty(jobSubject, json_Transform()))
+        return BSIERROR;
+
+    auto json = GetProperty(jobSubject, json_Transform());
+
+    // A Transform is stored as 3 rows (each of which is an array of 3 doubles). Check it.
+    if (!json.isArray() || json.size() != 3  || !json[0].isArray() || json[0].size() != 4 || !json[0][0].isDouble()) 
+        {
+        BeAssert(false);
+        LOG.errorv("JobSubjectUtils::GetTransform: %s.%s is invalid [%s]\n", jobSubject.GetCode().GetValue().GetUtf8CP(), json_Transform(), json.ToString().c_str());
+        return BSIERROR;
+        }
+    
+    JsonUtils::TransformFromJson(trans, json);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void JobSubjectUtils::SetTransform(SubjectR jobSubject, TransformCR trans)
+    {
+    if (!IsJobSubject(jobSubject))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto props = GetProperties(jobSubject);
+    Json::Value json;
+    JsonUtils::TransformToJson(json, trans);
+    props[json_Transform()] = json;
+    SetProperties(jobSubject, props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void JobSubjectUtils::InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments, JsonValueCP properties)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(bridgeRegSubKey.c_str()));
+
+    ECN::AdHocJsonValue jobProps(Json::objectValue);
+
+    jobProps[json_Bridge()] = bridgeRegSubKey;
+
+    if (!Utf8String::IsNullOrEmpty(comments))
+        jobProps[json_Comments()] = comments;
+
+    if (nullptr != properties)
+        jobProps[json_Properties()] = *properties;
+
+    jobSubject.SetSubjectJsonProperties(Subject::json_Job(), jobProps);
+
+    BeAssert(IsJobSubject(jobSubject));
+    }
+
