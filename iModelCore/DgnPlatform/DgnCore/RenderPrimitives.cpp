@@ -1527,17 +1527,33 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
+* @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR context) const
+MeshBuilderMap GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
     {
-    MeshList meshes;
-    if (m_geometries.empty())
-        return meshes;
+    auto builderMap = ToMeshBuilderMap(options, tolerance, featureTable, context);
+    for (auto& builder : builderMap)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            mesh->Close();
+        }
 
+    return builderMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
+    {
     DRange3d range = m_geometries.ComputeRange();
-    bool is2d = range.IsAlmostZeroZ();
-    MeshBuilderMap builderMap(tolerance, nullptr, range, is2d);
+    bool is2d = !range.IsNull() && range.IsAlmostZeroZ();
+
+    MeshBuilderMap builderMap(tolerance, featureTable, range, is2d);
+    if (m_geometries.empty())
+        return builderMap;
+
     for (auto const& geom : m_geometries)
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
@@ -1577,6 +1593,20 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 }
             }
         }
+
+    return builderMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR context, FeatureTableP featureTable) const
+    {
+    MeshList meshes;
+    if (m_geometries.empty())
+        return meshes;
+
+    MeshBuilderMap builderMap = ToMeshBuilderMap(options, tolerance, featureTable, context);
 
     for (auto& builder : builderMap)
         {

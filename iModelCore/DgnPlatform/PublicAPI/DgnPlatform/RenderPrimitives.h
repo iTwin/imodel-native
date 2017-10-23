@@ -552,6 +552,7 @@ private:
 public:
     MeshBuilderMap(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d) : m_vertexTolerance(tolerance*ToleranceRatio::Vertex()),
         m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()), m_featureTable(features), m_range(range), m_is2d(is2d) { }
+    MeshBuilderMap() : MeshBuilderMap(0.0, nullptr, DRange3d::NullRange(), false) { }
 
     DGNPLATFORM_EXPORT MeshBuilderR operator[](Key const& key);
 
@@ -565,6 +566,7 @@ public:
 
     DRange3dCR GetRange() const { return m_range; }
     void SetMaxFeatures(uint32_t maxFeatures) { if (nullptr != m_featureTable) m_featureTable->SetMaxFeatures(maxFeatures); }
+    FeatureTableP GetFeatureTable() { return m_featureTable; }
 };
 
 //=======================================================================================
@@ -868,6 +870,8 @@ private:
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, bool disjoint);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range, bool disjoint);
+
+    MeshBuilderMap ToMeshBuilderMap(GeometryOptionsCR, double tolerance, FeatureTableP, ViewContextR) const;
 public:
     GeometryAccumulator(DgnDbR db, System& system, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
     GeometryAccumulator(DgnDbR db, System& system, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
@@ -899,7 +903,8 @@ public:
     bool WantSurfacesOnly() const { return m_surfacesOnly; }
 
     //! Convert the geometry accumulated by this builder into a set of meshes.
-    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR) const;
+    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR, FeatureTableP featureTable=nullptr) const;
+    DGNPLATFORM_EXPORT MeshBuilderMap ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
     DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR) const;
@@ -964,7 +969,6 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 
         return IsValid();
         }
-
 };
 
 //=======================================================================================
@@ -1088,6 +1092,7 @@ protected:
     void AddTile(TileCorners const& corners, DisplayParamsCR params);
     void AddCurveVector(CurveVectorR curves, bool isFilled, bool isDisjoint);
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
+    void SetElementId(DgnElementId id) { m_accum.SetElementId(id); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
@@ -1125,9 +1130,9 @@ protected:
 
     void AddTriMesh(TriMeshArgsCR args);
 
-    double ComputeTolerance(GeometryAccumulatorR) const;
+    DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:
-    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(system, params) { }
+    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params, DgnElementId elemId=DgnElementId()) : GeometryListBuilder(system, params, elemId) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

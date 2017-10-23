@@ -203,6 +203,8 @@ struct GraphicProcessor
     virtual void ProcessGraphicList(bvector<GraphicPtr>&&) { }
     virtual void ProcessBatch(GraphicR, FeatureTable&&) { }
     virtual void ProcessBranch(GraphicBranch&&, TransformCR, ClipVectorCP) { }
+
+    virtual GraphicBuilderPtr CreateGraphic(SystemR system, GraphicBuilder::CreateParamsCR params) { return new PrimitiveBuilder(system, params); }
 };
 
 //=======================================================================================
@@ -214,7 +216,7 @@ struct GraphicProcessorSystem : FakeSystem
 protected:
     GraphicProcessorP m_proc;
 public:
-    GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return new PrimitiveBuilder(*const_cast<GraphicProcessorSystem*>(this), params); }
+    GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return m_proc->CreateGraphic(*const_cast<GraphicProcessorSystem*>(this), params); }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }

@@ -2600,6 +2600,7 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+    void clear() { m_map.clear(); }
 
     // Used by tile reader...
     void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
