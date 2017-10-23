@@ -39,8 +39,8 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
 
                 RangeClassInfo::List classList;
                 classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
-                m_finalizeParsingArgCache = move(classList);
-                ctx.PushArg(std::unique_ptr<ECSqlParseContext::RangeClassArg>(new ECSqlParseContext::RangeClassArg(m_finalizeParsingArgCache)));
+                m_rangeClassRefExpCache = move(classList);
+                ctx.PushArg(std::unique_ptr<ECSqlParseContext::RangeClassArg>(new ECSqlParseContext::RangeClassArg(m_rangeClassRefExpCache)));
                 auto propNameListExp = GetPropertyNameListExpP();
                 if (IsOriginalPropertyNameListUnset())
                     {
@@ -63,7 +63,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
                 {
                 ctx.PopArg();
-                m_finalizeParsingArgCache.clear();
+                m_rangeClassRefExpCache.clear();
 
                 return Validate(ctx);
                 }

@@ -31,42 +31,38 @@ public:
             UnionOrderByArg
             };
 
-        private:
+        protected:
             Type m_type;
-
-        public:
-            ParseArg(Type type)
+            explicit ParseArg(Type type)
                 :m_type(type)
                 {}
-            ParseArg()
-                :m_type(Type::Default)
-                {}
+        public:
+            ~ParseArg() {}
             Type GetType() const { return m_type; }
-            ~ParseArg() {};
         };
 
-    struct RangeClassArg : ParseArg
+    struct RangeClassArg final: ParseArg
         {
         private:
             RangeClassInfo::List const& m_arg;
         public:
-            RangeClassArg(RangeClassInfo::List const& arg)
+            explicit RangeClassArg(RangeClassInfo::List const& arg)
                 :ParseArg(Type::RangeClassArg), m_arg(arg)
                 {}
+            ~RangeClassArg() {}
             RangeClassInfo::List const& GetRangeClassInfos() const { return m_arg; }
-            ~RangeClassArg() {};
         };
 
-    struct UnionOrderByArg : ParseArg
+    struct UnionOrderByArg final: ParseArg
         {
         private:
             std::vector<SingleSelectStatementExp const*> const& m_arg;
         public:
-            UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg)
+            explicit UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg)
                 :ParseArg(Type::UnionOrderByArg), m_arg(arg)
                 {}
+            ~UnionOrderByArg() {}
             std::vector<SingleSelectStatementExp const*> const& GetUnionStmts() const { return m_arg; }
-            ~UnionOrderByArg() {};
         };
 
 private:
@@ -78,9 +74,13 @@ private:
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
     int m_aliasCount;
+
 public:
     explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb), m_currentECSqlParameterIndex(0), m_aliasCount(0) {}
     BentleyStatus FinalizeParsing(Exp& rootExp);
+    void PushArg(std::unique_ptr<ParseArg> arg);
+    ParseArg const* CurrentArg() const;
+    void PopArg();
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
@@ -89,13 +89,6 @@ public:
     IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
-
-    //----------------------------------------------------]
-    void PushArg(std::unique_ptr<ParseArg> arg);
-    ParseArg const* CurrentArg() const;
-    void PopArg();
-    //----------------------------------------------------]
-
     };
 
 //=======================================================================================

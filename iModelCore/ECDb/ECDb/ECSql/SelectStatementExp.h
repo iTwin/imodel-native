@@ -194,7 +194,7 @@ struct OrderByExp final : Exp
         Utf8String _ToString() const override { return "OrderBy"; }
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         std::vector<SingleSelectStatementExp const*> m_unionStmts;
-        ComputedExp const* GetFirstNonePropertyNamExpression() const;
+        ComputedExp const* FindIncompatibleOrderBySpecExpForUnion() const;
     public:
         explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs) : Exp(Type::OrderBy)
             {
@@ -260,7 +260,7 @@ struct SingleSelectStatementExp final : QueryExp
         int m_havingClauseIndex = UNSET_CHILDINDEX;
         int m_limitOffsetClauseIndex = UNSET_CHILDINDEX;
         int m_optionsClauseIndex = UNSET_CHILDINDEX;
-        RangeClassInfo::List m_finalizeParsingArgCache;
+        RangeClassInfo::List m_rangeClassRefExpCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
