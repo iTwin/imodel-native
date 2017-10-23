@@ -24,7 +24,7 @@ struct GridsTestFixtureBase : BentleyApi::DgnClientFx::TestHelpers::DgnClientFxT
         static void SetUpTestCase ();
         virtual void SetUp () override;
         virtual void TearDown () override;
-        DgnClientFx::DgnClientApp* _CreateApp () override { return new BentleyApi::DgnClientFx::UnitTests::TestApplication (); }
+        DgnClientFx::DgnClientApp* _CreateApp () override { return new DgnClientFx::DgnClientApp (); }
         BeSQLite::L10N::SqlangFiles _GetApplicationSqlangs () override;
     public:
         BeFileName GetProjectPath () const;

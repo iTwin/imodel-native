@@ -147,14 +147,16 @@ protected:
     //! @param[in] distance distance between elements
     GRIDELEMENTS_EXPORT static void AddDimensionsToOrthogonalGrid(Grids::GridSurfacePtr element1, Grids::GridSurfacePtr element2, double distance);
 
-    //! Creates orthogonal grid axis map from grid element vector
-    //! @param[out] axisMap GridAxisMap containing grid surfaces HORIZONTAL_AXIS and VERTICAL_AXIS
-    //! @param[in] elements grid element vector containing perpendicular grid surfaces
-    //! @return             BentleyStatus::SUCCESS if no error occured while sorting elements
-    GRIDELEMENTS_EXPORT static BentleyStatus ElementVectorToAxisMap(GridAxisMap& axisMap, GridElementVector elements);
-
     BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, CreateParams const& params);
 
+//TODO: remove all protected below:
+
+protected:
+//! Creates orthogonal grid axis map from grid element vector
+//! @param[out] axisMap GridAxisMap containing grid surfaces HORIZONTAL_AXIS and VERTICAL_AXIS
+//! @param[in] elements grid element vector containing perpendicular grid surfaces
+//! @return             BentleyStatus::SUCCESS if no error occured while sorting elements
+    GRIDELEMENTS_EXPORT static BentleyStatus ElementVectorToAxisMap (GridAxisMap& axisMap, GridElementVector elements);
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion, GRIDELEMENTS_EXPORT)
@@ -177,23 +179,26 @@ public:
     //! @return     grid with gridsurfaces in submodel
     GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr CreateAndInsertBySurfaces (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
 
+
+public:     //TODO: remove all below
+
     //! Creates orthogonal grid and inserts its elements and dimensions to db
     //! @param[out] grid    created grid elements
     //! @param[in]  params  grid parameters containing information about the grid. For more info look up CreateParams
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements/dimensions
-    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(GridAxisMap& grid, StandardCreateParams const& params, DVec3d normal);
+    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert (GridAxisMap& grid, StandardCreateParams const& params, DVec3d normal);
 
     //! Rotates orthogonal grid by given angle in radians on XY plane
     //! @param[in] grid             orthogonal grid to rotate
     //! @param[in] theta            angle to rotate on XY plane
     //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
-    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridAxisMap& grid, double theta, bool updateDimensions = false);
+    GRIDELEMENTS_EXPORT static void RotateToAngleXY (GridAxisMap& grid, double theta, bool updateDimensions = false);
 
     //! Rotates orthogonal grid by given angle in radians on XY plane
     //! @param[in] grid     orthogonal grid to rotate
     //! @param[in] theta    angle to rotate on XY plane
-    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridElementVector& grid, double theta, bool updateDimensions = false);
+    GRIDELEMENTS_EXPORT static void RotateToAngleXY (GridElementVector& grid, double theta, bool updateDimensions = false);
 };
 
 END_GRIDS_NAMESPACE

@@ -116,6 +116,9 @@ void GridsTestFixtureBase::SetUp ()
     projectPath.BeDeleteFile ();
     BeFileName::BeCopyFile (GetSeedProjectPath (), projectPath.c_str (), true);
 
+    DgnDomains::RegisterDomain (ConstraintModel::ConstraintModelDomain::GetDomain (), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain (Grids::GridsDomain::GetDomain (), DgnDomain::Required::Yes);
+
     EXPECT_EQ (BE_SQLITE_OK, DgnClientUi::OpenDgnDb (projectPath, DgnDb::OpenParams (Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
     DgnDbR db = *DgnClientFx::DgnClientApp::App ().Project ();
     ASSERT_TRUE (db.IsBriefcase ());
