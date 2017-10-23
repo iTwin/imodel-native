@@ -13,7 +13,10 @@
 #include "Manager.h"
 
 
-class OpenSSLMutexes
+#include <Bentley\WString.h>
+
+
+class OpenSSLMutexes 
     {
     private:
         static OpenSSLMutexes *s_instance;
@@ -97,9 +100,9 @@ protected:
         private:
 
             CURLHandle*     createCURLHandle(const HandleName &name);
-
-
         };
+
+
 
     CURLHandleManager m_CURLManager;
 
@@ -108,6 +111,13 @@ protected:
 
     bool                                    isLocalOrNetworkAccount = false;
 
+    Utf8String proxyUser;
+    Utf8String proxyPassword;
+    Utf8String proxyServerUrl;
+    Utf8String certificateAuthoritiesUrl;
+
+    void setupProxyToCurl(CURL* curl);
+    void setupCertificateAuthorities(CURL* curl);
 
 public:
                                             DataSourceAccountCURL                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
@@ -131,4 +141,6 @@ public:
         DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
-    };
+        CLOUD_EXPORT void                   setProxy                            (const Utf8String& proxyUserIn, const Utf8String& proxyPasswordIn, const Utf8String& proxyServerUrlIn);
+        CLOUD_EXPORT void                   setCertificateAuthoritiesUrl        (const Utf8String& certificateAuthoritiesUrlIn);
+    };    

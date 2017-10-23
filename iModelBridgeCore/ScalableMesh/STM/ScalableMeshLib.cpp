@@ -228,7 +228,7 @@ WebServiceKey GetBingKey()
 
     
     Utf8String bingKeyUrl(contextServiceURL);    
-    bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey");
+    bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+2427");
 
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);

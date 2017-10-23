@@ -59,9 +59,19 @@ DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const Acc
     OpenSSLMutexes::CreateInstance(CRYPTO_num_locks());
 
     CRYPTO_set_locking_callback(CURLHandle::OpenSSLLockingFunction);
-
     }
 
+void DataSourceAccountCURL::setProxy(const Utf8String& proxyUserIn, const Utf8String& proxyPasswordIn, const Utf8String& proxyServerUrlIn)
+    {
+    proxyUser = proxyUserIn;
+    proxyPassword = proxyPasswordIn;  
+    proxyServerUrl = proxyServerUrlIn;
+    }
+
+void DataSourceAccountCURL::setCertificateAuthoritiesUrl(const Utf8String& certificateAuthoritiesUrlIn)
+    {
+    certificateAuthoritiesUrl = certificateAuthoritiesUrlIn;
+    }
 
 DataSource * DataSourceAccountCURL::createDataSource(void)
 {
@@ -168,6 +178,9 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+
+    setupCertificateAuthorities(curl);
+    setupProxyToCurl(curl);
     
     auto res = curl_easy_perform(curl);
     if (CURLE_OK != res)
@@ -177,7 +190,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
-    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
+    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK" && response_header.data["HTTP"] != "1.1 200 Connection Established" && false)
         {
         //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
@@ -211,6 +224,35 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         }
 
     return status;
+    }
+
+void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)
+    {
+    assert(curl != nullptr);
+    
+    if (!proxyServerUrl.empty())
+        {
+        curl_easy_setopt(curl, CURLOPT_PROXY, proxyServerUrl);
+        curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+        if (!proxyUser.empty() && !proxyPassword.empty())
+            {
+            Utf8String proxyCreds = proxyUser;
+            proxyCreds.append(":");
+            proxyCreds.append(proxyPassword);
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds);
+            }
+        }
+    }
+
+void DataSourceAccountCURL::setupCertificateAuthorities(CURL* curl)
+    {
+    assert(curl != nullptr);
+
+    if (!certificateAuthoritiesUrl.empty())
+        {
+        curl_easy_setopt(curl, CURLOPT_CAINFO, certificateAuthoritiesUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+        }
     }
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
@@ -260,6 +302,10 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     curl_easy_setopt(curl, CURLOPT_HEADERDATA,       &response_header);
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, size);
 
+    setupCertificateAuthorities(curl);
+    setupProxyToCurl(curl);
+    
+    
     /* put it! */
     CURLcode res = curl_easy_perform(curl);
 

@@ -247,6 +247,15 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     // Create an account on the file service streaming
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+    
+    ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
+
+    if (!proxyInfo.m_serverUrl.empty())
+        {
+        assert(dynamic_cast<DataSourceAccountCURL*>(account) != nullptr);
+        static_cast<DataSourceAccountCURL*>(account)->setProxy(proxyInfo.m_user, proxyInfo.m_password, proxyInfo.m_serverUrl);
+        }
+
 
     if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
