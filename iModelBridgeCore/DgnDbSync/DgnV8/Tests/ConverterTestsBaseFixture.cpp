@@ -377,6 +377,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     if (!m_opts.m_useTiledConverter)
         {
         RootModelConverter updater(params);
+        params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
         updater.SetWantDebugCodes(true);
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);
@@ -390,6 +391,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     else
         {
         TiledFileConverter updater(params);
+        params.SetBridgeRegSubKey(TiledFileConverter::GetRegistrySubKey());
         updater.SetWantDebugCodes(true);
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);

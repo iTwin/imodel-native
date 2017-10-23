@@ -84,6 +84,7 @@ TEST_F(ConverterTests, DuplicateTile)
     RootModelConverter::RootModelSpatialParams params(m_params);
     
     params.SetInputFileName(m_v8FileName);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
     
     TiledFileConverter creator(params);
 
@@ -772,8 +773,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
     //  Set up the source GCS -> BIM GCS transformation.
     //  To do that, I need to know the root model of the source data. In this test, I arbitrarily decide on the first one. A real converter would know the root model.
     SubjectPtr noJobSubject = Subject::Create(*outputBim.Elements().GetRootSubject(), "DummyJobSubject");
-    BentleyApi::Json::Value noJobSubjectProperties(BentleyApi::Json::objectValue);
-    JobSubjectUtils::SetProperties(*noJobSubject, noJobSubjectProperties);
+    JobSubjectUtils::InitializeProperties(*noJobSubject, "Dummy");
 
     cvt.ComputeCoordinateSystemTransform(rootModel, *noJobSubject);
 
@@ -1109,7 +1109,7 @@ TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
         // Verify that lines moved as expected
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
         auto newProjectExtents = db->GeoLocation().GetProjectExtents();
-        ASSERT_TRUE(projectExtents.IsContained(newProjectExtents)) << "Project extents should have expanded to hold the lines that moved over and up";
+        ASSERT_TRUE(projectExtents.IsContained(newProjectExtents)) << "Project extents should have expanded to hold the lines that moved over and up";  
         ASSERT_FALSE(newProjectExtents.IsContained(projectExtents));
 
         auto bimLine1 = FindV8ElementInDgnDb(*db, elementId1);

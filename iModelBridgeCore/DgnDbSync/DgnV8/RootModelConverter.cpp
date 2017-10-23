@@ -934,6 +934,11 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        {
+        BeAssert(false && "Job registry subkey is a required property of iModelBridge::Params");
+        return ImportJobCreateStatus::FailedExistingRoot;
+        }
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
     auto matrixTolerance = Angle::TinyAngle();
@@ -1093,6 +1098,12 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type jtype)
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        {
+        BeAssert(false && "Job registry subkey is a required property of iModelBridge::Params");
+        return ImportJobCreateStatus::FailedExistingRoot;
+        }
+
     if (IsUpdating())
         {
         BeAssert(false);
