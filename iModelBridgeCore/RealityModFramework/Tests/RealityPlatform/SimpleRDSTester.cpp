@@ -30,7 +30,7 @@ static void Message(const char* pMsg)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
-TEST_F(SimpleRDSFixture, SetServerComponents)
+/*TEST_F(SimpleRDSFixture, SetServerComponents)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
@@ -51,7 +51,7 @@ TEST_F(SimpleRDSFixture, SetServerComponents)
     EXPECT_STREQ(RealityDataService::GetRepoName().c_str(), "S3MXECPlugin--Server");
     EXPECT_STREQ(RealityDataService::GetSchemaName().c_str(), "S3MX");
     EXPECT_TRUE(RealityDataService::AreParametersSet());
-    }
+    }*/
 
 RealityDataService* SimpleRDSFixture::s_realityDataServices = nullptr;
 
