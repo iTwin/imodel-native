@@ -122,7 +122,8 @@ IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size
 	m_reproTransform.Multiply(origin, m_polylineToDrape[segmentId]);
 
 	pointOnDirection.SumOf(origin, drapeDirection);
-	m_reproTransform.Multiply(pointOnDirection, pointOnDirection);
+	Transform t = m_reproTransform.ValidatedInverse();
+	t.Multiply(pointOnDirection, pointOnDirection);
 
 	DPlane3d targetCuttingPlane = DPlane3d::From3Points(m_polylineToDrape[segmentId], m_polylineToDrape[segmentId + 1], pointOnDirection);
 	paramsLine->SetPlane(targetCuttingPlane);
@@ -1066,7 +1067,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     bool ret = false;
     for (auto& node : nodes)
         {
-        if (!node->ArePoints3d())
+        if (!node->ArePoints3d() && !m_scmPtr->IsCesium3DTiles())
             {
             BcDTMPtr dtmP = node->GetBcDTM();
             if (dtmP == nullptr) continue;

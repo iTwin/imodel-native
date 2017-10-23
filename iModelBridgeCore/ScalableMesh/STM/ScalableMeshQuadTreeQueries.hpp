@@ -1760,6 +1760,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
                 {
                 meshNodes.push_back(SMPointIndexNode<POINT, EXTENT>::QueriedNode(node));
                 }
+				return false;
             }
         else if (node->m_nodeHeader.m_balanced && node->GetLevel() > m_requestedLevel) return false; //too deep
         }
