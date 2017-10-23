@@ -989,14 +989,14 @@ private:
     struct Features
     {
         BufferView32    m_nonUniform;
-        uint32_t        m_uniform = 0;
+        uint32_t        m_uniform = -1;
 
         Features() = default;
         explicit Features(uint32_t uniform) : m_uniform(uniform) { }
         explicit Features(BufferView32 nonUniform) : m_nonUniform(nonUniform) { }
 
-        bool IsValid() const { return 0 == m_uniform && !m_nonUniform.IsValid(); }
-        bool IsUniform() const { BeAssert(IsValid()); return 0 != m_uniform; }
+        bool IsValid() const { return m_nonUniform.IsValid() || -1 != m_uniform; }
+        bool IsUniform() const { BeAssert(IsValid()); return !IsNonUniform(); }
         bool IsNonUniform() const { BeAssert(IsValid()); return m_nonUniform.IsValid(); }
 
         uint32_t GetFeatureId(uint32_t index) const
@@ -1072,6 +1072,18 @@ private:
 
         OctEncodedNormalCP GetNormal(size_t index) const { return nullptr != m_normals ? reinterpret_cast<OctEncodedNormalCP>(m_normals+index) : nullptr; }
         FPoint2d const* GetParam(size_t index) const { return nullptr != m_params ? m_params+index : nullptr; }
+        uint16_t GetColorIndex(size_t index) const
+            {
+            if (!m_colorIndices.IsValid())
+                {
+                BeAssert(1 == m_colorsByIndex.size());
+                return m_colorsByIndex[0];
+                }
+            else
+                {
+                return m_colorsByIndex[index];
+                }
+            }
         uint32_t RemapIndex(uint32_t oldIndex) const
             {
             auto iter = m_indexMap.find(oldIndex);
@@ -1133,7 +1145,7 @@ TileIO::ReadStatus DgnCacheTileRebuilder::ReadFeatureTable(DgnElementIdSet const
     m_builders.SetMaxFeatures(header.maxFeatures);
 
     auto status = m_featureList.Read(m_buffer, header, skipElems);
-    m_buffer.SetPos(startPos);
+    m_buffer.SetPos(startPos + header.length);
     return status;
     }
 
@@ -1259,7 +1271,7 @@ QPoint3dCP DgnCacheTileRebuilder::ReadVertices(uint32_t& numVertices, Json::Valu
 uint16_t const* DgnCacheTileRebuilder::ReadNormals(Json::Value const& json)
     {
     BufferView16 view = ReadBufferView16(json["attributes"], "NORMAL");
-    BeAssert(!view.m_byte);
+    BeAssert(view.m_byte); // Ray writes each normal as a Vec2 of 2 bytes...
     return reinterpret_cast<uint16_t const*>(view.m_data);
     }
 
@@ -1286,7 +1298,7 @@ uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitiv
     uint32_t index = mesh.m_indices[indexIndex];
 
     QPoint3dCR pos = mesh.m_vertices[index];
-    uint16_t colorIdx = mesh.m_colorIndices[index];
+    uint16_t colorIdx = mesh.GetColorIndex(index);
     uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
     OctEncodedNormalCP normal = mesh.GetNormal(index);
     FPoint2dCP param = mesh.GetParam(index);
@@ -1422,7 +1434,7 @@ void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value 
             }
 
         // Fill color will also be the same for all vertices
-        uint16_t colorIdx = mesh.m_colorIndices[firstIndex];
+        uint16_t colorIdx = mesh.GetColorIndex(firstIndex);
         uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
         builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter);
         }
