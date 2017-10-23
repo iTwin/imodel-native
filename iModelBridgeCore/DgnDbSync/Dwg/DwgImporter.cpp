@@ -247,13 +247,21 @@ StableIdPolicy  DwgImporter::_GetDwgFileIdPolicy () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
     {
-    this->SetStepName (ProgressMessage::STEP_OPENINGFILE(), dwgdxfName.c_str());
-
+    DwgFileVersion  dwgVersion = DwgFileVersion::Invalid;
+    if (!DwgHelper::SniffDwgFile(dwgdxfName, &dwgVersion) && (DwgFileVersion::Newer == dwgVersion || !DwgHelper::SniffDxfFile(dwgdxfName, &dwgVersion)))
+        {
+        this->ReportError (IssueCategory::DiskIO(), DwgFileVersion::Newer == dwgVersion ? Issue::NewerDwgVersion() : Issue::NotRecognizedFormat(), dwgdxfName.c_str());
+        return  static_cast<BentleyStatus> (DwgFileVersion::Newer == dwgVersion ? DgnDbStatus::VersionTooNew : DgnDbStatus::NotOpen);
+        }
+    
     // load fonts before we start reading the DWG file as the toolkit may search for them via the hostApp:
     m_loadedFonts.LoadFonts ();
 
     WString  password;
     password.AppendUtf8 (this->GetOptions().GetPassword().c_str());
+
+    Utf8String  dispVersion = DwgHelper::GetStringFromDwgVersion (dwgVersion);
+    this->SetStepName (ProgressMessage::STEP_OPENINGFILE(), dwgdxfName.c_str(), dispVersion.c_str());
 
     m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, FileShareMode::DenyNo, password);
     if (!m_dwgdb.IsValid())
@@ -1538,7 +1546,10 @@ DwgImporter::DwgImporter (DwgImporter::Options const& options) : m_options(optio
     m_modelspaceId.SetNull ();
     m_currentspaceId.SetNull ();
     m_dwgModelMap.clear ();
+    m_materialSearchPaths.clear ();
     m_isProcessingDwgModelMap = false;
+
+    this->SetStepName (ProgressMessage::STEP_INITIALIZING());
 
     // read config file, if supplied
     if (!m_config.GetInstanceFilename().empty())
@@ -1675,6 +1686,35 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
         if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(str, "name") && !str.empty())
             userObjectEnablers.push_back (str);
         }   
+
+    // check material search paths
+    xmlDom->SelectNodes (nodes, "/ConvertConfig/Materials", nullptr);
+    for (auto node : nodes)
+        {
+        // collect explicit search paths
+        BeXmlDom::IterableNodeSet   childNodes;
+        node->SelectChildNodes (childNodes, "SearchPaths/Path");
+        for (auto childNode : childNodes)
+            {
+            if (BeXmlStatus::BEXML_Success == childNode->GetAttributeStringValue(str, "name"))
+                {
+                BeFileName  dir(str.c_str(), BentleyCharEncoding::Utf8);
+                if (dir.IsDirectory())
+                    {
+                    dir.AppendSeparator ();
+                    m_materialSearchPaths.push_back (dir);
+                    }
+                }
+            }
+        // check if the input DWG path should also be searched, in addition to explicit search paths
+        bool    boolValue = false;
+        node->SelectChildNodes (childNodes, "SearchOptions");
+        for (auto childNode : childNodes)
+            {
+            if (BeXmlStatus::BEXML_Success == childNode->GetAttributeBooleanValue(boolValue, "IncludeDwgPath"))
+                m_options.SetDwgPathInMaterialSearch (boolValue);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
