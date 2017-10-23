@@ -263,7 +263,7 @@ const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_Di
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& paths)
+RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& paths, bool disableDiskCache)
     : m_localState(nullptr), m_userSettings(paths.GetTemporaryDirectory(), this), m_selectionManager(nullptr), 
     m_categorySupplier(nullptr), m_ecPropertyFormatter(nullptr), m_localizationProvider(nullptr)
     {
@@ -274,12 +274,14 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, GetConnections(), NodesCacheType::Disk);
+    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, 
+        GetConnections(), disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
     m_contentCache = new ContentCache();
     m_statementCache = new ECDbStatementsCache();
     m_relatedPathsCache = new ECDbRelatedPathsCache();
     m_userSettings.SetLocalizationProvider(&GetLocalizationProvider());
-    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, GetConnections(), *m_nodesProviderContextFactory, *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
+    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, GetConnections(), *m_nodesProviderContextFactory, 
+        *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
     m_usedClassesListener = new UsedClassesListener(*this);
 
     BeFileName supplementalRulesetsDirectory = paths.GetAssetsDirectory();
