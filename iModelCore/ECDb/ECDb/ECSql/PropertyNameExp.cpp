@@ -373,23 +373,6 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    09/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyNameExp::IsInWhereExp() const
-    {
-    Exp const* p = this;
-    while (p = p->GetParent())
-        {
-        if (p->GetType() == Exp::Type::Where)
-            return true;
-
-        if (p->GetType() == Exp::Type::SingleSelect || p->GetType() == Exp::Type::Select || p->GetType() == Exp::Type::Update || p->GetType() == Exp::Type::Delete)
-            return false;
-        }
-
-    return false;
-    }
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyNameExp::_ToECSql(ECSqlRenderContext& ctx) const

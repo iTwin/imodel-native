@@ -64,7 +64,6 @@ struct DerivedPropertyExp final : Exp
 
         ValueExp const* GetExpression() const { return GetChild<ValueExp>(0); }
         Utf8String GetName() const;
-        bool HasAlias() const { return !m_columnAlias.empty(); }
         Utf8StringCR GetColumnAlias() const;
         Utf8StringCR GetNestedAlias() const { return m_nestedAlias; }
         void SetNestedAlias(Utf8CP nestedAlias) { m_nestedAlias = nestedAlias; }
@@ -276,7 +275,7 @@ struct SingleSelectStatementExp final : QueryExp
                                  std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
         explicit SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>&);
-        bool IsRowConstructor() const { return  m_fromClauseIndex == UNSET_CHILDINDEX;}
+        bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
 
