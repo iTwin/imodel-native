@@ -937,7 +937,7 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     if (_GetParams().GetBridgeRegSubKey().empty())
         {
         BeAssert(false && "Job registry subkey is a required property of iModelBridge::Params");
-        return ImportJobCreateStatus::FailedExistingRoot;
+        return ImportJobLoadStatus::FailedNotFound;
         }
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
