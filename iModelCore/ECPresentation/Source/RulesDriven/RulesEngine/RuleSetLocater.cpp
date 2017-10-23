@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
+#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include "ECSchemaHelper.h"
 
@@ -169,6 +170,9 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(ECDbCR con
     bmap<Utf8String, PresentationRuleSetPtr> locatedRulesets;
     for (RuleSetLocaterPtr& locater : sortedLocaters)
         {
+        if (nullptr != locater->GetDesignatedConnection() && &connection != locater->GetDesignatedConnection())
+            continue;
+
         bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets(rulesetId);
         for (PresentationRuleSetPtr& ruleset : rulesets)
             {
@@ -428,11 +432,84 @@ void FileRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void EmbeddedRuleSetLocater::LoadRuleSets() const
+    {
+    DbEmbeddedFileTable& embeddedFiles = const_cast<ECDbR>(m_connection).EmbeddedFiles();
+    for (auto const& file : embeddedFiles.MakeIterator())
+        {
+        if (0 != strcmp(file.GetTypeUtf8(), RuleSetEmbedder::FILE_TYPE_PresentationRuleSet))
+            continue;
+
+        bvector<Byte> data;
+        if (BE_SQLITE_OK != embeddedFiles.Read(data, file.GetNameUtf8()))
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        Utf8String rulesetXml;
+        rulesetXml.assign(data.begin(), data.end());
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlString(rulesetXml.c_str());
+        if (!ruleset.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        OnRulesetCreated(*ruleset);
+        m_cache.push_back(ruleset);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationRuleSetPtr> EmbeddedRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
+    {
+    if (nullptr == rulesetId)
+        return m_cache;
+    
+    bvector<PresentationRuleSetPtr> rulesets;
+    for (PresentationRuleSetPtr ruleset : m_cache)
+        {
+        if (ruleset->GetRuleSetId().Equals(rulesetId))
+            rulesets.push_back(ruleset);
+        }
+
+    return rulesets;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> EmbeddedRuleSetLocater::_GetRuleSetIds() const
+    {
+    bvector<Utf8String> rulesetIds;
+    bvector<PresentationRuleSetPtr> rulesets = LocateRuleSets();
+    for (PresentationRuleSetPtr& ruleset : rulesets)
+        rulesetIds.push_back(Utf8String(ruleset->GetRuleSetId().c_str()));
+    return rulesetIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void EmbeddedRuleSetLocater::_InvalidateCache(Utf8CP)
+    {
+    for (PresentationRuleSetPtr ruleset : m_cache)
+        OnRulesetDisposed(*ruleset);
+
+    m_cache.clear();
+    LoadRuleSets();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
     {
-    bvector<PresentationRuleSetPtr> rulesets = DirectoryRuleSetLocater::_LocateRuleSets(nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
     rulesets.erase(std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return !r->GetIsSupplemental();}), rulesets.end());
     for (PresentationRuleSetPtr ruleset : rulesets)
         ruleset->SetRuleSetId(rulesetId);

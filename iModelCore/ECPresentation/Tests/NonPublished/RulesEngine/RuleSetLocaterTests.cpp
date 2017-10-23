@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <ECPresentation/RulesDriven/RuleSetLocater.h>
+#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include "ECDbTestProject.h"
 
@@ -605,7 +606,7 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
                                 "</PresentationRuleSet>";
     CreateFileWithContent(ruleSetXmlString3, "3.PresentationRuleSet.xml", &subDirectory);
 
-    RefCountedPtr<SupplementalRuleSetLocater> locater = SupplementalRuleSetLocater::Create(directory);
+    RefCountedPtr<SupplementalRuleSetLocater> locater = SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(directory.GetNameUtf8().c_str()));
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets("Ruleset1");
     ASSERT_EQ(2, rulesets.size());
 
@@ -617,4 +618,101 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
     ASSERT_STREQ("Ruleset1", rulesets[1]->GetRuleSetId().c_str());
     EXPECT_EQ("Blue", rulesets[1]->GetStyleOverrides()[0]->GetForeColor());
     EXPECT_EQ("Orange", rulesets[1]->GetStyleOverrides()[0]->GetBackColor());
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                10/2017
++===============+===============+===============+===============+===============+======*/
+struct EmbeddedRuleSetLocaterTests : ::testing::Test
+{
+    static ECDbTestProject* s_project;
+    RuleSetEmbedder* m_embedder;
+
+    void SetUp() override
+        {
+        m_embedder = new RuleSetEmbedder(s_project->GetECDb());
+        }
+
+    void TearDown() override
+        {
+        s_project->GetECDb().AbandonChanges();
+        DELETE_AND_CLEAR(m_embedder);
+        }
+
+    static void SetUpTestCase()
+        {
+        s_project = new ECDbTestProject();
+        s_project->Create("EmbeddedRuleSetLocaterTests");
+        }
+
+    static void TearDownTestCase()
+        {
+        DELETE_AND_CLEAR(s_project);
+        }
+};
+ECDbTestProject* EmbeddedRuleSetLocaterTests::s_project = nullptr;
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_ConnectionWithoutEmbeddedFiles)
+    {
+    // create ruleset locater
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(s_project->GetECDb());
+
+    // validate no rulesets are located if connection doesn't have embedded rulesets.
+    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
+    ASSERT_EQ(0, rulesets.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_FindsRuleSet)
+    {
+    // create ruleset
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("LocateRuleSets_FindsRuleSet", 1, 0, false, "", "", "", false);
+
+    // embed ruleset
+    m_embedder->Embed(*ruleset);
+
+    // create ruleset locater
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(s_project->GetECDb());
+
+    // validate 1 ruleset was found in opened connection
+    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ("LocateRuleSets_FindsRuleSet", rulesets[0]->GetRuleSetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(EmbeddedRuleSetLocaterTests, DisposesAllCachedRulesetsWhenInvalidateRequested)
+    {
+    // create 2 rulesets
+    PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("DisposesAllCachedRulesetsWhenInvalidateRequested", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("DisposesAllCachedRulesetsWhenInvalidateRequested", 2, 0, false, "", "", "", false);
+
+    // embed rulesets
+    m_embedder->Embed(*ruleset1);
+    m_embedder->Embed(*ruleset2);
+
+    // create ruleset locater
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(s_project->GetECDb());
+
+    // verify 2 rulesets are located
+    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
+    ASSERT_EQ(2, rulesets.size());
+
+    size_t disposedRulesetsCount = 0;
+    TestRulesetCallbacksHandler handler;
+    handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR) {disposedRulesetsCount++; });
+    locater->SetRulesetCallbacksHandler(&handler);
+
+    // check if both rulesets were disposed from cache
+    locater->InvalidateCache();
+    EXPECT_EQ(2, disposedRulesetsCount);
+    EXPECT_EQ(1, rulesets[0]->GetRefCount());
+    EXPECT_EQ(1, rulesets[1]->GetRefCount());
     }

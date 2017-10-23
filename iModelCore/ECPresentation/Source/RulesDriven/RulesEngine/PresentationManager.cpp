@@ -268,6 +268,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     m_categorySupplier(nullptr), m_ecPropertyFormatter(nullptr), m_localizationProvider(nullptr)
     {
     GetLocaters().SetRulesetCallbacksHandler(this);
+    GetConnections().AddListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
     m_customFunctions = new CustomFunctionsInjector();
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
@@ -284,7 +285,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     BeFileName supplementalRulesetsDirectory = paths.GetAssetsDirectory();
     supplementalRulesetsDirectory.append(L"UI\\");
     supplementalRulesetsDirectory.append(L"PresentationRules\\");
-    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(supplementalRulesetsDirectory));
+    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalRulesetsDirectory.GetNameUtf8().c_str())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -293,6 +294,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
 RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
     {
     GetLocaters().SetRulesetCallbacksHandler(nullptr);
+    GetConnections().DropListener(*this);
     DELETE_AND_CLEAR(m_updateHandler);
     DELETE_AND_CLEAR(m_statementCache);
     DELETE_AND_CLEAR(m_relatedPathsCache);
@@ -346,6 +348,30 @@ void RulesDrivenECPresentationManager::_OnSettingChanged(Utf8CP rulesetId, Utf8C
     {
     CustomFunctionsManager::GetManager()._OnSettingChanged(rulesetId, settingId);
     m_updateHandler->NotifySettingChanged(rulesetId, settingId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnConnectionEvent(ConnectionEvent const& evt)
+    {
+    if (evt.GetEventType() == ConnectionEventType::Opened)
+        {
+        ECDbCR connection = evt.GetConnection();
+        RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[&connection] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(connection));
+        GetLocaters().RegisterLocater(*locater);
+        }
+    else if (evt.GetEventType() == ConnectionEventType::Closed)
+        {
+        auto iter = m_embeddedRuleSetLocaters.find(&evt.GetConnection());
+        if (m_embeddedRuleSetLocaters.end() == iter)
+            {
+            BeAssert(false);
+            return;
+            }
+        GetLocaters().UnregisterLocater(*iter->second);
+        m_embeddedRuleSetLocaters.erase(iter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

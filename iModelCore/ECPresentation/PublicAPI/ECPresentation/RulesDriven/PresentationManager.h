@@ -52,7 +52,7 @@ typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationCo
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener
+struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener, IConnectionsListener
 {
     struct ECDbStatementsCache;
     struct ECDbRelatedPathsCache;
@@ -173,6 +173,7 @@ private:
     IPropertyCategorySupplier* m_categorySupplier;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     ILocalizationProvider const* m_localizationProvider;
+    bmap<ECDb const*, RuleSetLocaterPtr> m_embeddedRuleSetLocaters;
     
 //__PUBLISH_SECTION_END__
 private:
@@ -201,6 +202,9 @@ protected:
 
     // IUserSettingsChangeListener
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
+
+    // IConnectionListener
+    ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
     
     // IECPresentationManager: Navigation
     ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetRootNodes(ECDbR, PageOptionsCR, JsonValueCR) override;

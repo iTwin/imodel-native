@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/Connection.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -61,6 +62,9 @@ protected:
     //! @see InvalidateCache
     virtual void _InvalidateCache(Utf8CP rulesetId) = 0;
 
+    //! Called to get connection for which this locater is created. Returns nullptr if locater is designated for all connections.
+    virtual ECDb const* _GetDesignatedConnection() const {return nullptr;}
+
     //! Implementations should call this function before they dispose a ruleset.
     ECPRESENTATION_EXPORT void OnRulesetDisposed(PresentationRuleSetCR ruleset) const;
 
@@ -92,9 +96,13 @@ public:
 
     //! Get the locater priority.
     ECPRESENTATION_EXPORT int GetPriority() const;
+
+    //! Get connection for which this locater is designated. Returns nullptr if locater is designated for all connections.
+    ECDb const* GetDesignatedConnection() const {return _GetDesignatedConnection();}
 };
 
 typedef RefCountedPtr<RuleSetLocater> RuleSetLocaterPtr;
+typedef RefCountedPtr<RuleSetLocater const> RuleSetLocaterCPtr;
 
 //=======================================================================================
 //! Ruleset locater that finds rulesets in the specified directories.
@@ -160,6 +168,34 @@ public:
     //! Change the path of the file to look for ruleset definition in.
     //! @param[in] path Path to an XML file that contains ruleset definition.
     ECPRESENTATION_EXPORT void SetPath(BeFileNameCR path);
+};
+
+//=======================================================================================
+//! Ruleset locater that finds rulesets embedded in ECDb.
+//! @ingroup GROUP_RulesDrivenPresentation
+// @bsiclass                                    Saulius.Skliutas                10/2017
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE EmbeddedRuleSetLocater : RefCounted<RuleSetLocater>
+{
+private:
+    ECDbCR m_connection;
+    mutable bvector<PresentationRuleSetPtr> m_cache;
+
+private:
+    EmbeddedRuleSetLocater(ECDbCR connection) : m_connection(connection) {LoadRuleSets();}
+    ECPRESENTATION_EXPORT void LoadRuleSets() const;
+
+protected:
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
+    ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
+    int _GetPriority() const override {return 100;}
+    ECDb const* _GetDesignatedConnection() const override {return &m_connection;}
+
+public:
+    //! Create a new locater.
+    //! @param[in] connection ECDb that contains embedded rulesets.
+    static RefCountedPtr<EmbeddedRuleSetLocater> Create(ECDbCR connection) {return new EmbeddedRuleSetLocater(connection);}
 };
 
 //=======================================================================================
@@ -233,17 +269,23 @@ public:
 //! Ruleset locater that finds supplemental rulesets in the specified directory.
 // @bsiclass                                   Aidas.Vaiksnoras                05/2017
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SupplementalRuleSetLocater : DirectoryRuleSetLocater 
+struct EXPORT_VTABLE_ATTRIBUTE SupplementalRuleSetLocater : RefCounted<RuleSetLocater>
 {
 private:
-    SupplementalRuleSetLocater(BeFileNameCR directoryPath) : DirectoryRuleSetLocater(directoryPath.GetNameUtf8().c_str()) {}
+    RuleSetLocaterCPtr m_locater;
+
+private:
+    SupplementalRuleSetLocater(RuleSetLocater const& locater) : m_locater(&locater) {}
 
 protected:
     ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    bvector<Utf8String> _GetRuleSetIds() const override {return m_locater->GetRuleSetIds();}
+    void _InvalidateCache(Utf8CP rulesetId) override {const_cast<RuleSetLocater&>(*m_locater).InvalidateCache(rulesetId);}
+    int _GetPriority() const override {return m_locater->GetPriority();}
 
 public:
     //! Create a new locater.
-    static RefCountedPtr<SupplementalRuleSetLocater> Create(BeFileNameCR directoryPath) { return new SupplementalRuleSetLocater(directoryPath); }
+    static RefCountedPtr<SupplementalRuleSetLocater> Create(RuleSetLocater const& locater) {return new SupplementalRuleSetLocater(locater);}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
