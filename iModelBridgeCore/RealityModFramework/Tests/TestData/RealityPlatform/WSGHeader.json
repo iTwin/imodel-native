@@ -1,0 +1,11 @@
+cache-control must-revalidate, no-cache, private
+content-length 178
+content-type application/json
+date Fri, 20 Oct 2017 15:26:06 GMT
+mas-request-id 00000000-0000-0000-0000-000000000000
+mas-server Bentley-WSG/02.06.02.08, Bentley-WebAPI/2.6, Bentley-RESTToolkit/2.7.6.4
+pragma no-cache
+request-context appId=cid-v1:785f2b89-aa53-403b-bc7f-09df40fd0f61
+server Bentley-WSG/02.06.02.08, Bentley-WebAPI/2.6, Bentley-RESTToolkit/2.7.6.4
+status 200
+x-powered-by ASP.NET

@@ -15,6 +15,7 @@
 #include <RealityPlatform/RealityDataService.h>
 #include <RealityPlatform/WSGServices.h>
 #include <RealityPlatform/GeoCoordinationService.h>
+#include <RealityPlatform/SimpleRDSApi.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -59,15 +60,29 @@ struct MockWSGRequest : WSGRequest
     {}
 
 	~MockWSGRequest()
-    {
+        {
 		s_instance = nullptr;
-    }
+        }
 
     MOCK_CONST_METHOD1(SetCertificatePath, void(Utf8String certificate));
     MOCK_CONST_METHOD5(PerformAzureRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
     MOCK_CONST_METHOD4(PrepareRequest, CURL*(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer, BeFile* file));
     MOCK_CONST_METHOD5(_PerformRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
     MOCK_CONST_METHOD5(PerformRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
+    };
+
+struct MockRDSRequestManager : RDSRequestManager
+    {
+    MockRDSRequestManager() : RDSRequestManager()
+        {}
+
+    ~MockRDSRequestManager()
+        {
+        s_instance = nullptr;
+        }
+
+    MOCK_METHOD0(MakeBuddiCall, Utf8String());
+    MOCK_METHOD0(Init, void());
     };
 
 //=====================================================================================
@@ -181,4 +196,29 @@ public:
             s_errorClass->errorCallBack(basicMessage, rawResponse);
             }
         }
-};
+    };
+
+ //=====================================================================================
+ //! @bsiclass                                   Spencer.Mason                  10/2017
+ //! SimpleRDSFixture
+ //=====================================================================================
+ class SimpleRDSFixture : public MockWSGRequestFixture
+    {
+public:
+    static RealityDataService* s_realityDataServices;
+
+    static void SetUpTestCase()
+        {  
+        s_mockWSGInstance = new MockWSGRequest();
+        s_realityDataServices = new RealityDataService();
+        s_realityDataServices->SetServerComponents("myserver.com", "9.9", "myRepo", "mySchema", "zz:\\mycertificate.pfx", "myProjectID");
+        }
+
+     static void TearDownTestCase()
+        {
+        delete s_realityDataServices;
+        s_realityDataServices = nullptr;
+        delete s_mockWSGInstance;
+        s_mockWSGInstance = nullptr;
+        }
+    };

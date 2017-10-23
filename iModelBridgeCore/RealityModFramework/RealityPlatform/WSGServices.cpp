@@ -795,6 +795,10 @@ Utf8String WSGServer::GetVersion(RawServerResponse& responseObject) const
     BeStringUtilities::Split(versionString.c_str(), "\n", lines);
     m_version = lines[0];
     m_version.Trim();
+    lines.clear();
+    BeStringUtilities::Split(m_version.c_str(), ",", lines);
+    m_version = lines[0];
+    m_version.Trim();
 
     return m_version;
     }

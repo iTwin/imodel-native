@@ -34,7 +34,7 @@ class RealityDataServiceFixture : public MockRealityDataServiceFixture
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              05/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, SetServerComponents)
+/*TEST_F(RealityDataServiceFixture, SetServerComponents)
 	{
 	// Test the SetServerComponents called in SetUpTestcase
 	EXPECT_STREQ(s_realityDataService->GetServerName().c_str(), "myserver.com");
@@ -49,7 +49,7 @@ TEST_F(RealityDataServiceFixture, SetServerComponents)
 
     // Reset the project ID for all the other test
     s_realityDataService->SetProjectId("myProjectID");
-	}
+	}*/
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              05/2017

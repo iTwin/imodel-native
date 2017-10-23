@@ -30,18 +30,18 @@ struct RDSRequestManager
     {    
     REALITYDATAPLATFORM_EXPORT void SetCallback(RDS_FeedbackFunction piFunc) { m_callback = piFunc; }
     REALITYDATAPLATFORM_EXPORT void SetErrorCallback(RDS_FeedbackFunction piFunc) { m_errorCallback = piFunc; }
-
     REALITYDATAPLATFORM_EXPORT static RDSRequestManager& GetInstance();
+    REALITYDATAPLATFORM_EXPORT void Init();
 
+protected:
+    static RDSRequestManager*      s_instance;
+    REALITYDATAPLATFORM_EXPORT RDSRequestManager();
+    REALITYDATAPLATFORM_EXPORT Utf8String MakeBuddiCall();
+    //RDSRequestManager(RDS_FeedbackFunction errorCallback, RDS_FeedbackFunction callbackFunction = nullptr);
+    
     void Report(Utf8String message);
     void ReportError(Utf8String message);
 
-private:
-    static RDSRequestManager*      s_instance;
-    RDSRequestManager();
-    RDSRequestManager(RDS_FeedbackFunction callbackFunction = nullptr, RDS_FeedbackFunction errorCallback = nullptr);
-
-    Utf8String MakeBuddiCall();
     RDS_FeedbackFunction    m_callback;
     RDS_FeedbackFunction    m_errorCallback;
     };
@@ -55,6 +55,8 @@ private:
 struct ConnectedRealityDataEnterpriseStat : public RealityDataEnterpriseStat
     {
 public:
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataEnterpriseStat() : RealityDataEnterpriseStat(){}
+
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetStats();
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataEnterpriseStat(const RealityDataEnterpriseStat& stat);
@@ -71,6 +73,8 @@ private:
 struct ConnectedRealityDataProjectRelationship: public RealityDataProjectRelationship
     {
 public:
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataProjectRelationship() : RealityDataProjectRelationship() {}
+
     REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Create();
@@ -89,6 +93,8 @@ private:
 struct ConnectedRealityDataDocument : public RealityDataDocument
     {
 public:
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataDocument() : RealityDataDocument(){}
+
     //REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForRealityData(bvector<ConnectedRealityDataDocumentPtr>& docVector);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetInfo();
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
@@ -108,6 +114,8 @@ private:
 struct ConnectedRealityDataFolder : public RealityDataFolder
     {
 public:
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataFolder() : RealityDataFolder() {}
+
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetInfo();
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Download(BeFileName filePath, Utf8String serverPath);
@@ -126,6 +134,8 @@ private:
 struct ConnectedRealityData : public RealityData
     {
 public:
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityData() : RealityData() {}
+
     REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForUltimateId(bvector<ConnectedRealityDataPtr>& dataVector);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetInfo();
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);

@@ -23,8 +23,21 @@ RDSRequestManager* RDSRequestManager::s_instance = nullptr;
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction callbackFunction, RDS_FeedbackFunction errorCallback) :
-    m_callback(callbackFunction), m_errorCallback(errorCallback)
+/*RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction callbackFunction, RDS_FeedbackFunction errorCallback) :
+    m_callback(callbackFunction),m_errorCallback(errorCallback)
+    {
+    Init();
+    }*/
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+RDSRequestManager::RDSRequestManager()
+    {
+    //Init();
+    }
+
+void RDSRequestManager::Init()
     {
     Utf8String serverName = MakeBuddiCall();
     WSGServer server = WSGServer(serverName, true);
@@ -33,7 +46,7 @@ RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction callbackFunction, RDS_
     Utf8String version = server.GetVersion(versionResponse);
     if (versionResponse.responseCode > 399)
         {
-        m_errorCallback("cannot reach server");
+        ReportError("cannot reach server");
         return;
         }
 
@@ -52,35 +65,35 @@ Utf8String RDSRequestManager::MakeBuddiCall()
     status = CCApi_IsInstalled(api, &installed);
     if (!installed)
         {
-        m_errorCallback("Connection client does not seem to be installed");
+        ReportError("Connection client does not seem to be installed");
         return "";
         }
     bool running = false;
     status = CCApi_IsRunning(api, &running);
     if (status != APIERR_SUCCESS || !running)
         {
-        m_errorCallback("Connection client does not seem to be running");
+        ReportError("Connection client does not seem to be running");
         return "";
         }
     bool loggedIn = false;
     status = CCApi_IsLoggedIn(api, &loggedIn);
     if (status != APIERR_SUCCESS || !loggedIn)
         {
-        m_errorCallback("Connection client does not seem to be logged in");
+        ReportError("Connection client does not seem to be logged in");
         return "";
         }
     bool acceptedEula = false;
     status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
     if (status != APIERR_SUCCESS || !acceptedEula)
         {
-        m_errorCallback("Connection client user does not seem to have accepted EULA");
+        ReportError("Connection client user does not seem to have accepted EULA");
         return "";
         }
     bool sessionActive = false;
     status = CCApi_IsUserSessionActive(api, &sessionActive);
     if (status != APIERR_SUCCESS || !sessionActive)
         {
-        m_errorCallback("Connection client does not seem to have an active session\n");
+        ReportError("Connection client does not seem to have an active session\n");
         return "";
         }
 
