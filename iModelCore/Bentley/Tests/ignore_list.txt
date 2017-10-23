@@ -31,10 +31,9 @@ UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBoth
 
 UniqueTasksHolderTests.GetTask_CalledTwiceInSequence_ReturnsSameTaskAndParentTaskGetsBlockedByExistingTaskRetrieval
 
-AsyncTaskTests.WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem
-    # bim0200, x64, NDEBUG, PRG, Hang
-
-AsyncTaskTests.Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted
+# These tests directly use the AsyncTask API, or a test helper class that does.
+# Arturas: [ignoring such tests] would be a reasonable thing to do to be on the safe side. As far as I know, tests that use AsyncTask tend to randomly hang, so it is possible that any of those might hang the build. We will look for a short time solution to make sure that we would safely run as many tests as possible and BeFolly is long term plan.
+AsyncTaskTests.*
 
 WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
     # bim0200, x64, NDEBUG, PRG, Random
