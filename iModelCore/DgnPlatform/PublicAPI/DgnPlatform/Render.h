@@ -264,7 +264,7 @@ struct Task : RefCounted<NonCopyableClass>
         RenderFrame,
         RenderTile,
         ResetTarget,
-		SetFlash,
+        SetFlash,
         SetHiliteSet,
     };
 
