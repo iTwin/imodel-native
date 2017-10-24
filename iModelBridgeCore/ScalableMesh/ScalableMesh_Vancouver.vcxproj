@@ -647,6 +647,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClCompile Include="stm\RasterUtilities.cpp" />
     <ClCompile Include="stm\ReprojectionModel.cpp" />
     <ClCompile Include="STM\ScalableMeshAnalysis.cpp" />
+    <ClCompile Include="STM\ScalableMeshAnalysis_Ecef.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />

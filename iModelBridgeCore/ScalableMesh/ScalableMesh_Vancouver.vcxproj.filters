@@ -1486,6 +1486,9 @@
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
+    <ClCompile Include="STM\ScalableMeshAnalysis_Ecef.cpp">
+      <Filter>Source\Core\Analysis</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableMesh_Vancouver.mke" />

@@ -312,6 +312,8 @@ $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMes
 
 $(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalysis.h ${MultiCompileDepends}
 
+$(o)ScalableMeshAnalysis_Ecef$(oext) : $(stmDir)ScalableMeshAnalysis_Ecef.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
+
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}

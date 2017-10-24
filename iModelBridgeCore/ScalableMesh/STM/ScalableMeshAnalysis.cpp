@@ -4,6 +4,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#define SM_ANALYSIS_DEBUG
 
 struct  SMDummyProgressListener : public ISMAnalysisProgressListener
     {
@@ -16,6 +17,7 @@ SMProgressReport::SMProgressReport(ISMAnalysisProgressListener* pProgressListene
     m_pProgressListener(pProgressListener)
     {
     m_workDone = 0.0;
+    m_timeDelay = 0.5; // report every 0.5 sec
     m_processCanceled = false;
     if (NULL == m_pProgressListener)
         m_pProgressListener = &s_SMdummyProgressListener;
@@ -27,6 +29,7 @@ SMProgressReport::SMProgressReport(ISMAnalysisProgressListener* pProgressListene
 SMProgressReport::SMProgressReport()
     {
     m_workDone = 0.0;
+    m_timeDelay = 0.5; // report every 0.5 sec
     m_processCanceled = false;
     }
 
@@ -87,6 +90,9 @@ ISMGridVolume::ISMGridVolume()
     m_totalVolume = m_cutVolume = m_fillVolume = 0;
     m_VolSegments = NULL;
     m_bInitialised = false;
+    m_isWorld = true;
+    m_isEcef = false;
+    m_xSize = m_ySize = 0;
     }
 
 ISMGridVolume::~ISMGridVolume() 
@@ -157,6 +163,63 @@ bool _CreatePolyfaceFromPoints(const bvector<DPoint3d>& polygon, PolyfaceHeaderP
     return (polyface != nullptr);
     }
 
+// Compute the intersection range from the polygon and meshe(s)
+bool ScalableMeshAnalysis::_GetComputationRange(DRange3d& rangeInter, bool inWorld, 
+                                                const bvector<DPoint3d>& polygon, IScalableMesh *mesh1, IScalableMesh *mesh2, bool bAlignZ)
+    {
+    if (mesh1 == nullptr)
+        return false;
+
+    DRange3d rangeMesh; // extend of the scalable mesh
+    if (inWorld)
+        _GetWorldRange(mesh1, rangeMesh);
+    else
+        mesh1->GetRange(rangeMesh);
+
+    if (mesh2 != nullptr)
+        {
+        DRange3d rangeMesh2; // extend of the second scalable mesh
+        if (inWorld)
+            _GetWorldRange(mesh2, rangeMesh2);
+        else
+            mesh2->GetRange(rangeMesh2);
+        rangeMesh.IntersectionOf(rangeMesh, rangeMesh2);
+        if (rangeMesh.IsNull())
+            return false; // no intersection
+        if (bAlignZ) // align the bottom Z
+            {
+            double zmin = std::min(rangeMesh.low.z, rangeMesh2.low.z);
+            rangeMesh.low.z = zmin;
+            }
+        }
+
+    DRange3d rangePolygon = DRange3d::From(0, 0);
+
+    if (!inWorld) // nedd to convert in 3sm space
+        {
+        bvector<DPoint3d> poly3sm;
+        _convertTo3SMSpace(polygon, poly3sm);
+        for (auto point : poly3sm)
+            rangePolygon.Extend(point);
+        }
+    else // polygon is already in World
+        {
+        for (auto point : polygon)
+            rangePolygon.Extend(point);
+        }
+
+    rangeInter.IntersectionOf(rangeMesh, rangePolygon);
+    if (rangeInter.IsNull())
+        return false; // no intersection
+
+    if (bAlignZ) // align the bottom Z
+        {
+        double zmin = std::min(rangeMesh.low.z, rangePolygon.low.z);
+        rangeInter.low.z = zmin;
+        }
+    return true;
+    }
+
 void ScalableMeshAnalysis::_CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction)
     {
     // store the first border to consider
@@ -217,40 +280,27 @@ void ScalableMeshAnalysis::_CreateCutVolumeRanges(SMVolumeSegment& segment, bvec
         }
     }
 
-bool ScalableMeshAnalysis::_InitGridFrom(ISMGridVolume& grid, double _resolution, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion)
-    {
-    grid.m_range.IntersectionOf(_rangeMesh, _rangeRegion);
-    if (grid.m_range.IsNull())
-        return false; // cannot compute volume, no intersection
-
-    grid.m_resolution = _resolution;
-    double maxLength = std::max(grid.m_range.XLength(), grid.m_range.YLength());
-    int gridSize = maxLength / grid.m_resolution;
-    if (gridSize > grid.m_gridSizeLimit)
-        {
-        grid.m_resolution = maxLength / grid.m_gridSizeLimit; // we limit the resolution
-        }
-
-    grid.m_center = DPoint3d::From(_rangeMesh.low.x + _rangeMesh.XLength() / 2,
-        _rangeMesh.low.y + _rangeMesh.YLength() / 2,
-        _rangeMesh.low.z + _rangeMesh.ZLength() / 2);
-
-    // split the range in regular grid xy
-    double xSize = (grid.m_range.high.x - grid.m_range.low.x) / grid.m_resolution; // Nb of cells on X
-    double ySize = (grid.m_range.high.y - grid.m_range.low.y) / grid.m_resolution; // Nb of cells on Y
-
-    // Init and reserve the memory for the volume segments
-    bool bRes = grid.InitGrid(xSize, ySize);
-
-    return bRes;
-    }
-
 // Compute "Stock Pile" volume between a polygon region and this scalablemesh
 // along a direction : Z by default
 // on a grid of given resolution
-// polygon points need to be in world coordinates
+// polygon points need to be in World coordinates
 // Returns a SMGridVolume structures
 DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
+    {
+    bool isECEF = m_scmPtr->IsCesium3DTiles();
+    if (isECEF)
+        return _ComputeDiscreteVolumeEcef(polygon, resolution, grid, pProgressListener);
+
+    bool isWorld = true;
+    if (isWorld && _ComputeDiscreteVolumeWorld(polygon, resolution, grid, pProgressListener) == DTMStatusInt::DTM_SUCCESS)
+        return DTMStatusInt::DTM_SUCCESS;
+
+    // else compute in 3SM space
+    return _ComputeDiscreteVolume3SM(polygon, resolution, grid, pProgressListener);
+    }
+
+// All values are computed in 3SM space
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume3SM(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
     {
     if (polygon.size() < 3)
         return DTMStatusInt::DTM_ERROR; // invalid region
@@ -259,7 +309,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     if (!report.CheckContinueOnProgress())
         return DTMStatusInt::DTM_ERROR; //User abort
 
-    DRange3d rangeMesh; // extend of the scalable mesh
+/*    DRange3d rangeMesh; // extend of the scalable mesh
     m_scmPtr->GetRange(rangeMesh);
 
     DRange3d rangeRegion; // Extend of the polygon region - extended to mesh Z
@@ -269,16 +319,18 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     for (auto point : polygon)
         rangeRegion.Extend(point);
     rangeRegion.low.z = rangeMesh.low.z;
-    rangeRegion.high.z = rangeMesh.high.z;
+    rangeRegion.high.z = rangeMesh.high.z;*/
+
+    DRange3d range; // get the computation range from data intersections
+    if (_GetComputationRange(range, true, polygon, m_scmPtr, NULL, false) == false)
+        return DTMStatusInt::DTM_ERROR; // no intersection
 
     // Initialize the grid volume structure
-    if (!_InitGridFrom(grid, resolution, rangeMesh, rangeRegion))
+    if (!_InitGridFrom(grid, resolution, range))
         return DTMStatusInt::DTM_ERROR; // could not initialize grid
 
-    DRange3d range = grid.m_range; // the intersection range (mesh inter region)
     int m_xSize, m_ySize;
     grid.GetGridSize(m_xSize, m_ySize);
-
     if (m_xSize==0 || m_ySize==0)
         return DTMStatusInt::DTM_ERROR; // Zero sized Grid
 
@@ -303,7 +355,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double m_xStep = grid.m_resolution;
     double m_yStep = grid.m_resolution;
 
-    int numProcs = std::min(m_ThreadNumber, omp_get_num_procs());
+    int numProcs = 1; // std::min(m_ThreadNumber, omp_get_num_procs());
     if (numProcs > 1)
         numProcs = numProcs - 1; // use all available CPUs minus one
     if (numProcs <= 0)
@@ -312,10 +364,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     const double progressStep = 1.0 / (m_xSize+1);
     double progress = 0.0; // progress value between 0 and 1
     bool userAborted(false);
-
-    const float nSeconds = 0.5; // check progress every nSeconds
     clock_t timer = clock();
-
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
 #pragma omp parallel num_threads(numProcs)
@@ -329,7 +378,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         if (main_id == t_id)
             {
             float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
-            if (secs > nSeconds)
+            if (secs > report.m_timeDelay)
                 {
                 userAborted = !report.CheckContinueOnProgress();
                 report.m_workDone = progress;
@@ -351,12 +400,16 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
             DPoint3d source = DPoint3d::From(x, y, zsource);
             DPoint3d sourceW = DPoint3d::From(x, y, zsource);
 
-            _convert3SMToWorld(sourceW);
+            _convert3SMToWorld(m_scmPtr, sourceW); // Intersection interface needs points in World
             bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
             bool bret = draping1->IntersectRay(Hits, grid.m_direction, sourceW);
-
+     
             if (bret && Hits.size() > 0)
                 {
+                //convert the hits back in 3SM system
+                for (auto &ahit : Hits)
+                    _convertWorldTo3SM(m_scmPtr, ahit.point);
+
                 auto classif = curveVectorPtr->PointInOnOutXY(source);
                 if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
                     {
@@ -376,6 +429,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
                             {
                             // add the intersection with the polygon in the hit list
                             BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
+                            //_convertWorldTo3SM(polyHit);
                             rayInter.point = polyHit;
                             rayInter.rayFraction = rayFraction;
                             rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
@@ -410,33 +464,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         }
 
     // Sum the discrete volumes
-    double AreaCell = m_xStep*m_yStep;
-    double _cutVolume = 0, _fillVolume = 0;
-#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
-    for (int i = 0; i < m_xSize; i++)
-        {
-        for (int j = 0; j < m_ySize; j++)
-            {
-            if (intersected[i*m_ySize + j] != true)
-                {
-                continue;
-                }
-            SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
-            for (int k = 0; k < segment.VolumeRanges.size() - 1; k += 2)
-                {
-                double deltaZ = segment.VolumeRanges[k + 1] - segment.VolumeRanges[k];
-                if (deltaZ > 0)
-                    _cutVolume += deltaZ * AreaCell;
-                else
-                    _fillVolume += -deltaZ * AreaCell;
-
-                segment.volume += deltaZ * AreaCell; // keep sum of volume
-                }
-            }
-        }
-    grid.m_cutVolume = _cutVolume;
-    grid.m_fillVolume = _fillVolume;
-    grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
+    _FillGridVolumes(grid, intersected, 1.0); // Sum the discrete volumes
 
     if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;
@@ -453,9 +481,22 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         return DTMStatusInt::DTM_ERROR; // invalid region
     if (diffMesh == nullptr)
         return DTMStatusInt::DTM_ERROR; // invalid mesh
-    if (diffMesh== m_scmPtr)
+    if (diffMesh == m_scmPtr)
         return DTMStatusInt::DTM_ERROR; // same meshes
 
+    bool isECEF = m_scmPtr->IsCesium3DTiles();
+    if (isECEF)
+        return _ComputeDiscreteVolumeEcef(polygon, diffMesh, resolution, grid, pProgressListener);
+
+    bool isWorld = true;
+    if (isWorld && _ComputeDiscreteVolumeWorld(polygon, diffMesh, resolution, grid, pProgressListener) == DTMStatusInt::DTM_SUCCESS)
+        return DTMStatusInt::DTM_SUCCESS;
+
+    return DTMStatusInt::DTM_ERROR;
+    }
+
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPoint3d>& polygon, IScalableMesh* diffMesh, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
+   {
    SMProgressReport report(pProgressListener);
     if (!report.CheckContinueOnProgress())
         return DTMStatusInt::DTM_ERROR; //User abort
@@ -481,11 +522,16 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     for (auto point : polygon)
         rangeRegion.Extend(point);
 
+    DRange3d range; // get the computation range from data intersections
+    bool dataInWorld = true;
+    if (_GetComputationRange(range, dataInWorld, polygon, m_scmPtr, diffMesh, true) == false)
+        return DTMStatusInt::DTM_ERROR; // no intersection
+
     // Initialize the grid volume structure
-    if (!_InitGridFrom(grid, resolution, rangeInter, rangeRegion))
+    if (!_InitGridFrom(grid, resolution, range))
         return DTMStatusInt::DTM_ERROR; // could not initialize grid
 
-    DRange3d range = grid.m_range; // the intersection range (mesh inter region)
+    //DRange3d range = grid.m_range; // the intersection range (mesh inter region)
     int m_xSize, m_ySize;
     grid.GetGridSize(m_xSize, m_ySize);
 
@@ -528,7 +574,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     double progress = 0.0;
     double progressStep = 1.0 / (m_xSize+1);
     bool userAborted(false);
-    const float nSeconds = 0.5; // check progress every nSeconds
     clock_t timer = clock();
 
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
@@ -543,7 +588,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         if (main_id == t_id)
             {
             float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
-            if (secs > nSeconds)
+            if (secs > report.m_timeDelay)
                 {
                 userAborted = !report.CheckContinueOnProgress();
                 report.m_workDone = progress;
@@ -561,16 +606,16 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
             {
             intersected[i*m_ySize + j] = false;
             double y = range.low.y + m_yStep * j;
-            DPoint3d source = DPoint3d::From(x, y, zsource);
-            DPoint3d sourceW = source;
-            _convert3SMToWorld(sourceW); // draping interface converts always from UorsTo3SM
+            DPoint3d sourceW = DPoint3d::From(x, y, zsource); // source is in world
+            //DPoint3d sourceW = source;
+            //_convert3SMToWorld(m_scmPtr, sourceW); // draping interface converts always from UorsTo3SM
 
             DPoint3d interP1;
             bool bret = draping1->IntersectRay(interP1, grid.m_direction, sourceW);
 
             if (bret)
                 {
-                auto classif = curveVectorPtr->PointInOnOutXY(source);
+                auto classif = curveVectorPtr->PointInOnOutXY(sourceW);
                 if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
                     {
                     DPoint3d interP2;
@@ -611,6 +656,9 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         }
 
     // Sum the discrete volumes
+    _FillGridVolumes(grid, intersected, m_unit2meter);
+
+    /*
     double AreaCell = m_xStep*m_yStep*m_unit2meter; // z are expressed in UOR
     double _cutVolume = 0, _fillVolume = 0;
 #pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
@@ -640,6 +688,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     grid.m_fillVolume = _fillVolume;
     grid.m_cutVolume = _cutVolume;
     grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
+    */
 
     delete[] intersected;
     delete[] interPoints;
@@ -650,9 +699,9 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-bool ScalableMeshAnalysis::_convert3SMToWorld(DPoint3d& _pt)
+bool ScalableMeshAnalysis::_convert3SMToWorld(IScalableMesh *scmPtr, DPoint3d& _pt)
     {
-    if (m_scmPtr == nullptr)
+    if (scmPtr == nullptr)
         return false;
     Transform transform(m_scmPtr->GetReprojectionTransform());
     if (transform.IsIdentity())
@@ -668,10 +717,32 @@ bool ScalableMeshAnalysis::_convert3SMToWorld(DPoint3d& _pt)
     return true;
     }
 
+bool ScalableMeshAnalysis::_convertWorldTo3SM(IScalableMesh *scmPtr, DPoint3d& _pt)
+    {
+    if (scmPtr == nullptr)
+        return false;
+    Transform transform(m_scmPtr->GetReprojectionTransform());
+    if (transform.IsIdentity())
+        {
+        const GeoCoords::GCS& gcs(m_scmPtr->GetGCS());
+        double ratioFromMeter = 1.0 / gcs.GetUnit().GetRatioToBase();
+        //Convert from UOR to SM unit.
+        _pt.Scale(ratioFromMeter);
+        }
+    else
+        {
+        Transform transformToSm;
+        bool result = transformToSm.InverseOf(transform);
+        assert(result == true);
+        transformToSm.Multiply(_pt);
+        }
+    return true;
+    }
+
 bool ScalableMeshAnalysis::_convertTo3SMSpace(const bvector<DPoint3d>& polygon, bvector<DPoint3d>& area)
     {
     if (m_scmPtr == nullptr)
-        return false;
+        return DTMStatusInt::DTM_ERROR;
     Transform transform(m_scmPtr->GetReprojectionTransform());
 
     if (transform.IsIdentity())
@@ -696,6 +767,22 @@ bool ScalableMeshAnalysis::_convertTo3SMSpace(const bvector<DPoint3d>& polygon, 
     return DTMStatusInt::DTM_SUCCESS;
     }
 
+bool ScalableMeshAnalysis::_GetWorldRange(IScalableMesh *scmPtr, DRange3d& _range)
+    {
+    DRange3d range3sm;
+    scmPtr->GetRange(range3sm);
+    DPoint3d Corners[8]; // get the corners in world, and compute the range of them
+    range3sm.Get8Corners(Corners);
+
+    _range.initFrom(0, 0); // reset the range
+    for (int i = 0; i < 8; i++)
+        {
+        _convert3SMToWorld(scmPtr, Corners[i]);
+        _range.Extend(Corners[i]);
+        }
+    return true;
+    }
+
 void ScalableMeshAnalysis::_SetMaxThreadNumber(int num)
     {
     m_ThreadNumber = num;
@@ -705,5 +792,249 @@ void ScalableMeshAnalysis::_SetUnitToMeter(double val)
     {
     m_unit2meter = val;
     }
+
+// Compute "Stock Pile" volume between a polygon region and this scalablemesh
+// along a direction : Z by default
+// on a grid of given resolution
+// polygon points need to be in world coordinates
+// Returns a SMGridVolume structures in World
+DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener)
+    {
+    if (polygon.size() < 3)
+        return DTMStatusInt::DTM_ERROR; // invalid region
+
+#ifdef SM_ANALYSIS_DEBUG
+    std::ofstream f;
+    f.open("c:\\Dev\\logDebugGrid_sdk.txt", ios_base::app);
+    f << "==  _ComputeDiscreteVolumeWorld() =============" << endl;
+    for (auto pp : polygon)
+        f << "Polygon :: " << pp.x << " , " << pp.y << " , " << pp.z << endl;
+    f << "==============================================" << endl;
+    f.close();
+#endif
+
+    SMProgressReport report(pProgressListener);
+    if (!report.CheckContinueOnProgress())
+        return DTMStatusInt::DTM_ERROR; //User abort
+
+/*    DRange3d rangeMesh; // extend of the scalable mesh
+    m_scmPtr->GetRange(rangeMesh);
+    // convert mesh range in World coordinate
+    _convert3SMToWorld(rangeMesh.low);
+    _convert3SMToWorld(rangeMesh.high);
+
+    DRange3d rangeRegion; // Extend of the polygon region - extended to mesh Z
+    DPoint3d P1 = polygon[0]; P1.z -= 1;  // keep only xy
+    DPoint3d P2 = polygon[1]; P2.z += 1;
+    rangeRegion = DRange3d::From(P1, P2);
+    for (auto point : polygon)
+        rangeRegion.Extend(point);
+    rangeRegion.low.z = rangeMesh.low.z - 1;
+    rangeRegion.high.z = rangeMesh.high.z + 1;*/
+
+    DRange3d range; // get the computation range from data intersections
+    if (_GetComputationRange(range, true, polygon, m_scmPtr, NULL, false) == false)
+        return DTMStatusInt::DTM_ERROR; // no intersection
+
+    // Initialize the grid volume structure
+    double resUOR = resolution / m_unit2meter;
+    if (!_InitGridFrom(grid, resUOR, range))
+        return DTMStatusInt::DTM_ERROR; // could not initialize grid
+    grid.m_resolution = resolution; // in meter
+
+    //DRange3d range = grid.m_range; // the intersection range (mesh inter region)
+    int m_xSize, m_ySize;
+    grid.GetGridSize(m_xSize, m_ySize);
+    if (m_xSize == 0 || m_ySize == 0)
+        return DTMStatusInt::DTM_ERROR; // Zero sized Grid
+
+    // Create the Polyface for intersections and queries
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polygon));
+    CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+    facetOptions->SetNormalsRequired(false);
+    facetOptions->SetMaxPerFace(3);
+    IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
+    polyfaceBuilder->AddRegion(*curveVectorPtr);
+    PolyfaceHeaderPtr polyface = polyfaceBuilder->GetClientMeshPtr();
+
+    auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
+    bool isTerrain = m_scmPtr->IsTerrain();
+
+    bool *intersected = new bool[m_xSize*m_ySize];
+    memset(intersected, 0, sizeof(bool)*m_xSize*m_ySize);
+
+    double tolerance = std::numeric_limits<double>::min(); // intersection tolerance
+    double zsource = range.low.z - tolerance; // be sure to start under the range
+    double m_xStep = resUOR;
+    double m_yStep = resUOR;
+
+    int numProcs = 1; // std::min(m_ThreadNumber, omp_get_num_procs());
+    if (numProcs > 1)
+        numProcs = numProcs - 1; // use all available CPUs minus one
+    if (numProcs <= 0)
+        numProcs = 1;
+
+    const double progressStep = 1.0 / (m_xSize + 1);
+    double progress = 0.0; // progress value between 0 and 1
+    bool userAborted(false);
+    clock_t timer = clock();
+    std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
+
+//SNU #pragma omp parallel num_threads(numProcs)
+    {
+
+#pragma omp for
+    for (int i = 0; i < m_xSize; i++)
+        {
+        std::thread::id t_id = std::this_thread::get_id(); // Get the id of the current Thread
+
+        if (main_id == t_id)
+            {
+            float secs = ((float)(clock() - timer)) / CLOCKS_PER_SEC;
+            if (secs > report.m_timeDelay)
+                {
+                userAborted = !report.CheckContinueOnProgress();
+                report.m_workDone = progress;
+                timer = clock();
+                }
+            }
+
+        if (userAborted)
+            continue;
+
+        double x = range.low.x + m_xStep * i;
+        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
+
+        for (int j = 0; j < m_ySize; j++)
+            {
+            intersected[i*m_ySize + j] = false;
+
+            double y = range.low.y + m_yStep * j;
+            DPoint3d source = DPoint3d::From(x, y, zsource);
+            DPoint3d sourceW = DPoint3d::From(x, y, zsource);
+
+            //_convert3SMToWorld(sourceW); // Intersection interface needs 
+            bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
+            bool bret = draping1->IntersectRay(Hits, grid.m_direction, sourceW);
+
+            if (bret && Hits.size() > 0)
+                {
+                //SNU auto classif = curveVectorPtr->PointInOnOutXY(source);
+                //SNU if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
+                    {
+                    DRay3d ray = DRay3d::FromOriginAndVector(source, grid.m_direction);
+                    DPoint3d polyHit; polyHit.Zero();
+                    double rayFraction = 0;
+                    visitor->Reset();
+                    if (visitor->AdvanceToFacetBySearchRay(ray, tolerance, polyHit, rayFraction))
+                        {
+                        // convert the intersections in meter
+                        SMVolumeSegment aSegment;
+                        if (isTerrain) // just stack the 2 intersections
+                            {
+                            aSegment.VolumeRanges.push_back(polyHit.z);
+                            aSegment.VolumeRanges.push_back(Hits[0].point.z);
+                            }
+                        else
+                            {
+                            // add the intersection with the polygon in the hit list
+                            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
+                            //_convertWorldTo3SM(polyHit);
+                            rayInter.point = polyHit;
+                            rayInter.rayFraction = rayFraction * m_unit2meter;
+                            rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
+                            rayInter.hasNormal = true;
+                            Hits.push_back(rayInter);
+
+                            DTMIntersectionCompare Comparator;
+                            std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
+
+                            _CreateFillVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
+                            _CreateCutVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
+                            }
+
+                        if (aSegment.VolumeRanges.size() > 0)
+                            {
+                            for (auto &seg : aSegment.VolumeRanges)
+                                {
+                                seg *= m_unit2meter; // store the Z-volume in meter
+                                }
+                            grid.m_VolSegments[i*m_ySize + j] = aSegment;
+                            intersected[i*m_ySize + j] = true;
+                            }
+                        }
+                    }
+                }
+            }
+#pragma omp critical
+        progress += progressStep;
+        }
+    }
+
+    if (userAborted)
+        {
+        delete[] intersected;
+        return DTMStatusInt::DTM_ERROR; //User abort
+        }
+
+    _FillGridVolumes(grid, intersected, 1.0); // Sum the discrete volumes
+   
+    if (!userAborted) // update only if not aborted
+        report.m_workDone = 1.0;
+
+    delete[] intersected;
+
+    return DTMStatusInt::DTM_SUCCESS;
+    }
+
+void ScalableMeshAnalysis::_FillGridVolumes(ISMGridVolume& grid, bool *intersected, double U2M)
+    {
+    double AreaCell = grid.m_resolution*grid.m_resolution * U2M * U2M;
+    double _cutVolume = 0, _fillVolume = 0;
+    int m_xSize, m_ySize;
+    grid.GetGridSize(m_xSize, m_ySize);
+#ifdef SM_ANALYSIS_DEBUG
+    std::ofstream f;
+    f.open("c:\\Dev\\logDebugGrid_sdk.txt" , ios_base::app);
+    f << "Grid Size :: " << m_xSize << " , " << m_ySize << endl;
+    f << "Grid Resolution :: " << grid.m_resolution << endl;
+    f << "Unit2meter :: " << U2M << endl;
+#endif
+
+    //#pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
+    for (int i = 0; i < m_xSize; i++)
+        {
+        for (int j = 0; j < m_ySize; j++)
+            {
+            if (intersected[i*m_ySize + j] != true)
+                {
+                continue;
+                }
+            SMVolumeSegment &segment = grid.m_VolSegments[i*m_ySize + j];
+            for (int k = 0; k < segment.VolumeRanges.size() - 1; k += 2)
+                {
+                double deltaZ = segment.VolumeRanges[k + 1] - segment.VolumeRanges[k];
+                if (deltaZ > 0)
+                    _cutVolume += deltaZ * AreaCell;
+                else
+                    _fillVolume += -deltaZ * AreaCell;
+
+                segment.volume += deltaZ * AreaCell; // keep sum of volume
+#ifdef SM_ANALYSIS_DEBUG
+                f << "  Volume [" << i << "\t ," << j << "\t] = " << deltaZ * AreaCell << std::endl;
+#endif
+                }
+            }
+        }
+    grid.m_cutVolume = _cutVolume;
+    grid.m_fillVolume = _fillVolume;
+    grid.m_totalVolume = grid.m_fillVolume + grid.m_cutVolume;
+
+#ifdef SM_ANALYSIS_DEBUG
+    f.close();
+#endif
+    }
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
