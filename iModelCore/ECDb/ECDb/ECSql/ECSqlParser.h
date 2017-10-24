@@ -22,6 +22,7 @@ struct ECSqlParseContext final
     {
 public:
     typedef bmap<ECN::ECClassId, ECN::ECClassCP> ClassListById;
+
     struct ParseArg
         {
         enum class Type
@@ -47,7 +48,7 @@ public:
             std::vector<RangeClassInfo> const& m_arg;
 
         public:
-            explicit RangeClassArg(std::vector<RangeClassInfo> const& arg) :ParseArg(Type::RangeClass), m_arg(arg) {}
+            explicit RangeClassArg(std::vector<RangeClassInfo> const& arg) : ParseArg(Type::RangeClass), m_arg(arg) {}
             ~RangeClassArg() {};
             std::vector<RangeClassInfo> const& GetRangeClassInfos() const { return m_arg; }
         };
@@ -57,7 +58,7 @@ public:
         private:
             std::vector<SingleSelectStatementExp const*> const& m_arg;
         public:
-            UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg)
+            explicit UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg) : ParseArg(Type::UnionOrderBy), m_arg(arg) {}
             ~UnionOrderByArg() {}
             std::vector<SingleSelectStatementExp const*> const& GetUnionClauses() const { return m_arg; }
         };
