@@ -109,12 +109,6 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& int64Val, JsonValueCR json)
     if (json.isNull())
         return ERROR;
 
-    if (json.isIntegral())
-        {
-        int64Val = json.asInt64();
-        return SUCCESS;
-        }
-
     if (json.isString())
         {
         Utf8CP strVal = json.asCString();
@@ -126,6 +120,12 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& int64Val, JsonValueCR json)
             }
 
         sscanf(strVal, "%" SCNi64, &int64Val);
+        return SUCCESS;
+        }
+
+    if (json.isConvertibleTo(Json::ValueType::intValue))
+        {
+        int64Val = json.asInt64();
         return SUCCESS;
         }
 

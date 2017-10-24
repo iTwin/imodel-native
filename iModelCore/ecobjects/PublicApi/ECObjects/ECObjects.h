@@ -178,6 +178,8 @@ enum class ECObjectsStatus
     UnableToSetMixinCustomAttribute,
     KindOfQuantityNotCompatible,
     InvalidFormatUnitSet,
+    PropertyHasNoKindOfQuantity,
+    PropertyValueNull,
     };
 
 //! Result status for deserializing an ECSchema from Xml
