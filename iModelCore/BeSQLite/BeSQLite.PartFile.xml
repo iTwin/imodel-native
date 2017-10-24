@@ -16,9 +16,7 @@
     <Part Name="BeSQLite" BentleyBuildMakeFile="BeSQLite.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
-        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
-        <SubPart PartName="snappy" PartFile="Zlib" Repository="Libsrc-Compress" />
-        <SubPart PartName="lzma" PartFile="Zlib" Repository="Libsrc-Compress" />
+        <SubPart PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"  PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
