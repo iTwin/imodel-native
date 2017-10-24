@@ -10,7 +10,6 @@
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/TestHelpers/DgnClientFxTests.h>
-#include <TestsBackdoor/TestApplication.h>
 
 #define POINTS_MATCH_TOLERANCE 1.0E-7    //1mm
 
