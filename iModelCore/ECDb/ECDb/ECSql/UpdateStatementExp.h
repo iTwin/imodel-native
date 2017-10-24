@@ -25,7 +25,7 @@ struct UpdateStatementExp final : Exp
         int m_whereClauseIndex;
         int m_optionsClauseIndex;
 
-        std::vector<RangeClassInfo> m_finalizeParsingArgCache;
+        std::vector<RangeClassInfo> m_rangeClassRefExpCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void _ToECSql(ECSqlRenderContext&) const override;

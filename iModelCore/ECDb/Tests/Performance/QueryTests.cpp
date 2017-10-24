@@ -296,7 +296,9 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
             m_ecdb.CloseDb();
             }
     };
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Muhammad.Hassan                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceQueryTests, SelectFromComplexClass)
     {
     ConnectToDb();
@@ -421,16 +423,25 @@ TEST_F(PerformanceQueryTests, SelectFromComplexClass_WithoutAdapter)
     LOG.infov("Iterating over %d rows (with %d repetitions) took %.4f msecs.", expectedRowCount, repetitionCount, timer.GetElapsedSeconds() * 1000.0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Carole.MacDonald                    07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceQueryTests, LoadByInstanceIDForAllClasses)
     {
     LoadByInstanceId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Carole.MacDonald                    07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceQueryTests, QueryAllInstancesOfEachClass)
     {
     QueryAllInstances();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Carole.MacDonald                    07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceQueryTests, QueryAllInstancesOfEachClassWithOrderBy)
     {
     QueryAllInstancesWithOrderBy();

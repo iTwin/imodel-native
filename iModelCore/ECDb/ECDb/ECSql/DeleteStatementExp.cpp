@@ -36,13 +36,13 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
         ClassNameExp const* classNameExp = GetClassNameExp();
         std::vector<RangeClassInfo> classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
-        m_finalizeParsingArgCache = std::move(classList);
-        ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_finalizeParsingArgCache));
+        m_rangeClassRefExpCache = std::move(classList);
+        ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
         return FinalizeParseStatus::NotCompleted;
         }
 
     ctx.PopArg();
-    m_finalizeParsingArgCache.clear();
+    m_rangeClassRefExpCache.clear();
     return FinalizeParseStatus::Completed;
     }
 

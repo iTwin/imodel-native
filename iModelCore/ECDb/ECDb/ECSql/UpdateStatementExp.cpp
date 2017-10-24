@@ -39,14 +39,14 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
         ClassNameExp const* classNameExp = GetClassNameExp();
         std::vector<RangeClassInfo> classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
-        m_finalizeParsingArgCache = classList;
-        ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_finalizeParsingArgCache));
+        m_rangeClassRefExpCache = classList;
+        ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
         ctx.PopArg();
-        m_finalizeParsingArgCache.clear();
+        m_rangeClassRefExpCache.clear();
 
         return FinalizeParseStatus::Completed;
         }

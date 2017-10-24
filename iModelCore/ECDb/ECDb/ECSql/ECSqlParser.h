@@ -48,7 +48,7 @@ public:
 
         public:
             explicit RangeClassArg(std::vector<RangeClassInfo> const& arg) :ParseArg(Type::RangeClass), m_arg(arg) {}
-            ~RangeClassArg() {}
+            ~RangeClassArg() {};
             std::vector<RangeClassInfo> const& GetRangeClassInfos() const { return m_arg; }
         };
 
@@ -57,7 +57,7 @@ public:
         private:
             std::vector<SingleSelectStatementExp const*> const& m_arg;
         public:
-            explicit UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg) :ParseArg(Type::UnionOrderBy), m_arg(arg) {}
+            UnionOrderByArg(std::vector<SingleSelectStatementExp const*> const& arg)
             ~UnionOrderByArg() {}
             std::vector<SingleSelectStatementExp const*> const& GetUnionClauses() const { return m_arg; }
         };
@@ -87,7 +87,6 @@ public:
     IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
-
     };
 
 //=======================================================================================

@@ -417,11 +417,10 @@ void OrderByExp::_ToECSql(ECSqlRenderContext& ctx) const
         isFirstItem = false;
         }
     }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       08/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ComputedExp const* OrderByExp::GetFirstNonePropertyNamExpression() const
+ComputedExp const* OrderByExp::FindIncompatibleOrderBySpecExpForUnion() const
     {
     for (auto children : GetChildren())
         {
@@ -460,7 +459,7 @@ Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseCo
 
         if (m_unionClauses.size() > 1)
             {
-            if (ComputedExp const* exp = GetFirstNonePropertyNamExpression())
+            if (ComputedExp const* exp = FindIncompatibleOrderBySpecExpForUnion())
                 {
                 parseContext.Issues().Report("'%s' ORDER BY term does not match any column in the result set.", exp->ToECSql().c_str());
                 return FinalizeParseStatus::Error;
@@ -745,8 +744,8 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         {
         if (!IsRowConstructor())
             {
-            m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions();
-            ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_finalizeParsingArgCache));
+            m_rangeClassRefExpCache = GetFrom()->FindRangeClassRefExpressions();
+            ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
             }
 
         return FinalizeParseStatus::NotCompleted;
@@ -756,7 +755,7 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
         if (!IsRowConstructor())
             {
             ctx.PopArg();
-            m_finalizeParsingArgCache.clear();
+            m_rangeClassRefExpCache.clear();
             }
         }
 
@@ -1052,9 +1051,9 @@ Utf8CP SelectStatementExp::OperatorToString(CompoundOperator op)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) 
+Exp::FinalizeParseStatus SelectStatementExp::_FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode)
     {
-    if (GetRhsStatement() && GetFirstStatement().GetOrderBy())
+    if (GetRhsStatement() != nullptr && GetFirstStatement().GetOrderBy() != nullptr)
         {
         parseContext.Issues().Report("ORDER BY clause must not be followed by UNION clause.");
         return FinalizeParseStatus::Error;

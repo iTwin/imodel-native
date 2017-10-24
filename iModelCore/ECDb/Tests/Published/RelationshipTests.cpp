@@ -5899,10 +5899,9 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
     };
 
 
-
-//---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/2014
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Muhammad.Hassan                   10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrengthTestFixture, BackwardEmbedding)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
@@ -6012,9 +6011,9 @@ TEST_F(RelationshipStrengthTestFixture, RelationshipTest)
     ASSERT_TRUE(IsNavigationPropertySet(child2, "Parent1"));
     }
 
-//---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/2014
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Muhammad.Hassan                   10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("BackwardRelationshipStrengthTest.ecdb", SchemaItem(GetTestSchemaXml())));
