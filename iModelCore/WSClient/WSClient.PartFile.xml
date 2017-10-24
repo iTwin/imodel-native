@@ -107,7 +107,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BentleyDesktopClient" BentleyBuildMakeFile="BentleyDesktopClientCCApi.prewire.mke" OnlyPlatforms="x64">
+    <Part Name="BentleyDesktopClient" BentleyBuildMakeFile="BentleyDesktopClientCCApi.prewire.mke" OnlyPlatforms="x64,x86">
         <SdkSource>Vancouver-BentleyDesktopClient</SdkSource>
     </Part>
 

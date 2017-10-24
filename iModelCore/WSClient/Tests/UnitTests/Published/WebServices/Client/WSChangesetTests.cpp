@@ -1371,7 +1371,7 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_MultipleErrorInstances_CallsE
             {"TestSchemaC.TestClassC", "C"}
         };
 
-    int errorCount = 0;
+    size_t errorCount = 0;
     auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
         {
         errorCount++;
