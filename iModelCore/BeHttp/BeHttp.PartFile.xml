@@ -35,9 +35,7 @@
         <SubPart PartName="BeHttpLibrary-Curl"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="BeSQLite"        PartFile="BeSQLite"     Repository="BeSQLite"/>
-        <SubPart PartName="Zlib"            PartFile="Zlib"         Repository="Libsrc-Compress"/>
-        <SubPart PartName="snappy"          PartFile="Zlib"         Repository="Libsrc-Compress"/>
-        <SubPart PartName="lzma"            PartFile="Zlib"         Repository="Libsrc-Compress"/>
+        <SubPart PartName="Compress"        PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="FollyShim"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeHttp$(libext)</Libs>
