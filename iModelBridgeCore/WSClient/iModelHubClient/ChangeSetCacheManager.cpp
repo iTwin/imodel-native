@@ -64,7 +64,7 @@ StatusTaskPtr ChangeSetCacheManager::EnableBackgroundDownload() const
             
         if (changeSetEventPtr.IsValid() && m_connection)
             {
-            PredownloadChangeSet(m_connection, changeSetId)->GetResult();
+            ExecuteAsync(PredownloadChangeSet(m_connection, changeSetId));
             }
         });
     return m_connection->SubscribeEventsCallback(&eventTypes, m_preDownloadCallback);

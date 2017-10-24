@@ -12,7 +12,6 @@
 #include <DgnPlatform/LocksManager.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
 #include "Error.xliff.h"
-
 USING_NAMESPACE_BENTLEY_DGN
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
@@ -192,9 +191,8 @@ void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevision
 // DO NOT nest methods that are using this method, because it will result in nested retry
 // DO add this wrapper for top level methods that do not fail if executed multiple times in a row
 //=======================================================================================
-struct ExecutionManager
-    {
-    static bool IsErrorForRetry(Error::Id errorId);
+
+    bool IsErrorForRetry(Error::Id errorId);
 
     template <typename T>
     static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallback)
@@ -220,6 +218,18 @@ struct ExecutionManager
                 return *finalResult;
                 });
         }
-    };
+        
+    template <typename T>
+    static T& ExecuteAsync(AsyncTaskPtr<T> task, int wait = 60000)
+        {
+        task->WaitFor(wait);
+
+        if (task->IsCompleted())
+            return task->GetResult();
+
+        return Result<T>::Error(Error::Id::ExecutionTimeout).GetValue();
+        }
+
+   
 
 END_BENTLEY_IMODELHUB_NAMESPACE
