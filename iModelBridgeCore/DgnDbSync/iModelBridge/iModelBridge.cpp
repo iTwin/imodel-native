@@ -137,6 +137,8 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         return nullptr;
         }
 
+    _GetParams().SetJobSubjectId(jobsubj->GetElementId());
+
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
@@ -250,6 +252,8 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
                 return BSIERROR;
                 }
             }
+
+        _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
         if (BSISUCCESS != _ConvertToBim(*jobsubj))
             {

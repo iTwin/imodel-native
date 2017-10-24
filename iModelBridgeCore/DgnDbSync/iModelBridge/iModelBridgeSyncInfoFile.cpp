@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
 #include <Logging/bentleylogging.h>
+#include <DgnPlatform/JsonUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -741,4 +742,50 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
         }
 
     return BSISUCCESS;
+    }
+
+//=======================================================================================
+// The "hash" of this item is the JSON representation of a 3x4 Transform
+// @bsiclass                                    BentleySystems 
+//=======================================================================================
+struct JobTransformSourceItem : iModelBridgeSyncInfoFile::ISourceItem
+    {
+    Transform m_trans;
+    Utf8String m_id;
+
+    JobTransformSourceItem(Utf8StringCR id, TransformCR t) : m_id(id), m_trans(t) {;}
+
+    Utf8String _GetId() override {return m_id;}
+    double _GetLastModifiedTime() override {return 0.0;}
+    Utf8String _GetHash() override {Json::Value json; JsonUtils::TransformToJson(json, m_trans); return json.ToString();}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR newTrans, TransformR oldTrans,
+    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID srid, Utf8CP kind, Utf8StringCR id)
+    {
+    newTrans = GetSpatialDataTransform();
+
+    JobTransformSourceItem docItem(id, newTrans);
+
+    auto change = changeDetector._DetectChange(srid, kind, docItem);
+    iModelBridgeSyncInfoFile::ConversionResults results;
+    changeDetector._UpdateBimAndSyncInfo(results, change);
+    if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New)
+        {
+        oldTrans.InitIdentity();
+        return _GetParams().IsUpdating();    // return true only if bridge is updating, not if it is doing its initial conversion
+        }
+    if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
+        {
+        Json::Value json;
+        json.From(change.GetSyncInfoRecord().GetSourceState().GetHash());
+        JsonUtils::TransformFromJson(oldTrans, json);
+        return true;
+        }
+
+    oldTrans = newTrans;
+    return false;
     }

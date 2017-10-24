@@ -296,6 +296,7 @@ struct iModelBridge
         IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
+        DgnElementId m_jobSubjectId;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
@@ -345,6 +346,8 @@ struct iModelBridge
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
         void SetSpatialDataTransform(Transform const& t) {m_spatialDataTransform = t;} //!< Optional. The transform that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data.
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
+        void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
+        DgnElementId GetJobSubjectId() const {return m_jobSubjectId;} //!< Identifies the job Subject element
 
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
@@ -658,6 +661,12 @@ public:
     //! Get a reference to the bridge's parameters. This base class assumes that the bridge
     //! has no additional parameters of its own.
     Params& _GetParams() override {return m_params;}
+
+    //! Look up the job Subject element
+    SubjectCPtr GetJobSubject() const {return m_db->Elements().Get<Subject>(m_params.GetJobSubjectId());}
+
+    //! Return the job's spatial data transform
+    Transform GetSpatialDataTransform() {return iModelBridge::GetSpatialDataTransform(*GetJobSubject());}
     };
 
 END_BENTLEY_DGN_NAMESPACE
