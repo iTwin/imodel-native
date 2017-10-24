@@ -264,6 +264,7 @@ struct Task : RefCounted<NonCopyableClass>
         RenderFrame,
         RenderTile,
         ResetTarget,
+		SetFlash,
         SetHiliteSet,
     };
 
@@ -2393,7 +2394,6 @@ struct Decorations
     DecorationListPtr   m_world;        // drawn with zbuffer, with default lighting, smooth shading
     DecorationListPtr   m_worldOverlay; // drawn in overlay mode, world units
     DecorationListPtr   m_viewOverlay;  // drawn in overlay mode, view units
-    DgnElementId        m_flashedElem;  // the ID of the element currently flashed by the locate cursor
 };
 
 //=======================================================================================
@@ -3084,7 +3084,7 @@ protected:
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
-        static void RecordGraphicsStats();
+    static void RecordGraphicsStats();
     virtual void _OnDestroy() {}
     virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
     virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
@@ -3098,6 +3098,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
+    virtual void _SetFlashed(DgnElementId, double) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
