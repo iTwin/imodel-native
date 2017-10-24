@@ -245,12 +245,9 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
                     ClassNameExp const& classNameExp = classRefExp.GetAs<ClassNameExp>();
                     ECN::ECClassCR ecClass = classNameExp.GetInfo().GetMap().GetClass();
 
-                    if (m_propertyPath.Size() == 2)
-                        {
-                        if (ecClass.GetName().EqualsIAscii(firstPropPathEntry.GetName()))
-                            classIndex = 0;
-                        }
-                    else
+                    if (ecClass.GetName().EqualsIAscii(firstPropPathEntry.GetName()))
+                        classIndex = 0;
+                    else if (m_propertyPath.Size() > 2)
                         {
                         PropertyPath::Location const& secondPropPathEntry = m_propertyPath[1];
                         if (!secondPropPathEntry.HasArrayIndex())
@@ -268,7 +265,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
             if (classIndex >= 0)
                 {
-                BeAssert(((int) m_propertyPath.Size()) > (classIndex + 1));
+                BeAssert(classIndex < (int) m_propertyPath.Size());
                 if (classRefExp.ContainsProperty(m_propertyPath[(size_t) (classIndex + 1)].GetName()))
                     classMatches.push_back(std::make_pair<RangeClassRefExp const*, size_t>(&classRefExp, (size_t) classIndex));
                 }

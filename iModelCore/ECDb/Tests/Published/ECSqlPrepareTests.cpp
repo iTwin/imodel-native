@@ -199,6 +199,7 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT PStructProp.i FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P, p.ECInstanceId FROM ecsql.PSA p, ecsql.P c"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA p, ecsql.P")) << "Duplicate class name / alias";
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM meta.ECClassDef this WHERE ECInstanceId IN (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM meta.ECClassDef this WHERE ECInstanceId = (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId)"));
@@ -208,7 +209,7 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef WHERE ECSchemaDef.Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef WHERE Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE Name=?"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE meta.ECSchemaDef.Name=?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT 1 FROM meta.ECSchemaDef s WHERE meta.ECSchemaDef.Name=?")) << "If alias is specified, it must be used in other expressions";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ECDbMeta.ECSchemaDef WHERE ECDbMeta.ECSchemaDef.Name=?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT meta.ECSchemaDef.Name FROM meta.ECSchemaDef"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT meta.ECSchemaDef.Name FROM ECDbMeta.ECSchemaDef"));
@@ -219,8 +220,8 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECDbMeta.ECSchemaDef.ECClassId FROM ECDbMeta.ECSchemaDef"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECDbMeta.ECSchemaDef.ECClassId FROM meta.ECSchemaDef"));
 
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT p.ECInstanceId,p.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND meta.ClassHasAllBaseClasses.SourceECInstanceId=ecsql.P.ECClassId AND meta.ClassHasAllBaseClasses.TargetECInstanceId = 500"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECSqlTest.P.ECInstanceId,ECSqlTest.P.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND ECDbMeta.ClassHasAllBaseClasses.SourceECInstanceId=ECSqlTest.P.ECClassId AND ECDbMeta.ClassHasAllBaseClasses.TargetECInstanceId = 500"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT p.ECInstanceId,p.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND meta.ClassHasAllBaseClasses.SourceECInstanceId=p.ECClassId AND meta.ClassHasAllBaseClasses.TargetECInstanceId = 500"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECSqlTest.P.ECInstanceId,ECSqlTest.P.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND ECDbMeta.ClassHasAllBaseClasses.SourceECInstanceId=ECSqlTest.P.ECClassId AND ECDbMeta.ClassHasAllBaseClasses.TargetECInstanceId = 500")) << "If alias is specified, it must be used in other expressions";
     }
 
 //---------------------------------------------------------------------------------------

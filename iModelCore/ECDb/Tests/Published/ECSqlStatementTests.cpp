@@ -21,7 +21,7 @@ struct ECSqlStatementTestFixture : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlStatus, Misc)
+TEST_F(ECSqlStatementTestFixture, ECSqlStatus)
     {
     ECSqlStatus empty;
     ASSERT_EQ(ECSqlStatus::Status::Success, empty.Get());
@@ -92,38 +92,79 @@ TEST(ECSqlStatus, Misc)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                             Muhammad Hassan                         06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PowSqlFunction : ScalarFunction
-    {
-    private:
-
-        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
-            {
-            if (args[0].IsNull() || args[1].IsNull())
-                {
-                ctx.SetResultError("Arguments to POW must not be NULL", -1);
-                return;
-                }
-
-            double base = args[0].GetValueDouble();
-            double exp = args[1].GetValueDouble();
-
-            double res = std::pow(base, exp);
-            ctx.SetResultDouble(res);
-            }
-
-    public:
-        PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ClassAliases)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("classaliases.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="A">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="A" typeName="int" />
+                     </ECEntityClass>
+                </ECSchema>)xml")));
+
+    ECInstanceKey a1Key, a2Key, b1Key, b2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(a1Key, "INSERT INTO ts.A(Name,Size) VALUES('A1', 10)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(a2Key, "INSERT INTO ts.A(Name,Size) VALUES('A2', 20)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(b1Key, "INSERT INTO ts.B(Name,A) VALUES('B1', 11)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(b2Key, "INSERT INTO ts.B(Name,A) VALUES('B2', 22)"));
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DISTINCT A.Name FROM ts.A C, ts.B A ORDER BY A.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("B1", stmt.GetValueText(0)) << "A is expected to refer to alias A. ECSQL: " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("B2", stmt.GetValueText(0)) << "A is expected to refer to alias A. ECSQL: " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DISTINCT A.Name FROM ts.A B, ts.B A ORDER BY A.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("B1", stmt.GetValueText(0)) << "A is expected to refer to alias A. ECSQL: " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("B2", stmt.GetValueText(0)) << "A is expected to refer to alias A. ECSQL: " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DISTINCT A FROM ts.A C, ts.B A ORDER BY A"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(11, stmt.GetValueInt(0)) << "A is expected to refer to Property A in class B. ECSQL: " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(22, stmt.GetValueInt(0)) << "A is expected to refer to Property A in class B. ECSQL: " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DISTINCT Size FROM ts.A C, ts.B A ORDER BY Size"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(10, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(20, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,6 +174,29 @@ TEST_F(ECSqlStatementTestFixture, UnionTests)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
+
+    struct PowSqlFunction final : ScalarFunction
+        {
+        private:
+
+            void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+                {
+                if (args[0].IsNull() || args[1].IsNull())
+                    {
+                    ctx.SetResultError("Arguments to POW must not be NULL", -1);
+                    return;
+                    }
+
+                double base = args[0].GetValueDouble();
+                double exp = args[1].GetValueDouble();
+
+                double res = std::pow(base, exp);
+                ctx.SetResultDouble(res);
+                }
+
+        public:
+            PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
+        };
 
     int rowCount;
     ECSqlStatement stmt;
@@ -1201,7 +1265,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlStatementTestFixture, CoalesceInECSql)
+TEST_F(ECSqlStatementTestFixture, Coalesce)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
