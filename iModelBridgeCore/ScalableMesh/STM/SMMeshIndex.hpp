@@ -453,6 +453,16 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     if (!IsLoaded())
         Load();
 
+    if (progress != nullptr && this->m_nodeHeader.m_level == 0)
+        {
+        startTime = clock();
+        loadDataTime = 0;
+        convertTime = 0;
+        storeTime = 0;
+        nbProcessedNodes = 0;
+        nbNodes = 0;
+        }
+
     ++nbNodes;
 
     static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
