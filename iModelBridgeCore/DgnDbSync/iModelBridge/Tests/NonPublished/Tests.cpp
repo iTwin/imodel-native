@@ -809,6 +809,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
     ASSERT_TRUE(m_expect.anyChanges);
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
+    DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
     ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
     }
 
@@ -1185,6 +1186,8 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+
+        // *** TBD: Check that the elements moved
         }
 
     }
