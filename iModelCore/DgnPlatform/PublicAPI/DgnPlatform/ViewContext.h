@@ -474,7 +474,6 @@ public:
     DGNPLATFORM_EXPORT void SetViewBackground(Render::GraphicR graphic);
 
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
-    void SetFlashed(DgnElementId elemId) { m_decorations.m_flashedElem = elemId; }
 };  
 
 END_BENTLEY_DGN_NAMESPACE
