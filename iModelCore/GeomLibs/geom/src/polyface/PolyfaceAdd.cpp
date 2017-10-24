@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceAdd.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -734,10 +734,15 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
                 _AddColorIndex (colorIndex[i] - 1);
             }
         }
+
+    // push_back() with realloc is hot-spot for performance...
+    m_polyfacePtr->EdgeChain().reserve(m_polyfacePtr->EdgeChain().size() + source.GetEdgeChainCount());
     for (size_t i=0; i<source.GetEdgeChainCount(); i++)
         {
         int32_t const*            indexCP = edgeChain[i].GetIndexCP();
         PolyfaceEdgeChain       newChain (edgeChain[i].GetId());
+
+        newChain.ReserveIndices(edgeChain[i].GetIndexCount());
 
         // Needs work - remap ids.
         for (size_t j=0; j<edgeChain[i].GetIndexCount(); j++)

@@ -602,6 +602,7 @@ GEOMDLLIMPEXP size_t            GetIndexCount () const;
 //! @return false if any indices out of bounds.
 GEOMDLLIMPEXP bool GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const &source) const;
 
+void ReserveIndices(size_t count) { m_vertexIndices.reserve(count); }
 };
 
 typedef PolyfaceEdgeChain const*    PolyfaceEdgeChainCP;
