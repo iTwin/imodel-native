@@ -61,6 +61,7 @@
         <SubPart PartName="ORDBridgeInstallerFiles"/>
         <SubPart PartName="ORDBridgeLibrary" />
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync" />
+        <SubPart PartName="CiviliModelBridgesTested" />
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
     </Product>
