@@ -1584,7 +1584,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 		DSegment3d intersectLast = DSegment3d::From(drapedLine[maxDrapedPos], retroProjectPtLast);
 		last.ClosestApproachUnbounded(param1, param2, pt1, pt2, last, intersectLast);
 		last.PointToFractionParameter(param1, pt1);
-		if (param1 <1+1e-6)
+		if (param1 <1-1e-6)
 		{
 			drapedLine.insert(drapedLine.begin() + maxDrapedPos+1, transformedLine[lastSeg+1]);
 		}
