@@ -233,7 +233,8 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
-    auto result = Pull(callback, cancellationToken)->GetResult();
+    auto result = ExecuteAsync(Pull(callback, cancellationToken));
+
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
         BreakHelper::HitBreakpoint(Breakpoints::AfterDownloadChangeSets);
@@ -245,7 +246,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
         }
 
     auto pulledChangeSets = result.GetValue();
-    auto mergeResult = Merge(pulledChangeSets)->GetResult();
+    auto mergeResult = ExecuteAsync(Merge(pulledChangeSets));
 
     if (!mergeResult.IsSuccess())
         {
@@ -315,7 +316,7 @@ void Briefcase::SubscribeForChangeSetEvents()
             }
         });
     auto subscribeResult = SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
-    m_eventsAvailable = subscribeResult->GetResult().IsSuccess();
+    m_eventsAvailable = ExecuteAsync(subscribeResult).IsSuccess();
     }
 
 //---------------------------------------------------------------------------------------
@@ -338,7 +339,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool r
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushRepeated";
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
-    auto result = PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken)->GetResult();
+    auto result = ExecuteAsync(PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken));
 
     if (result.IsSuccess())
         {
@@ -398,7 +399,7 @@ void Briefcase::CheckCreatingChangeSet() const
         if (Utf8String::IsNullOrEmpty(creatingChangeSetId.c_str()))
             return;
 
-        auto creatingChangeSetResult = m_imodelConnection->GetChangeSetById(creatingChangeSetId)->GetResult();
+        auto creatingChangeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetById(creatingChangeSetId));
         if (creatingChangeSetResult.IsSuccess())
             {
             m_db->Revisions().FinishCreateRevision();
@@ -566,7 +567,7 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
 
     auto versionManager = m_imodelConnection->GetVersionsManager();
 
-    ChangeSetsInfoResult changeSetResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken)->GetResult();
+    ChangeSetsInfoResult changeSetResult = ExecuteAsync(versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
 
     if (!changeSetResult.IsSuccess())
         {
@@ -575,7 +576,7 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
         }
     auto changeSetInfos = changeSetResult.GetValue();
 
-    auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
+    auto changeSetsResult = ExecuteAsync(m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken));
     if (!changeSetsResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
@@ -610,7 +611,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
         }
 
     ChangeSetsInfoResult changeSetResult;
-    changeSetResult = m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken)->GetResult();
+    changeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
 
     if (!changeSetResult.IsSuccess())
         {
@@ -619,7 +620,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
         }
     auto changeSetInfos = changeSetResult.GetValue();
 
-    auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
+    auto changeSetsResult = ExecuteAsync(m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken));
     if (!changeSetsResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());

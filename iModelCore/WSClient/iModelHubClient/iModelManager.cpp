@@ -130,10 +130,10 @@ IBriefcaseManager::Response iModelManager::_ProcessRequest (Request const& req, 
 
     StatusResult result;
     if (queryOnly)
-        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken)->GetResult();
+        result = ExecuteAsync(m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken)->GetResult ();
+        result = ExecuteAsync(m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
     if (result.IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
@@ -154,7 +154,7 @@ RepositoryStatus iModelManager::_Demote (DgnLockSet const& locks, DgnCodeSet con
         return RepositoryStatus::ServerUnavailable;
 
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken)->GetResult ();
+    auto result = ExecuteAsync(m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken));
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;
@@ -176,7 +176,7 @@ RepositoryStatus iModelManager::_Relinquish (Resources which, DgnDbR db)
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
-    auto result = m_connection->RelinquishCodesLocksInternal (which, db.GetBriefcaseId (), ResponseOptions::None, m_cancellationToken)->GetResult ();
+    auto result = ExecuteAsync(m_connection->RelinquishCodesLocksInternal(which, db.GetBriefcaseId(), ResponseOptions::None, m_cancellationToken));
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
@@ -202,12 +202,12 @@ RepositoryStatus iModelManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeS
     tasks.insert(unavailableTask);
 
     AsyncTask::WhenAll(tasks)->Wait();
-    if (availableTask->GetResult().IsSuccess() && unavailableTask->GetResult().IsSuccess())
+    if (ExecuteAsync(availableTask).IsSuccess() && ExecuteAsync(unavailableTask).IsSuccess())
         {
-        locks = availableTask->GetResult().GetValue ().GetLocks ();
-        codes = availableTask->GetResult().GetValue ().GetCodes ();
-        unavailableLocks = unavailableTask->GetResult().GetValue().GetLocks();
-        unavailableCodes = unavailableTask->GetResult().GetValue().GetCodes();
+        locks = ExecuteAsync(availableTask).GetValue ().GetLocks ();
+        codes = ExecuteAsync(availableTask).GetValue ().GetCodes ();
+        unavailableLocks = ExecuteAsync(unavailableTask).GetValue().GetLocks();
+        unavailableCodes = ExecuteAsync(unavailableTask).GetValue().GetCodes();
         return RepositoryStatus::Success;
         }
     else
@@ -227,7 +227,7 @@ RepositoryStatus iModelManager::_QueryStates (DgnLockInfoSet& lockStates, DgnCod
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
-    auto result = m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken)->GetResult ();
+    auto result = ExecuteAsync(m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken));
 
     if (result.IsSuccess ())
         {
