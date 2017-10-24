@@ -50,26 +50,6 @@ DVec3d normal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::SpatialLocationModelPtr    OrthogonalGridPortion::CreateSubModel
-(
-) const
-    {
-    Dgn::SpatialLocationModelPtr model = SpatialLocationModel::Create (*this);
-    if (!model.IsValid ())
-        return nullptr;
-
-    Dgn::IBriefcaseManager::Request req;
-    GetDgnDb().BriefcaseManager ().PrepareForModelInsert (req, *model, Dgn::IBriefcaseManager::PrepareAction::Acquire);
-
-    if (Dgn::DgnDbStatus::Success != model->Insert ())
-        return nullptr;
-
-    return model;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalGridPortionPtr        OrthogonalGridPortion::CreateAndInsert
 (
 StandardCreateParams const& params
@@ -82,8 +62,8 @@ StandardCreateParams const& params
     if (!thisGrid->Insert ().IsValid())
         return nullptr;
 
-    Dgn::SpatialLocationModelPtr subModel = thisGrid->CreateSubModel ();
-   
+    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel ();
+    
     if (subModel.IsValid ())
         {
         GridElementVector horizontalElements = CreateGridElements (params, subModel.get(), true);
@@ -105,23 +85,6 @@ StandardCreateParams const& params
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::SpatialLocationModelPtr    OrthogonalGridPortion::GetSurfacesModel
-(
-) const
-    {
-    Dgn::DgnModelPtr subModel = GetSubModel ();
-
-    if (subModel.IsValid ())
-        {
-        Dgn::SpatialLocationModelPtr surfacesModel = dynamic_cast<Dgn::SpatialLocationModel*>(subModel.get ());
-        BeAssert (surfacesModel.IsValid () && "GridPortion submodel is not spatialLocationModel!");
-        return surfacesModel;
-        }
-    return CreateSubModel ();
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -166,4 +166,42 @@ Dgn::ElementIterator GridPortion::MakeIterator () const
     return iterator;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::SpatialLocationModelPtr    GridPortion::GetSurfacesModel
+(
+) const
+    {
+    Dgn::DgnModelPtr subModel = GetSubModel ();
+
+    if (subModel.IsValid ())
+        {
+        Dgn::SpatialLocationModelPtr surfacesModel = dynamic_cast<Dgn::SpatialLocationModel*>(subModel.get ());
+        BeAssert (surfacesModel.IsValid () && "GridPortion submodel is not spatialLocationModel!");
+        return surfacesModel;
+        }
+    return CreateSubModel ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
+(
+) const
+    {
+    Dgn::SpatialLocationModelPtr model = SpatialLocationModel::Create (*this);
+    if (!model.IsValid ())
+        return nullptr;
+
+    Dgn::IBriefcaseManager::Request req;
+    GetDgnDb().BriefcaseManager ().PrepareForModelInsert (req, *model, Dgn::IBriefcaseManager::PrepareAction::Acquire);
+
+    if (Dgn::DgnDbStatus::Success != model->Insert ())
+        return nullptr;
+
+    return model;
+    }
+
 END_GRIDS_NAMESPACE

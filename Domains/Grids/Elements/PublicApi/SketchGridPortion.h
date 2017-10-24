@@ -37,6 +37,11 @@ public:
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             sketch grid
     GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal);
+
+    //! Creates an empty sketch grid
+    //! @param[in]  gridSurface   gridSurfacel for the sketchgridportion
+    //! @return             SUCCESS if successful
+    GRIDELEMENTS_EXPORT         BentleyStatus AddGridSurface (GridSurfacePtr gridSurface);
 };
 
 END_GRIDS_NAMESPACE

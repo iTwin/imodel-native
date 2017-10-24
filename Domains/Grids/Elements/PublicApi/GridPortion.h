@@ -38,6 +38,8 @@ struct EXPORT_VTABLE_ATTRIBUTE GridPortion : SurfaceSet
 private:
     BE_PROP_NAME (Normal);
 
+    Dgn::SpatialLocationModelPtr    CreateSubModel () const;
+
 protected:
 
     //! creates the GridPortion.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
@@ -57,6 +59,11 @@ protected:
     GRIDELEMENTS_EXPORT static GridPortionPtr Create(Dgn::DgnModelCR model, DVec3d normal);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPortion, GRIDELEMENTS_EXPORT)
+
+
+    //! gets the surfaces model
+    //! @return                 the surfaces model
+    GRIDELEMENTS_EXPORT Dgn::SpatialLocationModelPtr    GetSurfacesModel () const;
 
     //! Translates grid to given point
     //! @param[in] grid     grid to translate

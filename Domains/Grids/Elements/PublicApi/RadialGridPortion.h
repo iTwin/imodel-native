@@ -82,10 +82,19 @@ public:
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
 
+    //! Creates an empty radial grid
+    //! @param[in]  model   model for the radialgridportion
+    //! @param[in]  normal  perpendicularity plane of this Grid
+    //! @return             Radial grid
+    GRIDELEMENTS_EXPORT static RadialGridPortionPtr CreateAndInsert (CreateParams params);
+
     //! Creates radial grid and returns it as a map where DEFAULT_AXIS maps to grid elements
     //! @param[in] params   grid parameters containing information about the grid. For more info look up CreateParams
     //! @return             GridAxisMap containing the grid surfaces
     GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview(CreateParams params);
+
+
+public:     //TODO: remove all below
 
     //! Creates radial grid and inserts its elements to db
     //! @param[out] grid    created grid elements

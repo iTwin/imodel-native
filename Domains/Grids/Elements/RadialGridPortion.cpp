@@ -107,14 +107,26 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
+// @bsimethod                                    Jonas.Valiunas                     10/17
 //---------------------------------------------------------------------------------------
-BentleyStatus RadialGridPortion::CreateAndInsert(GridAxisMap& grid, CreateParams params)
+RadialGridPortionPtr RadialGridPortion::CreateAndInsert (CreateParams params)
     {
-    GridElementVector radialGrid = CreateGridPreview(params);
+    RadialGridPortionPtr thisGrid = new RadialGridPortion (params);
+
+    BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting Radial grid");
+
+    if (!thisGrid->Insert ().IsValid ())
+        return nullptr;
+
+    GridAxisMap grid;
+    CreateParams alteredParams = params;
+    alteredParams.m_model = thisGrid->GetSurfacesModel ().get();
+    GridElementVector radialGrid = CreateGridPreview (params);
     grid[DEFAULT_AXIS] = radialGrid;
 
-    return InsertGridMapElements(grid);
+    InsertGridMapElements (grid);
+
+    return thisGrid;
     }
 
 END_GRIDS_NAMESPACE

@@ -112,7 +112,6 @@ public:     //public - non-exported
             {}
         };
 private:
-    Dgn::SpatialLocationModelPtr    CreateSubModel () const;
 
     static BentleyStatus            ValidateBySurfacesParams (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
     static bool                     AreSurfacesCoplanar (bvector<CurveVectorPtr> const& surfaces);
@@ -160,10 +159,6 @@ protected:
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion, GRIDELEMENTS_EXPORT)
-
-    //! gets the surfaces model
-    //! @return                 the surfaces model
-    GRIDELEMENTS_EXPORT Dgn::SpatialLocationModelPtr    GetSurfacesModel () const;
 
     //! Creates orthogonal grid
     //! @param[in]  params    grid parameters containing information about the grid. For more info look up CreateParams

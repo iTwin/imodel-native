@@ -48,4 +48,5 @@ DVec3d          normal
     return new SketchGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
+
 END_GRIDS_NAMESPACE
