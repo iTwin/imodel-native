@@ -49,7 +49,7 @@ protected:
     DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;
     DGNDBSYNC_EXPORT void           _CloseSource (BentleyStatus) override;
     DGNDBSYNC_EXPORT void           _DeleteSyncInfo () override;
-    DGNDBSYNC_EXPORT void           _OnSourceFileDeleted () override;
+    DGNDBSYNC_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
     DGNDBSYNC_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&           _GetParams () override { return m_options; }
     DGNDBSYNC_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;

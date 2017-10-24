@@ -169,9 +169,38 @@ DgnElementId Converter::WriteRepositoryLink(DgnV8FileR file)
     Utf8String codevalue, uri;
     ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
 
-    auto rlinkId = iModelBridge::WriteRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue, uri);
-    BeAssert(rlinkId.IsValid());
-    return rlinkId;
+    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue.c_str(), uri.c_str());
+
+    auto rlinkPersist = GetDgnDb().Elements().Get<RepositoryLink>(rlink->GetElementId());
+    if (rlinkPersist.IsValid())
+        {
+        auto hashNew = iModelBridge::ComputeRepositoryLinkHash(*rlink);
+        auto hashOld = iModelBridge::ComputeRepositoryLinkHash(*rlinkPersist);
+        if (hashNew.GetHashString().Equals(hashOld.GetHashString()))
+            {
+            // If the link hasn't changed, then don't request locks or write to the BIM.
+            return rlink->GetElementId();
+            }
+        }
+
+    if (!GetDgnDb().BriefcaseManager().IsBulkOperation())
+        {
+        // Request locks and codes explicity. That is because a bridge can possibly create a RepositoryLink in one of its callbacks
+        // such as _OpenSource that is called before we go into bulk insert mode.
+        IBriefcaseManager::Request req;
+        rlink->PopulateRequest(req, (rlink->GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
+        GetDgnDb().BriefcaseManager().Acquire(req).Result();
+        }
+
+    auto rlinkPost = rlink->GetElementId().IsValid()? rlink->Update(): rlink->Insert();
+
+    if (!rlinkPost.IsValid())
+        {
+        _OnFatalError();
+        return DgnElementId();
+        }
+
+    return rlinkPost->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -928,6 +957,12 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         }
     else if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) == classId)
         {
+        if (m_spatialTransformCorrectionsApplied)
+            {
+            BeAssert(false && "Load all spatial models in ImportSpatialModels. You must not try to load/create spatial models after corrections have been applied.");
+            return DgnModelId();
+            }
+
         SubjectCR parentSubject = _GetSpatialParentSubject();
 
         DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, newName);
@@ -1277,6 +1312,8 @@ Converter::Converter(Params const& params)
     m_currIdPolicy = StableIdPolicy::ById;
 
     m_rootTrans.InitIdentity();
+    m_rootTransChange.InitIdentity();
+    m_jobTrans.InitIdentity();
 
     m_monitor = new Monitor;
 
@@ -1449,8 +1486,6 @@ void Converter::_OnConversionComplete()
         OnCreateComplete();
     else
         OnUpdateComplete();
-
-    ValidateJob();
 
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
@@ -2969,7 +3004,7 @@ DgnElementPtr Converter::CreateNewElement(DgnModel& model, DgnClassId elementCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::AddResolvedModelMapping(ResolvedModelMapping const& v8mm)
+void RootModelConverter::_AddResolvedModelMapping(ResolvedModelMapping const& v8mm)
     {
     m_v8ModelMappings.insert(v8mm);
     }
@@ -2985,7 +3020,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         if (res.IsValid())
             {
             if (!_FindModelForDgnV8Model(*v8ModelRef.GetDgnModelP(), trans).IsValid())
-                AddResolvedModelMapping(res);
+                _AddResolvedModelMapping(res);
             GetChangeDetector()._OnModelSeen(*this, res);
             return res;
             }
@@ -3018,7 +3053,10 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         // => We must make a new, transformed copy of the DgnV8 model.
         DgnAttachmentCP thisAttachment = v8ModelRef.AsDgnAttachmentCP();
         if (nullptr == thisAttachment)
+            {
+            BeAssert(false && "transformed copies are for attachments only!");
             return unresolvedMapping;
+            }
 
         bool base = true;
         while (nullptr != thisAttachment)
@@ -3076,7 +3114,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
 
     ResolvedModelMapping v8mm(*model, v8Model, mapping);
 
-    AddResolvedModelMapping(v8mm);
+    _AddResolvedModelMapping(v8mm);
 
     GetChangeDetector()._OnModelInserted(*this, v8mm, v8ModelRef.AsDgnAttachmentCP());
     GetChangeDetector()._OnModelSeen(*this, v8mm);
@@ -3112,7 +3150,7 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         if (res.IsValid())
             {
             if (!_FindModelForDgnV8Model(v8Model, trans).IsValid())
-                AddResolvedModelMapping(res);
+                _AddResolvedModelMapping(res);
             GetChangeDetector()._OnModelSeen(*this, res);
             return res;
             }
@@ -3144,7 +3182,7 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
 
     ResolvedModelMapping v8mm(*model, v8Model, mapping);
 
-    AddResolvedModelMapping(v8mm);
+    _AddResolvedModelMapping(v8mm);
 
     GetChangeDetector()._OnModelInserted(*this, v8mm, nullptr);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
@@ -3393,12 +3431,16 @@ void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model)
+void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, SubjectCR jobSubject)
     {
     m_rootModelRef = &rootV8Model;
     m_isRootModelSpatial = ShouldConvertToPhysicalModel(rootV8Model);
     m_rootFile = rootV8Model.GetDgnFileP();
     _ComputeCoordinateSystemTransform();
+
+    Transform bridgeCorrection;
+    if (BSISUCCESS == JobSubjectUtils::GetTransform(bridgeCorrection, jobSubject))
+        m_rootTrans = Transform::FromProduct(bridgeCorrection, m_rootTrans);
     }
 
 /*---------------------------------------------------------------------------------**//**

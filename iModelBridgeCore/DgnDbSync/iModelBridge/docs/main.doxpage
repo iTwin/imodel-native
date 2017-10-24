@@ -44,6 +44,8 @@ a bridge to do one-off publishing or to serve as a test harness for the bridge's
 
 See @ref ANCHOR_iModelUnitsAndGCS "Units and GCS" for converting source data into the coordinate system of the iModel.
 
+See @ref ANCHOR_TrackingDocuments "Tracking Documents" for information on how a bridge must track documents.
+
 See @ref ANCHOR_Provenance "Provenance" for the provenance that bridges must created and maintain.
 
 @anchor iModelBridge_getInstance
@@ -117,7 +119,7 @@ Here is a diagram of how the framework and bridges are run by Bentley Automation
 @anchor ANCHOR_BridgeIssuesAndLogging
 <h2>Reporting Issues and Logging Diagnostic Data</h2>
 The bridge can write messages to a specially named "issues" file in the staging directory. See BentleyApi::Dgn::iModelBridge::Params::GetReportFileName.
-The content of the issues file are displayed to the user at the end of the job run. 
+The content of the issues file are displayed to the user at the end of the job run. See BentleyApi::Dgn::iModelBridge::ReportIssue for a convenience function to write to the issues file.
 
 The bridge should use Bentley logging to log detailed information in order to help with the diagnosis of failures. 
 Logging is different from issue reporting. Logging messages are for specialists to read when looking for clues in order to diagnose obscure problems.
@@ -125,7 +127,7 @@ The framework initializes Bentley logging before running the bridge.
 
 @anchor ANCHOR_BridgeJobSubject
 <h2>Bridge Job Subject</h2>
-A bridge is required to create a uniquely named Subject element in the iModel. The job subject element should be a child of the root subject and must have a unique code. See @ref BentleyApi::Dgn::iModelBridge::_InitializeJob. 
+A bridge is required to create a uniquely named Subject element in the iModel. The job subject element should be a child of the root subject and must have a unique code. See @ref BentleyApi::Dgn::iModelBridge::_InitializeJob. The job subject's code value should incorporate the bridge's @ref ANCHOR_BridgeRegistration "subkey" and the @ref ANCHOR_BridgeJobSubject "GUID of input document", at a minimum.
 
 A bridge is required to scope all of the subjects and definitions and their models under its job subject element. That is, 
 - Subjects and partitions that a bridge creates should be children of the job subject element, 

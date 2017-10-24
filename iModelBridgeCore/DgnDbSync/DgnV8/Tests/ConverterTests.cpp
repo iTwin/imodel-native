@@ -84,6 +84,7 @@ TEST_F(ConverterTests, DuplicateTile)
     RootModelConverter::RootModelSpatialParams params(m_params);
     
     params.SetInputFileName(m_v8FileName);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
     
     TiledFileConverter creator(params);
 
@@ -771,7 +772,10 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
 
     //  Set up the source GCS -> BIM GCS transformation.
     //  To do that, I need to know the root model of the source data. In this test, I arbitrarily decide on the first one. A real converter would know the root model.
-    cvt.ComputeCoordinateSystemTransform(rootModel);
+    SubjectPtr noJobSubject = Subject::Create(*outputBim.Elements().GetRootSubject(), "DummyJobSubject");
+    JobSubjectUtils::InitializeProperties(*noJobSubject, "Dummy");
+
+    cvt.ComputeCoordinateSystemTransform(rootModel, *noJobSubject);
 
 
     //  Convert spatial elements
@@ -969,4 +973,160 @@ TEST_F(ConverterTests, XDomainTest)
         }
 
     XDomain::UnRegister(testXdomain);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyApi::ICurvePrimitivePtr getCurvePrimitiveFromElement(DgnElementCR el)
+    {
+    auto geom = el.ToGeometrySource();
+    if (nullptr == geom)
+        return nullptr;
+    size_t count = 0;
+    BentleyApi::ICurvePrimitivePtr curveprim;
+    for (auto iter : GeometryCollection(*geom))
+        {
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+        if (GeometricPrimitive::GeometryType::CurvePrimitive != geom->GetGeometryType())
+            return nullptr;
+        curveprim = geom->GetAsICurvePrimitive();
+        ++count;
+        }
+    EXPECT_EQ(1, count);
+    return curveprim;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getLineStartPoint(BentleyApi::DPoint3dR pt, DgnElementCR el)
+    {
+    auto curveprim = getCurvePrimitiveFromElement(el);
+    ASSERT_TRUE(curveprim.IsValid());
+    auto lineStr = curveprim->GetLineStringCP();
+    ASSERT_TRUE(nullptr != lineStr);
+    ASSERT_EQ(2, lineStr->size());
+    pt = lineStr->at(0);                                            // element local coordinates
+    el.ToGeometrySource()->GetPlacementTransform().Multiply(pt);    // => world coordinates
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void assertEqualPoints(BentleyApi::DPoint3dCR ptbim, Bentley::DPoint3dCR ptce, double uscale)
+    {
+    ASSERT_DOUBLE_EQ(ptbim.x, uscale*ptce.x);
+    ASSERT_DOUBLE_EQ(ptbim.y, uscale*ptce.y);
+    ASSERT_DOUBLE_EQ(ptbim.z, uscale*ptce.z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
+    {
+    LineUpFiles(L"TransformCorrectionFromJobSubject.bim", L"Test3d.dgn", false);
+    auto pointTolerance = 1.0e-10; // all values are near zero. The is the tolerance for comparing points, after applying a transform.
+    
+    // Place two lines and remember where they started.
+    auto o1 = Bentley::DPoint3d::From(1, 0, 0);
+    auto o2 = Bentley::DPoint3d::From(2, 0, 0);
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    DgnV8Api::ElementId elementId1;
+    v8editor.AddLine(&elementId1, v8editor.m_defaultModel, o1);
+    DgnV8Api::ElementId elementId2;
+    v8editor.AddLine(&elementId2, v8editor.m_defaultModel, o2);
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    auto unitsScaleFactor = 1.0;
+
+    BentleyApi::DPoint3d obim1Initial, obim2Initial;
+    BentleyApi::DRange3d projectExtents;    // make a note of the project extents
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+        projectExtents = db->GeoLocation().GetProjectExtents();
+
+        SubjectCPtr jobSubject = GetFirstJobSubject(*db);
+        ASSERT_TRUE(jobSubject.IsValid()) << "There is always a job subject element";
+
+        BentleyApi::Transform trans;
+        ASSERT_NE(BSISUCCESS, JobSubjectUtils::GetTransform(trans, *jobSubject)) << "The job subject should not yet have a transform property";
+
+        auto bimLine1 = FindV8ElementInDgnDb(*db, elementId1);
+        ASSERT_TRUE(bimLine1.IsValid());
+        getLineStartPoint(obim1Initial, *bimLine1);
+
+        ASSERT_FALSE(0 == BentleyApi::BeNumerical::Compare(obim1Initial.x, 0.0));
+
+        unitsScaleFactor = obim1Initial.x / o1.x;
+
+        assertEqualPoints(obim1Initial, o1, unitsScaleFactor);
+
+        auto bimLine2 = FindV8ElementInDgnDb(*db, elementId2);
+        ASSERT_TRUE(bimLine2.IsValid());
+        getLineStartPoint(obim2Initial, *bimLine2);
+        assertEqualPoints(obim2Initial, o2, unitsScaleFactor);
+        }
+
+    BentleyApi::DPoint3d xlat = BentleyApi::DPoint3d::From(1,1,1);
+    double rot = 0.0;
+    BentleyApi::Transform jobTrans = BentleyApi::Transform::FromIdentity();
+    jobTrans.FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rot);
+    jobTrans.SetTranslation(xlat);
+
+    if (true)
+        {
+        // Set up a job subject transform
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::ReadWrite);
+
+        SubjectCPtr jobSubject = GetFirstJobSubject(*db);
+        auto jobSubjectEdit = jobSubject->MakeCopy<Subject>();
+        JobSubjectUtils::SetTransform(*jobSubjectEdit, jobTrans);
+
+        DgnDbStatus status;
+        jobSubject = (SubjectCP)jobSubjectEdit->Update(&status).get();
+        ASSERT_TRUE(jobSubject.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+
+        BentleyApi::Transform transStored;
+        ASSERT_EQ(BSISUCCESS, JobSubjectUtils::GetTransform(transStored, *jobSubject)) << "The job subject should now have a transform property";
+        ASSERT_TRUE(transStored.IsEqual(jobTrans));
+
+        db->SaveChanges();
+        }
+
+    m_count = 0;
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    ASSERT_EQ(2, m_count) << "Both lines should have moved";
+
+    if (true)
+        {
+        // Verify that lines moved as expected
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+        auto newProjectExtents = db->GeoLocation().GetProjectExtents();
+        ASSERT_TRUE(projectExtents.IsContained(newProjectExtents)) << "Project extents should have expanded to hold the lines that moved over and up";  
+        ASSERT_FALSE(newProjectExtents.IsContained(projectExtents));
+
+        auto bimLine1 = FindV8ElementInDgnDb(*db, elementId1);
+        ASSERT_TRUE(bimLine1.IsValid());
+        BentleyApi::DPoint3d obim1AfterUpdate;
+        getLineStartPoint(obim1AfterUpdate, *bimLine1);
+        
+        auto obim1InitialTransformed = BentleyApi::DPoint3d::FromProduct(jobTrans, obim1Initial);
+        ASSERT_TRUE(obim1InitialTransformed.AlmostEqual(obim1AfterUpdate, pointTolerance)) << " Line1's origin should now be at the transformed location";
+
+        auto bimLine2 = FindV8ElementInDgnDb(*db, elementId2);
+        ASSERT_TRUE(bimLine2.IsValid());
+        BentleyApi::DPoint3d obim2AfterUpdate;
+        getLineStartPoint(obim2AfterUpdate, *bimLine2);
+
+        auto obim2InitialTransformed = BentleyApi::DPoint3d::FromProduct(jobTrans, obim2Initial);
+        ASSERT_TRUE(obim2InitialTransformed.AlmostEqual(obim2AfterUpdate, pointTolerance)) << " Line2's origin should now be at the transformed location";
+        }
+
     }

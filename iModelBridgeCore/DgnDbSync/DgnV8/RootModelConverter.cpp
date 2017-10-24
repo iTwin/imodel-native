@@ -934,8 +934,15 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        {
+        BeAssert(false && "Job registry subkey is a required property of iModelBridge::Params");
+        return ImportJobLoadStatus::FailedNotFound;
+        }
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10*BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
 
     m_importJob = FindImportJobForModel(*GetRootModelP());
 
@@ -948,7 +955,42 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 
     _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // (on update, this just looks up the existing mapping and caches it in memory)
 
-    m_rootModelMapping = GetModelForDgnV8Model(*m_rootModelRef->GetDgnModelP(), m_rootTrans); // (on update, this just looks up the existing mapping)
+    // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
+    SyncInfo::V8ModelMapping syncInfoModelMapping;
+    auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, m_importJob.GetV8ModelSyncInfoId());
+    if (BSISUCCESS != status)
+        {
+        BeAssert(false);
+        ReportError(IssueCategory::CorruptData(), Issue::Error(), "");
+        return ImportJobLoadStatus::FailedNotFound;
+        }
+    auto rootBimModel = GetDgnDb().Models().GetModel(syncInfoModelMapping.GetModelId());
+    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping);
+    _AddResolvedModelMapping(m_rootModelMapping);
+
+    //  Detect if the root GCS/units transform has changed.
+    if (!m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance))
+        {
+        // If so, we must force a re-conversion of all spatial data
+        m_rootTransHasChanged = true;
+        m_rootTransChange = Transform::FromProduct(m_rootTrans, m_rootModelMapping.GetTransform().ValidatedInverse().Value());
+        // This correction will be applied in CorrectSpatialTransforms
+        }
+
+    // Detect the job transform, if any
+    if (BSISUCCESS == JobSubjectUtils::GetTransform(m_jobTrans, m_importJob.GetSubject()) && !m_jobTrans.IsIdentity())
+        {
+        // This correction will be applied in CorrectSpatialTransforms
+
+        // Detect if this supplemental transform has changed.
+        if (!m_jobTrans.IsEqual(m_importJob.GetImportJob().GetTransform(), matrixTolerance, pointTolerance))
+            {
+            // If so, we must force a re-conversion of all spatial data
+            m_rootTransHasChanged = true;
+            m_importJob.GetImportJob().SetTransform(m_jobTrans);
+            GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
+            }
+        }
 
     GetOrCreateJobPartitions(); // (on update, this just looks up and caches existing modelids)
 
@@ -960,8 +1002,58 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
         }
     SetSpatialParentSubject(*hsubj);
 
-    CheckModelUnitsUnchanged(*GetRootModelP(), m_rootTrans);
     return ImportJobLoadStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::CorrectSpatialTransform(ResolvedModelMapping& rmm)
+    {
+    if (!IsUpdating())
+        return; // we only "correct" spatial transforms when we discover that the root trans has changed or a job transform has been added or changed.
+
+    if (m_jobTrans.IsIdentity() && m_rootTransChange.IsIdentity())
+        return;
+
+    if (!ShouldCorrectSpatialTransform(rmm))
+        return;
+
+    if (!m_rootTransChange.IsIdentity())
+        {
+        rmm.SetTransform(Transform::FromProduct(m_rootTransChange, rmm.GetTransform())); // See FindJob for how m_rootTransChange was computed
+        rmm.GetV8ModelMapping().Update(GetDgnDb());     // update syncinfo to note that the source data changed
+        }
+
+    if (!m_jobTrans.IsIdentity())
+        {
+        rmm.SetTransform(Transform::FromProduct(m_jobTrans, rmm.GetTransform()));       // pre-multiply!
+        // When it comes to the job transform, update *only* the transient model-mapping transforms that we keep in memory.
+        // That way, the transform that we apply when converting elements will include the job transform, as desired. 
+        // The job transform will not affect how the model mappings are stored in syncinfo.
+        // The syncinfo records must be keyed to the source transforms, which are computed by the bridge from source data.
+        // We must be able to look up models during the initial "ImportSpatialModels" pass using the transforms computed from source data.
+        // The job transform is an additional correction that should be applied to elements as they are converted.
+        // It is not part of the source data.
+        // The job transform can be changed independently of the source data.
+        }
+
+    m_spatialTransformCorrectionsApplied = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::CorrectSpatialTransforms()
+    {
+    CorrectSpatialTransform(m_rootModelMapping);
+
+    m_rootTrans = m_rootModelMapping.GetTransform();
+
+    for (auto& rmm : m_v8ModelMappings)
+        CorrectSpatialTransform(rmm);
+
+    m_spatialTransformCorrectionsApplied = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -975,9 +1067,17 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
         return;
         }
 
-    Utf8String jobName(iModelBridge::str_BridgeType_DgnV8());
+    // Use the document GUID, if available, to ensure a unique Job subject name.
+    Utf8String docIdStr;
+    auto docGuid = _GetParams().QueryDocumentGuid(_GetParams().GetInputFileName());
+    if (docGuid.IsValid())
+        docIdStr = docGuid.ToString();
+    else
+        docIdStr = Utf8String(_GetParams().GetInputFileName());
+
+    Utf8String jobName(_GetParams().GetBridgeRegSubKey());
     jobName.append(":");
-    jobName.append(GetFileBaseName(*GetRootV8File()));
+    jobName.append(docIdStr.c_str());
     jobName.append(", ");
     jobName.append(Utf8String(GetRootModelP()->GetModelName()));
 
@@ -998,6 +1098,12 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type jtype)
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        {
+        BeAssert(false && "Job registry subkey is a required property of iModelBridge::Params");
+        return ImportJobCreateStatus::FailedExistingRoot;
+        }
+
     if (IsUpdating())
         {
         BeAssert(false);
@@ -1012,9 +1118,9 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         }
     else
         {
-        if (!jobName.StartsWithI(iModelBridge::str_BridgeType_DgnV8()))
+        if (!jobName.StartsWithI(_GetParams().GetBridgeRegSubKeyUtf8().c_str()))
             {
-            jobName = iModelBridge::str_BridgeType_DgnV8();
+            jobName = _GetParams().GetBridgeRegSubKeyUtf8();
             jobName.append(":");
             jobName.append(_GetParams().GetBridgeJobName());
             }
@@ -1049,18 +1155,10 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     // 2. Create a subject, as a child of the rootsubject
     SubjectPtr ed = Subject::Create(*GetDgnDb().Elements().GetRootSubject(), jobName);
 
-    Json::Value v8JobProps(Json::objectValue);
-    v8JobProps["ConverterType"] = (int)jtype;
-    v8JobProps["NamePrefix"] = _GetNamePrefix();
-    v8JobProps["V8File"] = syncInfoFile.GetUniqueName();
-    v8JobProps["V8RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
+    Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
+    v8JobProps["RootModel"] = Utf8String(m_rootModelRef->GetDgnModelP()->GetModelName());
 
-    Json::Value jobProps(Json::objectValue);
-    if (!Utf8String::IsNullOrEmpty(comments))
-        jobProps["Comments"] = comments;
-    jobProps[iModelBridge::str_BridgeType_DgnV8()] = v8JobProps;
-
-    ed->SetSubjectJsonProperties(Subject::json_Job(), jobProps);
+    JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
 
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
@@ -1095,6 +1193,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     importJob.SetPrefix(_GetNamePrefix());
     importJob.SetType(jtype);
     importJob.SetSubjectId(jobSubject->GetElementId());
+    importJob.SetTransform(BentleyApi::Transform::FromIdentity());
     if (BSISUCCESS != GetSyncInfo().InsertImportJob(importJob))
         return ImportJobCreateStatus::FailedExistingRoot;
 
@@ -1141,6 +1240,7 @@ void RootModelConverter::_ConvertModels()
         ImportSpatialModels(haveFoundSpatialRoot, *m_rootModelRef, m_rootTrans);
         if (WasAborted())
             return;
+        CorrectSpatialTransforms();
         }
 
     _ImportDrawingAndSheetModels(m_rootModelMapping); // we also need to convert all drawing models now, so that we can analyze them for EC content.
@@ -1151,10 +1251,10 @@ void RootModelConverter::_ConvertModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootModelConverter::IsFileAssignedToBridge(DgnV8FileCR v8File) const 
+bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const 
     {
     BeFileName fn(v8File.GetFileName().c_str());
-    return m_params.IsFileAssignedToBridge(fn);
+    return _GetParams().IsFileAssignedToBridge(fn);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2218,6 +2318,8 @@ void RootModelConverter::_FinishConversion()
         }
 
     CopyExpirationDate(*m_rootFile);
+
+    ValidateJob();
     }
 
 /*=================================================================================**//**

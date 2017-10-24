@@ -63,6 +63,8 @@ TEST_F(ProgressMeterTests, ProgressOnAbort)
     RootModelConverter::RootModelSpatialParams params(m_params);
 
     params.SetInputFileName(m_v8FileName);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+
     RootModelConverter creator(params);
     creator.SetWantDebugCodes(true);
     auto db = OpenExistingDgnDb(m_dgnDbFileName);

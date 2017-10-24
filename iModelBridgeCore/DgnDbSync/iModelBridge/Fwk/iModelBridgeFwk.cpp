@@ -51,6 +51,7 @@ static BeSQLite::PropertySpec s_briefcaseIdPropSpec("BriefcaseId", "be_iModelBri
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 static iModelBridge* s_bridgeForTesting;
+static IModelBridgeRegistry* s_registryForTesting;
 
 #ifdef _WIN32
 static int s_maxWaitForMutex = 60000;
@@ -1240,8 +1241,10 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 #endif
 
-    //  Tell the bridge to update the BIM
-    if (BSISUCCESS != m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb))
+    //  Now, finally, we can convert data
+    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
+    
+    if (BSISUCCESS != bridgeCvtStatus)
         {
         m_briefcaseDgnDb->AbandonChanges();
         m_briefcaseDgnDb = nullptr;
@@ -1429,9 +1432,25 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+BentleyStatus iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
     return GetRegistry()._GetDocumentProperties(props, fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeGuid const& guid)
+    {
+    return GetRegistry()._GetDocumentPropertiesByGuid(props, localFilePath, guid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetRegistryForTesting(IModelBridgeRegistry& reg)
+    {
+    s_registryForTesting = &reg;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1441,7 +1460,11 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     {
     if (!m_registry.IsValid())
         {
-        m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+        if (s_registryForTesting)
+            m_registry = s_registryForTesting;
+        else
+            m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+
         if (!m_registry.IsValid())
             throw "iModelBridgeRegistry statedb open error";
         }

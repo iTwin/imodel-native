@@ -34,7 +34,7 @@ private:
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
-    void _OnSourceFileDeleted() override;
+    BentleyStatus _DetectDeletedDocuments() override;
 
 public:
     TiledConverterApp() {}
@@ -71,6 +71,9 @@ iModelBridge::CmdLineArgStatus TiledConverterApp::_ParseCommandLineArg(int iArg,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledConverterApp::_Initialize(int argc, WCharCP argv[])
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(TiledFileConverter::GetRegistrySubKey());
+
     m_params.SetInputFileName(_GetParams().GetInputFileName());
     return T_Super::_Initialize(argc, argv);
     }
@@ -136,9 +139,10 @@ SubjectCPtr TiledConverterApp::_InitializeJob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TiledConverterApp::_OnSourceFileDeleted()
+BentleyStatus TiledConverterApp::_DetectDeletedDocuments()
     {
-    m_converter->_OnSourceFileDeleted();
+    m_converter->_DetectDeletedDocuments();
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

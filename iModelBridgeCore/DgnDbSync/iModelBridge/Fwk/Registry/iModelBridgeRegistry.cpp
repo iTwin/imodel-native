@@ -82,6 +82,13 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
         MUSTBEOK(m_stateDb.CreateTable("fwk_BridgeAssignments", "SourceFile TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY, \
                                                                  Bridge BIGINT"));  // Bridge --foreign key--> fwk_InstalledBridges
 
+        // WARNING: Do not change the name or layout of the DocumentProperties - Bentley Automation Services assumes the following definition:
+        MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase, \
+                                                                DocGuid TEXT UNIQUE COLLATE NoCase,\
+                                                                DesktopURN TEXT COLLATE NoCase,\
+                                                                WebURN TEXT COLLATE NoCase, \
+                                                                OtherPropertiesJSON TEXT"));
+
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
         MUSTBEOK(m_stateDb.SaveChanges());
@@ -284,6 +291,9 @@ BentleyStatus iModelBridgeRegistry::SearchForBridgeToAssignToDocument(BeFileName
     BeAssert(BE_SQLITE_DONE == rc);
 
     LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
+
+    EnsureDocumentPropertiesFor(sourceFilePath);
+
     return BSISUCCESS;
     }
 
@@ -761,23 +771,75 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistry::EnsureDocumentPropertiesFor(BeFileNameCR fn)
+    {
+    iModelBridgeDocumentProperties _props;
+    if (BSISUCCESS == _GetDocumentProperties(_props, fn))
+        return;
+
+#define TEST_REGISTRY_FAKE_GUIDS
+#ifdef TEST_REGISTRY_FAKE_GUIDS
+    BeGuid testGuid;
+    testGuid.Create();
+    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,OtherPropertiesJSON) VALUES(?,?,'', '', '')");
+    stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
+    stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);
+#else
+    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath) VALUES(?)");
+    stmt->BindText(1, Utf8String(fn).c_str(), Statement::MakeCopy::Yes);
+#endif
+    stmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+BentleyStatus iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
     if (!m_stateDb.TableExists("DocumentProperties"))
-        return;
+        return BSIERROR;
 
     //                                               0         1           2       3
-    auto stmt = m_stateDb.GetCachedStatement("SELECT DocGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
+    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
-        return;
+        return BSIERROR;
 
-    props.m_docGUID             = stmt->GetValueText(0);
+    props.m_docGuid             = stmt->GetValueText(0);
     props.m_desktopURN          = stmt->GetValueText(1);
     props.m_webURN              = stmt->GetValueText(2);
     props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFileName, BeGuid const& docGuid)
+    {
+    if (!m_stateDb.TableExists("DocumentProperties"))
+        return BSIERROR;
+
+    //                                               0               1           2       3
+    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (docGuid=?)");
+#ifdef WIP_GUID_BINARY
+    stmt->BindGuid(1, docGuid);
+#else
+    auto guidstr = docGuid.ToString();
+    guidstr.ToLower();
+    stmt->BindText(1, guidstr.c_str(), Statement::MakeCopy::No);
+#endif
+    if (BE_SQLITE_ROW != stmt->Step())
+        return BSIERROR;
+
+    props.m_docGuid             = docGuid.ToString();
+    localFileName    = BeFileName(stmt->GetValueText(0), true);
+    props.m_desktopURN          = stmt->GetValueText(1);
+    props.m_webURN              = stmt->GetValueText(2);
+    props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    return BSISUCCESS;
     }
 
 /*

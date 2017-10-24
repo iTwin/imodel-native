@@ -186,6 +186,9 @@ void DwgBridge::_OnConvertedToBim (BentleyStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(DwgImporter::GetRegistrySubKey());
+
     auto host = DgnPlatformLib::QueryHost ();
     if (nullptr == host)
         {
@@ -283,9 +286,9 @@ void    DwgBridge::_CloseSource (BentleyStatus status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    DwgBridge::_OnSourceFileDeleted ()
+BentleyStatus DwgBridge::_DetectDeletedDocuments()
     {
-    m_importer->_OnSourceFileDeleted ();
+    return m_importer->_DetectDeletedDocuments();
     }
 
 /*---------------------------------------------------------------------------------**//**

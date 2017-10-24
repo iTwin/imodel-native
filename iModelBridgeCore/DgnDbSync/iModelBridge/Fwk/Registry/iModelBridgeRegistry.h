@@ -64,10 +64,12 @@ private:
     BentleyStatus WriteBridgesFile();
     //bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
     static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
+    void EnsureDocumentPropertiesFor(BeFileNameCR);
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
     BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override;
-    void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
+    BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
+    BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
 
     static void InitCrt(bool quietAsserts);
 
