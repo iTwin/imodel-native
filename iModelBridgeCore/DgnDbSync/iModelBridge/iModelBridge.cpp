@@ -9,6 +9,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
+#include <DgnPlatform/JsonUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -46,6 +47,14 @@ struct CallBookmarkFunctions
 
     bool IsBridgeReady() const {return (BSISUCCESS==m_bstatus) && (!m_doOpenSource || (BSISUCCESS==m_sstatus));}
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge::Params::Params()
+    {
+    m_spatialDataTransform.InitIdentity();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
@@ -393,6 +402,42 @@ DgnGCSPtr iModelBridge::GCSDefinition::CreateGcs(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::Params::ParseTransform(Transform& trans, Utf8StringCR str)
+    {
+    if (str.empty())
+        return BSIERROR;
+
+    trans.InitIdentity();
+
+    if (str[0] == '{')
+        {
+        Json::Value json = Json::Value::From(str);
+        if (json.isNull())
+            return BSIERROR;
+        JsonUtils::TransformFromJson(trans, json);
+        return BSISUCCESS;
+        }
+
+    if (str[0] == '(')
+        {
+        double x,y,z,rdeg;
+        if (4 != sscanf(str.c_str(), "(%lf,%lf,%lf)%lf", &x, &y, &z, &rdeg))
+            {
+            fprintf(stderr, "%s - invalid translation + rotation values - expected (x,y,z)angle\n", str.c_str());
+            return BSIERROR;
+            }
+        double rrad = Angle::DegreesToRadians(rdeg);
+        trans.FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rrad);
+        trans.SetTranslation(DPoint3d::From(x,y,z));
+        return BSISUCCESS;
+        }
+
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
 WString iModelBridge::GetArgValueW(WCharCP arg)
     {
     WString argValue(arg);
@@ -685,4 +730,18 @@ DgnDbStatus iModelBridge::InsertLinkTableRelationship(DgnDbR db, Utf8CP relClass
     auto status = db.InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), source, target);
     BeAssert(BE_SQLITE_OK == status);
     return (BE_SQLITE_OK == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR jobSubject)
+    {
+    Transform jobTrans = params.GetSpatialDataTransform();
+    
+    Transform jobSubjectTransform;
+    if (BSISUCCESS == JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject) && !jobSubjectTransform.IsIdentity())
+        jobTrans = Transform::FromProduct(jobTrans, jobSubjectTransform);
+
+    return jobTrans;
     }

@@ -1004,10 +1004,11 @@ BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::ApplyJobTransformToRootTrans()
     {
-    // Incorporate the job transform into the root transform. The job transform is just one more ingredient in computing the root transform.
-    Transform jobTrans;
-    if (BSISUCCESS != JobSubjectUtils::GetTransform(jobTrans, m_importJob.GetSubject()) || jobTrans.IsIdentity())
+    Transform jobTrans = iModelBridge::GetSpatialDataTransform(_GetParams(), m_importJob.GetSubject());
+    if (jobTrans.IsIdentity())
         return;
+
+    // Incorporate the job transform into the root transform. The job transform is just one more ingredient in computing the root transform.
 
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 

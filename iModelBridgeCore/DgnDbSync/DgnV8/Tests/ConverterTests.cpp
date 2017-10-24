@@ -11,7 +11,9 @@
 // @bsiclass                                    Umar.Hayat                      08/15
 //----------------------------------------------------------------------------------------
 struct ConverterTests : public ConverterTestBaseFixture
-    {};
+    {
+    void RunTransformCorrectionTest(BentleyApi::DPoint3dCR xlat, double rot, bool fromJobSubject);
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
@@ -1024,9 +1026,8 @@ static void assertEqualPoints(BentleyApi::DPoint3dCR ptbim, Bentley::DPoint3dCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
+void ConverterTests::RunTransformCorrectionTest(BentleyApi::DPoint3dCR xlat, double rot, bool fromJobSubject)
     {
-    LineUpFiles(L"TransformCorrectionFromJobSubject.bim", L"Test3d.dgn", false);
     auto pointTolerance = 1.0e-10; // all values are near zero. The is the tolerance for comparing points, after applying a transform.
     
     // Place two lines and remember where they started.
@@ -1073,13 +1074,11 @@ TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
         assertEqualPoints(obim2Initial, o2, unitsScaleFactor);
         }
 
-    BentleyApi::DPoint3d xlat = BentleyApi::DPoint3d::From(1,1,1);
-    double rot = 0.0;
     BentleyApi::Transform jobTrans = BentleyApi::Transform::FromIdentity();
     jobTrans.FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rot);
     jobTrans.SetTranslation(xlat);
 
-    if (true)
+    if (fromJobSubject)
         {
         // Set up a job subject transform
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::ReadWrite);
@@ -1098,6 +1097,10 @@ TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
         ASSERT_TRUE(transStored.IsEqual(jobTrans));
 
         db->SaveChanges();
+        }
+    else
+        {
+        m_params.SetSpatialDataTransform(jobTrans);
         }
 
     m_count = 0;
@@ -1129,4 +1132,30 @@ TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
         ASSERT_TRUE(obim2InitialTransformed.AlmostEqual(obim2AfterUpdate, pointTolerance)) << " Line2's origin should now be at the transformed location";
         }
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, TransformCorrectionFromJobSubject)
+    {
+    LineUpFiles(L"TransformCorrectionFromJobSubject.bim", L"Test3d.dgn", false);
+
+    BentleyApi::DPoint3d xlat = BentleyApi::DPoint3d::From(1,1,1);
+    double rot = 0.0;
+
+    RunTransformCorrectionTest(xlat, rot, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, TransformCorrectionFromParams)
+    {
+    LineUpFiles(L"TransformCorrectionFromParams.bim", L"Test3d.dgn", false);
+
+    BentleyApi::DPoint3d xlat = BentleyApi::DPoint3d::From(1,1,1);
+    double rot = 0.0;
+
+    RunTransformCorrectionTest(xlat, rot, false);
     }
