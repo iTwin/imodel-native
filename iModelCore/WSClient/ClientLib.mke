@@ -55,6 +55,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     _mobiledgnLibraryName = $(libprefix)MobileDgn$(stlibext)
 %endif
 
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)CCApi$(stlibext)	
+%endif
+
 %if $(TARGET_PLATFORM)=="Android"
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
     %include dlmlink.mki
@@ -64,7 +68,6 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)	
-	LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)CCApi$(stlibext)	
 
     %if $(TARGET_PLATFORM) != "WinRT"
         LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
