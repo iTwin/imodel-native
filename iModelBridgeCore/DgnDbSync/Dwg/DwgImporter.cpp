@@ -1182,7 +1182,7 @@ void DwgImporter::ComputeDefaultImportJobName (Utf8StringCR rootModelName)
     if (dotAt != Utf8String::npos)
         rootFileName.erase(dotAt);
 
-    Utf8String  jobName = iModelBridge::str_BridgeType_DWG() + Utf8String(":") + rootFileName + Utf8String(", ") + rootModelName;
+    Utf8String  jobName = Utf8String(GetOptions().GetBridgeRegSubKey()) + Utf8String(":") + rootFileName + Utf8String(", ") + rootModelName;
     DgnCode     code = Subject::CreateCode (*bimElements.GetRootSubject(), jobName.c_str());
 
     // create a unique job name
