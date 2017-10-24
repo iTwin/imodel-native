@@ -22,10 +22,10 @@ using ::testing::Matcher;
 using ::testing::Mock;
 using ::testing::Return;
 
-static void Message(const char* pMsg)
+/*static void Message(const char* pMsg)
     {
     std::cout << pMsg << std::endl;
-    }
+    }*/
 
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
@@ -130,4 +130,72 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipCreateRequestTes
     response = rel.Create();
 
     EXPECT_TRUE(response.simpleSuccess);
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+       {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataDocument.json");
+        }));
+
+    ConnectedRealityDataDocument doc = ConnectedRealityDataDocument();
+
+    doc.SetId("72adad30-c07c-465d-a1fe-2f2dfac950a7");
+    ConnectedResponse response = doc.GetInfo();
+
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(doc.GetName(), "Production_Helsinki_3MX_ok.3mx");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataFolder.json");
+        }));
+
+    ConnectedRealityDataFolder folder = ConnectedRealityDataFolder();
+    folder.SetId("72adad30-c07c-465d-a1fe-2f2dfac950a7");
+    ConnectedResponse response = folder.GetInfo();
+
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(folder.GetName(), "Scene123");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.curlCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
+        }));
+
+    ConnectedRealityData rd = ConnectedRealityData();
+    rd.SetUltimateId("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+    ConnectedResponse response = rd.GetInfo();
+
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(rd.GetName(), "Helsinki");
     }

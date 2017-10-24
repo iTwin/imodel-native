@@ -745,7 +745,7 @@ ConnectedResponse ConnectedRealityData::GetInfo()
 
     RawServerResponse rawResponse = RawServerResponse();
 
-    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_identifier);
+    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_ultimateId);
     RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
 
     Clone(entity);
