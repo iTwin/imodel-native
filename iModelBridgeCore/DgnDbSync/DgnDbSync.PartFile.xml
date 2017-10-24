@@ -245,7 +245,7 @@
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="DgnV8ConverterDLL" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterSqlang" />
@@ -276,7 +276,7 @@
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="ConceptStationDgnV8ConverterDLL" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="ConceptStationDgnV8ConverterSqlang" />
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>
