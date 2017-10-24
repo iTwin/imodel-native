@@ -776,7 +776,7 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
     if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New)
         {
         oldTrans.InitIdentity();
-        return _GetParams().IsUpdating();    // return true only if bridge is updating, not if it is doing its initial conversion
+        return !newTrans.IsIdentity();
         }
     if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
         {

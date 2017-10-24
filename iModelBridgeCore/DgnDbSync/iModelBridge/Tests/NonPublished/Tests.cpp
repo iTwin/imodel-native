@@ -641,6 +641,8 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         for (auto rec : m_syncInfo.MakeIteratorByScope(docrid))
             {
             ASSERT_TRUE(m_expect.anyDeleted);
+            if (!rec.GetDgnElementId().IsValid())
+                continue; // not every record in syncinfo is an element
             auto el = GetDgnDbR().Elements().GetElement(rec.GetDgnElementId());
             ASSERT_TRUE(el.IsValid());
             el->Delete();
