@@ -40,6 +40,7 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
     private:
         bvector<DPoint3d> m_linePts;
         bvector<double> m_distancePts;
+		size_t m_maxPtOnLineIdx, m_minPtOnLineIdx;
 
     protected:
         virtual DTMStatusInt _GetPointByIndex(DTMDrapedLinePointPtr& ret, unsigned int index) const override
@@ -62,16 +63,19 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
 //           *ptP = m_linePts[index];
 //#endif
             if (distanceP != nullptr) *distanceP = m_distancePts[index];
-            if (codeP != nullptr) *codeP = DTMDrapedLineCode::Tin;
+            if (codeP != nullptr) *codeP = index <= m_maxPtOnLineIdx && index >= m_minPtOnLineIdx ? DTMDrapedLineCode::Tin : DTMDrapedLineCode::External;
             return DTMStatusInt::DTM_SUCCESS;
             }
         virtual unsigned int _GetPointCount() const override
             {
             return (unsigned int)m_linePts.size();
             }
-        SMDrapedLine(const bvector<DPoint3d>& line, double distance)
+        SMDrapedLine(const bvector<DPoint3d>& line, double distance, size_t maxPtOnLineIdx, size_t minPtOnLineIdx)
             {
             m_linePts = line;
+			if (maxPtOnLineIdx == 0) m_maxPtOnLineIdx = line.size()-1;
+			else m_maxPtOnLineIdx = maxPtOnLineIdx;
+			m_minPtOnLineIdx = minPtOnLineIdx;
             m_distancePts.resize(m_linePts.size());
             double distUntil = distance;
             auto distIt = m_distancePts.begin();
@@ -86,9 +90,9 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
             }
 
     public:
-        static SMDrapedLine* Create(const bvector<DPoint3d>& line, double distance =0.0)
+        static SMDrapedLine* Create(const bvector<DPoint3d>& line, double distance =0.0, size_t maxPtOnLineIdx=0, size_t minPtOnLineIdx =0)
             {
-            return new SMDrapedLine(line, distance);
+            return new SMDrapedLine(line, distance, maxPtOnLineIdx, minPtOnLineIdx);
             }
         double GetDistanceUntil(const DPoint3d& pt) const
             {
@@ -1539,7 +1543,55 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
             }
         }
     }
-    ret = SMDrapedLine::Create(drapedLine, orderedList.empty()? 0 : orderedList.begin()->first);
+
+	size_t minDrapedPos = 0;
+	size_t maxDrapedPos = drapedLine.size() - 1;
+	if (!orderedList.empty())
+	{
+		//check for non-draped segments
+		if (orderedList.begin()->second.segment > 0)
+			for (size_t i = 0; i < orderedList.begin()->second.segment; ++i)
+			{
+				drapedLine.insert(drapedLine.begin() + i, transformedLine[i]);
+				minDrapedPos = i;
+			}
+
+		if (orderedList.rbegin()->second.segment < numPoints - 2)
+			for (size_t i = orderedList.rbegin()->second.segment; i < numPoints - 2; ++i)
+			{
+				drapedLine.insert(drapedLine.end(), transformedLine[i]);
+			}
+
+		//check for non-draped begin/end within the first/last segment
+		int firstSeg = orderedList.begin()->second.segment;
+		int lastSeg = orderedList.rbegin()->second.segment;
+
+		DSegment3d first = DSegment3d::From(transformedLine[firstSeg], transformedLine[firstSeg + 1]);
+		double param1, param2;
+		DPoint3d pt1, pt2;
+		DPoint3d retroProjectPt = DPoint3d::FromSumOf(drapedLine[minDrapedPos], DVec3d::From(0, 0, 1));
+		DSegment3d intersectFirst = DSegment3d::From(drapedLine[minDrapedPos], retroProjectPt);
+		first.ClosestApproachUnbounded(param1, param2, pt1, pt2, first, intersectFirst);
+		first.PointToFractionParameter(param1, pt1);
+		if (param1 > 1e-6)
+		{
+			drapedLine.insert(drapedLine.begin() + minDrapedPos, transformedLine[firstSeg]);
+			minDrapedPos++;
+		}
+
+		DSegment3d last = DSegment3d::From(transformedLine[lastSeg], transformedLine[lastSeg + 1]);
+		DPoint3d retroProjectPtLast = DPoint3d::FromSumOf(drapedLine[maxDrapedPos], DVec3d::From(0, 0, 1));
+		DSegment3d intersectLast = DSegment3d::From(drapedLine[maxDrapedPos], retroProjectPtLast);
+		last.ClosestApproachUnbounded(param1, param2, pt1, pt2, last, intersectLast);
+		last.PointToFractionParameter(param1, pt1);
+		if (param1 <1-1e-6)
+		{
+			drapedLine.insert(drapedLine.begin() + maxDrapedPos+1, transformedLine[lastSeg+1]);
+		}
+	}
+
+
+    ret = SMDrapedLine::Create(drapedLine, orderedList.empty()? 0 : orderedList.begin()->first, maxDrapedPos, minDrapedPos);
     return DTMStatusInt::DTM_SUCCESS;
     }
 
