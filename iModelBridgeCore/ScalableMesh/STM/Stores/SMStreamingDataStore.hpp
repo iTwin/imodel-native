@@ -247,6 +247,15 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     // Create an account on the file service streaming
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+    
+    ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
+
+    if (!proxyInfo.m_serverUrl.empty())
+        {
+        assert(dynamic_cast<DataSourceAccountCURL*>(account) != nullptr);
+        static_cast<DataSourceAccountCURL*>(account)->setProxy(proxyInfo.m_user, proxyInfo.m_password, proxyInfo.m_serverUrl);
+        }
+
 
     if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
@@ -398,7 +407,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_isTerrain = false; // default, always non terrain
         indexHeader->m_singleFile = false; // default, always multifile
         indexHeader->m_isCesiumFormat = true; // default, always cesium datasets
-        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+        indexHeader->m_rootNodeBlockID = HPMBlockID(rootNodeBlockID); // default, starts at 0
 
         BeFileName baseUrl(m_masterFileName.c_str());
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
@@ -422,6 +431,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
+            indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
             }
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);

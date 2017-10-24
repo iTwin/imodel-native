@@ -226,10 +226,15 @@ WebServiceKey GetBingKey()
         }
 #endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
-    
-    Utf8String bingKeyUrl(contextServiceURL);    
-    bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey");
+    uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
 
+    Utf8Char productIdStr[200];
+    BeStringUtilities::FormatUInt64(productIdStr, productId);
+        
+    Utf8String bingKeyUrl(contextServiceURL);    
+    bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+");
+    bingKeyUrl.append(productIdStr);
+            
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
 
