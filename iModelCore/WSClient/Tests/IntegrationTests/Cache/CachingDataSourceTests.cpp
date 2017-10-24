@@ -17,6 +17,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
@@ -206,12 +207,29 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
     EXPECT_EQ(fileName, Utf8String(path.GetFileNameAndExtension()));
     }
 
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectSyncServiceShare_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    Utf8String serverUrl = "https://qa-connect-wsg20.bentley.com";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0"; // QA project "MOBILE-ATP-06-Shares"
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--c4d60664-1226-4d4f-8beb-7d0e372ccc06";
+    Utf8String serverUrl = "https://qa-connect-projectsharestorage.bentley.com";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectShareV2--be34a3c3-e1df-4540-85a9-e39a2095225a"; // QA project "MOBILE-ATP-06-Shares"
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -270,8 +288,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
-    Utf8String repositoryId = "eB.viltest2-7.bentley.com,eB_Mobile_15.4";
+    Utf8String serverUrl = "https://mobilevm1.bentley.com/ws";
+    Utf8String repositoryId = "eB.MobileVM2.bentley.com,eB_15.4_CR";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -286,8 +304,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
-    Utf8String repositoryId = "pw.PW_Egde_10.00.01.71";
+    Utf8String serverUrl = "https://mobilevm5.bentley.com/ws";
+    Utf8String repositoryId = "pw.Mobile_ATP_2";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -302,8 +320,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
-    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fpw_edge_sp_2013.bentley.com~2F";
+    Utf8String serverUrl = "https://mobilevm1.bentley.com/ws";
+    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fpw_edge_sp_2013.bentley.com";
     Credentials creds("ps_edge_sp_2013.bentley.com\\Administrator", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
@@ -318,24 +336,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
-    Utf8String repositoryId = "Bentley.eB--viltest2-7.bentley.com~2CeB_Mobile_15.4";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWiseRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
+    Utf8String serverUrl = "https://mobilevm3.bentley.com/ws22";
+    Utf8String repositoryId = "Bentley.eB--MobileVM2.bentley.com~2CeB_15.4_CR";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -350,8 +352,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeed
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -362,28 +364,18 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeed
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithImsUser_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-7.bentley.com~3AMobile_10_00_02_92";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
+    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState);
+    proxy = std::shared_ptr<HttpConfigurationHandler>(new HttpConfigurationHandler([] (HttpRequest& request)
+        {
+        request.SetValidateCertificate(false);
+        }, proxy));
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepositoryWithImsUser_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-7.bentley.com~3AMobile_10_00_02_92";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -397,12 +389,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepositoryWithIm
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseNonCERepositoryWithImsUser_ErrorLoginFailed)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInvalidImsUser_ErrorLoginFailed)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--PWDIVM4.bentley.com~3APW_10.00.03.10";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -417,32 +409,13 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseNonCERepositoryWit
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetWSError().GetId());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://geo-demo-ws.bentley.com/ws";
-    Utf8String repositoryId = "Bentley.PW--geo-demo.bentley.com~3AGeo-Demo";
-    Credentials creds("twc", "admin");
-    BeFileName cachePath = GetTestCachePath();
-
-    auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5, 4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb",
-        "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
 TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3AMobile_ATP";
-    Credentials creds("admin", "admin");
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3AMobile_ATP_2";
+    Credentials creds("itest", "itest");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -452,9 +425,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository
     ASSERT_FALSE(nullptr == ds);
     BentleyStatus status;
 
-    /* pw:\\VILTEST2-5.bentley.com:Mobile_ATP\Documents\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
-    ObjectId uploadsFolderId{"PW_WSG", "Project", "62042ee9-c2de-4f0d-b80d-d8492702a70d"};
-    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "StandardDisplayItemTypes--PW_WSG.02.02-Project-62042ee9--c2de--4f0d--b80d--d8492702a70d"};
+    /* pw:\\MobileVM1.bentley.com:Mobile_ATP_2\Documents\WSClientIntegrationTests_DO_NOT_DELETE\CachingDataSourceTests\Uploads\ */
+    ObjectId uploadsFolderId{"PW_WSG", "Project", "a934340b-f7f8-4c78-a9fa-cc13cd80679e"};
+    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "StandardDisplayItemTypes--PW_WSG.02.03-Project-a934340b--f7f8--4c78--a9fa--cc13cd80679e"};
 
     if (true)
         {
@@ -560,12 +533,12 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository
     ASSERT_TRUE(syncResult.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds)
+TEST_F(CachingDataSourceTests, GetObjects_WSG250ProjectWiseSpatialQuery_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--viltest2-10.bentley.com~3APW_Mobile_Geo";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
