@@ -55,7 +55,7 @@ BentleyStatus ClassNameExp::_CreatePropertyNameExpList(ECSqlParseContext const& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ClassNameExp::_ContainProperty(Utf8CP propertyName) const
+bool ClassNameExp::_ContainsProperty(Utf8StringCR propertyName) const
     {
     if (m_info == nullptr)
         {
@@ -63,7 +63,7 @@ bool ClassNameExp::_ContainProperty(Utf8CP propertyName) const
         return false;
         }
 
-    PropertyMap const* propertyMap = m_info->GetMap().GetPropertyMaps().Find(propertyName);
+    PropertyMap const* propertyMap = m_info->GetMap().GetPropertyMaps().Find(propertyName.c_str());
     return propertyMap != nullptr;
     }
 

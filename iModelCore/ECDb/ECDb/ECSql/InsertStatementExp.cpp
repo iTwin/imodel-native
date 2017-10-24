@@ -22,7 +22,6 @@ InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameE
         propertyNameListExp = std::make_unique<PropertyNameListExp>();
 
     m_propertyNameListExpIndex = AddChild(std::move(propertyNameListExp));
-
     m_valuesExpIndex = AddChild(std::make_unique<ValueExpListExp>(valueExpList));
     }
 
@@ -37,12 +36,12 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             {
             ClassNameExp const* classNameExp = GetClassNameExp();
 
-            RangeClassInfo::List classList;
+            std::vector<RangeClassInfo> classList;
             classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
-            m_finalizeParsingArgCache = move(classList);
-            ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
+            m_rangeClassRefExpCache = std::move(classList);
+            ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
 
-            auto propNameListExp = GetPropertyNameListExpP();
+            PropertyNameListExp* propNameListExp = GetPropertyNameListExpP();
             if (IsOriginalPropertyNameListUnset())
                 {
                 auto addDelegate = [&propNameListExp] (std::unique_ptr<PropertyNameExp>& propNameExp)
@@ -62,12 +61,12 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             }
 
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
-            {
-            ctx.PopFinalizeParseArg();
-            m_finalizeParsingArgCache.clear();
+                {
+                ctx.PopArg();
+                m_rangeClassRefExpCache.clear();
 
-            return Validate(ctx);
-            }
+                return Validate(ctx);
+                }
 
             default:
                 BeAssert(false);

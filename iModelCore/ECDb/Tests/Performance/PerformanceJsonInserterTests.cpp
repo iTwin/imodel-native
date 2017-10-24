@@ -28,7 +28,7 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    TestUtilities::ReadFile(jsonInput, jsonInputFile);
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
@@ -71,12 +71,11 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
 
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    TestUtilities::ReadFile(jsonInput, jsonInputFile);
 
     // Parse JSON value using RapidJson
     rapidjson::Document rapidJsonInput;
-    bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
-    ASSERT_TRUE(parseSuccessful);
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(rapidJsonInput, Json::FastWriter().write(jsonInput)));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);

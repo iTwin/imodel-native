@@ -60,15 +60,13 @@ struct BeThread : NonCopyableClass
     private:
         const static int DEFAULT_STACK_SIZE = 1024 * 1024 * 8 * 2;
         mutable std::unique_ptr<__ThreadArg> m_arg;
-        BeThread()
-            {}
+        BeThread() {}
 
     public:
+        BeThread(BeThread&& rhs) :m_arg(std::move(rhs.m_arg)) {}
         ~BeThread() {}
-        BeThread(BeThread && rhs)
-            :m_arg(std::move(rhs.m_arg))
-            {}
-        BeThread& operator = (BeThread && rhs)
+
+        BeThread& operator=(BeThread && rhs)
             {
             if (this != &rhs)
                 {
@@ -76,28 +74,23 @@ struct BeThread : NonCopyableClass
                 }
             return *this;
             }
+
         State GetState() const { return m_arg->GetStateR().load(); }
         void Join() const
             {
             if (m_arg)
-                {
                 m_arg->Join();
-                }
             }
         void Join(uint32_t timeoutMillis) const
             {
             if (m_arg)
-                {
                 m_arg->Join(timeoutMillis);
-                }
-
             }
         intptr_t GetId() const
             {
             if (m_arg)
-                {
                 return m_arg->GetId();
-                }
+
             return 0;
             }
         static void JoinAll(std::vector<BeThread> const& threads, uint32_t timeoutMillis)
@@ -111,14 +104,13 @@ struct BeThread : NonCopyableClass
             {
             JoinAll(threads, BeConditionVariable::Infinite);
             }
+
         static BeThread Start(std::function<void(void)> work)
             {
             BeThread thread;
             thread.m_arg = std::unique_ptr<__ThreadArg>(new __ThreadArg(work));
             if (BeThreadUtilities::StartNewThread(__Run, thread.m_arg.get(), DEFAULT_STACK_SIZE) != SUCCESS)
-                {
                 thread.m_arg->GetStateR().store(BeThread::State::Error);
-                }
 
             return thread;
             }
@@ -142,46 +134,64 @@ THREAD_MAIN_IMPL __Run(void* args)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Majd.Uddin                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ThreadSafetyTests : public ECDbTestFixture
-    {};
+struct ThreadSafetyTests : public ECDbTestFixture  {};
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Majd.Uddin                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ThreadSafetyTests, AllThreadsShareDb)
+TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml"), Db::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb(3));
-
-    Utf8CP ecsql = "SELECT Name, NumberOfEmployees FROM stco.Company";
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ECInstanceKey acmeKey, bentleyKey, vwKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey,"INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(vwKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('VW', 100000)"));
 
     std::vector<BeThread> threads;
-
     const uint32_t kThreadCount = BeThreadUtilities::GetHardwareConcurrency();
     int counter = 0;
     for (uint32_t i = 0; i < kThreadCount; ++i)
         {
-        threads.push_back(BeThread::Start(
-            [&] ()
+        threads.push_back(BeThread::Start([&] ()
             {
-            printf("Begin here: %Id ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            printf("Thread %Id starts ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
 
             for (int i = 0; i < 100; ++i)
                 {
                 ECSqlStatement stmt;
-                EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, NumberOfEmployees FROM stco.Company"));
                 int rowCount = 0;
-                while (stmt.Step() != BE_SQLITE_DONE)
+                while (stmt.Step() == BE_SQLITE_ROW)
                     {
-                    EXPECT_STREQ("Sample string", stmt.GetValueText(0));
-                    EXPECT_EQ(123, stmt.GetValueInt(1));
+                    ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+                    Utf8CP name = stmt.GetValueText(1);
+                    const int employeeCount = stmt.GetValueInt(2);
+
+                    if (id == acmeKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("ACME", name);
+                        ASSERT_EQ(123, employeeCount);
+                        }
+                    else if (id == bentleyKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("Bentley", name);
+                        ASSERT_EQ(4000, employeeCount);
+                        }
+                    else if (id == vwKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("VW", name);
+                        ASSERT_EQ(100000, employeeCount);
+                        }
+                    else
+                        FAIL();
+
                     rowCount++;
                     }
-                EXPECT_EQ(3, rowCount); // 3 rows entered for Company above
+                ASSERT_EQ(3, rowCount); // 3 rows entered for Company above
                 stmt.Finalize();
                 }
-            printf("End here: %Id ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            printf("Thread %Id ends ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
             }
         ));
         counter++;
@@ -194,45 +204,64 @@ TEST_F(ThreadSafetyTests, AllThreadsShareDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Majd.Uddin                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
+TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(3));
+    ECInstanceKey acmeKey, bentleyKey, vwKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(vwKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('VW', 100000)"));
+
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
 
-    Utf8CP ecsql = "SELECT Name, NumberOfEmployees FROM stco.Company";
-
     std::vector<BeThread> threads;
-
     const uint32_t kThreadCount = BeThreadUtilities::GetHardwareConcurrency();
     int counter = 0;
     for (uint32_t i = 0; i < kThreadCount; ++i)
         {
-        threads.push_back(BeThread::Start(
-            [&] ()
+        threads.push_back(BeThread::Start([&] ()
             {
-            printf("Begin here: %Id ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            printf("Thread %Id starts ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
 
             for (int i = 0; i < 100; ++i)
                 {
                 ECDb db;
-                DbResult stat = db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly));
-                EXPECT_EQ(BE_SQLITE_OK, stat);
+                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
 
                 ECSqlStatement stmt;
-                EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECInstanceId, Name, NumberOfEmployees FROM stco.Company"));
                 int rowCount = 0;
-                while (stmt.Step() != BE_SQLITE_DONE)
+                while (stmt.Step() == BE_SQLITE_ROW)
                     {
-                    EXPECT_STREQ("Sample string", stmt.GetValueText(0));
-                    EXPECT_EQ(123, stmt.GetValueInt(1));
+                    ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+                    Utf8CP name = stmt.GetValueText(1);
+                    const int employeeCount = stmt.GetValueInt(2);
+
+                    if (id == acmeKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("ACME", name);
+                        ASSERT_EQ(123, employeeCount);
+                        }
+                    else if (id == bentleyKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("Bentley", name);
+                        ASSERT_EQ(4000, employeeCount);
+                        }
+                    else if (id == vwKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("VW", name);
+                        ASSERT_EQ(100000, employeeCount);
+                        }
+                    else
+                        FAIL();
+
                     rowCount++;
                     }
-                EXPECT_EQ(3, rowCount); // 3 rows entered for Company above
+                ASSERT_EQ(3, rowCount); // 3 rows entered for Company above
                 stmt.Finalize();
                 }
-            printf("End here: %Id ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            printf("Thread %Id ends ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
             }
         ));
         counter++;
@@ -245,45 +274,64 @@ TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_ECSQL)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Majd.Uddin                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ThreadSafetyTests, MultiThreadsOpenDb_SQL)
+TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
+
+    ECInstanceKey acmeKey, bentleyKey, vwKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(vwKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('VW', 100000)"));
     m_ecdb.CloseDb();
 
-    Utf8CP sql = "SELECT Name, NumberOfEmployees FROM sc_Company";
-
     std::vector<BeThread> threads;
-
     const uint32_t kThreadCount = BeThreadUtilities::GetHardwareConcurrency();
     int counter = 0;
     for (uint32_t i = 0; i < kThreadCount; ++i)
         {
-        threads.push_back(BeThread::Start(
-            [&] ()
+        threads.push_back(BeThread::Start([&] ()
             {
-            printf("Begin here: %Id ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            printf("Thread %Id starts ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
 
             for (int i = 0; i < 100; ++i)
                 {
                 ECDb db;
-                DbResult stat = db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly));
-                EXPECT_EQ(BE_SQLITE_OK, stat);
+                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
 
                 Statement stmt;
-                EXPECT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(db, sql));
+                ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT Id, Name, NumberOfEmployees FROM sc_Company"));
                 int rowCount = 0;
-                while (stmt.Step() != BE_SQLITE_DONE)
+                while (stmt.Step() == BE_SQLITE_ROW)
                     {
-                    EXPECT_STREQ("Sample string", stmt.GetValueText(0));
-                    EXPECT_EQ(123, stmt.GetValueInt(1));
+                    ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+                    Utf8CP name = stmt.GetValueText(1);
+                    const int employeeCount = stmt.GetValueInt(2);
+
+                    if (id == acmeKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("ACME", name);
+                        ASSERT_EQ(123, employeeCount);
+                        }
+                    else if (id == bentleyKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("Bentley", name);
+                        ASSERT_EQ(4000, employeeCount);
+                        }
+                    else if (id == vwKey.GetInstanceId())
+                        {
+                        ASSERT_STREQ("VW", name);
+                        ASSERT_EQ(100000, employeeCount);
+                        }
+                    else
+                        FAIL();
+
                     rowCount++;
                     }
-                EXPECT_EQ(3, rowCount); // 3 rows entered for Company above
+                ASSERT_EQ(3, rowCount); // 3 rows entered for Company above
                 stmt.Finalize();
                 }
-            printf("End here: %Id ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            printf("Thread %Id ends ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
             }
         ));
         counter++;

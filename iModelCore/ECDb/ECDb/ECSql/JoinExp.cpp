@@ -116,7 +116,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
     auto fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
 
-    RangeClassInfo::List fromClassRefs;
+    std::vector<RangeClassInfo> fromClassRefs;
     fromExpression->FindRangeClassRefs(fromClassRefs);
     PRECONDITION(!fromClassRefs.empty(), ERROR);
 

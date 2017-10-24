@@ -238,7 +238,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     if (SingleSelectStatementExp const* stmt = static_cast<SingleSelectStatementExp const*>(exp.FindParent(Exp::Type::SingleSelect)))
         isRowConstructor = stmt->IsRowConstructor();
 
-    if (!ctx.GetCurrentScope().IsRootScope() && !isRowConstructor)
+    if (!isRowConstructor)
         {
         Utf8String alias = exp.GetColumnAlias();
         if (alias.empty())
@@ -262,7 +262,8 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
                 }
             }
         }
-    else if (ctx.GetCurrentScope().IsRootScope())
+
+    if (ctx.GetCurrentScope().IsRootScope())
         {
         ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);
         ECSqlStatus status = ECSqlFieldFactory::CreateField(ctx, &exp, startColumnIndex);

@@ -115,7 +115,7 @@ struct FSRTests : public ::testing::Test
     void VerifyECInstnaces(ECInstanceList& instances)
         {
         ECDbR ecdb = m_db;
-        for (auto instance : instances)
+        for (IECInstancePtr instance : instances)
             {
             auto &ecClass = instance->GetClass();
             SqlPrintfString ecSql("SELECT * FROM ONLY [%s].[%s] WHERE ECInstanceId = %s", Utf8String(ecClass.GetSchema().GetName()).c_str(), Utf8String(ecClass.GetName()).c_str(), Utf8String(instance->GetInstanceId()).c_str());
@@ -125,8 +125,11 @@ struct FSRTests : public ::testing::Test
             ECInstanceECSqlSelectAdapter adapter(ecStatement);
             ASSERT_TRUE(BE_SQLITE_ROW == ecStatement.Step());
             IECInstancePtr newInstance = adapter.GetInstance();
-            ASSERT_TRUE(ECDbTestUtility::CompareECInstances(*newInstance, *instance)) << ecSql.GetUtf8CP() << "\n" << newInstance->GetInstanceId().c_str() << "!=" << instance->GetInstanceId().c_str();
 
+            Json::Value newInstanceJson, instanceJson;
+            ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(newInstanceJson, *newInstance, nullptr, true));
+            ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, nullptr, true));
+            ASSERT_EQ(ComparableJsonCppValue(newInstanceJson), ComparableJsonCppValue(instanceJson)) << ecSql.GetUtf8CP() << " " << newInstance->GetInstanceId().c_str() << "!=" << instance->GetInstanceId().c_str();
             }
         }
     };

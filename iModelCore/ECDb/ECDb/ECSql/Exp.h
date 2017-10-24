@@ -89,7 +89,7 @@ struct PropertyPath final
             private:
                 static const int NOT_ARRAY = -1;
 
-                Utf8String m_propertyName;
+                Utf8String m_name;
                 ECN::ECPropertyCP m_property = nullptr;
                 int m_arrayIndex = NOT_ARRAY;
 
@@ -97,9 +97,9 @@ struct PropertyPath final
                 void ClearResolvedProperty() { m_property = nullptr; }
 
             public:
-                Location(Utf8StringCR name, int arrayIndex) : m_propertyName(name), m_arrayIndex(arrayIndex) { BeAssert(!name.empty()); }
+                Location(Utf8StringCR name, int arrayIndex) : m_name(name), m_arrayIndex(arrayIndex) { BeAssert(!name.empty()); }
 
-                Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
+                Utf8StringCR GetName() const { return m_name; }
                 ECN::ECPropertyCP GetProperty() const { return m_property; }
                 bool HasArrayIndex() const { return m_arrayIndex >= 0; }
                 int GetArrayIndex() const { return m_arrayIndex; }
@@ -408,7 +408,7 @@ struct Exp : NonCopyableClass
         //! @return string description of this expression
         Utf8String ToString() const { return _ToString(); }
 
-        static bool IsAsteriskToken(Utf8CP token) { return strcmp(token, ASTERISK_TOKEN) == 0; }
+        static bool IsAsteriskToken(Utf8StringCR token) { return token.Equals(ASTERISK_TOKEN); }
 
         Exp const* FindParent(Exp::Type) const;
         bool Contains(Type candidateType) const;
@@ -418,28 +418,5 @@ struct Exp : NonCopyableClass
 typedef Exp const* ExpCP;
 typedef Exp const& ExpCR;
 
-struct RangeClassRefExp;
-struct RangeClassInfo final
-    {
-    typedef std::vector<RangeClassInfo> List;
-    enum Scope
-        {
-        Nil,
-        Local,
-        Inherited
-        };
-    private:
-        RangeClassRefExp const* m_exp;
-        Scope m_scope;
-
-    public:
-        RangeClassInfo() :m_exp(nullptr), m_scope(Scope::Nil) {}
-        RangeClassInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
-        ~RangeClassInfo() {}
-        Scope GetScope() const { return m_scope; }
-        bool IsLocal() const { return m_scope == Scope::Local; }
-        bool IsInherited() const { return m_scope == Scope::Inherited; }
-        RangeClassRefExp const& GetExp() const { return *m_exp; }
-    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

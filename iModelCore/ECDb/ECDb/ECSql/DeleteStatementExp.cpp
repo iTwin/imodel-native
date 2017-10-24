@@ -30,32 +30,26 @@ DeleteStatementExp::DeleteStatementExp(std::unique_ptr<ClassRefExp> classNameExp
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    
+
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        auto classNameExp = GetClassNameExp ();
-        RangeClassInfo::List classList;
+        ClassNameExp const* classNameExp = GetClassNameExp();
+        std::vector<RangeClassInfo> classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
-        m_finalizeParsingArgCache = move (classList);
-        ctx.PushFinalizeParseArg (&m_finalizeParsingArgCache);
-
+        m_rangeClassRefExpCache = std::move(classList);
+        ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(m_rangeClassRefExpCache));
         return FinalizeParseStatus::NotCompleted;
         }
-    else
-        {
-        ctx.PopFinalizeParseArg ();
-        m_finalizeParsingArgCache.clear();
-        return FinalizeParseStatus::Completed;
-        }
+
+    ctx.PopArg();
+    m_rangeClassRefExpCache.clear();
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassNameExp const* DeleteStatementExp::GetClassNameExp() const
-    {
-    return GetChild<ClassNameExp>(m_classNameExpIndex);
-    }
+ClassNameExp const* DeleteStatementExp::GetClassNameExp() const { return GetChild<ClassNameExp>(m_classNameExpIndex); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
@@ -86,7 +80,7 @@ void DeleteStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     ctx.AppendToECSql("DELETE FROM ").AppendToECSql(*GetClassNameExp());
 
-    Exp const* exp = GetWhereClauseExp ();
+    Exp const* exp = GetWhereClauseExp();
     if (exp != nullptr)
         ctx.AppendToECSql(" ").AppendToECSql(*exp);
 
@@ -94,7 +88,6 @@ void DeleteStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (exp != nullptr)
         ctx.AppendToECSql(" ").AppendToECSql(*exp);
     }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

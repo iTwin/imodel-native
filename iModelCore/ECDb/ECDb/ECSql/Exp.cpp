@@ -33,8 +33,6 @@ Exp const* Exp::FindParent(Exp::Type type) const
     return p;
     }
 
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool Exp::Contains(Exp::Type candidateType) const
@@ -396,10 +394,10 @@ void PropertyPath::Location::SetProperty(ECPropertyCR property)
 Utf8String PropertyPath::Location::ToString(bool includeArrayIndexes) const
     {
     if (GetArrayIndex() < 0 || !includeArrayIndexes)
-        return m_propertyName;
+        return m_name;
 
     Utf8String tmp;
-    tmp.Sprintf("%s[%d]", m_propertyName.c_str(), GetArrayIndex());
+    tmp.Sprintf("%s[%d]", m_name.c_str(), GetArrayIndex());
     return tmp;
     }
 

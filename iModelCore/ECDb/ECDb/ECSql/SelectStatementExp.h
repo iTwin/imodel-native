@@ -75,7 +75,7 @@ struct DerivedPropertyExp final : Exp
 struct FromExp final : Exp
     {
     private:
-        void FindRangeClassRefs(RangeClassInfo::List&, ClassRefExp const&,RangeClassInfo::Scope) const;
+        void FindRangeClassRefs(std::vector<RangeClassInfo>&, ClassRefExp const&,RangeClassInfo::Scope) const;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -87,13 +87,13 @@ struct FromExp final : Exp
 
         BentleyStatus TryAddClassRef(ECSqlParseContext&, std::unique_ptr<ClassRefExp>);
 
-        RangeClassInfo::List FindRangeClassRefExpressions() const;
+        std::vector<RangeClassInfo> FindRangeClassRefExpressions() const;
 
         //-----------------------------------------------------------------------------------------
         // @bsimethod                                    Affan.Khan                       05/2013
         //For subquery it return "" if subquery has no alias
         //+---------------+---------------+---------------+---------------+---------------+------
-        void FindRangeClassRefs(RangeClassInfo::List&, RangeClassInfo::Scope scope = RangeClassInfo::Scope::Local) const;
+        void FindRangeClassRefs(std::vector<RangeClassInfo>&, RangeClassInfo::Scope scope = RangeClassInfo::Scope::Local) const;
     };
 
 //=======================================================================================
@@ -185,11 +185,16 @@ struct OrderBySpecExp final : Exp
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
+struct SingleSelectStatementExp;
 struct OrderByExp final : Exp
     {
     private:
+        std::vector<SingleSelectStatementExp const*> m_unionClauses;
+
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override { return "OrderBy"; }
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        ComputedExp const* FindIncompatibleOrderBySpecExpForUnion() const;
 
     public:
         explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs) : Exp(Type::OrderBy)
@@ -205,8 +210,8 @@ struct OrderByExp final : Exp
 struct SelectClauseExp final : Exp
     {
     private:
-        BentleyStatus ReplaceAsteriskExpression(ECSqlParseContext const&, DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const&);
-        BentleyStatus ReplaceAsteriskExpressions(ECSqlParseContext const&, RangeClassInfo::List const&);
+        BentleyStatus ReplaceAsteriskExpression(ECSqlParseContext const&, DerivedPropertyExp const& asteriskExp, std::vector<RangeClassInfo> const&);
+        BentleyStatus ReplaceAsteriskExpressions(ECSqlParseContext const&, std::vector<RangeClassInfo> const&);
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -216,10 +221,7 @@ struct SelectClauseExp final : Exp
     public:
         SelectClauseExp() : Exp(Type::Selection) {}
 
-        void AddProperty(std::unique_ptr<DerivedPropertyExp> propertyExp)
-            {
-            AddChild(std::move(propertyExp));
-            }
+        void AddProperty(std::unique_ptr<DerivedPropertyExp> propertyExp) { AddChild(std::move(propertyExp)); }
     };
 
 //=======================================================================================
@@ -256,7 +258,7 @@ struct SingleSelectStatementExp final : QueryExp
         int m_havingClauseIndex = UNSET_CHILDINDEX;
         int m_limitOffsetClauseIndex = UNSET_CHILDINDEX;
         int m_optionsClauseIndex = UNSET_CHILDINDEX;
-        RangeClassInfo::List m_finalizeParsingArgCache;
+        std::vector<RangeClassInfo> m_rangeClassRefExpCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -272,7 +274,7 @@ struct SingleSelectStatementExp final : QueryExp
                                  std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
         explicit SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>&);
-        bool IsRowConstructor() const { return  m_fromClauseIndex == UNSET_CHILDINDEX;}
+        bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
 
@@ -380,7 +382,7 @@ struct SelectStatementExp final : QueryExp
         SelectClauseExp const* _GetSelection() const override { return GetFirstStatement().GetSelection(); }
 
         static Utf8CP OperatorToString(CompoundOperator);
-
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& parseContext, FinalizeParseMode parseMode) override;
     public:
         explicit SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>);
         SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, CompoundOperator, bool isAll, std::unique_ptr<SelectStatementExp> rhs);
@@ -404,7 +406,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     friend struct ECSqlParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
-        bool _ContainProperty(Utf8CP propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName) != nullptr; }
+        bool _ContainsProperty(Utf8StringCR propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName.c_str()) != nullptr; }
         BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;

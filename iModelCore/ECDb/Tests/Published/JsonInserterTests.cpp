@@ -28,7 +28,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
     Json::Value expectedJson;
-    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(expectedJson, jsonInputFile));
+    ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(expectedJson, jsonInputFile));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
@@ -303,9 +303,9 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
     Json::Value expectedJsonCpp;
-    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(expectedJsonCpp, jsonInputFile));
+    ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(expectedJsonCpp, jsonInputFile));
     rapidjson::Document expectedJson;
-    ASSERT_FALSE(expectedJson.Parse<0>(Json::FastWriter().write(expectedJsonCpp).c_str()).HasParseError());
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, Json::FastWriter().write(expectedJsonCpp)));
 
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);

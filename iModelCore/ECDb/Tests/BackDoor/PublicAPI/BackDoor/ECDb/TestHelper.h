@@ -9,7 +9,9 @@
 
 #include "ECDbTests.h"
 #include "TestInfoHolders.h"
-#include <ostream>
+#include <Bentley/BeNumerical.h>
+#include <json/json.h>
+#include <rapidjson/BeRapidJson.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -26,7 +28,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! which is then used by each method of TestHelper.
 // @bsiclass                                                 Krischan.Eberle     06/2017
 //=======================================================================================    
-struct TestHelper
+struct TestHelper final
     {
     private:
         ECDbCR m_ecdb;
@@ -51,7 +53,7 @@ struct TestHelper
         BentleyStatus ImportSchemas(std::vector<SchemaItem> const&) const;
 
         ECSqlStatus PrepareECSql(Utf8CP ecsql) const { ECSqlStatement stmt;  return stmt.Prepare(m_ecdb, ecsql); }
-        DbResult ExecuteNonSelectECSql(Utf8CP ecsql) const;
+        DbResult ExecuteECSql(Utf8CP ecsql) const;
         DbResult ExecuteInsertECSql(ECInstanceKey&, Utf8CP ecsql) const;
 
         MapStrategyInfo GetMapStrategy(ECN::ECClassId) const;
@@ -83,6 +85,62 @@ struct TestHelper
         Utf8String GetIndexDdl(Utf8StringCR indexName) const { return GetDdl(indexName.c_str(), "index"); }
         bool IndexExists(Utf8StringCR indexName) const { return !GetDdl(indexName.c_str(), "index").empty(); }
         std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR dbTableName) const;
+    };
+
+//=======================================================================================    
+//! Misc test utilities
+// @bsiclass                                                 Krischan.Eberle     10/2017
+//=======================================================================================    
+struct TestUtilities final
+    {
+    private:
+        TestUtilities() = delete;
+        ~TestUtilities() = delete;
+
+    public:
+        static BentleyStatus ReadFile(Utf8StringR, BeFileNameCR);
+        static BentleyStatus ReadFile(Json::Value&, BeFileNameCR);
+        static BentleyStatus ReadFile(rapidjson::Document&, BeFileNameCR);
+
+        static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
+        static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
+
+        //! Use this method to compare to double values in tests as comparing them directly often fails due to floating point inaccuracies
+        static bool Equals(double lhs, double rhs) { return fabs(lhs - rhs) <= BeNumerical::ComputeComparisonTolerance(lhs, rhs); }
+    };
+
+//=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     10/2017
+//=======================================================================================    
+struct ComparableJsonCppValue final
+    {
+public:
+    JsonValueCR m_value;
+
+    explicit ComparableJsonCppValue(JsonValueCR json) : m_value(json) {}
+
+    bool operator==(ComparableJsonCppValue const& rhs) const;
+    bool operator!=(ComparableJsonCppValue const& rhs) const { return !(*this == rhs); }
+    };
+
+void PrintTo(ComparableJsonCppValue const&, std::ostream*);
+
+//=======================================================================================    
+//! Utility to populate an ECInstance with random values
+// @bsiclass                                                 Affan.Khan     03/12
+//=======================================================================================    
+struct ECInstancePopulator final
+    {
+    private:
+        static void PopulateStructValue(ECN::ECValueR value, ECN::ECClassCR structType);
+        static void PopulatePrimitiveValue(ECN::ECValueR ecValue, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
+
+        static ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, Utf8CP baseAccessPath);
+        static ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName) { return CopyStruct(target, *ECN::ECValuesCollection::Create(structValue), propertyName); }
+
+    public:
+        //! Populates the ECInstance with random values
+        static void Populate(ECN::IECInstanceR, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);
     };
 
 END_ECDBUNITTESTS_NAMESPACE
