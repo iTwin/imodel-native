@@ -189,7 +189,7 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
     if (SQL_ISRULE(parseNode, selection))
         {
         OSQLParseNode const* n = parseNode->getChild(0);
-        if (Exp::IsAsteriskToken(n->getTokenValue().c_str()))
+        if (Exp::IsAsteriskToken(n->getTokenValue()))
             {
             PropertyPath pp;
             pp.Push(Exp::ASTERISK_TOKEN);
@@ -803,7 +803,7 @@ BentleyStatus ECSqlParser::ParseSetFct(std::unique_ptr<ValueExp>& exp, OSQLParse
 
     std::unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(functionName, setQuantifier, isStandardSetFunction);
 
-    if (functionName.EqualsIAscii("count") && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
+    if (functionName.EqualsIAscii("count") && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue()))
         {
         std::unique_ptr<ValueExp> argExp = nullptr;
         if (SUCCESS != LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)))

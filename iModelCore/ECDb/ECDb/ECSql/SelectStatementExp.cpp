@@ -578,9 +578,9 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
         PropertyPath const& propertyPath = innerExp.GetPropertyPath();
         //case: SELECT a.* from FOO a
-        if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetPropertyName()))
+        if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetName()))
             {
-            Utf8CP alias = propertyPath[0].GetPropertyName();
+            Utf8StringCR alias = propertyPath[0].GetName();
             //Find class ref that matches the alias and replace the asterisk by just the props of that class ref
             for (RangeClassInfo const& classRef : rangeClassRefs)
                 {
@@ -727,11 +727,12 @@ DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propert
             if (expr->GetType() == Type::PropertyName)
                 {
                 PropertyNameExp const& propertyNameExp = expr->GetAs<PropertyNameExp>();
-                if (strcmp(propertyNameExp.GetPropertyName(), propertyName) == 0)
+                if (propertyNameExp.GetPropertyName().Equals(propertyName))
                     return &derivedPropertyExp;
                 }
             }
         }
+
     return nullptr;
     }
 

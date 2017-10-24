@@ -227,7 +227,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp(ECSq
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
 
     ECClassCR& rootClass = internalPropPath.GetClassMap()->GetClass();
-    return ECSqlColumnInfo::CreateTopLevel(false, std::move(ecsqlPropPath), rootClass, propertyNameExp.GetClassAlias());
+    return ECSqlColumnInfo::CreateTopLevel(false, std::move(ecsqlPropPath), rootClass, propertyNameExp.GetClassName());
     }
 
 //-----------------------------------------------------------------------------------------

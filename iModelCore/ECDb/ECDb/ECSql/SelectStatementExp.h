@@ -406,7 +406,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     friend struct ECSqlParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
-        bool _ContainProperty(Utf8CP propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName) != nullptr; }
+        bool _ContainsProperty(Utf8StringCR propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName.c_str()) != nullptr; }
         BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
