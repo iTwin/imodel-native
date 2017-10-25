@@ -90,9 +90,9 @@ $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir
 
 objs + $(o)SQLite$(oext)
 
-BeSQLiteRequiredLibs = $(BuildContext)SubParts/Libs/$(stlibprefix)BeZlib$(stlibext)
-BeSQLiteRequiredLibs + $(BuildContext)SubParts/Libs/$(stlibprefix)snappy$(stlibext)
-BeSQLiteRequiredLibs + $(BuildContext)SubParts/Libs/$(stlibprefix)lzma$(stlibext)
+BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)
