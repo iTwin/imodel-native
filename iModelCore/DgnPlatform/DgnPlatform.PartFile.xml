@@ -63,12 +63,12 @@
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="pnglib"                 PartFile="png"          Repository="Libsrc-png"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
-        <SubPart PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
         <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
