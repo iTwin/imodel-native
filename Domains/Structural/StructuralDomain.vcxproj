@@ -67,7 +67,6 @@
     <ClCompile Include="StructuralProfiles\BuiltUpProfileComponent.cpp" />
     <ClCompile Include="StructuralProfiles\ConstantProfile.cpp" />
     <ClCompile Include="StructuralProfiles\CurvedExtrusion.cpp" />
-    <ClCompile Include="StructuralProfiles\Loft.cpp" />
     <ClCompile Include="StructuralProfiles\ParametricProfile.cpp" />
     <ClCompile Include="StructuralProfiles\Profile.cpp" />
     <ClCompile Include="StructuralProfiles\ProfiledExtrusion.cpp" />
@@ -112,7 +111,6 @@
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfileComponent.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ConstantProfile.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\CurvedExtrusion.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Loft.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ParametricProfile.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Profile.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ProfiledExtrusion.h" />

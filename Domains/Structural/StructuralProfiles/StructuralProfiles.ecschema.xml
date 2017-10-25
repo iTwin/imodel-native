@@ -144,12 +144,6 @@
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Loft" description="Loft">
-        <BaseClass>ProfiledExtrusion</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECRelationshipClass typeName="ProfiledExtrusionHasProfile" description="TODO" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="TODO1" polymorphic="true">
             <Class class="ProfiledExtrusion"/>

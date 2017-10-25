@@ -19,11 +19,14 @@ StructuralProfilesDomain::StructuralProfilesDomain() : DgnDomain(BENTLEY_STRUCTU
     // TODO: register handlers once they are created
     //RegisterHandler(StructuralProfilesModelHandler::GetHandler());
     //RegisterHandler(BuiltUpProfileComponentHandler::GetHandler());
+    
+    RegisterHandler(ProfileHandler::GetHandler());
+    RegisterHandler(ConstantProfileHandler::GetHandler());
+    RegisterHandler(PublishedProfileHandler::GetHandler());
 
     RegisterHandler(ProfiledExtrusionHandler::GetHandler());
     RegisterHandler(CurvedExtrusionHandler::GetHandler());
     RegisterHandler(StraightExtrusionHandler::GetHandler());
-    RegisterHandler(LoftHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

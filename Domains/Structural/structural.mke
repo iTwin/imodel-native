@@ -101,7 +101,6 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructProfilesPublicAPI)Profiledextrusion.h \
     $(StructProfilesPublicAPI)CurvedExtrusion.h \
     $(StructProfilesPublicAPI)StraightExtrusion.h \
-    $(StructProfilesPublicAPI)Loft.h \
     $(StructProfilesPublicAPI)VaryingProfileByZone.h \
     $(StructMaterialPublicAPI)MaterialProperties.h \
     $(StructMaterialPublicAPI)ConcreteMaterialProperties.h \
@@ -178,13 +177,6 @@ $(o)ProfiledExtrusion$(oext) : $(StructProfiles)ProfiledExtrusion.cpp \
 $(o)CurvedExtrusion$(oext) : $(StructProfiles)CurvedExtrusion.cpp \
     ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)CurvedExtrusion.h \
-    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
-    $(StructCommonPublicAPI)Form.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)Loft$(oext) : $(StructProfiles)Loft.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)Loft.h \
     $(StructProfilesPublicAPI)ProfiledExtrusion.h \
     $(StructCommonPublicAPI)Form.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h

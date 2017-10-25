@@ -861,10 +861,38 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
 
     Dgn::DgnCode memberCode1 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralAdditionTests - code for structural member 1");
     WallPtr pstructMember1 = Wall::Create(physicalModel);
-    pstructMember1->SetCode(memberCode1);//not sure it is correct...
+    pstructMember1->SetCode(memberCode1);
     pstructMember1->Insert(&status);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     status = padd1->SetParentId(pstructMember1->GetElementId(), pstructMember1->GetElementClassId());
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    }
+
+
+#define PUBLISHEDPROFILE_CODE_VALUE3       "PUBLISHEDPROFILE-003"
+
+TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
+    {   
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_PublishedProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE3);
+    ASSERT_TRUE(code.IsValid());
+  
+    Dgn::DgnDbStatus status;
+    PublishedProfilePtr publishedProfile = PublishedProfile::Create(definitionModel);
+
+    publishedProfile->SetCode(code);
+    publishedProfile->Insert(&status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE3);
+    ASSERT_TRUE(queriedElement.IsValid());
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     }

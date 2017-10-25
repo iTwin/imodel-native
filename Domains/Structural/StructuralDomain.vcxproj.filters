@@ -170,9 +170,6 @@
     <ClCompile Include="StructuralProfiles\CurvedExtrusion.cpp">
       <Filter>StructuralProfiles</Filter>
     </ClCompile>
-    <ClCompile Include="StructuralProfiles\Loft.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
     <ClCompile Include="StructuralProfiles\ProfiledExtrusion.cpp">
       <Filter>StructuralProfiles</Filter>
     </ClCompile>
@@ -305,9 +302,6 @@
       <Filter>StructuralCommon</Filter>
     </ClInclude>
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\CurvedExtrusion.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Loft.h">
       <Filter>StructuralProfiles</Filter>
     </ClInclude>
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ProfiledExtrusion.h">
