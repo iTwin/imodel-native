@@ -542,7 +542,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 
-LINKER_LIBRARIES = $(ContextSubpartsLibs)$(stlibprefix)scz_compress$(stlibext)
+LINKER_LIBRARIES = $(ContextSubpartsStaticLibs)$(stlibprefix)scz_compress$(stlibext)
 
 %if $(TARGET_PLATFORM)=="Windows"   
 LINKER_LIBRARIES + Comdlg32.lib Ws2_32.lib

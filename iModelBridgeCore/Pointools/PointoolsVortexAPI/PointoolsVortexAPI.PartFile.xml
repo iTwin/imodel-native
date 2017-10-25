@@ -54,11 +54,11 @@
         <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
         <!--SubPart PartName="OpenGLSubParts"/-->
         <SubPart PartName="ttlapi"             PartFile="ttl"              Repository="libsrc-ttl"/>
-        <SubPart PartName="LokiApi"         PartFile="Loki"             Repository="libsrc-loki"/>
-        <SubPart PartName="FastDelegate"    PartFile="FastDelegate"     Repository="libsrc-FastDelegate"/>
+        <SubPart PartName="Loki" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="FastDelegate" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <!--<SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>-->
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"         Repository="GeomLibs"/>
-        <SubPart PartName="SCZ_Compress"    PartFile="scz_compress"     Repository="libsrc-scz_compress"/>
+        <SubPart LibType="Static" PartName="SczCompress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <Libs>Delivery/$(shlibprefix)PointoolsVortexAPI$(libext)</Libs>
             <Assemblies Feature="PointCloud">Delivery/$(shlibprefix)PointoolsVortexAPI$(ApiNumber)$(shlibext)</Assemblies>
