@@ -1386,8 +1386,8 @@ DLM_NOENTRY                 = 1
 
 LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(IppJpegLib12Bits) \
-                    $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
-                    $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext) \
+                    $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
+                    $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(stlibext) \
                     $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) \
                     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \

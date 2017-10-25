@@ -13,8 +13,8 @@
     <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
     
     <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="pnglib"                     PartFile="png"              Repository="libsrc-png"/>
-        <SubPart PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
@@ -106,8 +106,8 @@
         <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
         <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="pnglib"                             PartFile="png"                  Repository="libsrc-png"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="Jpeg12BitsLib" />
         <SubPart PartName="GdalLib" />
         <SubPart PartName="GdalData" />
