@@ -53,6 +53,7 @@
 #define DYNAMIC_PRESSURE_NAME                               "PressureProp"
 #define DYNAMIC_FLOW_NAME                                   "FlowProp"
 #define DYNAMIC_ELECTRICAL_POTENIAL_NAME                    "VoltProp"
+#define DYNAMIC_PRESSURE_GRADIENT_NAME                      "PressureGradientProp"
 
 
 
@@ -368,6 +369,10 @@ TEST_F(AecUnitsTestFixture, AddClassesToDynamicSchema)
     locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_FREQUENCY);
     myProp->SetKindOfQuantity(locatedKOQ);
 
+    newClass->CreatePrimitiveProperty(myProp, DYNAMIC_PRESSURE_GRADIENT_NAME);
+    myProp->SetType(ECN::PRIMITIVETYPE_Double);
+    locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_PRESSURE_GRADIENT);
+    myProp->SetKindOfQuantity(locatedKOQ);
 
 
     bvector<ECN::ECSchemaCP> updatedSchemas;
@@ -3600,6 +3605,9 @@ TEST_F(AecUnitsTestFixture, PlantPressureUnitsTest)
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PSIG, testDouble);
     ASSERT_NEAR(testDouble, -14.69580374, 0.00001);
 
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_KGF_PER_SQ_M, testDouble);
+    ASSERT_NEAR(testDouble, 0.101971621, 0.00001);
+
     // Set using PAG
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PAG, -101324.0));
@@ -3627,6 +3635,9 @@ TEST_F(AecUnitsTestFixture, PlantPressureUnitsTest)
 
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PSIG, testDouble);
     ASSERT_NEAR(testDouble, -14.69580374, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_KGF_PER_SQ_M, testDouble);
+    ASSERT_NEAR(testDouble, 0.101971621, 0.00001);
 
     // Set using PSI
 
@@ -3656,6 +3667,8 @@ TEST_F(AecUnitsTestFixture, PlantPressureUnitsTest)
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PSIG, testDouble);
     ASSERT_NEAR(testDouble, -14.69580374, 0.00001);
 
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_KGF_PER_SQ_M, testDouble);
+    ASSERT_NEAR(testDouble, 0.101971621, 0.00001);
 
     // Set using PSIG
 
@@ -3684,6 +3697,40 @@ TEST_F(AecUnitsTestFixture, PlantPressureUnitsTest)
 
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PSIG, testDouble);
     ASSERT_NEAR(testDouble, -14.69580374, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_KGF_PER_SQ_M, testDouble);
+    ASSERT_NEAR(testDouble, 0.101971621, 0.00001);
+
+    // Set using KGF_PER_SQ_M
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_KGF_PER_SQ_M, 0.101971621));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.0001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PA, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PAG, testDouble);
+    ASSERT_NEAR(testDouble, -101324.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PSI, testDouble);
+    ASSERT_NEAR(testDouble, 0.000145038, 0.0001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_PSIG, testDouble);
+    ASSERT_NEAR(testDouble, -14.69580374, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_PRESSURE_PROPERTY_NAME, AEC_UNIT_KGF_PER_SQ_M, testDouble);
+    ASSERT_NEAR(testDouble, 0.101971621, 0.00001);
 
     }
 
@@ -4576,6 +4623,9 @@ TEST_F(AecUnitsTestFixture, PlantFlowUnitsTest)
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_GALLON_PER_MIN, testDouble);
     ASSERT_NEAR(testDouble, 15850.323141488903, 0.00000001);
 
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_SEC, testDouble);
+    ASSERT_NEAR(testDouble, 1000.0, 0.00001);
+
 
     // Set using Liters per minute
 
@@ -4605,6 +4655,9 @@ TEST_F(AecUnitsTestFixture, PlantFlowUnitsTest)
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_GALLON_PER_MIN, testDouble);
     ASSERT_NEAR(testDouble, 15850.323141488903, 0.00000001);
 
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_SEC, testDouble);
+    ASSERT_NEAR(testDouble, 1000.0, 0.00001);
+
     // Set using Cubic Feet/Minute
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_CUB_FT_PER_MIN, 2118.8800032893155));
@@ -4632,6 +4685,9 @@ TEST_F(AecUnitsTestFixture, PlantFlowUnitsTest)
 
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_GALLON_PER_MIN, testDouble);
     ASSERT_NEAR(testDouble, 15850.323141488903, 0.00000001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_SEC, testDouble);
+    ASSERT_NEAR(testDouble, 1000.0, 0.00001);
 
     // Set using Gallons/Minute
 
@@ -4661,6 +4717,39 @@ TEST_F(AecUnitsTestFixture, PlantFlowUnitsTest)
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_GALLON_PER_MIN, testDouble);
     ASSERT_NEAR(testDouble, 15850.323141488903, 0.00000001);
 
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_SEC, testDouble);
+    ASSERT_NEAR(testDouble, 1000.0, 0.00001);
+
+    // Set using Litre/Sec
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_SEC, 1000.0));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_CUB_M_PER_SEC, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_MIN, testDouble);
+    ASSERT_NEAR(testDouble, 60000.0, 0.01);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_CUB_FT_PER_MIN, testDouble);
+    ASSERT_NEAR(testDouble, 2118.8800032893155, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_GALLON_PER_MIN, testDouble);
+    ASSERT_NEAR(testDouble, 15850.323141488903, 0.00000001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PROCESS_PIPING_FLOW_PROPERTY_NAME, AEC_UNIT_LITRE_PER_SEC, testDouble);
+    ASSERT_NEAR(testDouble, 1000.0, 0.00001);
 
     }
 
@@ -5472,6 +5561,88 @@ TEST_F(AecUnitsTestFixture, VelocityUnitsTest)
 //  @bsimethod                                                    06/2017
 //+---------------+---------------+---------------+---------------+---------------+-------
 
+TEST_F(AecUnitsTestFixture, PressureGradientTest)
+    {
+    DgnDbPtr db = OpenDgnDb();
+
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(DYNAMIC_SCHEMA_NAME);
+
+    ASSERT_TRUE(nullptr != schema);
+
+    Dgn::SubjectCPtr parentSubject = db->Elements().GetRootSubject();
+
+    Dgn::DgnCode               partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, MODEL_TEST_NAME);
+    Dgn::DgnElementId          partitionId = db->Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db->Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    ASSERT_TRUE(partition.IsValid());
+
+    PhysicalModelCPtr physModel = dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    ASSERT_TRUE(physModel.IsValid());
+
+    Dgn::PhysicalElementPtr element = CreatePhysicalElement(DYNAMIC_SCHEMA_NAME, DYNAMIC_CLASS_NAME, *physModel);
+
+    ASSERT_TRUE(element.IsValid());
+
+    // Set using HZ
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, DYNAMIC_PRESSURE_GRADIENT_NAME, AEC_UNIT_PA_PER_M, 1.0));
+
+    Dgn::DgnDbStatus status;
+
+    Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ECN::ECValue propVal;
+    double testValue;
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_PRESSURE_GRADIENT_NAME));
+    double testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PRESSURE_GRADIENT_NAME, AEC_UNIT_PA_PER_M, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PRESSURE_GRADIENT_NAME, AEC_UNIT_BAR_PER_KM, testDouble);
+    ASSERT_NEAR(testDouble, 0.01, 0.00001);
+
+
+    // Set using KHZ
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PRESSURE_GRADIENT_NAME, AEC_UNIT_BAR_PER_KM, 0.01));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_PRESSURE_GRADIENT_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PRESSURE_GRADIENT_NAME, AEC_UNIT_PA_PER_M, testDouble);
+    ASSERT_NEAR(testDouble, 1.0, 0.00001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_PRESSURE_GRADIENT_NAME, AEC_UNIT_BAR_PER_KM, testDouble);
+    ASSERT_NEAR(testDouble, 0.01, 0.00001);
+
+    }
+
+
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
 TEST_F(AecUnitsTestFixture, frequencyUnitsTest)
     {
     DgnDbPtr db = OpenDgnDb();
@@ -5516,16 +5687,15 @@ TEST_F(AecUnitsTestFixture, frequencyUnitsTest)
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_FREQUENCY_NAME));
     double testDouble = propVal.GetDouble();
     ASSERT_NEAR(testDouble, 1000.0, 0.001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_HZ, testDouble);
     ASSERT_NEAR(testDouble, 1000.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_KHZ, testDouble);
     ASSERT_NEAR(testDouble, 1.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_MHZ, testDouble);
     ASSERT_NEAR(testDouble, 0.001, 0.00001);
-
 
     // Set using KHZ
 
@@ -5533,47 +5703,47 @@ TEST_F(AecUnitsTestFixture, frequencyUnitsTest)
 
     testElement = queriedElement->Update(&status);
 
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
-
-    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
 
     ASSERT_TRUE(queriedElement.IsValid());
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_VELOCITY_NAME));
     testDouble = propVal.GetDouble();
     ASSERT_NEAR(testDouble, 1000.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_HZ, testDouble);
     ASSERT_NEAR(testDouble, 1000.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_KHZ, testDouble);
     ASSERT_NEAR(testDouble, 1.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_MHZ, testDouble);
     ASSERT_NEAR(testDouble, 0.001, 0.00001);
-
+    
     // Set using MHZ
-
+    
     ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_MHZ, 0.001));
-
+    
     testElement = queriedElement->Update(&status);
-
+    
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
-
+    
     queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
-
+    
     ASSERT_TRUE(queriedElement.IsValid());
-
+    
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_FREQUENCY_NAME));
     testDouble = propVal.GetDouble();
     ASSERT_NEAR(testDouble, 1000.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_HZ, testDouble);
     ASSERT_NEAR(testDouble, 1000.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_KHZ, testDouble);
     ASSERT_NEAR(testDouble, 1.0, 0.00001);
-
+    
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_FREQUENCY_NAME, AEC_UNIT_MHZ, testDouble);
     ASSERT_NEAR(testDouble, 0.001, 0.00001);
+    
     }
+
+
