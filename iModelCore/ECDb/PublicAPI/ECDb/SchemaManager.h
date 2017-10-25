@@ -83,7 +83,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
             {
             None = 0,
             DoNotFailSchemaValidationForLegacyIssues,
-            Poisoning
+            Poisoning //!< Currently not supported. Poisoning concept is being revisited.
             };
 #endif
 

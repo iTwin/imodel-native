@@ -208,6 +208,12 @@ BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, S
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
+    if (ctx.GetOptions() == SchemaImportOptions::Poisoning)
+        {
+        LOG.error("Failed to import ECSchemas. SchemaImportOption::Poisoning is not supported.");
+        return ERROR;
+        }
+
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(GetECDb(), schemaImportToken));
     if (!policy.IsSupported())
         {

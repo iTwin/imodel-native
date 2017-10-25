@@ -165,6 +165,24 @@ TEST_F(ECSqlStatementTestFixture, ClassAliases)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a1.Name, ts.A.Name FROM ts.A a1, ts.A WHERE a1.Size=20 AND ts.A.Size=10 ORDER BY a1.Name, ts.A.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_STREQ("A2", stmt.GetValueText(0)) << stmt.GetECSql();
+    ASSERT_STREQ("A1", stmt.GetValueText(1)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT a1.Name, ts.A.Name FROM ts.A a1, ts.A WHERE a1.Size=20 AND A.Size=10 ORDER BY a1.Name, A.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_STREQ("A2", stmt.GetValueText(0)) << stmt.GetECSql();
+    ASSERT_STREQ("A1", stmt.GetValueText(1)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
