@@ -927,7 +927,7 @@
         <SubPart PartName="libxml2"                     PartFile="BeLibxml2"        Repository="libsrc-libxml2" />
         <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
         <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
-        <SubPart PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeSQLite"                    PartFile="BeSQLite"         Repository="BeSQLite" />
         <SubPart PartName="ECDb"                        PartFile="ECDb"             Repository="ECDb" />
         <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
