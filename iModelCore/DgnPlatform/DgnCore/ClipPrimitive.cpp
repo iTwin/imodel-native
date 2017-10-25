@@ -30,7 +30,7 @@ struct ClipPlanesPrimitive : ClipPrimitive
 {
     mutable ClipPlaneSetP m_clipPlanes;
     mutable ClipPlaneSetP m_maskPlanes;
-    uint32_t  m_flags;
+    uint32_t m_flags;
 
     enum 
         {
@@ -584,7 +584,7 @@ static void parseLinearPlanes(ClipPlaneSetR planeSet, DPoint2dCR start, DPoint2d
 
     if (NULL == cameraFocalLength)
         {
-        DVec2d                  perpendicular = DVec2d::From(-normal.y, normal.x);
+        DVec2d perpendicular = DVec2d::From(-normal.y, normal.x);
 
         convexSet.push_back(ClipPlane(DVec3d::From(normal.x, normal.y), DPoint3d::From(start), invisible));
         convexSet.push_back(ClipPlane(DVec3d::From(-normal.x, -normal.y), DPoint3d::From(end), invisible));

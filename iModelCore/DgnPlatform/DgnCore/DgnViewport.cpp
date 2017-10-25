@@ -375,7 +375,7 @@ static void validateCamera(ViewDefinition3d::Camera& camera, ViewDefinition3dR c
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Adjust the front and back clip planes to include the project extents.
+* Adjust the front and back clip planes to include the viewed extents.
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
@@ -383,54 +383,44 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
     if (!m_is3dView)
         return;
 
-    DPoint3d saveOrg = origin;
-    DVec3d saveDelta = delta;
-    m_rotMatrix.Multiply(origin);   // put origin into view orientation
+    DRange3d extents = m_viewController->GetViewedExtents(*this);
+    if (extents.IsEmpty())
+        return;
 
+    // convert viewed extents in world coordinates to min/max in view aligned coordinates
     Transform viewTransform;
     viewTransform.InitFrom(m_rotMatrix);
+    Frustum extFrust(extents);
+    extFrust.Multiply(viewTransform);
+    extents = extFrust.ToRange();
 
-    DRange3d extents = m_viewController->GetViewedExtents(*this);
-    if (!extents.IsEmpty())
-        {
-        Frustum extFrust(extents);
-        extFrust.Multiply(viewTransform);
-        extents = extFrust.ToRange();
-
-        origin.z = extents.low.z;
-        delta.z = extents.high.z - origin.z;
-        }
-
-    double backFraction = 1.0;
-    if (m_isCameraOn)
-        {
-        DPoint3d orgWorld = origin;
-        m_rotMatrix.MultiplyTranspose(orgWorld);
-
-        DPoint3d eyeOrg;
-        eyeOrg.DifferenceOf(m_camera.GetEyePoint(), orgWorld);
-        m_rotMatrix.Multiply(eyeOrg);
-        backFraction = m_camera.GetFocusDistance() / eyeOrg.z; // Perspective fraction at focus plane.
-
-        if (backFraction <= 0.0)
-            {
-            origin = saveOrg;
-            delta = saveDelta;
-            return;
-            }
-        }
-
-    delta.z = std::max(delta.z, DgnUnits::OneMeter());
-
-    double maxDelta = std::max(delta.x, delta.y) * backFraction;
-    if (maxDelta > delta.z)
-        {
-        double offset = maxDelta - delta.z;
-        origin.z -= offset/2.0;
-        delta.z += offset;
-        }
-
+    m_rotMatrix.Multiply(origin);       // put origin in view coordinates
+    origin.z = extents.low.z;           // set origin to back of viewed extents
+    delta.z = extents.high.z - origin.z; // and delta to front of viewed extents
     m_rotMatrix.MultiplyTranspose(origin);
+
+    if (!m_isCameraOn) 
+        return;
+
+    // if the camera is on, we need to make sure that the viewed volume is not behind the eye
+    DVec3d eyeOrg;
+    eyeOrg.DifferenceOf(m_camera.GetEyePoint(), origin);
+    m_rotMatrix.Multiply(eyeOrg);
+
+    // if the distance from the eye to origin in less than 1 meter, move the origin away from the eye. Usually, this means
+    // that the camera is outside the viewed extents and pointed away from it. There's nothing to see anyway.
+    if (eyeOrg.z < DgnUnits::OneMeter())
+        {
+        m_rotMatrix.Multiply(origin);
+        origin.z -= ((2.0*DgnUnits::OneMeter()) - eyeOrg.z);
+        m_rotMatrix.MultiplyTranspose(origin);
+        delta.z = DgnUnits::OneMeter();
+        return;
+        }
+
+    // if part of the viewed extents are behind the eye, don't include that.
+    if (delta.z > eyeOrg.z)
+        delta.z = eyeOrg.z;
     }
 
 struct ViewChangedCaller
@@ -530,24 +520,32 @@ ViewportStatus DgnViewport::SetupFromViewController()
                     validateCamera(m_camera, *cameraView);
                 }
 
-            _AdjustZPlanes(origin, delta);
+            _AdjustZPlanes(origin, delta); // make sure view volume includes entire volume of view
+
+            // if the camera is on, don't allow front plane behind camera
+            if (m_isCameraOn)
+                {
+                DVec3d eyeOrg;
+                eyeOrg.DifferenceOf(m_camera.GetEyePoint(), origin); // vector from eye to origin
+                m_rotMatrix.Multiply(eyeOrg);
+
+                double frontDist = eyeOrg.z - delta.z; // front distance is backDist - delta.z
+                BeAssert(frontDist >= 0.0);
+
+                // allow viewcontroller to specify a minimum front dist, but in no case less than 6 inches
+                double minFrontDist = std::max(15.2 * DgnUnits::OneCentimeter(), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
+                if (frontDist < minFrontDist)
+                    {
+                    // camera is too close to front plane, move origin away from eye to maintain a minimum front distance.
+                    m_rotMatrix.Multiply(origin);
+                    origin.z -= (minFrontDist - frontDist);
+                    m_rotMatrix.MultiplyTranspose(origin);
+                    }
+                }
 
             // if we moved the z planes, set the "zClipAdjusted" flag.
             if (!origin.IsEqual(m_viewOrgUnexpanded) || !delta.IsEqual(m_viewDeltaUnexpanded))
-                {
                 m_zClipAdjusted = true;
-
-                if (m_isCameraOn)
-                    {
-                    // don't let the front clip move past camera
-                    DVec3d cameraDir;
-                    cameraDir.DifferenceOf(m_camera.GetEyePoint(), origin);
-                    m_rotMatrix.Multiply(cameraDir);
-                    double maxDeltaZ = cameraDir.z - (15.2 * DgnUnits::OneCentimeter()); // about 6 inches
-                    if (delta.z > maxDeltaZ)
-                        delta.z = maxDeltaZ;
-                    }
-                }
             }
         }
     else
