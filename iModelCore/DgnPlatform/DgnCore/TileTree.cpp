@@ -102,7 +102,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
                 return ERROR;
 
-            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream());
+            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
             me->m_contentType = response.GetHeaders().GetContentType();
             me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
 
@@ -119,7 +119,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
         if (!data.HasData())
             return ERROR;
 
-        me->m_tileBytes = std::move(data);
+        me->m_tileBytes = std::move(data); // NEEDSWORK this is a copy not a move...
         me->m_contentType = "";     // unknown 
         me->m_expirationDate = 0;   // unknown 
 
@@ -1561,6 +1561,18 @@ void Root::CancelTileLoad(TileCR tile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileRequests::RequestMissing(BeTimePoint deadline) const
     {
+#if defined(DEBUG_REQUEST_MISSING)
+    size_t nRequested = 0;
+    for (auto const& kvp : m_map)
+        {
+        for (auto const& missing : kvp.second)
+            if (missing.GetTile().IsNotLoaded())
+                ++nRequested;
+        }
+
+    THREADLOG.debugv("Requesting %llu tiles", nRequested);
+#endif
+
     for (auto const& kvp : m_map)
         if (!kvp.second.empty())
             kvp.first->RequestTiles(kvp.second, deadline);
