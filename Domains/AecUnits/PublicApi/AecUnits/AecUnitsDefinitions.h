@@ -75,6 +75,7 @@
 #define AEC_KOQ_VELOCITY                      "VELOCITY"
 #define AEC_KOQ_FREQUENCY                     "FREQUENCY"
 #define AEC_KOQ_THERMAL_RESISTANCE            "THERMAL_RESISTANCE"
+#define AEC_KOQ_PRESSURE_GRADIENT             "PRESSURE_GRADIENT"
 
 
 // Angular Units
@@ -108,6 +109,8 @@
 #define AEC_UNIT_PSIG                                       "PSIG"
 #define AEC_UNIT_PA                                         "PA"
 #define AEC_UNIT_PAG                                        "PA_GAUGE"
+#define AEC_UNIT_KGF_PER_SQ_M                               "KGF/SQ.M"
+
 
 // Temperature Units
 #define AEC_UNIT_CELSIUS                                    "CELSIUS"
@@ -141,6 +144,8 @@
 #define AEC_UNIT_LITRE_PER_MIN                              "LITRE/MIN"
 #define AEC_UNIT_CUB_FT_PER_MIN                             "CUB.FT/MIN"
 #define AEC_UNIT_GALLON_PER_MIN                             "GALLON/MIN"
+#define AEC_UNIT_LITRE_PER_SEC                              "LITRE/SEC"
+
 
 // Electrical Potential Units
 #define AEC_UNIT_VOLT                                       "VOLT"
@@ -177,3 +182,8 @@
 #define AEC_UNIT_SQUARE_METER_KELVIN_PER_WATT               "(SQ.M*KELVIN)/WATT"
 #define AEC_UNIT_SQUARE_METER_CELIUS_PER_WATT               "(SQ.M*CELSIUS)/WATT"
 #define AEC_UNIT_SQUARE_FEET_HOUR_FAHRENHEIT_PER_BTU        "(SQ.FT*HR*FAHRENHEIT)/BTU"
+
+// Pressure Gradients Units
+#define AEC_UNIT_PA_PER_M                                   "PA/M"
+#define AEC_UNIT_BAR_PER_KM                                 "BAR/KM"
+

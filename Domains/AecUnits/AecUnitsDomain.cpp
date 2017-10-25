@@ -149,6 +149,9 @@ namespace AecUnits
         if (Dgn::DgnDbStatus::Success != element.GetPropertyValue(propVal, propertyName.c_str()))
             return BentleyStatus::ERROR;
 
+        if (propVal.IsNull())
+            return BentleyStatus::ERROR;
+
         double storedValue = propVal.GetDouble();
 
         Units::UnitsProblemCode code = u->Convert(value, storedValue, u1);
