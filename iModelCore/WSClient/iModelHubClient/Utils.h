@@ -192,43 +192,43 @@ void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevision
 // DO add this wrapper for top level methods that do not fail if executed multiple times in a row
 //=======================================================================================
 
-    bool IsErrorForRetry(Error::Id errorId);
+bool IsErrorForRetry(Error::Id errorId);
 
-    template <typename T>
-    static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallback)
+template <typename T>
+static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallback)
+    {
+    std::shared_ptr<Result<T>> finalResult = std::make_shared<Result<T>>();
+    return taskCallback()->Then([=](Result<T>const& res) 
         {
-        std::shared_ptr<Result<T>> finalResult = std::make_shared<Result<T>>();
-        return taskCallback()->Then([=](Result<T>const& res) 
+        *finalResult = res;
+        if (!res.IsSuccess())
             {
-            *finalResult = res;
-            if (!res.IsSuccess())
+            if (IsErrorForRetry(res.GetError().GetId()))
                 {
-                if (IsErrorForRetry(res.GetError().GetId()))
+                taskCallback()->Then([=](Result<T>const& res)
                     {
-                    taskCallback()->Then([=](Result<T>const& res)
-                        {
-                        *finalResult = res;
-                        });
-                    }
+                    *finalResult = res;
+                    });
                 }
+            }
 
-            return ;
-            })->template Then<Result<T>>([=]()
-                {
-                return *finalResult;
-                });
-        }
-        
-    template <typename T>
-    static T& ExecuteAsync(AsyncTaskPtr<T> task, int wait = 60000)
-        {
-        task->WaitFor(wait);
+        return ;
+        })->template Then<Result<T>>([=]()
+            {
+            return *finalResult;
+            });
+    }
 
-        if (task->IsCompleted())
-            return task->GetResult();
+template <typename T>
+static T& ExecuteAsync(AsyncTaskPtr<T> task, int wait = 60000)
+    {
+    task->WaitFor(wait);
 
-        return Result<T>::Error(Error::Id::ExecutionTimeout).GetValue();
-        }
+    if (task->IsCompleted())
+        return task->GetResult();
+
+    return Result<T>::Error(Error::Id::ExecutionTimeout).GetValue();
+    }
 
    
 

@@ -11,7 +11,6 @@
 #include <thread>
 #include "EventManager.h"
 #include "../Logging.h"
-#include "../Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
@@ -78,7 +77,7 @@ unsigned __stdcall EventManagerThread(void* arg)
                 }
 
             LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Getting event.");
-            auto eventResult = ExecuteAsync(imodelConnectionP->GetEvent(true, cancellationTokenPtr));
+            auto eventResult = imodelConnectionP->GetEvent(true, cancellationTokenPtr)->GetResult();
             if (!cancellationTokenPtr->IsCanceled() && eventResult.IsSuccess())
                 {
                 LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Event received.");
