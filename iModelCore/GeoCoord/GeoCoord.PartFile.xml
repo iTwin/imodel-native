@@ -11,7 +11,7 @@
     <!-- To Use the GeoCoord part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="B02">
-        <SubPart PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeoCoordHeaderFiles" />
         <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
         <SubPart PartName="GeomDlls"                PartFile="geomlibs"             Repository="GeomLibs" />
