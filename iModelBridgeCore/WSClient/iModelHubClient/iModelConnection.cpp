@@ -2950,24 +2950,24 @@ StatusTaskPtr iModelConnection::AcquireCodesLocks
     IBriefcaseManager::ResponseOptions  options,
     ICancellationTokenPtr               cancellationToken
 ) const
-{
+    {
     return ExecuteWithRetry<void>([=]() { return AcquireCodesLocksInternal(locks, codes, briefcaseId, seedFileId, lastChangeSetId, options, cancellationToken); });
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::QueryCodesLocksAvailability
 (
-    LockRequestCR                       locks,
-    DgnCodeSet                          codes,
-    BeBriefcaseId                       briefcaseId,
-    BeGuidCR                            seedFileId,
-    Utf8StringCR                        lastChangeSetId,
-    IBriefcaseManager::ResponseOptions  options,
-    ICancellationTokenPtr               cancellationToken
+LockRequestCR                       locks,
+DgnCodeSet                          codes,
+BeBriefcaseId                       briefcaseId,
+BeGuidCR                            seedFileId,
+Utf8StringCR                        lastChangeSetId,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
-{
+    {
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, seedFileId, lastChangeSetId, *changeset, WSChangeset::ChangeState::Modified, false, true);
@@ -2977,21 +2977,21 @@ StatusTaskPtr iModelConnection::QueryCodesLocksAvailability
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Created, true);
 
     return SendChangesetRequest(changeset, options, cancellationToken);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::DemoteCodesLocks
 (
-    const DgnLockSet&                       locks,
-    DgnCodeSet const&                       codes,
-    BeBriefcaseId                           briefcaseId,
-    BeGuidCR                                seedFileId,
-    IBriefcaseManager::ResponseOptions      options,
-    ICancellationTokenPtr                   cancellationToken
+const DgnLockSet&                       locks,
+DgnCodeSet const&                       codes,
+BeBriefcaseId                           briefcaseId,
+BeGuidCR                                seedFileId,
+IBriefcaseManager::ResponseOptions      options,
+ICancellationTokenPtr                   cancellationToken
 ) const
-{
+    {
     const Utf8String methodName = "iModelConnection::DemoteCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     //How to set description here?
@@ -3003,19 +3003,19 @@ StatusTaskPtr iModelConnection::DemoteCodesLocks
     SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
 
     return SendChangesetRequestInternal(changeset, options, cancellationToken);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas           10/2017
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::RelinquishCodesLocksInternal
 (
-    IBriefcaseManager::Resources            resourcesToRelinquish,
-    BeBriefcaseId                           briefcaseId,
-    IBriefcaseManager::ResponseOptions      options,
-    ICancellationTokenPtr                   cancellationToken
+IBriefcaseManager::Resources            resourcesToRelinquish,
+BeBriefcaseId                           briefcaseId,
+IBriefcaseManager::ResponseOptions      options,
+ICancellationTokenPtr                   cancellationToken
 ) const
-{
+    {
     const Utf8String methodName = "iModelConnection::RelinquishCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
@@ -3027,32 +3027,32 @@ StatusTaskPtr iModelConnection::RelinquishCodesLocksInternal
         CodeDiscardReservedJsonRequest(changeset, briefcaseId);
 
     return SendChangesetRequest(changeset, options, cancellationToken);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::RelinquishCodesLocks
 (
-    BeBriefcaseId                           briefcaseId,
-    IBriefcaseManager::ResponseOptions      options,
-    ICancellationTokenPtr                   cancellationToken
+BeBriefcaseId                           briefcaseId,
+IBriefcaseManager::ResponseOptions      options,
+ICancellationTokenPtr                   cancellationToken
 ) const
-{
+    {
     return RelinquishCodesLocksInternal(IBriefcaseManager::Resources::All, briefcaseId, options, cancellationToken);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
 BriefcasesInfoTaskPtr iModelConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
-{
+    {
     const Utf8String methodName = "iModelConnection::QueryAllBriefcasesInfo";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase);
     return QueryBriefcaseInfoInternal(query, cancellationToken);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016

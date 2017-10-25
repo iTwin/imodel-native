@@ -170,7 +170,7 @@ ICancellationTokenPtr cancellationToken
 
                 return UsersInfoResult::Error(result.GetError());
                 });
-                })));
+            })));
 
             if (!queryUsersResult.IsSuccess())
                 return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult.GetError()));

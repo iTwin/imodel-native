@@ -112,9 +112,9 @@ AsyncTaskPtr<WSObjectsResult> ExecuteOnQueryFailure(WSObjectsResult result, ICan
     {
         // TODO: This check should be removed after UserInfo will be available in PROD.
         if (WSError::Id::ClassNotFound == result.GetError().GetId())
-        {
+            {
             return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken);
-        }
+            }
         return CreateCompletedAsyncTask<WSObjectsResult>(WSObjectsResult::Error(result.GetError()));
     }
     return CreateCompletedAsyncTask<WSObjectsResult>(result);
@@ -153,31 +153,30 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
     std::shared_ptr<iModelsResult> finalResult = std::make_shared<iModelsResult>();
   
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const & result)
-    { 
+        { 
         WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
         ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
-        {
-            if (!result.IsSuccess())
             {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            if (!result.IsSuccess())
+               {
+               LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
                finalResult->SetError(result.GetError());
                return;
-            }
+               }
             bvector<iModelInfoPtr> iModels;
             for (const auto& iModel : result.GetValue().GetInstances())
-            {
+                {
                 iModels.push_back(iModelInfo::Parse(iModel, m_serverUrl));
-            }
+                }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
             finalResult->SetSuccess(iModels);
-
-        });
+            });
     })->Then<iModelsResult>([=] 
-    {
+        {
         return *finalResult;
-    });
+        });
 
 
     }
@@ -218,33 +217,32 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const & result)
         { 
-            WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
-            query.SetFilter(filter);
-            ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
+        WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+        query.SetFilter(filter);
+        ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
             {
-                if (!result.IsSuccess())
+            if (!result.IsSuccess())
                 {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                    finalResult->SetError(result.GetError());
-                    return;
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                finalResult->SetError(result.GetError());
+                return;
                 }
-                auto iModelInfoInstances = result.GetValue().GetInstances();
-                if (iModelInfoInstances.Size() == 0)
+            auto iModelInfoInstances = result.GetValue().GetInstances();
+            if (iModelInfoInstances.Size() == 0)
                 {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
-                    finalResult->SetError(Error::Id::iModelDoesNotExist);
-                    return;
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
+                finalResult->SetError(Error::Id::iModelDoesNotExist);
+                return;
                 }
-                iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                finalResult->SetSuccess(iModelInfo);
+            iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            finalResult->SetSuccess(iModelInfo);
             });
-       
-    })->Then<iModelResult>([=]
-    {
-        return *finalResult;
-    });
+        })->Then<iModelResult>([=]
+            {
+            return *finalResult;
+            });
 
     }
 
@@ -287,31 +285,30 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
         WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
         query.SetFilter(filter);
             ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
-            {
-                if (!result.IsSuccess())
                 {
+                if (!result.IsSuccess())
+                    {
                     LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
                     finalResult->SetError(result.GetError());
                     return;
-                }
+                    }
             
-
-            auto iModelInfoInstances = result.GetValue().GetInstances();
-            if (iModelInfoInstances.Size() == 0)
+                auto iModelInfoInstances = result.GetValue().GetInstances();
+                if (iModelInfoInstances.Size() == 0)
+                    {
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
+                    finalResult->SetError(Error::Id::iModelDoesNotExist);
+                    return;
+                    }
+                iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                finalResult->SetSuccess(iModelInfo);
+                });
+        })->Then<iModelResult>([=] 
             {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
-                finalResult->SetError(Error::Id::iModelDoesNotExist);
-                return;
-            }
-            iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
-            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-            finalResult->SetSuccess(iModelInfo);
-        });
-    })->Then<iModelResult>([=] 
-    {
-        return *finalResult;
-    });
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
