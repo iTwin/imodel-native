@@ -175,7 +175,7 @@
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model" description="A container for persisting drawing grahics.">
+    <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model" description="A container for persisting drawing graphics.">
         <BaseClass>GraphicalModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
@@ -925,14 +925,14 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GeometricElement" modifier="Abstract" displayLabel="Geometric Element" description="Geometric Element is an abstract base class used to model real world entities that intrinsicly have geometry.">
+    <ECEntityClass typeName="GeometricElement" modifier="Abstract" displayLabel="Geometric Element" description="Geometric Element is an abstract base class used to model real world entities that intrinsically have geometry.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
             <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="3D Geometric Element" description="3D Geometric Element is an abstract base class used to model real world entities that intrinsicly have 3D geometry.">
+    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="3D Geometric Element" description="3D Geometric Element is an abstract base class used to model real world entities that intrinsically have 3D geometry.">
         <!-- Base class for elements with 3d geometry -->
         <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
@@ -1251,7 +1251,7 @@
             <Class class="Element"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
-            <!-- Note: multiplicity=(0..*) is correct. While an Element can only have 1 unique apsect per aspect class, it can have N unique aspects total. -->
+            <!-- Note: multiplicity=(0..*) is correct. While an Element can only have 1 unique aspect per aspect class, it can have N unique aspects total. -->
             <Class class="ElementUniqueAspect"/>
         </Target>
     </ECRelationshipClass>

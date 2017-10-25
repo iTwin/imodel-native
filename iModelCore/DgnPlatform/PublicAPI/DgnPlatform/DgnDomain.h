@@ -506,7 +506,7 @@ private:
     void OnDbClose();
     void SyncWithSchemas();
     void DeleteHandlers();
-	
+
     // Imports schemas of all required domains into the DgnDb. 
     SchemaStatus ImportSchemas();
     // Validates (and upgrades if necessary) domain schemas - used when the DgnDb is first opened up.
