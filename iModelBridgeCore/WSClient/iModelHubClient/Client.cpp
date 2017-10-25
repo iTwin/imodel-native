@@ -839,7 +839,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Latest seedFile's ChangeSetId did not match briefcase's.");
         pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), callback, cancellationToken);
-        pullChangeSetsResult = ExecuteAsync(pullChangeSetsTask);
+        pullChangeSetsResult = pullChangeSetsTask->GetResult();
         if (!pullChangeSetsResult.IsSuccess())
             {
             LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
@@ -851,7 +851,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
-    ChangeSets changeSets = ExecuteAsync(pullChangeSetsTask).GetValue();
+    ChangeSets changeSets = pullChangeSetsTask->GetResult().GetValue();
     handler.SetFinished();
 
     return MergeChangeSetsIntoDgnDb(db, changeSets, filePath);
@@ -1263,7 +1263,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
     handler.AddCallback(changeSetsCallback, 20.0f);
     handler.AddCallback(seedFileCallback, 80.0f);
 
-    auto SeedFileResult = ExecuteAsync(connection->DownloadSeedFile(filePath, fileInfo.GetFileId().ToString(), seedFileCallback, cancellationToken));
+    auto SeedFileResult = connection->DownloadSeedFile(filePath, fileInfo.GetFileId().ToString(), seedFileCallback, cancellationToken)->GetResult();
     if (!SeedFileResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, SeedFileResult.GetError().GetMessage().c_str());
@@ -1278,7 +1278,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
         }
 
-    auto changeSetsResult = ExecuteAsync(connection->DownloadChangeSetsInternal(changeSetsToMerge, changeSetsCallback, cancellationToken));
+    auto changeSetsResult = connection->DownloadChangeSetsInternal(changeSetsToMerge, changeSetsCallback, cancellationToken)->GetResult();
     if (!changeSetsResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());

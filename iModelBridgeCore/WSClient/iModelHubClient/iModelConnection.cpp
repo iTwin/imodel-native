@@ -433,7 +433,7 @@ ICancellationTokenPtr             cancellationToken
     instanceId.Sprintf("%u", briefcaseId.GetValue());
     ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, instanceId);
 
-    auto downloadResult = ExecuteAsync(DownloadFile(localFile, fileObject, fileAccessKey, callback, cancellationToken));
+    auto downloadResult = DownloadFile(localFile, fileObject, fileAccessKey, callback, cancellationToken)->GetResult();
 
     if (!downloadResult.IsSuccess())
         return downloadResult;
@@ -1842,7 +1842,7 @@ bool longpolling
                 if (SetEventSASToken())
                     m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
                 int nextLoopValue = numOfRetries - 1;
-                return ExecuteAsync(GetEventServiceResponse(nextLoopValue, longpolling));
+                return GetEventServiceResponse(nextLoopValue, longpolling)->GetResult();
                 }
             else
                 {
@@ -2159,7 +2159,7 @@ ICancellationTokenPtr                  cancellationToken
         ChangeSets resultChangeSets;
         for (auto task : tasks)
             {
-            auto result = ExecuteAsync(dynamic_pointer_cast<ChangeSetTask>(task));
+            auto result = dynamic_pointer_cast<ChangeSetTask>(task)->GetResult();
             if (!result.IsSuccess())
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
@@ -2201,7 +2201,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
     FileAccessKey::AddDownloadAccessKeySelect(selectString);
     query.SetSelect(selectString);
 
-    auto changeSetsQueryResult = ExecuteAsync(GetChangeSetsInternal(query, true, cancellationToken));
+    auto changeSetsQueryResult = GetChangeSetsInternal(query, true, cancellationToken)->GetResult();
     if (!changeSetsQueryResult.IsSuccess())
         return CreateCompletedAsyncTask(ChangeSetsResult::Error(changeSetsQueryResult.GetError()));
     
@@ -2821,7 +2821,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
             auto createdFileInfo = fileCreationResult.GetValue();
             if (!createdFileInfo->AreFileDetailsAvailable())
                 {
-                auto fileUpdateResult = ExecuteAsync(UpdateServerFile(*createdFileInfo, cancellationToken));
+                auto fileUpdateResult = UpdateServerFile(*createdFileInfo, cancellationToken)->GetResult();
                 if (!fileUpdateResult.IsSuccess())
                     {
                     finalResult->SetError(fileUpdateResult.GetError());
