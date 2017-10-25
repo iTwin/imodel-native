@@ -1603,7 +1603,10 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
     {
-    Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    if (nullptr != v8::Isolate::GetCurrent())
+        Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    else
+        LOG.errorv(L"ASSERTION FAILURE: %ls %ls %d\n", msg, file, line);
     }
 
 /*---------------------------------------------------------------------------------**//**
