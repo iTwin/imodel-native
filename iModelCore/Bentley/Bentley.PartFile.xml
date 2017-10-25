@@ -36,7 +36,7 @@
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="B02" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
-        <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
+        <SubPart PartName="Icu" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)Bentley$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
@@ -205,7 +205,7 @@
 
     <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="BeLibJpegTurbo" PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <SubPart LibType="Static" PartName="JpegTurbo" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <PublicAPI Domain="BeJpeg"/>
             <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibext)</Libs>
@@ -215,7 +215,7 @@
 
     <Part Name="BeXml" BentleyBuildMakeFile="BeXml/bexml.mke" ApiNumber="B02">
         <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="libxml2" PartFile="BeLibxml2" Repository="Libsrc-libxml2"/>
+        <SubPart PartName="LibXml2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <PublicAPI Domain="BeXml"/>
             <Assemblies>Delivery/$(shlibprefix)BeXml$(ApiNumber)$(shlibext)</Assemblies>
