@@ -483,6 +483,38 @@ struct ProxyManager
         Utf8String          m_proxyCreds;
     };
 
+//! Callback function to retrieve the token.
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @param[out] token       Token string
+//! @param[out] timer       Timestamp of when the token was generated.
+typedef std::function<void(Utf8StringR token, time_t& timer)> CurlConstructor_TokenCallBack;
+
+//=====================================================================================
+//! @bsiclass                                  Spencer.Mason               01/2017
+//! ProxyManager
+//! Centralized class to handle proxy information, in case multiple CurlConstructors
+//! are used
+//=====================================================================================
+struct ConnectTokenManager
+    {
+protected:
+    REALITYDATAPLATFORM_EXPORT static ConnectTokenManager* s_ctInstance;
+    REALITYDATAPLATFORM_EXPORT ConnectTokenManager();
+public:
+    REALITYDATAPLATFORM_EXPORT static ConnectTokenManager& GetInstance();
+
+    //! Set token callback informations
+    REALITYDATAPLATFORM_EXPORT void SetTokenCallback(CurlConstructor_TokenCallBack pi_func) { m_tokenCallback = pi_func; }
+    
+    REALITYDATAPLATFORM_EXPORT Utf8String GetToken() const; 
+    REALITYDATAPLATFORM_EXPORT void RefreshToken() const;
+
+private:
+    mutable Utf8String              m_token;
+    mutable time_t                  m_tokenRefreshTimer;
+    CurlConstructor_TokenCallBack   m_tokenCallback;
+    };
+
 //=====================================================================================
 //! @bsiclass                                  Spencer.Mason               01/2017
 //! CurlConstructor
@@ -510,9 +542,7 @@ public:
 protected:
     REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const;
 
-    mutable Utf8String          m_token;
-    BeFileName          m_certificatePath;
-    mutable time_t              m_tokenRefreshTimer;
+    BeFileName                      m_certificatePath;
     };
 
 //=====================================================================================

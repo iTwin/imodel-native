@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/SpatialEntityHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,10 +17,6 @@
 #define THUMBNAIL_HEIGHT    512
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-
-
-
-
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
