@@ -15,6 +15,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         HFCPtr<HRFRASTERFILE> m_streamingRasterFile;
         HFCPtr<HRARASTER> m_raster;
         SMIndexMasterHeader<EXTENT> m_masterHeader;
+        std::mutex                  m_preloadMutex;
 
 
     public : 
@@ -44,7 +45,9 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
         
         virtual void CancelPreloadData() override;
-                                
+
+        virtual bool IsTextureAvailable() override;
+                               
         virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        

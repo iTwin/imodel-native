@@ -200,6 +200,8 @@ $(o)ScalableMeshInitialization$(oext) : $(stmDir)ScalableMeshInitialization.cpp 
 
 $(o)ScalableMesh$(oext) : $(stmDir)ScalableMesh.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)ScalableMeshInfo$(oext) : $(stmDir)ScalableMeshInfo.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 $(o)ScalableMeshClipContainer$(oext) : $(stmDir)ScalableMeshClipContainer.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp $(stmDir)ScalableMeshQuery.hpp $(stmDir)ScalableMeshQuery.h $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -478,11 +480,14 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
+    Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
+    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
@@ -516,3 +521,12 @@ LINKER_LIBRARIES            = \
 
 %include $(sharedMki)LinkLibrary.mki
 
+#----------------------------------------------------------------------------------------
+# Copy the cacert.pem file for securely talk to the RealityDataS-1 server for 
+# usgs datas
+#----------------------------------------------------------------------------------------
+$(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
+    $(CopyFirstDepToFirstTarget)
+
+$(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
+        $(LinkFirstDepToFirstTarget)

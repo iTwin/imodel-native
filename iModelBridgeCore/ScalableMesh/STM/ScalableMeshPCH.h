@@ -38,6 +38,8 @@
 #include <DgnPlatform\ScanCriteria.h>
 #endif
 
+#include <DgnPlatform\ImageUtilities.h>
+
 #include <DgnPlatform\DgnPlatform.r.h>
 #ifdef VANCOUVER_API
 #include <DgnPlatform\ElementHandle.h>

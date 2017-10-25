@@ -267,6 +267,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual bool          _IsTextured() override;
 
+        virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const override;
+
         virtual bool          _IsCesium3DTiles() override;
 
         virtual Utf8String    _GetProjectWiseContextShareLink() override;
@@ -449,6 +451,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool          _IsTerrain() override;
 
         virtual bool          _IsTextured() override { return false; }
+
+        virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const override {return ERROR;}
 
         virtual bool           _IsCesium3DTiles() override { return false; }
 

@@ -2,6 +2,8 @@
 
 #include <ScalableMesh\ITextureProvider.h>
 #include "ImagePPHeaders.h"
+#include "RasterUtilities.h"
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -20,6 +22,6 @@ struct StreamTextureProvider : virtual public ITextureProvider
         virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area) override;
     public:
 
-        StreamTextureProvider(WString url, DRange3d totalExt, GeoCoordinates::BaseGCSCPtr targetCS);
+        StreamTextureProvider(HFCPtr<HRARASTER>& textureSource, DRange3d totalExt);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE
