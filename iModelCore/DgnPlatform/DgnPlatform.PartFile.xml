@@ -55,17 +55,17 @@
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-        <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
+        <SubPart PartName="Freetype2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
+        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
         <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -845,7 +845,7 @@
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
     <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-    <SubPart PartName="rapidjsonapi"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
+    <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
   </Part>
 
 </BuildContext>
