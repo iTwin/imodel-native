@@ -514,7 +514,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
-    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)BeJpeg.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib \

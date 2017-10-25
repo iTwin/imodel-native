@@ -35,7 +35,7 @@
         <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="CloudDataSource_Vancouver" PartFile="CloudDataSource"                      Repository="ScalableMesh"/>
-        <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <!-- For Importer-->
