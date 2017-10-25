@@ -1605,8 +1605,8 @@ static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
     {
     if (nullptr != v8::Isolate::GetCurrent())
         Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
-    else
-        LOG.errorv(L"ASSERTION FAILURE: %ls %ls %d\n", msg, file, line);
+    //else
+    //    LOG.errorv(L"ASSERTION FAILURE: %ls %ls %d\n", msg, file, line);
     }
 
 /*---------------------------------------------------------------------------------**//**
