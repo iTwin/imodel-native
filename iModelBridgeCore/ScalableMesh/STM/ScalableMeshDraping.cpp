@@ -1552,21 +1552,21 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 		if (orderedList.begin()->second.segment > 0)
 			for (size_t i = 0; i < orderedList.begin()->second.segment; ++i)
 			{
-				drapedLine.insert(drapedLine.begin() + i, transformedLine[i]);
+				drapedLine.insert(drapedLine.begin() + i, pts[i]);
 				minDrapedPos = i;
 			}
 
 		if (orderedList.rbegin()->second.segment < numPoints - 2)
 			for (size_t i = orderedList.rbegin()->second.segment; i < numPoints - 2; ++i)
 			{
-				drapedLine.insert(drapedLine.end(), transformedLine[i]);
+				drapedLine.insert(drapedLine.end(), pts[i]);
 			}
 
 		//check for non-draped begin/end within the first/last segment
 		int firstSeg = orderedList.begin()->second.segment;
 		int lastSeg = orderedList.rbegin()->second.segment;
 
-		DSegment3d first = DSegment3d::From(transformedLine[firstSeg], transformedLine[firstSeg + 1]);
+		DSegment3d first = DSegment3d::From(pts[firstSeg], pts[firstSeg + 1]);
 		double param1, param2;
 		DPoint3d pt1, pt2;
 		DPoint3d retroProjectPt = DPoint3d::FromSumOf(drapedLine[minDrapedPos], DVec3d::From(0, 0, 1));
@@ -1575,18 +1575,18 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 		first.PointToFractionParameter(param1, pt1);
 		if (param1 > 1e-6)
 		{
-			drapedLine.insert(drapedLine.begin() + minDrapedPos, transformedLine[firstSeg]);
+			drapedLine.insert(drapedLine.begin() + minDrapedPos, pts[firstSeg]);
 			minDrapedPos++;
 		}
 
-		DSegment3d last = DSegment3d::From(transformedLine[lastSeg], transformedLine[lastSeg + 1]);
+		DSegment3d last = DSegment3d::From(pts[lastSeg], pts[lastSeg + 1]);
 		DPoint3d retroProjectPtLast = DPoint3d::FromSumOf(drapedLine[maxDrapedPos], DVec3d::From(0, 0, 1));
 		DSegment3d intersectLast = DSegment3d::From(drapedLine[maxDrapedPos], retroProjectPtLast);
 		last.ClosestApproachUnbounded(param1, param2, pt1, pt2, last, intersectLast);
 		last.PointToFractionParameter(param1, pt1);
 		if (param1 <1-1e-6)
 		{
-			drapedLine.insert(drapedLine.begin() + maxDrapedPos+1, transformedLine[lastSeg+1]);
+			drapedLine.insert(drapedLine.begin() + maxDrapedPos+1, pts[lastSeg+1]);
 		}
 	}
 
