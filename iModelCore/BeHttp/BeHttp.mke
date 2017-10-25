@@ -2,7 +2,7 @@
 #
 #     $Source: BeHttp.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 CompileOptionsMki = $(_MakeFilePath)BeHttpCompileOptions.mki
@@ -44,7 +44,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(stlibext)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(libext)
 
 %include $(sharedMki)linkLibrary.mki

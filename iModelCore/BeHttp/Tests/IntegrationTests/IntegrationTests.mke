@@ -79,7 +79,7 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLite$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeIcu4c$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeZlib$(libext)
+GUNITTEST_LIBS + $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gmock$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gtest$(libext)
 
