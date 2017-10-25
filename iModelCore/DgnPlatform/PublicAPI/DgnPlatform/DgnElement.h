@@ -2038,6 +2038,11 @@ public:
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
 
+    //! Modify the origin and angles of this Placement3d by applying the specified transform.
+    //! @param trans The transform to apply
+    //! @return false if the operation failed
+    DGNPLATFORM_EXPORT bool TryApplyTransform(TransformCR trans);
+
     //! Determine whether this Placement3d is valid.
     bool IsValid() const
         {

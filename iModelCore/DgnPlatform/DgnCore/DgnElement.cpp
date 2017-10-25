@@ -2137,6 +2137,17 @@ static void fixRange(double& low, double& high) {if (low==high) {low-=halfMillim
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Placement3d::TryApplyTransform(TransformCR t1)
+    {
+    if (t1.IsIdentity())
+        return true;
+    Transform t0 = m_angles.ToTransform(m_origin);
+    return YawPitchRollAngles::TryFromTransform(m_origin, m_angles, Transform::FromProduct(t1, t0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d Placement3d::CalculateRange() const
@@ -3559,6 +3570,9 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform const& transformIn)
     {
+    if (transformIn.IsIdentity())
+        return DgnDbStatus::Success;
+
     Transform   placementTrans;
 
     auto geom = el.ToGeometrySourceP();

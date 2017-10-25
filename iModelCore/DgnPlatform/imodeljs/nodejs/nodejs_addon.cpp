@@ -12,12 +12,22 @@
 #include <memory>
 #include "suppress_warnings.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning (disable:4251)
+#endif // _MSC_VER
+
 #include <nan.h>
 #undef X_OK // node\uv-win.h defines this, and then folly/portability/Unistd.h re-defines it.
 
 #include <node.h>
 #include <node_buffer.h>
 #include <node_version.h>
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif //_MSC_VER
+
 #include <json/value.h>
 #include "../imodeljs.h"
 #include <ECObjects/ECSchema.h>
