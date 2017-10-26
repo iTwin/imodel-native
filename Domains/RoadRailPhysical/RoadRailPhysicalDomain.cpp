@@ -14,6 +14,8 @@
 #include <RoadRailPhysical/RoadRailCategory.h>
 #include <RoadRailPhysical/RoadSegment.h>
 #include <RoadRailPhysical/TravelwaySegment.h>
+#include <RoadRailPhysical/TravelwaySideSegment.h>
+#include <RoadRailPhysical/TravelwayStructureSegment.h>
 #include <RoadRailPhysical/TypicalSection.h>
 #include <RoadRailPhysical/TypicalSectionPoint.h>
 
@@ -72,6 +74,11 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(RegularTravelwaySegmentHandler::GetHandler());
     RegisterHandler(TravelwayTransitionHandler::GetHandler());
     RegisterHandler(TravelwayIntersectionSegmentElementHandler::GetHandler());
+
+    RegisterHandler(TravelwaySideSegmentElementHandler::GetHandler());
+    RegisterHandler(RegularTravelwaySideSegmentHandler::GetHandler());
+    RegisterHandler(TravelwayStructureSegmentElementHandler::GetHandler());
+    RegisterHandler(RegularTravelwayStructureSegmentHandler::GetHandler());
     
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
     RegisterHandler(RoadClassDefinitionTableHandler::GetHandler());

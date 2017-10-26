@@ -73,6 +73,12 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSectionPoint.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySideSegment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwayStructureSegment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailPhysicalDomain.cpp">
@@ -106,6 +112,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TypicalSectionPoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TravelwaySideSegment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TravelwayStructureSegment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

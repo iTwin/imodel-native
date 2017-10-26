@@ -118,7 +118,7 @@ RoadClassPtr RoadClass::Create(RoadwayCR roadway, RoadClassDefinitionCR ClassDef
     if (!roadway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = roadway.GetAlignmentId();
+    auto alignmentId = roadway.GetMainAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 

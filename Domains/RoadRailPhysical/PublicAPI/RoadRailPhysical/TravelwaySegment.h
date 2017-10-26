@@ -37,7 +37,7 @@ public:
 }; // TravelwaySegmentElement
 
 //=======================================================================================
-//! Base class for physical Road segments.
+//! Generic class for physical Road segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RegularTravelwaySegment : TravelwaySegmentElement
@@ -59,7 +59,8 @@ public:
     Dgn::DgnElementId GetTravelwayDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("Definition"); }
     ROADRAILPHYSICAL_EXPORT void SetTravelwayDefinition(TravelwayDefinitionElementCR travelwayDef);
 
-    ROADRAILPHYSICAL_EXPORT static RegularTravelwaySegmentPtr Create(PathwayElementCR pathway, double fromDistanceAlong, double toDistanceAlong, TravelwayDefinitionElementCR travelwayDef);
+    ROADRAILPHYSICAL_EXPORT static RegularTravelwaySegmentPtr Create(PathwayElementCR pathway, double fromDistanceAlong, double toDistanceAlong, 
+        TravelwayDefinitionElementCR travelwayDef, RoadRailAlignment::AlignmentCP alignment = nullptr);
 }; // RegularTravelwaySegment
 
 //=======================================================================================

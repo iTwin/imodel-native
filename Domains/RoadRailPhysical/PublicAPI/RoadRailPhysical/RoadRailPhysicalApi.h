@@ -19,4 +19,6 @@
 #include "TypicalSectionPoint.h"
 #include "TypicalSection.h"
 #include "TravelwaySegment.h"
+#include "TravelwaySideSegment.h"
+#include "TravelwayStructureSegment.h"
 #include "RoadSegment.h"

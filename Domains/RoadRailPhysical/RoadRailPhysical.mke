@@ -59,6 +59,10 @@ $(o)RoadSegment$(oext) : $(_MakeFilePath)RoadSegment.cpp ${MultiCompileDepends} 
 
 $(o)TravelwaySegment$(oext) : $(_MakeFilePath)TravelwaySegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySegment.h
 
+$(o)TravelwaySideSegment$(oext) : $(_MakeFilePath)TravelwaySideSegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySideSegment.h
+
+$(o)TravelwayStructureSegment$(oext) : $(_MakeFilePath)TravelwayStructureSegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwayStructureSegment.h
+
 $(o)TypicalSection$(oext) : $(_MakeFilePath)TypicalSection.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSection.h
 
 $(o)TypicalSectionPoint$(oext) : $(_MakeFilePath)TypicalSectionPoint.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSectionPoint.h

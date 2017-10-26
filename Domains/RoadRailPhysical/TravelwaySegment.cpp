@@ -45,14 +45,27 @@ RegularTravelwaySegment::RegularTravelwaySegment(CreateParams const& params, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegularTravelwaySegmentPtr RegularTravelwaySegment::Create(PathwayElementCR pathway, double fromDistanceAlong, double toDistanceAlong, TravelwayDefinitionElementCR travelwayDef)
+RegularTravelwaySegmentPtr RegularTravelwaySegment::Create(PathwayElementCR pathway, double fromDistanceAlong, double toDistanceAlong, 
+    TravelwayDefinitionElementCR travelwayDef, AlignmentCP alignment)
     {
     if (!pathway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = pathway.GetAlignmentId();
-    if (!alignmentId.IsValid())
-        return nullptr;
+    DgnElementId alignmentId;
+
+    if (alignment)
+        {
+        if (pathway.GetMainAlignmentId() != alignment->GetParentId())
+            return nullptr;
+
+        alignmentId = alignment->GetElementId();
+        }
+    else
+        {
+        alignmentId = pathway.GetMainAlignmentId();
+        if (!alignmentId.IsValid())
+            return nullptr;
+        }
 
     CreateParams params(pathway.GetDgnDb(), pathway.GetModelId(), QueryClassId(pathway.GetDgnDb()), pathway.GetCategoryId());
     params.SetParentId(pathway.GetElementId(),
@@ -89,7 +102,7 @@ TravelwayTransitionPtr TravelwayTransition::Create(PathwayElementCR pathway, dou
     if (!pathway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = pathway.GetAlignmentId();
+    auto alignmentId = pathway.GetMainAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 

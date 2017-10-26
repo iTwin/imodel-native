@@ -89,7 +89,7 @@
     <NMakeReBuildCommandLine>bb -ax64 -p Gtest-RoadRailPhysical-Tests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests RoadRailPhysical-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailPhysical-Tests RoadRailPhysical:Gtest</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p Gtest-RoadRailPhysical-Tests -r DgnDomains-RoadRailPhysical -f RoadRailPhysical re BackdoorForUnitTests RoadRailPhysical-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailPhysical-Tests RoadRailPhysical:Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\Delivery\PublishedApi\;$(OutRoot)Winx64\Build\UnitTests\RoadRailPhysical\BackDoorRoadRailPhysicalUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\Delivery\PublishedApi\;$(OutRoot)Winx64\Build\UnitTests\RoadRailPhysical\BackDoorRoadRailPhysicalUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

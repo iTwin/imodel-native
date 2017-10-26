@@ -15,7 +15,7 @@ HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PathwayElement::SetAlignment(AlignmentCP alignment)
+DgnDbStatus PathwayElement::SetMainAlignment(AlignmentCP alignment)
     {
     return SetPropertyValue("MainAlignment", (alignment) ? alignment->GetElementId() : DgnElementId(), Alignment::QueryClassId(GetDgnDb()));
     }

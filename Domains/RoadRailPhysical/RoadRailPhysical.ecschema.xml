@@ -115,7 +115,7 @@
             <Class class="bis:PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="TravelwayStructureElement" modifier="Abstract" description="Base class for a set of physical layers providing structural support to the Travelway." >
+    <ECEntityClass typeName="TravelwayStructureSegmentElement" modifier="Abstract" description="Base class for a set of physical layers providing structural support to the Travelway." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECCustomAttributes>
@@ -126,7 +126,10 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RegularTravelwayStructureSegment" modifier="None" description="A segment of a Travelway structure with a constant definition." >
-        <BaseClass>TravelwayStructureElement</BaseClass>
+        <BaseClass>TravelwayStructureSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECNavigationProperty propertyName="Definition" relationshipName="RegularSegmentRefersToTravelwayStructureDefinition" direction="Forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="RegularSegmentRefersToTravelwayStructureDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
@@ -138,9 +141,9 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="TravelwayStructureIntersectionLeg" modifier="None" description="A segment of a Travelway structure along an intersection with another." >
-        <BaseClass>TravelwayStructureElement</BaseClass>
+        <BaseClass>TravelwayStructureSegmentElement</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="TravelwaySideElement" modifier="Abstract" description="Base class for a Set of physical elements, with their corresponding structural layers, along the side of a Travelway, providing different purposes (e.g. separation, safety, connections to existing terrain, etc)." >
+    <ECEntityClass typeName="TravelwaySideSegmentElement" modifier="Abstract" description="Base class for a Set of physical elements, with their corresponding structural layers, along the side of a Travelway, providing different purposes (e.g. separation, safety, connections to existing terrain, etc)." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECCustomAttributes>
@@ -151,9 +154,12 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RegularTravelwaySideSegment" modifier="None" description="Generic class for Road/Rail end-condition elements." >
-        <BaseClass>TravelwaySideElement</BaseClass>
+        <BaseClass>TravelwaySideSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECNavigationProperty propertyName="Definition" relationshipName="RegularSegmentRefersToTravelwaySideDefinition" direction="Forward"/>
-        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
+        <!--ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/-->
         <ECProperty propertyName="TravelwayIndex" typeName="int"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="RegularSegmentRefersToTravelwaySideDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">

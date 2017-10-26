@@ -174,7 +174,7 @@ DesignSpeedPtr DesignSpeed::Create(PathwayElementCR pathway, DesignSpeedDefiniti
     if (!pathway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = pathway.GetAlignmentId();
+    auto alignmentId = pathway.GetMainAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 

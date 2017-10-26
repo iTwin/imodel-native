@@ -54,11 +54,11 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     // Create Roadway
     auto roadwayPtr = Roadway::Create(*physicalModelPtr);
     StatusAspect::Set(*roadwayPtr, *StatusAspect::Create(StatusAspect::Status::Proposed));
-    roadwayPtr->SetAlignment(alignmentPtr.get());
+    roadwayPtr->SetMainAlignment(alignmentPtr.get());
     auto roadwayCPtr = roadwayPtr->Insert();
     ASSERT_TRUE(roadwayCPtr.IsValid());    
     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadwayCPtr)->GetStatus());
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetAlignmentId());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetMainAlignmentId());
 
     alignmentPtr->SetILinearElementSource(roadwayPtr.get());
     ASSERT_TRUE(alignmentPtr->Update().IsValid());
@@ -138,12 +138,19 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
 
     DgnModelId roadwayStandardsModelId = QueryFirstModelIdOfType(*projectPtr, RoadwayStandardsModel::QueryClassId(*projectPtr));
     auto roadwayStandardsModelPtr = RoadwayStandardsModel::Get(*projectPtr, roadwayStandardsModelId);
-    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "4 lanes");
+    auto roadTravelwayDefRightPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "2 lanes right-side");
+    auto roadTravelwayDefLeftPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "2 lanes left-side");
     auto travelwayRightSideDefPtr = TravelwaySideDefinition::Create(*roadwayStandardsModelPtr, "Paved+Unpaved Shoulder right-side");
     auto sideSlopeRightSideDefPtr = TravelwaySideDefinition::Create(*roadwayStandardsModelPtr, "Side-Slope Conditions right-side");
+    auto travelwayLeftSideDefPtr = TravelwaySideDefinition::Create(*roadwayStandardsModelPtr, "Shoulder + Side-Slope Conditions left-side");
+    auto pavementDefRightPtr = TravelwayStructureDefinition::Create(*roadwayStandardsModelPtr, "PavementDesign right-side");
+    auto pavementDefLeftPtr = TravelwayStructureDefinition::Create(*roadwayStandardsModelPtr, "PavementDesign left-side");
 
-    TypicalSectionPortionBreakDownModelPtr twBreakDownModelPtr;
-    ASSERT_TRUE(roadTravelwayDefPtr->Insert(twBreakDownModelPtr).IsValid());
+    TypicalSectionPortionBreakDownModelPtr twRightBreakDownModelPtr;
+    ASSERT_TRUE(roadTravelwayDefRightPtr->Insert(twRightBreakDownModelPtr).IsValid());
+
+    TypicalSectionPortionBreakDownModelPtr twLeftBreakDownModelPtr;
+    ASSERT_TRUE(roadTravelwayDefLeftPtr->Insert(twLeftBreakDownModelPtr).IsValid());
 
     TypicalSectionPortionBreakDownModelPtr shoulderRBreakDownModelPtr;
     ASSERT_TRUE(travelwayRightSideDefPtr->Insert(shoulderRBreakDownModelPtr).IsValid());
@@ -151,30 +158,121 @@ TEST_F(RoadRailPhysicalTests, BasicTypicalSectionTest)
     TypicalSectionPortionBreakDownModelPtr sideSlopeRBreakDownModelPtr;
     ASSERT_TRUE(sideSlopeRightSideDefPtr->Insert(sideSlopeRBreakDownModelPtr).IsValid());
 
+    TypicalSectionPortionBreakDownModelPtr sideLBreakDownModelPtr;
+    ASSERT_TRUE(travelwayLeftSideDefPtr->Insert(sideLBreakDownModelPtr).IsValid());
+
+    TypicalSectionPortionBreakDownModelPtr pavementRBreakDownModelPtr;
+    ASSERT_TRUE(pavementDefRightPtr->Insert(pavementRBreakDownModelPtr).IsValid());
+
+    TypicalSectionPortionBreakDownModelPtr pavementLBreakDownModelPtr;
+    ASSERT_TRUE(pavementDefLeftPtr->Insert(pavementLBreakDownModelPtr).IsValid());
+
     InsertTestPointNames(*roadwayStandardsModelPtr);
-    InsertFourLanes(*twBreakDownModelPtr);
+    InsertTwoLanesRightSide(*twRightBreakDownModelPtr);
+    InsertTwoLanesLeftSide(*twLeftBreakDownModelPtr);
     InsertShouldersRightSide(*shoulderRBreakDownModelPtr);
     InsertSideSlopeRightSide(*sideSlopeRBreakDownModelPtr);
+    InsertShouldersAndSideSlopeLeftSide(*sideLBreakDownModelPtr);
+    InsertPavementDesignRightSide(*pavementRBreakDownModelPtr);
+    InsertPavementDesignLeftSide(*pavementLBreakDownModelPtr);
 
     auto overallTypicalSectionPtr = OverallTypicalSection::Create(*roadwayStandardsModelPtr, "4 lanes with shoulders");
 
     OverallTypicalSectionBreakDownModelPtr overallTypicalSectionModelPtr;
     ASSERT_TRUE(overallTypicalSectionPtr->Insert(overallTypicalSectionModelPtr).IsValid());
 
-    auto alignmentPlaceHolderCPtr = OverallTypicalSectionAlignment::CreateAndInsert(*overallTypicalSectionModelPtr, { 0, 0 });
-    ASSERT_EQ(DgnDbStatus::Success, OverallTypicalSection::SetMainAlignment(*overallTypicalSectionPtr, *alignmentPlaceHolderCPtr));
+    auto mainAlignmentPlaceHolderCPtr = OverallTypicalSectionAlignment::CreateAndInsert(*overallTypicalSectionModelPtr, { 0, 0 });
+    ASSERT_EQ(DgnDbStatus::Success, OverallTypicalSection::SetMainAlignment(*overallTypicalSectionPtr, *mainAlignmentPlaceHolderCPtr));
 
-    auto travelwayDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *roadTravelwayDefPtr, *alignmentPlaceHolderCPtr);
-    ASSERT_TRUE(travelwayDefPortionPtr->Insert().IsValid());
+    auto rightAlignmentPlaceHolderCPtr = OverallTypicalSectionAlignment::CreateAndInsert(*overallTypicalSectionModelPtr, { 0, 0 });
+    auto leftAlignmentPlaceHolderCPtr = OverallTypicalSectionAlignment::CreateAndInsert(*overallTypicalSectionModelPtr, { 0, 0 });
 
-    auto rightSideDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *travelwayRightSideDefPtr, *alignmentPlaceHolderCPtr);
+    auto travelwayDefPortionRightPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *roadTravelwayDefRightPtr, *rightAlignmentPlaceHolderCPtr);
+    ASSERT_TRUE(travelwayDefPortionRightPtr->Insert().IsValid());
+
+    auto travelwayDefPortionLeftPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *roadTravelwayDefLeftPtr, *leftAlignmentPlaceHolderCPtr);
+    ASSERT_TRUE(travelwayDefPortionLeftPtr->Insert().IsValid());
+
+    auto rightSideDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *travelwayRightSideDefPtr, *rightAlignmentPlaceHolderCPtr);
     ASSERT_TRUE(rightSideDefPortionPtr->Insert().IsValid());
 
-    auto rightSideSlopeDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *sideSlopeRightSideDefPtr, *alignmentPlaceHolderCPtr);
+    auto rightSideSlopeDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *sideSlopeRightSideDefPtr, *rightAlignmentPlaceHolderCPtr);
     ASSERT_TRUE(rightSideSlopeDefPortionPtr->Insert().IsValid());
 
-    twBreakDownModelPtr->Create2dView();
+    auto leftSideDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *travelwayLeftSideDefPtr, *leftAlignmentPlaceHolderCPtr);
+    ASSERT_TRUE(leftSideDefPortionPtr->Insert().IsValid());
+
+    auto rightPavementDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *pavementDefRightPtr, *rightAlignmentPlaceHolderCPtr);
+    ASSERT_TRUE(rightPavementDefPortionPtr->Insert().IsValid());
+
+    auto leftPavementDefPortionPtr = OverallTypicalSectionPortion::Create(*overallTypicalSectionModelPtr, *pavementDefLeftPtr, *leftAlignmentPlaceHolderCPtr);
+    ASSERT_TRUE(leftPavementDefPortionPtr->Insert().IsValid());
+
+    twRightBreakDownModelPtr->Create2dView();
+    twLeftBreakDownModelPtr->Create2dView();
     shoulderRBreakDownModelPtr->Create2dView();
     sideSlopeRBreakDownModelPtr->Create2dView();
+    sideLBreakDownModelPtr->Create2dView();
+    pavementRBreakDownModelPtr->Create2dView();
+    pavementLBreakDownModelPtr->Create2dView();
     overallTypicalSectionModelPtr->Create2dView();
+
+    DgnModelId alignmentModelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
+    auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
+
+    // Create Alignments
+    auto mainAlignmentPtr = Alignment::Create(*alignModelPtr);
+    mainAlignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
+    ASSERT_TRUE(mainAlignmentPtr->Insert().IsValid());
+
+    // Create Horizontal 
+    DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 150, 0 } };
+    CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 2);
+    auto horizAlignmPtr = HorizontalAlignment::Create(*mainAlignmentPtr, *horizAlignVecPtr);
+    ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
+
+    // Create Vertical
+    auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(*projectPtr, VerticalAlignmentModel::QueryClassId(*projectPtr),
+        mainAlignmentPtr->GetElementId()));
+    ASSERT_EQ(DgnDbStatus::Success, verticalModelPtr->Insert());
+
+    DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
+    CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
+    auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
+    ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
+
+    auto alignmentRightSidePtr = Alignment::Create(*mainAlignmentPtr);
+    alignmentRightSidePtr->InsertAndShareHorizontalMainVerticalFromParent();
+
+    auto alignmentLeftSidePtr = Alignment::Create(*mainAlignmentPtr);
+    alignmentLeftSidePtr->InsertAndShareHorizontalMainVerticalFromParent();
+
+    DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr,
+        DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
+    auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
+    
+    auto roadwayPtr = Roadway::Create(*physicalModelPtr);
+    roadwayPtr->SetMainAlignment(mainAlignmentPtr.get());
+    roadwayPtr->Insert();
+
+    // Travelway Segments
+    auto travelwaySegmentRightPtr = RegularTravelwaySegment::Create(*roadwayPtr, 0, 150, *roadTravelwayDefRightPtr, alignmentRightSidePtr.get());
+    travelwaySegmentRightPtr->Insert();
+
+    auto travelwaySegmentLeftPtr = RegularTravelwaySegment::Create(*roadwayPtr, 0, 150, *roadTravelwayDefLeftPtr, alignmentLeftSidePtr.get());
+    travelwaySegmentLeftPtr->Insert();
+
+    // TravelwaySide Segments
+    auto travelwaySideSegmentRightPtr = RegularTravelwaySideSegment::Create(*roadwayPtr, 0, 150, *travelwayRightSideDefPtr, alignmentRightSidePtr.get());
+    travelwaySideSegmentRightPtr->Insert();
+
+    auto travelwaySideSegmentLeftPtr = RegularTravelwaySideSegment::Create(*roadwayPtr, 0, 150, *travelwayLeftSideDefPtr, alignmentLeftSidePtr.get());
+    travelwaySideSegmentLeftPtr->Insert();
+
+    //TravelwayStructure Elements
+    auto travelwayStructureSegmentRightPtr = RegularTravelwayStructureSegment::Create(*roadwayPtr, 0, 150, *pavementDefRightPtr, alignmentRightSidePtr.get());
+    travelwayStructureSegmentRightPtr->Insert();
+
+    auto travelwayStructureSegmentLeftPtr = RegularTravelwayStructureSegment::Create(*roadwayPtr, 0, 150, *pavementDefLeftPtr, alignmentLeftSidePtr.get());
+    travelwayStructureSegmentLeftPtr->Insert();
     }

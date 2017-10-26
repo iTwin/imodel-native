@@ -38,9 +38,9 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
 
-    Dgn::DgnElementId GetAlignmentId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainAlignment"); }
-    RoadRailAlignment::AlignmentCPtr GetAlignment() const { return RoadRailAlignment::Alignment::Get(GetDgnDb(), GetAlignmentId()); }
-    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetAlignment(RoadRailAlignment::AlignmentCP alignment);
+    Dgn::DgnElementId GetMainAlignmentId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainAlignment"); }
+    RoadRailAlignment::AlignmentCPtr GetMainAlignment() const { return RoadRailAlignment::Alignment::Get(GetDgnDb(), GetMainAlignmentId()); }
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetMainAlignment(RoadRailAlignment::AlignmentCP alignment);
 }; // PathwayElement
 
 //=======================================================================================
