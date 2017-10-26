@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder const& rhs)
+NativeSqlBuilder& NativeSqlBuilder::operator=(NativeSqlBuilder const& rhs)
     {
     if (this != &rhs)
         m_nativeSql = rhs.m_nativeSql;
@@ -28,7 +28,7 @@ NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder const& rhs)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder&& rhs)
+NativeSqlBuilder& NativeSqlBuilder::operator=(NativeSqlBuilder&& rhs)
     {
     if (this != &rhs)
         m_nativeSql = std::move(rhs.m_nativeSql);
@@ -68,35 +68,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append(List const& builderList, Utf8CP separ
 
     return *this;
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator /*= nullptr*/)
-    {
-    BeAssert(lhsBuilderList.size() == rhsBuilderList.size());
-    BeAssert(!Utf8String::IsNullOrEmpty(operatorStr));
-
-    const size_t builderCount = lhsBuilderList.size();
-    bool isFirstBuilder = true;
-    for (size_t i = 0; i < builderCount; i++)
-        {
-        if (!isFirstBuilder)
-            {
-            if (Utf8String::IsNullOrEmpty(separator))
-                AppendComma();
-            else
-                Append(separator);
-            }
-
-        Append(lhsBuilderList[i]).Append(operatorStr).Append(rhsBuilderList[i]);
-
-        isFirstBuilder = false;
-        }
-
-    return *this;
-    }
-
+    
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -179,38 +151,6 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& li
 
         NativeSqlBuilder::List const& innerList = listOfLists[i];
         flattenedList.insert(flattenedList.end(), innerList.begin(), innerList.end());
-        }
-
-    return flattenedList;
-    }
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t,std::vector<size_t>> const& indexSkipList)
-    {
-    List flattenedList;
-    for (size_t i = 0; i < listOfLists.size(); i++)
-        {
-        NativeSqlBuilder::List const& innerList = listOfLists[i];
-        auto itor = indexSkipList.find(i);
-        if (itor != indexSkipList.end())
-            {
-            auto skipIt = itor->second.begin();
-            auto skipEndIt = itor->second.end();
-            for (size_t j = 0; j < innerList.size(); j++)
-                {
-                if (skipIt != skipEndIt && j == *skipIt)
-                    {
-                    skipIt++;
-                    continue;
-                    }
-
-                flattenedList.push_back(innerList[j]);
-                }
-            }
-        else
-            flattenedList.insert(flattenedList.end(), innerList.begin(), innerList.end());
         }
 
     return flattenedList;

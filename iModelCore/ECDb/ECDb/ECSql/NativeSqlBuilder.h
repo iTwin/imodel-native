@@ -47,7 +47,6 @@ struct NativeSqlBuilder final
         //!@param[in] separator The separator used to separate the items in @p builderList. If nullptr is passed,
         //!                     the items will be separated by comma.
         NativeSqlBuilder& Append(List const& builderList, Utf8CP separator = nullptr);
-        NativeSqlBuilder& Append(List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
         NativeSqlBuilder& AppendFormatted(Utf8CP format, ...);
         NativeSqlBuilder& AppendFullyQualified(Utf8CP qualifier, Utf8CP identifier);
         NativeSqlBuilder& AppendFullyQualified(Utf8StringCR qualifier, Utf8StringCR identifier);
@@ -68,7 +67,6 @@ struct NativeSqlBuilder final
         Utf8StringCR GetSql() const { return m_nativeSql; }
         
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
-        static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
     };
 
 
