@@ -28,7 +28,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         }
 
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
-    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilder();
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
 

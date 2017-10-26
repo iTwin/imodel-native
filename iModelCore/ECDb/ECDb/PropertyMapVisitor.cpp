@@ -186,12 +186,16 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& property
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope scope, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/) 
+ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope scope, Utf8StringCR classIdentifier, bool wrapInParentheses /*= false*/) 
     : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_scope(scope), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses)
-    {
-    if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
-        m_classIdentifier = nullptr;
-    }
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope scope, bool wrapInParentheses /*= false*/)
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_scope(scope), m_wrapInParentheses(wrapInParentheses)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
@@ -219,8 +223,10 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
+    const bool requiresCast = RequiresCast(propertyMap);
+
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
+        return ToNativeSql(propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>(), requiresCast);
 
     Result& result = Record(propertyMap);
 
@@ -229,7 +235,13 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         sqlBuilder.AppendParenLeft();
 
-    sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+    if (requiresCast)
+        sqlBuilder.Append("CAST(");
+
+    sqlBuilder.AppendFullyQualified(m_classIdentifier, propertyMap.GetColumn().GetName());
+
+    if (requiresCast)
+        sqlBuilder.Append(" AS ").Append(DbColumn::TypeToSql(propertyMap.GetColumnDataType())).Append(")");
 
     if (m_wrapInParentheses)
         sqlBuilder.AppendParenRight();
@@ -240,7 +252,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap) const
+BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap, bool requiresCast) const
     {
     Result& result = Record(relClassIdPropMap);
 
@@ -249,16 +261,19 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
     switch (m_scope)
         {
             case ECSqlScope::Select:
+                BeAssert(!requiresCast && "Assignment exp must not have cast");
                 //Here we refer to the class view representing the table, which is already fully prepared
                 //to deal whether the respective id col is null or not. Therefore no need to inject the CASE expr
-                sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
+                sqlBuilder.AppendFullyQualified(m_classIdentifier, relClassIdPropMap.GetColumn().GetName());
                 return SUCCESS;
 
             case ECSqlScope::NonSelectAssignmentExp:
+                BeAssert(!requiresCast && "Assignment exp must not have cast");
+
                 if (relClassIdPropMap.GetColumn().GetPersistenceType() == PersistenceType::Virtual) //ignore completely, no-op binders will be
                     return SUCCESS;
 
-                sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
+                sqlBuilder.AppendFullyQualified(m_classIdentifier, relClassIdPropMap.GetColumn().GetName());
                 return SUCCESS;
 
             case ECSqlScope::NonSelectNoAssignmentExp:
@@ -267,16 +282,28 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
             NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>().GetIdPropertyMap();
 
             NativeSqlBuilder idColStrBuilder;
-            idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+            idColStrBuilder.AppendFullyQualified(m_classIdentifier, idPropMap.GetColumn().GetName());
 
             NativeSqlBuilder relClassIdColStrBuilder;
             if (relClassIdPropMap.GetColumn().GetPersistenceType() == PersistenceType::Virtual)
-                relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
+                relClassIdColStrBuilder.Append(relClassIdPropMap.GetDefaultClassId());
             else
-                relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
-            
+                relClassIdColStrBuilder.AppendFullyQualified(m_classIdentifier, relClassIdPropMap.GetColumn().GetName());
+
+            //wrap cast around case expression rather than the rel class id sql. Cast expressions have the affinity of the target type
+            //whereas case expressions don't have an affinity and therefore behave like BLOB columns and would therefore negate the whole
+            //idea of injecting the casts again which is what we want to avoid
+            //No affinity behaves differently in terms of type conversions prior to comparisons
+            //(see https://sqlite.org/datatype3.html#type_conversions_prior_to_comparison)
+            if (requiresCast)
+                sqlBuilder.Append("CAST(");
+
             //The RelECClassId should always be logically null if the respective NavId col is null
-            sqlBuilder.AppendFormatted("CASE WHEN %s IS NULL THEN NULL ELSE %s END", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
+            sqlBuilder.AppendFormatted("CASE WHEN %s IS NULL THEN NULL ELSE %s END", idColStrBuilder.GetSql().c_str(), relClassIdColStrBuilder.GetSql().c_str());
+
+            if (requiresCast)
+                sqlBuilder.Append(" AS ").Append(DbColumn::TypeToSql(relClassIdPropMap.GetColumnDataType())).AppendParenRight();
+
             return SUCCESS;
             }
 
@@ -300,11 +327,18 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPropert
         }
 
     Result& result = Record(*vmap);
-    Utf8CP columnExp = m_scope == ECSqlScope::Select ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    Utf8StringCR columnExp = m_scope == ECSqlScope::Select ? propertyMap.GetAccessString() : vmap->GetColumn().GetName();
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenLeft();
     
-    result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
+    const bool requiresCast = RequiresCast(*vmap);
+    if (requiresCast)
+        result.GetSqlBuilderR().Append("CAST(");
+
+    result.GetSqlBuilderR().AppendFullyQualified(m_classIdentifier, columnExp);
+
+    if (requiresCast)
+        result.GetSqlBuilderR().Append(" AS ").Append(DbColumn::TypeToSql(vmap->GetColumnDataType())).AppendParenRight();
 
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
@@ -329,15 +363,23 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& p
         result.GetSqlBuilderR().AppendParenLeft();
 
     if (m_scope == ECSqlScope::Select)
-        result.GetSqlBuilderR().Append(m_classIdentifier, COL_ECClassId);
+        result.GetSqlBuilderR().AppendFullyQualified(m_classIdentifier.c_str(), COL_ECClassId);
     else
         {
         DbColumn const& col = perTablePropMap->GetColumn();
-
         if (col.GetPersistenceType() == PersistenceType::Virtual)
             result.GetSqlBuilderR().Append(perTablePropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         else
-            result.GetSqlBuilderR().Append(m_classIdentifier, col.GetName().c_str());
+            {
+            const bool requiresCast = RequiresCast(*perTablePropMap);
+            if (requiresCast)
+                result.GetSqlBuilderR().Append("CAST(");
+
+            result.GetSqlBuilderR().AppendFullyQualified(m_classIdentifier, col.GetName());
+
+            if (requiresCast)
+                result.GetSqlBuilderR().Append(" AS ").Append(DbColumn::TypeToSql(perTablePropMap->GetColumnDataType())).AppendParenRight();
+            }
         }
         
     if (m_wrapInParentheses) 
@@ -366,7 +408,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMa
 
 
     if (m_scope == ECSqlScope::Select)
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetAccessString().c_str());
+        result.GetSqlBuilderR().AppendFullyQualified(m_classIdentifier, propertyMap.GetAccessString());
     else
         {
         DbColumn const& col = perTablePropMap->GetColumn();
@@ -374,7 +416,16 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMa
         if (col.GetPersistenceType() == PersistenceType::Virtual)
             result.GetSqlBuilderR().Append(perTablePropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         else
-            result.GetSqlBuilderR().Append(m_classIdentifier, col.GetName().c_str());
+            {
+            const bool requiresCast = RequiresCast(*perTablePropMap);
+            if (requiresCast)
+                result.GetSqlBuilderR().Append("CAST(");
+
+            result.GetSqlBuilderR().AppendFullyQualified(m_classIdentifier, col.GetName());
+
+            if (requiresCast)
+                result.GetSqlBuilderR().Append(" AS ").Append(DbColumn::TypeToSql(perTablePropMap->GetColumnDataType())).AppendParenRight();
+            }
         }
 
     if (m_wrapInParentheses) 
@@ -396,11 +447,19 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap const
         }
 
     Result& result = Record(*vmap);
-    Utf8CP columnExp = m_scope == ECSqlScope::Select ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    Utf8StringCR columnExp = m_scope == ECSqlScope::Select ? propertyMap.GetAccessString() : vmap->GetColumn().GetName();
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenLeft();
     
-    result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
+    const bool requiresCast = RequiresCast(*vmap);
+    if (requiresCast)
+        result.GetSqlBuilderR().Append("CAST(");
+
+    result.GetSqlBuilderR().AppendFullyQualified(m_classIdentifier, columnExp);
+
+    if (requiresCast)
+        result.GetSqlBuilderR().Append(" AS ").Append(DbColumn::TypeToSql(vmap->GetColumnDataType())).AppendParenRight();
+
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
 
@@ -412,22 +471,10 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap const
 //---------------------------------------------------------------------------------------
 ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    m_resultSetByAccessString[propertyMap.GetAccessString().c_str()] = m_resultSet.size();
     m_resultSet.push_back(Result(propertyMap));
     return m_resultSet.back();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-const ToSqlPropertyMapVisitor::Result* ToSqlPropertyMapVisitor::Find(Utf8CP accessString) const
-    {
-    auto itor = m_resultSetByAccessString.find(accessString);
-    if (itor == m_resultSetByAccessString.end())
-        return nullptr;
-
-    return &m_resultSet.at(itor->second);
-    }
 
 //************************************SavePropertyMapVisitor*************************************
 

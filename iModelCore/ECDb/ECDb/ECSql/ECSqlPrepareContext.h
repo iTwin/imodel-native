@@ -132,8 +132,7 @@ struct ECSqlPrepareContext final : NonCopyableClass
             return static_cast<TECSqlPreparedStatement&> (GetPreparedStatement());
             }
 
-        NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
-        Utf8CP GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
+        NativeSqlBuilder& GetSqlBuilder() { return m_nativeSqlBuilder; }
 
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }

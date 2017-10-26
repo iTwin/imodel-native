@@ -103,6 +103,19 @@ BentleyStatus TestHelper::ImportSchema(SchemaItem const& testItem) const
     return ERROR;
     }
 
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                   10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestHelper::ECSqlToSql(Utf8CP ecsql) const
+    {
+    ECSqlStatement stmt; 
+    if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, ecsql))
+        return Utf8String(stmt.GetNativeSql());
+
+    return Utf8String();
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -112,7 +125,6 @@ DbResult TestHelper::ExecuteECSql(Utf8CP ecsql) const
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
         return BE_SQLITE_ERROR;
 
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
     return stmt.Step();
     }
 
@@ -125,7 +137,6 @@ DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
         return BE_SQLITE_ERROR;
 
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
     return stmt.Step(key);
     }
 

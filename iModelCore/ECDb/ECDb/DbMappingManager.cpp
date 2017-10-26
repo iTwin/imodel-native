@@ -288,7 +288,7 @@ ECN::ECRelationshipClassCR ForeignKeyPartitionView::GetRootClass(ECN::ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-const std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartitionView::GetPartitions(bool onlyPhysical, bool onlyConcrete) const
+std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartitionView::GetPartitions(bool onlyPhysical, bool onlyConcrete) const
     {
     std::vector<Partition const*> result;
     for (std::unique_ptr<Partition> const& partition : m_partitions)
@@ -308,7 +308,7 @@ const std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartition
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-const std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartitionView::GetPartitions(DbTable const& table, bool onlyPhysical, bool onlyConcrete) const
+std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartitionView::GetPartitions(DbTable const& table, bool onlyPhysical, bool onlyConcrete) const
     {
     std::vector<Partition const*> result;
     for (Partition const* partition : GetPartitions(onlyPhysical, onlyConcrete))

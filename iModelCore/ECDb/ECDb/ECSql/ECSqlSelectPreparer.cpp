@@ -34,18 +34,18 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
     switch (exp.GetOperator())
         {
             case SelectStatementExp::CompoundOperator::Except:
-                ctx.GetSqlBuilderR().Append(" EXCEPT "); break;
+                ctx.GetSqlBuilder().Append(" EXCEPT "); break;
             case SelectStatementExp::CompoundOperator::Intersect:
-                ctx.GetSqlBuilderR().Append(" INTERSECT "); break;
+                ctx.GetSqlBuilder().Append(" INTERSECT "); break;
             case SelectStatementExp::CompoundOperator::Union:
-                ctx.GetSqlBuilderR().Append(" UNION "); break;
+                ctx.GetSqlBuilder().Append(" UNION "); break;
             default:
                 BeAssert(false && "Error");
                 return ECSqlStatus::InvalidECSql;
         }
 
     if (exp.IsAll())
-        ctx.GetSqlBuilderR().Append("ALL ");
+        ctx.GetSqlBuilder().Append("ALL ");
 
     SelectClauseExp const* lhs = exp.GetSelection();
     SelectStatementExp const& rhsStatement = *exp.GetRhsStatement();
@@ -76,7 +76,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     BeAssert(exp.IsComplete());
 
     ctx.PushScope(exp, exp.GetOptions());
-    NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilder();
     ECSqlStatus status;
     if (exp.IsRowConstructor())
         {

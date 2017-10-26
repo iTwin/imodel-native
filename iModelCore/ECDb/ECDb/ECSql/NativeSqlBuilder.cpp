@@ -36,8 +36,6 @@ NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder&& rhs)
     return *this;
     }
 
-
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    08/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -47,10 +45,6 @@ NativeSqlBuilder& NativeSqlBuilder::Append(ECN::ECClassId id)
     id.ToString(classIdStr);
     return Append(classIdStr);
     }
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(NativeSqlBuilder const& builder) { return Append(builder.ToString()); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
@@ -106,10 +100,21 @@ NativeSqlBuilder& NativeSqlBuilder::Append(List const& lhsBuilderList, Utf8CP op
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(Utf8CP classIdentifier, Utf8CP identifier)
+NativeSqlBuilder& NativeSqlBuilder::AppendFullyQualified(Utf8CP qualifier, Utf8CP identifier)
     {
-    if (!Utf8String::IsNullOrEmpty(classIdentifier))
-        AppendEscaped(classIdentifier).AppendDot();
+    if (!Utf8String::IsNullOrEmpty(qualifier))
+        AppendEscaped(qualifier).AppendDot();
+
+    return AppendEscaped(identifier);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+NativeSqlBuilder& NativeSqlBuilder::AppendFullyQualified(Utf8StringCR qualifier, Utf8StringCR identifier)
+    {
+    if (!qualifier.empty())
+        AppendEscaped(qualifier).AppendDot();
 
     return AppendEscaped(identifier);
     }
@@ -123,7 +128,7 @@ NativeSqlBuilder& NativeSqlBuilder::AppendFormatted(Utf8CP format, ...)
     va_start(args, format);
     Utf8String formattedMessage;
     formattedMessage.VSprintf(format, args);
-    Append(formattedMessage.c_str());
+    Append(formattedMessage);
     va_end(args);
     return *this;
     }
@@ -131,12 +136,10 @@ NativeSqlBuilder& NativeSqlBuilder::AppendFormatted(Utf8CP format, ...)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    08/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeSqlBuilder::Push(bool clear /*= true*/)
+void NativeSqlBuilder::Push()
     {
     m_stack.push_back(m_nativeSql);
-
-    if (clear)
-        m_nativeSql.clear();
+    m_nativeSql.clear();
     }
 
 //-----------------------------------------------------------------------------------------

@@ -859,63 +859,129 @@ TEST_F(DbMappingTestFixture, NullViewCheck)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, SharedColumnCasting)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
-        "  <ECEntityClass typeName='TestClass'  modifier='none'>"
-        "      <ECCustomAttributes>"
-        "          <ClassMap xmlns='ECDbMap.02.00'>"
-        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "          </ClassMap>"
-        "          <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>"
-        "          </ShareColumns>"
-        "      </ECCustomAttributes>"
-        "      <ECProperty propertyName='F1' typeName='double' />"
-        "      <ECProperty propertyName='F2' typeName='double' />"
-        "  </ECEntityClass>"
-        "</ECSchema>")));
+    ASSERT_EQ(SUCCESS, SetupECDb("SharedColumnCasting.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+          <ECEntityClass typeName="Parent"  modifier="none">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="Child"  modifier="none">
+              <ECCustomAttributes>
+                  <ClassMap xmlns="ECDbMap.02.00">
+                      <MapStrategy>TablePerHierarchy</MapStrategy>
+                  </ClassMap>
+                  <ShareColumns xmlns="ECDbMap.02.00">
+                      <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  </ShareColumns>
+              </ECCustomAttributes>
+              <ECProperty propertyName="D" typeName="double" />
+              <ECProperty propertyName="S" typeName="string" />
+              <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+          </ECEntityClass>
+          <ECRelationshipClass typeName="Rel" strength="referencing" strengthDirection="Forward" modifier="None">
+              <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                 <Class class="Parent" />
+             </Source>
+              <Target multiplicity="(0..*)" polymorphic="True" roleLabel="referenced by">
+                <Class class="Child" />
+             </Target>
+          </ECRelationshipClass>
+        </ECSchema>)xml")));
 
-    //    printf("ECSQL: %s\n  SQL:%s\n",stmt.GetECSql(), stmt.GetNativeSql());
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Rel");
+    ASSERT_TRUE(relClassId.IsValid());
 
+    ECInstanceKey parentKey, childKey1, childKey2;
+    {
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES ('Parent-1')"));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Child(D,S,Parent) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(1, 10.0));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "10", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, parentKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey1));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "10", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, parentKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey2));
+    m_ecdb.SaveChanges();
+    }
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(F1) VALUES (10.0)"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(F1) VALUES ('10.0')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.TestClass WHERE F1=10"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE D=10"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(2, stmt.GetValueInt(0));
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
         
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.TestClass WHERE F1='10'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE D='10'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(2, stmt.GetValueInt(0));
-    stmt.Finalize();
-    
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestClass SET F2=20.0 WHERE F1=10"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2);
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestClass SET F2=20.0 WHERE F1='10'"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE S='2'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.TestClass WHERE F1='10'"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE S=2"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.TestClass WHERE F1=10"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE Parent=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, parentKey.GetInstanceId(), relClassId));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.Child WHERE Parent.Id=? AND Parent.RelECClassId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, relClassId));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Child WHERE Parent.Id=%s AND Parent.RelECClassId=%s",
+                                                                          parentKey.GetInstanceId().ToString().c_str(), relClassId.ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ts.Child WHERE Parent.Id='%s' AND Parent.RelECClassId='%s'",
+                                                                          parentKey.GetInstanceId().ToString().c_str(), relClassId.ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Child ORDER BY S"));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(childKey1.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(childKey2.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET S='Hello world' WHERE D=10"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 0);
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET S='Hello world' WHERE D='10'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Child WHERE D='10'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 2) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Child WHERE D=10"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(m_ecdb.GetModifiedRowCount(), 0) << stmt.GetECSql();
     stmt.Finalize();
     }
 

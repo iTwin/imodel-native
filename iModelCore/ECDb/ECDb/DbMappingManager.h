@@ -126,8 +126,8 @@ struct ForeignKeyPartitionView final : NonCopyableClass
         bool Contains(Partition const&) const;
         BentleyStatus UpdateFromECClassIdColumn();
         Partition const* FindCompatiblePartiton(NavigationPropertyMap const&) const;
-        const std::vector<Partition const*> GetPartitions(bool onlyPhysical = false, bool onlyConcrete = false) const;
-        const std::vector<Partition const*> GetPartitions(DbTable const&, bool onlyPhysical = false, bool onlyConcrete = false) const;
+        std::vector<Partition const*> GetPartitions(bool onlyPhysical = false, bool onlyConcrete = false) const;
+        std::vector<Partition const*> GetPartitions(DbTable const&, bool onlyPhysical = false, bool onlyConcrete = false) const;
         BentleyStatus Insert(std::unique_ptr<Partition> partition);
         static std::unique_ptr<ForeignKeyPartitionView> CreateReadonly(ECDbCR, ECN::ECRelationshipClassCR);
         static std::unique_ptr<ForeignKeyPartitionView> Create(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);

@@ -62,7 +62,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
                 return ECSqlStatus::Error;
         }
 
-    nativeSql = context.GetNativeSql();
+    nativeSql.assign(context.GetSqlBuilder().GetSql());
     return ECSqlStatus::Success;
     }
 
@@ -351,10 +351,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
             nativeSqlBuilder.AppendParenLeft();
 
         Utf8String castExpSnippet;
-        if (SUCCESS != PrepareCastExpForPrimitive(castExpSnippet, targetType, operandNativeSqlSnippets[i].ToString()))
+        if (SUCCESS != PrepareCastExpForPrimitive(castExpSnippet, targetType, operandNativeSqlSnippets[i].GetSql()))
             return ECSqlStatus::Error;
 
-        nativeSqlBuilder.Append(castExpSnippet.c_str(), false);
+        nativeSqlBuilder.Append(castExpSnippet);
 
         if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenRight();
@@ -443,7 +443,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullCastExp(NativeSqlBuilder::List& nativeS
 // @bsimethod                                    Krischan.Eberle                    10/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippet, ECN::PrimitiveType primTargetType, Utf8CP castOperandSnippet)
+BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippet, ECN::PrimitiveType primTargetType, Utf8StringCR castOperandSnippet)
     {
     Utf8CP castFormat = nullptr;
     switch (primTargetType)
@@ -475,7 +475,7 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
                 return ERROR;
         }
 
-    sqlSnippet.Sprintf(castFormat, castOperandSnippet);
+    sqlSnippet.Sprintf(castFormat, castOperandSnippet.c_str());
     return SUCCESS;
     }
 
@@ -504,7 +504,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             return ECSqlStatus::Error;
             }
 
-        classViewSql.AppendSpace().AppendEscaped(exp.GetId().c_str());
+        classViewSql.AppendSpace().AppendEscaped(exp.GetId());
         nativeSqlSnippets.push_back(classViewSql);
 
         return ECSqlStatus::Success;
@@ -720,7 +720,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, Cros
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp const& fromClause)
     {
-    NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilder();
 
     sqlGenerator.Append("FROM ");
     bool isFirstItem = true;
@@ -745,14 +745,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp c
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupByExp const& exp)
     {
-    ctx.GetSqlBuilderR().Append(" GROUP BY ");
+    ctx.GetSqlBuilder().Append(" GROUP BY ");
 
     NativeSqlBuilder::List groupingValuesSnippetList;
     const ECSqlStatus stat = PrepareValueExpListExp(groupingValuesSnippetList, ctx, *exp.GetGroupingValueListExp(), /* encloseInParentheses = */ false);
     if (!stat.IsSuccess())
         return stat;
 
-    ctx.GetSqlBuilderR().Append(groupingValuesSnippetList);
+    ctx.GetSqlBuilder().Append(groupingValuesSnippetList);
     return ECSqlStatus::Success;
     }
 
@@ -762,8 +762,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupB
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareHavingExp(ECSqlPrepareContext& ctx, HavingExp const& exp)
     {
-    ctx.GetSqlBuilderR().Append(" HAVING ");
-    return PrepareSearchConditionExp(ctx.GetSqlBuilderR(), ctx, *exp.GetSearchConditionExp());
+    ctx.GetSqlBuilder().Append(" HAVING ");
+    return PrepareSearchConditionExp(ctx.GetSqlBuilder(), ctx, *exp.GetSearchConditionExp());
     }
 
 
@@ -811,24 +811,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp(ECSqlPrepareContext& ctx, LimitOffsetExp const& exp)
     {
-    ctx.GetSqlBuilderR().Append(" LIMIT ");
+    ctx.GetSqlBuilder().Append(" LIMIT ");
 
     NativeSqlBuilder::List sqlSnippets;
     ECSqlStatus stat = PrepareValueExp(sqlSnippets, ctx, *exp.GetLimitExp());
     if (!stat.IsSuccess())
         return stat;
 
-    ctx.GetSqlBuilderR().Append(sqlSnippets[0]);
+    ctx.GetSqlBuilder().Append(sqlSnippets[0]);
 
     if (exp.HasOffset())
         {
-        ctx.GetSqlBuilderR().Append(" OFFSET ");
+        ctx.GetSqlBuilder().Append(" OFFSET ");
         sqlSnippets.clear();
         ECSqlStatus stat = PrepareValueExp(sqlSnippets, ctx, *exp.GetOffsetExp());
         if (!stat.IsSuccess())
             return stat;
 
-        ctx.GetSqlBuilderR().Append(sqlSnippets[0]);
+        ctx.GetSqlBuilder().Append(sqlSnippets[0]);
         }
 
     return ECSqlStatus::Success;
@@ -899,7 +899,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
         }
 
     if (!orderBySqlBuilder.IsEmpty())
-        ctx.GetSqlBuilderR().Append("ORDER BY ").Append(orderBySqlBuilder);
+        ctx.GetSqlBuilder().Append("ORDER BY ").Append(orderBySqlBuilder);
 
     ctx.PopScope();
     return ECSqlStatus::Success;
@@ -948,7 +948,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, QualifiedJoinExp const& exp)
     {
-    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilder();
     ECSqlStatus r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetFromClassRef());
     if (!r.IsSuccess())
         return r;
@@ -1041,7 +1041,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     ECSqlStatus r;
 
-    NativeSqlBuilder& sql = ctx.GetSqlBuilderR();
+    NativeSqlBuilder& sql = ctx.GetSqlBuilder();
 
     ///Resolve direction of the relationship
     ECRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
@@ -1155,7 +1155,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, fromEP.GetClassNameRef()->GetId().c_str());
+    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, fromEP.GetClassNameRef()->GetId());
     fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
     if (fromECInstanceIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1163,7 +1163,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
+    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
     }
 
@@ -1176,7 +1176,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         }
 
     
-    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId());
     fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
     if (fromRelatedIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1184,7 +1184,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSql());
+    sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
 
     //RelationView To ToECClass
     sql.Append(" INNER JOIN ");
@@ -1203,7 +1203,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, toEP.GetClassNameRef()->GetId().c_str());
+    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, toEP.GetClassNameRef()->GetId());
     toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
     if (toECInstanceIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1211,7 +1211,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
+    sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
     }
 
@@ -1223,14 +1223,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         return ECSqlStatus::Error;
         }
 
-    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId());
     toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
     if (toRelatedIdSqlVisitor.GetResultSet().size() != 1)
         {
         BeAssert(false);
         return ECSqlStatus::Error;
         }
-    sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSql());
+    sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
     }
 
     return ECSqlStatus::Success;
@@ -1260,7 +1260,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         nativeSql.Append(isEveryFunction ? "MIN" : "MAX");
         }
     else
-        nativeSql.Append(functionName.c_str());
+        nativeSql.Append(functionName);
 
     nativeSql.AppendParenLeft();
 
@@ -1355,9 +1355,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, SubqueryExp const& exp)
     {
-    ctx.GetSqlBuilderR().AppendParenLeft();
+    ctx.GetSqlBuilder().AppendParenLeft();
     ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *exp.GetQuery());
-    ctx.GetSqlBuilderR().AppendParenRight();
+    ctx.GetSqlBuilder().AppendParenRight();
     return stat;
     }
 
@@ -1372,7 +1372,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp(ECSqlPrepareContext& ctx, Su
         return status;
 
     if (!exp.GetAlias().empty())
-        ctx.GetSqlBuilderR().AppendSpace().AppendQuoted(exp.GetAlias().c_str());
+        ctx.GetSqlBuilder().AppendSpace().AppendQuoted(exp.GetAlias().c_str());
 
     return ECSqlStatus::Success;
     }
@@ -1393,9 +1393,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, S
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const& exp)
     {
-    ctx.GetSqlBuilderR().Push(true);
+    ctx.GetSqlBuilder().Push();
     ECSqlStatus st = PrepareSubqueryExp(ctx, *exp.GetQuery());
-    nativeSqlSnippets.push_back(NativeSqlBuilder(ctx.GetSqlBuilderR().Pop().c_str()));
+    nativeSqlSnippets.push_back(NativeSqlBuilder(ctx.GetSqlBuilder().Pop()));
     return st;
     }
 

@@ -38,7 +38,7 @@ struct ECSqlExpPreparer final
         ~ECSqlExpPreparer();
 
         static ECSqlStatus PrepareNullCastExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, CastExp const&);
-        static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8CP castOperandSnippet);
+        static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8StringCR castOperandSnippet);
         static ECSqlStatus PrepareFunctionArgExpList(NativeSqlBuilder&, ECSqlPrepareContext&, FunctionCallExp const&);
         static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
 
