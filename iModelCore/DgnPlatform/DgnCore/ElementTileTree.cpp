@@ -40,6 +40,10 @@ struct TileContext;
 // and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
 // #define CACHE_GEOMETRY_PARTS
 
+// Turn this on to diagnose issues which may be specific to partial tile generation.
+// It will prevent us from creating partial tiles - instead tile generation will take as long as needed to produce a complete tile.
+// #define DISABLE_PARTIAL_TILES
+
 // Often we find multiple threads trying to facet the same DgnGeometryPart simultaneously, and we want to allow only one thread to do so while the others wait on the result.
 // Unfortunately this is not 100% reliable, because the symbology associated with each instance can be any combination of that defined in the part's GeometryStream
 // and that defined in the referencing GeometryStream. 99.9% of the time no symbology is defined in the part however...
@@ -901,7 +905,8 @@ private:
     bool            m_aborted = false;
     bool            m_anySkipped = false;
 
-    bool CheckStop() { return (m_aborted = m_aborted && m_loadContext.WasAborted()); }
+    bool CheckStop() { return m_aborted || (m_aborted = m_loadContext.WasAborted()); }
+
     void Insert(double diagonalSq, DgnElementId elemId)
         {
         m_entries.Insert(diagonalSq, elemId);
@@ -975,6 +980,7 @@ Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::System
     {
     // We only create partial tiles for the 'root' tiles (the top-most displayable tiles) because they are the first tiles we generate for an empty view,
     // and can always be substituted while higher-resolution child tiles are being (fully) generated.
+#if !defined(DISABLE_PARTIAL_TILES)
     if (!tile.IsParentDisplayable() && nullptr != loads && loads->HasDeadline())
         {
         auto now = BeTimePoint::Now();
@@ -991,6 +997,7 @@ Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::System
             m_collectionDeadline = now + duration;
             }
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1127,7 +1134,7 @@ BentleyStatus Loader::_LoadTile()
     if (!IsCacheable())
         {
         if (SUCCESS != LoadGeometryFromModel(geometry))
-            return ERROR;                                            
+            return ERROR;
         }
     else
         {
@@ -2471,7 +2478,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         return Completion::Aborted;
 
     // Determine whether or not to subdivide this tile
-    if (!isPartialTile && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+    if (!isPartialTile && m_geometries.IsComplete() && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
         {
         // If no elements were skipped and only a small number of elements exist within this tile's range:
         //  - Make it a leaf tile, if it contains no curved geometry; otherwise

@@ -1570,7 +1570,8 @@ void TileRequests::RequestMissing(BeTimePoint deadline) const
                 ++nRequested;
         }
 
-    THREADLOG.debugv("Requesting %llu tiles", nRequested);
+    if (0 < nRequested)
+        THREADLOG.debugv("Requesting %llu tiles", nRequested);
 #endif
 
     for (auto const& kvp : m_map)
