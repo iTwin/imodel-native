@@ -5,12 +5,13 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="RealityModFramework.prewire.mke">
         <Bindings>
             <PublicAPI Domain="RealityPlatform" />
+            <PublicAPI Domain="RealityPlatformConnect" />
             <PublicAPI Domain="RealityPackage" />
             <PublicAPI Domain="RealityAdmin" />
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x64" ApiNumber="B02">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatformDesktop\RealityPlatform.mke" OnlyPlatforms="x64" ApiNumber="B02">
         <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
@@ -21,6 +22,19 @@
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatform$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="RealityPlatformConnect" BentleyBuildMakeFile="RealityPlatformConnect\RealityPlatformConnect.mke" OnlyPlatforms="x64" ApiNumber="B02">
+        <SubPart PartName="RealityPackage" />
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityPlatformConnect$(stlibext)</Libs>
+            <Assemblies>delivery/$(shlibprefix)RealityPlatformConnect$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     

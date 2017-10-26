@@ -12,7 +12,6 @@
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/WSGServices.h>
-#include <CCApi/CCPublic.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -62,7 +61,7 @@ RequestStatus RawServerResponse::ValidateJSONResponse(Json::Value& instances, Ut
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Francis Boily         	    02/2017
+// @bsimethod                                   Spencer.Mason          	    02/2017
 //-------------------------------------------------------------------------------------
 CurlConstructor::CurlConstructor()
     {
@@ -75,7 +74,6 @@ CurlConstructor::CurlConstructor()
     exeDir = exeDir.substr(0, pos + 1);
     BeFileName caBundlePath = BeFileName(exeDir);
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
-    m_tokenRefreshTimer = 0;
     }
 
 //-------------------------------------------------------------------------------------
@@ -106,9 +104,15 @@ WSGRequest& WSGRequest::GetInstance()
 //-------------------------------------------------------------------------------------
 Utf8String CurlConstructor::GetToken() const
     {
-    if((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
-        RefreshToken();
-    return m_token;
+    return ConnectTokenManager::GetInstance().GetToken();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+void CurlConstructor::RefreshToken() const
+    {
+    return ConnectTokenManager::GetInstance().RefreshToken();
     }
 
 //-------------------------------------------------------------------------------------
@@ -125,70 +129,6 @@ void CurlConstructor::SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8Strin
 void CurlConstructor::GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) const
     {
     ProxyManager::GetInstance().GetCurrentProxyUrlAndCredentials(proxyUrl, proxyCreds);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                02/2017
-//-------------------------------------------------------------------------------------
-void CurlConstructor::RefreshToken() const
-    {
-    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-    CallStatus status = APIERR_SUCCESS;
-
-    bool installed;
-    status = CCApi_IsInstalled(api, &installed);
-    if (!installed)
-        {
-        std::cout << "Connection client does not seem to be installed" << std::endl;
-        return;
-        }
-    bool running = false;
-    status = CCApi_IsRunning(api, &running);
-    if (status != APIERR_SUCCESS || !running)
-        {
-        std::cout << "Connection client does not seem to be running" << std::endl;
-        return;
-        }
-    bool loggedIn = false;
-    status = CCApi_IsLoggedIn(api, &loggedIn);
-    if (status != APIERR_SUCCESS || !loggedIn)
-        {
-        std::cout << "Connection client does not seem to be logged in" << std::endl;
-        return;
-        }
-    bool acceptedEula = false;
-    status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
-    if (status != APIERR_SUCCESS || !acceptedEula)
-        {
-        std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
-        return;
-        }
-    bool sessionActive = false;
-    status = CCApi_IsUserSessionActive(api, &sessionActive);
-    if (status != APIERR_SUCCESS || !sessionActive)
-        {
-        std::cout << "Connection client does not seem to have an active session" << std::endl;
-        return;
-        }
-
-    LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";//;L"https:://qa-ims.bentley.com"
-    UINT32 maxTokenLength = 16384;
-    LPWSTR lpwstrToken = new WCHAR[maxTokenLength];
-
-    status = CCApi_GetSerializedDelegateSecurityToken(api, relyingParty, lpwstrToken, maxTokenLength);
-    if (status != APIERR_SUCCESS)
-        return;
-
-    char* charToken = new char[maxTokenLength];
-    wcstombs(charToken, lpwstrToken, maxTokenLength);
-
-    m_token = "Authorization: Token ";
-    m_token.append(charToken);
-    m_tokenRefreshTimer = std::time(nullptr);
-    
-    delete lpwstrToken;
-    delete charToken;
-    CCApi_FreeApi(api);
     }
 
 //-------------------------------------------------------------------------------------
@@ -983,4 +923,37 @@ ProxyManager::ProxyManager()
     s_pmInstance = this;
     m_proxyUrl = "";
     m_proxyCreds = "";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectTokenManager* ConnectTokenManager::s_ctInstance = nullptr;
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectTokenManager& ConnectTokenManager::GetInstance()
+    {
+    if (nullptr == s_ctInstance)
+        s_ctInstance = new ConnectTokenManager();
+    return *s_ctInstance;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectTokenManager::ConnectTokenManager() :
+    m_token(""), m_tokenRefreshTimer(0)
+    {
+    s_ctInstance = this;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+Utf8String ConnectTokenManager::GetToken() const
+    {
+    if ((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
+        RefreshToken();
+    return m_token;
     }
