@@ -18,5 +18,4 @@ appName     = RealityModFramework.prewire
 always:
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPackage=$(RealityPackagePublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatformConnect=$(RealityPlatformConnectPublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityAdmin=$(RealityAdminPublicAPISrc)"
