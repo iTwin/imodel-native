@@ -6233,7 +6233,7 @@ int                     epsgCode
 
         if (NULL != (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, WString(csKeyName).c_str())))
             {
-            if (epsgCode = m_csParameters->csdef.epsgNbr)
+            if (epsgCode == m_csParameters->csdef.epsgNbr)
                 {
                 // found it ... 
                 m_coordSysId = COORDSYS_KEYNM;
