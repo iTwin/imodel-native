@@ -59,6 +59,7 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
 
 %include $(sharedMki)linktool.mki
 
