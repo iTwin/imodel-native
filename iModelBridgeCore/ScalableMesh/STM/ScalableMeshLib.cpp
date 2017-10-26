@@ -30,8 +30,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-#define BING_AUTHENTICATION_KEY "AnLjDxNA_guaYuWWJifrpWnqvlxWPl8lLHzT1ixQH3vXLwb3CTEolWX34nbn4HfS"
-
 struct SMImagePPHost : public ImageppLib::Host
     {
     virtual void             _RegisterFileFormat() override
@@ -217,14 +215,6 @@ WebServiceKey GetBingKey()
 
     Utf8String contextServiceURL;
     contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());        
-
-#ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
-    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
-        {
-        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
-        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
-        }
-#endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
 
