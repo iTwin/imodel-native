@@ -456,7 +456,16 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
 
     Transform unitTransform;
+
+#ifdef VANCOUVER_API
+    unitTransform.InitIdentity();
+    unitTransform.form3d[0][0] = ratioToMeterH;
+    unitTransform.form3d[1][1] = ratioToMeterH;
+    unitTransform.form3d[2][2] = ratioToMeterV;    
+#else
     unitTransform.InitFromScaleFactors(ratioToMeterH, ratioToMeterH, ratioToMeterV);
+#endif
+
     unitTransform.Multiply(range.low, range.low);
     unitTransform.Multiply(range.high, range.high);
 

@@ -94,11 +94,16 @@ IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  f
 
 	using namespace ISMStore;
 	BeFileName fileName = BeFileName(filePath);
-	if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
-	{
+
+#ifdef VANCOUVER_API
+    if (fileName.IsUrl() || (!BeFileName::DoesPathExist(fileName.c_str()) && !canCreateFile(filePath)))
+#else
+    if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
+#endif	
+	    {
 		status = BSIERROR;
 		return 0;
-	}
+	    }
 
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 

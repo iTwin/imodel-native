@@ -126,11 +126,15 @@ void ScalableMeshRDSProvider::InitializeRealityDataService()
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
 
     if (!proxyInfo.m_serverUrl.empty())
-        {        
+        {       
+#ifndef VANCOUVER_API
         Utf8String proxyCreds = proxyInfo.m_user;
         proxyCreds.append(":");
         proxyCreds.append(proxyInfo.m_password);
         RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
+#else 
+        assert(!"RealityDataService::SetProxyInfo not yet available");
+#endif
         }    
     }
 

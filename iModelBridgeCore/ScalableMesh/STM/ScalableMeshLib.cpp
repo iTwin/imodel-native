@@ -25,7 +25,9 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 
 
-
+#ifndef VANCOUVER_API
+USING_NAMESPACE_IMAGEPP
+#endif
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -115,7 +117,13 @@ void GetCertificateAutoritiesFileUrl(Utf8String& pemFileName)
     WCHAR wccwd[FILENAME_MAX];
     GetModuleFileNameW(hm, &wccwd[0], (DWORD)FILENAME_MAX);
     BeFileName cwdfn(wccwd);
+
+#ifdef VANCOUVER_API    
+    pemFileName.append(Utf8String(BeFileName::GetDirectoryName(cwdfn.c_str()).c_str()).c_str());
+#else    
     pemFileName.append(Utf8String(cwdfn.GetDirectoryName().c_str()).c_str());
+#endif
+
     pemFileName.append("\\ScalableMeshCacert.pem");
     }
 
@@ -219,21 +227,39 @@ WebServiceKey GetBingKey()
     contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());        
 
 #ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
-    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
+
+#ifdef VANCOUVER_API    
+    if (contextServiceURL.StartsWith("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
         {
         bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
         return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
         }
+#else
+    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
+        {
+            bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
+            return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
+        }
+#endif
+
 #endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
+    Utf8String productIdStr; 
 
-    Utf8Char productIdStr[200];
+#ifdef VANCOUVER_API    
+    wchar_t prodIdStr[200];
+    BeStringUtilities::FormatUInt64(prodIdStr, 200, productId, HexFormatOptions::None);
+    BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);    
+#else
+    Utf8Char prodIdStr[200];
     BeStringUtilities::FormatUInt64(productIdStr, productId);
+    productIdStr.append(prodIdStr);
+#endif
         
     Utf8String bingKeyUrl(contextServiceURL);    
     bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+");
-    bingKeyUrl.append(productIdStr);
+    bingKeyUrl.append(productIdStr.c_str());
             
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
@@ -268,7 +294,7 @@ WebServiceKey GetBingKey()
 //=======================================================================================
 // @bsiclass                                                    Raphael.Lemieux 09/2017
 //=======================================================================================
-class BingAuthenticationCallback : public ImagePP::HFCAuthenticationCallback, public RefCountedBase
+class BingAuthenticationCallback : public HFCAuthenticationCallback, public RefCountedBase
     {
 private:
     mutable WebServiceKey m_bingKey;
@@ -277,10 +303,10 @@ public:
     virtual             ~BingAuthenticationCallback()     {    };
 
 
-    bool       GetAuthentication(ImagePP::HFCAuthentication* pio_Authentication) const override;
-    unsigned short RetryCount(ImagePP::HCLASS_ID pi_AuthenticationType) const override     { return 1;     }
+    bool       GetAuthentication(HFCAuthentication* pio_Authentication) const override;
+    unsigned short RetryCount(HCLASS_ID pi_AuthenticationType) const override     { return 1;     }
     bool       IsCancelled() const override     { return !m_bingKey.IsValid();     }
-    bool       CanAuthenticate(ImagePP::HCLASS_ID pi_AuthenticationType) const override     { return true;     }
+    bool       CanAuthenticate(HCLASS_ID pi_AuthenticationType) const override     { return true;     }
     };
 
 typedef RefCountedPtr<BingAuthenticationCallback> BingAuthenticationCallbackPtr;
@@ -289,9 +315,9 @@ typedef RefCountedPtr<BingAuthenticationCallback> BingAuthenticationCallbackPtr;
 //=======================================================================================
 // @bsiclass                                                    Raphael.Lemieux 09/2017
 //=======================================================================================
-bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* pio_Authentication) const
+bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authentication) const
     {
-    ImagePP::HFCInternetAuthentication* pAuth = dynamic_cast<ImagePP::HFCInternetAuthentication*>(pio_Authentication);
+    HFCInternetAuthentication* pAuth = dynamic_cast<HFCInternetAuthentication*>(pio_Authentication);
 
     if (pAuth != nullptr)
         {
@@ -312,7 +338,7 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
         return !key.empty();
         }
 
-    ImagePP::HFCProxyAuthentication* pProxyAuth = dynamic_cast<ImagePP::HFCProxyAuthentication*>(pio_Authentication);
+    HFCProxyAuthentication* pProxyAuth = dynamic_cast<HFCProxyAuthentication*>(pio_Authentication);
 
     if (pProxyAuth != nullptr)
         {
@@ -331,7 +357,7 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
         return false;
         }
 
-    ImagePP::HFCCertificateAutoritiesAuthentication* pCertAutorityAuth = dynamic_cast<ImagePP::HFCCertificateAutoritiesAuthentication*>(pio_Authentication);
+    HFCCertificateAutoritiesAuthentication* pCertAutorityAuth = dynamic_cast<HFCCertificateAutoritiesAuthentication*>(pio_Authentication);
 
     if (pCertAutorityAuth != nullptr)
         {

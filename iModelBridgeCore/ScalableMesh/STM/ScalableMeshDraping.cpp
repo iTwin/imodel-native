@@ -126,7 +126,14 @@ IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size
 	m_reproTransform.Multiply(origin, m_polylineToDrape[segmentId]);
 
 	pointOnDirection.SumOf(origin, drapeDirection);
-	Transform t = m_reproTransform.ValidatedInverse();
+    bool    inverseOf(TransformCP pIn);
+
+#ifdef VANCOUVER_API
+    Transform t; 
+    t.inverseOf(&m_reproTransform);
+#else
+    Transform t = m_reproTransform.ValidatedInverse();
+#endif
 	t.Multiply(pointOnDirection, pointOnDirection);
 
 	DPlane3d targetCuttingPlane = DPlane3d::From3Points(m_polylineToDrape[segmentId], m_polylineToDrape[segmentId + 1], pointOnDirection);

@@ -39,6 +39,7 @@ class BingMapLogoRetriever
         +---------------+---------------+---------------+---------------+---------------+------*/
         bool DownloadBitmapToRgba(bvector<Byte>& imageData, DPoint2d& size, WChar const* pURI, DPoint2d* pRequestedSize)
             {
+#ifndef VANCOUVER_API
             WChar localFilename[MAX_PATH];
 
             if (0 != URLDownloadToCacheFileW(NULL, pURI, localFilename, MAX_PATH, 0, NULL))
@@ -63,6 +64,11 @@ class BingMapLogoRetriever
             size.y = info.height;
 
             return true;
+#else
+            assert(!"DownloadBitmapToRgba not implemented yet");
+            return false;
+#endif
+
             }
 
     public : 
