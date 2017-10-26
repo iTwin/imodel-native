@@ -13,6 +13,7 @@
 #include <Grids/Handlers/IntersectionCurveHandlers.h>
 #include <Grids/Handlers/GridArcSurfaceHandler.h>
 #include <Grids/Handlers/GridSurfaceCreatesGridCurveHandler.h>
+#include <Grids/Handlers/GridHandlers.h>
 #include <DgnPlatform/DgnCategory.h>
 
 #define GRIDLINE_STYLE_NAME "GridlineStyle1"
@@ -43,6 +44,7 @@ GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     RegisterHandler (OrthogonalGridPortionHandler::GetHandler ());
     RegisterHandler (RadialGridPortionHandler::GetHandler ());
     RegisterHandler (SketchGridPortionHandler::GetHandler ());
+    RegisterHandler (GridAxisHandler::GetHandler ());
 
     RegisterHandler (IntersectionCurveHandler::GetHandler ());
     RegisterHandler (GridCurveHandler::GetHandler ());
@@ -201,6 +203,8 @@ void GridsDomain::_OnSchemaImported(DgnDbR db) const
     //method        |   db  |               name                        |      color       |    isVisible   |   isPlotted   |   isSnappable |   isLocatable |   weight  |   styleId |   displaypriority |      materialId      |    transparency    |
     tmpColorDef = Dgn::ColorDef::DarkGrey ();
     tmpColorDef.SetAlpha (0xaa);
+
+    InsertCategory (db, GRIDS_CATEGORY_CODE_Uncategorized, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     InsertCategory (db, GRIDS_CATEGORY_CODE_DrivingSurface, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     tmpColorDef = Dgn::ColorDef::DarkBlue ();
     tmpColorDef.SetAlpha (0xaa);

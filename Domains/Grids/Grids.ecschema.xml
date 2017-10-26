@@ -36,7 +36,32 @@
       </Target>
       <ECProperty propertyName="IsBaseSurface" typeName="boolean" description="whether the surface is the base on which others are imprinted"/>
     </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GridPortionHasAxes" strength="referencing" strengthDirection="backward">
+      <Source cardinality="(1,1)" polymorphic="true">
+        <Class class="GridPortion"/>
+      </Source>
+      <Target cardinality="(1,N)" polymorphic="true">
+        <Class class="GridAxis"/>
+      </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GridAxisContainsGridSurfaces" strength="referencing" strengthDirection="backward">
+      <Source cardinality="(1,1)" polymorphic="true">
+        <Class class="GridAxis"/>
+      </Source>
+      <Target cardinality="(1,N)" polymorphic="true">
+        <Class class="GridSurface"/>
+      </Target>
+    </ECRelationshipClass>
   
+    <ECEntityClass typeName="GridAxis">
+      <BaseClass>bis:DefinitionElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+      <ECNavigationProperty propertyName="Grid" relationshipName="GridPortionHasAxes" direction="Backward" description="Grid this axis belong to" />
+    </ECEntityClass>
   
     <ECEntityClass typeName="IntersectionCurve">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
@@ -86,6 +111,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECNavigationProperty propertyName="Axis" relationshipName="GridAxisContainsGridSurfaces" direction="Backward" description="Axis this gridSurface belong to" />
     </ECEntityClass>
 
 
@@ -97,6 +123,13 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GridArcSurface">
+      <BaseClass>GridSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GridSplineSurface">
       <BaseClass>GridSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "PublicApi/OrthogonalGridPortion.h"
+#include "PublicApi/GridAxis.h"
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
@@ -62,12 +63,17 @@ StandardCreateParams const& params
     if (!thisGrid->Insert ().IsValid())
         return nullptr;
 
+    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb().GetDictionaryModel ();
+
+    GridAxisPtr verticalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel ();
     
     if (subModel.IsValid ())
         {
-        GridElementVector horizontalElements = CreateGridElements (params, subModel.get(), true);
-        GridElementVector verticalElements = CreateGridElements (params, subModel.get(), false);
+        GridElementVector horizontalElements = CreateGridElements (params, subModel.get(), true, verticalAxis);
+        GridElementVector verticalElements = CreateGridElements (params, subModel.get(), false, horizontalAxis);
 
         for (GridSurfacePtr gridSurface : horizontalElements)
             {
@@ -167,19 +173,6 @@ CreateParams const& params
         return BentleyStatus::SUCCESS;
         }
     return BentleyStatus::ERROR;
-    /*
-    BeSQLite::Savepoint savePoint (params.m_dgndb, "creating gridPortion"); //do not need to commit - will get commited on destructor
-
-    OrthogonalGridPortionPtr thisGrid = new OrthogonalGridPortion (params, params.m_normal);
-
-    BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
-    if (!thisGrid->Insert ().IsValid ())
-        return nullptr;
-
-    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, params) ||
-        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, params))
-        savePoint.Cancel ();
-    return thisGrid;*/
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,7 +256,7 @@ double distance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridElementVector OrthogonalGridPortion::CreateGridElements (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, bool isHorizontal)
+GridElementVector OrthogonalGridPortion::CreateGridElements (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, bool isHorizontal, GridAxisPtr gridAxis)
     {
     GridElementVector orthogonalGrid;
 

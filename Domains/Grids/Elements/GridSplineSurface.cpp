@@ -1,4 +1,4 @@
-#include "PublicApi/GridArcSurface.h"
+#include "PublicApi/GridSplineSurface.h"
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
@@ -7,12 +7,12 @@
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridArcSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridSplineSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridArcSurface::GridArcSurface
+GridSplineSurface::GridSplineSurface
 (
 CreateParams const& params
 ) : T_Super(params) 
@@ -24,7 +24,7 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridArcSurface::GridArcSurface
+GridSplineSurface::GridSplineSurface
 (
 CreateParams const& params,
 ISolidPrimitivePtr  surface
@@ -35,20 +35,20 @@ ISolidPrimitivePtr  surface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridArcSurfacePtr                 GridArcSurface::Create 
+GridSplineSurfacePtr                 GridSplineSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
 ISolidPrimitivePtr  surface
 )
     {
-    return new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
+    return new GridSplineSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridArcSurfacePtr GridArcSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+GridSplineSurfacePtr GridSplineSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
     {
-    return GridArcSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
+    return GridSplineSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 END_GRIDS_NAMESPACE
