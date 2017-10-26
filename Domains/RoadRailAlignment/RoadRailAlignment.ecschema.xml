@@ -17,6 +17,15 @@
         </ECCustomAttributes>
         <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AlignmentOwnsSubAlignments" strength="embedding" strengthDirection="Forward" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="has 1 parent alignment">
+            <Class class="Alignment"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N alignment">
+            <Class class="Alignment"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="HorizontalAlignmentsPortion" description="Horizontal/Top portions of Alignments in an AlignmentModel that will be broken down in more detail in a separate HorizontalAlignmentModel.">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
         <ECCustomAttributes>
@@ -56,18 +65,18 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="HorizontalModelBreaksDownAlignment" strength="embedding" strengthDirection="Backward" modifier="Sealed">
+    <ECRelationshipClass typeName="HorizontalModelBreaksDownAlignmentsPortion" strength="embedding" strengthDirection="Backward" modifier="Sealed">
         <BaseClass>bis:ModelModelsElement</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="may be broken down into 1 horizontal model">
             <Class class="HorizontalAlignmentModel"/>
         </Source>
         <Target multiplicity="(1..1)" polymorphic="false" roleLabel="breaks down 1 alignment">
-            <Class class="Alignment"/>
+            <Class class="HorizontalAlignmentsPortion"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
+        <Source multiplicity="(1..*)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="refers to 1 horizontal" polymorphic="false">
@@ -76,7 +85,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
+        <Source multiplicity="(1..*)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="refers to 1 main vertical" polymorphic="false">

@@ -25,6 +25,45 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentPtr Alignment::Create(AlignmentCR parentAlignment)
+    {
+    if (!parentAlignment.GetElementId().IsValid())
+        return nullptr;
+
+    CreateParams params(parentAlignment.GetDgnDb(), parentAlignment.GetModelId(),
+        QueryClassId(parentAlignment.GetDgnDb()), AlignmentCategory::Get(parentAlignment.GetDgnDb()));
+    params.m_parentId = parentAlignment.GetElementId();
+    params.m_parentRelClassId = parentAlignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsSubAlignments);
+    return new Alignment(params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr Alignment::InsertAndShareHorizontalMainVerticalFromParent(DgnDbStatus* stat)
+    {
+    if (!GetParentId().IsValid())
+        {
+        if (stat)
+            *stat = DgnDbStatus::WrongElement;
+        return nullptr;
+        }
+
+    auto retVal = Insert(stat);
+
+    auto parentAlignmentCPtr = Alignment::Get(GetDgnDb(), GetParentId());
+    SetHorizontal(*retVal, *parentAlignmentCPtr->QueryHorizontal());
+
+    auto vertAlignCPtr = parentAlignmentCPtr->QueryMainVertical();
+    if (vertAlignCPtr.IsValid())
+        SetMainVertical(*retVal, *vertAlignCPtr);
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Alignment::_GetLength() const

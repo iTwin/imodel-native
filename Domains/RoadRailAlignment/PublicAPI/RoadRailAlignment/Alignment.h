@@ -53,6 +53,7 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelCR model);
+    ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentCR parentAlignment);
 
     AlignmentModelPtr GetAlignmentModel() const { return dynamic_cast<AlignmentModelP>(GetModel().get()); }
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr QueryHorizontal() const;    
@@ -62,6 +63,7 @@ public:
     ROADRAILALIGNMENT_EXPORT Dgn::DgnModelId QueryVerticalAlignmentSubModelId() const;
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
     ROADRAILALIGNMENT_EXPORT bvector<DistanceAlongStationPair> QueryOrderedStations() const;
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertAndShareHorizontalMainVerticalFromParent(Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom();
