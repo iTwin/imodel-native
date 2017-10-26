@@ -152,6 +152,21 @@ RepositoryStatus GridPortion::TranslateToPoint (DPoint3d point)
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridPortion::GetGridRotationAngleXY(double& angle) const
+    {
+    bvector<DgnElementId> gridElementIds = MakeIterator().BuildIdList<DgnElementId>();
+    if (gridElementIds.empty() || !gridElementIds.front().IsValid())
+        return BentleyStatus::ERROR;
+
+    GridSurfaceCPtr firstElem = GetDgnDb().Elements().Get<GridSurface>(gridElementIds.front());
+    angle = GeometryUtils::PlacementToAngleXY(firstElem->GetPlacement());
+
+    return BentleyStatus::SUCCESS;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/17
 //---------------+---------------+---------------+---------------+---------------+------

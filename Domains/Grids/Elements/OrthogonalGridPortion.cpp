@@ -452,6 +452,52 @@ void OrthogonalGridPortion::RotateToAngleXY(GridElementVector& grid, double thet
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+Dgn::RepositoryStatus OrthogonalGridPortion::RotateToAngleXY(double theta, bool updateDimensions)
+    {
+    DgnDbR db = GetDgnDb();
+    Dgn::RepositoryStatus status = RepositoryStatus::Success;
+
+    GridElementVector gridElements;
+    for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
+        {
+        GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
+        BeAssert(surface.IsValid() && "Grid surfaces related to grid portion must be valid");
+
+        gridElements.push_back(surface);
+        }
+
+    if (gridElements.empty())
+        return status;
+
+    // Get rotation origin point
+    DPoint3d rotationOrigin = gridElements.front()->GetPlacement().GetOrigin();
+
+    for (GridSurfacePtr surface : gridElements)
+        {
+        surface->RotateXY(rotationOrigin, theta);
+        if (RepositoryStatus::Success != (status = BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface")))
+            return status;
+        surface->Update();
+        }
+
+    if (!updateDimensions)
+        return status;
+
+    RotMatrix rotMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
+
+    for (GridSurfacePtr gridSurface : gridElements)
+        {
+        bvector<BeSQLite::EC::ECInstanceId> relationships = DimensionHandler::GetDimensioningRelationshipInstances(db, gridSurface->GetElementId());
+        for (BeSQLite::EC::ECInstanceId instance : relationships)
+            DimensionHandler::RotateDirection(db, instance, rotMatrix);
+        }
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
 BentleyStatus OrthogonalGridPortion::ElementVectorToAxisMap(GridAxisMap& axisMap, GridElementVector elements)

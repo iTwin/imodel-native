@@ -39,6 +39,11 @@ public:
     //! @param[in] theta            angle in radians
     GRIDELEMENTS_EXPORT void RotateXY(double theta);
 
+    //! Rotates grid around point by given angle in radians
+    //! @param[in] point            point to rotate around
+    //! @param[in] theta            angle in radians
+    GRIDELEMENTS_EXPORT void RotateXY(DPoint3d point, double theta);
+
     //! Translates grid to given point
     //! @param[in] target   point to move
     GRIDELEMENTS_EXPORT void MoveToPoint(DPoint3d target);

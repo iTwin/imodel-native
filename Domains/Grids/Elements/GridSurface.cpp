@@ -108,6 +108,16 @@ void GridSurface::RotateXY(double theta)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
+void GridSurface::RotateXY(DPoint3d point, double theta)
+    {
+    Placement3d placement = GetPlacement();
+    GeometryUtils::RotatePlacementAroundPointXY(placement, point, theta);
+    SetPlacement(placement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
 void GridSurface::MoveToPoint(DPoint3d target)
     {
     Placement3d placement = GetPlacement();

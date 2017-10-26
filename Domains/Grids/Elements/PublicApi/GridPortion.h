@@ -87,6 +87,11 @@ public:
     //! @param[in] theta    angle to rotate to
     GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY (double theta);
 
+    //! Returns an angle the grid elements have rotated to
+    //! @param[out] angle   angle that the grid elements have rotated to 
+    //! @return BentleyStatus::ERROR if grid has no elements
+    GRIDELEMENTS_EXPORT BentleyStatus GetGridRotationAngleXY(double& angle) const;
+
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 
