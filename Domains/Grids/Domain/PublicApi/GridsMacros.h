@@ -72,6 +72,7 @@
 
 #define GRIDS_CLASS_IntersectionCurve                           "IntersectionCurve"
 #define GRIDS_CLASS_GridCurve                                   "GridCurve"
+#define GRIDS_CLASS_GridAxis                                    "GridAxis"
 #define GRIDS_CLASS_GridLine                                    "GridLine"
 #define GRIDS_CLASS_GridSpline                                  "GridSpline"
 #define GRIDS_CLASS_GridArc                                     "GridArc"
@@ -79,6 +80,7 @@
 #define GRIDS_CLASS_DrivingSurface                              "DrivingSurface"
 #define GRIDS_CLASS_GridSurface                                 "GridSurface"
 #define GRIDS_CLASS_GridPlaneSurface                            "GridPlaneSurface"
+#define GRIDS_CLASS_GridSplineSurface                           "GridSplineSurface"
 #define GRIDS_CLASS_GridArcSurface                              "GridArcSurface"
 
 //Categories
@@ -87,6 +89,9 @@
 
 #define GRIDS_CATEGORY_CODE_DrivingSurface                      "DrivingSurface"
 #define GRIDS_CATEGORY_CODE_GridSurface                         "GridSurface"
+
+
+#define GRIDS_CATEGORY_CODE_Uncategorized                       "Uncategorized"
 
 //Authorities
 #define GRIDS_AUTHORITY_GridCurve                       GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurve)

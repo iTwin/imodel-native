@@ -12,6 +12,7 @@
 #include "Elements/DrivingSurface.h"
 #include "Elements/GridArc.h"
 #include "Elements/GridArcSurface.h"
+#include "Elements/GridSplineSurface.h"
 #include "Elements/GridCurve.h"
 #include "Elements/GridLine.h"
 #include "Elements/GridPortion.h"
@@ -30,6 +31,7 @@
 #include "Handlers/GridSurfaceHandler.h"
 #include "Handlers/IntersectionCurveHandlers.h"
 #include "Handlers/PortionHandlers.h"
+#include "Handlers/GridHandlers.h"
 
 
 

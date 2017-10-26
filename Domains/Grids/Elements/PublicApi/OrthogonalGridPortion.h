@@ -12,6 +12,7 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
 #include "GridPortion.h"
+#include "GridAxis.h"
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (OrthogonalGridPortion)
 
@@ -130,7 +131,7 @@ protected:
     //! @param[in] params       parameters for creating the grid portion
     //! @param[in] isHorizontal true if horizontal elements should be created, false if vertical
     //! @return                 vector containing horizontal or vertical orthogonal grid elements
-    static GridElementVector CreateGridElements (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, bool isHorizontal);
+    static GridElementVector CreateGridElements (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, bool isHorizontal, GridAxisPtr gridAxis = nullptr);
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
     //! @param[in] elementIndex     index of the grid plane

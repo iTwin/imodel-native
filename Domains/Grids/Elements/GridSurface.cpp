@@ -71,30 +71,6 @@ DgnClassId classId
     return createParams;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridSurfacePtr                 GridSurface::Create 
-(
-Dgn::SpatialLocationModelCR model,
-CurveVectorPtr  surfaceVector
-)
-    {
-    return new GridSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surfaceVector);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  03/17
-//---------------------------------------------------------------------------------------
-GridSurfacePtr                 GridSurface::Create 
-(
-Dgn::SpatialLocationModelCR model,
-ISolidPrimitivePtr surface
-)
-    {
-    return new GridSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
@@ -133,14 +109,6 @@ void GridSurface::Translate(DVec3d translation)
     Placement3d placement = GetPlacement();
     GeometryUtils::TranslatePlacement(placement, translation);
     SetPlacement(placement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-GridSurfacePtr GridSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
-    {
-    return GridSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 END_GRIDS_NAMESPACE
