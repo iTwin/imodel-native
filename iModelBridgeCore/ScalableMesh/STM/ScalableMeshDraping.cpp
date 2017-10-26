@@ -87,6 +87,7 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
                     }
                 *distIt = distUntil;
                 }
+
             }
 
     public:
@@ -1557,9 +1558,9 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 			}
 
 		if (orderedList.rbegin()->second.segment < numPoints - 2)
-			for (size_t i = orderedList.rbegin()->second.segment; i < numPoints - 2; ++i)
+			for (size_t i = orderedList.rbegin()->second.segment+1; i < numPoints - 2; ++i)
 			{
-				drapedLine.insert(drapedLine.end(), pts[i]);
+				drapedLine.insert(drapedLine.end(), pts[i+1]);
 			}
 
 		//check for non-draped begin/end within the first/last segment
