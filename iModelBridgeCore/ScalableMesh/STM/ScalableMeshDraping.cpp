@@ -1557,8 +1557,8 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 				minDrapedPos = i;
 			}
 
-		if (orderedList.rbegin()->second.segment < numPoints - 2)
-			for (size_t i = orderedList.rbegin()->second.segment+1; i < numPoints - 2; ++i)
+		if (orderedList.rbegin()->second.segment+1 <= numPoints - 2)
+			for (size_t i = orderedList.rbegin()->second.segment+1; i <= numPoints - 2; ++i)
 			{
 				drapedLine.insert(drapedLine.end(), pts[i+1]);
 			}
