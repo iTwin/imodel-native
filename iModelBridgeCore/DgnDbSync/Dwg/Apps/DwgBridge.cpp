@@ -161,7 +161,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
     {
     // instantiate a new importer to begin a new job
-    m_importer.reset (new DwgImporter(m_options));
+    m_importer.reset (this->_CreateDwgImporter());
     // will save elements into target BIM
     m_importer->SetDgnDb (bim);
     // boostrap importer with required syncInfo file
@@ -179,6 +179,15 @@ void DwgBridge::_OnConvertedToBim (BentleyStatus status)
     m_importer.reset (nullptr);
     // terminate the toolkit after DwgDbDatabase is released (i.e. via above ~DwgImporter call):
     DwgImporter::TerminateDwgHost ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter*    DwgBridge::_CreateDwgImporter ()
+    {
+    // provide the default DWG importer
+    return  new DwgImporter (m_options);
     }
 
 /*---------------------------------------------------------------------------------**//**

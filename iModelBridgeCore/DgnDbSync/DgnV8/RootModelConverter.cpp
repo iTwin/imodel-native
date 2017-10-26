@@ -941,8 +941,6 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
         }
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
-    auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10*BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
 
     m_importJob = FindImportJobForModel(*GetRootModelP());
 
@@ -955,42 +953,12 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 
     _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // (on update, this just looks up the existing mapping and caches it in memory)
 
-    // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
-    SyncInfo::V8ModelMapping syncInfoModelMapping;
-    auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, m_importJob.GetV8ModelSyncInfoId());
-    if (BSISUCCESS != status)
-        {
-        BeAssert(false);
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), "");
+    if (BSISUCCESS != FindRootModelFromImportJob())
         return ImportJobLoadStatus::FailedNotFound;
-        }
-    auto rootBimModel = GetDgnDb().Models().GetModel(syncInfoModelMapping.GetModelId());
-    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping);
-    _AddResolvedModelMapping(m_rootModelMapping);
 
-    //  Detect if the root GCS/units transform has changed.
-    if (!m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance))
-        {
-        // If so, we must force a re-conversion of all spatial data
-        m_rootTransHasChanged = true;
-        m_rootTransChange = Transform::FromProduct(m_rootTrans, m_rootModelMapping.GetTransform().ValidatedInverse().Value());
-        // This correction will be applied in CorrectSpatialTransforms
-        }
+    ApplyJobTransformToRootTrans();
 
-    // Detect the job transform, if any
-    if (BSISUCCESS == JobSubjectUtils::GetTransform(m_jobTrans, m_importJob.GetSubject()) && !m_jobTrans.IsIdentity())
-        {
-        // This correction will be applied in CorrectSpatialTransforms
-
-        // Detect if this supplemental transform has changed.
-        if (!m_jobTrans.IsEqual(m_importJob.GetImportJob().GetTransform(), matrixTolerance, pointTolerance))
-            {
-            // If so, we must force a re-conversion of all spatial data
-            m_rootTransHasChanged = true;
-            m_importJob.GetImportJob().SetTransform(m_jobTrans);
-            GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
-            }
-        }
+    DetectRootTransformChange();
 
     GetOrCreateJobPartitions(); // (on update, this just looks up and caches existing modelids)
 
@@ -1008,37 +976,106 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
+    {
+    // Look up the root model in syncinfo, using the ID saved in the ImportJob record. We can't use GetModelForDgnV8Model, because m_rootTrans might have changed.
+    SyncInfo::V8ModelMapping syncInfoModelMapping;
+    auto status = GetSyncInfo().GetModelBySyncInfoId(syncInfoModelMapping, m_importJob.GetV8ModelSyncInfoId());
+    if (BSISUCCESS != status)
+        {
+        BeAssert(false);
+        ReportError(IssueCategory::CorruptData(), Issue::Error(), "ImportJob has bad V8ModelSyncInfoId");
+        return BSIERROR;
+        }
+    auto rootBimModel = GetDgnDb().Models().GetModel(syncInfoModelMapping.GetModelId());
+    if (!rootBimModel.IsValid())
+        {
+        BeAssert(false);
+        ReportError(IssueCategory::CorruptData(), Issue::Error(), "V8ModelMapping has bad DgnModelId");
+        return BSIERROR;
+        }
+    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping);
+    _AddResolvedModelMapping(m_rootModelMapping);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::ApplyJobTransformToRootTrans()
+    {
+    Transform jobTrans = iModelBridge::GetSpatialDataTransform(_GetParams(), m_importJob.GetSubject());
+    if (jobTrans.IsIdentity())
+        return;
+
+    // Incorporate the job transform into the root transform. The job transform is just one more ingredient in computing the root transform.
+
+    m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
+
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10*BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
+
+    if (!jobTrans.IsEqual(m_importJob.GetImportJob().GetTransform(), matrixTolerance, pointTolerance))
+        {
+        m_importJob.GetImportJob().SetTransform(jobTrans);
+        GetSyncInfo().UpdateImportJob(m_importJob.GetImportJob()); // update syncinfo to record the new baseline
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::DetectRootTransformChange()
+    {
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10*BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
+
+    //  Detect if anything about the root GCS/units transform has changed (including the computed root trans and the job trans).
+    m_rootTransHasChanged  = !m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance);
+
+    if (!m_rootTransHasChanged)
+        return;
+
+    // The root transform has changed.
+
+    // We will have to correct all model transforms (later on in the conversion).
+    // So, we want the factor, rtc, such that: 
+    //  r1 = rtc * r0    
+    // Where "r1" is the new root trans, and "r0" is the old root trans. Therefore, 
+    //  rtc = r1 * inverse(r0)
+    // We can then pre-multiply *all* spatial model transforms by rtc, in order to base them on the new root transform.
+    // For example, suppose the transform for a given attachment was 
+    //                      r0*a1*...*an
+    // We can rebase it on r1 by pre-multiplying by rtc:
+    //                  rtc*r0*a1*...*an
+    // =   (r1*inverse(r0))*r0*a1*...*an
+    // =                    r1*a1*...*an
+    // See CorrectSpatialTransform for where we do this.
+    auto r0inv = m_rootModelMapping.GetTransform().ValidatedInverse();  // The inverse of the old root trans, aka r0
+    if (!r0inv.IsValid())
+        {
+        BeAssert(false);
+        ReportError(IssueCategory::Unsupported(), Issue::Error(), "Root transform cannot be modified - inverse failed");
+        return;
+        }
+    m_rootTransChange = Transform::FromProduct(m_rootTrans, r0inv.Value()); // rtc = r1 * inverse(r0)
+
+    // Now adopt the old root trans to start with.
+    // We will use the old root transform in ImportSpatialModels in order to find all of the existing spatial models.
+    // Then, we will correct their transforms in CorrectSpatialTransforms.
+    m_rootTrans = m_rootModelMapping.GetTransform();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::CorrectSpatialTransform(ResolvedModelMapping& rmm)
     {
-    if (!IsUpdating())
-        return; // we only "correct" spatial transforms when we discover that the root trans has changed or a job transform has been added or changed.
-
-    if (m_jobTrans.IsIdentity() && m_rootTransChange.IsIdentity())
+    if (!m_rootTransHasChanged || !rmm.GetDgnModel().IsSpatialModel())
         return;
 
-    if (!ShouldCorrectSpatialTransform(rmm))
-        return;
-
-    if (!m_rootTransChange.IsIdentity())
-        {
-        rmm.SetTransform(Transform::FromProduct(m_rootTransChange, rmm.GetTransform())); // See FindJob for how m_rootTransChange was computed
-        rmm.GetV8ModelMapping().Update(GetDgnDb());     // update syncinfo to note that the source data changed
-        }
-
-    if (!m_jobTrans.IsIdentity())
-        {
-        rmm.SetTransform(Transform::FromProduct(m_jobTrans, rmm.GetTransform()));       // pre-multiply!
-        // When it comes to the job transform, update *only* the transient model-mapping transforms that we keep in memory.
-        // That way, the transform that we apply when converting elements will include the job transform, as desired. 
-        // The job transform will not affect how the model mappings are stored in syncinfo.
-        // The syncinfo records must be keyed to the source transforms, which are computed by the bridge from source data.
-        // We must be able to look up models during the initial "ImportSpatialModels" pass using the transforms computed from source data.
-        // The job transform is an additional correction that should be applied to elements as they are converted.
-        // It is not part of the source data.
-        // The job transform can be changed independently of the source data.
-        }
-
-    m_spatialTransformCorrectionsApplied = true;
+    rmm.SetTransform(Transform::FromProduct(m_rootTransChange, rmm.GetTransform())); // See DetectRootTransformChange for how m_rootTransChange was computed
+    rmm.GetV8ModelMapping().Update(GetDgnDb()); // (we can now look up the model mapping in syncinfo using the new transform)
     }
 
 /*---------------------------------------------------------------------------------**//**

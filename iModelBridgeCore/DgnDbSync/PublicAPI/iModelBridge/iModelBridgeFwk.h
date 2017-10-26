@@ -126,7 +126,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_fwkAssetsDir;
         iModelBridge::GCSDefinition m_inputGcs;
         iModelBridge::GCSCalculationMethod m_gcsCalculationMethod;
+        Transform m_spatialDataTransform;
         bvector<WString> m_bargs;
+
+        IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).

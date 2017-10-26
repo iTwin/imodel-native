@@ -957,12 +957,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         }
     else if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) == classId)
         {
-        if (m_spatialTransformCorrectionsApplied)
-            {
-            BeAssert(false && "Load all spatial models in ImportSpatialModels. You must not try to load/create spatial models after corrections have been applied.");
-            return DgnModelId();
-            }
-
         SubjectCR parentSubject = _GetSpatialParentSubject();
 
         DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, newName);
@@ -1313,7 +1307,6 @@ Converter::Converter(Params const& params)
 
     m_rootTrans.InitIdentity();
     m_rootTransChange.InitIdentity();
-    m_jobTrans.InitIdentity();
 
     m_monitor = new Monitor;
 

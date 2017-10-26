@@ -618,15 +618,17 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestSourceItemWithId m_bar_i1;
     TestiModelHubFX& m_testiModelHubFX;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
+    bool m_jobTransChanged = false;
 
     struct
         {
-        bool findJobSubject;
-        bool anyChanges;
-        bool anyDeleted;
+        bool findJobSubject = false;
+        bool anyChanges = false;
+        bool anyDeleted = false;
         bool assignmentCheck = false;
+        bool jobTransChanged = false;
         bvector<Utf8String> docsDeleted;
-        } m_expect {};
+        } m_expect;
 
     WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
@@ -639,6 +641,8 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         for (auto rec : m_syncInfo.MakeIteratorByScope(docrid))
             {
             ASSERT_TRUE(m_expect.anyDeleted);
+            if (!rec.GetDgnElementId().IsValid())
+                continue; // not every record in syncinfo is an element
             auto el = GetDgnDbR().Elements().GetElement(rec.GetDgnElementId());
             ASSERT_TRUE(el.IsValid());
             el->Delete();
@@ -661,13 +665,13 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
         // register the document. This then becomes the scope for all of my items.
         iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
-        auto rlinkId = docLink.m_element->GetElementId();
 
         // Set up the model and category that my superclass's DoTest method uses
         DgnDbTestUtils::InsertPhysicalModel(GetDgnDbR(), "PhysicalModel");
         DgnDbTestUtils::InsertSpatialCategory(GetDgnDbR(), "SpatialCategory");
 
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
         return subjectObj->InsertT<Subject>();
         }
 
@@ -797,7 +801,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
     {
     Utf8CP itemKind = "";   // we don't use kinds in this test
 
-    auto change = changeDetector._DetectChange(m_docScopeId, itemKind, item);
+    auto change = changeDetector._DetectChange(m_docScopeId, itemKind, item, nullptr, m_jobTransChanged);
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
         {
         changeDetector._OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
@@ -807,6 +811,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
     ASSERT_TRUE(m_expect.anyChanges);
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
+    DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
     ASSERT_EQ(BentleyStatus::SUCCESS, changeDetector._UpdateBimAndSyncInfo(results, change));
     }
 
@@ -826,6 +831,10 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
 
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName());
     m_docScopeId = docLink.m_syncInfoRecord.GetROWID();
+
+    Transform _newTrans, _oldTrans;
+    m_jobTransChanged = DetectSpatialDataTransformChange(_newTrans, _oldTrans, *changeDetector, m_docScopeId, "JT", "JT");
+    ASSERT_EQ(m_expect.jobTransChanged, m_jobTransChanged);
 
     // Convert the "items" in my (non-existant) source file.
     if (_GetParams().GetInputFileName() == L"Foo")
@@ -1076,6 +1085,111 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, SpatialDataTransformTest)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeTests_Test1_Bridge";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"SpatialDataTransformTest");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+    
+    // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
+    // The fwk won't try to load this file, since we will register a fake bridge.
+    BeFileName fakeBridgeName(testDir);
+    fakeBridgeName.AppendToPath(L"iModelBridgeTests-SpatialDataTransformTest");
+    BeFile fakeBridgeFile;
+    ASSERT_EQ(BeFileStatus::Success, fakeBridgeFile.Create(fakeBridgeName, true));
+    fakeBridgeFile.Close();
+
+    bvector<WString> args;
+    args.push_back(L"iModelBridgeTests.SpatialDataTransformTest");                       // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    args.push_back(L"--server-environment=Qa");
+    args.push_back(L"--server-repository=iModelBridgeTests_SpatialDataTransformTest");   // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--fwk-create-repository-if-necessary");        
+    args.push_back(L"--server-user=username=username");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
+    BeFileName platformAssetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+    args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestiModelHubFX testiModelHubFX(testDir);
+    iModelBridgeFwk::SetiModelHubFXForTesting(testiModelHubFX);
+
+    // Register the test bridge that fwk should run
+    iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
+    iModelBridgeFwk::SetBridgeForTesting(testBridge);
+
+    TestRegistry testRegistry;
+    populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+    testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
+    iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+
+    testBridge.m_expect.assignmentCheck = true;
+
+    if (true)
+        {
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = false;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        }
+    
+    if (true)
+        {
+        // Run an update with no changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        }
+
+    if (true)
+        {
+        // Run an update with a spatial data transform change
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = true;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+
+        // *** TBD: Check that the elements moved
         }
 
     }

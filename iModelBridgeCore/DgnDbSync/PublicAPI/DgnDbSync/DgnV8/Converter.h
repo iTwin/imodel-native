@@ -933,7 +933,6 @@ protected:
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
     Transform            m_rootTrans; // this is usually identity. It is non-identity in the case where we are pulling in a new dgnv8 file and we need to do a GCS or other coordinate transform to map it in. 
-    Transform            m_jobTrans; // this is usually identity. It is non-identity in the case where the bridge job needs to apply a correction on top of the computed GCS/units transform.
     Transform            m_rootTransChange;
     DgnDbPtr             m_dgndb;
     Config               m_config;
@@ -2186,7 +2185,9 @@ protected:
 
     virtual void _AddResolvedModelMapping(ResolvedModelMapping const&) {}
 
-    bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
+    BentleyStatus FindRootModelFromImportJob();
+    void ApplyJobTransformToRootTrans();
+    void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2404,6 +2405,7 @@ protected:
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
 
     void CorrectSpatialTransforms();
+    bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}

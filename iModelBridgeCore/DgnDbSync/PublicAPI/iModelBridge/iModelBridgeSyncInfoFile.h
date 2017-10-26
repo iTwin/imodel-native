@@ -483,8 +483,9 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! @param kind the kind of source item
         //! @param item the source item
         //! @param filter Optional. How to choose among many records for the same item
+        //! @param forceChange Optional. If the item exists in syncinfo, then always report it as changed.
         //! return the results of looking in syncinfo and comparing the existing syncinfo record, if any, with the item's current state.
-        IMODEL_BRIDGE_EXPORT virtual Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr);
+        IMODEL_BRIDGE_EXPORT virtual Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr, bool forceChange = false);
 
         //! Update the BIM and syncinfo with the results of converting an item to one or more DgnElements.
         //! If changeDetectorResults indicates that the item is new or changed, the conversion writes are written to the BIM and syncinfo is updated.
@@ -523,7 +524,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //! A ChangeDetector that can be used in the initial conversion, where all source items are new.
     struct InitialConversionChangeDetector : ChangeDetector
         {
-        IMODEL_BRIDGE_EXPORT Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr) override;
+        IMODEL_BRIDGE_EXPORT Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr, bool forceChange = false) override;
         void _OnScopeSkipped(ROWID srid) override {BeAssert(false);}//! Nothing should be skipped -- all content goes into the intial conversion. 
         void _OnElementSeen(DgnElementId) override {}               //! No need to keep a list of elements 
         void _DeleteElementsNotSeenInScopes(bvector<iModelBridgeSyncInfoFile::ROWID> const&) override {}                   //! There will be no deletions
@@ -686,6 +687,17 @@ public:
     IMODEL_BRIDGE_EXPORT BentleyStatus DetectDeletedDocuments(Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID());
 
     //! @}
+
+    //! Convenience method to detect if the bridge job's spatial data transform has changed and, if so, to update its record syncinfo and return the old and new transforms.
+    //! @param[out] newTrans    The new spatial data transform to use.
+    //! @param[out] oldTrans    The spatial data transform that was used the last time this bridge ran.
+    //! @param changeDetector   The change detector
+    //! @param srid             The scope of the spatial data transform syncinfo record. Normally, this should be the document ROWID.
+    //! @param kind             The kind of syncinfo record that should hold this transform record. This must be distinct from the kinds of records used by the bridge for normal data.
+    //! @param id               The id that the transform record should have in syncinfo. This must be unique relative to @a kind.
+    //! @return true if the spatial data transform has changed (or is new).
+    IMODEL_BRIDGE_EXPORT bool DetectSpatialDataTransformChange(TransformR newTrans, TransformR oldTrans,
+        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID srid, Utf8CP kind, Utf8StringCR id);
 };
 
 END_BENTLEY_DGN_NAMESPACE

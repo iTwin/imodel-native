@@ -1091,8 +1091,8 @@ protected:
 
     //! @name DWG-DgnDb sync info
     //! @{
-    virtual DwgSyncInfo::DwgFileId      _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
-    virtual StableIdPolicy              _GetDwgFileIdPolicy () const;
+    DGNDBSYNC_EXPORT virtual DwgSyncInfo::DwgFileId _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
+    DGNDBSYNC_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
 public:
@@ -1168,6 +1168,7 @@ public:
     //! Create a new or update an existing element from an entity based on the sync info
     DGNDBSYNC_EXPORT BentleyStatus      ImportOrUpdateEntity (ElementImportInputs& inputs);
     DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
+    DGNDBSYNC_EXPORT uint32_t           GetEntitiesImported () const { return m_entitiesImported; }
     
     };  // DwgImporter
 

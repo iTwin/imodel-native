@@ -295,17 +295,22 @@ struct iModelBridge
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
         IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
         WString m_thisBridgeRegSubKey;
+        Transform m_spatialDataTransform;
+        DgnElementId m_jobSubjectId;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
 
       public:
+        IMODEL_BRIDGE_EXPORT Params();
+
         //! @name Helper functions
         //! @{
 
         IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGcsSpec(GCSDefinition& gcs, Utf8StringCR gcsParms);
         IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGCSCalculationMethod(GCSCalculationMethod& cm, Utf8StringCR value);
+        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseTransform(Transform& cm, Utf8StringCR value);
 
         //! @}
 
@@ -339,6 +344,10 @@ struct iModelBridge
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
+        void SetSpatialDataTransform(Transform const& t) {m_spatialDataTransform = t;} //!< Optional. The transform that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data.
+        TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
+        void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
+        DgnElementId GetJobSubjectId() const {return m_jobSubjectId;} //!< Identifies the job Subject element
 
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
@@ -534,6 +543,16 @@ public:
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
 
+    //! Get the transform, if any, that the bridge should pre-multiply to the normal transform that it computes and applied to all converted spatial data.
+    //! The job's spatial data transform can come from a command-line parameter or from a property of the job subject element in the iModel. In case both are specified,
+    //! the transform specified on the command line is pre-multiplied to the transform specified by the job subject.
+    //! @param[in] params The bridge's parameters
+    //! @param[in] jobSubject The bridge's job subject.
+    //! @return the transform to apply to spatial data or the identity matrix if no job transform was found
+    IMODEL_BRIDGE_EXPORT static Transform GetSpatialDataTransform(Params const& params, SubjectCR jobSubject);
+
+    Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
+
     //!This function called before _ConvertToBim method. It provides bridges an oppurtunity to post a schema change Changeset into the imodelhub. This makes the
     //!revision comparison operations work well in sqlite. Return true if a schema change was detected.
     virtual bool _UpgradeDynamicSchema(DgnDbR db) { return false; }
@@ -642,6 +661,12 @@ public:
     //! Get a reference to the bridge's parameters. This base class assumes that the bridge
     //! has no additional parameters of its own.
     Params& _GetParams() override {return m_params;}
+
+    //! Look up the job Subject element
+    SubjectCPtr GetJobSubject() const {return m_db->Elements().Get<Subject>(m_params.GetJobSubjectId());}
+
+    //! Return the job's spatial data transform
+    Transform GetSpatialDataTransform() {return iModelBridge::GetSpatialDataTransform(*GetJobSubject());}
     };
 
 END_BENTLEY_DGN_NAMESPACE
