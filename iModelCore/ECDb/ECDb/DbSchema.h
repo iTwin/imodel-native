@@ -608,7 +608,6 @@ public:
     ECDbCR GetECDb() const { return m_ecdb; }
     void ClearCache() const;
 
-    static bool ExistsInDb(ECDbCR, Utf8CP dbObjectName);
     static EntityType GetEntityType(ECDbCR ecdb, Utf8CP name);
     };
 

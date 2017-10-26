@@ -695,23 +695,6 @@ DbSchema::EntityType DbSchema::GetEntityType(ECDbCR ecdb, Utf8CP name)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     07/2017
-//---------------------------------------------------------------------------------------
-//static
-bool DbSchema::ExistsInDb(ECDbCR ecdb, Utf8CP dbObjectName)
-    {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT NULL FROM sqlite_master WHERE name=? COLLATE NOCASE");
-    if (stmt == nullptr)
-        {
-        BeAssert(stmt != nullptr);
-        return false;
-        }
-
-    stmt->BindText(1, dbObjectName, Statement::MakeCopy::No);
-    return stmt->Step() == BE_SQLITE_ROW;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //--------------------------------------------------------------------------------------
 DbTable const* DbSchema::GetNullTable() const
@@ -1748,11 +1731,11 @@ bool ForeignKeyDbConstraint::IsValid() const
 //---------------------------------------------------------------------------------------
 bool ForeignKeyDbConstraint::IsDuplicate() const
     {
-    for (auto constraint : GetForeignKeyTable().GetConstraints())
+    for (DbConstraint const* constraint : GetForeignKeyTable().GetConstraints())
         {
         if (constraint->GetType() == DbConstraint::Type::ForeignKey)
             {
-            auto fkConstraint = static_cast<ForeignKeyDbConstraint const*>(constraint);
+            ForeignKeyDbConstraint const* fkConstraint = static_cast<ForeignKeyDbConstraint const*>(constraint);
             if (fkConstraint == this)
                 continue;
 
@@ -1789,13 +1772,13 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 
     std::set<DbColumn const*> rhsFkColumns = std::set<DbColumn const*>(rhs.m_fkColumns.begin(), rhs.m_fkColumns.end());
     std::set<DbColumn const*> rhsReferencedTableColumns = std::set<DbColumn const*>(rhs.m_referencedTableColumns.begin(), rhs.m_referencedTableColumns.end());
-    for (auto col : m_fkColumns)
+    for (DbColumn const* col : m_fkColumns)
         {
         if (rhsFkColumns.find(col) == rhsFkColumns.end())
             return false;
         }
 
-    for (auto col : m_referencedTableColumns)
+    for (DbColumn const* col : m_referencedTableColumns)
         {
         if (rhsReferencedTableColumns.find(col) == rhsReferencedTableColumns.end())
             return false;
