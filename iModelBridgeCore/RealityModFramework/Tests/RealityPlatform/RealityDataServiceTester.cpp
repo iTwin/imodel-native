@@ -572,7 +572,6 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestBadRequest)
     RealityDataEnterpriseStat stat {};
 	s_realityDataService->Request(requestUT, stat, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    
 	}
 
 //=====================================================================================

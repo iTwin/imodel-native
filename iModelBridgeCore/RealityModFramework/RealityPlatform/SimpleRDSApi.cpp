@@ -503,11 +503,11 @@ ConnectedResponse ConnectedRealityDataFolder::Upload(BeFileName filePath, Utf8St
             }
         }
 
-    RealityDataServiceDownload download = RealityDataServiceDownload(filePath, serverPath);
-    if (download.IsValidTransfer())
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, serverPath);
+    if (upload.IsValidTransfer())
         {
-        download.OnlyReportErrors(true);
-        const TransferReport& ur = download.Perform();
+        upload.OnlyReportErrors(true);
+        const TransferReport& ur = upload.Perform();
         if (ur.results.empty())
             {
             response.simpleSuccess = true;
@@ -710,11 +710,61 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8String s
             }
         }
 
-    RealityDataServiceDownload download = RealityDataServiceDownload(filePath, serverPath);
-    if (download.IsValidTransfer())
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    if (!m_organizationId.empty())
+        properties.Insert(RealityDataField::OrganizationId, m_organizationId);
+    if (!m_ultimateId.empty())
+        properties.Insert(RealityDataField::UltimateId, m_ultimateId);
+    if (!m_ultimateSite.empty())
+        properties.Insert(RealityDataField::UltimateSite, m_ultimateSite);
+    if (!m_containerName.empty())
+        properties.Insert(RealityDataField::ContainerName, m_containerName);
+    if (!m_dataLocationGuid.empty())
+        properties.Insert(RealityDataField::DataLocationGuid, m_dataLocationGuid);
+    if (!m_name.empty())
+        properties.Insert(RealityDataField::Name, m_name);
+    if (!m_dataset.empty())
+        properties.Insert(RealityDataField::Dataset, m_dataset);
+    if (!m_description.empty())
+        properties.Insert(RealityDataField::Description, m_description);
+    if (!m_rootDocument.empty())
+        properties.Insert(RealityDataField::RootDocument, m_rootDocument);
+    if (m_classification != Classification::UNDEFINED_CLASSIF)
+        properties.Insert(RealityDataField::Classification, GetClassificationTag());
+    if (!m_realityDataType.empty())
+        properties.Insert(RealityDataField::Type, m_realityDataType);
+    if (!m_description.empty())
+        properties.Insert(RealityDataField::Streamed, m_description);
+    properties.Insert(RealityDataField::Description, m_streamed ? "True" : "False");
+    if (!m_footprintString.empty() || !m_footprint.empty())
+        properties.Insert(RealityDataField::Footprint, GetFootprintString());
+    if (!m_thumbnailDocument.empty())
+        properties.Insert(RealityDataField::ThumbnailDocument, m_thumbnailDocument);
+    if (!m_metadataUrl.empty())
+        properties.Insert(RealityDataField::MetadataUrl, m_metadataUrl);
+    if (!m_copyright.empty())
+        properties.Insert(RealityDataField::Copyright, m_copyright);
+    if (!m_termsOfUse.empty())
+        properties.Insert(RealityDataField::TermsOfUse, m_termsOfUse);
+    if (!m_resolution.empty())
+        properties.Insert(RealityDataField::ResolutionInMeters, m_resolution);
+    if (!m_accuracy.empty())
+        properties.Insert(RealityDataField::AccuracyInMeters, m_accuracy);
+    if ((m_visibility != Visibility::UNDEFINED_VISIBILITY) || !m_visibilityString.empty())
+        properties.Insert(RealityDataField::Visibility, GetVisibilityTag());
+    properties.Insert(RealityDataField::Listable, m_listable ? "True" : "False");
+    if (!m_owner.empty())
+        properties.Insert(RealityDataField::OwnedBy, m_owner);
+    if (!m_group.empty())
+        properties.Insert(RealityDataField::Group, m_group);
+
+    Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
+
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, serverPath, propertyString);
+    if (upload.IsValidTransfer())
         {
-        download.OnlyReportErrors(true);
-        const TransferReport& ur = download.Perform();
+        upload.OnlyReportErrors(true);
+        const TransferReport& ur = upload.Perform();
         if (ur.results.empty())
             {
             response.simpleSuccess = true;
