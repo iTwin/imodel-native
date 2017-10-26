@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/ClientHelper.h>
+#include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_HTTP
@@ -60,7 +61,7 @@ ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials 
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
     m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
-    auto signInResult = m_signinMgr->SignInWithCredentials(credentials)->GetResult();
+    auto signInResult = ExecuteAsync(m_signinMgr->SignInWithCredentials(credentials));
     if (!signInResult.IsSuccess())
         {
         error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());
@@ -78,7 +79,7 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
     m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
-    auto signInResult =  m_signinMgr->SignInWithToken(token)->GetResult();
+    auto signInResult = ExecuteAsync(m_signinMgr->SignInWithToken(token));
     if (!signInResult.IsSuccess())
         {
         error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());
@@ -130,7 +131,7 @@ Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProje
     query.SetSelect ("$id");
     query.SetFilter (Utf8PrintfString ("Active+eq+true+and+Number+eq+'%s'", bcsProjectName.c_str()));
 
-    auto result = client->SendQueryRequest(query)->GetResult();
+    auto result = ExecuteAsync(client->SendQueryRequest(query));
     if (!result.IsSuccess())
         {
         error = result.GetError();

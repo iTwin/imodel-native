@@ -41,7 +41,7 @@ ICancellationTokenPtr cancellationToken
     ObjectId userInfoObject(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo, userId);
     WSQuery query(userInfoObject);
 
-    return ExecutionManager::ExecuteWithRetry<UserInfoPtr>([=] ()
+    return ExecuteWithRetry<UserInfoPtr>([=] ()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UserInfoResult>
@@ -90,7 +90,7 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
 
-    return ExecutionManager::ExecuteWithRetry<bvector<UserInfoPtr> >([=] ()
+    return ExecuteWithRetry<bvector<UserInfoPtr> >([=] ()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)
@@ -151,7 +151,7 @@ ICancellationTokenPtr cancellationToken
         WSQuery query = WSQuery(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
         query.AddFilterIdsIn(locallyUnavailableUserObjects);
 
-        UsersInfoResult queryUsersResult = ExecutionManager::ExecuteWithRetry<bvector<UserInfoPtr> >([=] ()
+        UsersInfoResult queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > (([=] ()
             {
             //Execute query
             return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UsersInfoResult>
@@ -170,7 +170,7 @@ ICancellationTokenPtr cancellationToken
 
                 return UsersInfoResult::Error(result.GetError());
                 });
-            })->GetResult();
+            })));
 
             if (!queryUsersResult.IsSuccess())
                 return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult.GetError()));
@@ -200,5 +200,5 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     if (s_userInfoCache.size() == 0)
-        QueryAllUsersInfo(cancellationToken)->GetResult();
+        ExecuteAsync(QueryAllUsersInfo(cancellationToken));
     }

@@ -64,7 +64,7 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
     if (typeid(NotUsedFileAccessKey) == typeid(*fileAccessKey))
         {
         // This environment does not use fileAccessKey
-        return ExecutionManager::ExecuteWithRetry<void>([=]() {
+        return ExecuteWithRetry<void>([=]() {
             return m_wsRepositoryClient->SendGetFileRequest(fileId, localFile, nullptr, callback, cancellationToken)
                 ->Then<StatusResult>([=](const WSFileResult& fileResult)
                 {
@@ -82,7 +82,7 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
         }
 
     // Download file directly from the url.
-    return ExecutionManager::ExecuteWithRetry<void>([=]() {
+    return ExecuteWithRetry<void>([=]() {
         return m_azureClient->SendGetFileRequest(fileAccessKey->GetDownloadUrl(), localFile, callback, cancellationToken)
             ->Then<StatusResult>([=](const AzureResult& result)
             {
@@ -113,7 +113,7 @@ ICancellationTokenPtr             cancellationToken
     {
     if (fileAccessKey.IsNull())
         {
-        auto fileAccessKeyResult = QueryFileAccessKey(fileId, cancellationToken)->GetResult();
+        auto fileAccessKeyResult = ExecuteAsync(QueryFileAccessKey(fileId, cancellationToken));
         if (!fileAccessKeyResult.IsSuccess())
             return CreateCompletedAsyncTask(StatusResult::Error(fileAccessKeyResult.GetError()));
 
@@ -316,7 +316,7 @@ StatusTaskPtr iModelConnection::InitializeServerFile(FileInfoCR fileInfo, ICance
 //---------------------------------------------------------------------------------------
 FilesTaskPtr iModelConnection::SeedFilesQuery(WSQuery query, ICancellationTokenPtr cancellationToken) const
     {
-    return ExecutionManager::ExecuteWithRetry<bvector<FileInfoPtr>>([=]() {
+    return ExecuteWithRetry<bvector<FileInfoPtr>>([=]() {
         return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<FilesResult>([=] (WSObjectsResult const& result)
             {
             if (!result.IsSuccess())
@@ -341,7 +341,7 @@ BeBriefcaseId                  briefcaseId
     const Utf8String methodName = "iModelConnection::WriteBriefcaseIdIntoFile";
     BeSQLite::DbResult status;
 
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, 
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes,
         SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
@@ -373,7 +373,7 @@ IBriefcaseManager::ResponseOptions options,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return ExecutionManager::ExecuteWithRetry<void>([=]() { return SendChangesetRequestInternal(changeset, options, cancellationToken); });
+    return ExecuteWithRetry<void>([=]() { return SendChangesetRequestInternal(changeset, options, cancellationToken); });
     }
 
 //---------------------------------------------------------------------------------------
@@ -905,7 +905,7 @@ StatusTaskPtr iModelConnection::AcquireCodesLocksInternal
 BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::QueryBriefcaseInfoInternal";
-    return ExecutionManager::ExecuteWithRetry<bvector<BriefcaseInfoPtr>>([=]()
+    return ExecuteWithRetry<bvector<BriefcaseInfoPtr>>([=]()
         {
         return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
             ->Then<BriefcasesInfoResult>([=](const WSObjectsResult& result)
@@ -970,8 +970,8 @@ ICancellationTokenPtr cancellationToken
         {
         for (auto task : tasks)
             {
-            if (!task->GetResult().IsSuccess())
-                return CodeLockSetResult::Error(task->GetResult().GetError());
+            if (!ExecuteAsync(task).IsSuccess())
+                return CodeLockSetResult::Error(ExecuteAsync(task).GetError());
             }
         return CodeLockSetResult::Success(*finalValue);
         });
@@ -988,7 +988,7 @@ CodeLocksSetAddFunction addFunction,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void>([=]()
         {
         //Execute query
         return m_wsRepositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<StatusResult>
@@ -1249,7 +1249,7 @@ ICancellationTokenPtr cancellationToken
     
     auto requestString = changeSet->ToRequestString();
     HttpStringBodyPtr request = HttpStringBody::Create(requestString);
-    return ExecutionManager::ExecuteWithRetry<CodeSequence>([=]()
+    return ExecuteWithRetry<CodeSequence>([=]()
         {
         return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<CodeSequenceResult>
             ([=](const WSChangesetResult& result)
@@ -1293,7 +1293,7 @@ ICancellationTokenPtr cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeSet->ToRequestString());
-    return ExecutionManager::ExecuteWithRetry<CodeSequence>([=]()
+    return ExecuteWithRetry<CodeSequence>([=]()
         {
         return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<CodeSequenceResult>
             ([=](const WSChangesetResult& result)
@@ -1915,7 +1915,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::SubscribeToEvents";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void>([=]()
         {
         return SetEventServiceClient(eventTypes, cancellationToken);
         });
@@ -2026,7 +2026,7 @@ bool                        parseFileAccessKey,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
-    return ExecutionManager::ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
+    return ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
         {
         return ChangeSetsFromQueryInternal(query, parseFileAccessKey, cancellationToken);
         });
@@ -2047,7 +2047,7 @@ ICancellationTokenPtr       cancellationToken
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<ChangeSetsInfoResult> finalResult = std::make_shared<ChangeSetsInfoResult>();
 
-    return ExecutionManager::ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
+    return ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
         {
         return ChangeSetsFromQueryInternal(query, parseFileAccessKey, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
             {
@@ -2283,7 +2283,7 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
 
     while (!IsInitializationFinished(initializationState) && retriesLeft > 0)
         {
-        auto seedFilesResult = GetSeedFileById(fileGuid)->GetResult();
+        auto seedFilesResult = ExecuteAsync(GetSeedFileById(fileGuid));
         if (!seedFilesResult.IsSuccess())
             {
             LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFilesResult.GetError().GetMessage().c_str()); 
@@ -2367,7 +2367,7 @@ ICancellationTokenPtr             cancellationToken
     // Stage 1. Create changeSet.
     std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushChangeSetJson(changeSet, dgndb.GetBriefcaseId(), changeSet->ContainsSchemaChanges(dgndb)));
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void>([=]()
         {
         return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), nullptr, cancellationToken)
             ->Then([=] (const WSCreateObjectResult& initializePushResult)
@@ -2745,7 +2745,7 @@ StatusTaskPtr iModelConnection::LockiModel(ICancellationTokenPtr cancellationTok
     const Utf8String methodName = "iModelConnection::LockiModel";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void>([=]()
         {
         Json::Value iModelLockJson = Json::objectValue;
         iModelLockJson[ServerSchema::Instance] = Json::objectValue;
@@ -2776,7 +2776,7 @@ StatusTaskPtr iModelConnection::UnlockiModel(ICancellationTokenPtr cancellationT
     const Utf8String methodName = "iModelConnection::LockiModel";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return ExecutionManager::ExecuteWithRetry<void>([=] ()
+    return ExecuteWithRetry<void>([=] ()
         {
         ObjectId id = ObjectId::ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::iModelLock, ServerSchema::Class::iModelLock);
         return m_wsRepositoryClient->SendDeleteObjectRequest(id, cancellationToken)
@@ -2804,7 +2804,7 @@ FileTaskPtr iModelConnection::UploadNewSeedFile(BeFileNameCR filePath, FileInfoC
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<FileResult> finalResult = std::make_shared<FileResult>();
-    return ExecutionManager::ExecuteWithRetry<FileInfoPtr>([=]()
+    return ExecuteWithRetry<FileInfoPtr>([=]()
         {
         return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (FileResultCR fileCreationResult)
             {
@@ -2949,9 +2949,9 @@ StatusTaskPtr iModelConnection::AcquireCodesLocks
     Utf8StringCR                        lastChangeSetId,
     IBriefcaseManager::ResponseOptions  options,
     ICancellationTokenPtr               cancellationToken
-) const 
+) const
     {
-    return ExecutionManager::ExecuteWithRetry<void>([=]() { return AcquireCodesLocksInternal(locks, codes, briefcaseId, seedFileId, lastChangeSetId, options, cancellationToken); });
+    return ExecuteWithRetry<void>([=]() { return AcquireCodesLocksInternal(locks, codes, briefcaseId, seedFileId, lastChangeSetId, options, cancellationToken); });
     }
 
 //---------------------------------------------------------------------------------------
@@ -2959,13 +2959,13 @@ StatusTaskPtr iModelConnection::AcquireCodesLocks
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::QueryCodesLocksAvailability
 (
-    LockRequestCR                       locks,
-    DgnCodeSet                          codes,
-    BeBriefcaseId                       briefcaseId,
-    BeGuidCR                            seedFileId,
-    Utf8StringCR                        lastChangeSetId,
-    IBriefcaseManager::ResponseOptions  options,
-    ICancellationTokenPtr               cancellationToken
+LockRequestCR                       locks,
+DgnCodeSet                          codes,
+BeBriefcaseId                       briefcaseId,
+BeGuidCR                            seedFileId,
+Utf8StringCR                        lastChangeSetId,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
@@ -2995,8 +2995,8 @@ ICancellationTokenPtr                   cancellationToken
     const Utf8String methodName = "iModelConnection::DemoteCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     //How to set description here?
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    SetLocksJsonRequestToChangeSet (locks, briefcaseId, seedFileId, "", *changeset, WSChangeset::ChangeState::Modified);
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    SetLocksJsonRequestToChangeSet(locks, briefcaseId, seedFileId, "", *changeset, WSChangeset::ChangeState::Modified);
 
     DgnCodeState state;
     state.SetAvailable();
@@ -3018,10 +3018,10 @@ ICancellationTokenPtr                   cancellationToken
     {
     const Utf8String methodName = "iModelConnection::RelinquishCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     if (static_cast<bool>(resourcesToRelinquish & IBriefcaseManager::Resources::Locks))
-        LockDeleteAllJsonRequest (changeset, briefcaseId);
+        LockDeleteAllJsonRequest(changeset, briefcaseId);
 
     if (static_cast<bool>(resourcesToRelinquish & IBriefcaseManager::Resources::Codes))
         CodeDiscardReservedJsonRequest(changeset, briefcaseId);
@@ -3120,10 +3120,10 @@ ICancellationTokenPtr cancellationToken
         {
         for (auto& task : tasks)
             {
-            if (!task->GetResult().IsSuccess())
-                return BriefcasesInfoResult::Error(task->GetResult().GetError());
+            if (!ExecuteAsync(task).IsSuccess())
+                return BriefcasesInfoResult::Error(ExecuteAsync(task).GetError());
 
-            auto briefcaseInfo = task->GetResult().GetValue();
+            auto briefcaseInfo = ExecuteAsync(task).GetValue();
             finalValue->insert(finalValue->end(), briefcaseInfo.begin(), briefcaseInfo.end());
             }
 
@@ -3195,7 +3195,7 @@ ICancellationTokenPtr cancellationToken
         }
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<CodeLockSetResult> finalResult = std::make_shared<CodeLockSetResult>();
-    return ExecutionManager::ExecuteWithRetry<CodeLockSetResultInfo>([=]()
+    return ExecuteWithRetry<CodeLockSetResultInfo>([=]()
         {
         return GetChangeSetById(lastChangeSetId, cancellationToken)->Then([=] (ChangeSetInfoResultCR changeSetResult)
             {
@@ -3224,10 +3224,10 @@ ICancellationTokenPtr cancellationToken
                 {
                 for (auto task : tasks)
                     {
-                    if (!task->GetResult().IsSuccess())
+                    if (!ExecuteAsync(task).IsSuccess())
                         {
-                        finalResult->SetError(task->GetResult().GetError());
-                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, task->GetResult().GetError().GetMessage().c_str());
+                        finalResult->SetError(ExecuteAsync(task).GetError());
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, ExecuteAsync(task).GetError().GetMessage().c_str());
                         return;
                         }
                     }
@@ -3291,7 +3291,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 BriefcaseInfoTaskPtr iModelConnection::AcquireNewBriefcase(ICancellationTokenPtr cancellationToken) const
     {
-    return ExecutionManager::ExecuteWithRetry<BriefcaseInfoPtr>([=]()
+    return ExecuteWithRetry<BriefcaseInfoPtr>([=]()
         {
         return CreateBriefcaseInstance(cancellationToken)->Then<BriefcaseInfoResult>([=] (const WSCreateObjectResult& result)
             {
@@ -3504,7 +3504,7 @@ ICancellationTokenPtr               cancellationToken
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::VerifyConnection(ICancellationTokenPtr cancellationToken) const
     {
-    return ExecutionManager::ExecuteWithRetry<void>([=]()
+    return ExecuteWithRetry<void>([=]()
         {
         return m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<StatusResult>([] (const AsyncResult<void, WSError>& result)
             {
