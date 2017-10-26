@@ -21,6 +21,20 @@
     </Models>
     <Raster ImportAttachments="true" />
     <PointClouds ImportPointClouds="true" LevelOfDetails="3" />
+    <Materials>
+        <SearchPaths>
+            <!-- 
+            Folders to be searched for material textures, one folder per entry, for example:
+            <Path name="\\MyServer\Materials\Textures" />
+            <Path name="C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures\1\Mats" />
+            -->
+        </SearchPaths>
+            <!--
+            Option IncludeDwgPath tells the importer whether or not to also search the input DWG folder
+            for materials, in addition to above explicitly listed folders.
+            -->
+        <SearchOptions IncludeDwgPath="true" />
+    </Materials>
     <ObjectEnablers>
         <PreLoadModules>
             <!--

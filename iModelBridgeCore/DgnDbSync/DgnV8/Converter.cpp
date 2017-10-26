@@ -1306,6 +1306,7 @@ Converter::Converter(Params const& params)
     m_currIdPolicy = StableIdPolicy::ById;
 
     m_rootTrans.InitIdentity();
+    m_rootTransChange.InitIdentity();
 
     m_monitor = new Monitor;
 
@@ -2996,7 +2997,7 @@ DgnElementPtr Converter::CreateNewElement(DgnModel& model, DgnClassId elementCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::AddResolvedModelMapping(ResolvedModelMapping const& v8mm)
+void RootModelConverter::_AddResolvedModelMapping(ResolvedModelMapping const& v8mm)
     {
     m_v8ModelMappings.insert(v8mm);
     }
@@ -3012,7 +3013,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         if (res.IsValid())
             {
             if (!_FindModelForDgnV8Model(*v8ModelRef.GetDgnModelP(), trans).IsValid())
-                AddResolvedModelMapping(res);
+                _AddResolvedModelMapping(res);
             GetChangeDetector()._OnModelSeen(*this, res);
             return res;
             }
@@ -3045,7 +3046,10 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         // => We must make a new, transformed copy of the DgnV8 model.
         DgnAttachmentCP thisAttachment = v8ModelRef.AsDgnAttachmentCP();
         if (nullptr == thisAttachment)
+            {
+            BeAssert(false && "transformed copies are for attachments only!");
             return unresolvedMapping;
+            }
 
         bool base = true;
         while (nullptr != thisAttachment)
@@ -3103,7 +3107,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
 
     ResolvedModelMapping v8mm(*model, v8Model, mapping);
 
-    AddResolvedModelMapping(v8mm);
+    _AddResolvedModelMapping(v8mm);
 
     GetChangeDetector()._OnModelInserted(*this, v8mm, v8ModelRef.AsDgnAttachmentCP());
     GetChangeDetector()._OnModelSeen(*this, v8mm);
@@ -3139,7 +3143,7 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
         if (res.IsValid())
             {
             if (!_FindModelForDgnV8Model(v8Model, trans).IsValid())
-                AddResolvedModelMapping(res);
+                _AddResolvedModelMapping(res);
             GetChangeDetector()._OnModelSeen(*this, res);
             return res;
             }
@@ -3171,7 +3175,7 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
 
     ResolvedModelMapping v8mm(*model, v8Model, mapping);
 
-    AddResolvedModelMapping(v8mm);
+    _AddResolvedModelMapping(v8mm);
 
     GetChangeDetector()._OnModelInserted(*this, v8mm, nullptr);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
@@ -3420,12 +3424,16 @@ void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model)
+void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, SubjectCR jobSubject)
     {
     m_rootModelRef = &rootV8Model;
     m_isRootModelSpatial = ShouldConvertToPhysicalModel(rootV8Model);
     m_rootFile = rootV8Model.GetDgnFileP();
     _ComputeCoordinateSystemTransform();
+
+    Transform bridgeCorrection;
+    if (BSISUCCESS == JobSubjectUtils::GetTransform(bridgeCorrection, jobSubject))
+        m_rootTrans = Transform::FromProduct(bridgeCorrection, m_rootTrans);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -186,6 +186,9 @@ void DwgBridge::_OnConvertedToBim (BentleyStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(DwgImporter::GetRegistrySubKey());
+
     auto host = DgnPlatformLib::QueryHost ();
     if (nullptr == host)
         {

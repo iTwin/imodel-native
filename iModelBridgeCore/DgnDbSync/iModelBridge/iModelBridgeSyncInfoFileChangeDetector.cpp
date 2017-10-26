@@ -261,7 +261,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::ChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter)
+iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::ChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool forceChange)
     {
     Results res;
 
@@ -284,7 +284,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
             return Results(sid, currentState);    // We have it, but the filter rejected it. We have to treat it as new
 
         // We found it because its content hash matches a stored record. So, we report that this item is the same as this record.
-        return Results(ChangeType::Unchanged, rec, currentState);
+        return Results(forceChange? ChangeType::Changed: ChangeType::Unchanged, rec, currentState);
         }
         
     // --------------------------------
@@ -299,11 +299,13 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
             continue;
 
         double lmt = item._GetLastModifiedTime();
-        if ((0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() != lmt))
+        if (!forceChange && (0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() != lmt))
             return Results(ChangeType::Unchanged, rec, SourceState(lmt,""));
 
         SourceState currentState(lmt, item._GetHash());
         ChangeType ch = (rec.GetSourceState().GetHash() == currentState.GetHash())? ChangeType::Unchanged: ChangeType::Changed;
+        if (forceChange)
+            ch = ChangeType::Changed;
         return Results(ch, rec, currentState);
         }
     
@@ -314,13 +316,14 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::InitialConversionChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter)
+iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::InitialConversionChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool)
     {
     Results res;
     auto sid = SourceIdentity(scope, kind, item._GetId());
     SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
     return Results(sid, currentState);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -34,7 +34,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
             m_programPath.AppendSeparator();
             }
         m_programPath.BeGetFullPathName ();
-        m_programName = BeFileName::GetFileNameWithoutExtension (m_programPath.c_str());
+        m_programName = BeFileName::GetFileNameWithoutExtension (programFullPath.c_str());
         }
     void GetRunRoot (char const* argv0, BeFileName& path)
         {

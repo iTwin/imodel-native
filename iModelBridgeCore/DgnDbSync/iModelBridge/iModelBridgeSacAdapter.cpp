@@ -333,6 +333,7 @@ void iModelBridgeSacAdapter::Params::PrintUsage()
 "--job-name=                    (optional) The code for the new job subject when creating a dgndb.\n"
 "--input-guid=                  (optional) The document GUID of the input file.\n"
 "--doc-props=                   (optional) Document properties for the input file (in JSON format).\n"
+"--transform=                   (optional) 3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
     );
     }
 
@@ -514,6 +515,13 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         {
         unSupportedFwkArg(argv[iArg]);
         if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(bparams.m_gcsCalculationMethod, iModelBridge::GetArgValue(argv[iArg])))
+            return iModelBridge::CmdLineArgStatus::Error;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--transform="))
+        {
+        if (BSISUCCESS != iModelBridge::Params::ParseTransform(bparams.m_spatialDataTransform, iModelBridge::GetArgValue(argv[iArg])))
             return iModelBridge::CmdLineArgStatus::Error;
         return iModelBridge::CmdLineArgStatus::Success;
         }

@@ -265,6 +265,9 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
     {
     BeAssert((nullptr != DgnPlatformLib::QueryHost()) && "framework must register the host");
 
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+
     BentleyApi::BeFileName v8DllsRelativeDir;
     bool isPowerplatformBased = false;
     if (GetV8DgnDllsRelativeDir(v8DllsRelativeDir, isPowerplatformBased, argc, argv))

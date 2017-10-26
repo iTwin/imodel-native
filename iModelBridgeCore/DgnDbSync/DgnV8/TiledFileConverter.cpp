@@ -211,10 +211,14 @@ void TiledFileConverter::_ConvertElementsInModel(ResolvedModelMapping const& v8m
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/15
+* @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TiledFileConverter::ConvertRootModel()
     {
+    CorrectSpatialTransform(m_rootModelMapping);
+
+    m_rootTrans = m_rootModelMapping.GetTransform();
+
     _OnConversionStart();
 
     if (!m_rootFile.IsValid() || nullptr == m_rootModelRef)
