@@ -53,6 +53,7 @@ struct TestHelper final
         BentleyStatus ImportSchemas(std::vector<SchemaItem> const&) const;
 
         ECSqlStatus PrepareECSql(Utf8CP ecsql) const { ECSqlStatement stmt;  return stmt.Prepare(m_ecdb, ecsql); }
+        Utf8String ECSqlToSql(Utf8CP ecsql) const;
         DbResult ExecuteECSql(Utf8CP ecsql) const;
         DbResult ExecuteInsertECSql(ECInstanceKey&, Utf8CP ecsql) const;
 

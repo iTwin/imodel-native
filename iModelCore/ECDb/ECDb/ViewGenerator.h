@@ -91,43 +91,40 @@ struct ViewGenerator final
 
         struct ToSqlVisitor final : IPropertyMapVisitor
             {
-                enum class ColumnAliasMode
+                struct Result final
                     {
-                    NoAlias = 0,
-                    SystemPropertyName
-                    };
+                    public: 
+                        enum class SqlExpressionType
+                            {
+                            PropertyName,
+                            Literal,
+                            Computed
+                            };
 
-
-                struct Result
-                    {
                     private:
                         SingleColumnDataPropertyMap const* m_propertyMap = nullptr;
                         NativeSqlBuilder m_sql;
-                        bool m_isLiteralSqlSnippet = false;
+                        SqlExpressionType m_sqlExpType = SqlExpressionType::PropertyName;
 
                     public:
-                        Result() {}
-                        explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
+                        Result(SingleColumnDataPropertyMap const& propertyMap, SqlExpressionType sqlExpType) :m_propertyMap(&propertyMap), m_sqlExpType(sqlExpType) {}
 
                         SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
                         DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
                         NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
                         NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
-                        //indicates whether the added SQL snippet is a literal or a col name.
+                        //indicates what type the generated SQL snippet is.
                         //This is necessary for calling code to determine whether it has to add a col alias or not
-                        bool IsLiteralSqlSnippet() const { return m_isLiteralSqlSnippet; }
-                        void SetIsLiteralSqlSnippet() { m_isLiteralSqlSnippet = true; }
+                        SqlExpressionType GetSqlExpressionType() const { return m_sqlExpType; }
                     };
 
             private:
                 Context const& m_context;
-                Utf8CP m_classIdentifier;
+                Utf8String m_classIdentifier;
                 DbTable const& m_tableFilter;
-                ColumnAliasMode m_columnAliasMode = ColumnAliasMode::NoAlias;
-                mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
                 mutable std::vector<Result> m_resultSet;
-                bool m_doNotAddColumnAliasForComputedExpression;
-                BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
+
+                BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
                 BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
                 BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
@@ -136,14 +133,19 @@ struct ViewGenerator final
                 BentleyStatus ToNativeSql(ConstraintECClassIdPropertyMap const&) const;
                 BentleyStatus ToNativeSql(ECClassIdPropertyMap const&) const;
                 BentleyStatus ToNativeSql(ECInstanceIdPropertyMap const&) const;
-                Result& Record(SingleColumnDataPropertyMap const&) const;
+
+                Result& AddResult(SingleColumnDataPropertyMap const&, Result::SqlExpressionType) const;
+
+                //Casts are needed for shared columns to make sure shared columns behave the same as unshared columns.
+                //Shared columns are of type BLOB which behaves differently in terms of type conversions prior to comparisons
+                //(see https://sqlite.org/datatype3.html#type_conversions_prior_to_comparison)
+                static bool RequiresCast(SingleColumnDataPropertyMap const& propMap) { return propMap.GetColumn().IsShared() && propMap.GetColumnDataType() != DbColumn::Type::Any && propMap.GetColumnDataType() != DbColumn::Type::Blob; }
 
             public:
-                ToSqlVisitor(Context const& ctx, DbTable const& tableFilter, Utf8CP classIdentifier, ColumnAliasMode);
+                ToSqlVisitor(Context const& ctx, DbTable const& tableFilter, Utf8StringCR classIdentifier) : IPropertyMapVisitor(), m_context(ctx), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier) {}
                 ~ToSqlVisitor() {}
                 std::vector<Result> const& GetResultSet() const { return m_resultSet; }
-                void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
-                void DoNotAddColumnAliasForComputedExpression() { m_doNotAddColumnAliasForComputedExpression = true; }
+                void Reset() const { m_resultSet.clear(); }
             };
 
         ViewGenerator();

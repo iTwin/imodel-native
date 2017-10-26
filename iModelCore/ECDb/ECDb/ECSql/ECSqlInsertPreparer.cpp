@@ -44,7 +44,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
         return stat;
 
     PrepareClassId(ctx, insertNativeSqlSnippets, classMap);
-    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), insertNativeSqlSnippets, exp);
+    BuildNativeSqlInsertStatement(ctx.GetSqlBuilder(), insertNativeSqlSnippets, exp);
 
     ctx.PopScope();
     return ECSqlStatus::Success;

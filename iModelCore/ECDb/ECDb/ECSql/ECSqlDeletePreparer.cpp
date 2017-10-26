@@ -31,7 +31,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStateme
     if (!stat.IsSuccess())
         return stat;
 
-    BuildNativeSqlDeleteStatement(ctx.GetSqlBuilderR(), deleteNativeSqlSnippets);
+    BuildNativeSqlDeleteStatement(ctx.GetSqlBuilder(), deleteNativeSqlSnippets);
     ctx.PopScope();
     return stat;
     }

@@ -117,41 +117,42 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
             Result() : m_propertyMap(nullptr) {}
             explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
 
-            Utf8CP GetAccessString() const { return GetPropertyMap().GetAccessString().c_str(); }
             SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
             NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
             NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
-            Utf8CP GetSql() const { return m_sql.ToString(); }
             DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
-            DbTable const& GetTable() const { return GetColumn().GetTable(); }
         };
 
     private:
         ECSqlScope m_scope;
-        Utf8CP m_classIdentifier;
+        Utf8String m_classIdentifier;
         DbTable const& m_tableFilter;
         bool m_wrapInParentheses;
-        mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
         mutable std::vector<Result> m_resultSet;
 
         BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
         BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
-        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
+        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&, bool requiresCast) const;
         BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ECInstanceIdPropertyMap const&) const;
         Result& Record(SingleColumnDataPropertyMap const&) const;
 
+        //Casts are needed for shared columns in all cases except for SELECT and assignment expressions
+        //to make sure shared columns behave the same as unshared columns.
+        //Shared columns are of type BLOB which behaves differently in terms of type conversions prior to comparisons
+        //(see https://sqlite.org/datatype3.html#type_conversions_prior_to_comparison)
+        bool RequiresCast(SingleColumnDataPropertyMap const& propMap) const { return m_scope == ECSqlScope::NonSelectNoAssignmentExp && propMap.GetColumn().IsShared() && propMap.GetColumnDataType() != DbColumn::Type::Blob && propMap.GetColumnDataType() != DbColumn::Type::Any; }
 
     public:
-        ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope target, Utf8CP classIdentifier, bool wrapInParentheses = false);
+        ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope target, bool wrapInParentheses = false);
+        ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope target, Utf8StringCR classIdentifier, bool wrapInParentheses = false);
         ~ToSqlPropertyMapVisitor() {}
         std::vector<Result> const& GetResultSet() const { return m_resultSet; }
-        const Result* Find(Utf8CP accessString) const;
-        void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
+        void Reset() const { m_resultSet.clear(); }
 
         bool IsForAssignmentExpression() const { return m_scope == ECSqlScope::NonSelectAssignmentExp; }
     };
