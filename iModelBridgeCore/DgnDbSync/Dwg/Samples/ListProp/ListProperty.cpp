@@ -223,9 +223,16 @@ BentleyStatus   ListProperty::_ImportEntity (ElementImportResults& results, Elem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus   ListPropertySample::ImportDwgFile (int argc, WCharCP argv[])
+DwgImporter* ListPropertySample::_CreateDwgImporter ()
     {
-    return T_Super::RunAsStandaloneExe(argc, argv);
+    // Create our sample importer, using DwgBridge options:
+    DwgImporter::Options* opts = static_cast<DwgImporter::Options*> (&_GetParams());
+    if (nullptr == opts)
+        {
+        BeAssert (false && "This sample is not a sub-class of DwgBridge!!");
+        return  nullptr;
+        }
+    return new ListProperty (*opts);
     }
 
 
