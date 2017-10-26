@@ -203,6 +203,8 @@ void GridsDomain::_OnSchemaImported(DgnDbR db) const
     //method        |   db  |               name                        |      color       |    isVisible   |   isPlotted   |   isSnappable |   isLocatable |   weight  |   styleId |   displaypriority |      materialId      |    transparency    |
     tmpColorDef = Dgn::ColorDef::DarkGrey ();
     tmpColorDef.SetAlpha (0xaa);
+
+    InsertCategory (db, GRIDS_CATEGORY_CODE_Uncategorized, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     InsertCategory (db, GRIDS_CATEGORY_CODE_DrivingSurface, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     tmpColorDef = Dgn::ColorDef::DarkBlue ();
     tmpColorDef.SetAlpha (0xaa);
