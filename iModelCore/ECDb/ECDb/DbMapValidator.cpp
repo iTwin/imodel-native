@@ -272,6 +272,11 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
             }
         }
 
+    if (table.GetPrimaryKeyConstraint() != nullptr)
+        {
+        if (SUCCESS != ValidateDbConstraint(*table.GetPrimaryKeyConstraint()))
+            return ERROR;
+        }
 
     for (DbConstraint const* constraint : table.GetConstraints())
         {
