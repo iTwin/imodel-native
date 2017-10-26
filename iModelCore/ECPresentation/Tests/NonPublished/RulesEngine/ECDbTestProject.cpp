@@ -255,16 +255,31 @@ public:
         }
 };
 
+static bool s_isInitialized = false; 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Krischan.Eberle                12/2012
+* @bsimethod                                 Krischan.Eberle                10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bool ECDbTestProject::s_isInitialized = false; 
+static void Initialize()
+    {
+    if (!s_isInitialized)
+        {
+        //establish standard schema search paths (they are in the application dir)
+        BeFileName applicationSchemaDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory (applicationSchemaDir);
+
+        BeFileName temporaryDir;
+        BeTest::GetHost().GetOutputRoot (temporaryDir);
+
+        ECDb::Initialize (temporaryDir, &applicationSchemaDir);
+        srand ((uint32_t)(0xffffffff & BeTimeUtilities::QueryMillisecondsCounter ()));
+        s_isInitialized = true;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbTestProject::ECDbTestProject () : m_ecdb (new ECDb) { Initialize (); }
+ECDbTestProject::ECDbTestProject(ECDb* db) : m_ecdb(nullptr != db ? db : new ECDb()) {Initialize();}
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
@@ -280,38 +295,6 @@ ECDbTestProject::~ECDbTestProject ()
     delete m_ecdb;
     m_ecdb = nullptr;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Krischan.Eberle                10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-void ECDbTestProject::Initialize ()
-    {
-    if (!s_isInitialized)
-        {
-        //establish standard schema search paths (they are in the application dir)
-        BeFileName applicationSchemaDir;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory (applicationSchemaDir);
-
-        BeFileName temporaryDir;
-        BeTest::GetHost().GetOutputRoot (temporaryDir);
-
-        ECDb::Initialize (temporaryDir, &applicationSchemaDir);
-        srand ((uint32_t)(0xffffffff & BeTimeUtilities::QueryMillisecondsCounter ()));
-        s_isInitialized = true;
-        }
-    }   
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ECDbTestProject::IsInitialized () {return s_isInitialized; }   
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                11/2012
-//+---------------+---------------+---------------+---------------+---------------+-
-Utf8CP ECDbTestProject::GetECDbPath () const { return GetECDbCR ().GetDbFileName (); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
@@ -366,19 +349,9 @@ DbResult ECDbTestProject::Open (Utf8CP ecdbFileName, ECDb::OpenParams openParams
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Krischan.Eberle                10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbR ECDbTestProject::GetECDb () { return *m_ecdb; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Krischan.Eberle                10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbCR ECDbTestProject::GetECDbCR () const { return *m_ecdb; }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbTestProject::ImportECSchema (ECN::ECSchemaPtr& schema, Utf8CP testSchemaXmlFileName)
+BentleyStatus ECDbTestProject::ImportECSchema(ECN::ECSchemaPtr& schema, Utf8CP testSchemaXmlFileName)
     {
     if (Utf8String::IsNullOrEmpty(testSchemaXmlFileName))
         return ERROR;
