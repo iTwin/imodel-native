@@ -77,7 +77,7 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
 			else m_maxPtOnLineIdx = maxPtOnLineIdx;
 			m_minPtOnLineIdx = minPtOnLineIdx;
             m_distancePts.resize(m_linePts.size());
-            double distUntil = distance;
+			double distUntil = 0;
             auto distIt = m_distancePts.begin();
             for (auto it = m_linePts.begin(); it != m_linePts.end(); distIt++, it++)
                 {
@@ -85,6 +85,7 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
                     {
                     distUntil += DVec3d::FromStartEnd(*(it - 1), *it).MagnitudeXY();
                     }
+
                 *distIt = distUntil;
                 }
 
@@ -1557,6 +1558,8 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 				minDrapedPos = i;
 			}
 
+		maxDrapedPos = drapedLine.size() - 1;
+
 		if (orderedList.rbegin()->second.segment+1 <= numPoints - 2)
 			for (size_t i = orderedList.rbegin()->second.segment+1; i <= numPoints - 2; ++i)
 			{
@@ -1578,6 +1581,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 		{
 			drapedLine.insert(drapedLine.begin() + minDrapedPos, pts[firstSeg]);
 			minDrapedPos++;
+			maxDrapedPos++;
 		}
 
 		DSegment3d last = DSegment3d::From(pts[lastSeg], pts[lastSeg + 1]);
@@ -1590,7 +1594,6 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
 			drapedLine.insert(drapedLine.begin() + maxDrapedPos+1, pts[lastSeg+1]);
 		}
 	}
-
 
     ret = SMDrapedLine::Create(drapedLine, orderedList.empty()? 0 : orderedList.begin()->first, maxDrapedPos, minDrapedPos);
     return DTMStatusInt::DTM_SUCCESS;
