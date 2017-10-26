@@ -180,7 +180,6 @@ private:
     IPropertyCategorySupplier* m_categorySupplier;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     ILocalizationProvider const* m_localizationProvider;
-    bool m_isTreeTraversed = false;
     
 //__PUBLISH_SECTION_END__
 private:

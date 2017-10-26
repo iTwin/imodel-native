@@ -1897,3 +1897,12 @@ void NodesCache::SetIsExpanded(uint64_t nodeId, bool isExpanded) const
     stmt->BindUInt64(1, nodeId);
     stmt->Step();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(ECDbR connection, Utf8CP rulesetId, bool isUpdatesDisabled) const
+    {    
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, nullptr, isUpdatesDisabled);
+    return context.IsValid() ? NodesWithUndeterminedChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
+    }

@@ -173,6 +173,7 @@ public:
 
     ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
     ECPRESENTATION_EXPORT void ResetExpandedNodes(BeSQLite::BeGuid connectionId, Utf8CP rulesetId);
+    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(ECDbR connection, Utf8CP ruleSetId, bool isUpdatesDisabled) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

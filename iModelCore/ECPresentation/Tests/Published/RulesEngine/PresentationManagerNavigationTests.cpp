@@ -4798,3 +4798,28 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     EXPECT_STREQ("ClassH", childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("ClassH", childrenNodes[1]->GetLabel().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras               10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesFromNotExpandedHierarchy)
+    {    
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ReturnsNodesFromNotExpandedHierarchy", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+
+    // request for filtered nodes paths
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("ReturnsNodesFromNotExpandedHierarchy", TargetTree_MainTree).GetJson();
+    bvector<NodesPathElement> nodes = IECPresentationManager::GetManager().GetFilteredNodesPaths(s_project->GetECDb(), "", options);
+
+    // make sure we have 1 node
+    ASSERT_EQ(1, nodes.size());
+    EXPECT_EQ(1, nodes[0].GetChildren().size());
+    }

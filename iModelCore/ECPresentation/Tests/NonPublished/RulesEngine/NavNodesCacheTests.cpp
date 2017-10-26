@@ -1790,3 +1790,64 @@ TEST_F(NodesCacheTests, ResetIsExpandedFlag)
     EXPECT_FALSE(m_cache->GetNode(node1->GetNodeId())->IsExpanded());
     EXPECT_FALSE(m_cache->GetNode(node2->GetNodeId())->IsExpanded());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // create node
+    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetRulesetId("ruleset_id");
+    EXPECT_FALSE(node->DeterminedChildren());
+
+    // cache node
+    m_cache->Cache(*node, true);
+
+    // expect provider with nodes that are not parents for other nodes (yet)
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(GetDb(), info.GetRulesetId().c_str(), false);
+    ASSERT_TRUE(provider.IsValid());
+    EXPECT_EQ(1, provider->GetNodesCount());
+
+    // expect node that is not parent for other nodes
+    JsonNavNodePtr expectedNode;
+    provider->GetNode(expectedNode, 0);
+    EXPECT_EQ(expectedNode->GetNodeId(), node->GetNodeId());
+    EXPECT_TRUE(expectedNode->DeterminedChildren());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // create node
+    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetRulesetId("ruleset_id");
+    uint64_t nodeId = node->GetNodeId();
+    EXPECT_FALSE(node->DeterminedChildren());
+
+    // cache node
+    m_cache->Cache(*node, true);
+
+    // cache child data source
+    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), info.GetRulesetId(), &nodeId, &nodeId);
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // expect provider to be empty, because all nodes are data sources
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(GetDb(), info.GetRulesetId().c_str(), false);
+    ASSERT_TRUE(provider.IsValid());
+    EXPECT_EQ(0, provider->GetNodesCount());
+    }

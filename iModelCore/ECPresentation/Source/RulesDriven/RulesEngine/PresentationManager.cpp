@@ -143,15 +143,19 @@ private:
             RulesPreprocessor::RootNodeRuleParameters params(context.GetDb(), context.GetRuleset(), TargetTree_MainTree,
                 context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
-            provider = MultiSpecificationNodesProvider::Create(context, specs);
+            if (!specs.empty())
+                provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(context.GetDb(), *parent, context.GetRuleset(), TargetTree_MainTree, 
                 context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
-            provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
+            if (!specs.empty())
+                provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
+        if (provider.IsNull())
+            provider = EmptyNavNodesProvider::Create(context);
         return provider;
         }
 
@@ -473,7 +477,7 @@ NavNodeCPtr RulesDrivenECPresentationManager::_GetNode(ECDbR connection, uint64_
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::TraverseNodes(ECDbR connection, JsonValueCR options, DataContainer<NavNodeCPtr> nodes)
     {
-    for (int i = 0; i < nodes.GetSize(); i++) //WIP Won't traverse nodes which are already in cache
+    for (int i = 0; i < nodes.GetSize(); i++)
         {
         NavNodeCPtr node = nodes.Get(i);
         if (node->HasChildren())
@@ -486,14 +490,19 @@ void RulesDrivenECPresentationManager::TraverseNodes(ECDbR connection, JsonValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavNodeCPtr> RulesDrivenECPresentationManager::_GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions)
     {
-    DataContainer<NavNodeCPtr> rootNodes = GetRootNodes(connection, PageOptions(), jsonOptions);
-    // Add all tree nodes to NodesCache
-    if (!m_isTreeTraversed)
+    NavigationOptions options(jsonOptions);
+    if (!GetNodesCache().IsDataSourceCached(connection.GetDbGuid(), options.GetRulesetId()))
+        GetRootNodes(connection, PageOptions(), jsonOptions);
+    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetDisableUpdates());
+    size_t nodesCount = provider->GetNodesCount();
+    for (size_t i = 0; i < nodesCount; i++)
         {
-        TraverseNodes(connection, jsonOptions, rootNodes);
-        m_isTreeTraversed = true;
+        JsonNavNodePtr node;
+        provider->GetNode(node, i);
+        if (node->HasChildren())
+            TraverseNodes(connection, jsonOptions, GetChildren(connection, *node, PageOptions(), jsonOptions));
         }
-    return GetNodesCache().GetFilteredNodes(connection, NavigationOptions(jsonOptions).GetRulesetId(), filterText);
+    return GetNodesCache().GetFilteredNodes(connection, options.GetRulesetId(), filterText);
     }
 
 /*---------------------------------------------------------------------------------**//**
