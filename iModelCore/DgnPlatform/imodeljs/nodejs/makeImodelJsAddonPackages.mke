@@ -11,11 +11,11 @@ ProductDir = $(OutputRootDir)Product/
 o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/publish/
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-    Platform = "Windows"
-    PlatformAndArch = "WinX64"
+    Platform=Windows
+    PlatformAndArch=WinX64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
-    Platform = "Linux"
-    PlatformAndArch = "LinuxX64"
+    Platform=Linux
+    PlatformAndArch=LinuxX64
 %else
     %error iModelJsNodeAddon is not available for this platform
 %endif
@@ -25,3 +25,9 @@ o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/publish/
 always:
     -$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)
+
+%iffile $(ProductDir)iModelJsNodeAddon-$(Platform)-New
+always:
+    | $(ProductDir)iModelJsNodeAddon-$(Platform)-New ...
+    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform)-New $(o)new $(PlatformAndArch)
+%endif
