@@ -632,7 +632,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
             {
             auto bimAlignmentCPtr = AlignmentBim::Alignment::Get(m_bimPhysicalModelPtr->GetDgnDb(), iterEntry.GetDgnElementId());
             if (bimAlignmentCPtr.IsValid())
-                roadwayPtr->SetAlignment(bimAlignmentCPtr.get());
+                roadwayPtr->SetMainAlignment(bimAlignmentCPtr.get());
             }
         }
 
