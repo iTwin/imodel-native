@@ -2588,6 +2588,20 @@ public:
         return found;
         }
     
+    bool FindFeature(FeatureR feature, uint32_t index) const
+        {
+        for (auto kvp : m_map)
+            {
+            if (kvp.second == index)
+                {
+                feature = kvp.first;
+                return true;
+                }
+            }
+
+        return false;
+        }
+
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }

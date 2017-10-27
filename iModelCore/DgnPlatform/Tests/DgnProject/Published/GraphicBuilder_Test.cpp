@@ -23,10 +23,18 @@ void ExpectEqualDouble(double a, double b)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ExpectEqualPoints(DPoint3dCR a, DPoint3dCR b)
+template<typename T> void ExpectEqualPoints2d(T const& a, T const& b)
     {
     ExpectEqualDouble(a.x, b.x);
     ExpectEqualDouble(a.y, b.y);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void ExpectEqualPoints(T const& a, T const& b)
+    {
+    ExpectEqualPoints2d(a, b);
     ExpectEqualDouble(a.z, b.z);
     }
 
@@ -50,7 +58,6 @@ void ExpectEqualBytes(ByteStream const& a, ByteStream const& b)
         bool equalBytes = 0 == memcmp(a.data(), b.data(), a.size());
         EXPECT_TRUE(equalBytes);
 
-#define DEBUG_EQUAL_BYTES
 #if defined(DEBUG_EQUAL_BYTES)
         if (!equalBytes)
             {
@@ -335,7 +342,274 @@ protected:
     template<typename T> void RoundTripMeshBuilders(T populateGraphic);
 
     void RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, size_t nTotalElems);
+
+    void ExpectEqualGeometry(TileTree::StreamBufferR baseline, TileTree::StreamBufferR comparand);
+    void ExpectEqualGeometry(Render::Primitives::GeometryCollectionR base, Render::Primitives::GeometryCollectionR comp);
+    void ExpectEqualMeshLists(MeshListCR, MeshListCR);
+    void ExpectEqualFeatureTables(FeatureTableCR, FeatureTableCR, bool expectEqualIndices=false);
+    void ExpectEqualMeshes(MeshCR, MeshCR);
+    void ExpectEqualColorTables(ColorTableCR, ColorTableCR);
+    void ExpectEqualMeshPrimitives(MeshCR, MeshCR);
+    void ExpectEqualEdges(MeshCR, MeshCR);
+    void ExpectEqualMeshEdgeLists(bvector<MeshEdge> const& base, bvector<MeshEdge> const& comp, MeshCR baseMesh, MeshCR compMesh);
+    void ExpectEqualSilhouetteNormals(OctEncodedNormalPairListCR base, OctEncodedNormalPairListCR comp);
+    void ExpectEqualPolylineLists(MeshCR, MeshCR);
+    void ExpectEqualPolylineLists(PolylineList const&, PolylineList const&, MeshCR, MeshCR);
+    void ExpectEqualVertexLists(bvector<uint32_t> const&, bvector<uint32_t> const&, MeshCR, MeshCR);
+    void ExpectEqualVertices(MeshCR, MeshCR, uint32_t, uint32_t, FeatureIndex const&, FeatureIndex const&);
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualGeometry(TileTree::StreamBufferR base, TileTree::StreamBufferR comp)
+    {
+    ElementAlignedBox3d baseRange, compRange;
+    Render::Primitives::GeometryCollection baseGeom, compGeom;
+    bool baseIsLeaf, compIsLeaf;
+    auto& model = *GetDefaultPhysicalModel();
+
+    base.SetPos(0);
+    comp.SetPos(0);
+    EXPECT_TRUE(TileTree::TileIO::ReadStatus::Success == TileTree::TileIO::ReadDgnTile(baseRange, baseGeom, base, model, m_system, baseIsLeaf));
+    EXPECT_TRUE(TileTree::TileIO::ReadStatus::Success == TileTree::TileIO::ReadDgnTile(compRange, compGeom, comp, model, m_system, compIsLeaf));
+
+    ExpectEqualRange(baseRange, compRange);
+    EXPECT_EQ(baseIsLeaf, compIsLeaf);
+    ExpectEqualGeometry(baseGeom, compGeom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualGeometry(Render::Primitives::GeometryCollectionR base, Render::Primitives::GeometryCollectionR comp)
+    {
+    EXPECT_EQ(base.IsEmpty(), comp.IsEmpty());
+    EXPECT_EQ(base.IsComplete(), comp.IsComplete());
+    EXPECT_EQ(base.ContainsCurves(), comp.ContainsCurves());
+
+    ExpectEqualMeshLists(base.Meshes(), comp.Meshes());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualMeshLists(MeshListCR base, MeshListCR comp)
+    {
+    ExpectEqualFeatureTables(base.FeatureTable(), comp.FeatureTable());
+
+    EXPECT_EQ(base.size(), comp.size());
+    if (base.size() == comp.size())
+        {
+        for (size_t i = 0; i < base.size(); i++)
+            ExpectEqualMeshes(*base[i], *comp[i]);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualFeatureTables(FeatureTableCR base, FeatureTableCR comp, bool expectEqualIndices)
+    {
+    EXPECT_EQ(base.size(), comp.size());
+    EXPECT_EQ(base.GetMaxFeatures(), comp.GetMaxFeatures());
+    EXPECT_EQ(base.IsUniform(), comp.IsUniform());
+
+    for (auto kvp : base)
+        {
+        uint32_t compIndex;
+        EXPECT_TRUE(comp.FindIndex(compIndex, kvp.first));
+        if (expectEqualIndices)
+            EXPECT_EQ(kvp.second, compIndex);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualMeshes(MeshCR base, MeshCR comp)
+    {
+    EXPECT_EQ(base.IsEmpty(), comp.IsEmpty());
+    EXPECT_EQ(base.Is2d(), comp.Is2d());
+    EXPECT_EQ(base.IsPlanar(), comp.IsPlanar());
+    EXPECT_TRUE(base.GetType() == comp.GetType());
+
+    EXPECT_EQ(base.Triangles().Count(), comp.Triangles().Count());
+    EXPECT_EQ(base.Polylines().size(), comp.Polylines().size());
+    EXPECT_EQ(base.Colors().size(), comp.Colors().size());
+    EXPECT_EQ(base.Params().size(), comp.Params().size());
+    EXPECT_EQ(base.Normals().size(), comp.Normals().size());
+
+    ExpectEqualRange(base.GetRange(), comp.GetRange());
+    ExpectEqualRange(base.GetUVRange(), comp.GetUVRange());
+    EXPECT_TRUE(base.GetDisplayParams().IsEqualTo(comp.GetDisplayParams()));
+
+    ExpectEqualColorTables(base.GetColorTable(), comp.GetColorTable());
+
+    ASSERT_EQ(base.Points().size(), comp.Points().size());
+    if (Mesh::PrimitiveType::Mesh == base.GetType())
+        ExpectEqualMeshPrimitives(base, comp);
+    else
+        ExpectEqualPolylineLists(base, comp);
+
+    ASSERT_EQ(base.GetEdges().IsValid(), comp.GetEdges().IsValid());
+    if (base.GetEdges().IsValid())
+        ExpectEqualEdges(base, comp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualEdges(MeshCR baseMesh, MeshCR compMesh)
+    {
+    auto const& base = *baseMesh.GetEdges();
+    auto const& comp = *compMesh.GetEdges();
+
+    ExpectEqualPolylineLists(base.m_polylines, comp.m_polylines, baseMesh, compMesh);
+    ExpectEqualMeshEdgeLists(base.m_visible, comp.m_visible, baseMesh, compMesh);
+    ExpectEqualMeshEdgeLists(base.m_silhouette, comp.m_silhouette, baseMesh, compMesh);
+    ExpectEqualSilhouetteNormals(base.m_silhouetteNormals, comp.m_silhouetteNormals);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualMeshEdgeLists(bvector<MeshEdge> const& base, bvector<MeshEdge> const& comp, MeshCR baseMesh, MeshCR compMesh)
+    {
+    ASSERT_EQ(base.size(), comp.size());
+
+    bvector<uint32_t> baseIndices(2);
+    bvector<uint32_t> compIndices(2);
+    for (size_t i = 0; i < base.size(); i++)
+        {
+        baseIndices[0] = base[i].m_indices[0];
+        baseIndices[1] = base[i].m_indices[1];
+        baseIndices[0] = base[i].m_indices[0];
+        compIndices[1] = comp[i].m_indices[1];
+
+        ExpectEqualVertexLists(baseIndices, compIndices, baseMesh, compMesh);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualSilhouetteNormals(OctEncodedNormalPairListCR base, OctEncodedNormalPairListCR comp)
+    {
+    ASSERT_EQ(base.size(), comp.size());
+    for (size_t i = 0; i < base.size(); i++)
+        {
+        EXPECT_TRUE(base[i].first == comp[i].first);
+        EXPECT_TRUE(base[i].second == comp[i].second);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualColorTables(ColorTableCR base, ColorTableCR comp)
+    {
+    EXPECT_EQ(base.size(), comp.size());
+    EXPECT_EQ(base.HasTransparency(), comp.HasTransparency());
+    EXPECT_EQ(base.IsUniform(), comp.IsUniform());
+
+    for (auto kvp : base)
+        {
+        auto compKvp = comp.find(kvp.first);
+        EXPECT_FALSE(comp.end() == compKvp);
+        if (comp.end() != compKvp)
+            EXPECT_EQ(kvp.second, compKvp->second);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualMeshPrimitives(MeshCR base, MeshCR comp)
+    {
+    ASSERT_EQ(base.Triangles().Count(), comp.Triangles().Count());
+    ExpectEqualVertexLists(base.Triangles().Indices(), comp.Triangles().Indices(), base, comp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualPolylineLists(MeshCR baseMesh, MeshCR compMesh)
+    {
+    ExpectEqualPolylineLists(baseMesh.Polylines(), compMesh.Polylines(), baseMesh, compMesh);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualPolylineLists(PolylineList const& basePolylines, PolylineList const& compPolylines, MeshCR baseMesh, MeshCR compMesh)
+    {
+    for (size_t i = 0; i < basePolylines.size(); i++)
+        {
+        MeshPolyline const& base = basePolylines[i];
+        MeshPolyline const& comp = compPolylines[i];
+
+        ASSERT_EQ(base.GetIndices().size(), comp.GetIndices().size());
+        EXPECT_EQ(base.GetStartDistance(), comp.GetStartDistance());
+        ExpectEqualPoints(base.GetRangeCenter(), comp.GetRangeCenter());
+
+        ExpectEqualVertexLists(base.GetIndices(), comp.GetIndices(), baseMesh, compMesh);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualVertexLists(bvector<uint32_t> const& base, bvector<uint32_t> const& comp, MeshCR baseMesh, MeshCR compMesh)
+    {
+    ASSERT_EQ(base.size(), comp.size());
+
+    FeatureIndex baseFeatureIndex, compFeatureIndex;
+    baseMesh.ToFeatureIndex(baseFeatureIndex);
+    compMesh.ToFeatureIndex(compFeatureIndex);
+
+    ASSERT_EQ(baseFeatureIndex.IsEmpty(), compFeatureIndex.IsEmpty());
+    ASSERT_EQ(baseFeatureIndex.IsUniform(), compFeatureIndex.IsUniform());
+
+    for (size_t i = 0; i < base.size(); i++)
+        ExpectEqualVertices(baseMesh, compMesh, base[i], comp[i], baseFeatureIndex, compFeatureIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::ExpectEqualVertices(MeshCR base, MeshCR comp, uint32_t baseIndex, uint32_t compIndex, FeatureIndex const& baseFeatIdx, FeatureIndex const& compFeatIdx)
+    {
+    EXPECT_TRUE(base.Points()[baseIndex] == comp.Points()[compIndex]);
+
+    if (!base.Normals().empty())
+        EXPECT_TRUE(base.Normals()[baseIndex] == comp.Normals()[compIndex]);
+
+    if (!base.Params().empty())
+        ExpectEqualPoints2d(base.Params()[baseIndex], comp.Params()[compIndex]);
+
+    if (!base.Colors().empty())
+        EXPECT_EQ(base.Colors()[baseIndex], comp.Colors()[compIndex]);
+
+    uint32_t baseFeatureId, compFeatureId;
+    if (baseFeatIdx.IsUniform())
+        {
+        baseFeatureId = baseFeatIdx.m_featureID;
+        compFeatureId = compFeatIdx.m_featureID;
+        }
+    else
+        {
+        baseFeatureId = baseFeatIdx.m_featureIDs[baseIndex];
+        compFeatureId = compFeatIdx.m_featureIDs[compIndex];
+        }
+
+    Feature baseFeat, compFeat;
+    EXPECT_TRUE(base.GetFeatureTable()->FindFeature(baseFeat, baseFeatureId));
+    EXPECT_TRUE(comp.GetFeatureTable()->FindFeature(compFeat, compFeatureId));
+    EXPECT_TRUE(baseFeat.GetClass() == compFeat.GetClass());
+    EXPECT_EQ(baseFeat.GetElementId().GetValueUnchecked(), compFeat.GetElementId().GetValueUnchecked());
+    EXPECT_EQ(baseFeat.GetSubCategoryId().GetValueUnchecked(), compFeat.GetSubCategoryId().GetValueUnchecked());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Test that we can write a GeometryCollection to a binary+json stream, read it back,
@@ -448,7 +722,7 @@ void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, 
     TileTree::StreamBuffer roundTripBytes;
     EXPECT_EQ(SUCCESS, TileTree::TileIO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, readCentroid, true));
     if (skipElems.empty())
-        ExpectEqualBytes(writeBytes, roundTripBytes);
+        ExpectEqualGeometry(writeBytes, roundTripBytes);
     else
         EXPECT_TRUE(roundTripBytes.size() < writeBytes.size());
     }
@@ -501,7 +775,6 @@ TEST_F(MeshBuilderTest, RoundTripTileIO)
     RoundTripGeometryCollection([&](GraphicBuilderR gf) { BuildGraphic(gf); });
     }
 
-#if defined(WIP_BUSTED)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -511,5 +784,4 @@ TEST_F(MeshBuilderTest, RoundTripMeshBuilders)
 
     RoundTripMeshBuilders([&](GraphicBuilderR gf) { BuildGraphic(gf); });
     }
-#endif
 

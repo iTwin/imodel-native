@@ -1127,7 +1127,7 @@ private:
     void AddPolylines(MeshPrimitive const&, Json::Value const& json);
     Polyline ReadPolyline(void const*& pData, bool useShortIndices); // increments pData past the end of the polyline
 
-    void AddMeshEdges(MeshPrimitive const& mesh, Json::Value const& json);
+    void AddMeshEdges(MeshBuilderR builder, MeshPrimitive const& mesh, Json::Value const& json);
     void AddPolylineEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
     void AddSilhouetteEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
 public:
@@ -1351,14 +1351,17 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json
             }
         }
 
-    AddMeshEdges(mesh, json);
+    AddMeshEdges(builder, mesh, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCacheTileRebuilder::AddMeshEdges(MeshPrimitive const& mesh, Json::Value const& primJson)
+void DgnCacheTileRebuilder::AddMeshEdges(MeshBuilderR builder, MeshPrimitive const& mesh, Json::Value const& primJson)
     {
+    if (nullptr == builder.GetMesh())
+        return;
+
     auto edgesJson = primJson["edges"];
     if (edgesJson.isNull())
         return;
@@ -1369,6 +1372,7 @@ void DgnCacheTileRebuilder::AddMeshEdges(MeshPrimitive const& mesh, Json::Value 
     MeshEdgesPtr edges = new MeshEdges();
     AddPolylineEdges(*edges, mesh, edgesJson);
     AddSilhouetteEdges(*edges, mesh, edgesJson);
+    builder.GetMesh()->GetEdgesR() = edges;
 
     // ###TODO: Overlooking some edges?? See:
     //  DgnCacheTileWriter::CreateMeshEdges() - adds as "visibles"

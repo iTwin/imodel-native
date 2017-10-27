@@ -37,6 +37,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshList);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(Mesh);
@@ -239,6 +240,7 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+    const_iterator find(uint32_t color) const { return m_map.find(color); }
 
     void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const;
 };
@@ -428,7 +430,7 @@ private:
         explicit Features(FeatureTableP table) : m_table(table) { }
 
         void Add(FeatureCR, size_t numVerts);
-        void ToFeatureIndex(FeatureIndex& index) const;
+        DGNPLATFORM_EXPORT void ToFeatureIndex(FeatureIndex& index) const;
         void SetIndices(bvector<uint32_t>&& indices);
     };
 
@@ -484,6 +486,7 @@ public:
     bool Is2d() const { return m_is2d; }
     bool IsPlanar() const { return m_isPlanar; }
     PrimitiveType GetType() const { return m_type; }
+    FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
 
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
