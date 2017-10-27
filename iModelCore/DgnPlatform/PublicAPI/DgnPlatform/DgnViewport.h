@@ -104,6 +104,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         bool m_controller = false;
         bool m_rotatePoint = false;
         bool m_firstDrawComplete = false;
+        bool m_redrawPending = false;
 
     public:
         void InvalidateDecorations() {m_decorations=false;}
@@ -112,18 +113,21 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         void InvalidateController() {m_controller=false; InvalidateRenderPlan(); InvalidateFirstDrawComplete();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
         void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
+        void InvalidateRedrawPending() {m_redrawPending = false;}
         void SetValidDecorations() {m_decorations=true;}
         void SetFirstDrawComplete() {m_firstDrawComplete=true;}
         void SetValidScene() {m_scene=true;}
         void SetValidController() {m_controller=true;}
         void SetValidRenderPlan() {m_renderPlan=true;}
         void SetValidRotatePoint() {m_rotatePoint=true;}
+        void SetRedrawPending() {m_redrawPending = true;}
         bool IsValidDecorations() const {return m_decorations;}
         bool IsValidScene() const {return m_scene;}
         bool IsValidRenderPlan() const {return m_renderPlan;}
         bool IsValidController() const {return m_controller;}
         bool IsValidRotatePoint() const {return m_rotatePoint;}
         bool IsFirstDrawComplete() const {return m_firstDrawComplete;}
+        bool IsRedrawPending() const {return m_redrawPending;}
     };
 
     //! Object to monitor changes to a DgnViewport. See #AddTracker, #DropTracker
@@ -186,6 +190,7 @@ protected:
     DGNPLATFORM_EXPORT void SaveViewUndo();
     DGNPLATFORM_EXPORT void Animate();
     DGNVIEW_EXPORT bool ProcessFlash();
+    DGNVIEW_EXPORT void PrepareDecorations(UpdatePlan const&, Render::Decorations&);
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
