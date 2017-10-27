@@ -87,7 +87,8 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
                                                                 DocGuid TEXT UNIQUE COLLATE NoCase,\
                                                                 DesktopURN TEXT COLLATE NoCase,\
                                                                 WebURN TEXT COLLATE NoCase, \
-                                                                OtherPropertiesJSON TEXT"));
+                                                                AttributesJSON TEXT, \
+                                                                SpatialRootTransformJSON TEXT"));
 
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
@@ -783,7 +784,7 @@ void iModelBridgeRegistry::EnsureDocumentPropertiesFor(BeFileNameCR fn)
 #ifdef TEST_REGISTRY_FAKE_GUIDS
     BeGuid testGuid;
     testGuid.Create();
-    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,OtherPropertiesJSON) VALUES(?,?,'', '', '')");
+    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,AttributesJSON,SpatialRootTransformJSON) VALUES(?,?,'', '', '', '')");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);
 #else
@@ -801,16 +802,17 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentP
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0         1           2       3
-    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
+    //                                               0         1           2       3              4
+    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
         return BSIERROR;
 
-    props.m_docGuid             = stmt->GetValueText(0);
-    props.m_desktopURN          = stmt->GetValueText(1);
-    props.m_webURN              = stmt->GetValueText(2);
-    props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    props.m_docGuid        = stmt->GetValueText(0);
+    props.m_desktopURN     = stmt->GetValueText(1);
+    props.m_webURN         = stmt->GetValueText(2);
+    props.m_attributesJSON = stmt->GetValueText(3);
+    props.m_spatialRootTransformJSON = stmt->GetValueText(4);
     return BSISUCCESS;
     }
 
@@ -822,8 +824,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0               1           2       3
-    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (docGuid=?)");
+    //                                               0               1           2       3              4
+    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (docGuid=?)");
 #ifdef WIP_GUID_BINARY
     stmt->BindGuid(1, docGuid);
 #else
@@ -838,7 +840,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     localFileName    = BeFileName(stmt->GetValueText(0), true);
     props.m_desktopURN          = stmt->GetValueText(1);
     props.m_webURN              = stmt->GetValueText(2);
-    props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    props.m_attributesJSON      = stmt->GetValueText(3);
+    props.m_spatialRootTransformJSON = stmt->GetValueText(4);
     return BSISUCCESS;
     }
 

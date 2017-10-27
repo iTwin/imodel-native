@@ -103,7 +103,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     if (nullptr != rootSubjectDescription)
         createProjectParams.SetRootSubjectDescription(rootSubjectDescription);
 
-    createProjectParams.SetRootSubjectName("TBD"); // WIP_BRIDGE
+    createProjectParams.SetRootSubjectName(_GetParams().GetBridgeRegSubKeyUtf8().c_str());
 
     // Create the DgnDb file. All currently registered domain schemas are imported.
     BeSQLite::DbResult createStatus;
@@ -707,12 +707,12 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
             rlink->SetRepositoryGuid(beguid);
         }
 
-    if (!docProps.m_desktopURN.empty() || !docProps.m_otherPropertiesJSON.empty())
+    if (!docProps.m_desktopURN.empty() || !docProps.m_attributesJSON.empty())
         {
         Json::Value jsonValue = Json::objectValue;
         jsonValue["desktopURN"] = docProps.m_desktopURN;
         jsonValue["webURN"] = docProps.m_webURN;
-        jsonValue["properties"] = Json::Value::From(docProps.m_otherPropertiesJSON);
+        jsonValue["attributes"] = Json::Value::From(docProps.m_attributesJSON);
         rlink->SetDocumentProperties(jsonValue);
         }
 

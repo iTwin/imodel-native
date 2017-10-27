@@ -1073,7 +1073,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::InitCrt(false);
 
-    //  Open our state db. (That's where bridge assignments are, too.)
+    //  Open our state db.
     dbres = OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
         return RETURN_STATUS_LOCAL_ERROR;
@@ -1090,10 +1090,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     if (m_jobEnvArgs.m_bridgeAssetsDir.empty())
-        {
         m_jobEnvArgs.m_bridgeAssetsDir = findBridgeAssetsDir(m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName());
-
-        }
 
     // Put out this info message, so that we can relate all subsequent logging messages to this bridge.
     // The log on this machine may have messages from many bridge jobs.
@@ -1115,7 +1112,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     fwkDb3.AppendToPath(L"sqlang");
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
-    Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, ""); // *** TBD: product name = job name
+    Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str());
     DgnViewLib::Initialize(host, true);
 
     //  Initialize the bridge-specific L10N
