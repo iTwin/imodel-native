@@ -70,6 +70,54 @@ void RDSRequestManager::ReportError(Utf8String message)
         m_errorCallback(message.c_str());
     }
 
+ConnectedNavNode::ConnectedNavNode(const NavNode& node)
+    {
+    Clone(node);
+    }
+
+void ConnectedNavNode::Clone(const NavNode& node)
+    {
+    m_navString = node.GetNavString();
+    m_typeSystem = node.GetTypeSystem();
+    m_schemaName = node.GetSchemaName();
+    m_className = node.GetECClassName();
+    m_instanceId = node.GetInstanceId();
+    m_label = node.GetLabel();
+
+    m_rootNode = node.GetRootNode();
+    m_rootId = node.GetRootId();
+    }
+
+ConnectedResponse ConnectedNavNode::GetRootNodes(bvector<ConnectedNavNode>& nodes)
+    {
+    ConnectedResponse response = ConnectedResponse();
+
+    RawServerResponse rawResponse = RawServerResponse();
+    bvector<NavNode> rootNodes = NodeNavigator::GetInstance().GetRootNodes(RealityDataService::GetServerName(), RealityDataService::GetRepoName(), rawResponse);
+
+    for (int i = 0; i < rootNodes.size(); i++)
+        nodes.push_back(ConnectedNavNode(rootNodes[i]));
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+ConnectedResponse ConnectedNavNode::GetChildNodes(bvector<ConnectedNavNode>& nodes)
+    {
+    ConnectedResponse response = ConnectedResponse();
+
+    RawServerResponse rawResponse = RawServerResponse();
+    bvector<NavNode> rootNodes = NodeNavigator::GetInstance().GetChildNodes(RealityDataService::GetServerName(), RealityDataService::GetRepoName(), *this, rawResponse);
+
+    for (int i = 0; i < rootNodes.size(); i++)
+        nodes.push_back(ConnectedNavNode(rootNodes[i]));
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
@@ -159,12 +207,22 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForRDId(bv
         return response;
         }
         
+    return RetrieveAllForRDId(relationshipVector, m_realityDataId);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String rdId)
+    {
+    ConnectedResponse response = ConnectedResponse();
+
     RawServerResponse rawResponse = RawServerResponse();
-    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(m_realityDataId);
-   
+    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(rdId);
+
     bvector<RealityDataProjectRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
 
-    for(int i = 0; i < tmpVector.size(); i++)
+    for (int i = 0; i < tmpVector.size(); i++)
         relationshipVector.push_back(new ConnectedRealityDataProjectRelationship(tmpVector[i]));
 
     response.Clone(rawResponse);
@@ -184,9 +242,19 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForProject
         response.simpleMessage = "must set related id, first";
         return response;
         }
+    
+    return RetrieveAllForProjectId(relationshipVector, m_relatedId);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String projectId)
+    {
+    ConnectedResponse response = ConnectedResponse();
 
     RawServerResponse rawResponse = RawServerResponse();
-    RealityDataProjectRelationshipByProjectIdRequest idReq = RealityDataProjectRelationshipByProjectIdRequest(m_relatedId);
+    RealityDataProjectRelationshipByProjectIdRequest idReq = RealityDataProjectRelationshipByProjectIdRequest(projectId);
 
     bvector<RealityDataProjectRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
 
@@ -328,6 +396,15 @@ void ConnectedRealityDataDocument::Clone(RealityDataDocumentPtr docptr)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
+ConnectedRealityDataDocument::ConnectedRealityDataDocument(Utf8String navString)
+    {
+    m_id = navString;
+    GetInfo();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
 ConnectedResponse ConnectedRealityDataDocument::GetInfo()
     {
     ConnectedResponse response = ConnectedResponse();
@@ -450,6 +527,15 @@ ConnectedResponse ConnectedRealityDataDocument::Delete()
 ConnectedRealityDataFolder::ConnectedRealityDataFolder(RealityDataFolderPtr folderptr)
     {
     Clone(folderptr);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataFolder::ConnectedRealityDataFolder(Utf8String navString) 
+    {
+    m_id = navString;
+    GetInfo();
     }
 
 //-------------------------------------------------------------------------------------
@@ -642,6 +728,15 @@ void ConnectedRealityData::Clone(RealityDataPtr rd)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
+ConnectedRealityData::ConnectedRealityData(Utf8String guid)
+    {
+    m_identifier = guid;
+    GetInfo();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
 ConnectedResponse ConnectedRealityData::RetrieveAllForUltimateId(bvector<ConnectedRealityDataPtr>& dataVector)
     {
     ConnectedResponse response = ConnectedResponse();
@@ -675,7 +770,7 @@ ConnectedResponse ConnectedRealityData::RetrieveAllForUltimateId(bvector<Connect
 ConnectedResponse ConnectedRealityData::GetInfo()
     {
     ConnectedResponse response = ConnectedResponse();
-    if (m_ultimateId.empty())
+    if (m_identifier.empty())
         {
         response.simpleSuccess = false;
         response.simpleMessage = "must set ultimate id, first";
@@ -684,7 +779,7 @@ ConnectedResponse ConnectedRealityData::GetInfo()
 
     RawServerResponse rawResponse = RawServerResponse();
 
-    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_ultimateId);
+    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_identifier);
     RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
 
     Clone(entity);

@@ -46,6 +46,15 @@ protected:
     RDS_FeedbackFunction    m_errorCallback;
     };
 
+struct ConnectedNavNode : public NavNode
+    {
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse GetRootNodes(bvector<ConnectedNavNode>& nodes);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetChildNodes(bvector<ConnectedNavNode>& children);
+    REALITYDATAPLATFORM_EXPORT ConnectedNavNode(const NavNode& node);
+private:
+    REALITYDATAPLATFORM_EXPORT void Clone(const NavNode& stat);
+    };
+
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              10/2017
 //! ConnectedRealityDataEnterpriseStat
@@ -58,7 +67,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataEnterpriseStat() : RealityDataEnterpriseStat(){}
 
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetStats();
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataEnterpriseStat(const RealityDataEnterpriseStat& stat);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataEnterpriseStat& stat);
@@ -75,6 +84,8 @@ struct ConnectedRealityDataProjectRelationship: public RealityDataProjectRelatio
 public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataProjectRelationship() : RealityDataProjectRelationship() {}
 
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String rdId);
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String projectId);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Create();
@@ -100,6 +111,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Download(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Delete();
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataDocument(Utf8String navString);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataDocument(RealityDataDocumentPtr doc);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(RealityDataDocumentPtr doc);
@@ -120,6 +132,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Download(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Delete();
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataFolder(Utf8String navString);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataFolder(RealityDataFolderPtr folder);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(RealityDataFolderPtr folder);
@@ -141,6 +154,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Download(BeFileName filePath, Utf8String serverPath);
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Delete();
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityData(Utf8String guid);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityData(RealityDataPtr realityData);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(RealityDataPtr realityData);
