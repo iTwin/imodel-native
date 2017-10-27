@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationHandlerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectAuthenticationHandlerTests.h"
@@ -19,6 +19,9 @@ AuthenticationHandler::Attempt StubAttempt(Utf8StringCR url)
     return AuthenticationHandler::Attempt(url, "", DateTime::GetCurrentTimeUtc(), 0);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpAuthErrors_True)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -28,6 +31,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpAuthErr
     EXPECT_TRUE(authHandler._ShouldRetryAuthentication(StubHttpResponse(HttpStatus::Forbidden)));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpNonAuthErrors_False)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -38,6 +44,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpNonAuth
     EXPECT_FALSE(authHandler._ShouldRetryAuthentication(StubHttpResponse(ConnectionStatus::CouldNotConnect)));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_DatasourceNotFoundError_True)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -47,6 +56,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_DatasourceN
     EXPECT_TRUE(authHandler._ShouldRetryAuthentication(response));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_DifferentBaseUrl_ReturnsEmpty)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -57,6 +69,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_DifferentBaseUr
     EXPECT_EQ("", result.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_SameBaseUrl_ReturnsExistingToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -70,6 +85,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_SameBaseUrl_Ret
     EXPECT_EQ(token->ToAuthorizationString(), result.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedToken_ReturnsToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -83,6 +101,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedToken_
     EXPECT_EQ(token->ToAuthorizationString(), result.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NoCachedTokenAndUpdateTokenFails_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -96,6 +117,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NoCachedTokenAn
     EXPECT_FALSE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersisted_UpdatesAndReturnsToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -111,6 +135,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersi
     EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWithTokenAuth_RetrievesnewTokenAndRetries)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -128,6 +155,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWi
     EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceWithTokenAuth_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
@@ -139,6 +169,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceW
     EXPECT_FALSE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceAndIsNotTokenAuth_UsesExistingToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();

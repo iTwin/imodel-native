@@ -11,22 +11,34 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_Default_SetsStatusNone)
     {
     EXPECT_EQ(WSError::Status::None, WSError().GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_Default_LocalizedStringsEmpty)
     {
     EXPECT_EQ("", WSError().GetDisplayMessage());
     EXPECT_EQ("", WSError().GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_Default_IdUnknown)
     {
     EXPECT_EQ(WSError::Id::Unknown, WSError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, CreateServerNotSupported_NewError_SetsStatusAndLocalizedMessage)
     {
     auto error = WSError::CreateServerNotSupportedError();
@@ -36,6 +48,9 @@ TEST_F(WSErrorTests, CreateServerNotSupported_NewError_SetsStatusAndLocalizedMes
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, CreateFunctionalityNotSupportedError_NewError_SetsStatusAndIdAndLocalizedMessage)
     {
     auto error = WSError::CreateFunctionalityNotSupportedError();
@@ -45,12 +60,18 @@ TEST_F(WSErrorTests, CreateFunctionalityNotSupportedError_NewError_SetsStatusAnd
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_CanceledHttpResponse_SetsStatusCanceled)
     {
     WSError error(StubHttpResponse(ConnectionStatus::Canceled));
     EXPECT_EQ(WSError::Status::Canceled, error.GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusConnectionError)
     {
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::None)).GetStatus());
@@ -60,11 +81,17 @@ TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsSt
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpResponseWithCertificateError_SetsStatusCertificateError)
     {
     EXPECT_EQ(WSError::Status::CertificateError, WSError(StubHttpResponse(ConnectionStatus::CertificateError)).GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingField_SetsStatusServerNotSupported)
     {
     auto body = R"({"errorId":null, "errorMessage":null})";
@@ -73,6 +100,9 @@ TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingField_SetsStatusServerNotSupp
     EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_JsonErrorFormatCorrectButContentTypeXml_SetsStatusServerNotSupported)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
@@ -81,6 +111,9 @@ TEST_F(WSErrorTests, Ctor_JsonErrorFormatCorrectButContentTypeXml_SetsStatusServ
     EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectAndContentTypeXml_ParsesXmlAndSetsError)
     {
     auto body = R"( <ModelError
@@ -99,6 +132,9 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectAndContentTypeXml_ParsesXmlAndSet
     EXPECT_EQ("TestMessage\nTestDescription", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectWithNullDescription_ParsesXmlAndSetsError)
     {
     auto body = R"( <ModelError
@@ -117,6 +153,9 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectWithNullDescription_ParsesXmlAndS
     EXPECT_EQ("Foo", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_JsonErrorFormatWithNullFields_FallbacksToDefaultIdAndLocalizedMessageFromHttpError)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
@@ -129,6 +168,9 @@ TEST_F(WSErrorTests, Ctor_JsonErrorFormatWithNullFields_FallbacksToDefaultIdAndL
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_ClassNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
     {
     auto body = R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
@@ -142,6 +184,9 @@ TEST_F(WSErrorTests, Ctor_ClassNotFoundError_SetsErrorReceivedStatusAndIdWithLoc
     EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_FileNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
     {
     auto body = R"({"errorId":"FileNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
@@ -155,6 +200,9 @@ TEST_F(WSErrorTests, Ctor_FileNotFoundError_SetsErrorReceivedStatusAndIdWithLoca
     EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_InstanceNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
     {
     auto body = R"({"errorId":"InstanceNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
@@ -168,6 +216,9 @@ TEST_F(WSErrorTests, Ctor_InstanceNotFoundError_SetsErrorReceivedStatusAndIdWith
     EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_BadRequestError_SetsRecievedMessageAndDescriptionForUser)
     {
     auto body = R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
@@ -180,6 +231,9 @@ TEST_F(WSErrorTests, Ctor_BadRequestError_SetsRecievedMessageAndDescriptionForUs
     EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_ConflictError_SetsRecievedMessageAndDescriptionForUser)
     {
     auto body = R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})";
@@ -192,6 +246,9 @@ TEST_F(WSErrorTests, Ctor_ConflictError_SetsRecievedMessageAndDescriptionForUser
     EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMessage)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
@@ -202,6 +259,9 @@ TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMess
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpStatus500_SetsIdServerError)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
@@ -210,6 +270,9 @@ TEST_F(WSErrorTests, Ctor_HttpStatus500_SetsIdServerError)
     EXPECT_EQ(WSError::Id::ServerError, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpStatus500WithErrorId_SetsIdFromError)
     {
     auto body = R"({"errorId":"NoClientLicense", "errorMessage":null, "errorDescription":null})";
@@ -218,6 +281,9 @@ TEST_F(WSErrorTests, Ctor_HttpStatus500WithErrorId_SetsIdFromError)
     EXPECT_EQ(WSError::Id::NoClientLicense, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpStatusConflict_SetsIdConflict)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
@@ -226,6 +292,9 @@ TEST_F(WSErrorTests, Ctor_HttpStatusConflict_SetsIdConflict)
     EXPECT_EQ(WSError::Id::Conflict, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpStatusConflictWithErrorId_SetsIdFromError)
     {
     auto body = R"({"errorId":"NoClientLicense", "errorMessage":null, "errorDescription":null})";
@@ -234,6 +303,9 @@ TEST_F(WSErrorTests, Ctor_HttpStatusConflictWithErrorId_SetsIdFromError)
     EXPECT_EQ(WSError::Id::NoClientLicense, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpStatusBadRequest_SetsIdBadRequest)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
@@ -242,6 +314,9 @@ TEST_F(WSErrorTests, Ctor_HttpStatusBadRequest_SetsIdBadRequest)
     EXPECT_EQ(WSError::Id::BadRequest, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpStatusBadRequestWithErrorId_SetsIdFromError)
     {
     auto body = R"({"errorId":"NoClientLicense", "errorMessage":null, "errorDescription":null})";
@@ -250,6 +325,9 @@ TEST_F(WSErrorTests, Ctor_HttpStatusBadRequestWithErrorId_SetsIdFromError)
     EXPECT_EQ(WSError::Id::NoClientLicense, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi1ErrorIdObjectNotFound_SetsIdInstanceNotFound)
     {
     auto body = R"({"errorId":"ObjectNotFound", "errorMessage":null, "errorDescription":null})";
@@ -258,6 +336,9 @@ TEST_F(WSErrorTests, Ctor_WebApi1ErrorIdObjectNotFound_SetsIdInstanceNotFound)
     EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi2ErrorInstanceNotFound_SetsIdInstanceNotFound)
     {
     auto body = R"({"errorId":"InstanceNotFound", "errorMessage":null, "errorDescription":null})";
@@ -266,6 +347,9 @@ TEST_F(WSErrorTests, Ctor_WebApi2ErrorInstanceNotFound_SetsIdInstanceNotFound)
     EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi1ErrorDatasourceNotFound_SetsIdRepositoryNotFound)
     {
     auto body = R"({"errorId":"DatasourceNotFound", "errorMessage":null, "errorDescription":null})";
@@ -274,6 +358,9 @@ TEST_F(WSErrorTests, Ctor_WebApi1ErrorDatasourceNotFound_SetsIdRepositoryNotFoun
     EXPECT_EQ(WSError::Id::RepositoryNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi2ErrorRepositoryNotFound_SetsIdRepositoryNotFound)
     {
     auto body = R"({"errorId":"RepositoryNotFound", "errorMessage":null, "errorDescription":null})";
@@ -282,6 +369,9 @@ TEST_F(WSErrorTests, Ctor_WebApi2ErrorRepositoryNotFound_SetsIdRepositoryNotFoun
     EXPECT_EQ(WSError::Id::RepositoryNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi1ErrorLinkTypeNotFound_SetsIdClassNotFound)
     {
     auto body = R"({"errorId":"LinkTypeNotFound", "errorMessage":null, "errorDescription":null})";
@@ -290,6 +380,9 @@ TEST_F(WSErrorTests, Ctor_WebApi1ErrorLinkTypeNotFound_SetsIdClassNotFound)
     EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi2ErrorSchemaNotFound_SetsIdSchemaNotFound)
     {
     auto body = R"({"errorId":"SchemaNotFound", "errorMessage":null, "errorDescription":null})";
@@ -298,6 +391,9 @@ TEST_F(WSErrorTests, Ctor_WebApi2ErrorSchemaNotFound_SetsIdSchemaNotFound)
     EXPECT_EQ(WSError::Id::SchemaNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_ErrorFileNotFound_SetsIdFileNotFound)
     {
     auto body = R"({"errorId":"FileNotFound", "errorMessage":null, "errorDescription":null})";
@@ -306,6 +402,9 @@ TEST_F(WSErrorTests, Ctor_ErrorFileNotFound_SetsIdFileNotFound)
     EXPECT_EQ(WSError::Id::FileNotFound, error.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpErrorCanceled_Canceled)
     {
     HttpError httpError(ConnectionStatus::Canceled, HttpStatus::None);
@@ -316,6 +415,9 @@ TEST_F(WSErrorTests, Ctor_HttpErrorCanceled_Canceled)
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpErrorConnectionError_ConnectionError)
     {
     HttpError httpError(ConnectionStatus::CouldNotConnect, HttpStatus::None);
@@ -326,6 +428,9 @@ TEST_F(WSErrorTests, Ctor_HttpErrorConnectionError_ConnectionError)
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_HttpErrorNotFound_IdUnknown)
     {
     HttpError httpError(ConnectionStatus::OK, HttpStatus::NotFound);
@@ -336,6 +441,9 @@ TEST_F(WSErrorTests, Ctor_HttpErrorNotFound_IdUnknown)
     EXPECT_EQ("", error.GetDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, GetData_ReturnsData)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null, "customProperty":"TestData"})";
@@ -347,6 +455,9 @@ TEST_F(WSErrorTests, GetData_ReturnsData)
     EXPECT_EQ("TestData", data["customProperty"].asString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, GetData_CanceledHttpStatus)
     {
     WSError error(StubHttpResponse(ConnectionStatus::Canceled));
@@ -354,6 +465,9 @@ TEST_F(WSErrorTests, GetData_CanceledHttpStatus)
     EXPECT_EQ(Json::Value::GetNull(), error.GetData());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceled)
     {
     EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::None)).GetData());
@@ -363,6 +477,9 @@ TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceled)
     EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetData());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, GetData_IMSRedirect)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
@@ -370,6 +487,9 @@ TEST_F(WSErrorTests, GetData_IMSRedirect)
     EXPECT_EQ(Json::Value::GetNull(), error.GetData());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, GetData_Xml)
     {
     auto body = R"( <ModelError

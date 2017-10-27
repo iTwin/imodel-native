@@ -39,6 +39,9 @@ void ExampleTests::SetUp()
     CacheTransactionManager::SetAllowUnsafeAccess(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, WSRepositoryClient_PWConnectionCreationAndQuery)
     {
     auto clientInfo = ClientInfo::Create("TestApp", {1, 0}, "TestAppGuid");
@@ -68,6 +71,9 @@ TEST_F(ExampleTests, WSRepositoryClient_PWConnectionCreationAndQuery)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, WSRepositoryClient_ConnectConnectionCreationAndQuery)
     {
     auto clientInfo = ClientInfo::Create("TestApp", {1, 0}, "TestAppGuid", "2545");
@@ -97,6 +103,9 @@ TEST_F(ExampleTests, WSRepositoryClient_ConnectConnectionCreationAndQuery)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, CachingDataSource_PWConnectionCreationAndQuery)
     {
     BeFileName rootPath = GetTestsTempDir();
@@ -141,6 +150,9 @@ TEST_F(ExampleTests, CachingDataSource_PWConnectionCreationAndQuery)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, CachingDataSource_PWDocumentRenameAndSync)
     {
     BeFileName rootPath = GetTestsTempDir();

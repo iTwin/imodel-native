@@ -15,12 +15,18 @@ using namespace ::testing;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, IsEmpty_Empty_True)
     {
     WSChangeset changeset;
     EXPECT_TRUE(changeset.IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, IsEmpty_InstanceAdded_False)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -28,6 +34,9 @@ TEST_F(WSChangesetTests, IsEmpty_InstanceAdded_False)
     EXPECT_FALSE(changeset.IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_EmptyChangeset_ReturnsEmptyChangesetAndSizeIsSameAsEmptyChangesetJson)
     {
     WSChangeset changeset;
@@ -37,6 +46,9 @@ TEST_F(WSChangesetTests, ToRequestString_EmptyChangeset_ReturnsEmptyChangesetAnd
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetIsEmpty_ReturnsEmptyChangesetAndSizeIsSameAsEmptyChangesetJson)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -46,6 +58,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetIsEmpty_ReturnsE
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAddingMoreThanOneInstance_DoesNotAddAdditionalInstance)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -72,6 +87,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAddingMoreThanOn
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_NullProperties_DoesNotAddPropertiesMember)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -83,6 +101,9 @@ TEST_F(WSChangesetTests, ToRequestString_NullProperties_DoesNotAddPropertiesMemb
     EXPECT_FALSE(changesetJson["instance"].isMember("properties"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_EmptyObjectValueProperties_DoesNotAddPropertiesMember)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -94,6 +115,9 @@ TEST_F(WSChangesetTests, ToRequestString_EmptyObjectValueProperties_DoesNotAddPr
     EXPECT_FALSE(changesetJson["instance"].isMember("properties"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_NullValueProperties_DoesNotAddPropertiesMember)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -105,6 +129,9 @@ TEST_F(WSChangesetTests, ToRequestString_NullValueProperties_DoesNotAddPropertie
     EXPECT_FALSE(changesetJson["instance"].isMember("properties"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -126,6 +153,9 @@ TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJso
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -147,6 +177,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneExistingIn
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OneCreatedInstance_ReturnsChangesetJsonWithPropertiesAndWithoutIdAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -171,6 +204,9 @@ TEST_F(WSChangesetTests, ToRequestString_OneCreatedInstance_ReturnsChangesetJson
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneCreatedInstance_ReturnsChangesetJsonWithPropertiesAndWithoutIdAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -195,6 +231,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneCreatedIns
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OneModifiedInstance_ReturnsChangesetJsonWithPropertiesAndIdAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -223,6 +262,9 @@ TEST_F(WSChangesetTests, ToRequestString_OneModifiedInstance_ReturnsChangesetJso
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneModifiedInstance_ReturnsChangesetJsonWithPropertiesAndIdAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -251,6 +293,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneModifiedIn
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OneDeletedInstance_ReturnsChangesetJsonWithoutPropertiesAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -275,6 +320,9 @@ TEST_F(WSChangesetTests, ToRequestString_OneDeletedInstance_ReturnsChangesetJson
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneDeletedInstance_ReturnsChangesetJsonWithoutPropertiesAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -299,6 +347,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneDeletedIns
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OneForwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
@@ -341,6 +392,9 @@ TEST_F(WSChangesetTests, ToRequestString_OneForwardRelatedInstance_ReturnsChange
     EXPECT_EQ(1, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneForwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
@@ -383,6 +437,9 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneForwardRel
     EXPECT_EQ(1, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OneBackwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
@@ -425,6 +482,9 @@ TEST_F(WSChangesetTests, ToRequestString_OneBackwardRelatedInstance_ReturnsChang
     EXPECT_EQ(1, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_TwoRelatedInstances_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
@@ -482,6 +542,9 @@ TEST_F(WSChangesetTests, ToRequestString_TwoRelatedInstances_ReturnsChangesetJso
     EXPECT_EQ(2, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_ThreeInstances_ReturnsChangesetAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
@@ -529,6 +592,9 @@ TEST_F(WSChangesetTests, ToRequestString_ThreeInstances_ReturnsChangesetAndCalcu
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_GetRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -544,6 +610,9 @@ TEST_F(WSChangesetTests, ToRequestString_GetRequestOptions_ReturnsChangesetAndCa
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_RemoveRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -559,6 +628,9 @@ TEST_F(WSChangesetTests, ToRequestString_RemoveRequestOptions_ReturnsChangesetAn
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsResponseContentSet_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -577,6 +649,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsResponseContentSet_ReturnsChange
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsRefreshInstanceSet_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -595,6 +670,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsRefreshInstanceSet_ReturnsChange
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsTwoCustomOptionsSet_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -614,6 +692,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsTwoCustomOptionsSet_ReturnsChang
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsOwerwriten_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -633,6 +714,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsOwerwriten_ReturnsC
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsRemoved_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -647,6 +731,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsRemoved_ReturnsChan
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsManyOptionsSet_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -669,6 +756,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsManyOptionsSet_ReturnsChangesetA
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ToRequestString_OptionsSetAndInstanceAdded_ReturnsChangesetAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -693,6 +783,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsSetAndInstanceAdded_ReturnsChang
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, RemoveInstance_OneInstanceInstance_ReturnsTrueAndLeavesChangesetEmpty)
     {
     WSChangeset changeset;
@@ -707,6 +800,9 @@ TEST_F(WSChangesetTests, RemoveInstance_OneInstanceInstance_ReturnsTrueAndLeaves
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, RemoveInstance_ThreeInstances_ReturnsTrueAndLeavesOtherTwoInstances)
     {
     WSChangeset changeset;
@@ -743,6 +839,9 @@ TEST_F(WSChangesetTests, RemoveInstance_ThreeInstances_ReturnsTrueAndLeavesOther
     EXPECT_EQ(ObjectId("TestSchema.TestClassC", "C"), instanceC.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, RemoveInstance_TwoRelatedInstances_ReturnsRemovedIdAndLeavesOtherInstances)
     {
     WSChangeset changeset;
@@ -787,12 +886,18 @@ TEST_F(WSChangesetTests, RemoveInstance_TwoRelatedInstances_ReturnsRemovedIdAndL
     EXPECT_EQ(ObjectId("TestSchemaC.TestClassC", "C"), instanceC.GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, FindInstance_EmptyChangeset_ReturnsNullptr)
     {
     WSChangeset changeset;
     EXPECT_EQ(nullptr, changeset.FindInstance({"TestSchema.TestClass","Foo"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, FindInstance_NonExistingInstance_ReturnsNullptr)
     {
     WSChangeset changeset;
@@ -800,6 +905,9 @@ TEST_F(WSChangesetTests, FindInstance_NonExistingInstance_ReturnsNullptr)
     EXPECT_EQ(nullptr, changeset.FindInstance({"TestSchema.TestClass","Other"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, FindInstance_RelationshipInstanceId_ReturnsNull)
     {
     WSChangeset changeset;
@@ -810,6 +918,9 @@ TEST_F(WSChangesetTests, FindInstance_RelationshipInstanceId_ReturnsNull)
     EXPECT_EQ(nullptr, changeset.FindInstance({"TestSchemaB.TestClassB","B"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, FindInstance_RootAndRelatedInstance_ReturnsInstance)
     {
     WSChangeset changeset;
@@ -824,6 +935,9 @@ TEST_F(WSChangesetTests, FindInstance_RootAndRelatedInstance_ReturnsInstance)
     EXPECT_EQ(&instanceE, changeset.FindInstance({"TestSchemaE.TestClassE","E"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_EmptyChangeset_DoesNotCallHandlerAndReturnsSuccess)
     {
     WSChangeset changeset;
@@ -837,6 +951,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_EmptyChangeset_DoesNotCallHan
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_TwoCreatedInstances_CallsHandleOnEachCreatedInstance)
     {
     WSChangeset changeset;
@@ -882,6 +999,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_TwoCreatedInstances_CallsHand
     EXPECT_EQ(2, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_ModifiedDeletedInstances_DoesNotCallHandle)
     {
     WSChangeset changeset;
@@ -916,6 +1036,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_ModifiedDeletedInstances_Does
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_ExistingRelationshipAndModifiedInstances_DoesNotCallHandler)
     {
     WSChangeset changeset;
@@ -957,6 +1080,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_ExistingRelationshipAndModifi
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelatedInstances_CallsHandleOnEachCreatedInstance)
     {
     WSChangeset changeset;
@@ -1014,6 +1140,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelatedInstances_Calls
     EXPECT_EQ(3, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_SingleInstanceChangesetCreatedRelatedInstances_CallsHandleOnEachCreatedInstance)
     {
     WSChangeset changeset(WSChangeset::SingeInstance);
@@ -1071,6 +1200,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_SingleInstanceChangesetCreate
     EXPECT_EQ(3, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelationship_CallsHandleForRelationship)
     {
     WSChangeset changeset;
@@ -1114,6 +1246,9 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelationship_CallsHand
     EXPECT_EQ(1, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString)
     {
     auto testProperties = std::make_shared<Json::Value>(ToJson(R"(

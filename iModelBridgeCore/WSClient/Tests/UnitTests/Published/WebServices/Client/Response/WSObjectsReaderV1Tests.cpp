@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/UnitTests/Published/WebServices/Client/Response/WSObjectsReaderV1Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,9 @@
 
 #include <WebServices/Client/Response/WSObjectsReaderV1.h>
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsNullValue_ReturnsFalse)
     {
     BeTest::SetFailOnAssert(false);
@@ -23,6 +26,9 @@ TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsNullValue_ReturnsFalse)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsEmptyObject_ReturnsTrue)
     {
     auto json = ToRapidJson("{}");
@@ -36,6 +42,9 @@ TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsEmptyObject_ReturnsTrue)
     EXPECT_EQ(0, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsInstance_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({ "$id" : "A" })");
@@ -49,6 +58,9 @@ TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsInstance_ReturnsTrue)
     EXPECT_EQ(1, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsInstanceByClass_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({ "TestClass" : [{ "$id" : "A" }] })");
@@ -62,6 +74,9 @@ TEST_F(WSObjectsReaderV1Tests, InstancesIsValid_JsonAsInstanceByClass_ReturnsTru
     EXPECT_EQ(1, instances.Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, InstanceIsValid_InstanceWithoutId_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({ "notId" : "A" })");
@@ -76,6 +91,9 @@ TEST_F(WSObjectsReaderV1Tests, InstanceIsValid_InstanceWithoutId_ReturnsFalse)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, InstanceIsValid_InstanceInClassWithoutId_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({ "TestClass1" : [{ "notId" : "A" }] })");
@@ -89,6 +107,9 @@ TEST_F(WSObjectsReaderV1Tests, InstanceIsValid_InstanceInClassWithoutId_ReturnsF
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, ReadInstances_JsonInstanceWithoutETag_ReturnsEmptyETag)
     {
     auto json = ToRapidJson(R"({ "TestClass1" : [{ "notId" : "A" }] })");
@@ -102,6 +123,9 @@ TEST_F(WSObjectsReaderV1Tests, ReadInstances_JsonInstanceWithoutETag_ReturnsEmpt
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, RelationshipInstancesIsValid_V1FormatDoesNotHaveRelationships_ReturnsTrue)
     {
     auto json = ToRapidJson(R"({ "$id" : "A" })");
@@ -114,6 +138,9 @@ TEST_F(WSObjectsReaderV1Tests, RelationshipInstancesIsValid_V1FormatDoesNotHaveR
     EXPECT_EQ(0, (*instances.begin()).GetRelationshipInstances().Size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, End_IsValid_ReturnsFalse)
     {
     auto json = ToRapidJson(R"({})");
@@ -128,6 +155,9 @@ TEST_F(WSObjectsReaderV1Tests, End_IsValid_ReturnsFalse)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, BeginIncrement_JsonAsThreeInstancesByTwoClasses_IncrementsThreeTimes)
     {
     auto json = ToRapidJson(R"({ "TestClass1" : [{ "$id" : "A" }, { "$id" : "B" }], "TestClass2" : [{ "$id" : "C" }] })");
@@ -145,6 +175,9 @@ TEST_F(WSObjectsReaderV1Tests, BeginIncrement_JsonAsThreeInstancesByTwoClasses_I
     EXPECT_TRUE(it == instances.end());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, Begin_JsonAsInstance_ReturnsInstance)
     {
     auto json = ToRapidJson(R"({ "$id" : "A", "Property" : "Value" })");
@@ -159,6 +192,9 @@ TEST_F(WSObjectsReaderV1Tests, Begin_JsonAsInstance_ReturnsInstance)
     EXPECT_TRUE(instance.GetRelationshipInstances().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, Begin_JsonAsInstanceByClass_ReturnsInstance)
     {
     auto json = ToRapidJson(R"({ "TestClass" : [{ "$id" : "A", "Property" : "Value" }] })");
@@ -171,6 +207,9 @@ TEST_F(WSObjectsReaderV1Tests, Begin_JsonAsInstanceByClass_ReturnsInstance)
     EXPECT_TRUE(instance.GetRelationshipInstances().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsReaderV1Tests, BeginAndIncrement_JsonAsTwoInstancesByTwoClass_ReturnsSecondInstance)
     {
     auto json = ToRapidJson(R"({ "TestClass1" : [{ "$id" : "A" }], "TestClass2" : [{ "$id" : "B" }] })");

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/SamlTokenTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SamlTokenTests.h"
@@ -13,6 +13,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, CopyCtor_OriginalEmpty_Empty)
     {
     auto original = std::make_shared<SamlToken>();
@@ -21,6 +24,9 @@ TEST_F(SamlTokenTests, CopyCtor_OriginalEmpty_Empty)
     EXPECT_TRUE(copy.IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndOriginalDestroyed_LifetimeCopied)
     {
     auto original = std::make_shared<SamlToken>(StubSamlTokenXML(42));
@@ -34,6 +40,9 @@ TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndOriginalDestroyed_Lifetim
     EXPECT_EQ(42, copy->GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndCopyDestroyed_LifetimeSameInOriginal)
     {
     auto original = std::make_shared<SamlToken>(StubSamlTokenXML(42));
@@ -47,6 +56,9 @@ TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndCopyDestroyed_LifetimeSam
     EXPECT_EQ(42, original->GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, AssignmentOperator_Self_LifetimeSame)
     {
     auto token = std::make_shared<SamlToken>(StubSamlTokenXML(111));
@@ -56,6 +68,9 @@ TEST_F(SamlTokenTests, AssignmentOperator_Self_LifetimeSame)
     ASSERT_EQ(111, token->GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndRightDestroyed_LifetimeCopied)
     {
     auto token1 = std::make_shared<SamlToken>(StubSamlTokenXML(111));
@@ -74,6 +89,9 @@ TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndRightDestroyed_Life
     EXPECT_EQ(222, token1->GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndLeftDestroyed_LifetimeSameInOriginal)
     {
     auto token1 = std::make_shared<SamlToken>(StubSamlTokenXML(111));
@@ -92,31 +110,49 @@ TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndLeftDestroyed_Lifet
     EXPECT_EQ(222, token2->GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsEmpty_DefaultCtor_True)
     {
     EXPECT_TRUE(SamlToken().IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsEmpty_CtorWithEmptyString_True)
     {
     EXPECT_TRUE(SamlToken("").IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsEmpty_CtorWithNotEmptyString_FALSE)
     {
     EXPECT_FALSE(SamlToken("something").IsEmpty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsSupported_DefaultCtor_False)
     {
     EXPECT_FALSE(SamlToken().IsSupported());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsSupported_InvalidXml_False)
     {
     EXPECT_FALSE(SamlToken("this is not xml").IsSupported());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsSupported_ValidAssertionWithVersions_SuportedOnlyVersion_1_1)
     {
     Utf8String tokenStr;
@@ -130,21 +166,33 @@ TEST_F(SamlTokenTests, IsSupported_ValidAssertionWithVersions_SuportedOnlyVersio
     EXPECT_TRUE(SamlToken(tokenStr).IsSupported());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, ToAuthorizationString_AnyStringPassed_ReturnsFormattedAuthorizationHeaderValue)
     {
     EXPECT_EQ("token " + Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToAuthorizationString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, ToSAMLAuthorizationString_AnyStringPassed_ReturnsFormattedAuthorizationHeaderValue)
     {
     EXPECT_EQ("SAML " + Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToSAMLAuthorizationString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, AsString_AnyStringPassed_ReturnsSame)
     {
     EXPECT_EQ("TestToken", SamlToken("TestToken").AsString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsValidAt_XmlConditionWithDates_ValidOnlyIfBetweenDates)
     {
     Utf8String tokenStr =
@@ -164,42 +212,63 @@ TEST_F(SamlTokenTests, IsValidAt_XmlConditionWithDates_ValidOnlyIfBetweenDates)
     EXPECT_TRUE(token.IsValidAt(DateTime(DateTime::Kind::Utc, 2000, 01, 02, 23, 59, 59)));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsValidNow_InvalidToken_False)
     {
     SamlToken token(StubSamlTokenXML(0));
     EXPECT_FALSE(token.IsValidNow(0));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsValidNow_ValidToken_True)
     {
     SamlToken token(StubSamlTokenXML(100));
     EXPECT_TRUE(token.IsValidNow(0));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsValidNow_ValidTokenAndOffsetIsOutOfValidity_False)
     {
     SamlToken token(StubSamlTokenXML(100));
     EXPECT_FALSE(token.IsValidNow(100));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsValidNow_ValidTokenAndOffsetIsInValidity_True)
     {
     SamlToken token(StubSamlTokenXML(100));
     EXPECT_TRUE(token.IsValidNow(4));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, GetLifetime_InvalidToken_Zero)
     {
     SamlToken token;
     EXPECT_EQ(0, token.GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, GetLifetime_TokenWithValidLifetime_LifetimeReturned)
     {
     SamlToken token(StubSamlTokenXML(42));
     EXPECT_EQ(42, token.GetLifetime());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, GetAttributes_AttributesExist_SuccessAndReturnsAttributes)
     {
     Utf8String tokenStr =
@@ -224,6 +293,9 @@ TEST_F(SamlTokenTests, GetAttributes_AttributesExist_SuccessAndReturnsAttributes
     EXPECT_EQ("B", attributes["Boo"]);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, GetAttributes_NoAttributes_SuccessWithNoAttributes)
     {
     Utf8String tokenStr =
@@ -240,6 +312,9 @@ TEST_F(SamlTokenTests, GetAttributes_NoAttributes_SuccessWithNoAttributes)
     EXPECT_TRUE(token.IsSupported());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, GetX509Certificate_SignatureExists_SuccessAndReturnsElementContent)
     {
     Utf8String tokenStr =
@@ -261,6 +336,9 @@ TEST_F(SamlTokenTests, GetX509Certificate_SignatureExists_SuccessAndReturnsEleme
     EXPECT_EQ("TestCertificate", cert);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, GetX509Certificate_SignatureDoesNotExist_ReturnsError)
     {
     Utf8String tokenStr =
@@ -276,6 +354,9 @@ TEST_F(SamlTokenTests, GetX509Certificate_SignatureDoesNotExist_ReturnsError)
     EXPECT_TRUE(token.IsSupported());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, OperatorEquals_TokensWithSameValue_True)
     {
     EXPECT_TRUE(SamlToken("Foo") == SamlToken("Foo"));
@@ -284,6 +365,9 @@ TEST_F(SamlTokenTests, OperatorEquals_TokensWithSameValue_True)
     EXPECT_TRUE(SamlToken(tokenStr) == SamlToken(tokenStr));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, OperatorNotEquals_TokensWithDifferentValues_False)
     {
     EXPECT_FALSE(SamlToken("A") == SamlToken("B"));

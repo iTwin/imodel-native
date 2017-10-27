@@ -94,6 +94,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_TempDirArg, ValuesIn(vector<TestAr
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "--workdir", "TestDir\\TestFolder"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_TempDirArg, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -127,6 +130,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_SilentProvided, ValuesIn(vector<Te
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "--silent"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_SilentProvided, Parse_Silent_LogLevelZero)
     {
     auto args = GetParam();
@@ -143,6 +149,9 @@ TEST_P(ArgumentParserTests_SilentProvided, Parse_Silent_LogLevelZero)
     EXPECT_EQ(0, logLevel);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ArgumentParserTests, Parse_SilentNotProvided_LogLevelOne)
     {
     TestArgs args = {"Foo.exe", "--createcache", "-url", "URL", "-r", "RId"};
@@ -165,6 +174,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithoutCredentials, ValuesIn
         {"Foo.exe", "--createcache", "-r", "RId", "-url", "URL"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateWithoutCredentials, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -198,6 +210,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithBasicAuth, ValuesIn(vect
         {"Foo.exe", "--createcache", "-r", "RId", "-auth:basic", "TestUser:TestPass", "-url", "URL"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateWithBasicAuth, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -232,6 +247,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithImsAuth, ValuesIn(vector
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:prod:ims", "TestUser:TestPass"}, UrlProvider::Environment::Release},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateWithImsAuth, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto param = GetParam();
@@ -269,6 +287,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithImsTokenAuth, ValuesIn(v
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:prod:token", GetTestTokenPath()}, UrlProvider::Environment::Release},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateWithImsTokenAuth, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto param = GetParam();
@@ -305,6 +326,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithBasicAuth, Val
         {"Foo.exe", "--createcache", "-auth:basic", "U1:P1", "-url", "URL1", "-r", "R1", "--upgradecache", "-r", "R2", "-auth:basic", "U2:P2", "-url", "URL2"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateAndUpgradeWithBasicAuth, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -347,6 +371,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithDefaultParams,
         {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-auth:qa:token", GetTestTokenPath(), "--upgradecache", "-auth:basic", "U2:P2"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateAndUpgradeWithDefaultParams, Parse_UpgradeCacheDefaultsParametersFromCreateCache_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -380,6 +407,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithSchemas, ValuesIn(vector
         {"Foo.exe", "--createcache", "-schemas", GetTestSchemasDirWithSeperator()},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_CreateWithSchemas, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -414,6 +444,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeFromSchemas, ValuesIn(vecto
         {"Foo.exe", "--createcache", "-schemas", GetTestSchemasDirWithSeperator(), "--upgradecache", "-url", "URL", "-r", "R"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_UpgradeFromSchemas, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -454,6 +487,9 @@ INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeToSchemas, ValuesIn(vector<
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "--upgradecache", "-schemas", GetTestSchemasDir() },
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_UpgradeToSchemas, Parse_ValidParameters_FillsTestDataAndReturnsZero)
     {
     auto args = GetParam();
@@ -535,6 +571,9 @@ INSTANTIATE_TEST_CASE_P(UknownParameters, ArgumentParserTests_InvalidParameters,
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-foo", "boo"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_InvalidParameters, Parse_InvalidParameters_RetrurnsAndPrintsErrorWithoutHelp)
     {
     auto args = GetParam();
@@ -561,6 +600,9 @@ INSTANTIATE_TEST_CASE_P(HelpSupplied, ArgumentParserTests_Help, ValuesIn(vector<
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "--help"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_Help, Parse_HelpSupplied_PrintsHelpWithoutError)
     {
     auto args = GetParam();
@@ -585,6 +627,9 @@ INSTANTIATE_TEST_CASE_P(GTestArguments, ArgumentParserTests_GTestArguments, Valu
         {"Foo.exe", "--createcache", "-url", "URL", "--gtest_foo=*aa*", "-r", "RId"},
     }));
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ArgumentParserTests_GTestArguments, Parse_GTestArguments_IgnoresThem)
     {
     auto args = GetParam();

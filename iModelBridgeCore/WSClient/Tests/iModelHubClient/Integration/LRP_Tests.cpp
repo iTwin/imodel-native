@@ -53,6 +53,9 @@ struct LRPTests : public IntegrationTestsBase
         }
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LRPTests, InitializeFileJob)
     {
     auto db = CreateTestDb();

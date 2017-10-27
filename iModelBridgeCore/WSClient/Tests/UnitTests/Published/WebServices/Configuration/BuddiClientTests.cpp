@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/BuddiClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuddiClientTests.h"
@@ -25,6 +25,9 @@ Utf8String FormatXml(Utf8StringCR inputXml)
     return formattedXml;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_Default_SendsPostSoapRequest)
     {
     BuddiClient client(GetHandlerPtr(), "http://test.com");
@@ -51,6 +54,9 @@ TEST_F(BuddiClientTests, GetRegions_Default_SendsPostSoapRequest)
     client.GetRegions()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_ResponseContainsRegionsXml_ReturnsRegions)
     {
     BuddiClient client(GetHandlerPtr());
@@ -84,6 +90,9 @@ TEST_F(BuddiClientTests, GetRegions_ResponseContainsRegionsXml_ReturnsRegions)
     EXPECT_STREQ("Region B", result.GetValue()[1].GetName().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_ReceivesEmptyXML_ReturnsUnxpectedError)
     {
     BuddiClient client(GetHandlerPtr());
@@ -98,6 +107,9 @@ TEST_F(BuddiClientTests, GetRegions_ReceivesEmptyXML_ReturnsUnxpectedError)
     EXPECT_EQ(BuddiError::UnxpectedError, result.GetError().GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_ReceivesXmlWithWrongFormat_ReturnsUnxpectedError)
     {
     BuddiClient client(GetHandlerPtr());
@@ -127,6 +139,9 @@ TEST_F(BuddiClientTests, GetRegions_ReceivesXmlWithWrongFormat_ReturnsUnxpectedE
     EXPECT_EQ(BuddiError::UnxpectedError, result.GetError().GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_ReceivesInternalServerError_ReturnsUnxpectedErrorWithMessage)
     {
     BuddiClient client(GetHandlerPtr());
@@ -139,6 +154,9 @@ TEST_F(BuddiClientTests, GetRegions_ReceivesInternalServerError_ReturnsUnxpected
     EXPECT_FALSE(result.GetError().GetMessage().empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_ReceivesCouldNotConnect_ReturnsConnectionErrorWithMessage)
     {
     BuddiClient client(GetHandlerPtr());
@@ -151,6 +169,9 @@ TEST_F(BuddiClientTests, GetRegions_ReceivesCouldNotConnect_ReturnsConnectionErr
     EXPECT_FALSE(result.GetError().GetMessage().empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetUrl_NameAndRegionPassed_SendsPostSoapRequest)
     {
     BuddiClient client(GetHandlerPtr(), "http://test.com");
@@ -180,6 +201,9 @@ TEST_F(BuddiClientTests, GetUrl_NameAndRegionPassed_SendsPostSoapRequest)
     client.GetUrl("TestUrl", 999)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetUrl_ResponseContainsUrl_ReturnsUrl)
     {
     BuddiClient client(GetHandlerPtr());
@@ -202,6 +226,9 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsUrl_ReturnsUrl)
     EXPECT_STREQ("TestUrl", result.GetValue().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetUrl_ResponseContainsEmptyUrl_ReturnsUrlNotConfiguredErrorWithMessage)
     {
     BuddiClient client(GetHandlerPtr());
@@ -225,6 +252,9 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsEmptyUrl_ReturnsUrlNotConfigured
     EXPECT_FALSE(result.GetError().GetMessage().empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetUrl_ResponseUrlNotFound_ReturnsUrlNotConfiguredErrorWithMessage)
     {
     BuddiClient client(GetHandlerPtr());

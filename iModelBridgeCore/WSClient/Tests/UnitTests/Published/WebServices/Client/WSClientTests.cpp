@@ -19,6 +19,9 @@ void WSClientTests::SetUp()
     ServerInfoProvider::InvalidateAllInfo();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -33,6 +36,9 @@ TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
     client->SendGetInfoRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -47,6 +53,9 @@ TEST_F(WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
     client->GetServerInfo()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -62,6 +71,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl
     client->GetServerInfo()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsBadRequestAndNoWSGError_SendsGetInfoUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -77,6 +89,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsBadRequestAndNoWSGError
     client->GetServerInfo()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsNotNotFoundAndWSGError_ReturnsError)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -90,6 +105,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsNotNotFoundAndWSGError_
     EXPECT_EQ("Goo", result.GetError().GetDescription());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsGetAboutPageUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -106,6 +124,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsG
     client->GetServerInfo()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageToIdentifyWSGR1)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -121,6 +142,9 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageT
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageToIdentifyBentleyConnectWSGR1)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -137,6 +161,9 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageT
     EXPECT_EQ(BeVersion(1, 1), info.GetValue().GetWebApiVersion());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -150,6 +177,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_Retries
     EXPECT_EQ(WSError::Status::ServerNotSupported, info.GetError().GetStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperServerHeader_IdentifyingWSG2)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -189,6 +219,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasMasServerAndServerHeader_Ide
     EXPECT_EQ(BeVersion(2, 6), info.GetValue().GetVersion());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -203,6 +236,9 @@ TEST_F(WSClientTests, GetServerInfo_CalledTwiceWithSuccessfullConnection_Queries
     EXPECT_EQ(info1.GetValue().GetVersion(), info2.GetValue().GetVersion());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_SendInfoRequestCalledFirst_UsesCachedInfo)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -217,6 +253,9 @@ TEST_F(WSClientTests, GetServerInfo_SendInfoRequestCalledFirst_UsesCachedInfo)
     EXPECT_EQ(info1.GetValue().GetVersion(), info2.GetValue().GetVersion());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_PreviouslyCachedInfoIsInvalidatedAndNewRequested)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -233,6 +272,9 @@ TEST_F(WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_Previo
     EXPECT_TRUE(info.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_TwoServersCalledTwoTimesEach_UsesCachedInfo)
     {
     auto client1 = WSClient::Create("https://one.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -277,6 +319,9 @@ TEST_F(WSClientTests, GetServerInfo_TwoServersCalledTwoTimesEach_UsesCachedInfo)
     EXPECT_EQ(1, listenerCallCount2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponseIsUnauthorized_StopsAndReturnsLoginError)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -291,6 +336,9 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseIsUnauthorized_StopsAndReturnsL
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_SecondResponseIsUnauthorized_StopsAndReturnsLoginError)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -306,6 +354,9 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseIsUnauthorized_StopsAndReturns
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_ThirdResponseIsUnauthorized_StopsAndReturnsLoginError)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -322,6 +373,9 @@ TEST_F(WSClientTests, GetServerInfo_ThirdResponseIsUnauthorized_StopsAndReturnsL
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_AllResponsesWithServerError_ReturnsServerNotSupportedError)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -335,6 +389,9 @@ TEST_F(WSClientTests, GetServerInfo_AllResponsesWithServerError_ReturnsServerNot
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedWithReceivedInfo)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -356,6 +413,9 @@ TEST_F(WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedW
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerNotLeakedAndNotNotified)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -390,6 +450,9 @@ TEST_F(WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerNo
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, RegisterServerInfoListener_InfoNotReceivedDueToNetworkError_ListenerNotNotified)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -405,6 +468,9 @@ TEST_F(WSClientTests, RegisterServerInfoListener_InfoNotReceivedDueToNetworkErro
     client->SendGetInfoRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNotNotified)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -420,6 +486,9 @@ TEST_F(WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNotN
     client->SendGetInfoRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotNotified)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -438,6 +507,9 @@ TEST_F(WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotN
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1Format_ParsesDefaultFields)
     {
     Utf8String dataSourcesResponse =
@@ -464,6 +536,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1Format_ParsesDefaultFie
     EXPECT_EQ("D", dataSource.GetPluginId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithType_ParsesLocationFromId)
     {
     Utf8String dataSourcesResponse =
@@ -487,6 +562,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithType_ParsesLo
     EXPECT_EQ("testLocation", dataSource.GetLocation());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithNoType_ParsesLocationFromId)
     {
     Utf8String dataSourcesResponse =
@@ -510,6 +588,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithNoType_Parses
     EXPECT_EQ("testLocation", dataSource.GetLocation());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdECAndType_ParsesLocationFromId)
     {
     Utf8String dataSourcesResponse =
@@ -533,6 +614,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdECA
     EXPECT_EQ("testLocation", dataSource.GetLocation());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1AndIdIsNotKnownFormat_ReturnsEmptyLocation)
     {
     Utf8String dataSourcesResponse =
@@ -564,6 +648,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1AndIdIsNotKnownFormat_R
     EXPECT_EQ("", dataSource.GetLocation());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdEC_ReturnsPluginIdFromProviderTypeField)
     {
     Utf8String dataSourcesResponse =
@@ -587,6 +674,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdEC_
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1_CorrectUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -602,6 +692,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1_CorrectUrl)
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV11_UrlWithoutWebApiVersion)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -617,6 +710,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV11_UrlWithoutWebApiVersi
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2_CorrectUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -632,6 +728,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2_CorrectUrl)
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV21_CorrectUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -647,6 +746,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV21_CorrectUrl)
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV22_CorrectUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -662,6 +764,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV22_CorrectUrl)
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2Format_ReturnsParsedDataSources)
     {
     Utf8String dataSourcesResponse =
@@ -701,6 +806,9 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2Format_ReturnsParsedDat
     EXPECT_EQ("testPluginId", dataSource.GetPluginId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2FormatWithWrongSchema_ReturnsErrorNotSupported)
     {
     Utf8String dataSourcesResponse =

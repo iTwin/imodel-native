@@ -11,6 +11,9 @@
 #include <WebServices/Client/Response/WSObjectsResponse.h>
 #include <WebServices/Client/Response/WSObjectsReaderV1.h>
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSUploadResponseTests, Ctor_NoParams_DefaultValues)
     {
     EXPECT_EQ(nullptr, WSUploadResponse().GetBody().get());
@@ -25,6 +28,9 @@ TEST_F(WSUploadResponseTests, Ctor_NoParams_DefaultValues)
     EXPECT_TRUE(jsonDocument.IsNull());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSUploadResponseTests, Ctor_JsonBodyPassed_BodyCanBeRead)
     {
     auto jsonStr = R"({ "Foo" : "Boo" })";

@@ -89,6 +89,7 @@ public:
         EventCallbackNotFound,
         EventCallbackAlreadySubscribed,
         EventCallbackNotSpecified,
+        ExecutionTimeout,
 
         //WebServices Errors
         LoginFailed = 400,

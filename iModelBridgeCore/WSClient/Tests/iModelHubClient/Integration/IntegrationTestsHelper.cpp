@@ -173,7 +173,7 @@ DgnElementCPtr CreateAndInsertModeledElement (Utf8CP name, DgnDbR db)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                 11/2016
 //---------------------------------------------------------------------------------------
-DgnModelPtr CreateModel (PhysicalPartitionCR partition, DgnDbR db)
+PhysicalModelPtr CreateModel (PhysicalPartitionCR partition, DgnDbR db)
     {
     PhysicalModelPtr model = PhysicalModel::Create(partition);
     IBriefcaseManager::Request req;
@@ -184,7 +184,7 @@ DgnModelPtr CreateModel (PhysicalPartitionCR partition, DgnDbR db)
     return DgnDbStatus::Success == status ? model : nullptr;
     }
 
-DgnModelPtr CreateModel (Utf8CP name, DgnDbR db)
+PhysicalModelPtr CreateModel (Utf8CP name, DgnDbR db)
     {
     PhysicalPartitionPtr partition = CreateModeledElement (name, db);
     EXPECT_TRUE(partition->Insert().IsValid());

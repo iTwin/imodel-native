@@ -67,6 +67,9 @@ CallStatus CreateDummyTestProject_v4(CWSCCHANDLE apiHandle)
         nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
     {
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will fail.
@@ -89,6 +92,9 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
     ASSERT_TRUE(api == nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCredentialsAreRequired_ApiIsNull)
     {
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will probably fail.
@@ -115,6 +121,9 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCred
         ASSERT_TRUE(api == nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitialization)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -138,6 +147,9 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitializa
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_ApiIsNull)
     {
     WCharP password = L"password";
@@ -159,6 +171,9 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_
     ASSERT_TRUE(api == nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_ApiIsNull)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -179,6 +194,9 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_
     ASSERT_TRUE(api == nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -202,6 +220,9 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -238,6 +259,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetre
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -265,6 +289,9 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCod
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -298,6 +325,9 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturnedWithFulfilledProjectProperties_SuccessfulRetreivalOfProperties)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -344,6 +374,9 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -391,6 +424,9 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_Appropriate
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeButInvalidPropertyType_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -428,6 +464,9 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeAndValidPropertyTypeButInvalidProperty_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -479,6 +518,9 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will probably fail.
@@ -604,6 +646,9 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Succ
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -725,6 +770,9 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_Su
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -773,6 +821,9 @@ TEST_F(ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -875,6 +926,9 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucce
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -997,6 +1051,9 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_S
     ASSERT_TRUE(status == SUCCESS);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 David.Jones                           05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -1105,7 +1162,9 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful
     ASSERT_TRUE(status == SUCCESS);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Robert.Priest                           03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -1160,7 +1219,9 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
     status = ConnectWebServicesClientC_FreeApi(api);
     ASSERT_TRUE(status == SUCCESS);
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Robert.Priest                           03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     //set up a project and share to test with

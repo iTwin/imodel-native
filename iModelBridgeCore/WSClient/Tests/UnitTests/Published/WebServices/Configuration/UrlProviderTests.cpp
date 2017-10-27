@@ -18,6 +18,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define URL_COUNT 15
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefaultUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -30,6 +33,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefault
     EXPECT_STRNE("", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -42,6 +48,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_Returns
     EXPECT_STRNE("", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_GetsUrlFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -55,6 +64,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_Gets
     EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlButAlsoCallBuddiGet)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -75,6 +87,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlBut
     AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddiCannotConnect_ReturnsLastCachedUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -89,6 +104,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddi
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -110,6 +128,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBu
     EXPECT_EQ("B", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -124,6 +145,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_Returns
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -146,6 +170,9 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
     EXPECT_EQ("NewUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -197,6 +224,9 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     UrlProvider::CleanUpUrlCache();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -248,6 +278,9 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::Urls::UsageTracking.Get().c_str();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_CleansUpCache)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -270,6 +303,9 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_Cle
     EXPECT_STREQ(urlDev.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotCleanUpCache)
     {
     auto client = std::make_shared<MockBuddiClient>();
@@ -284,6 +320,9 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
     EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate)
     {
     StubLocalState localState;
@@ -301,6 +340,9 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
     configurator->_PerformRequest(request)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate)
     {
     StubLocalState localState;
@@ -318,6 +360,9 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
     configurator->_PerformRequest(request)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsValidateCertificate)
     {
     StubLocalState localState;
