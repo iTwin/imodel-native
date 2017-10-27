@@ -15,7 +15,7 @@ SourceDirectory             = $(RootDirectory)Source/
 XliffsDirectory             = $(RootDirectory)Localization/Xliffs/
 PublicApiDirectory          = $(RootDirectory)PublicAPI/ECPresentation/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
-OutputDirectory             = $(OutputRootDir)build/ECPresentation/
+OutputDirectory             = $(OutputRootDir)build/ECPresentation/Lib/
 CompileOptionsMki           = $(SourceDirectory)CompileOptions.mki
 ECPresentationMakefiles     = $(_MakeFileSpec)
 
