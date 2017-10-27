@@ -121,4 +121,32 @@ void GridSurface::Translate(DVec3d translation)
     SetPlacement(placement);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridSurface::SetGrometry(ISolidPrimitivePtr surface)
+    {
+    if (_ValidateGeometry(surface))
+        return _SetGeometry(surface);
+
+    return BentleyStatus::ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridSurface::_SetGeometry(ISolidPrimitivePtr surface)
+    {
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
+
+    if (builder->Append(*surface, Dgn::GeometryBuilder::CoordSystem::World))
+        {
+        if (SUCCESS != builder->Finish(*geomElem))
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
 END_GRIDS_NAMESPACE

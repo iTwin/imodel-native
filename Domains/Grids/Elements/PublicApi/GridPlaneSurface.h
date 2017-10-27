@@ -35,6 +35,7 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params, ISolidPrimitivePtr  surface);
     friend struct GridPlaneSurfaceHandler;
 
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) override;
 public:
     //IConstrainable TODO: remove IConstrainable
     GRIDELEMENTS_EXPORT virtual bool GetGeomIdPlane (int geomId, DPlane3dR planeOut) const override;

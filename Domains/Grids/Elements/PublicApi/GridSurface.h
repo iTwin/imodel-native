@@ -31,6 +31,9 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, ISolidPrimitivePtr surface);
     friend struct GridSurfaceHandler;
 
+    virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) = 0;
+
     static GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSurface, GRIDELEMENTS_EXPORT)
@@ -56,6 +59,8 @@ public:
     //! @param[in] translation   vector to translate by
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
 
+    //! Sets geometry for this grid surface
+    GRIDELEMENTS_EXPORT BentleyStatus SetGrometry(ISolidPrimitivePtr surface);
 };
 
 END_GRIDS_NAMESPACE

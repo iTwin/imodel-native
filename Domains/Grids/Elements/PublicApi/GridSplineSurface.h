@@ -30,6 +30,7 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridSplineSurface (CreateParams const& params, ISolidPrimitivePtr surface);
     friend struct GridSplineSurfaceHandler;
 
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) override;
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSplineSurface, GRIDELEMENTS_EXPORT)
 
