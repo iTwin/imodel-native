@@ -73,9 +73,6 @@
     <ClCompile Include="StructuralProfiles\PublishedProfile.cpp" />
     <ClCompile Include="StructuralProfiles\StraightExtrusion.cpp" />
     <ClCompile Include="StructuralProfiles\StructuralProfilesDomain.cpp" />
-    <ClCompile Include="StructuralProfiles\VaryingProfile.cpp" />
-    <ClCompile Include="StructuralProfiles\VaryingProfileByZone.cpp" />
-    <ClCompile Include="StructuralProfiles\VaryingProfileZone.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h" />
@@ -119,9 +116,6 @@
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesApi.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDefinitions.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDomain.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\VaryingProfile.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\VaryingProfileByZone.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\VaryingProfileZone.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7317B658-8A6E-4A68-857A-2DFA99B98479}</ProjectGuid>

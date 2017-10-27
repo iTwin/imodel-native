@@ -630,9 +630,9 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-#define VARYINGPROFILE_CODE_VALUE       "VARYINGPROFILE-001"
+//#define VARYINGPROFILE_CODE_VALUE       "VARYINGPROFILE-001"
 
-TEST_F(StructuralDomainTestFixture, VaryingProfileClassTests)
+/*TEST_F(StructuralDomainTestFixture, VaryingProfileClassTests)
     {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
@@ -647,10 +647,10 @@ TEST_F(StructuralDomainTestFixture, VaryingProfileClassTests)
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
 
     //abstract class
-    }
+    }*/
 
-#define VARYINGPROFILEBYZONE_CODE_VALUE       "VARYINGPROFILEBYZONE-001"
-
+//#define VARYINGPROFILEBYZONE_CODE_VALUE       "VARYINGPROFILEBYZONE-001"
+/*
 TEST_F(StructuralDomainTestFixture, VaryingProfileByZoneClassTests)
     {
     DgnDbPtr db = OpenDgnDb();
@@ -671,7 +671,7 @@ TEST_F(StructuralDomainTestFixture, VaryingProfileByZoneClassTests)
 
     Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILEBYZONE_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
-    }
+    }*/
 
 
 #define CONSTANTPROFILE_CODE_VALUE2       "CONSTANTPROFILE-002"
@@ -703,7 +703,7 @@ TEST_F(StructuralDomainTestFixture, BuiltUpProfileComponentUsesConstantProfileTe
     ASSERT_TRUE(queriedElement->Update().IsValid());
     }
 
-TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
+/*TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
     {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
@@ -714,7 +714,7 @@ TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
     ASSERT_TRUE(aspectEnabler.IsValid());
 
     ECN::StandaloneECInstancePtr p = aspectEnabler->CreateInstance();
-    }
+    }*/
 
 #define STRUCTURALSUBTRACTION_CODE_VALUE       "STRUCTURALSUBTRACTION-001"
 TEST_F(StructuralDomainTestFixture, StructuralSubtractionClassTests)

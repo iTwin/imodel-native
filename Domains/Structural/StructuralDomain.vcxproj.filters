@@ -137,15 +137,6 @@
     <ClCompile Include="StructuralProfiles\PublishedProfile.cpp">
       <Filter>StructuralProfiles</Filter>
     </ClCompile>
-    <ClCompile Include="StructuralProfiles\VaryingProfile.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\VaryingProfileByZone.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\VaryingProfileZone.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
     <ClCompile Include="StructuralDomainUtilities.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
@@ -218,15 +209,6 @@
       <Filter>StructuralProfiles</Filter>
     </ClInclude>
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\PublishedProfile.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\VaryingProfile.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\VaryingProfileByZone.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\VaryingProfileZone.h">
       <Filter>StructuralProfiles</Filter>
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Beam.h">

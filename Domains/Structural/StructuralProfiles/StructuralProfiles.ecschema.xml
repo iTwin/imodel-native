@@ -60,38 +60,6 @@
         </ECCustomAttributes>
         <ECProperty propertyName="InputProperties" typeName="string" description="JSON storage of input properties for the parametric shape."/>
     </ECEntityClass> 
-    <ECEntityClass typeName="VaryingProfileZone" description="This aspect defines a zone of a VaryingProfileByZone.">
-        <BaseClass>bis:ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-        <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order of zones within the VaryingProfileByZone."/>
-        <ECProperty propertyName="Transition" typeName="string" description="The transition of the profile between StartProfile and EndProfile along this zone. Standard values are &quot;Linear&quot;, &quot;ParabolicAtStart&quot;, &quot;ParabolicAtEnd&quot;, &quot;ParabolicAtBothEnds&quot;"/>
-        <ECNavigationProperty propertyName="EndProfile" relationshipName="ProfileZoneUsesEndProfile" direction="Forward" description="The using MultiAspect">
-            <ECCustomAttributes>
-            </ECCustomAttributes>
-        </ECNavigationProperty>
-        <ECNavigationProperty propertyName="StartProfile" relationshipName="ProfileZoneUsesStartProfile" direction="Forward" description="The using MultiAspect">
-            <ECCustomAttributes>
-            </ECCustomAttributes>
-        </ECNavigationProperty>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="ProfileZoneUsesEndProfile" isDomainClass="True" modifier="None" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="uses start profile" polymorphic="False">
-            <Class class="VaryingProfileZone" />
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="True">
-            <Class class="ConstantProfile" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ProfileZoneUsesStartProfile" modifier="None" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="uses start profile" polymorphic="False">
-            <Class class="VaryingProfileZone" />
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="True">
-            <Class class="ConstantProfile" />
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="PublishedProfile" description="A Constant Profile that is defined by a standards organization or other publisher.">
         <BaseClass>ConstantProfile</BaseClass>
         <ECCustomAttributes>
@@ -101,27 +69,6 @@
         <ECProperty propertyName="Document" typeName="string" description="The name of the document, catalog or standard that this profile was published in."/>
         <ECProperty propertyName="Version" typeName="string" description="The version of the document, catalog or standard that that published this profile."/>
     </ECEntityClass>
-    <ECEntityClass typeName="VaryingProfile" description="A Profile that varies along its length (unlike Constant Profile)." modifier="Abstract">
-        <BaseClass>Profile</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="VaryingProfileByZone" description="A Varying Profile that is defined using zones along its length.">
-        <BaseClass>VaryingProfile</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="VaryingProfileOwnsZone" description="VaryingProfileByZone's ownership of VaryingProfileZone." modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>                    
-        <Source multiplicity="(1..1)" roleLabel="owns zone" polymorphic="false">
-            <Class class="VaryingProfileByZone"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is zone of" polymorphic="false">
-            <Class class="VaryingProfileZone"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="ProfiledExtrusion" description="Profiled Extrusion" modifier="none">
         <BaseClass>sc:Form</BaseClass>
         <ECCustomAttributes>

@@ -97,11 +97,9 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructProfilesPublicAPI)ParametricProfile.h \
     $(StructProfilesPublicAPI)Profile.h \
     $(StructProfilesPublicAPI)PublishedProfile.h \
-    $(StructProfilesPublicAPI)VaryingProfile.h \
     $(StructProfilesPublicAPI)Profiledextrusion.h \
     $(StructProfilesPublicAPI)CurvedExtrusion.h \
     $(StructProfilesPublicAPI)StraightExtrusion.h \
-    $(StructProfilesPublicAPI)VaryingProfileByZone.h \
     $(StructMaterialPublicAPI)MaterialProperties.h \
     $(StructMaterialPublicAPI)ConcreteMaterialProperties.h \
     $(StructMaterialPublicAPI)SteelMaterialProperties.h
@@ -316,21 +314,6 @@ $(o)PublishedProfile$(oext) : $(StructProfiles)PublishedProfile.cpp \
     $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
-$(o)VaryingProfile$(oext) : $(StructProfiles)VaryingProfile.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)VaryingProfile.h \
-    $(StructProfilesPublicAPI)Profile.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)VaryingProfileByZone$(oext) : $(StructProfiles)VaryingProfileByZone.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)VaryingProfileByZone.h \
-    $(StructProfilesPublicAPI)VaryingProfile.h \
-    $(StructProfilesPublicAPI)Profile.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
 $(o)MaterialProperties$(oext) : $(StructMaterial)MaterialProperties.cpp \
     ${MultiCompileDepends} \
     $(StructMaterialPublicAPI)MaterialProperties.h 
@@ -344,12 +327,6 @@ $(o)SteelMaterialProperties$(oext) : $(StructMaterial)SteelMaterialProperties.cp
     ${MultiCompileDepends} \
     $(StructMaterialPublicAPI)SteelMaterialProperties.h \
     $(StructMaterialPublicAPI)MaterialProperties.h
-
-$(o)VaryingProfileZone$(oext) : $(StructProfiles)VaryingProfileZone.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)VaryingProfileZone.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 %include MultiCppCompileGo.mki
 

@@ -17,8 +17,6 @@
 #include "ParametricProfile.h"
 #include "Profile.h"
 #include "PublishedProfile.h"
-#include "VaryingProfile.h"
-#include "VaryingProfileByZone.h"
 #include "ProfiledExtrusion.h"
 #include "CurvedExtrusion.h"
 #include "StraightExtrusion.h"
