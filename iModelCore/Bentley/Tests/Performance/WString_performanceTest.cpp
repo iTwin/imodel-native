@@ -11,6 +11,9 @@
     static int s_niters = 100000;
     StopWatch timer;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, WStringCopying)
     {
     WString base = L"abcdef123456789";
@@ -24,6 +27,9 @@ TEST(PerformanceBentley, WStringCopying)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        08/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, WStringCtors)
     {
     // Empty string construction
@@ -48,6 +54,9 @@ TEST(PerformanceBentley, WStringCtors)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, WStringAppendStayShort)
     {
     // append+stay short
@@ -66,6 +75,9 @@ TEST(PerformanceBentley, WStringAppendStayShort)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, WStringAppendGrowLong)
     {
     // append+grow to long size
@@ -84,6 +96,9 @@ TEST(PerformanceBentley, WStringAppendGrowLong)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, WStringCompare)
     {
     // compare
@@ -99,6 +114,9 @@ TEST(PerformanceBentley, WStringCompare)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, StringConversions)
     {
     char const* asc = "Now is the time for all good men to come to the aid of the party.";
@@ -113,6 +131,9 @@ TEST(PerformanceBentley, StringConversions)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, Formatting)
     {
     timer.Start();
@@ -145,6 +166,9 @@ TEST(PerformanceBentley, Formatting)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), s_niters, "For all Formatting");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Sam.Wilson                        02/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PerformanceBentley, LargeNumberOfWStrings)
     {
     bvector<WString> strings;

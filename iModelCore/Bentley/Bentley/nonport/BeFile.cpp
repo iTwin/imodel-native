@@ -424,8 +424,6 @@ BeFileStatus BeFile::Close()
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    BeAssert(AS_FDES(m_handle) > 2);
-
     if (close(AS_FDES(m_handle)) == 0)
         {
         m_handle = INVALID_HANDLE_VALUE;
