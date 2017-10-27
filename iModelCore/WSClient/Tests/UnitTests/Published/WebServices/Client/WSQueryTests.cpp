@@ -13,6 +13,9 @@ using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_SchemaAndClassesPassed_SetsSchemaAndClasses)
     {
     WSQuery query("TestSchema", set<Utf8String> {"A", "B"});
@@ -20,6 +23,9 @@ TEST_F(WSQueryTests, Ctor_SchemaAndClassesPassed_SetsSchemaAndClasses)
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"A", "B"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_SchemaAndClass_SetsSchemaAndClass)
     {
     WSQuery query("TestSchema", "TestClass");
@@ -27,6 +33,9 @@ TEST_F(WSQueryTests, Ctor_SchemaAndClass_SetsSchemaAndClass)
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_SchemaAndClassWithPolymorphicTrue_SetsSchemaAndPolymorphicClass)
     {
     WSQuery query("TestSchema", "TestClass", true);
@@ -34,6 +43,9 @@ TEST_F(WSQueryTests, Ctor_SchemaAndClassWithPolymorphicTrue_SetsSchemaAndPolymor
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass!poly"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_ECClassPassed_SetsSchemaAndClass)
     {
     auto schema = ParseSchema(R"xml(
@@ -46,6 +58,9 @@ TEST_F(WSQueryTests, Ctor_ECClassPassed_SetsSchemaAndClass)
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_ECClassPassedWithPolymorphictrue_SetsSchemaAndPolymorphicClass)
     {
     auto schema = ParseSchema(R"xml(
@@ -58,6 +73,9 @@ TEST_F(WSQueryTests, Ctor_ECClassPassedWithPolymorphictrue_SetsSchemaAndPolymorp
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass!poly"}));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndFilter)
     {
     WSQuery query(ObjectId("TestSchema", "TestClass", "TestId"));
@@ -66,6 +84,9 @@ TEST_F(WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndFilter)
     EXPECT_STREQ(query.GetFilter().c_str(), "$id+in+['TestId']");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_ObjectIdPassedWithPolymorphicTrue_SetsSchemaAndClassAndFilter)
     {
     WSQuery query(ObjectId("TestSchema", "TestClass", "TestId"), true);
@@ -75,12 +96,18 @@ TEST_F(WSQueryTests, Ctor_ObjectIdPassedWithPolymorphicTrue_SetsSchemaAndClassAn
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndEscapesRemoteId)
     {
     WSQuery query(ObjectId("Foo", "Boo", "'"));
     EXPECT_STREQ(query.GetFilter().c_str(), "$id+in+['%27%27']");
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToFullString_MultipleClassesAndSchema_AddsEverythingToQueryString)
     {
     WSQuery query("Schema", set<Utf8String>{"A", "B"});
@@ -88,12 +115,18 @@ TEST_F(WSQueryTests, ToFullString_MultipleClassesAndSchema_AddsEverythingToQuery
     EXPECT_STREQ("Schema/A,B?$filter=TestFilter", query.ToFullString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_NoOptionsSet_ReturnsEmpty)
     {
     WSQuery query("Foo", "Boo");
     EXPECT_STREQ("", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_SelectOptionSet_FormatsOption)
     {
     WSQuery query("Foo", "Boo");
@@ -101,6 +134,9 @@ TEST_F(WSQueryTests, ToQueryString_SelectOptionSet_FormatsOption)
     EXPECT_STREQ("$select=TestSelect", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_AddSelectCalledMultipleTimes_AddsOptionsToSelectClause)
     {
     WSQuery query("Foo", "Boo");
@@ -112,6 +148,9 @@ TEST_F(WSQueryTests, ToQueryString_AddSelectCalledMultipleTimes_AddsOptionsToSel
     EXPECT_STREQ("$select=A,B,C,D", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_FilterOptionSet_FormatsOption)
     {
     WSQuery query("Foo", "Boo");
@@ -119,6 +158,9 @@ TEST_F(WSQueryTests, ToQueryString_FilterOptionSet_FormatsOption)
     EXPECT_STREQ("$filter=TestFilter", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_OrderByOptionSet_FormatsOption)
     {
     WSQuery query("Foo", "Boo");
@@ -126,6 +168,9 @@ TEST_F(WSQueryTests, ToQueryString_OrderByOptionSet_FormatsOption)
     EXPECT_STREQ("$orderby=TestOrderBy", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_SkipOptionSet_FormatsOption)
     {
     WSQuery query("Foo", "Boo");
@@ -133,6 +178,9 @@ TEST_F(WSQueryTests, ToQueryString_SkipOptionSet_FormatsOption)
     EXPECT_STREQ("$skip=42", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_SkipOptionReset_ReturnsEmpty)
     {
     WSQuery query("Foo", "Boo");
@@ -141,6 +189,9 @@ TEST_F(WSQueryTests, ToQueryString_SkipOptionReset_ReturnsEmpty)
     EXPECT_STREQ("", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_TopOptionSet_FormatsOption)
     {
     WSQuery query("Foo", "Boo");
@@ -148,6 +199,9 @@ TEST_F(WSQueryTests, ToQueryString_TopOptionSet_FormatsOption)
     EXPECT_STREQ("$top=42", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_TopOptionReset_ReturnsEmpty)
     {
     WSQuery query("Foo", "Boo");
@@ -156,6 +210,9 @@ TEST_F(WSQueryTests, ToQueryString_TopOptionReset_ReturnsEmpty)
     EXPECT_STREQ("", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_CustomParametersSet_AddsParametersToQueryString)
     {
     WSQuery query("Foo", "Boo");
@@ -165,6 +222,9 @@ TEST_F(WSQueryTests, ToQueryString_CustomParametersSet_AddsParametersToQueryStri
     EXPECT_STREQ("$select=TestSelect&NameA=ValueA&NameB=ValueB", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_CustomParametersSetWithNoValue_AddsParametersToQueryString)
     {
     WSQuery query("Foo", "Boo");
@@ -173,6 +233,9 @@ TEST_F(WSQueryTests, ToQueryString_CustomParametersSetWithNoValue_AddsParameters
     EXPECT_STREQ("NameA=&NameB=", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_MultipleOptionsSet_FormatsAllOfThem)
     {
     WSQuery query("Foo", "Boo");
@@ -182,6 +245,9 @@ TEST_F(WSQueryTests, ToQueryString_MultipleOptionsSet_FormatsAllOfThem)
     EXPECT_STREQ("$filter=TestFilter&$skip=4&$top=2", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, RemoveCustomParameter_CustomParameterAdded_CustomParameterRemoved)
     {
     WSQuery query("Foo", "Boo");
@@ -190,6 +256,9 @@ TEST_F(WSQueryTests, RemoveCustomParameter_CustomParameterAdded_CustomParameterR
     EXPECT_STREQ("", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, RemoveCustomParameter_NotExistingCustomParameterName_NothingRemoved)
     {
     WSQuery query("Foo", "Boo");
@@ -198,6 +267,9 @@ TEST_F(WSQueryTests, RemoveCustomParameter_NotExistingCustomParameterName_Nothin
     EXPECT_STREQ("NameA=AAA", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetAlias_CalledMultipleTimesWithDifferentPhrases_ReturnsDifferentAliases)
     {
     WSQuery query("Foo", "Boo");
@@ -205,6 +277,9 @@ TEST_F(WSQueryTests, GetAlias_CalledMultipleTimesWithDifferentPhrases_ReturnsDif
     EXPECT_STREQ("@B", query.GetAlias("Phrase2").c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetAlias_CalledMoreThanAlphabetLengthTimes_ReturnsAliasesPostfixedWith1)
     {
     WSQuery query("Foo", "Boo");
@@ -219,6 +294,9 @@ TEST_F(WSQueryTests, GetAlias_CalledMoreThanAlphabetLengthTimes_ReturnsAliasesPo
     EXPECT_STREQ("@B1", query.GetAlias("Phrase2").c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetAlias_CalledMoreThanTwiceAlphabetLengthTimes_ReturnsAliasesPostfixedWith2)
     {
     WSQuery query("Foo", "Boo");
@@ -233,6 +311,9 @@ TEST_F(WSQueryTests, GetAlias_CalledMoreThanTwiceAlphabetLengthTimes_ReturnsAlia
     EXPECT_STREQ("@B2", query.GetAlias("Phrase2").c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetAlias_CalledMultipleTimesWithSamePhrase_ReturnsSameAlias)
     {
     WSQuery query("Foo", "Boo");
@@ -241,6 +322,9 @@ TEST_F(WSQueryTests, GetAlias_CalledMultipleTimesWithSamePhrase_ReturnsSameAlias
     EXPECT_STREQ("@B", query.GetAlias("Phrase2").c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetAliasMap_NoAliasesCreated_Empty)
     {
     WSQuery query("Foo", "Boo");
@@ -248,6 +332,9 @@ TEST_F(WSQueryTests, GetAliasMap_NoAliasesCreated_Empty)
     }
 
 #ifdef USE_GTEST
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetAliasMap_AliasesCreated_ContainsAliases)
     {
     WSQuery query("Foo", "Boo");
@@ -257,6 +344,9 @@ TEST_F(WSQueryTests, GetAliasMap_AliasesCreated_ContainsAliases)
     }
 #endif
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetPhrase_CalledWithNotGeneratedAliases_ReturnsNull)
     {
     WSQuery query("Foo", "Boo");
@@ -264,6 +354,9 @@ TEST_F(WSQueryTests, GetPhrase_CalledWithNotGeneratedAliases_ReturnsNull)
     EXPECT_EQ(nullptr, query.GetPhrase("@A"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, GetPhrase_CalledWithGeneratedAliases_ReturnsPhrases)
     {
     WSQuery query("Foo", "Boo");
@@ -271,6 +364,9 @@ TEST_F(WSQueryTests, GetPhrase_CalledWithGeneratedAliases_ReturnsPhrases)
     EXPECT_STREQ("42", query.GetPhrase(query.GetAlias("42")));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, ToQueryString_AliasesGenerated_FormatsAliasesToQuery)
     {
     WSQuery query("Foo", "Boo");
@@ -280,6 +376,9 @@ TEST_F(WSQueryTests, ToQueryString_AliasesGenerated_FormatsAliasesToQuery)
     EXPECT_STREQ("$skip=42&@A=Phrase1&@B=Phrase2", query.ToQueryString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, EscapeValue_StringPassed_PercentEncodesSpecialSymbols)
     {
     EXPECT_STREQ("", WSQuery::EscapeValue("").c_str());
@@ -288,6 +387,9 @@ TEST_F(WSQueryTests, EscapeValue_StringPassed_PercentEncodesSpecialSymbols)
     EXPECT_STREQ("%3A", WSQuery::EscapeValue(":").c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Equals_EqualQueries_True)
     {
     EXPECT_EQ(WSQuery("A", "B"), WSQuery("A", "B"));
@@ -301,6 +403,9 @@ TEST_F(WSQueryTests, Equals_EqualQueries_True)
     EXPECT_EQ(query1, query2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, Equals_NonEqualQueries_False)
     {
     EXPECT_FALSE(WSQuery("A", "B") == WSQuery("A", "Other"));
@@ -315,6 +420,9 @@ TEST_F(WSQueryTests, Equals_NonEqualQueries_False)
     EXPECT_FALSE(query1 == query2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_NoIds_EmptyInFilter)
     {
     std::deque<ObjectId> ids;
@@ -324,6 +432,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_NoIds_EmptyInFilter)
     EXPECT_STREQ("$id+in+[]", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_FilterForSelectedObjects)
     {
     std::deque<ObjectId> ids;
@@ -335,6 +446,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_FilterForSelectedObjects)
     EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_FilterForCorrectSchema)
     {
     std::deque<ObjectId> ids;
@@ -348,6 +462,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_FilterForCorrectSc
     EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentClasses_FilterForCorrectClasses)
     {
     std::deque<ObjectId> ids;
@@ -365,6 +482,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentClasses_FilterForCorrectCl
     EXPECT_STREQ("$id+in+['A','B','C']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForMaxTwoObjects_CorrectFilter)
     {
     std::deque<ObjectId> ids;
@@ -378,6 +498,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForMaxTwoObjects_CorrectFilter)
     EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterWithMaxLength_FilterForObjectsFittingTheLenght)
     {
     std::deque<ObjectId> ids;
@@ -391,6 +514,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterWithMaxLength_FilterForObjectsFitti
     EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_InCollectionIsEmpty)
     {
     std::deque<ObjectId> ids;
@@ -402,6 +528,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_InCollectionIsEmpty)
     EXPECT_TRUE(ids.empty());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_InCollectionHasRemainingObjects)
     {
     WSQuery query("Schema", "Class");
@@ -417,6 +546,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_InCollectionHasRem
     EXPECT_EQ(3, ids.size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_OutCollectionHasFilteredObjects)
     {   
     std::deque<ObjectId> ids;
@@ -430,6 +562,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_OutCollectionHasFilteredObjects)
     EXPECT_EQ(2, idsOut.size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_OutCollectionHasFilteredObjects)
     {
     std::deque<ObjectId> ids;
@@ -444,6 +579,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_OutCollectionHasFi
     EXPECT_EQ(2, idsOut.size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForMaxTwoObjects_OutCollectionHasFilteredObjects)
     {
     std::deque<ObjectId> ids;
@@ -460,6 +598,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForMaxTwoObjects_OutCollectionHasFi
     EXPECT_EQ(2, idsOut.size());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterToInitialFilter_TheInitialFilterRemains)
     {
     std::deque<ObjectId> ids;
@@ -471,6 +612,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterToInitialFilter_TheInitialFilterRem
     EXPECT_STREQ("(Filter)+and+$id+in+[]", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForTwoIDsToInitialFilter_TheInitialFilterRemains)
     {
     std::deque<ObjectId> ids;
@@ -484,6 +628,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForTwoIDsToInitialFilter_TheInitial
     EXPECT_STREQ("(Filter)+and+$id+in+['A','B']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_SetMaxObjectCountTo0_CorrectFilterWithIds)
     {
     std::deque<ObjectId> ids;
@@ -496,6 +643,9 @@ TEST_F(WSQueryTests, AddFilterIdsIn_SetMaxObjectCountTo0_CorrectFilterWithIds)
     EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSQueryTests, AddFilterIdsIn_SetMaxLenghtTo0_CorrectFilterWithIds)
     {
     std::deque<ObjectId> ids;

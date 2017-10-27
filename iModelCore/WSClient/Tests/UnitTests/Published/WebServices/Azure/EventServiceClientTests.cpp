@@ -24,7 +24,9 @@ unsigned STDCALL_ATTRIBUTE workThreadHandler(void* arg)
     printf("Exiting thread\n");
     return 0;
     }
-
+/*---------------------------------------------------------------------------------**//**
++* @bsitest                                    Jeehwan.Cho                     05/16
+++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(EventServiceClientTests, Test1)
     {
     /*Utf8String NAMESPACE1 = "BentleyEventService-579998";

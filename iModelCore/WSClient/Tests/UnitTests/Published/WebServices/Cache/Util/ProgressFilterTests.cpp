@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ProgressFilterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,9 @@
 
 using namespace ::testing;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Julius.Cepukenas                    02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithProgressOfNullptr_DoesNothing)
     {
     std::function<void(double)> onProgress = nullptr;
@@ -18,6 +21,9 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithProgressOfNullptr
     filteredProgress(55);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Julius.Cepukenas                    02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfOneArgument_ProgressExcecutes)
     {
     int count = 0;
@@ -31,6 +37,9 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfOneArgu
     EXPECT_EQ(1, count);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Julius.Cepukenas                    02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfTwoArguments_ProgressExcecutes)
     {
     int count = 0;
@@ -45,6 +54,9 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgress_CreatedWithFunctionOfTwoArgu
     EXPECT_EQ(1, count);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Julius.Cepukenas                    02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithInsufficientDelay_ProgressIsCalledOnce)
     {
     int count = 0;
@@ -60,6 +72,9 @@ TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithInsufficient
     EXPECT_EQ(1, count);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Julius.Cepukenas                    02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, ExecuteFilteredProgressTwice_ExecuteWithSufficiantDelay_ProgressIsCalledTwice)
     {
     int count = 0;

@@ -15,12 +15,18 @@ void ClientInfoTests::SetUp()
     BackDoor::DgnClientFx_Device::Initialize();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, DefaultLanguage_Constant_NotEmpty)
     {
     EXPECT_STRNE("", ClientInfo::DefaultLanguage);
     EXPECT_STRNE("", Utf8String(ClientInfo::DefaultLanguage).Trim().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespondingHeaders)
     {
     ClientInfo info("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
@@ -34,12 +40,18 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespo
     EXPECT_STREQ("en", headers.GetAcceptLanguage());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetProductToken_PassedMandatoryValues_SetsValues)
     {
     ClientInfo info("TestAppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
     EXPECT_STREQ("TestAppName/4.2", info.GetProductToken().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_SameHeadersWithValues_OverridesExistingValues)
     {
     ClientInfo info("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
@@ -55,6 +67,9 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_SameHeadersWithValues_OverridesEx
     EXPECT_STREQ("TestDeviceId", headers.GetValue("Mas-Uuid"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_UnrelatedHeadersWithValues_DoesNotRemoveExistingHeaders)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -66,6 +81,9 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_UnrelatedHeadersWithValues_DoesNo
     EXPECT_STREQ("TestValue", headers.GetValue("Test-Header"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_UsingPrimaryRequestProvider_IncludesPrimaryHeaders)
     {
     HttpRequestHeaders primaryHeaders;
@@ -79,6 +97,9 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_UsingPrimaryRequestProvider_Inclu
     EXPECT_STREQ("Foo", headers.GetValue("Mas-Uuid"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_UsingPrimaryRequestProviderWithSameHeaders_OverridesHeaders)
     {
     HttpRequestHeaders primaryHeaders;
@@ -91,6 +112,9 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_UsingPrimaryRequestProviderWithSa
     EXPECT_STREQ("TestDeviceId", headers.GetValue("Mas-Uuid"));
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, SetLanguage_DefaultLanguage_LeavesHeaderAsIs)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -104,6 +128,9 @@ TEST_F(ClientInfoTests, SetLanguage_DefaultLanguage_LeavesHeaderAsIs)
     EXPECT_STREQ("en", headers.GetAcceptLanguage());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, SetLanguage_DefaultLanguageInDifferentCase_LeavesHeaderAsIs)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -117,6 +144,9 @@ TEST_F(ClientInfoTests, SetLanguage_DefaultLanguageInDifferentCase_LeavesHeaderA
     EXPECT_STREQ("en", headers.GetAcceptLanguage());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, SetLanguage_NotDefaultLanguage_AddsLanguageToHeaderWithFallbackLanguageWithLowerPriority)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -130,6 +160,9 @@ TEST_F(ClientInfoTests, SetLanguage_NotDefaultLanguage_AddsLanguageToHeaderWithF
     EXPECT_STREQ("en-US, en;q=0.6", headers.GetAcceptLanguage());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, SetFallbackLanguage_DifferentFromSetLanguage_AddsLanguageToHeaderWithFallbackLanguageWithLowerPriority)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -143,6 +176,9 @@ TEST_F(ClientInfoTests, SetFallbackLanguage_DifferentFromSetLanguage_AddsLanguag
     EXPECT_STREQ("en, lt;q=0.6", headers.GetAcceptLanguage());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, SetLanguage_FallbackLanguageInDifferentCase_SetsFallback)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -152,6 +188,9 @@ TEST_F(ClientInfoTests, SetLanguage_FallbackLanguageInDifferentCase_SetsFallback
     EXPECT_STREQ("en", info.GetLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, SetLanguage_NotFallbackLanguage_SetsLanguage)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -161,6 +200,9 @@ TEST_F(ClientInfoTests, SetLanguage_NotFallbackLanguage_SetsLanguage)
     EXPECT_STREQ("en-US", info.GetLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetFallbackLanguage_NotFallbackLanguage_ReturnsLanguageSet)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -169,6 +211,9 @@ TEST_F(ClientInfoTests, GetFallbackLanguage_NotFallbackLanguage_ReturnsLanguageS
     EXPECT_STREQ("en-US", info.GetFallbackLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_Default_ReturnsDefaultLanguage)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -176,6 +221,9 @@ TEST_F(ClientInfoTests, GetAcceptLanguage_Default_ReturnsDefaultLanguage)
     EXPECT_STREQ(ClientInfo::DefaultLanguage, info.GetAcceptLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageSetToEmptyAndFallbackLanguageSet_ReturnsFallbackLanguage)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -186,6 +234,9 @@ TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageSetToEmptyAndFallbackLanguageS
     EXPECT_STREQ("lt", info.GetAcceptLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageSetToEmptyAndFallbackLanguageSetToEmpty_ReturnsDefaultFallbackLanguage)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -196,6 +247,9 @@ TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageSetToEmptyAndFallbackLanguageS
     EXPECT_STREQ(ClientInfo::DefaultLanguage, info.GetAcceptLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageSetFallbackLanguageSetToEmpty_ReturnsLanguage)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -206,6 +260,9 @@ TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageSetFallbackLanguageSetToEmpty_
     EXPECT_STREQ("lt", info.GetAcceptLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageAndFallbackLanguageSet_ReturnsSetLanguagesWithPriority)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -216,6 +273,9 @@ TEST_F(ClientInfoTests, GetAcceptLanguage_LanguageAndFallbackLanguageSet_Returns
     EXPECT_STREQ("en-US, lt;q=0.6", info.GetAcceptLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_SetLanguageIsNotDefaultLanguage_FallbackLanguageWithLowerPriority)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");
@@ -224,6 +284,9 @@ TEST_F(ClientInfoTests, GetAcceptLanguage_SetLanguageIsNotDefaultLanguage_Fallba
     EXPECT_STREQ("en-US, en;q=0.6", info.GetAcceptLanguage().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientInfoTests, GetAcceptLanguage_FallbackLanguageDifferentFromSetLanguage_FallbackLanguageWithLowerPriority)
     {
     ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo");

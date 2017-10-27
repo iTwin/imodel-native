@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationPersistenceTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,6 +17,9 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, GetShared_CalledTwice_ReturnsSameCredentials)
     {
     StubLocalState localState;
@@ -29,6 +32,9 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetShared_CalledTwice_ReturnsSameC
     EXPECT_EQ(p1, p2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSameToken)
     {
     StubLocalState localState;
@@ -42,6 +48,9 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSam
     EXPECT_EQ(token->AsString(), persistence->GetToken()->AsString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredInOldLocation_SavesToSecureStoreAndDeletesThemFromOldLocation)
     {
     StubLocalState localState;
@@ -66,6 +75,9 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredIn
     EXPECT_STREQ("TestToken", secureStore->values["Connect"]["Token"].asString().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredAndCredentialsStored_CallsListenerBeforeSettingNewCredentials)
     {
     StubLocalState localState;
@@ -90,6 +102,9 @@ TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredA
     EXPECT_EQ(1, called);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredAndNoCredentialsStored_DoesNotCallListener)
     {
     StubLocalState localState;
@@ -110,6 +125,9 @@ TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredA
     EXPECT_EQ(0, called);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredAndAndPasswordChanges_DoesNotCallListener)
     {
     StubLocalState localState;
@@ -132,6 +150,9 @@ TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredA
     EXPECT_EQ(0, called);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerUnregisteredAndCredentialsStored_DoesNotCallUnregisteredListener)
     {
     StubLocalState localState;

@@ -51,6 +51,9 @@ BeFileName GetTestCachePath()
     return cachePath;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -81,6 +84,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobalDev_Succeeds)
     {
     UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &m_localState);
@@ -101,6 +107,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobalDev_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -129,6 +138,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -148,6 +160,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFile_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -206,6 +221,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
     EXPECT_EQ(fileName, Utf8String(path.GetFileNameAndExtension()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: eB schema incomaptible to BIM02
 // SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success)
@@ -227,6 +245,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -246,6 +267,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeed
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: 
 // BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
 // SOLUTION: "IssuePlugin--default" is only used in Graphite generation, no fix
@@ -268,6 +292,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL:
 // BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
 // BIM02: ECClass 'ClashDetection:ResultBase' has invalid base class : An abstract class must not have a non - abstract base class.
@@ -291,6 +318,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyMarkupV2_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -310,6 +340,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyMarkupV2_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -329,6 +362,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succee
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectBIMReviewShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -351,6 +387,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectBIMReviewShare_Succeed
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -367,6 +406,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -383,6 +425,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL:
 // BIM02: Invalid property in ECClass 'Bentley_SP:Field': The property 'ID' has a name of an ECSQL system property which is not allowed.
 // SOLUTION: bim02 added this constraing, share point plugin is deprecated, no fix
@@ -402,6 +447,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: eB schema incomaptible to BIM02
 // SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
@@ -420,6 +468,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: server down
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWiseRepository_Succeeds)
     {
@@ -437,6 +488,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWiseRepository_Succeed
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -453,6 +507,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeed
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -469,6 +526,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepository_Succe
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepositoryWithImsUser_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -488,6 +548,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepositoryWithIm
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseNonCERepositoryWithImsUser_ErrorLoginFailed)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -508,6 +571,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseNonCERepositoryWit
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetWSError().GetId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -527,6 +593,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.FK_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
 TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue)
     {
@@ -652,6 +721,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository
     ASSERT_TRUE(syncResult.IsSuccess());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // WIP06: Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
 TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds_KnownIssue)
     {
@@ -691,6 +763,9 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds_
     ASSERT_NE(0, result.GetValue().GetJson().size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version, need IssuePluginV1.2--default
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistV11Queries_Succeeds_KnownIssue)
     {
@@ -776,6 +851,9 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistV11Queries_Succeeds_KnownIssu
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 /*
 TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
     {

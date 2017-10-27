@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Transactions/BeSQLiteDbTransactionHandlerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,6 +45,9 @@ struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
             }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarted_Error)
     {
     BeSQLite::Db::CreateParams createParams;
@@ -58,6 +61,9 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarte
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDone_ChangesSaved)
     {
     BeSQLite::Db::CreateParams createParams;
@@ -79,6 +85,9 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDone_ChangesS
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDoneInSecondTransaction_ChangesSaved)
     {
     BeSQLite::Db::CreateParams createParams;
@@ -103,6 +112,9 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDoneInSecondT
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, RollbackTransaction_ChangesDone_ChangesRemoved)
     {
     BeSQLite::Db::CreateParams createParams;
@@ -124,6 +136,9 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, RollbackTransaction_ChangesDone_Change
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction)
     {
     auto thread1 = WorkerThread::Create("thread1");

@@ -107,6 +107,9 @@ BeFileName GetSeedFilePath(BeFileName cachePath, Utf8StringCR fileName)
     return path.AppendToPath(BeFileName(fileName));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "empty");
@@ -115,6 +118,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success_KnownIssue)
     ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "data");
@@ -126,6 +132,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData_KnownI
     EXPECT_FALSE(HasFailure());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue)
     {
     // *-upgrade-new is finalized but has not set upgraded flag - should upgrade again
@@ -138,6 +147,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingN
     EXPECT_FALSE(HasFailure());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue)
     {
     // *-upgrade-new is finalized and has set upgraded flag - should copy file and return
@@ -150,6 +162,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNe
     EXPECT_FALSE(HasFailure());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_ServerInfoSetDoDefaultAndSchemasAreValid_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "data");
@@ -163,6 +178,9 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_Server
     EXPECT_FALSE(HasFailure());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInterrupted1_SuccessAndContainsOldData_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "interrupted1");
@@ -369,6 +387,9 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
     EXPECT_THAT(changes, IsEmpty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
     {
     BeFileName path = StubFilePath();
@@ -404,6 +425,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
     {
     auto paths = GetSeedPaths(7, "data");
@@ -427,6 +451,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedProperti
     EXPECT_EQ(expected, changesJson);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
     {
     auto paths = GetSeedPaths(7, "data");
@@ -450,6 +477,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadMod
     EXPECT_EQ(expected, changesJson);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
     {
     auto paths = GetSeedPaths(7, "data");
@@ -473,6 +503,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadMod
     EXPECT_EQ(expected, changesJson);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // Left for referance
 //TEST_F(DataSourceCacheUpgradeTests, DISABLED_SetupV8)
 //    {
@@ -507,6 +540,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadMod
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalDeletionsRemovesThem_KnownIssue)
     {
     // Arrange
@@ -540,6 +576,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
     }
 
 //// Left for referance
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(DataSourceCacheUpgradeTests, DISABLED_SetupV9)
 //    {
 //    DataSourceCache cache;
@@ -564,6 +603,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached_KnownIssue)
     {
     // Arrange
@@ -608,6 +650,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached_KnownIssue)
     EXPECT_EQ(0, CountClassInstances(cache, "DSCacheSchema.CachedResponseInfoToResultWeakRelationship"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved_KnownIssue)
     {
     // Arrange
@@ -645,6 +690,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved
     EXPECT_FALSE(cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIssue)
     {
     // Arrange
@@ -679,6 +727,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIs
     EXPECT_TRUE(cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 //// Left for referance
 //TEST_F(DataSourceCacheUpgradeTests, SetupV10)
 //    {
@@ -699,6 +750,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIs
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine_KnownIssue)
     {
     // Arrange
@@ -727,6 +781,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingRe
     }
 
 //// Left for referance
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(DataSourceCacheUpgradeTests, SetupV11)
 //    {
 //    DataSourceCache cache;
@@ -748,6 +805,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingRe
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                              Benediktas.Lipnickas                     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChanges_KnownIssue)
     {
     // Arrange
@@ -768,6 +828,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChange
     EXPECT_TRUE(isFileModified);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // Left for referance
 //TEST_F(DataSourceCacheUpgradeTests, SetupV12)
 //    {
@@ -806,6 +869,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChange
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced_KnownIssue)
     {
     // Arrange
@@ -824,6 +890,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemo
     EXPECT_EQ("", cache.ReadResponseCacheTag(fullResponseKey));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData_KnownIssue)
     {
     // Arrange
@@ -868,7 +937,10 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
     EXPECT_EQ("", cache.ReadResponseCacheTag(fullResponseKey));
     EXPECT_TRUE(cache.IsResponseCached(fullResponseKey));
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 // Left for referance
 //TEST_F(DataSourceCacheUpgradeTests, SetupV20)
 //    {
@@ -907,6 +979,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
 //    cache.Close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V20WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced)
     {
     // Arrange
@@ -925,6 +1000,9 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V20WithCachedResponses_ResponseTagsRemo
     EXPECT_EQ("", cache.ReadResponseCacheTag(fullResponseKey));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheUpgradeTests, Open_V20CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData)
     {
     // Arrange

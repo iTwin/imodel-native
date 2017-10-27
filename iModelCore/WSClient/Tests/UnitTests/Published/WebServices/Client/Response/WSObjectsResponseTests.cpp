@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/UnitTests/Published/WebServices/Client/Response/WSObjectsResponseTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,11 +11,17 @@
 #include <WebServices/Client/Response/WSObjectsResponse.h>
 #include <WebServices/Client/Response/WSObjectsReaderV1.h>
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, Ctor_NoParams_IsModifiedTrueToDetectInvalidInstances)
     {
     EXPECT_TRUE(WSObjectsResponse().IsModified());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, GetInstances_DefaultCtor_ReturnsEmpty)
     {
     BeTest::SetFailOnAssert(false);
@@ -23,6 +29,9 @@ TEST_F(WSObjectsResponseTests, GetInstances_DefaultCtor_ReturnsEmpty)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, GetJsonValue_DefaultCtor_ReturnsNull)
     {
     BeTest::SetFailOnAssert(false);
@@ -30,6 +39,9 @@ TEST_F(WSObjectsResponseTests, GetJsonValue_DefaultCtor_ReturnsNull)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, GetRapidJsonDocument_DefaultCtor_ReturnsNull)
     {
     BeTest::SetFailOnAssert(false);
@@ -37,6 +49,9 @@ TEST_F(WSObjectsResponseTests, GetRapidJsonDocument_DefaultCtor_ReturnsNull)
     BeTest::SetFailOnAssert(true);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, GetInstances_CtorWithReaderAndBody_ReturnsInstances)
     {
     auto reader = WSObjectsReaderV1::Create("Schema", "Class");
@@ -46,6 +61,9 @@ TEST_F(WSObjectsResponseTests, GetInstances_CtorWithReaderAndBody_ReturnsInstanc
     EXPECT_EQ(ObjectId("Schema", "Class", "A"), (*result.GetInstances().begin()).GetObjectId());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, IsFinal_SkipTokenEmpty_True)
     {
     WSObjectsResponse response(nullptr, HttpStringBody::Create(), HttpStatus::OK, "", "");
@@ -54,6 +72,9 @@ TEST_F(WSObjectsResponseTests, IsFinal_SkipTokenEmpty_True)
     EXPECT_EQ("", response.GetSkipToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSObjectsResponseTests, IsFinal_SkipTokenNotEmpty_False)
     {
     WSObjectsResponse response(nullptr, HttpStringBody::Create(), HttpStatus::OK, "", "SomeToken");

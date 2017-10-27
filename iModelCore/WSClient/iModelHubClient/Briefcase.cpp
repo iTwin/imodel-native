@@ -235,6 +235,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 
     auto result = Pull(callback, cancellationToken)->GetResult();
 
+
 #if defined (ENABLE_BIM_CRASH_TESTS)
         BreakHelper::HitBreakpoint(Breakpoints::AfterDownloadChangeSets);
 #endif
@@ -315,7 +316,7 @@ void Briefcase::SubscribeForChangeSetEvents()
             }
         });
     auto subscribeResult = SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
-    m_eventsAvailable = subscribeResult->GetResult().IsSuccess();
+    m_eventsAvailable = ExecuteAsync(subscribeResult).IsSuccess();
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,7 +399,7 @@ void Briefcase::CheckCreatingChangeSet() const
         if (Utf8String::IsNullOrEmpty(creatingChangeSetId.c_str()))
             return;
 
-        auto creatingChangeSetResult = m_imodelConnection->GetChangeSetById(creatingChangeSetId)->GetResult();
+        auto creatingChangeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetById(creatingChangeSetId));
         if (creatingChangeSetResult.IsSuccess())
             {
             m_db->Revisions().FinishCreateRevision();
@@ -566,7 +567,7 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
 
     auto versionManager = m_imodelConnection->GetVersionsManager();
 
-    ChangeSetsInfoResult changeSetResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken)->GetResult();
+    ChangeSetsInfoResult changeSetResult = ExecuteAsync(versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
 
     if (!changeSetResult.IsSuccess())
         {
@@ -610,7 +611,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
         }
 
     ChangeSetsInfoResult changeSetResult;
-    changeSetResult = m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken)->GetResult();
+    changeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
 
     if (!changeSetResult.IsSuccess())
         {

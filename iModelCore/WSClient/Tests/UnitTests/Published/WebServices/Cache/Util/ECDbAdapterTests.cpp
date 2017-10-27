@@ -131,6 +131,9 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
     return db;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassKey_ReturnsClass)
     {
     auto db = GetTestDb();
@@ -138,6 +141,9 @@ TEST_F(ECDbAdapterTests, GetECClass_ValidClassKey_ReturnsClass)
     EXPECT_EQ("TestClass", ecClass->GetName());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassKey_ReturnsNullptr)
     {
     auto db = GetTestDb();
@@ -145,6 +151,9 @@ TEST_F(ECDbAdapterTests, GetECClass_InValidClassKey_ReturnsNullptr)
     EXPECT_EQ(nullptr, ecClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassKeyWithNotExistingClass_ReturnsNullptr)
     {
     auto db = GetTestDb();
@@ -152,6 +161,9 @@ TEST_F(ECDbAdapterTests, GetECClass_ValidClassKeyWithNotExistingClass_ReturnsNul
     EXPECT_EQ(nullptr, ecClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
     {
     auto db = GetTestDb();
@@ -162,6 +174,9 @@ TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
     EXPECT_EQ("TestClass", ecClass->GetName());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassId_ReturnsNull)
     {
     auto db = GetTestDb();
@@ -169,12 +184,18 @@ TEST_F(ECDbAdapterTests, GetECClass_InValidClassId_ReturnsNull)
     EXPECT_EQ(nullptr, ecClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClasses_EmptyMap_EmptyResult)
     {
     auto db = GetTestDb();
     EXPECT_TRUE(ECDbAdapter(*db).GetECClasses(ECInstanceKeyMultiMap()).empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneClass)
     {
     auto db = GetTestDb();
@@ -191,6 +212,9 @@ TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneCla
     EXPECT_EQ(ecClass, classes[0]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClasses_ShcemaHasSuchRelationshipClass_RelationshipClassReturned)
     {
     auto schema = StubRelationshipSchema("TestSchema", "A", "B", "AB");
@@ -207,6 +231,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_ShcemaHasSuchRelationshipClass_
     EXPECT_CONTAINS(relationshipClasses, relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasTwoMatchingRelationsipClasses_NullReturned)
     {
     auto schema = ParseSchema(R"(
@@ -234,6 +261,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasTwoMatchingRel
     EXPECT_EQ(nullptr, relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -274,6 +304,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingRel
     EXPECT_EQ(db->Schemas().GetClass("TestSchema", "AB1")->GetRelationshipClassCP(), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingBackwardRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -321,7 +354,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingBac
     EXPECT_EQ(db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP(), relationshipClass);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasTwoMatchingRelationsipClasses_NullReturned)
     {
     auto schema = ParseSchema(R"(
@@ -349,6 +384,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasTwoMatchingRel
     EXPECT_EQ(nullptr, relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -389,6 +427,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
     EXPECT_EQ(db->GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP(), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingBackwardRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -434,6 +475,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingBac
     EXPECT_EQ(db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP(), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Mark.Uvari                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesSecondIsCloser_ReturnsSecondRelClass)
     {
     auto schema = ParseSchema(R"(
@@ -474,6 +518,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.AB2"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Mark.Uvari                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesFirstIsCloser_ReturnsFirstRelClass)
     {
     auto schema = ParseSchema(R"(
@@ -514,6 +561,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.AB1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                   Mark.Uvari                     10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatchingRelationsipClasses_NullReturned)
     {
     auto schema = ParseSchema(R"(
@@ -549,6 +599,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatch
     EXPECT_EQ(nullptr, relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasOneMatchingBackwardRelClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -603,6 +656,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasOneMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithNoDirectMatching_ReturnsParent)
     {
     auto schema = ParseSchema(R"(
@@ -663,6 +719,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.AB1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentChildRelationshipsWithMatchingRelationship_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -717,6 +776,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.AABB1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneBackwardRelationshipClosest_ReturnsClosestMatching)
     {
     auto schema = ParseSchema(R"(
@@ -771,6 +833,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneOppositeRelationshipClosest_ReturnsClosestMatching)
     {
     auto schema = ParseSchema(R"(
@@ -825,6 +890,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneBackwardOppositeRelationshipClosest_ReturnsMatchingFirstClass)
     {
     auto schema = ParseSchema(R"(
@@ -879,6 +947,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneBackwardOppositeRelationshipClosest_ReturnsMatchingSecondClass)
     {
     auto schema = ParseSchema(R"(
@@ -933,6 +1004,9 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasTwoMatchingRelationsipClasses_BothReturned)
     {
     auto schema = ParseSchema(R"(
@@ -960,6 +1034,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasTwoMatchingR
     EXPECT_CONTAINS(relationshipClasses, db->GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasThreeMatchingRelationsipClassesIncludingBackwardStrengthDirection_AllThreeReturned)
     {
     auto schema = ParseSchema(R"(
@@ -998,7 +1075,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasThreeMatchin
     EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "BA1")->GetRelationshipClassCP());
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -1040,6 +1119,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingR
     EXPECT_CONTAINS(relationshipClasses, db->GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -1091,6 +1173,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRel
     EXPECT_CONTAINS(relationshipClasses, db->GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasTwoMatchingRelClassIncludingBackwardRelClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -1151,6 +1236,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasTwoMatchingRel
     EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -1202,6 +1290,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsip
     EXPECT_CONTAINS(relationshipClasses, db->GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                 Yashwanth.Chintana                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelClassOneBackwardRelClassAndOneWithBaseClasses_ReturnsMatching)
     {
     auto schema = ParseSchema(R"(
@@ -1262,6 +1353,9 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelClassOne
     EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, RelateInstances_InstancesExist_RelationshipIsCreated)
     {
     auto schema = ParseSchema(R"(
@@ -1288,6 +1382,9 @@ TEST_F(ECDbAdapterTests, RelateInstances_InstancesExist_RelationshipIsCreated)
     EXPECT_EQ(relationshipKey, adapter.FindRelationship(relClass, source, target));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRelationshipKey)
     {
     auto schema = ParseSchema(R"(
@@ -1317,6 +1414,9 @@ TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRe
     EXPECT_EQ(relationshipKey2, relationshipKey1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, CountClassInstances_ValidAndInvalidECClasses_Counts)
     {
     auto db = GetTestDb();
@@ -1335,6 +1435,9 @@ TEST_F(ECDbAdapterTests, CountClassInstances_ValidAndInvalidECClasses_Counts)
     EXPECT_EQ(1, adapter.CountClassInstances(relClass));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_InvalidKey_Error)
     {
     auto db = GetTestDb();
@@ -1348,6 +1451,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_InvalidKey_Error)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_NotExistingInstance_NotifiesBeforeDeletionAndDoesNothing)
     {
     auto db = GetTestDb();
@@ -1363,6 +1469,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_NotExistingInstance_NotifiesBeforeDelet
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({instance})));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstances_NotifiesBeforeDeletionAndDeletes)
     {
     auto db = GetTestDb();
@@ -1382,6 +1491,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstances_NotifiesBeforeDeletio
     EXPECT_EQ(0, adapter.CountClassInstances(adapter.GetECClass("TestSchema.TestClass")));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndRemovedListener_ListenerNotNotifiedAndDeletes)
     {
     auto db = GetTestDb();
@@ -1399,6 +1511,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndRemovedListener_List
     EXPECT_EQ(0, adapter.CountClassInstances(adapter.GetECClass("TestSchema.TestClass")));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndListenerReturnsError_ReturnsErrorWithoutDeletion)
     {
     auto db = GetTestDb();
@@ -1415,6 +1530,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndListenerReturnsError
     EXPECT_EQ(1, adapter.CountClassInstances(adapter.GetECClass("TestSchema.TestClass")));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChild_DeletesParentAndChild)
     {
     auto db = GetTestDb();
@@ -1439,6 +1557,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChild_DeletesPar
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstance_DeletingParentThatHoldsChild_DeletesParentAndChild)
     {
     auto db = GetTestDb();
@@ -1463,6 +1584,9 @@ TEST_F(ECDbAdapterTests, DeleteInstance_DeletingParentThatHoldsChild_DeletesPare
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstnace_DeletingNotExistingHoldingRelationship_NotifiesBeforeDeleteAndAndSuccess)
     {
     auto db = GetTestDb();
@@ -1487,6 +1611,9 @@ TEST_F(ECDbAdapterTests, DeleteInstnace_DeletingNotExistingHoldingRelationship_N
     EXPECT_CONTAINS(notDeletedInstances, parent.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingHoldingRelationship_DeletesRelationshipAndChild)
     {
     auto db = GetTestDb();
@@ -1511,6 +1638,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingHoldingRelationship_DeletesRela
     EXPECT_CONTAINS(notDeletedInstances, parent.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChild_DeletesParentAndChild)
     {
     auto db = GetTestDb();
@@ -1535,6 +1665,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChild_DeletesPa
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingEmbeddingRelationship_DeletesRelationshipAndChild)
     {
     auto db = GetTestDb();
@@ -1559,6 +1692,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingEmbeddingRelationship_DeletesRe
     EXPECT_CONTAINS(notDeletedInstances, parent.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOtherHoldingParent_DoesNotDeleteChild)
     {
     auto db = GetTestDb();
@@ -1592,6 +1728,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
     EXPECT_CONTAINS(notDeletedInstances, rel2.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingHoldingRelationshipWhenChildHasOtherHoldingParent_DeletesRelationshipWithoutChild)
     {
     auto db = GetTestDb();
@@ -1624,6 +1763,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingHoldingRelationshipWhenChildHas
     EXPECT_CONTAINS(notDeletedInstances, rel2.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOtherHoldingParent_DeletesParentAndChild)
     {
     auto db = GetTestDb();
@@ -1653,6 +1795,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOth
     EXPECT_CONTAINS(notDeletedInstances, otherParent.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingEmbeddingRelationshipWhenChilHasOtherHoldingParent_DeletesRelationshipAndChild)
     {
     auto db = GetTestDb();
@@ -1686,6 +1831,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingEmbeddingRelationshipWhenChilHa
     EXPECT_EQ(0, adapter.FindInstances(holdingRelClass).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted)
     {
     auto db = GetTestDb();
@@ -1714,6 +1862,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingRelationshipThatHoldsHierarchy_
     EXPECT_CONTAINS(notDeletedInstances, parent.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHoldsSubChildThatHasOtherHoldingParent_DoesNotDeleteSubChild)
     {
     auto db = GetTestDb();
@@ -1747,6 +1898,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHoldsSu
     EXPECT_CONTAINS(notDeletedInstances, otherParent.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOtherEmbeddingParent_ParentAndChildDeleted)
     {
     // Embedding relationship is ignored from perspecfive of holding relationship in ECDb.
@@ -1780,6 +1934,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
     EXPECT_NCONTAIN(notDeletedInstances, child.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOtherHoldingParent_ParentAndChildDeleted)
     {
     auto db = GetTestDb();
@@ -1811,6 +1968,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOth
     EXPECT_NCONTAIN(notDeletedInstances, child.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasReferencingRelationship_DeletesParentAndChild)
     {
     auto db = GetTestDb();
@@ -1842,6 +2002,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasRefe
     EXPECT_CONTAINS(notDeletedInstances, other.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild)
     {
     auto db = GetTestDb();
@@ -1876,6 +2039,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsTwoChildrenThatH
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentWithChildWithHoldingCircularRelationships_DeletesParentOnlyAsCircularDeletionNotSupported)
     {
     // TODO: This is flaw in ECDb - it does not handle circular relationships.
@@ -1911,6 +2077,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentWithChildWithHoldingCircu
     EXPECT_CONTAINS(notDeletedInstances, c.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren)
     {
     auto db = GetTestDb();
@@ -1941,6 +2110,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletedInstanceIsInHoldingCircularRelat
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_RelatedInstances_NotifiesEachChildInstanceDeletionAndDeletesThem)
     {
     auto db = GetTestDb();
@@ -1990,6 +2162,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedInstances_NotifiesEachChildInsta
     EXPECT_CONTAINS(notDeletedInstances, f.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesEachChildInstanceDeletionAndDeletesThem)
     {
     auto db = GetTestDb();
@@ -2041,6 +2216,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesE
     EXPECT_NCONTAIN(notDeletedInstances, cc.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsInstancesAndDeletedInstance_SkipsAdditonalDeletedAndSucceeds)
     {
     auto db = GetTestDb();
@@ -2071,6 +2249,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsInstancesAndDelete
     EXPECT_CONTAINS(notDeletedInstances, c.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstances)
     {
     auto db = GetTestDb();
@@ -2101,6 +2282,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstancesWithTheirChildren)
     {
     auto db = GetTestDb();
@@ -2145,6 +2329,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_NotExistingRelationship_DoesNothingAndSuccess)
     {
     auto db = GetTestDb();
@@ -2165,6 +2352,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_NotExistingRelationship_DoesNothingA
     EXPECT_EQ(2, adapter.FindInstances(ecClass).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_ReferencingRelationship_DeletesRelationshipLeavingEndInstances)
     {
     auto db = GetTestDb();
@@ -2189,6 +2379,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_ReferencingRelationship_DeletesRelat
     EXPECT_EQ(0, adapter.FindInstances(relClass).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationship_DeletesRelationshipAndChild)
     {
     auto db = GetTestDb();
@@ -2216,6 +2409,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationship_DeletesRelations
     EXPECT_EQ(0, adapter.FindInstances(relClass).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelationshipAndChild)
     {
     auto db = GetTestDb();
@@ -2247,6 +2443,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelatio
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredParent_DeletesRelationshipAndChild)
     {
     auto db = GetTestDb();
@@ -2284,6 +2483,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredPar
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMultipleParents_DeletesRelationshipLeavingChild)
     {
     auto db = GetTestDb();
@@ -2316,6 +2518,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMult
     EXPECT_TRUE(adapter.HasRelationship(relClass, otherParent, child));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, RelateInstances_EmbeddingRelationshipAndAdditonalParent_Error)
     {
     auto db = GetTestDb();
@@ -2335,6 +2540,9 @@ TEST_F(ECDbAdapterTests, RelateInstances_EmbeddingRelationshipAndAdditonalParent
     EXPECT_EQ(1, adapter.FindInstances(relClass).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteRelationship_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstancesWithTheirChildren)
     {
     auto db = GetTestDb();
@@ -2373,6 +2581,9 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_OnBeforeDeleteReturnsAdditionalToDel
     EXPECT_CONTAINS(notDeletedInstances, b.GetInstanceId());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_TwoMultipleClassInstances_DeletesInstances)
     {
     auto db = GetTestDb();
@@ -2394,6 +2605,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_TwoMultipleClassInstances_DeletesInstan
     EXPECT_EQ(0, adapter.FindInstances(ecClass2).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances)
     {
     auto db = GetTestDb();
@@ -2425,6 +2639,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances
     EXPECT_EQ(0, adapter.FindInstances(ecClass3).size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_InvalidStatement_ReturnsErrorAndEmptyList)
     {
     auto db = GetTestDb();
@@ -2440,6 +2657,9 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_InvalidStatement_ReturnsErrorAndE
     EXPECT_EQ(0, keys.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKeys)
     {
     auto db = GetTestDb();
@@ -2468,6 +2688,9 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
     EXPECT_EQ(2, keys.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, ECDb_DeleteRelationship_ShouldNotDeleteEnds1)
     {
     auto schema = ParseSchema(R"xml(
@@ -2509,6 +2732,9 @@ TEST_F(ECDbAdapterTests, ECDb_DeleteRelationship_ShouldNotDeleteEnds1)
     EXPECT_EQ(1, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, ECDb_DeleteRelationship_ShouldNotDeleteEnds2)
     {
     auto schema = ParseSchema(R"xml(
@@ -2546,6 +2772,9 @@ TEST_F(ECDbAdapterTests, ECDb_DeleteRelationship_ShouldNotDeleteEnds2)
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, ECDb_DeleteRelationship_ShouldNotDeleteEnds3)
     {
     auto schema = ParseSchema(R"xml(

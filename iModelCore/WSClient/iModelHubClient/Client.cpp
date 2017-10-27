@@ -102,6 +102,24 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
     return new Client(clientInfo, customHandler);
     }
 
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<WSObjectsResult> ExecuteOnQueryFailure(WSObjectsResult result, ICancellationTokenPtr cancellationToken, IWSRepositoryClientPtr client, WSQuery query)
+{
+    if (!result.IsSuccess())
+    {
+        // TODO: This check should be removed after UserInfo will be available in PROD.
+        if (WSError::Id::ClassNotFound == result.GetError().GetId())
+            {
+            return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken);
+            }
+        return CreateCompletedAsyncTask<WSObjectsResult>(WSObjectsResult::Error(result.GetError()));
+    }
+    return CreateCompletedAsyncTask<WSObjectsResult>(result);
+}
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
@@ -131,35 +149,38 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", projectId.c_str());
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult& result)
-        {
-        if (!result.IsSuccess())
-            {
-            // TODO: This check should be removed after UserInfo will be available in PROD.
-            if (WSError::Id::ClassNotFound == result.GetError().GetId())
-                {
-                WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
-                result = client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->GetResult();
-                }
 
+    std::shared_ptr<iModelsResult> finalResult = std::make_shared<iModelsResult>();
+  
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const & result)
+        { 
+        WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+        ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
+            {
             if (!result.IsSuccess())
+               {
+               LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+               finalResult->SetError(result.GetError());
+               return;
+               }
+            bvector<iModelInfoPtr> iModels;
+            for (const auto& iModel : result.GetValue().GetInstances())
                 {
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return iModelsResult::Error(result.GetError());
+                iModels.push_back(iModelInfo::Parse(iModel, m_serverUrl));
                 }
-            }
 
-        bvector<iModelInfoPtr> iModels;
-        for (const auto& iModel : result.GetValue().GetInstances())
-            {
-            iModels.push_back(iModelInfo::Parse(iModel, m_serverUrl));
-            }
-
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Success.");
-        return iModelsResult::Success(iModels);
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
+            finalResult->SetSuccess(iModels);
+            });
+    })->Then<iModelsResult>([=] 
+        {
+        return *finalResult;
         });
+
+
     }
+
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
@@ -192,37 +213,37 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
     iModelInfo::AddOwnerInfoSelect(select);
     query.SetSelect(select);
 
+    std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
-        {
-        if (!result.IsSuccess())
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const & result)
+        { 
+        WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+        query.SetFilter(filter);
+        ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
             {
-            // TODO: This check should be removed after UserInfo will be available in PROD.
-            if (WSError::Id::ClassNotFound == result.GetError().GetId())
-                {
-                WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
-                query.SetFilter(filter);
-                result = client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->GetResult();
-                }
-
             if (!result.IsSuccess())
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                return iModelResult::Error(result.GetError());
+                finalResult->SetError(result.GetError());
+                return;
                 }
-            }
-
-        auto iModelInfoInstances = result.GetValue().GetInstances();
-        if (iModelInfoInstances.Size() == 0)
+            auto iModelInfoInstances = result.GetValue().GetInstances();
+            if (iModelInfoInstances.Size() == 0)
+                {
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
+                finalResult->SetError(Error::Id::iModelDoesNotExist);
+                return;
+                }
+            iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            finalResult->SetSuccess(iModelInfo);
+            });
+        })->Then<iModelResult>([=]
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
-            return iModelResult::Error(Error::Id::iModelDoesNotExist);
-            }
-        iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-        return iModelResult::Success(iModelInfo);
-        });
+            return *finalResult;
+            });
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -257,37 +278,37 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
     iModelInfo::AddOwnerInfoSelect(select);
     query.SetSelect(select);
 
+    std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const & result)
         {
-        if (!result.IsSuccess())
-            {
-            // TODO: This check should be removed after UserInfo will be available in PROD.
-            if (WSError::Id::ClassNotFound == result.GetError().GetId())
+        WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+        query.SetFilter(filter);
+            ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
                 {
-                WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
-                query.SetFilter(filter);
-                result = client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->GetResult();
-                }
-
-            if (!result.IsSuccess())
-                {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                return iModelResult::Error(result.GetError());
-                }
-            }
-
-        auto iModelInfoInstances = result.GetValue().GetInstances();
-        if (iModelInfoInstances.Size() == 0)
+                if (!result.IsSuccess())
+                    {
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                    finalResult->SetError(result.GetError());
+                    return;
+                    }
+            
+                auto iModelInfoInstances = result.GetValue().GetInstances();
+                if (iModelInfoInstances.Size() == 0)
+                    {
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
+                    finalResult->SetError(Error::Id::iModelDoesNotExist);
+                    return;
+                    }
+                iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+                finalResult->SetSuccess(iModelInfo);
+                });
+        })->Then<iModelResult>([=] 
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
-            return iModelResult::Error(Error::Id::iModelDoesNotExist);
-            }
-        iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-        return iModelResult::Success(iModelInfo);
-        });
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -605,7 +626,7 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
-    auto fileResult = connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken)->GetResult();
+    auto fileResult = ExecuteAsync(connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken));
     if (!fileResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
@@ -702,7 +723,7 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
 
     //get Briefcase FileInfo
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting FileInfo of Briefcase ID %d.", briefcaseID);
-    auto fileInfoResult = connection->GetBriefcaseFileInfo(briefcaseID, nullptr)->GetResult();
+    auto fileInfoResult = ExecuteAsync(connection->GetBriefcaseFileInfo(briefcaseID, nullptr));
     if (!fileInfoResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileInfoResult.GetError().GetMessage().c_str());
@@ -741,22 +762,22 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions)
-    {
+{
     bvector<DgnRevisionCP> changeSetsToMerge;
     ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
 
     auto upgradeOptions = SchemaUpgradeOptions(changeSetsToMerge);
     upgradeOptions.SetUpgradeFromDomains(domainUpgradeOptions);
     return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, upgradeOptions));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets)
-    {
+{
     return OpenWithSchemaUpgradeInternal(status, filePath, changeSets);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
@@ -768,7 +789,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     if (!doSync)
         return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
 
-    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
     if (!seedFileInfoResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
@@ -791,7 +812,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
@@ -917,7 +938,7 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
 
     iModelConnectionPtr connection = connectionResult.GetValue();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquiring briefcase ID.");
-    auto briefcaseResult = connection->CreateBriefcaseInstance(cancellationToken)->GetResult();
+    auto briefcaseResult = ExecuteAsync(connection->CreateBriefcaseInstance(cancellationToken));
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterCreateBriefcaseInstance);
 #endif
@@ -1102,7 +1123,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfo
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
-    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
     if (!seedFileInfoResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
@@ -1110,7 +1131,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfo
         }
 
     auto versionManager = connection->GetVersionsManager();
-    ChangeSetsInfoResult result = versionManager.GetVersionChangeSets(versionId, seedFileInfoResult.GetValue()->GetFileId(), cancellationToken)->GetResult();
+    ChangeSetsInfoResult result = ExecuteAsync(versionManager.GetVersionChangeSets(versionId, seedFileInfoResult.GetValue()->GetFileId(), cancellationToken));
     if (!result.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
@@ -1145,14 +1166,14 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelIn
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
-    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
     if (!seedFileInfoResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
         }
 
-    auto result = connection->GetChangeSetById(changeSetId, cancellationToken)->GetResult();
+    auto result = ExecuteAsync(connection->GetChangeSetById(changeSetId, cancellationToken));
     if (!result.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
@@ -1167,7 +1188,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelIn
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     query.SetFilter(filter);
 
-    auto changeSetsResult = connection->ChangeSetsFromQueryInternal(query, false, cancellationToken)->GetResult();
+    auto changeSetsResult = ExecuteAsync(connection->ChangeSetsFromQueryInternal(query, false, cancellationToken));
 
     return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), changeSetsResult.GetValue(), fileNameCallback, callback, cancellationToken);
     }
@@ -1197,14 +1218,14 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, L
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
-    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
     if (!seedFileInfoResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
         }
 
-    ChangeSetsInfoResult result = connection->GetAllChangeSets()->GetResult();
+    ChangeSetsInfoResult result = ExecuteAsync(connection->GetAllChangeSets());
     if (!result.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());

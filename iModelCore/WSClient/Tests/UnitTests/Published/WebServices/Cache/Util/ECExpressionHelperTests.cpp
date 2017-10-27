@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECExpressionHelperTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,6 +14,9 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_EmptyString_ReturnsEmpty)
     {
     auto schema = ParseSchema(
@@ -28,6 +31,9 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_EmptyString_ReturnsEmpty)
     EXPECT_EQ(0, properties.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithPropertyAndVariousSymbols_ReturnsProperty)
     {
     auto schema = ParseSchema(
@@ -56,6 +62,9 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithPropertyAndVario
     EXPECT_CONTAINS(properties, ecProperty);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithMultipleProperties_ReturnsProperties)
     {
     auto schema = ParseSchema(
@@ -76,6 +85,9 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithMultipleProperti
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithFakeProperties_ReturnsOnlyValidProperties)
     {
     auto schema = ParseSchema(

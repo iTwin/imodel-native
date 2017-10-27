@@ -32,6 +32,9 @@ void ConnectSignInManagerTests::StubUrlProviderEnvironment(UrlProvider::Environm
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction_SetsValidateCertificateForAllRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Release);
@@ -47,6 +50,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction
     Http::Request("https://foo.com", "GET", authHandler).Perform().get();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Qa);
@@ -62,6 +68,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNot
     Http::Request("https://foo.com", "GET", authHandler).Perform().get();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests)
     {
     StubUrlProviderEnvironment(UrlProvider::Environment::Dev);
@@ -77,6 +86,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNo
     Http::Request("https://foo.com", "GET", authHandler).Perform().get();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest)
     {
     auto imsClient = std::make_shared<NiceMock<MockImsClient>>();
@@ -99,6 +111,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingD
     Http::Request("https://foo.com/b", "GET", authHandler2).Perform().get();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -132,6 +147,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
     t2->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_DefaultAuthenticationHandler_SendsWithAuthorizationString)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -159,6 +177,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_DefaultAuthentication
     Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHandler_SendsWithAuthorizationString)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -186,6 +207,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHa
     Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHandler_SendsWithSAMLAuthorizationString)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -213,6 +237,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHa
     Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
     {
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
@@ -225,6 +252,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
     EXPECT_EQ("", info.username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFromToken)
     {
     auto tokenStr =
@@ -268,6 +298,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithToken_ReturnsValuesFro
     EXPECT_EQ("ValueD", info.username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_ReturnsEmpty)
     {
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
@@ -284,6 +317,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_Retu
     EXPECT_EQ("", info.username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
     {
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
@@ -297,6 +333,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
     EXPECT_EQ("", info.username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
     {
     auto tokenStr =
@@ -339,6 +378,9 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
     EXPECT_EQ("ValueD", info.username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetLastUsername_NoPreviousUsers_ReturnEmpty)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -347,6 +389,9 @@ TEST_F(ConnectSignInManagerTests, GetLastUsername_NoPreviousUsers_ReturnEmpty)
     EXPECT_EQ("", manager->GetLastUsername());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedIn_ReturnsCurrentUser)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -359,6 +404,9 @@ TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedIn_ReturnsCurrentUser)
     EXPECT_EQ("TestUser", manager->GetLastUsername());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedInSecondTime_ReturnsCurrentUser)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -377,6 +425,9 @@ TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedInSecondTime_ReturnsCurr
     EXPECT_EQ("TestUserB", manager->GetLastUsername());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedOut_ReturnsPreviousUser)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -391,6 +442,9 @@ TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedOut_ReturnsPreviousUser)
     EXPECT_EQ("TestUser", manager->GetLastUsername());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -401,6 +455,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_NotSignedIn_TokenProviderDoes
     EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInAndSecondCall_ReturnsSameProvider)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -418,6 +475,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInAndSecondCall_Returns
     EXPECT_EQ(provider1, provider2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithToken_GetTokenReturnsNullBecauseUpdateTokenIsRequired)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -434,6 +494,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithToken_GetTokenRet
     EXPECT_EQ(nullptr, provider->GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithToken_UpdateTokenRetrievesDelegationTokenUsingIdentityToken)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -453,6 +516,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithToken_UpdateToken
     EXPECT_EQ(delegationToken, provider->UpdateToken()->GetResult());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenCalledMultipleTimesAfterUpdateWithLongLivedToken_ReturnsSameToken)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -476,6 +542,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenC
     EXPECT_EQ(token1, token2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenCalledMultipleTimesAfterUpdateWithShortLivedToken_DoesNotReturnExpiredToken)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -497,6 +566,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenC
     EXPECT_EQ(nullptr, provider->GetToken());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -520,6 +592,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenReq
     EXPECT_EQ(1, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenRequestFailsDueToConnectionError_ReturnsNullWithoutCallingExpirationHandler)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -543,6 +618,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenRequestFailsDueToConnect
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsButIdentityTokenRenewalSucceeds_GetsNewDelegationToken)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -571,6 +649,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsButIdenti
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithToken_FirstTime_UserChangeHandlerNotCalled)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -587,6 +668,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_FirstTime_UserChangeHandlerNot
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeWithSameUser_UserChangeHandlerNotCalled)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -604,6 +688,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeWithSameUser_UserCha
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithSameUser_UserChangeHandlerNotCalled)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -622,6 +709,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithSame
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithDifferentUser_UserChangeHandlerCalled)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -643,6 +733,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithDiff
     EXPECT_EQ(1, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithCredentials_SecondTimeAfterSignOutWithDifferentUser_UserChangeHandlerCalled)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -664,6 +757,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithCredentials_SecondTimeAfterSignOutWi
     EXPECT_EQ(1, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithToken_DifferentUserInOtherSignInManagerWithSharedSecureStore_UserDoesNotChangeForOtherManager)
     {
     // Mimics two apps signing-in independently with shared secure store
@@ -697,6 +793,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_DifferentUserInOtherSignInMana
     EXPECT_EQ("TestUserA", manager1->GetUserInfo().username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithCredentials_DifferentUserInOtherSignInManagerWithSharedSecureStore_UserChangesForOtherManager)
     {
     // Mimics two apps signing-in independently with shared secure store
@@ -730,6 +829,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithCredentials_DifferentUserInOtherSign
     EXPECT_EQ("TestUserB", manager1->GetUserInfo().username);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChangedInOtherSignInManagerWithSharedPersistence_HandlerCalledOnce)
     {
     // Mimics two apps signing-in independently with shared secure store
@@ -774,6 +876,9 @@ TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChange
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerAfterFinalize)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -792,6 +897,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerA
     EXPECT_EQ(1, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
     {
     auto imsClient = std::make_shared<MockImsClient>();

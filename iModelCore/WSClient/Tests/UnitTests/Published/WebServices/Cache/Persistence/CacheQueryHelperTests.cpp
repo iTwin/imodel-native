@@ -32,6 +32,9 @@ ECSchemaPtr CacheQueryHelperTests::GetTestSchema()
     return schema;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, CreateReadInfos_EmptyOptions_ReturnsGivenClasses)
     {
     auto schema = GetTestSchema();
@@ -48,6 +51,9 @@ TEST_F(CacheQueryHelperTests, CreateReadInfos_EmptyOptions_ReturnsGivenClasses)
     EXPECT_EQ(schema->GetClassCP("Furniture"), &infos[1].GetECClass());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, CreateReadInfos_OptionsWithSelectClass_ConstructsInfosWithOnlySelectedClasses)
     {
     auto schema = GetTestSchema();
@@ -65,6 +71,9 @@ TEST_F(CacheQueryHelperTests, CreateReadInfos_OptionsWithSelectClass_ConstructsI
     EXPECT_EQ(schema->GetClassCP("Furniture"), &infos[0].GetECClass());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, CreateReadInfos_EmptyOptions_ReturnsSelectAllAndNoSorting)
     {
     auto schema = GetTestSchema();
@@ -77,6 +86,9 @@ TEST_F(CacheQueryHelperTests, CreateReadInfos_EmptyOptions_ReturnsSelectAllAndNo
     EXPECT_TRUE(infos[0].GetSortProperties().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, CreateReadInfos_OptionsWithOrderBy_ReturnsOrderingOptions)
     {
     auto schema = GetTestSchema();
@@ -98,6 +110,9 @@ TEST_F(CacheQueryHelperTests, CreateReadInfos_OptionsWithOrderBy_ReturnsOrdering
     EXPECT_EQ(true, infos[0].GetSortProperties()[1].GetSortAscending());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, CreateReadInfos_OptionsWithSelectProperties_ReturnsSelectionOptions)
     {
     auto schema = GetTestSchema();
@@ -115,6 +130,9 @@ TEST_F(CacheQueryHelperTests, CreateReadInfos_OptionsWithSelectProperties_Return
     EXPECT_CONTAINS(infos[0].GetSelectProperties().GetProperties(), ecClass->GetPropertyP("Name"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_ConstructsSelectQueryWithAllPropertiesAndRemoteId)
     {
     auto schema = GetTestSchema();
@@ -126,6 +144,9 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_Co
     EXPECT_TRUE(Utf8String::npos != ecSql.find("SELECT info.[RemoteId], instance.* FROM"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_ConstructsJoinWithInfo)
     {
     auto schema = GetTestSchema();
@@ -137,6 +158,9 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_EmptyOptions_Co
     EXPECT_TRUE(Utf8String::npos != ecSql.find("JOIN ONLY [WSC].[CachedObjectInfo] info ON info.[InstanceId] = instance.ECInstanceId"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithOrderBy_ConstructsQueryWithOrderBy)
     {
     auto schema = GetTestSchema();
@@ -155,6 +179,9 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithOrde
     EXPECT_TRUE(Utf8String::npos != ecSql.find("ORDER BY instance.[Legs] DESC, LOWER (instance.[Name]) ASC"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithSelectProperties_ConstructsQueryWithSelectedProperties)
     {
     auto schema = GetTestSchema();
@@ -169,6 +196,9 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithSele
     EXPECT_STREQ("SELECT instance.[Legs], instance.[Name], instance.[ECInstanceId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithSelectNoProperties_ConstructsQueryWithSelectECInstanceId)
     {
     auto schema = GetTestSchema();
@@ -182,6 +212,9 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithSele
     EXPECT_STREQ("SELECT instance.[ECInstanceId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithRemoteIdSelected_ConstructsQueryWithJoin)
     {
     auto schema = GetTestSchema();

@@ -400,7 +400,7 @@ void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevision
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-bool ExecutionManager::IsErrorForRetry(Error::Id errorId)
+bool IsErrorForRetry(Error::Id errorId) 
     {
     static bset<Error::Id> set;
     if (set.empty())

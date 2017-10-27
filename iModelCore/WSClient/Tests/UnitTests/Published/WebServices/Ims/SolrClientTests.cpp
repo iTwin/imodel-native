@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Ims/SolrClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,9 @@ using namespace ::std;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_ValidBaseUrl_SetsValidBaseUrl)
     {
     Utf8String collection("IMS/User");
@@ -24,6 +27,9 @@ TEST_F(SolrClientTests, Ctor_ValidBaseUrl_SetsValidBaseUrl)
     EXPECT_STREQ("https://srv.com/token", client->GetBaseUrl().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_ValidCollection_SetsValidCollectionPath)
     {
     Utf8String collection("IMS/User");
@@ -32,6 +38,9 @@ TEST_F(SolrClientTests, Ctor_ValidCollection_SetsValidCollectionPath)
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithLeadingForwardSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(/IMS/User)");
@@ -40,6 +49,9 @@ TEST_F(SolrClientTests, Ctor_StringWithLeadingForwardSlashes_ShouldRemoveSlashes
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithTrailingForwardSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(IMS/User/)");
@@ -48,6 +60,9 @@ TEST_F(SolrClientTests, Ctor_StringWithTrailingForwardSlashes_ShouldRemoveSlashe
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithLeadingBackwardSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(\IMS/User)");
@@ -56,6 +71,9 @@ TEST_F(SolrClientTests, Ctor_StringWithLeadingBackwardSlashes_ShouldRemoveSlashe
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithTrailingBackwardSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(IMS/User\)");
@@ -64,6 +82,9 @@ TEST_F(SolrClientTests, Ctor_StringWithTrailingBackwardSlashes_ShouldRemoveSlash
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithLeadingAndTrailingBackwardSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(\IMS/User\)");
@@ -72,6 +93,9 @@ TEST_F(SolrClientTests, Ctor_StringWithLeadingAndTrailingBackwardSlashes_ShouldR
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithLeadingAndTrailingForwardSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(/IMS/User/)");
@@ -80,6 +104,9 @@ TEST_F(SolrClientTests, Ctor_StringWithLeadingAndTrailingForwardSlashes_ShouldRe
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, Ctor_StringWithLeadingAndTrailingSlashes_ShouldRemoveSlashesAndSetValidCollectionPath)
     {
     Utf8String collection(R"(\/\IMS/User\/)");
@@ -88,6 +115,9 @@ TEST_F(SolrClientTests, Ctor_StringWithLeadingAndTrailingSlashes_ShouldRemoveSla
     EXPECT_STREQ("IMS/User", client->GetCollectionPath().c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_ValidCollection_SendsCorrectUrl)
     {
     Utf8String collection("IMS/User");
@@ -103,6 +133,9 @@ TEST_F(SolrClientTests, SendGetRequest_ValidCollection_SendsCorrectUrl)
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_BaseUrlWithTrailingForwardSlashAndCollectionWithLeadingForwardSlash_SendsCorrectUrl)
     {
     Utf8String collection(R"(/IMS/User)");
@@ -118,6 +151,9 @@ TEST_F(SolrClientTests, SendGetRequest_BaseUrlWithTrailingForwardSlashAndCollect
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingForwardSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(/IMS/User)");
@@ -133,6 +169,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingForwardSlashes_ShouldRem
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithTrailingForwardSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(IMS/User/)");
@@ -148,6 +187,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithTrailingForwardSlashes_ShouldRe
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingBackwardSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(\IMS/User)");
@@ -163,6 +205,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingBackwardSlashes_ShouldRe
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithTrailingBackwardSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(IMS/User\)");
@@ -178,6 +223,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithTrailingBackwardSlashes_ShouldR
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingBackwardSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(\IMS/User\)");
@@ -193,6 +241,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingBackwardSlash
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingForwardSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(/IMS/User/)");
@@ -208,6 +259,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingForwardSlashe
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingSlashes_ShouldRemoveSlashesAndSendCorrectUrl)
     {
     Utf8String collection(R"(\/\IMS/User\/)");
@@ -223,6 +277,9 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingSlashes_Shoul
     client->SendGetRequest()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmail_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -239,6 +296,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmail_ConstructsCorre
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponse_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -256,6 +316,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponse_
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponseAndIndentation_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -274,6 +337,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponseA
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponseAndIndentationAndSelectionForUserId_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -293,6 +359,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponseA
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForRoleIdAndJsonResponseAndIndentationAndFilterForOrgIdAndSelectForUserId_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -313,6 +382,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForRoleIdAndJsonResponse
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsAllQueryParametersExceptSort_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -334,6 +406,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsAllQueryParametersExceptSort_Constr
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForUserIdAndJsonResponseAndIndentationAndSelectForEmail_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -353,6 +428,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForUserIdAndJsonResponse
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsJsonResponseAndIndentationAndSort_ConstructsCorrectQueryUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -371,6 +449,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsJsonResponseAndIndentationAndSort_C
     client->SendGetRequest(query)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsSortMultipleTimes_ConstructsCorrectQueryUrlWithMultipleSortsCommaDelimeted)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
@@ -391,6 +472,9 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsSortMultipleTimes_ConstructsCorrect
     client->SendGetRequest(query)->Wait();  
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones    03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_NoQueryProvided_ConstructsCorrectQueryUrlAsVanillaUrl)
     {
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
