@@ -403,7 +403,7 @@ public:
             virtual bool _GetLogSQLiteErrors() {return false;}
 
             //! Set up for activity messages.
-            virtual StatusInt _SetupActivityMessage(ActivityMessageDetails const& details) {return SUCCESS;}
+            virtual StatusInt _SetupActivityMessage(ActivityMessageDetails const* details) {return SUCCESS;}
 
             //! Output an activity message to the user.
             virtual StatusInt _OutputActivityMessage(Utf8CP messageText, int32_t percentComplete) {return SUCCESS;}

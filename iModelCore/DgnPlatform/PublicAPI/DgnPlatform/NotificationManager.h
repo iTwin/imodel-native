@@ -120,7 +120,7 @@ public:
 //! Specifies the details of an activity message to be displayed to the user.
 // @bsiclass                                                      Dan.East      10/17
 //=======================================================================================
-struct           ActivityMessageDetails
+struct           ActivityMessageDetails : RefCountedBase
 {
 //__PUBLISH_SECTION_END__
     friend struct NotificationManager;
@@ -143,12 +143,18 @@ public:
         m_supportsCancellation = supportsCancellation;
         }
 
+    //! Destructor for ActivityMessageDetails
+    virtual ~ActivityMessageDetails() {}
+
     bool GetShowProgressBar() const { return m_showProgressBar; } //!< Gets the property to show the progress bar in the activity message dialog.
     bool GetShowPercentInMessage() const { return m_showPercentInMessage; } //!< Gets the property to show the percentage complete in the activity message text.
     bool GetSupportsCancellation() const { return m_supportsCancellation; } //!< Gets the property to show the Cancel button, giving the user the ability to cancel the operation.
 
     //! Implement if cancellation is supported.
-    virtual void _ActivityCancelled () const {}
+    virtual void _OnActivityCancelled () const {}
+
+    //! Activity completed.
+    virtual void _OnActivityCompleted () const {}
 };
 
 //=======================================================================================
@@ -215,7 +221,7 @@ public:
     //! Set up for activity messages.
     //! @param[in] details      The activity message details.
     //! @return SUCCESS if the message was displayed, ERROR if an invalid priority is specified.
-    DGNPLATFORM_EXPORT static StatusInt SetupActivityMessage(ActivityMessageDetails const& details);
+    DGNPLATFORM_EXPORT static StatusInt SetupActivityMessage(ActivityMessageDetails const * details);
 
     //! Output an activity message to the user. Once percentComplete reaches 100, the message will be dismissed.
     //! @param[in] messageText      The message text.
