@@ -75,6 +75,9 @@ private:
 public:
     BE_SQLITE_EXPORT BeBriefcaseBasedIdSequenceManager(DbR, bvector<Utf8CP> const& sequenceNames);
 
+    //! Gets a sequence from the manager
+    //! @param[in] sequenceKey Key of the sequence. It is the index of the sequence name in the vector passed to the constructor.
+    //! @return Retrieved sequence
     BeBriefcaseBasedIdSequence const& GetSequence(uint32_t sequenceKey) const { BeAssert(sequenceKey < (uint32_t) m_sequences.size()); return m_sequences[(size_t) sequenceKey]; }
 
     BE_SQLITE_EXPORT DbResult InitializeSequences() const;
