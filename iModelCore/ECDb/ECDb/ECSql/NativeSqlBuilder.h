@@ -30,42 +30,28 @@ struct NativeSqlBuilder final
     public:
         NativeSqlBuilder() {}
         explicit NativeSqlBuilder(Utf8CP initialStr) : m_nativeSql(initialStr) {}
+        explicit NativeSqlBuilder(Utf8StringCR initialStr) : m_nativeSql(initialStr) {}
         ~NativeSqlBuilder() {}
         NativeSqlBuilder(NativeSqlBuilder const& rhs) : m_nativeSql(rhs.m_nativeSql) {}
         NativeSqlBuilder& operator= (NativeSqlBuilder const& rhs);
         NativeSqlBuilder(NativeSqlBuilder&& rhs) : m_nativeSql(std::move(rhs.m_nativeSql)) {}
         NativeSqlBuilder& operator= (NativeSqlBuilder&& rhs);
 
-        NativeSqlBuilder& Append(NativeSqlBuilder const& builder);
+        NativeSqlBuilder& Append(NativeSqlBuilder const& builder) { return Append(builder.GetSql()); }
+        NativeSqlBuilder& Append(Utf8StringCR str) { m_nativeSql.append(str); return *this; }
         NativeSqlBuilder& Append(Utf8CP str) { m_nativeSql.append(str); return *this; }
 
-        void Push(bool clear = true);
+        void Push();
         Utf8String Pop();
 
         //!@param[in] separator The separator used to separate the items in @p builderList. If nullptr is passed,
         //!                     the items will be separated by comma.
         NativeSqlBuilder& Append(List const& builderList, Utf8CP separator = nullptr);
-        NativeSqlBuilder& Append(List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
         NativeSqlBuilder& AppendFormatted(Utf8CP format, ...);
-        NativeSqlBuilder& Append(Utf8CP classIdentifier, Utf8CP identifier);
+        NativeSqlBuilder& AppendFullyQualified(Utf8CP qualifier, Utf8CP identifier);
+        NativeSqlBuilder& AppendFullyQualified(Utf8StringCR qualifier, Utf8StringCR identifier);
+        NativeSqlBuilder& AppendEscaped(Utf8StringCR identifier) { return Append("[").Append(identifier).Append("]"); }
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
-        NativeSqlBuilder& Append(DbColumn const& column) { return Append(column.GetTable().GetName().c_str(), column.GetName().c_str()); }
-        NativeSqlBuilder& Append(DbColumn const& column, DbColumn::Type castInto)
-            {
-            if (column.GetType() == castInto || castInto == DbColumn::Type::Any)
-                return Append(column);
-
-            return Append("CAST (").Append(column).Append(" AS ").Append(DbColumn::TypeToSql(castInto)).Append(")");
-            }
-        NativeSqlBuilder& Append(Utf8CP tableAlias, DbColumn const& column, DbColumn::Type castInto)
-            {
-            if (column.GetType() == castInto || castInto == DbColumn::Type::Any)
-                return Append(tableAlias, column.GetName().c_str());
-
-            return Append("CAST (").Append(column).Append(" AS ").Append(DbColumn::TypeToSql(castInto)).Append(")");
-            }
-        NativeSqlBuilder& Append(DbTable const& table) { return Append(table.GetName().c_str()); }
-        NativeSqlBuilder& Append(Utf8CP identifier, bool escape) { return escape ? AppendEscaped(identifier) : Append(identifier); };
         NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
         NativeSqlBuilder& Append(ECN::ECClassId id);
         NativeSqlBuilder& AppendSpace() { return Append(" "); }
@@ -73,23 +59,14 @@ struct NativeSqlBuilder final
         NativeSqlBuilder& AppendDot() { return Append("."); }
         NativeSqlBuilder& AppendParenLeft() { return Append("("); }
         NativeSqlBuilder& AppendParenRight() { return Append(")"); }
-        NativeSqlBuilder& AppendLine(Utf8CP str) { return Append(str).AppendEol(); }
-        NativeSqlBuilder& AppendEol() { return Append("\n"); }
         NativeSqlBuilder& AppendIf(bool condition, Utf8CP stringLiteral) { if (condition) Append(stringLiteral); return *this; }
         NativeSqlBuilder& AppendIIf(bool condition, Utf8CP trueStr, Utf8CP falseStr) { return condition ? Append(trueStr) : Append(falseStr); }
-        NativeSqlBuilder& AppendSpace(int count)
-            {
-            for (int i = 0; i < count; i++)
-                AppendSpace();
 
-            return *this;
-            }
         void Clear() { m_nativeSql.clear(); m_stack.clear(); }
         bool IsEmpty() const { return m_nativeSql.empty(); }
-        Utf8CP ToString() const { return m_nativeSql.c_str(); }
+        Utf8StringCR GetSql() const { return m_nativeSql; }
         
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
-        static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
     };
 
 

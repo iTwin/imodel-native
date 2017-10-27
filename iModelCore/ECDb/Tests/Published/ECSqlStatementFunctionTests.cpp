@@ -5,27 +5,31 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementTestFixture.h"
+#include "ECDbPublishedTests.h"
 #include <Bentley/Base64Utilities.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                 03/15
-//+---------------+---------------+---------------+---------------+---------------+------
-struct ExpectedResult
-    {
-    bool m_isPrepareSupported;
-    bool m_isStepSupported;
-    ECN::PrimitiveType m_returnType;
 
-    ExpectedResult() : m_isPrepareSupported(false), m_isStepSupported (false) {}
-    explicit ExpectedResult(ECN::PrimitiveType returnType, bool isStepSupported = true) : m_isPrepareSupported(true), m_isStepSupported(isStepSupported), m_returnType(returnType) {}
+struct ECSqlStatementFunctionTestFixture : ECDbTestFixture
+    {
+    //---------------------------------------------------------------------------------------
+    // @bsiclass                                     Krischan.Eberle                 03/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    struct ExpectedResult final
+        {
+        bool m_isPrepareSupported = false;
+        bool m_isStepSupported = false;
+        ECN::PrimitiveType m_returnType;
+
+        ExpectedResult() {}
+        explicit ExpectedResult(ECN::PrimitiveType returnType, bool isStepSupported = true) : m_isPrepareSupported(true), m_isStepSupported(isStepSupported), m_returnType(returnType) {}
+        };
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
+TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 5));
@@ -106,7 +110,7 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
+TEST_F(ECSqlStatementFunctionTestFixture, CoalesceAndNullIf)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
@@ -172,7 +176,7 @@ TEST_F(ECSqlStatementTestFixture, CoalesceAndNullIf)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
+TEST_F(ECSqlStatementFunctionTestFixture, FunctionCallWithDistinct)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
@@ -251,7 +255,7 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, Base64Functions)
+TEST_F(ECSqlStatementFunctionTestFixture, Base64Functions)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("base64functions.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
@@ -406,7 +410,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
+TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     const int perClassRowCount = 10;

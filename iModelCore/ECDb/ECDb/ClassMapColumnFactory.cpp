@@ -64,8 +64,7 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
             return ERROR;
             }
 
-
-        if (baseClassMap->GetPrimaryTable().GetId() != classMap.GetPrimaryTable().GetId())
+        if (baseClassMap->GetPrimaryTable() != classMap.GetPrimaryTable())
             continue;
 
         baseClasses.push_back(baseClassMap);
@@ -94,7 +93,7 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
             if (primTable.GetType() == DbTable::Type::Virtual)
                 continue;
 
-            if (primTable.GetId() != contextClassMap.GetPrimaryTable().GetId())
+            if (primTable != contextClassMap.GetPrimaryTable())
                 continue;
 
             if (Query(columnMaps, *derivedClassMap, Filter::DerivedAndLocal, &contextClassMap) != SUCCESS)
@@ -361,7 +360,7 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
         resolveColumnName(resolvedColumnName, params.GetColumnName(), classId, retryCount);
         }
 
-    DbColumn* newColumn = effectiveTable.CreateColumn(resolvedColumnName, colType, DbColumn::Kind::Default, PersistenceType::Physical);
+    DbColumn* newColumn = effectiveTable.AddColumn(resolvedColumnName, colType, DbColumn::Kind::Default, PersistenceType::Physical);
     if (newColumn == nullptr)
         return nullptr;
 
@@ -610,7 +609,7 @@ DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& 
             return const_cast<DbColumn*>(column);
         }
 
-    return GetEffectiveTable(ctx)->CreateSharedColumn();
+    return GetEffectiveTable(ctx)->AddSharedColumn();
     }
 
 //------------------------------------------------------------------------------------------

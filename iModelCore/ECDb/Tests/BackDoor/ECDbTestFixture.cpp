@@ -15,6 +15,14 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //************************************************************************************
 // ECDbTestFixture
 //************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//no need to release a static non-POD variable (Bentley C++ coding standards)
+//static
+ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 0, 1);
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -274,8 +282,9 @@ BentleyStatus ECDbTestFixture::PopulateECDb(ECSchemaCR schema, int instanceCount
 
         for (int i = 0; i < instanceCountPerClass; i++)
             {
-            IECInstancePtr ecInstance = ECDbTestUtility::CreateArbitraryECInstance(*ecClass);
-            if (BE_SQLITE_OK != inserter.Insert(*ecInstance))
+            IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+            ECInstancePopulator::Populate(*instance);
+            if (BE_SQLITE_OK != inserter.Insert(*instance))
                 return ERROR;
             }
         }

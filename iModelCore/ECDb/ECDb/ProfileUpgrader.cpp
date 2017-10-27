@@ -11,8 +11,31 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//*************************************** ProfileUpgrader_XXX *********************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    10/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " BEDB_TABLE_Local " WHERE Name NOT LIKE 'ec_instanceidsequence' COLLATE NOCASE AND NAME LIKE 'ec_%sequence' COLLATE NOCASE"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Deleting ECDb profile table id sequences from table '" BEDB_TABLE_Local "' failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
-//*************************************** ECDbProfileSchemaUpgrader *********************************
+    const int actualModifiedRowCount = ecdb.GetModifiedRowCount();
+    if (17 != actualModifiedRowCount)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Expected to delete 17 ECDb profile table id sequences from table '" BEDB_TABLE_Local "'. %d were deleted though.", actualModifiedRowCount);
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Deleted ECDb profile table id sequences from table '" BEDB_TABLE_Local "'.");
+    return BE_SQLITE_OK;
+    }
+
+
+//*************************************** ProfileSchemaUpgrader *********************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        07/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -40,10 +63,9 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettings().GetSchemaImportToken()))
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
         {
-        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.",
-                   ecdb.GetDbFileName());
+        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.", ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
         }
 
@@ -59,21 +81,19 @@ BentleyStatus ProfileSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadContextR r
     {
     ECSchemaPtr ecdbSystemSchema = nullptr;
     const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString(ecdbSystemSchema, GetECDbSystemSchemaXml(), readContext);
-    if (SchemaReadStatus::Success != deserializeStat)
-        {
-        if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
-            LOG.errorv("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
-        else
-            {
-            //other error codes are considered programmer errors and therefore have an assertion, too
-            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDbSystem ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
-            BeAssert(false && "ECDb upgrade: Failed to deserialize ECDbSystem ECSchema");
-            }
+    if (SchemaReadStatus::Success == deserializeStat)
+        return SUCCESS;
 
-        return ERROR;
+    if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
+        LOG.errorv("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
+    else
+        {
+        //other error codes are considered programmer errors and therefore have an assertion, too
+        LOG.errorv("Creating / upgrading ECDb file %s failed because ECDbSystem ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
+        BeAssert(false && "ECDb upgrade: Failed to deserialize ECDbSystem ECSchema");
         }
 
-    return SUCCESS;
+    return ERROR;
     }
 
 

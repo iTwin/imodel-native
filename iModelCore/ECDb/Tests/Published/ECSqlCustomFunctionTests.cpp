@@ -5,15 +5,18 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementTestFixture.h"
+#include "ECDbPublishedTests.h"
+
 #include <cmath> // for std::pow
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct ECSqlCustomFunctionTestFixture : ECDbTestFixture {};
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PowSqlFunction : ScalarFunction
+struct PowSqlFunction final : ScalarFunction
     {
 private:
 
@@ -39,7 +42,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct IntegerToBlobSqlFunction : ScalarFunction
+struct IntegerToBlobSqlFunction final : ScalarFunction
     {
     private:
 
@@ -65,7 +68,7 @@ struct IntegerToBlobSqlFunction : ScalarFunction
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ToBoolStrSqlFunction : ScalarFunction
+struct ToBoolStrSqlFunction final : ScalarFunction
     {
     private:
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
@@ -94,7 +97,7 @@ struct ToBoolStrSqlFunction : ScalarFunction
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
- struct SumOfSquares : AggregateFunction
+ struct SumOfSquares final : AggregateFunction
      {
      private:
 
@@ -144,7 +147,7 @@ struct ToBoolStrSqlFunction : ScalarFunction
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
+TEST_F(ECSqlCustomFunctionTestFixture, RegisterUnregisterCustomSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
@@ -162,7 +165,7 @@ TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
+TEST_F(ECSqlCustomFunctionTestFixture, CallUnregisteredSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
@@ -182,26 +185,22 @@ TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
+TEST_F(ECSqlCustomFunctionTestFixture, NumericSqlFunction)
     {
-    const int perClassRowCount = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb(perClassRowCount));
+    ASSERT_EQ(SUCCESS, SetupECDb("NumericSqlFunction.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
-    //insert one more test row which has a NULL column
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        m_ecdb.SaveChanges();
-        }
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ecsql.P (I) VALUES (10)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ecsql.P (I) VALUES (-4)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
 
+    
     PowSqlFunction func;
     ASSERT_EQ(0, m_ecdb.AddFunction(func));
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,POW(I,2) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,POW(I,2) FROM ecsql.P WHERE I IS NOT NULL"));
 
         int rowCount = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -214,12 +213,12 @@ TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
             ASSERT_EQ(std::pow(base, 2), actualFuncResult);
             }
 
-        ASSERT_EQ(perClassRowCount, rowCount);
+        ASSERT_EQ(2, rowCount);
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I, POW(I,?) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I, POW(I,?) FROM ecsql.P WHERE I IS NOT NULL"));
 
         int exp = 3;
         stmt.BindInt(1, exp);
@@ -239,37 +238,36 @@ TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(I,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(I,NULL) FROM ecsql.P"));
 
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(NULL,2) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(NULL,2) FROM ecsql.P"));
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(NULL,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
-
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(NULL,NULL) FROM ecsql.P"));
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(I,2) FROM ecsql.P WHERE I IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
-
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT POW(I,2) FROM ecsql.P WHERE I IS NULL"));
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
+
     ASSERT_EQ(0, m_ecdb.RemoveFunction(func));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
+TEST_F(ECSqlCustomFunctionTestFixture, StringSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
@@ -292,7 +290,7 @@ TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
+TEST_F(ECSqlCustomFunctionTestFixture, BlobSqlFunction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
@@ -352,7 +350,7 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
- TEST_F (ECSqlStatementTestFixture, AggregateFunction)
+ TEST_F (ECSqlCustomFunctionTestFixture, AggregateFunction)
      {
      ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
      ASSERT_EQ(SUCCESS, PopulateECDb(3));
@@ -395,190 +393,83 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
      ASSERT_EQ (BE_SQLITE_ERROR, stmt.Step())<< "Step is expected to fail if function is called with NULL argument";
      }
 
-#ifdef NOT_NOW
-//---------------------------------------------------------------------------------------
-// Syntax: DATEFROMSTRING (Str) : DateTime
-// @bsiclass                                     Krischan.Eberle                 03/15
-//+---------------+---------------+---------------+---------------+---------------+------
-struct DateFromStringFunction : ScalarFunction, ScalarFunction::IScalar
-    {
-    private:
-        void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
-            {
-            if (nArgs != 1)
-                {
-                ctx->SetResultError("Wrong number of arguments for function DATEFROMSTRING.", -1);
-                return;
-                }
-
-            if (args[0].IsNull())
-                {
-                ctx->SetResultError("Argument to DATEFROMSTRING must not be NULL", -1);
-                return;
-                }
-
-            Utf8CP dateStr = args[0].GetValueText();
-            DateTime dt;
-            if (SUCCESS != DateTime::FromString(dt, dateStr))
-                ctx->SetResultError("Invalid date string format.", -1);
-            else
-                {
-                double jd = -1.0;
-                dt.ToJulianDay(jd);
-                ctx->SetResultDouble(jd);
-                }
-            }
-
-    public:
-        DateFromStringFunction() : ScalarFunction("DATEFROMSTRING", 1, ECN::PrimitiveType::PRIMITIVETYPE_DateTime, this) {}
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, DateECSqlFunction)
+TEST_F(ECSqlCustomFunctionTestFixture, JulianDayFromStringFunction)
     {
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"));
+    //---------------------------------------------------------------------------------------
+    // Syntax: JULIANDAYFROMSTRING(TEXT) : JulianDay double
+    // @bsiclass                                     Krischan.Eberle                 03/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    struct JulianDayFromStringFunction final : ScalarFunction
+        {
+        private:
+            void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+                {
+                if (nArgs != 1)
+                    {
+                    ctx.SetResultError("Wrong number of arguments for function JULIANDAYFROMSTRING.", -1);
+                    return;
+                    }
+
+                if (args[0].IsNull())
+                    {
+                    ctx.SetResultError("Argument to JULIANDAYFROMSTRING must not be NULL", -1);
+                    return;
+                    }
+
+                Utf8CP dateStr = args[0].GetValueText();
+                DateTime dt;
+                if (SUCCESS != DateTime::FromString(dt, dateStr))
+                    ctx.SetResultError("Invalid date string format.", -1);
+                else
+                    {
+                    double jd = -1.0;
+                    dt.ToJulianDay(jd);
+                    ctx.SetResultDouble(jd);
+                    }
+                }
+
+        public:
+            JulianDayFromStringFunction() : ScalarFunction("JULIANDAYFROMSTRING", 1, DbValueType::FloatVal) {}
+        };
+
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
     DateTime dt(2015, 3, 24);
     Utf8String dtStr = dt.ToString();
     //insert test data
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P (DtUtc, S) VALUES (?,?)"));
+    stmt.BindDateTime(1, dt);
+    stmt.BindText(2, dtStr.c_str(), IECSqlBinder::MakeCopy::No);
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    m_ecdb.SaveChanges();
+    }
+
+
+    JulianDayFromStringFunction sqlFunc;
+    ASSERT_EQ(0, m_ecdb.AddFunction(sqlFunc));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DtUtc, JULIANDAYFROMSTRING(S) FROM ecsql.P"));
+
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P (DtUtc, S) VALUES (?,?)"));
-        stmt.BindDateTime(1, dt);
-        stmt.BindText(2, dtStr.c_str(), IECSqlBinder::MakeCopy::No);
-
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-
-        ecdb.SaveChanges();
-        }
-
-
-    DateFromStringECSqlFunction ecsqlFunc;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
-
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT DtUtc, DATEFROMSTRING(S) FROM ecsql.P"));
-
-        while (stmt.Step() == BE_SQLITE_ROW)
-            {
-            DateTime expectedDt = stmt.GetValueDateTime(0);
-            DateTime actualDt = stmt.GetValueDateTime(1);
-            ASSERT_EQ(expectedDt.GetYear(), actualDt.GetYear());
-            ASSERT_EQ(expectedDt.GetMonth(), actualDt.GetMonth());
-            ASSERT_EQ(expectedDt.GetDay(), actualDt.GetDay());
-            ASSERT_EQ(expectedDt.GetHour(), actualDt.GetHour());
-            ASSERT_EQ(expectedDt.GetMinute(), actualDt.GetMinute());
-            ASSERT_EQ(expectedDt.GetSecond(), actualDt.GetSecond());
-            }
+        DateTime expectedDt = stmt.GetValueDateTime(0);
+        DateTime actualDt = stmt.GetValueDateTime(1);
+        ASSERT_EQ(expectedDt.GetYear(), actualDt.GetYear());
+        ASSERT_EQ(expectedDt.GetMonth(), actualDt.GetMonth());
+        ASSERT_EQ(expectedDt.GetDay(), actualDt.GetDay());
+        ASSERT_EQ(expectedDt.GetHour(), actualDt.GetHour());
+        ASSERT_EQ(expectedDt.GetMinute(), actualDt.GetMinute());
+        ASSERT_EQ(expectedDt.GetSecond(), actualDt.GetSecond());
         }
     }
 
-//---------------------------------------------------------------------------------------
-// Syntax: GETGEOMETRYTYPE (IGeometry) : String
-// @bsiclass                                     Krischan.Eberle                 03/15
-//+---------------+---------------+---------------+---------------+---------------+------
-struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
-    {
-    private:
-        void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
-            {
-            if (nArgs != 1)
-                {
-                ctx->SetResultError("Wrong number of arguments for function GETGEOMETRYTYPE.", -1);
-                return;
-                }
-
-            if (args[0].IsNull())
-                {
-                ctx->SetResultError("Argument to GETGEOMETRYTYPE must not be NULL", -1);
-                return;
-                }
-
-            Byte const* geomBlob = static_cast<Byte const*> (args[0].GetValueBlob());
-            int blobSize = args[0].GetValueBytes();
-            BeAssert(blobSize > 0);
-            const size_t blobSizeU = (size_t) blobSize;
-            bvector<Byte> byteVec;
-            byteVec.reserve(blobSizeU);
-            byteVec.assign(geomBlob, geomBlob + blobSizeU);
-            IGeometryPtr geom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(byteVec);
-            if (geom == nullptr)
-                {
-                ctx->SetResultError("Argument to GETGEOMETRYTYPE is not an IGeometry", -1);
-                return;
-                }
-
-            IGeometry::GeometryType type = geom->GetGeometryType();
-            Utf8CP geomTypeStr = GeometryTypeToString(type);
-            ctx->SetResultText(geomTypeStr, -1, DbFunction::Context::CopyData::Yes);
-            }
-
-    public:
-        GeometryTypeECSqlFunction() : ECSqlScalarFunction("GETGEOMETRYTYPE", 1, ECN::PrimitiveType::PRIMITIVETYPE_String, this) {}
-
-        static Utf8CP GeometryTypeToString(IGeometry::GeometryType type)
-            {
-            switch (type)
-                {
-                    case IGeometry::GeometryType::BsplineSurface: return "BsplineSurface";
-                    case IGeometry::GeometryType::CurvePrimitive: return "CurvePrimitive";
-                    case IGeometry::GeometryType::CurveVector: return "CurveVector";
-                    case IGeometry::GeometryType::Polyface: return "Polyface";
-                    case IGeometry::GeometryType::SolidPrimitive: return "SolidPrimitive";
-                    default: return "Unknown";
-                }
-            }
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                 03/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, GeometryECSqlFunction)
-    {
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"));
-
-    IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
-    Utf8CP expectedGeomTypeStr = GeometryTypeECSqlFunction::GeometryTypeToString(line->GetGeometryType());
-    //insert test data
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PASpatial (Geometry) VALUES (?)"));
-        stmt.BindGeometry(1, *line);
-        
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-
-        ecdb.SaveChanges();
-        }
-
-        GeometryTypeECSqlFunction ecsqlFunc;
-        ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
-
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(Geometry) FROM ecsql.PASpatial"));
-
-        while (stmt.Step() == BE_SQLITE_ROW)
-            {
-            Utf8CP actualGeomTypeStr = stmt.GetValueText(0);
-            ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);
-            }
-        }
-
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(?) FROM ecsql.PASpatial LIMIT 1"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry (1, *line));
-
-        while (stmt.Step() == BE_SQLITE_ROW)
-            {
-            Utf8CP actualGeomTypeStr = stmt.GetValueText(0);
-            ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);
-            }
-        }
-    }
-
-#endif
 END_ECDBUNITTESTS_NAMESPACE

@@ -39,11 +39,10 @@ private:
     bool m_isPolymorphic;
 
     virtual Utf8StringCR _GetId() const = 0;
-    virtual bool _ContainProperty(Utf8CP propertyName) const = 0;
+    virtual bool _ContainsProperty(Utf8StringCR propertyName) const = 0;
     virtual BentleyStatus _CreatePropertyNameExpList (ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
 
 protected:
-    //RangeClassRefExp (Type type) : RangeClassRefExp(type, true) {}
     explicit RangeClassRefExp (Type type, bool isPolymorphic) : ClassRefExp (type), m_isPolymorphic(isPolymorphic) {}
 
 public:
@@ -54,9 +53,35 @@ public:
     bool IsPolymorphic() const { return m_isPolymorphic;}
 
     BentleyStatus CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(ctx, addDelegate); }
-    bool ContainProperty(Utf8CP propertyName) const { return _ContainProperty(propertyName); }
+    bool ContainsProperty(Utf8StringCR propertyName) const { return _ContainsProperty(propertyName); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2013
+//+===============+===============+===============+===============+===============+======
+struct RangeClassInfo final
+    {
+    enum class Scope
+        {
+        Local,
+        Inherited
+        };
+
+    private:
+        RangeClassRefExp const* m_exp = nullptr;
+        Scope m_scope = Scope::Local;
+
+    public:
+        RangeClassInfo() {}
+        RangeClassInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
+
+        bool IsValid() const { return m_exp != nullptr; }
+        Scope GetScope() const { BeAssert(IsValid()); return m_scope; }
+        bool IsLocal() const { BeAssert(IsValid()); return m_scope == Scope::Local; }
+        bool IsInherited() const { BeAssert(IsValid()); return m_scope == Scope::Inherited; }
+        RangeClassRefExp const& GetExp() const { BeAssert(IsValid()); return *m_exp; }
+    };
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
@@ -88,7 +113,7 @@ private:
 
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
-    bool _ContainProperty(Utf8CP propertyName) const override;
+    bool _ContainsProperty(Utf8StringCR propertyName) const override;
     BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString () const override;

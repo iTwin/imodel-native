@@ -61,7 +61,6 @@ struct TableMap final : RefCounted<NonCopyableClass>
         void Initialize(Utf8StringCR tableName);
         void InitColumnIndexByName();
         void InitSystemColumnMaps();
-        void InitForeignKeyRelClassMaps();
 
         ECN::ECClassId QueryClassId() const;
 

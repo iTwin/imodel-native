@@ -40,12 +40,12 @@ struct PropertyNameExp final : ValueExp
         PropertyPath m_propertyPath;
         std::unique_ptr<PropertyRef> m_propertyRef;
 
-        Utf8String m_classAlias;
+        Utf8String m_className;
         RangeClassRefExp const* m_classRefExp = nullptr;
         ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr; //will never be null, but cannot declare as ref as it is set after construction
-
+        BentleyStatus ResolveUnionOrderByArg(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
-        BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
+        BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath&);
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void SetClassRefExp(RangeClassRefExp const& classRefExp);
@@ -58,12 +58,12 @@ struct PropertyNameExp final : ValueExp
         PropertyNameExp(ECSqlParseContext const&, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
         PropertyNameExp(ECSqlParseContext const&, RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
 
-        Utf8CP GetPropertyName() const { return m_propertyPath[0].GetPropertyName(); }
+        Utf8StringCR GetPropertyName() const { return m_propertyPath[0].GetName(); }
 
         PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
         PropertyMap const& GetPropertyMap() const;
 
-        Utf8CP GetClassAlias() const { return m_classAlias.c_str(); }
+        Utf8CP GetClassName() const { return m_className.c_str(); }
         RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
         PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }

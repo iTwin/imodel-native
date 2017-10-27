@@ -87,6 +87,18 @@ public:
     static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
     static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
 
+    template<typename TId>
+    static TId GetLastInsertedId(ECDbCR ecdb)
+        {
+        const int64_t id = ecdb.GetLastInsertRowId();
+        if (id <= 0)
+            {
+            BeAssert(false && "Could not retrieve last inserted row id from SQLite");
+            return TId();
+            }
+
+        return TId((uint64_t) id);
+        }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

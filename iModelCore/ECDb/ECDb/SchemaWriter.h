@@ -68,7 +68,6 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus DeleteCustomAttributeClass(ECN::ECClassCR deletedClass);
 
         bool IsSpecifiedInRelationshipConstraint(ECN::ECClassCR) const;
-        BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
         bool IsMajorChangeAllowedForSchema(ECN::ECSchemaId id) const { return m_majorChangesAllowedForSchemas.find(id) != m_majorChangesAllowedForSchemas.end(); }
         bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty) const;

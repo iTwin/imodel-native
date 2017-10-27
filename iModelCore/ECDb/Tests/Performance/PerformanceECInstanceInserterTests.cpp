@@ -315,10 +315,14 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
                 }
 
             std::vector<IECInstancePtr> testDataset;
-            for (auto ecClass : testClasses)
+            for (ECClassCP ecClass : testClasses)
                 {
                 for (int i = 0; i < numberOfInstancesPerClass; i++)
-                    testDataset.push_back(ECDbTestUtility::CreateArbitraryECInstance(*ecClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues));
+                    {
+                    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+                    ECInstancePopulator::Populate(*instance);
+                    testDataset.push_back(instance);
+                    }
                 }
 
             if (!testInserter.Prepare(ecdb, testClasses))

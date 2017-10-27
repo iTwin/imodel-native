@@ -11,6 +11,128 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, Settings)
+    {
+    EXPECT_FALSE(ECDb().GetECDbSettings().RequiresECCrudWriteToken());
+    EXPECT_FALSE(ECDb().GetECDbSettings().RequiresECSchemaImportToken());
+    EXPECT_TRUE(ECDb().GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
+
+    struct RestrictableECDb final : ECDb
+        {
+        RestrictableECDb(bool requireCrudToken, bool requireSchemaImportToken, bool allowChangeSetMergeIncompatibleSchemaImport) : ECDb()
+            {
+            ApplyECDbSettings(requireCrudToken, requireSchemaImportToken, allowChangeSetMergeIncompatibleSchemaImport);
+            }
+
+        ~RestrictableECDb() {}
+
+        ECCrudWriteToken const* GetCrudToken() const { return GetECDbSettingsManager().GetCrudWriteToken(); }
+        SchemaImportToken const* GetImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("settings.ecdb"));
+    BeFileName testFilePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    auto createSchemaV1 = [] () 
+        {
+        ECSchemaPtr schema = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "Test", "t", 1, 0, 0));
+        ECEntityClassP testClass = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(testClass, "Foo1"));
+        PrimitiveECPropertyP testProp = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, testClass->CreatePrimitiveProperty(testProp, "Name"));
+        testClass = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(testClass, "Foo2"));
+        EXPECT_EQ(ECObjectsStatus::Success, testClass->CreatePrimitiveProperty(testProp, "Name"));
+        return schema;
+        };
+
+    //creates V2 of the test schema that contains changes (a class is deleted) that are not supported by changeset merging 
+    auto createSchemaV2 = [] ()
+        {
+        ECSchemaPtr schema = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "Test", "t", 2, 0, 0));
+        ECEntityClassP testClass = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(testClass, "Foo2"));
+        PrimitiveECPropertyP testProp = nullptr;
+        EXPECT_EQ(ECObjectsStatus::Success, testClass->CreatePrimitiveProperty(testProp, "Name"));
+        return schema;
+        };
+
+
+    for (bool requiresECCrudWriteToken : {false, true})
+        {
+        for (bool requiresSchemaImportToken : {false, true})
+            {
+            for (bool allowChangesetMergingIncompatibleSchemaImport : {false, true})
+                {
+                RestrictableECDb ecdb(requiresECCrudWriteToken, requiresSchemaImportToken, allowChangesetMergingIncompatibleSchemaImport);
+                EXPECT_EQ(requiresECCrudWriteToken, ecdb.GetECDbSettings().RequiresECCrudWriteToken());
+                EXPECT_EQ(requiresSchemaImportToken, ecdb.GetECDbSettings().RequiresECSchemaImportToken());
+                EXPECT_EQ(allowChangesetMergingIncompatibleSchemaImport, ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
+
+                ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+
+                Utf8CP ecsql = "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('foofile.txt')";
+                if (requiresECCrudWriteToken)
+                    {
+                    ECSqlStatement stmt;
+                    ASSERT_TRUE(ecdb.GetCrudToken() != nullptr) << "RequiresECCrudWriteToken == true";
+                    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdb, ecsql, nullptr)) << "RequiresECCrudWriteToken == true";
+                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql, ecdb.GetCrudToken())) << "RequiresECCrudWriteToken == true";
+                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "RequiresECCrudWriteToken == true";
+                    }
+                else
+                    {
+                    ECSqlStatement stmt;
+                    ASSERT_TRUE(ecdb.GetCrudToken() == nullptr) << "RequiresECCrudWriteToken == false";
+                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql, nullptr)) << "RequiresECCrudWriteToken == false";
+                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "RequiresECCrudWriteToken == false";
+                    }
+
+                if (requiresSchemaImportToken)
+                    {
+                    ASSERT_TRUE(ecdb.GetImportToken() != nullptr) << "RequiresSchemaImportToken == true";
+                    ECSchemaPtr schema = createSchemaV1();
+                    ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas({schema.get()}, nullptr)) << "RequiresSchemaImportToken == true";
+                    ecdb.AbandonChanges();
+                    schema = createSchemaV1();
+                    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "RequiresSchemaImportToken == true";
+                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") != nullptr) << "RequiresSchemaImportToken == true";
+                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "RequiresSchemaImportToken == true";
+                    }
+                else
+                    {
+                    ECSchemaPtr schema = createSchemaV1();
+                    ASSERT_TRUE(ecdb.GetImportToken() == nullptr) << "RequiresSchemaImportToken == false";
+                    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, nullptr)) << "RequiresSchemaImportToken == false";
+                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") != nullptr) << "RequiresSchemaImportToken == false";
+                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "RequiresSchemaImportToken == false";
+                    }
+
+                if (allowChangesetMergingIncompatibleSchemaImport)
+                    {
+                    ECSchemaPtr schema = createSchemaV2();
+                    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "AllowChangesetMergingIncompatibleSchemaImport == true";
+                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") == nullptr) << "AllowChangesetMergingIncompatibleSchemaImport == true";
+                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "AllowChangesetMergingIncompatibleSchemaImport == true";
+                    }
+                else
+                    {
+                    ECSchemaPtr schema = createSchemaV2();
+                    ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "AllowChangesetMergingIncompatibleSchemaImport == false";
+                    }
+
+                ecdb.AbandonChanges();
+                }
+            }
+        }
+    }
+
 //=======================================================================================
 // @bsiclass                                     Krischan.Eberle                  01/15
 //=======================================================================================
@@ -172,16 +294,16 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                10/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ResetIdSequences)
+TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
     {
     struct TestECDb final : ECDb
         {
         TestECDb() : ECDb() {}
         ~TestECDb() {}
 
-        BentleyStatus CallResetIdSequences(BeBriefcaseId newBriefcaseId, IdSet<ECClassId> const* ecClassIgnoreList) { return ResetIdSequences(newBriefcaseId, ecClassIgnoreList); }
+        BentleyStatus CallResetInstanceIdSequence(BeBriefcaseId newBriefcaseId, IdSet<ECClassId> const* ecClassIgnoreList) { return ResetInstanceIdSequence(newBriefcaseId, ecClassIgnoreList); }
 
-        BeBriefcaseBasedId GetECInstanceIdSequenceValue()
+        BeBriefcaseBasedId GetInstanceIdSequenceValue()
             {
             BriefcaseLocalValueCache& cache = GetBLVCache();
             size_t ix = 0;
@@ -196,7 +318,7 @@ TEST_F(ECDbTestFixture, ResetIdSequences)
             }
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ResetIdSequences.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(SUCCESS, SetupECDb("ResetInstanceIdSequence.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                                                                             <ECEntityClass typeName="A" >
@@ -266,15 +388,15 @@ TEST_F(ECDbTestFixture, ResetIdSequences)
     TestECDb testDb;
     ASSERT_EQ(BE_SQLITE_OK, testDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
-    ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetECInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
+    ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
 
     for (std::pair<uint32_t, uint64_t> const& kvPair : sequenceValuesPerBriefcase)
         {
         BeBriefcaseId briefcaseId(kvPair.first);
         uint64_t expectedMaxId = kvPair.second;
         BeBriefcaseBasedId expectedId(briefcaseId, expectedMaxId);
-        ASSERT_EQ(SUCCESS, testDb.CallResetIdSequences(briefcaseId, nullptr)) << briefcaseId.GetValue();
-        ASSERT_EQ(expectedId, testDb.GetECInstanceIdSequenceValue()) << "Briefcase Id: " << briefcaseId.GetValue() << " Expected sequence value (lower 40 bits): " << expectedMaxId;
+        ASSERT_EQ(SUCCESS, testDb.CallResetInstanceIdSequence(briefcaseId, nullptr)) << briefcaseId.GetValue();
+        ASSERT_EQ(expectedId, testDb.GetInstanceIdSequenceValue()) << "Briefcase Id: " << briefcaseId.GetValue() << " Expected sequence value (lower 40 bits): " << expectedMaxId;
         }
     }
 

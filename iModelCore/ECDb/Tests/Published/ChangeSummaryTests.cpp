@@ -28,11 +28,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
 //=======================================================================================
 struct TestChangeSet : BeSQLite::ChangeSet
     {
-    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override
-        {
-        BeAssert(false && "Unexpected conflict");
-        return ConflictResolution::Skip;
-        }
+    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
     };
 
 //=======================================================================================
@@ -40,15 +36,9 @@ struct TestChangeSet : BeSQLite::ChangeSet
 //=======================================================================================
 struct TestChangeTracker : BeSQLite::ChangeTracker
     {
-    TestChangeTracker(BeSQLite::DbR db)
-        {
-        SetDb(&db);
-        }
+    TestChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
 
-    OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override
-        {
-        return OnCommitStatus::Continue;
-        }
+    OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Continue; }
     };
 
 //---------------------------------------------------------------------------------------
@@ -123,51 +113,44 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
 TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Code' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='TestElement' modifier='None'>"
-        "        <BaseClass>Element</BaseClass>"
-        "        <ECProperty propertyName='S' typeName='string'/>"
-        "        <ECProperty propertyName='I' typeName='int'/>"
-        "        <ECProperty propertyName='L' typeName='long'/>"
-        "        <ECProperty propertyName='D' typeName='double'/>"
-        "        <ECProperty propertyName='DT' typeName='dateTime'/>"
-        "        <ECProperty propertyName='B' typeName='boolean'/>"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Element" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                      <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="TestElement" modifier="None">
+                <BaseClass>Element</BaseClass>
+                <ECProperty propertyName="S" typeName="string"/>
+                <ECProperty propertyName="I" typeName="int"/>
+                <ECProperty propertyName="L" typeName="long"/>
+                <ECProperty propertyName="D" typeName="double"/>
+                <ECProperty propertyName="DT" typeName="dateTime"/>
+                <ECProperty propertyName="B" typeName="boolean"/>
+            </ECEntityClass>
+        </ECSchema>)xml")));
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    ECSqlStatement stmt;
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B) VALUES ('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true)"));
-
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.TestElement(Code,S,I,L,D,DT,B) VALUES('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true)"));
     m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
     TestChangeSet changeset;
-    auto rc = changeset.FromChangeTrack(tracker);
-    ASSERT_TRUE(BE_SQLITE_OK == rc);
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ChangeSummary changeSummary(m_ecdb);
-    BentleyStatus status = changeSummary.FromChangeSet(changeset);
-    ASSERT_TRUE(SUCCESS == status);
+    ASSERT_EQ(SUCCESS, changeSummary.FromChangeSet(changeset));
 
     /*
     BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect

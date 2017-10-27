@@ -32,11 +32,11 @@ private:
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 0); }
+    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 1); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static ProfileVersion GetMinimumSupportedVersion() { return ProfileVersion(4, 0, 0, 0); }
 
-    static DbResult RunUpgraders(ECDbCR, ProfileVersion const& currentProfileVersion);
+    static DbResult RunUpgraders(ECDbCR);
 
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", "ec_Db"); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", "ec_Db"); }

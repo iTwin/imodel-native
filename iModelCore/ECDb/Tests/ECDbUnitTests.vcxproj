@@ -41,6 +41,7 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
     <ClCompile Include="Published\BulkCrudTests.cpp" />
     <ClCompile Include="Published\ChangeSummaryTests.cpp" />
+    <ClCompile Include="Published\ECSqlToSqlGenerationTests.cpp" />
     <ClCompile Include="Published\FileFormatCompatibilityTests.cpp" />
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
@@ -58,7 +59,6 @@
     <ClCompile Include="Published\ECSqlRangeTreeTests.cpp" />
     <ClCompile Include="Published\ECSqlStatementCacheTest.cpp" />
     <ClCompile Include="Published\ECSqlStatementFunctionTests.cpp" />
-    <ClCompile Include="Published\ECSqlStatementTestFixture.cpp" />
     <ClCompile Include="Published\ECSqlStatementTests.cpp" />
     <ClCompile Include="Published\FileInfoTests.cpp" />
     <ClCompile Include="Published\FSRTests.cpp" />
@@ -91,7 +91,6 @@
     <ClInclude Include="Published\BulkCrudTestFixture.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h" />
-    <ClInclude Include="Published\ECSqlStatementTestFixture.h" />
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

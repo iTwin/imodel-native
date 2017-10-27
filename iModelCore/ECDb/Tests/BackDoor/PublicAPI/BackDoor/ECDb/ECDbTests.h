@@ -9,11 +9,8 @@
 
 #include <ECDb/ECDbApi.h>
 #include <Bentley/BeTest.h>
-#include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
-#include <json/json.h>
 #include <ostream>
-#include <initializer_list>
 
 #define BEGIN_ECDBUNITTESTS_NAMESPACE BEGIN_BENTLEY_SQLITE_EC_NAMESPACE namespace Tests {
 #define END_ECDBUNITTESTS_NAMESPACE } END_BENTLEY_SQLITE_EC_NAMESPACE
@@ -53,7 +50,7 @@ struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
     private:
         ECDbR m_ecdb;
         mutable ECDbIssue m_issue;
-        void _OnIssueReported(Utf8CP message) const override;
+        void _OnIssueReported(Utf8CP message) const override { m_issue = ECDbIssue(message); }
 
     public:
         explicit ECDbIssueListener(ECDbR ecdb) : BeSQLite::EC::ECDb::IIssueListener(), m_ecdb(ecdb) { m_ecdb.AddIssueListener(*this); }
@@ -63,43 +60,6 @@ struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
         ECDbIssue GetIssue() const;
 
         void Reset() { m_issue = ECDbIssue(); }
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                                 Ramanujam.Raman      04/2012
-+===============+===============+===============+===============+===============+======*/
-struct ECDbTestUtility
-    {
-    typedef void(*PopulatePrimitiveValueCallback)(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecproperty);
-
-    private:
-        static bool     CompareJsonWithECValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
-        static bool     CompareJsonWithECPrimitiveValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
-        static bool     CompareJsonWithECArrayValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
-        static bool     CompareJsonWithECStructValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
-
-        static void     PopulateStructValue(ECN::ECValueR value, ECN::ECClassCR structType, PopulatePrimitiveValueCallback callback);
-        static void     PopulatePrimitiveValue(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
-        static void     GenerateRandomValue(ECN::ECValueR value, ECN::PrimitiveType type, ECN::ECPropertyCP ecproperty = nullptr);
-
-        static ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, Utf8CP baseAccessPath);
-        static ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
-
-    public:
-        static bool     CompareECInstances(ECN::IECInstanceCR a, ECN::IECInstanceCR b);
-        static int64_t  ReadCellValueAsInt64(BeSQLite::DbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
-        static bool     CompareJsonWithECInstance(const Json::Value& json, ECN::IECInstanceCR referenceInstance);
-        static void     DebugDumpJson(const Json::Value& jsonValue);
-        
-        static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
-
-        static void     AssertECDateTime(ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
-
-        static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);
-        static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);
-        static void            AssignRandomValueToECInstance(ECN::ECValueP createdValue, ECN::IECInstancePtr instance, Utf8CP propertyName);
-        static void PopulatePrimitiveValueWithRandomValues(ECN::ECValueR ecValue, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
-
     };
 
 //=======================================================================================

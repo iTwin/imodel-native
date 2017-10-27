@@ -25,7 +25,7 @@ protected:
                 ApplyECDbSettings(true, false, true);
                 }
 
-            ECCrudWriteToken const* GetToken() const { return GetECDbSettings().GetCrudWriteToken(); }
+            ECCrudWriteToken const* GetToken() const { return GetECDbSettingsManager().GetCrudWriteToken(); }
         };
     };
 
@@ -33,7 +33,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
+TEST_F(ECCrudWriteTokenTestFixture, Test)
 {
     BeFileName seedFilePath;
     ECInstanceKey blobIoInstanceKey;
