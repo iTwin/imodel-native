@@ -511,7 +511,7 @@ protected:
         }
 
 public:
-    TestNodesProviderContextFactory() : m_statementsCache(10) {}
+    TestNodesProviderContextFactory() : m_statementsCache(10), m_nodesCache(nullptr) {}
     void SetNodesCache(IHierarchyCacheP cache) {m_nodesCache = cache;}
 };
 

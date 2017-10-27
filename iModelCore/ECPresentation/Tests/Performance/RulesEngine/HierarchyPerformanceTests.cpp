@@ -25,7 +25,7 @@ struct HierarchyPerformanceTests : RulesEnginePerformanceTests
         BeFileName path;
         BeTest::GetHost().GetDocumentsRoot(path);
         path.AppendToPath(L"Performance");
-        path.AppendToPath(L"Plant.bim");
+        path.AppendToPath(L"Oakland.ibim");
         return path;
         }
 
@@ -260,4 +260,25 @@ TEST_F(HierarchyPerformanceTests, CreateFullHierarchyWithoutPaging)
     {
     Timer t_hierarchy;
     IncrementallyGetNodes("Items", nullptr, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HierarchyPerformanceTests, FilterNodesFromNotExpandedHierarchy)
+    {
+    Timer t_hierarchy;
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
+    m_manager->GetFilteredNodesPaths(m_project, "ist", options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
+    {
+    IncrementallyGetNodes("Items", nullptr, false);
+    Timer t_hierarchy;
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
+    m_manager->GetFilteredNodesPaths(m_project, "ist", options);
     }

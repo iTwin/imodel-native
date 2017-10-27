@@ -163,15 +163,19 @@ private:
             RulesPreprocessor::RootNodeRuleParameters params(context.GetDb(), context.GetRuleset(), TargetTree_MainTree,
                 context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
-            provider = MultiSpecificationNodesProvider::Create(context, specs);
+            if (!specs.empty())
+                provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(context.GetDb(), *parent, context.GetRuleset(), TargetTree_MainTree, 
                 context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
-            provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
+            if (!specs.empty())
+                provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
+        if (provider.IsNull())
+            provider = EmptyNavNodesProvider::Create(context);
         return provider;
         }
 
@@ -507,6 +511,39 @@ NavNodeCPtr RulesDrivenECPresentationManager::_GetParent(ECDbR connection, NavNo
 NavNodeCPtr RulesDrivenECPresentationManager::_GetNode(ECDbR connection, uint64_t nodeId)
     {
     return GetNodesCache().GetNode(nodeId, NodeVisibility::Physical);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::TraverseNodes(ECDbR connection, JsonValueCR options, DataContainer<NavNodeCPtr> nodes)
+    {
+    for (int i = 0; i < nodes.GetSize(); i++)
+        {
+        NavNodeCPtr node = nodes.Get(i);
+        if (node->HasChildren())
+            TraverseNodes(connection, options, GetChildren(connection, *node, PageOptions(), options));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NavNodeCPtr> RulesDrivenECPresentationManager::_GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions)
+    {
+    NavigationOptions options(jsonOptions);
+    if (!GetNodesCache().IsDataSourceCached(connection.GetDbGuid(), options.GetRulesetId()))
+        GetRootNodes(connection, PageOptions(), jsonOptions);
+    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetDisableUpdates());
+    size_t nodesCount = provider->GetNodesCount();
+    for (size_t i = 0; i < nodesCount; i++)
+        {
+        JsonNavNodePtr node;
+        provider->GetNode(node, i);
+        if (node->HasChildren())
+            TraverseNodes(connection, jsonOptions, GetChildren(connection, *node, PageOptions(), jsonOptions));
+        }
+    return GetNodesCache().GetFilteredNodes(connection, options.GetRulesetId(), filterText);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -878,4 +915,12 @@ void RulesDrivenECPresentationManager::_OnNodeCollapsed(ECDbR connection, uint64
         node->SetIsExpanded(false);
         GetNodesCache().Update(nodeId, *node);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnAllNodesCollapsed(ECDbR connection, JsonValueCR options)
+    {
+    GetNodesCache().ResetExpandedNodes(connection.GetDbGuid(), options["RulesetId"].asCString());
     }
