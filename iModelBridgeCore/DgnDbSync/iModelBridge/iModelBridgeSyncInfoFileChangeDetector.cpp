@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #undef LOG
-#define LOG (*LoggingManager::GetLogger(L"DgnDbSync"))
+#define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
@@ -22,6 +22,8 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(Conve
     {
     if (!conversionResults.m_element.IsValid())
         return DgnDbStatus::Success;
+
+    GetLocksAndCodes(*conversionResults.m_element);
 
     DgnDbStatus stat;
 
@@ -82,6 +84,25 @@ DgnElementPtr iModelBridgeSyncInfoFile::ChangeDetector::MakeCopyForUpdate(DgnEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::GetLocksAndCodes(DgnElementR el)
+    {
+    if (GetDgnDb().BriefcaseManager().IsBulkOperation())
+        return DgnDbStatus::Success;
+
+    // Request locks and codes explicity this is happening in a phase such as _OpenSource that is called before we go into bulk insert mode.
+    IBriefcaseManager::Request req;
+    el.PopulateRequest(req, (el.GetElementId().IsValid())? BeSQLite::DbOpcode::Update: BeSQLite::DbOpcode::Insert);
+    if (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().Acquire(req).Result())
+        {
+        BeAssert(false);
+        return DgnDbStatus::LockNotHeld;
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIMForOneElement(ConversionResults& conversionResults, DgnElementId existingElementId)
     {
     if (!conversionResults.m_element.IsValid() || !existingElementId.IsValid())
@@ -108,7 +129,9 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::UpdateResultsInBIMForOneEl
 
     DgnElementPtr writeEl = MakeCopyForUpdate(*conversionResults.m_element, *el);
 
-    DgnDbStatus stat;
+    GetLocksAndCodes(*writeEl);
+
+    DgnDbStatus stat; 
     DgnElementCPtr result = GetDgnDb().Elements().Update(*writeEl, &stat); 
     if (!result.IsValid())
         return stat;
@@ -238,7 +261,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::ChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter)
+iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::ChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool forceChange)
     {
     Results res;
 
@@ -261,7 +284,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
             return Results(sid, currentState);    // We have it, but the filter rejected it. We have to treat it as new
 
         // We found it because its content hash matches a stored record. So, we report that this item is the same as this record.
-        return Results(ChangeType::Unchanged, rec, currentState);
+        return Results(forceChange? ChangeType::Changed: ChangeType::Unchanged, rec, currentState);
         }
         
     // --------------------------------
@@ -276,11 +299,13 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
             continue;
 
         double lmt = item._GetLastModifiedTime();
-        if ((0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() != lmt))
+        if (!forceChange && (0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() != lmt))
             return Results(ChangeType::Unchanged, rec, SourceState(lmt,""));
 
         SourceState currentState(lmt, item._GetHash());
         ChangeType ch = (rec.GetSourceState().GetHash() == currentState.GetHash())? ChangeType::Unchanged: ChangeType::Changed;
+        if (forceChange)
+            ch = ChangeType::Changed;
         return Results(ch, rec, currentState);
         }
     
@@ -291,17 +316,18 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::InitialConversionChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter)
+iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::InitialConversionChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool)
     {
     Results res;
     auto sid = SourceIdentity(scope, kind, item._GetId());
     SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
     return Results(sid, currentState);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeen()
+void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes)
     {
     // *** NB: This alogorithm *infers* that an element was deleted in the source repository if we did not see it during the conversion.
     //          This inference is valid only if we know that we saw all items in the source and that they were all added to m_elementsSeen or m_scopesSkipped.
@@ -310,6 +336,9 @@ void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeen()
     auto iter = m_si.MakeIterator();
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
+        if (std::find(onlyInScopes.begin(), onlyInScopes.end(), elementInSyncInfo.GetSourceIdentity().GetScopeROWID()) == onlyInScopes.end())
+            continue;   // consider only items in the specified scopes
+
         auto previousConversion = elementInSyncInfo.GetRecord();
         if (!previousConversion.GetDgnElementId().IsValid())
             continue;   // ignore discards and records created for organization purposes

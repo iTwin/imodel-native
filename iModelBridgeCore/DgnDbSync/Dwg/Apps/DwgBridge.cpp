@@ -161,7 +161,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
     {
     // instantiate a new importer to begin a new job
-    m_importer.reset (new DwgImporter(m_options));
+    m_importer.reset (this->_CreateDwgImporter());
     // will save elements into target BIM
     m_importer->SetDgnDb (bim);
     // boostrap importer with required syncInfo file
@@ -182,10 +182,22 @@ void DwgBridge::_OnConvertedToBim (BentleyStatus status)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter*    DwgBridge::_CreateDwgImporter ()
+    {
+    // provide the default DWG importer
+    return  new DwgImporter (m_options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     {
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(DwgImporter::GetRegistrySubKey());
+
     auto host = DgnPlatformLib::QueryHost ();
     if (nullptr == host)
         {
@@ -283,9 +295,9 @@ void    DwgBridge::_CloseSource (BentleyStatus status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    DwgBridge::_OnSourceFileDeleted ()
+BentleyStatus DwgBridge::_DetectDeletedDocuments()
     {
-    m_importer->_OnSourceFileDeleted ();
+    return m_importer->_DetectDeletedDocuments();
     }
 
 /*---------------------------------------------------------------------------------**//**

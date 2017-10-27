@@ -45,6 +45,7 @@ LINKER_LIBRARIES    + $(ContextDeliveryDir)DwgBridge.lib
 
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
 
 #----------------------------------------------------------------------
 #   Link the executable

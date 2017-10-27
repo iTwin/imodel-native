@@ -51,10 +51,9 @@ static BeSQLite::PropertySpec s_briefcaseIdPropSpec("BriefcaseId", "be_iModelBri
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 static iModelBridge* s_bridgeForTesting;
+static IModelBridgeRegistry* s_registryForTesting;
 
-#ifdef _WIN32
 static int s_maxWaitForMutex = 60000;
-#endif
 
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
@@ -180,7 +179,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-input-sheet=          (required)  Input sheet file name. Can be more than one.\n"
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
-#ifdef COMMENT_OUT // *** we don't plan to support these as direct inputs in the framework BAS GUI
+        L"--fwk-transform=            (optional)  3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
         L"--fwk-input-gcs=gcsspec     (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
         L"--fwk-geoCalculation=       (optional)  If a new model is added with the --update option, sets the geographic coordinate calculation method. Possible Values are:\n"
@@ -188,7 +187,6 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"                                           Reproject - Do full geographic reprojection of each point\n"
         L"                                           Transform - use the source GCS and DgnDb GCS to construct and use a linear transform\n"
         L"                                           TransformScaled - Similar to Transform, except the transform is scaled to account for the GCS grid to ground scale (also known as K factor).\n"
-#endif
         );
     }
 
@@ -210,6 +208,7 @@ void iModelBridgeFwk::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeFwk", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"iModelHub", NativeLogging::LOG_INFO);
     //NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnCore", NativeLogging::LOG_TRACE);
     NativeLogging::LoggingConfig::SetSeverity(L"DgnV8Converter", NativeLogging::LOG_TRACE);
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
@@ -224,14 +223,22 @@ static BeFileName  GetDefaultAssetsDirectory()
 
     fwkAssetsDirRaw.AppendToPath(L"..");
     fwkAssetsDirRaw.AppendToPath(L"..");
-    fwkAssetsDirRaw.AppendToPath(L"assets");                        // we want:         blah/iModelBridgeFwk/assets
+    fwkAssetsDirRaw.AppendToPath(L"Assets");                        // we want:         blah/iModelBridgeFwk/assets
     if (fwkAssetsDirRaw.DoesPathExist())
         return fwkAssetsDirRaw;
 
     //Try default assets folder relative the program directory
     fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
-    fwkAssetsDirRaw.AppendToPath(L"assets");
+    fwkAssetsDirRaw.AppendToPath(L"Assets");
     return fwkAssetsDirRaw;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridgeFwk::JobDefArgs::JobDefArgs()
+    {
+    m_spatialDataTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -368,13 +375,18 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
-#ifdef _WIN32
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-max-wait="))
             {
             wscanf(getArgValueW(argv[iArg]).c_str(), L"%d", &s_maxWaitForMutex);
             continue;
             }
-#endif
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-transform="))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, getArgValue(argv[iArg])))
+                return BSIERROR;
+            continue;
+            }
 
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input-gcs="))
             {
@@ -922,6 +934,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
+    params.SetSpatialDataTransform(m_jobEnvArgs.m_spatialDataTransform);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1239,8 +1252,10 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 #endif
 
-    //  Tell the bridge to update the BIM
-    if (BSISUCCESS != m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb))
+    //  Now, finally, we can convert data
+    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
+    
+    if (BSISUCCESS != bridgeCvtStatus)
         {
         m_briefcaseDgnDb->AbandonChanges();
         m_briefcaseDgnDb = nullptr;
@@ -1428,9 +1443,25 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
+BentleyStatus iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)
     {
     return GetRegistry()._GetDocumentProperties(props, fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::_GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeGuid const& guid)
+    {
+    return GetRegistry()._GetDocumentPropertiesByGuid(props, localFilePath, guid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetRegistryForTesting(IModelBridgeRegistry& reg)
+    {
+    s_registryForTesting = &reg;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1440,7 +1471,11 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     {
     if (!m_registry.IsValid())
         {
-        m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+        if (s_registryForTesting)
+            m_registry = s_registryForTesting;
+        else
+            m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+
         if (!m_registry.IsValid())
             throw "iModelBridgeRegistry statedb open error";
         }

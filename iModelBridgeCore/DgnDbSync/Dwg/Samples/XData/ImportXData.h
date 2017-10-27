@@ -61,7 +61,8 @@ public:
 struct ImportXDataSample : public DwgBridge
     {
     DEFINE_T_SUPER (DwgBridge)
-    BentleyStatus   ImportDwgFile (int argc, WCharCP argv[]);
+    // override this method to provide DwgBridge our sample importer:
+    DwgImporter*    _CreateDwgImporter () override;
     };  // ImportXDataSample
 
 END_DGNDBSYNC_DWG_NAMESPACE

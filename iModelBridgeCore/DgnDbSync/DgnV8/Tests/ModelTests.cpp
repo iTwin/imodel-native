@@ -36,6 +36,7 @@ void ModelTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNa
     RootModelConverter::RootModelSpatialParams params(m_params);
 
     params.SetInputFileName(input);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
 
     RootModelConverter creator(params);
     creator.SetWantDebugCodes(true);

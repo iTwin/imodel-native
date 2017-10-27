@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE
 
-static DgnDbServerClientUtils* s_utilsForTesting;
+static iModelHubFX* s_iModelHubFXForTesting;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -409,7 +409,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseSharedLocks()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::Briefcase_Shutdown()
     {
-    if (nullptr != m_clientUtils && m_clientUtils != s_utilsForTesting)
+    if (nullptr != m_clientUtils && m_clientUtils != s_iModelHubFXForTesting)
         delete m_clientUtils;       // This relases the DgnDbBriefcase
         
     m_clientUtils = nullptr;
@@ -418,9 +418,9 @@ void iModelBridgeFwk::Briefcase_Shutdown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SetDgnDbServerClientUtilsForTesting(DgnDbServerClientUtils& utils)
+void iModelBridgeFwk::SetiModelHubFXForTesting(iModelHubFX& c)
     {
-    s_utilsForTesting = &utils;
+    s_iModelHubFXForTesting = &c;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -440,7 +440,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
 
     Http::HttpClient::Initialize(assetsDir);
     BeAssert(nullptr == m_clientUtils);
-    m_clientUtils = s_utilsForTesting? s_utilsForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount);
+    m_clientUtils = s_iModelHubFXForTesting? s_iModelHubFXForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount);
     Tasks::AsyncError serror;
     if (BSISUCCESS != m_clientUtils->SignIn(&serror, m_serverArgs.m_credentials))
         {

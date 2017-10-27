@@ -33,10 +33,13 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 struct DwgBridge : iModelBridge
 {
 DEFINE_T_SUPER (iModelBridge)
-
-protected:
+private:
     DwgImporter::Options            m_options;
     std::unique_ptr<DwgImporter>    m_importer;
+
+protected:
+    // Instantiate a new DwgImporter - consumer to override with a customer importer:
+    DGNDBSYNC_EXPORT virtual DwgImporter* _CreateDwgImporter ();
 
     // iModelBridge overrides
     DGNDBSYNC_EXPORT WString        _SupplySqlangRelPath () override;
@@ -49,7 +52,7 @@ protected:
     DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;
     DGNDBSYNC_EXPORT void           _CloseSource (BentleyStatus) override;
     DGNDBSYNC_EXPORT void           _DeleteSyncInfo () override;
-    DGNDBSYNC_EXPORT void           _OnSourceFileDeleted () override;
+    DGNDBSYNC_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
     DGNDBSYNC_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&           _GetParams () override { return m_options; }
     DGNDBSYNC_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;

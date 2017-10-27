@@ -234,12 +234,15 @@ struct DwgImporter
     friend struct DwgSyncInfo;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
+    friend struct MaterialFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
 
 public:
+    static WCharCP GetRegistrySubKey() {return L"DwgBridge";}
+
     //! Configuration for the conversion process
     struct Config
         {
@@ -310,6 +313,7 @@ public:
         uint16_t            m_pointCloudLevelOfDetails;
         bool                m_preferRenderableGeometry;
         Utf8String          m_namePrefix;
+        bool                m_includeDwgPathInMaterialSearchPaths;
 
     public:
         Options ()
@@ -325,6 +329,7 @@ public:
             m_importPointClouds = false;
             m_pointCloudLevelOfDetails = 1;
             m_preferRenderableGeometry = false;
+            m_includeDwgPathInMaterialSearchPaths = false;
             }
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -347,6 +352,7 @@ public:
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
+        void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -371,6 +377,7 @@ public:
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
+        bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         };  // Options : iModelBridge::Params
 
     struct GeometryOptions : public IDwgDrawOptions
@@ -712,7 +719,7 @@ public:
         };
 
     //! Categories for issues
-    BENTLEY_TRANSLATABLE_STRINGS_START(IssueCategory, dwg_issueCategory)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(IssueCategory, dwg_issueCategory)
         L10N_STRING(Compatibility)      // =="Compatibility"==
         L10N_STRING(ConfigXml)          // =="Config"==
         L10N_STRING(CorruptData)        // =="Corrupt Data"==
@@ -729,10 +736,10 @@ public:
         L10N_STRING(Unsupported)        // =="Unsupported"==
         L10N_STRING(VisualFidelity)     // =="Visual Fidelity"==
         L10N_STRING(Briefcase)          // =="Briefcase"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! A problem in the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
         L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
         L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will used for display."==
         L10N_STRING(CannotOpenModelspace)        // =="Cannot open modelspace for file [%s]"==
@@ -778,6 +785,7 @@ public:
         L10N_STRING(ModelFilteredOut)            // =="Model [%s] was not imported."==
         L10N_STRING(NotADgnDb)                   // =="The file is not a DgnDb"==
         L10N_STRING(NotRecognizedFormat)         // =="File [%s] is not in a recognized format"==
+        L10N_STRING(NewerDwgVersion)             // =="File [%s] is a newer version not currently supported"==
         L10N_STRING(CantCreateRaster)            // =="Cannot create raster attachment [%s]."==
         L10N_STRING(RootModelChanged)            // =="The original root model was deleted or has changed units."==
         L10N_STRING(RootModelMustBePhysical)     // =="Root model [%s] is not a physical model."==
@@ -788,12 +796,13 @@ public:
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
+        L10N_STRING(STEP_INITIALIZING)                 // =="Initializing"==
         L10N_STRING(STEP_CLEANUP_EMPTY_TABLES)         // =="Cleaning up empty tables"==
-        L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls"==
+        L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls [%s]"==
         L10N_STRING(STEP_COMPACTING)                   // =="Compacting File"==
         L10N_STRING(STEP_IMPORTING_ENTITIES)           // =="Importing Entities"==
         L10N_STRING(STEP_IMPORTING_VIEWS)              // =="Importing Views"==
@@ -806,20 +815,20 @@ public:
         L10N_STRING(STEP_IMPORTING_LAYERS)             // =="Importing Layers"==
         L10N_STRING(STEP_IMPORTING_TEXTSTYLES)         // =="Importing Text Styles"==
         L10N_STRING(STEP_IMPORTING_LINETYPES)          // =="Importing Line Types"==
-        L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
         L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
+        L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
+        L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
+        L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
         L10N_STRING(TASK_IMPORTING_MODEL)              // =="Model: %s"==
         L10N_STRING(TASK_IMPORTING_RASTERDATA)         // =="Importing raster data file: %s"==
         L10N_STRING(TASK_CREATING_THUMBNAIL)           // =="Creating thumbnail for: %s"==
-        L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
-        L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Miscellaneous strings needed for DwgImporter
-    BENTLEY_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
         L10N_STRING(AttrdefsSchemaDescription)         // =="Block attribute definitions created from DWG file %ls"==
         L10N_STRING(BlockAttrdefDescription)           // =="Attribute definitions created from block %ls"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter
         {
@@ -907,6 +916,7 @@ protected:
     T_LineStyleIdMap            m_importedLinestyles;
     T_MaterialIdMap             m_importedMaterials;
     T_MaterialTextureIdMap      m_materialTextures;
+    bvector<BeFileName>         m_materialSearchPaths;
     uint32_t                    m_entitiesImported;
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
@@ -949,6 +959,7 @@ protected:
     BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
     DGNDBSYNC_EXPORT  virtual void      _SetChangeDetector (bool updating);
     virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
+    DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
 
     //! @name The ImportJob
     //! @{
@@ -971,9 +982,7 @@ protected:
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
 
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
-    //! Called when the framework detects that a input file has been removed from the job and is presumably deleted in the ProjectWise source.
-    //! The bridge should delete all models and elements in the briefcase that came from this file.
-    DGNDBSYNC_EXPORT virtual void       _OnSourceFileDeleted ();
+    DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
 
     //! @name  Creating DgnModels for DWG
     //! @{
@@ -1028,6 +1037,7 @@ protected:
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterialSection ();
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNDBSYNC_EXPORT virtual BentleyStatus          _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    DGNDBSYNC_EXPORT bvector<BeFileName> const&     GetMaterialSearchPaths () const { return m_materialSearchPaths; }
 
     //! @name  Importing entities
     //! @{
@@ -1081,8 +1091,8 @@ protected:
 
     //! @name DWG-DgnDb sync info
     //! @{
-    virtual DwgSyncInfo::DwgFileId      _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
-    virtual StableIdPolicy              _GetDwgFileIdPolicy () const;
+    DGNDBSYNC_EXPORT virtual DwgSyncInfo::DwgFileId _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
+    DGNDBSYNC_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
 public:
@@ -1158,6 +1168,7 @@ public:
     //! Create a new or update an existing element from an entity based on the sync info
     DGNDBSYNC_EXPORT BentleyStatus      ImportOrUpdateEntity (ElementImportInputs& inputs);
     DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
+    DGNDBSYNC_EXPORT uint32_t           GetEntitiesImported () const { return m_entitiesImported; }
     
     };  // DwgImporter
 

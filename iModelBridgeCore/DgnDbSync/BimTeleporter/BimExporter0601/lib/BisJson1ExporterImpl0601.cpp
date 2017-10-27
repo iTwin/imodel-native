@@ -713,7 +713,7 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
         if (!cat.IsValid())
             continue;
         Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, cat->GetElementId().GetValue());
-        ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str());
+        ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str(), false);
         auto& entry = out[out.size() - 1][JSON_OBJECT_KEY];
         auto& codeSpec = entry[BIS_ELEMENT_PROP_CodeSpec] = Json::Value(Json::ValueType::objectValue);
         if (vc.IsDrawingView() || vc.IsSheetView())
@@ -726,6 +726,7 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
             entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
             codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
             }
+        (QueueJson) (out[out.size()-1].toStyledString().c_str());
         }
 
     auto& categorySelector = out.append(Json::ValueType::objectValue);
@@ -1448,7 +1449,6 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
                     obj.removeMember("GeometryStream");
                 else
                     obj["GeometryStream"] = encode.c_str();
-
                 }
             }
         else if (nullptr != element->ToGeometryPart())

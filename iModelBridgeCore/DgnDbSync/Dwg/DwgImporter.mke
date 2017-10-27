@@ -131,6 +131,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ImagePP$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)Raster$(libext) 
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnView.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
 
 %if $(DWGTOOLKIT) == "OpenDwg"
 

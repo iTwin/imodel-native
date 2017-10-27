@@ -24,7 +24,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct DgnDbServerClientUtils;
+struct iModelHubFX;
 
 //=======================================================================================
 // @bsiclass
@@ -126,7 +126,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_fwkAssetsDir;
         iModelBridge::GCSDefinition m_inputGcs;
         iModelBridge::GCSCalculationMethod m_gcsCalculationMethod;
+        Transform m_spatialDataTransform;
         bvector<WString> m_bargs;
+
+        IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
@@ -180,7 +183,7 @@ protected:
     BeFileName m_briefcaseName;
     BeFileName m_stdoutFileName;
     BeFileName m_stderrFileName;
-    DgnDbServerClientUtils* m_clientUtils;
+    iModelHubFX* m_clientUtils;
     EffectiveServerError m_lastServerError;
     bvector<DgnModelId> m_modelsInserted;
     iModelBridge* m_bridge;
@@ -197,7 +200,8 @@ protected:
     void InitLogging();
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
-    void _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
+    BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
+    BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
     IModelBridgeRegistry& GetRegistry();
 
     DgnProgressMeter& GetProgressMeter() const;
@@ -248,9 +252,11 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
 
     //! @private
-    IMODEL_BRIDGE_FWK_EXPORT static void SetDgnDbServerClientUtilsForTesting(DgnDbServerClientUtils&);
+    IMODEL_BRIDGE_FWK_EXPORT static void SetiModelHubFXForTesting(iModelHubFX&);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 };
