@@ -84,7 +84,7 @@ void AppendILinearlyLocatedClassIdsECSQL(bset<DgnClassId> const& iLinearlyLocate
     if (iLinearlyLocatedClassIds.empty())
         return;
 
-    ecSql.append("AND ClassHasAllBaseClasses.TargetECInstanceId ");
+    ecSql.append("AND meta.ClassHasAllBaseClasses.TargetECInstanceId ");
 
     if (1 == iLinearlyLocatedClassIds.size())
         ecSql.append(Utf8PrintfString("= %d ", iLinearlyLocatedClassIds.begin()->GetValue()).c_str());
@@ -110,7 +110,7 @@ void GetAtLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Ut
         "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
         "   AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.ECInstanceId "
         "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
-        "WHERE ILinearElement.Id = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
+        "WHERE ILinearElement.Id = ? AND meta.ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -149,7 +149,7 @@ void GetFromToLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds
         "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
         "   FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart, FromToLocation.ECInstanceId "
         "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
-        "WHERE ILinearElement.Id = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
+        "WHERE ILinearElement.Id = ? AND meta.ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -192,7 +192,7 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
         "   coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
         "   coalesce(AtLocation.ECInstanceId, FromToLocation.ECInstanceId) "
         "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
-        "WHERE ILinearElement.Id = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
+        "WHERE ILinearElement.Id = ? AND meta.ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
