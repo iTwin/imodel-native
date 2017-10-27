@@ -2962,7 +2962,6 @@ public:
     //! Compute the units transform from the specified root model into meters, and *also* prepare the transformation of geo-located data 
     //! in the root model and its attachments into the GCS of the target BIM.
     //! @param rootV8Model    The root DgnModel in the input V8
-    //! @param params         The job params
     //! @param jobSubject     The Job Subject element. Its transform property, if any, is post-multiplied onto the GCS root transform.
     //! @note This function will modify the data in rootV8Model and its attachments if reprojection is necessary.
     //! @note You must call this once up front, before calling ConvertElement.
@@ -2970,7 +2969,7 @@ public:
     //! @note If you later call RecordModelMapping to enroll a model that is attached to this root model, you must call #ComputeAttachmentTransform
     //! in order to compute the units transform for the attached model and then pass that as the optional third argument to RecordModelMapping.
     //! @see GetRootTrans
-    DGNDBSYNC_EXPORT void ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, iModelBridge::Params const& params, SubjectCR jobSubject);
+    DGNDBSYNC_EXPORT void ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, SubjectCR jobSubject);
 
     //! Record a V8->BIM model mapping
     //! @param sourceV8Model    A DgnModel in the input V8

@@ -3424,14 +3424,14 @@ void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, iModelBridge::Params const& params, SubjectCR jobSubject)
+void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, SubjectCR jobSubject)
     {
     m_rootModelRef = &rootV8Model;
     m_isRootModelSpatial = ShouldConvertToPhysicalModel(rootV8Model);
     m_rootFile = rootV8Model.GetDgnFileP();
     _ComputeCoordinateSystemTransform();
 
-    Transform jobTrans = iModelBridge::GetSpatialDataTransform(params, jobSubject);
+    Transform jobTrans = iModelBridge::GetSpatialDataTransform(_GetParams(), jobSubject);
     if (jobTrans.IsIdentity())
         return;
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
