@@ -99,3 +99,9 @@ LimitingTaskQueueTests.Push_TaskReturnsValue_SameValueReturned
 
 WorkerThreadTests.Push_NoParentTask_PrioritySetToNormal
     # bim0200, x64, NDEBUG, firebug, random hang
+
+WStringTest.FlakyTest
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\Bentley\Tests\Published\WString_test.cpp(1582): error: Value of: s1 != s2
+    # Actual: false
+    # Expected: true
