@@ -30,7 +30,7 @@ struct iModelBridgeDocumentProperties
     Utf8String m_spatialRootTransformJSON; //!< Spatial data transform for root document, in JSON format
 
     iModelBridgeDocumentProperties() {}
-    iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP a, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_attributesJSON(o), m_offset(o) {}
+    iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP a, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_attributesJSON(o), m_spatialRootTransformJSON(o) {}
     };
 
 struct IModelBridgeRegistry : IRefCounted
