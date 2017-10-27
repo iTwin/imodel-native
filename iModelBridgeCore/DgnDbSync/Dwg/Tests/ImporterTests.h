@@ -2,13 +2,10 @@
 |
 |     $Source: Dwg/Tests/ImporterTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-// 
-#define DWGTOOLKIT_RealDwg 1
 
 #include "../DwgImportInternal.h"
 #include <Bentley/BeTest.h>
@@ -36,13 +33,17 @@
 +===============+===============+===============+===============+===============+======*/
 struct ImporterTests : public ::testing::Test
 {
-    ImporterTestsHost m_host;
 public:
+    static ImporterTestsHost s_testsHost;
+
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 
     static BentleyApi::WString GetDataSourcePath();
     static BentleyApi::BeFileName GetInputFileName(BentleyApi::WCharCP filename);
     static BentleyApi::BeFileName GetOutputFileName(BentleyApi::WCharCP filename);
     static void MakeWritableCopyOf(BentleyApi::BeFileName& outFile, BentleyApi::WCharCP filename);
+    static void MakeWritableCopyOf(BentleyApi::BeFileName& fnoutFile, BentleyApi::BeFileNameCR inputFileName, BentleyApi::WCharCP filename);
     static BentleyApi::BeFileName GetOutputDir();
     static BentleyApi::WString GetOutRoot();
     static BentleyApi::BeFileName GetIBimFileName(BentleyApi::BeFileName& inFile);

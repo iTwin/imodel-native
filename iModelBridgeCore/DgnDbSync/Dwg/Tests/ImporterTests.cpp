@@ -2,10 +2,14 @@
 |
 |     $Source: Dwg/Tests/ImporterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterTests.h"
+
+USING_NAMESPACE_DGNDBSYNC_DWG
+
+ImporterTestsHost ImporterTests::s_testsHost;
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar Hayat      05/16
@@ -58,6 +62,16 @@ void ImporterTests::MakeWritableCopyOf(BentleyApi::BeFileName& outFile, BentleyA
     BentleyApi::BeFileName inFile = GetInputFileName(filename);
     ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(inFile, outFile)) << "Unable to copy file \nSource: [" << BentleyApi::Utf8String(inFile.c_str()).c_str() << "]\nDestination: [" << BentleyApi::Utf8String(outFile.c_str()).c_str() << "]";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void ImporterTests::MakeWritableCopyOf(BentleyApi::BeFileName& outFile, BentleyApi::BeFileNameCR inputFileName, BentleyApi::WCharCP filename)
+    {
+    outFile = GetOutputFileName(filename);
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(inputFileName, outFile)) << "Unable to copy file \nSource: [" << Utf8String(inputFileName.c_str()).c_str() << "]\nDestination: [" << Utf8String(outFile.c_str()).c_str() << "]";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat 11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -76,6 +90,7 @@ BentleyApi::BeFileName ImporterTests::GetOutputDir()
     BentleyApi::BeFileName filepath;
     BentleyApi::BeTest::GetHost().GetOutputRoot (filepath);
     filepath.AppendToPath(L"Output");
+    BentleyApi::BeFileName::CreateNewDirectory (filepath);
     return filepath;
     }
 
@@ -105,3 +120,20 @@ DgnDbPtr ImporterTests::OpenExistingDgnDb(BentleyApi::BeFileNameCR projectName, 
     return DgnDb::OpenDgnDb(&fileStatus, projectName, openParams);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ImporterTests::SetUpTestCase ()
+    {
+    DgnViewLib::Initialize (s_testsHost, true);
+    DwgImporter::Initialize (nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ImporterTests::TearDownTestCase ()
+    {
+    s_testsHost.Terminate (false);
+    DwgImporter::TerminateDwgHost ();
+    }

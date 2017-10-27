@@ -2,7 +2,7 @@
 #
 #  $Source: Dwg/Tests/Tests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 programName = DwgImporterTests
@@ -18,17 +18,9 @@ BEGTEST_INPUT=$(baseDir)
     %error RealDWG only supports Windows platform!
 %endif
 
+ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
-# Need to ignore this because it's in Vancouver's header files.
-%if defined(MSVC_VERSION)
-%if MSVC_VERSION >= 1900
-    # C4312: 'type cast': conversion from '...' to '...' of greater size
-    CCompOpts + -wd4312
-
-    # C4091: '... ': ignored on left of '...' when no variable is declared
-    CCompOpts + -wd4091
-%endif
-%endif
+%include $(baseDir)../DwgCompileOptions.mki
 
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
@@ -40,7 +32,7 @@ BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
-TestsHeaders = $(baseDir)Tests.h $(baseDir)ImporterTests.h $(baseDir)ImportConfigeditor.h
+TestsHeaders = $(baseDir)Tests.h $(baseDir)ImporterBaseFixture.h $(baseDir)ImporterTests.h $(baseDir)ImportConfigeditor.h $(baseDir)ImporterCommandBuilder.h
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
 o = $(OutputRootDir)build/DgnDbSync/$(programName)/
@@ -75,7 +67,7 @@ $(o)ImportConfigEditor.obj          : $(BEGTEST_INPUT)ImportConfigEditor.cpp    
 GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
-GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib $(BuildContext)Delivery/DwgImporter.lib
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib $(ContextDeliveryDir)/DwgImporter.lib
 GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
@@ -86,8 +78,7 @@ LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 
 
-LINKER_LIBRARIES    + $(BuildContext)Delivery/DwgImporter.lib
-LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DwgDbExchange.lib
+LINKER_LIBRARIES    + $(ContextDeliveryDir)DwgImporter.lib
 
 %include $(SharedMki)gunittest.mki
 
@@ -97,10 +88,10 @@ always:
 $(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/ImportConfig.xsd : $(baseDir)../Config/ConvertConfig.xsd
+$(BuildContext)Delivery/ImporterTestsConfig.xsd : $(baseDir)../Config/ConvertConfig.xsd
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/ImportConfig.xml : $(baseDir)../Config/ConvertConfig.xml
+$(BuildContext)Delivery/ImporterTestsConfig.xml : $(baseDir)../Config/ConvertConfig.xml
     $(LinkFirstDepToFirstTarget)
     
 $(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt

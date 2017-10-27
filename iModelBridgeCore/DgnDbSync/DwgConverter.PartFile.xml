@@ -16,6 +16,8 @@
         <SubProduct ProductName="OpenDwgImporter" />
         <!-- DWG importer using RealDwg -->
         <SubProduct ProductName="RealDwgImporter" />
+        <!-- Build unit tests -->
+        <SubProduct ProductName="DwgImporterTests" />
         <!-- Internal sample parts -->
         <SubPart PartName="Samples" />
     </Part>
@@ -199,7 +201,8 @@
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <Bindings>
             <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgImporterTests.exe</Files>
-            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgImporterTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets">Delivery/ImporterTestsConfig.xml</Files>
+            <Files ProductDirectoryName="Assets">Delivery/DwgImporterTests.logging.config.xml</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DwgImporterTests_en-US.sqlang.db3</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore">Delivery/ignore_list.txt</Files>
             <Directory SourceName="Delivery/DgnDbSyncTestData"  SubPartDirectory="TestData"  ProductDirectoryName="DgnDbSync_TestData" />
@@ -207,7 +210,7 @@
     </Part>
     
     <ProductDirectoryList ListName="Tests">
-        <ProductDirectory Name="DwgImporterTestsExe"         Path=""/>
+        <ProductDirectory Name="DwgImporterTestsExe"            Path=""/>
         <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
         <ProductDirectory Name="DgnV8ConverterSeedData"         Path="SeedData"/>
         <ProductDirectory Name="DgnDbSync_TestData"             Path="TestData"/>
@@ -217,8 +220,15 @@
     <Product Name="DwgImporterTests" SaveProduct="false" OnlyPlatforms="x64">
         <SubPart PartName="DwgImporterTestsExe"/>
         <Directories DirectoryListName="RealDwgConverterDirList" />
-        <Directories DirectoryListName="DwgAppCommonDirList" PartFile="DgnDbSync"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
+
+    <Part Name="RunDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="DwgImporterTests" />
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgImporterTests.log</Files>
+        </Bindings>
+    </Part>
 
 </BuildContext>

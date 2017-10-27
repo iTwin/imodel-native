@@ -2,21 +2,21 @@
 |
 |     $Source: Dwg/Tests/Tests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#define DWGTOOLKIT_RealDwg 1
 
 #include "../DwgImportInternal.h"
 
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
 //=======================================================================================
-struct ImporterTestsHost : DgnPlatformLib::Host
+struct ImporterTestsHost : DgnViewLib::Host
 {
 protected:
     virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override {name.assign("DwgImporterTests");}
+    virtual ViewManager& _SupplyViewManager() override;
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     //virtual NotificationAdmin& _SupplyNotificationAdmin() override;
     virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
