@@ -13,3 +13,95 @@ ImportConfigTests.embedConfigFile
 
 ECConversionTests.RelationshipInstance       # WIP UmarH
 
+
+RasterTests.Clip_ReprojectedPreserveCurves
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\RasterTests.cpp(851): error: Value of: boundArc->center.AlmostEqual(BentleyApi::DPoint3d::From(-26609.344918304880, 20180.189303782310, 0.00000000000000000))
+    # Actual: false
+    # Expected: true
+
+ConverterTests.GetCoordinateSystemProperties
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(355): error: Expected: (nullptr) != (dgnGCS), actual: 8-byte object <00-00 00-00 00-00 00-00> vs NULL
+
+ConverterTests.GCSMultiFilesGCSTransformNoScale
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(338): error:       Expected: TestRootModelCreator::ImportJobCreateStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: creator.InitializeJob()
+    # Which is: 4-byte object <02-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
+    # Model range is wrong. Model: Building 1
+    # Expected: {775953.177000 83335.970000}{776088.568000 83467.105000}
+    # Actual:   {-24.874306 -102.773877}{65.332224 62.070878}
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
+    # Model range is wrong. Model: TPB Building
+    # Expected: {775885.794000 83307.685000}{775960.122000 83398.668000}
+    # Actual:   {19423.654845 -1229.968723}{19523.497038 -1173.407035}
+
+ConverterTests.GCSMultiFilesReprojectImport
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(338): error:       Expected: TestRootModelCreator::ImportJobCreateStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: creator.InitializeJob()
+    # Which is: 4-byte object <02-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
+    # Model range is wrong. Model: Building 1
+    # Expected: {775953.179000 83335.971000}{776088.567000 83467.104000}
+    # Actual:   {-24.874306 -102.773877}{65.332224 62.070878}
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
+    # Model range is wrong. Model: TPB Building
+    # Expected: {775885.795000 83307.686000}{775960.121000 83398.667000}
+    # Actual:   {19423.654845 -1229.968723}{19523.497038 -1173.407035}
+
+RasterTests.RasterReprojected
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\RasterTests.cpp(76): error: Failed
+    # Model range is wrong. Model: 12TVL305030_saltLake.itiff
+    # Expected: {-27262.460350 19477.554900}{-25753.419790 20986.611090}
+    # Actual:   {430500.000000 4503000.000000}{432000.000000 4504500.000000}
+
+ConverterTests.GCSMultiFilesGOAndHelmert
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+
+ConverterTests.GCSMultiFilesGCSTransformWithScale
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(338): error:       Expected: TestRootModelCreator::ImportJobCreateStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: creator.InitializeJob()
+    # Which is: 4-byte object <02-00 00-00>
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
+    # Actual: false
+    # Expected: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
+    # Model range is wrong. Model: Building 1
+    # Expected: {775953.179000 83335.971000}{776088.567000 83467.104000}
+    # Actual:   {-24.874306 -102.773877}{65.332224 62.070878}
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
+    # Model range is wrong. Model: TPB Building
+    # Expected: {775885.795000 83307.686000}{775960.121000 83398.667000}
+    # Actual:   {19423.654845 -1229.968723}{19523.497038 -1173.407035}

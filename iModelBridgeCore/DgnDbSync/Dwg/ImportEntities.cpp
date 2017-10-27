@@ -1979,12 +1979,14 @@ virtual void    _WorldLine (DPoint3d points[2]) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _PushModelTransform (TransformCR newTransform) override
     {
+    // trival reject invalid input
+    Transform   validTransform = ::isnan(newTransform.ColumnX().Magnitude()) ? Transform::FromIdentity() : newTransform;
     Transform   topTransform;
 
     if (m_transformStack.empty())
-        topTransform = newTransform;
+        topTransform = validTransform;
     else
-        topTransform.InitProduct (m_transformStack.back(), newTransform);
+        topTransform.InitProduct (m_transformStack.back(), validTransform);
 
     // push the componded transformation on top of the stack
     m_transformStack.push_back (topTransform);

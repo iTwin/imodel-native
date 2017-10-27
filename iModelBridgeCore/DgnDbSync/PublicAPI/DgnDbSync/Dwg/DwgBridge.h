@@ -33,10 +33,13 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 struct DwgBridge : iModelBridge
 {
 DEFINE_T_SUPER (iModelBridge)
-
-protected:
+private:
     DwgImporter::Options            m_options;
     std::unique_ptr<DwgImporter>    m_importer;
+
+protected:
+    // Instantiate a new DwgImporter - consumer to override with a customer importer:
+    DGNDBSYNC_EXPORT virtual DwgImporter* _CreateDwgImporter ();
 
     // iModelBridge overrides
     DGNDBSYNC_EXPORT WString        _SupplySqlangRelPath () override;

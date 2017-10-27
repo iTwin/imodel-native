@@ -1117,11 +1117,14 @@ void SetViewportRange (DRange2dCR range)
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void getViewportDcCorners (DWGGE_TypeR(Point2d) lower_left, DWGGE_TypeR(Point2d) upper_right) const override
     {
+    // AcDbPointCloud(as opposed to AcDbPointCloudEx), does not display objects if we return viewport corners!!
+#ifdef USE_VIEWPORT_SIZE
     if (m_lowerleftCorner != m_upperrightCorner)
         {
         lower_left = m_lowerleftCorner;
         upper_right = m_upperrightCorner;
         }
+#endif
     }
 
 virtual DwgDbBool       isPerspective() const override  { return false; }
@@ -1180,6 +1183,8 @@ private:
         m_drawGeometry = drawGeom;
         m_options = options;
         m_entity = ent;
+        if (nullptr != options)
+            m_context.SetDatabase (options->_GetDatabase());
         }
 public:
 
@@ -1299,7 +1304,6 @@ DwgGiViewportDraw (IDwgDrawGeometryR drawGeom, IDwgDrawOptionsR options, IDwgDra
     m_drawGeometry = &drawGeom;
     m_options = &options;
     m_entity = ent;
-    m_context.SetDatabase (options._GetDatabase());
     m_regenType = options._GetRegenType ();
 
     DRange2d    range;

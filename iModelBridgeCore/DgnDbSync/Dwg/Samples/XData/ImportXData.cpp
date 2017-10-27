@@ -67,7 +67,7 @@ BentleyStatus   ImportXData::ConvertXData (DgnElementR element, DwgDbEntityCR en
 
         AdhocPropertiesBuilder  builder(element);
 
-        // Iterate through all entries, prints them and add them to DgnElement as Adhoc properties:
+        // Iterate through all entries, print them and add them to DgnElement as Adhoc properties:
         for (DwgResBufP curr = xdata->Start(); curr != xdata->End(); curr = curr->Next())
             {
             switch (curr->GetDataType())
@@ -163,6 +163,7 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
 
     LOG.tracev ("DgnElement %s(ID=%lld) has been created, checking XDATA...", dgnElement->GetDisplayLabel().c_str(), dgnElement->GetElementId());
 
+    // Convert XDATA as Adhoc properties and add them to the new element:
     status = ConvertXData (*dgnElement, inputs.GetEntity());
 
     if (BSISUCCESS != status)
@@ -175,9 +176,16 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus   ImportXDataSample::ImportDwgFile (int argc, WCharCP argv[])
+DwgImporter* ImportXDataSample::_CreateDwgImporter ()
     {
-    return T_Super::RunAsStandaloneExe(argc, argv);
+    // Create our sample importer, using DwgBridge options:
+    DwgImporter::Options* opts = static_cast<DwgImporter::Options*> (&_GetParams());
+    if (nullptr == opts)
+        {
+        BeAssert (false && "This sample is not a sub-class of DwgBridge!!");
+        return  nullptr;
+        }
+    return new ImportXData (*opts);
     }
 
 END_DGNDBSYNC_DWG_NAMESPACE
@@ -189,9 +197,9 @@ END_DGNDBSYNC_DWG_NAMESPACE
 int wmain (int argc, wchar_t const* argv[])
     {
     /*-----------------------------------------------------------------------------------
-    Expected command line arguments:
+    Minimal command line arguments:
 
-    ImportXData <input DWG full file name> <output DgnDb folder name>
+    ImportXData -i=<input DWG full file name> -o=<output DgnDb folder name>
     -----------------------------------------------------------------------------------*/
     if (argc < 3)
         return  1;
@@ -199,7 +207,7 @@ int wmain (int argc, wchar_t const* argv[])
     ImportXDataSample     sampleImporter;
 
     // Begin importing DWG file into DgnDb
-    BentleyStatus   status = sampleImporter.ImportDwgFile (argc, argv);
+    BentleyStatus   status = sampleImporter.RunAsStandaloneExe (argc, argv);
 
     return (int)status;
     }

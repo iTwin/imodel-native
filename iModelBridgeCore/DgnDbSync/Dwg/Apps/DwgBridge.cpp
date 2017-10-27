@@ -25,7 +25,6 @@ void            DwgBridge::_PrintUsage ()
     {
     fwprintf (stderr,
 L"\
---description=          (optional; publishing only) A string saved as the 'description' property in the DgnDb.\n\
 --unstableIds           (optional; publishing only) A flag in syncinfo that indicates that subsequent updates should assume that ElementIds are not a reliable way to cross-check elements in two versions of a file. The same piece of graphics could have been assigned a new ElementId in the new version of the file.\n\
 --configuration=        (optional; publishing only) Path to the publisher configuration file (defaults to \"ConvertConfig.xml\" next to the EXE)\n\
 --password=             Password needed for the importer to open protected input files.\n\
@@ -40,12 +39,6 @@ iModelBridge::CmdLineArgStatus DwgBridge::_ParseCommandLineArg (int iArg, int ar
     if (0 == wcscmp(argv[iArg], L"--unstableIds"))
         {
         GetImportOptions().SetStableIdPolicy(StableIdPolicy::ByHash);
-        return CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--description="))
-        {
-        GetImportOptions().SetDescription(GetArgValue(argv[iArg]).c_str());
         return CmdLineArgStatus::Success;
         }
 
@@ -161,7 +154,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
     {
     // instantiate a new importer to begin a new job
-    m_importer.reset (new DwgImporter(m_options));
+    m_importer.reset (this->_CreateDwgImporter());
     // will save elements into target BIM
     m_importer->SetDgnDb (bim);
     // boostrap importer with required syncInfo file
@@ -179,6 +172,15 @@ void DwgBridge::_OnConvertedToBim (BentleyStatus status)
     m_importer.reset (nullptr);
     // terminate the toolkit after DwgDbDatabase is released (i.e. via above ~DwgImporter call):
     DwgImporter::TerminateDwgHost ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter*    DwgBridge::_CreateDwgImporter ()
+    {
+    // provide the default DWG importer
+    return  new DwgImporter (m_options);
     }
 
 /*---------------------------------------------------------------------------------**//**

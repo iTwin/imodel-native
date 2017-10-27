@@ -49,7 +49,7 @@ private:
 
 public:
     // Constructor
-    ListProperty (Options& options) : T_Super(options) { }
+    ListProperty (DwgImporter::Options& options) : T_Super(options) { }
     // Override _ImportEntity to LIST entity properties
     virtual BentleyStatus   _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs) override;
     };  // ListProperty
@@ -61,7 +61,8 @@ public:
 struct ListPropertySample : public DwgBridge
     {
     DEFINE_T_SUPER (DwgBridge)
-    BentleyStatus   ImportDwgFile (int argc, WCharCP argv[]);
+    // override this method to provide DwgBridge our sample importer:
+    DwgImporter*    _CreateDwgImporter () override;
     };  // ListPropertySample
 
 END_DGNDBSYNC_DWG_NAMESPACE

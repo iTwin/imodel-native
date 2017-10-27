@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterCommandBuilder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -34,7 +34,10 @@ void ImporterCommandBuilder::resetCommand()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImporterCommandBuilder::createCommandForDwgImporter()
     {
-    COMMANDPLUS(WString(L"DwgImporter.exe"))
+    BentleyApi::BeFileName exePath;
+    BentleyApi::BeTest::GetHost().GetDocumentsRoot(exePath);
+    exePath.AppendToPath(L"DwgImporter.exe");
+    COMMANDPLUS(exePath)
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar Hayat      05/16

@@ -296,9 +296,7 @@ public:
         StableIdPolicy      m_stableIdPolicy;
         BeFileName          m_rootDir;
         BeFileName          m_configFile;
-        BeFileName          m_configFile2;
         BeFileName          m_changesFile;
-        Utf8String          m_description;
         Utf8String          m_password;
         DateTime            m_time;
         DateTime            m_expirationDate;
@@ -334,9 +332,7 @@ public:
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
         void SetConfigFile (BentleyApi::BeFileNameCR fileName) {m_configFile = fileName;}
-        void SetConfigFile2 (BentleyApi::BeFileNameCR fileName) {m_configFile2 = fileName;}
         void SetChangesFile (BentleyApi::BeFileNameCR fileName) {m_changesFile = fileName;}
-        void SetDescription (BentleyApi::Utf8CP descr) {m_description=descr;}
         void SetTime (DateTime tm) {m_time=tm;}
         void SetPassword (BentleyApi::Utf8CP pw) {m_password=pw;}
         void SetStableIdPolicy (StableIdPolicy val) {m_stableIdPolicy=val;}
@@ -356,10 +352,8 @@ public:
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
-        BeFileNameCR GetConfigFile2() const {return m_configFile2;}
         BeFileNameCR GetChangesFile() const {return m_changesFile;}
         StableIdPolicy GetStableIdPolicy() const {return m_stableIdPolicy;}
-        Utf8String GetDescription() const {return m_description;}
         Utf8String GetPassword () const {return m_password;}
         DateTime GetTime() const {return m_time;}
         DateTime GetExpirationDate() const {return m_expirationDate;}
@@ -1091,8 +1085,8 @@ protected:
 
     //! @name DWG-DgnDb sync info
     //! @{
-    virtual DwgSyncInfo::DwgFileId      _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
-    virtual StableIdPolicy              _GetDwgFileIdPolicy () const;
+    DGNDBSYNC_EXPORT virtual DwgSyncInfo::DwgFileId _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
+    DGNDBSYNC_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
 public:
@@ -1152,7 +1146,6 @@ public:
     DGNDBSYNC_EXPORT void               ReportSyncInfoIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
     DGNDBSYNC_EXPORT BentleyStatus      OnFatalError (IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::ProgramExits(), ...);
     DGNDBSYNC_EXPORT bool               WasAborted () const { return m_wasAborted; }
-    DGNDBSYNC_EXPORT Utf8String         GetDescription () const { return m_options.GetDescription(); }
     DgnProgressMeterR                   GetProgressMeter() const;
     DGNDBSYNC_EXPORT MessageCenter&     GetMessageCenter () { return m_messageCenter; }
     DGNDBSYNC_EXPORT Options const&     GetOptions () const { return m_options; }
@@ -1168,6 +1161,7 @@ public:
     //! Create a new or update an existing element from an entity based on the sync info
     DGNDBSYNC_EXPORT BentleyStatus      ImportOrUpdateEntity (ElementImportInputs& inputs);
     DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
+    DGNDBSYNC_EXPORT uint32_t           GetEntitiesImported () const { return m_entitiesImported; }
     
     };  // DwgImporter
 

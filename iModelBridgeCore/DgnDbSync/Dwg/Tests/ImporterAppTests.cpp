@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterAppTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterBaseFixture.h"
@@ -39,7 +39,7 @@ TEST_F(ImporterAppTests, createIBim)
     MakeWritableCopyOf(inFile, fileName.c_str());
     createCommand();
     addInputFile(inFile.c_str());
-    addOutputFile(GetOutRoot() );
+    addOutputFile(GetOutputDir() );
     ASSERT_EQ( SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -57,7 +57,7 @@ TEST_F(ImporterAppTests, createIBIMandIModel)
     MakeWritableCopyOf(inFile, fileName.c_str());
     createCommand();
     addInputFile(inFile.c_str());
-    addOutputFile(GetOutRoot());
+    addOutputFile(GetOutputDir());
     addCompressFlag();
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
@@ -76,7 +76,7 @@ TEST_F(ImporterAppTests, createIBIMandIModelFromDxf)
     MakeWritableCopyOf(inFile, fileName.c_str());
     createCommand();
     addInputFile(inFile.c_str());
-    addOutputFile(GetOutRoot());
+    addOutputFile(GetOutputDir());
     addCompressFlag();
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
@@ -96,7 +96,7 @@ TEST_F(ImporterAppTests, Description)
     MakeWritableCopyOf(inFile, fileName.c_str());
     createCommand();
     addInputFile(inFile.c_str());
-    addOutputFile(GetOutRoot());
+    addOutputFile(GetOutputDir());
     addDescription(L"TestDescription");
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
@@ -106,8 +106,15 @@ TEST_F(ImporterAppTests, Description)
     EXPECT_PRESENT(inFile.c_str())
 
     DgnDbPtr db = OpenExistingDgnDb(outFile);
+    ASSERT_TRUE(db.IsValid());
     BentleyApi::Utf8String description;
+#ifdef FILE_DESCRIPTION
     db->QueryProperty(description, DgnProjectProperty::Description());
+#else   // root subject decscription
+    SubjectCPtr rootSubject = db->Elements().GetRootSubject ();
+    if (rootSubject.IsValid())
+        description = rootSubject->GetDescription ();
+#endif
 
     EXPECT_TRUE(description.CompareTo("TestDescription") == 0) << "Description does not match";
     }
