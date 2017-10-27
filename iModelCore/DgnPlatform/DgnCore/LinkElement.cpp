@@ -457,7 +457,8 @@ DgnDbStatus RepositoryLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 void RepositoryLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
     {
     T_Super::_ToJson(out, opts);
-    out[json_repositoryGuid()] = m_repositoryGuid.ToString();
+    if (m_repositoryGuid.IsValid())
+        out[json_repositoryGuid()] = m_repositoryGuid.ToString();
     }
 
 //---------------------------------------------------------------------------------------

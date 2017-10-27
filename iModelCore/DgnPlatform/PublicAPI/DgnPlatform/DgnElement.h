@@ -2038,6 +2038,11 @@ public:
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
 
+    //! Modify the origin and angles of this Placement3d by applying the specified transform.
+    //! @param trans The transform to apply
+    //! @return false if the operation failed
+    DGNPLATFORM_EXPORT bool TryApplyTransform(TransformCR trans);
+
     //! Determine whether this Placement3d is valid.
     bool IsValid() const
         {
@@ -3309,7 +3314,6 @@ public:
     BE_JSON_NAME(Subject); //<! The namespace reserved for Subject Json properties
     BE_JSON_NAME(Job); //<! The sub-namespace reserved for Job Subject Json properties
     BE_JSON_NAME(Model); //<! The sub-namespace reserved for Model Subject Json properties
-
     //! Get Json properties
     ECN::AdHocJsonValueCR GetSubjectJsonProperties() const {return GetJsonProperties(json_Subject());}
 
@@ -3321,6 +3325,86 @@ public:
 
     //! Set Json properties from a particular sub-namespace
     void SetSubjectJsonProperties(Utf8CP sns, JsonValueCR props) {m_jsonProperties.GetMemberR(json_Subject())[sns] = props;}
+};
+
+//=======================================================================================
+//! Helper functions for working with Subject elements that are "job subjects"
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct JobSubjectUtils
+{
+    BE_JSON_NAME(Bridge); //<! The name reserved within the Job subspace for the required "Bridge" property. This is the registry subkey value used by the bridge.
+    BE_JSON_NAME(Transform); //<! The name reserved within the Job subspace for the optional "Transform" property
+    BE_JSON_NAME(Comments); //<! The name reserved within the Job subspace for the optional "Comments" property.
+    BE_JSON_NAME(Properties); //<! The name reserved within the Job subspace for the optional "Properties" property. This is where bridge-specific properties go.
+
+    //! Test to see if the specified subject is a @em job subject. See InitializeProperties to set up a subject element as a job subject.
+    //! @param subj The job subject
+    static bool IsJobSubject(SubjectCR subj) {return subj.GetSubjectJsonProperties().isMember(Subject::json_Job());}
+
+    //! @name Primitive Property Access Functions
+    //! @{
+
+    //! Test if a specified job subject property exists
+    //! @param subj The job subject
+    //! @param propName The name of a job subject property
+    static bool HasProperty(SubjectCR subj, Utf8CP propName) {BeAssert(IsJobSubject(subj)); return subj.GetSubjectJsonProperties(Subject::json_Job()).isMember(propName);}
+
+    //! Get all of the job subject's properties at once
+    //! @param subj The job subject
+    //! @return the value of the job subject's properties
+    static ECN::AdHocJsonValue GetProperties(SubjectCR subj) {BeAssert(IsJobSubject(subj)); return subj.GetSubjectJsonProperties(Subject::json_Job());}
+
+    //! Get a job subject property
+    //! @param subj The job subject
+    //! @param propName The name of a job subject property
+    //! @return the value of the job subject property
+    static Json::Value GetProperty(SubjectCR subj, Utf8CP propName) {BeAssert(IsJobSubject(subj) && HasProperty(subj, propName)); return subj.GetSubjectJsonProperties(Subject::json_Job())[propName];}
+
+    //! Set all of the job subject properties at once. subj must already be a job subject element. Call InitializeProperties to set up a subject as a job subject.
+    //! @param subj The job subject
+    //! @param value The properties
+    static void SetProperties(SubjectR subj, JsonValueCR value) {BeAssert(IsJobSubject(subj)); subj.SetSubjectJsonProperties(Subject::json_Job(), value);}
+
+    //! Set a job subject property
+    //! @param subj The job subject
+    //! @param propName The name of a job subject property
+    //! @param value The property name
+    static void SetProperty(SubjectR subj, Utf8CP propName, JsonValueCR value) {auto props = GetProperties(subj); props[propName] = value; SetProperties(subj, props);}
+
+    //! @}
+
+    //! @name High-level JobSubject Property Access Functions
+    //! @{
+
+    //! Initialize the job's properties. This is a convenience method that allows the caller to set required and some of the option job subject properties with a single function call.
+    //! Any and all previously existing job properties are removed.
+    //! @param[in] jobSubject An editable copy of the job subject
+    //! @param[in] bridgeRegSubKey the registry subkey identifier used by the bridge.
+    //! @param[in] comments Optional comments
+    //! @param[in] properties Optional bridge-specific properties
+    DGNPLATFORM_EXPORT static void InitializeProperties(SubjectR jobSubject, Utf8StringCR bridgeRegSubKey, Utf8CP comments = nullptr, JsonValueCP properties = nullptr);
+
+    //! Get the job's Bridge property. This is the registry subkey value used by the bridge.
+    //! @param[in] jobSubject The job subject
+    //! @return non-zero error status if the job subject does not have a Bridge.
+    static Utf8String GetBridge(SubjectCR jobSubject) {auto v = GetProperty(jobSubject, json_Bridge()); return v.isString()? v.asCString(): "";}
+
+    //! Get the transform that should be applied to all spatial data converted by the job.
+    //! @note The transform should be @em pre-multiplied to any GCS transform that the bridge has already calculated.
+    //! @param[out] trans Transform to apply to spatial data.
+    //! @param[in] jobSubject The job subject
+    //! @return non-zero error status if the job subject does not have a transform.
+    DGNPLATFORM_EXPORT static BentleyStatus GetTransform(TransformR trans, SubjectCR jobSubject);
+
+    //! Get the transform that should be applied to all spatial data converted by the job.
+    //! @note The transform will be @em pre-multiplied to any GCS transform that the bridge has already calculated.
+    //! @param[in] jobSubject An editable copy of the job subject
+    //! @param[in] trans Transform to apply to spatial data.
+    DGNPLATFORM_EXPORT static void SetTransform(SubjectR jobSubject, TransformCR trans);
+
+    //! @}
+
 };
 
 //=======================================================================================

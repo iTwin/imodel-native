@@ -12,12 +12,22 @@
 #include <memory>
 #include "suppress_warnings.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning (disable:4251)
+#endif // _MSC_VER
+
 #include <nan.h>
 #undef X_OK // node\uv-win.h defines this, and then folly/portability/Unistd.h re-defines it.
 
 #include <node.h>
 #include <node_buffer.h>
 #include <node_version.h>
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif //_MSC_VER
+
 #include <json/value.h>
 #include "../imodeljs.h"
 #include <ECObjects/ECSchema.h>
@@ -1593,7 +1603,10 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
     {
-    Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    if (nullptr != v8::Isolate::GetCurrent())
+        Nan::ThrowError(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    //else
+    //    LOG.errorv(L"ASSERTION FAILURE: %ls %ls %d\n", msg, file, line);
     }
 
 /*---------------------------------------------------------------------------------**//**

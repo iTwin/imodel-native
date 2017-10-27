@@ -266,8 +266,11 @@ protected:
     DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
 
     //! Convert this DgnModel to a Json::Value.
-    //! @note If you override this method, you @em must call T_Super::_ToJson()
+    //! @note If you override this method, you @em must call T_Super::_ToJson
     DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
+
+    //! Initialize this DgnModel from a Json::Value.
+    //! @note If you override this method, you @em must call T_Super::_FromJson
     DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
     //! Invoked on saving the JsonProperties field into the Db as part of an Insert or Update operation.

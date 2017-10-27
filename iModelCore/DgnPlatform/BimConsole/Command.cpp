@@ -1113,7 +1113,7 @@ void CreateClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
         for (Utf8String classId : classTokens)
             {
             ECClassId id;
-            if (ECClassId::FromString(id, classId.c_str()))
+            if (SUCCESS == ECClassId::FromString(id, classId.c_str()))
                 classIds.push_back(id);
             else
                 {

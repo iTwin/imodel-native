@@ -55,29 +55,23 @@
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-        <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
+        <SubPart PartName="Freetype2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="pnglib"                 PartFile="png"          Repository="Libsrc-png"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
+        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
-        <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
         <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
-
-        <!--
-            Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
-            JM: We end up with the full geocoord set on Windows and iOS due to other platform-specific parts including it. These are missing on Android, and it is suspected to cause problems. Based on the description above, I am unifying DgnPlatformDLL to use the full set, so at least we're consistent across platforms.
-        -->
-        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
@@ -650,14 +644,14 @@
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
-        <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
+        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
-        <SubPart PartName="CrunchLib"              PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Crunch" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
         <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
 		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
@@ -746,6 +740,7 @@
     <ProductDirectoryList ListName="DgnPlatformDirList" >
         <ProductDirectory Name="ApplicationRoot"            Path=""/>
         <ProductDirectory Name="Assemblies"                                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static"                RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="Libs"                       Path="libs"/>
@@ -764,6 +759,7 @@
 
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon-Windows" />
+    <SubProduct ProductName="iModelJsNodeAddon-Windows-New" />
     <SubProduct ProductName="iModelJsNodeAddon-Linux" />
   </Product>
 
@@ -773,11 +769,17 @@
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
+  <!-- Preview of a new version of nodejs support that is coming ... -->
+  <Product Name="iModelJsNodeAddon-Windows-New">
+    <SubPart PartName="iModelJsNodeAddonLib-Windows-New" LibType="Dynamic" />
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+  </Product>
+
   <Product Name="iModelJsNodeAddon-Linux">
     <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
-    
+
   <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">
     <ProductDirectory Name="AddonRoot" Path="Addon" />
     <ProductDirectory Name="iModelJsNode_node_module" RelativeTo="AddonRoot"/>
@@ -807,6 +809,21 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
         Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node,
         Delivery/iModelJsNodeAddon/N_8_2_1/package.json
+      </Files>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <!-- Preview of a new version of nodejs support that is coming ... -->
+  <Part Name="iModelJsNodeAddonLib-Windows-New" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_7_0" >
+    <SubPart PartName="node-gyp-standalone_8_7_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <Bindings>
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_7">
+        Delivery/iModelJsNodeAddon/N_8_7_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_7_0/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -850,7 +867,7 @@
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
     <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-    <SubPart PartName="rapidjsonapi"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
+    <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
   </Part>
 
 </BuildContext>

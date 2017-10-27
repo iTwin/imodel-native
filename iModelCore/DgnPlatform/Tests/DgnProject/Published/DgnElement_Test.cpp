@@ -2323,6 +2323,8 @@ TEST_F(ImodelJsTest, MeasureInsertPerformance)
     {
     SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true); // Imports the DgnPlatformTest schema and sets the briefcaseid=standalone
 
+    StopWatch timer(true);
+
     PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
     DgnModelId modelId = model->GetModelId();
 
@@ -2362,4 +2364,7 @@ TEST_F(ImodelJsTest, MeasureInsertPerformance)
     stmt.Prepare(*m_db, "select count(*) from DgnPlatformTest.ImodelJsTestElement");
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementCount, stmt.GetValueInt(0));
+
+    timer.Stop();
+    printf("ImodelJsTest.MeasureInsertPerformance %lf\n", timer.GetElapsedSeconds());
     }
