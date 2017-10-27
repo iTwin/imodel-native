@@ -150,7 +150,7 @@ public:
 
 //=======================================================================================
 //! Abstract base class for objects that break down the functional structure of something.
-//! For example, a faciliy, like a building or plant, may be broken down into functional <i>systems</i>.
+//! For example, a facility, like a building or plant, may be broken down into functional <i>systems</i>.
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    05/16
 //=======================================================================================
