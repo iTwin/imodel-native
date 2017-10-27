@@ -156,6 +156,24 @@ struct LiteralValueExp final : ValueExp
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
+struct EnumValueExp final : ValueExp
+    {
+    private:
+        ECN::ECEnumeratorCR m_enumerator;
+        Utf8String m_accessString;
+        void _ToECSql(ECSqlRenderContext&) const override;
+        Utf8String _ToString() const override;
+
+    public:
+        explicit EnumValueExp(ECN::ECEnumeratorCR value, Utf8StringCR accessString);
+
+        ECN::ECEnumeratorCR GetEnumerator() const { return m_enumerator; }
+        Utf8String GetSqlValue() const;
+
+    };
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      04/2013
+//+===============+===============+===============+===============+===============+======
 struct FunctionCallExp final : ValueExp
     {
     private:
