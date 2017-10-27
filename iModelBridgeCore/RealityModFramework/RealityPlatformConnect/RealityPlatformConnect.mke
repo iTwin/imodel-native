@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-appName         = RealityPlatformConnect
+appName         = RealityPlatform
 baseDir         = $(SrcRoot)RealityModFramework/RealityPlatform/
 deskDir         = $(_MakeFilePath)
 
