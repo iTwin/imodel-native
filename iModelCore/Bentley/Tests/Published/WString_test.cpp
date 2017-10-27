@@ -1572,3 +1572,12 @@ TEST(WStringTest, WPrintfStringTest)
     WPrintfStringArgs(L"Test no. 5", L"%ls no. %d", L"Test", 5);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Ridha.Malik                    10/17
+//---------------------------------------------------------------------------------------
+TEST(WStringTest,FlakyTest)
+    {
+    WString s1(L"a");
+    WString s2 (L"a");
+    ASSERT_TRUE (s1 != s2);
+    }
