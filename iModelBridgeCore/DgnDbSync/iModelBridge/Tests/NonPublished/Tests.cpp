@@ -619,6 +619,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestiModelHubFX& m_testiModelHubFX;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
+    int m_changeCount = 0;
 
     struct
         {
@@ -820,6 +821,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
         return;
         }
     
+    ++m_changeCount;
     ASSERT_TRUE(m_expect.anyChanges);
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
@@ -1175,6 +1177,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
         testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
@@ -1182,6 +1185,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        EXPECT_EQ(0, testBridge.m_changeCount);
         }
 
     if (true)
@@ -1192,6 +1196,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
         testBridge.m_expect.jobTransChanged = true;
+        testBridge.m_changeCount = 0;
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
@@ -1200,8 +1205,75 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        args.pop_back();
 
         // *** TBD: Check that the elements moved
+        EXPECT_EQ(2, testBridge.m_changeCount);
+        }
+
+    if (true)
+        {
+        // Run an update with same transform => verify no changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        args.pop_back();
+        EXPECT_EQ(0, testBridge.m_changeCount);
+        }
+
+    if (true)
+        {
+        // Run an update with same transform passed via doc props => verify no changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+        fooDocProps.m_spatialRootTransformJSON = "{\"transform\" : \"(1,0,0)0\"}";
+        //args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        EXPECT_EQ(0, testBridge.m_changeCount);
+        }
+
+    if (true)
+        {
+        // Run an update with a new transform passed via doc props => verify 2 changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = true;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+        fooDocProps.m_spatialRootTransformJSON = "{\"transform\" : \"(1,0,0)45\"}";
+        //args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        EXPECT_EQ(2, testBridge.m_changeCount);
         }
 
     }

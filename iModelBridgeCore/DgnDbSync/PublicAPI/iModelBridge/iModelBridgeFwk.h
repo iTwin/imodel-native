@@ -135,6 +135,9 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         //! arguments (which are presumably the arguments to the bridge).
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
 
+        //! Parse additional arguments in the form of JSON
+        BentleyStatus ParseJsonArgs(JsonValueCR);
+
         //! Validate that all require arguments were supplied and are valid
         BentleyStatus Validate(int argc, WCharCP argv[]);
 
@@ -223,6 +226,8 @@ protected:
     BentleyStatus Briefcase_PullMergePush(Utf8CP);
     BentleyStatus Briefcase_ReleaseSharedLocks();
     //! @}
+
+    BentleyStatus ParseDocProps();
 
     WString GetMutexName();
     int RunExclusive(int argc, WCharCP argv[]);

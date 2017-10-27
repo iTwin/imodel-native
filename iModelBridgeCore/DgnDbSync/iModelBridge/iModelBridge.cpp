@@ -431,7 +431,7 @@ BentleyStatus iModelBridge::Params::ParseTransform(Transform& trans, Utf8StringC
             return BSIERROR;
             }
         double rrad = Angle::DegreesToRadians(rdeg);
-        trans.FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rrad);
+        trans = Transform::FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rrad);
         trans.SetTranslation(DPoint3d::From(x,y,z));
         return BSISUCCESS;
         }

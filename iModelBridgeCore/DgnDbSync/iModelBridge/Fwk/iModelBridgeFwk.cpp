@@ -61,7 +61,7 @@ void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 void* iModelBridgeFwk::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
     {
@@ -79,7 +79,7 @@ void* iModelBridgeFwk::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP func
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 T_iModelBridge_getInstance* iModelBridgeFwk::JobDefArgs::LoadBridge()
     {
@@ -242,7 +242,7 @@ iModelBridgeFwk::JobDefArgs::JobDefArgs()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
@@ -423,7 +423,40 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridgeFwk::JobDefArgs::ParseJsonArgs(JsonValueCR obj)
+    {
+    for (auto const& propName : obj.getMemberNames())
+        {
+        if (propName.EqualsI("transform"))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, obj["transform"].asCString()))
+                return BSIERROR;
+            }
+        else if (propName.EqualsI("gcs"))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(m_inputGcs, obj["gcs"].asCString()))
+                return BSIERROR;
+            }
+
+        else if (propName.EqualsI("geoCalculation"))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(m_gcsCalculationMethod, obj["geoCalculation"].asCString()))
+                return BSIERROR;
+            }
+        else
+            {
+            fprintf(stderr, "%s - unrecognized JSON document property", propName.c_str());
+            return BSIERROR;
+            }
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
     {
@@ -470,6 +503,32 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::ParseDocProps()
+    {
+    // The iModelBridge Job Configuration UI allows the user to specify things like the transform for a root model.
+    // Merge that data into the params, so that it is passed through to the bridge like any other data.
+
+    if (m_jobEnvArgs.m_inputFileName.empty())
+        return BSISUCCESS;
+
+    iModelBridgeDocumentProperties docProps;
+    _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
+    if (docProps.m_spatialRootTransformJSON.empty())
+        return BSISUCCESS;
+
+    Json::Value jsonValue = Json::Value::From(docProps.m_spatialRootTransformJSON);
+    if (jsonValue.isNull())
+        {
+        fprintf(stderr, "%s - invalid JSON syntax\n", docProps.m_spatialRootTransformJSON.c_str());
+        return BSIERROR;
+        }
+
+    return m_jobEnvArgs.ParseJsonArgs(jsonValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
     {
     if (argc < 2)
@@ -480,7 +539,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bargptrs, argc, argv)) || (BSISUCCESS != m_jobEnvArgs.Validate(argc, argv)))
+    if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bargptrs, argc, argv)) || (BSISUCCESS != ParseDocProps()) || (BSISUCCESS != m_jobEnvArgs.Validate(argc, argv)))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
