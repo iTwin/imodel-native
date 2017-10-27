@@ -351,7 +351,7 @@ private:
 
 private:
     ECPRESENTATION_EXPORT BaseECClassGroupingNodesQueryContract(ECClassId baseClassId);
-    Utf8String GetDisplayLabelClause(Utf8CP) const;
+    Utf8String GetDisplayLabelClause(Utf8CP);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::BaseClassGroupingNodes;}
@@ -403,10 +403,10 @@ private:
 private:
     ECPRESENTATION_EXPORT ECPropertyGroupingNodesQueryContract(ECClassCR, ECPropertyCR, Utf8String, PropertyGroupCR, ECClassCP);
     static Utf8String GetGroupingValueClause(ECPropertyCR);
-    Utf8String GetDisplayLabelClause(Utf8CP) const;
-    Utf8String GetImageIdClause(Utf8CP) const;
-    Utf8String GetGroupingValuesClause(Utf8CP) const;
-    Utf8String GetPropertyValueClause(Utf8CP) const;
+    Utf8String GetDisplayLabelClause(Utf8CP);
+    Utf8String GetImageIdClause(Utf8CP);
+    Utf8String GetGroupingValuesClause(Utf8CP);
+    Utf8String GetPropertyValueClause(Utf8CP);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::PropertyGroupingNodes;}
@@ -457,9 +457,10 @@ private:
     ContentDescriptorCPtr m_descriptor;
     ECClassCP m_class;
     IQueryInfoProvider const& m_queryInfo;
+    bool m_skipCompositePropertyFields;
 
 private:
-    ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&);
+    ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bool);
     PresentationQueryContractFunctionField const& GetDisplayLabelField() const;
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
@@ -469,12 +470,13 @@ protected:
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
 
 public:
-    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
+    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bool skipCompositePropertyFields = true)
         {
-        return new ContentQueryContract(id, descriptor, ecClass, queryInfo);
+        return new ContentQueryContract(id, descriptor, ecClass, queryInfo, skipCompositePropertyFields);
         }
     ContentDescriptorCR GetDescriptor() const {return *m_descriptor;}
     ContentDescriptor::Property const* FindMatchingProperty(ContentDescriptor::ECPropertiesField const&, ECClassCP) const;
+    bool ShouldSkipCompositePropertyFields() const {return m_skipCompositePropertyFields;}
 };
 
 /*=================================================================================**//**

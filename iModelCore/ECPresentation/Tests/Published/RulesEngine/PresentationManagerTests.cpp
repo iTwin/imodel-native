@@ -16,12 +16,46 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 ECDbTestProject* RulesDrivenECPresentationManagerTests::s_project = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls()
+    {
+    static bmap<Utf8String, Utf8String> s_registeredSchemaXmls;
+    return s_registeredSchemaXmls;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerTests::SetUpTestCase()
     {
     s_project = new ECDbTestProject();
     s_project->Create("RulesDrivenECPresentationManagerTests", "RulesEngineTest.01.00.ecschema.xml");
+    
+    bvector<ECSchemaPtr> schemas;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(s_project->GetECDb().GetSchemaLocater());
+    for (auto pair : GetRegisteredSchemaXmls())
+        {
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
+        if (!schema.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        schemas.push_back(schema);
+        }
+
+    if (!schemas.empty())
+        {
+        bvector<ECSchemaCP> importSchemas;
+        importSchemas.resize(schemas.size());
+        std::transform(schemas.begin(), schemas.end(), importSchemas.begin(), [](ECSchemaPtr const& schema) { return schema.get(); });
+
+        ASSERT_TRUE(SUCCESS == s_project->GetECDb().Schemas().ImportSchemas(importSchemas));
+        s_project->GetECDb().SaveChanges();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,6 +67,11 @@ void RulesDrivenECPresentationManagerTests::TearDownTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManagerTests::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls()[name] = schemaXml;}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerTests::SetUp()
@@ -40,7 +79,7 @@ void RulesDrivenECPresentationManagerTests::SetUp()
     Localization::Init();
 
     m_locater = TestRuleSetLocater::Create();
-    m_manager = new RulesDrivenECPresentationManager(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    m_manager = new RulesDrivenECPresentationManager(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_manager->GetLocaters().RegisterLocater(*m_locater);
     IECPresentationManager::RegisterImplementation(m_manager);
     IECPresentationManager::GetManager().GetConnections().NotifyConnectionOpened(s_project->GetECDb());
@@ -80,6 +119,73 @@ void RulesDrivenECPresentationManagerTests::ShutDownTestL10N()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP RulesDrivenECPresentationManagerTests::GetSchema()
+    {
+    return s_project->GetECDb().Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP RulesDrivenECPresentationManagerTests::GetClass(Utf8CP schemaName, Utf8CP className)
+    {
+    return s_project->GetECDb().Schemas().GetClass(schemaName, className);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP RulesDrivenECPresentationManagerTests::GetClass(Utf8CP name)
+    {
+    return GetClass(BeTest::GetNameOfCurrentTest(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCP RulesDrivenECPresentationManagerTests::GetRelationshipClass(Utf8CP schemaName, Utf8CP className)
+    {
+    ECClassCP ecClass = GetClass(schemaName, className);
+    return (nullptr == ecClass) ? nullptr : ecClass->GetRelationshipClassCP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCP RulesDrivenECPresentationManagerTests::GetRelationshipClass(Utf8CP name)
+    {
+    return GetRelationshipClass(BeTest::GetNameOfCurrentTest(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String RulesDrivenECPresentationManagerTests::GetClassNamesList(bvector<ECClassCP> const& classes)
+    {
+    Utf8String list;
+    bset<ECSchemaCP> usedSchemas;
+    bool firstClass = true;
+    for (ECClassCP ecClass : classes)
+        {
+        if (usedSchemas.end() == usedSchemas.find(&ecClass->GetSchema()))
+            {
+            if (!usedSchemas.empty())
+                list.append(";");
+            list.append(ecClass->GetSchema().GetName()).append(":");
+            usedSchemas.insert(&ecClass->GetSchema());
+            firstClass = true;
+            }
+        if (!firstClass)
+            list.append(",");
+        list.append(ecClass->GetName());
+        firstClass = false;
+        }
+    return list;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String RulesDrivenECPresentationManagerTests::GetDisplayLabel(IECInstanceCR instance)
@@ -103,7 +209,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, InitializesUserSettings)
 
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("MyRulesetId", 1, 0, false, "", "", "", false);
     UserSettingsGroupP settingsGroup = new UserSettingsGroup("Label");
-    settingsGroup->GetSettingsItemsR().push_back(new UserSettingsItem("TestSetting", "Label", "StringValue", "DefaultValue"));
+    settingsGroup->AddSettingsItem(*new UserSettingsItem("TestSetting", "Label", "StringValue", "DefaultValue"));
     ruleset->AddPresentationRule(*settingsGroup);
 
     TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
@@ -308,6 +414,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, OnNodeExpanded_SetsTheFlagAndUpdat
     NodesCache& cache = m_manager->GetNodesCache();
 
     // cache root data source
+    m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
     DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
     cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
@@ -337,6 +444,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, OnNodeCollapsed_SetsTheFlagAndUpda
     NodesCache& cache = m_manager->GetNodesCache();
 
     // cache root data source
+    m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
     DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
     cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 

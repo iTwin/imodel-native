@@ -101,3 +101,16 @@ Utf8StringCR CheckBoxRule::GetIsEnabled(void) const { return m_isEnabled; }
 * @bsimethod                                    Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CheckBoxRule::_Accept(CustomizationRuleVisitor& visitor) const {visitor._Visit(*this);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 CheckBoxRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    md5.Add(m_propertyName.c_str(), m_propertyName.size());
+    md5.Add(&m_useInversedPropertyValue, sizeof(m_useInversedPropertyValue));
+    md5.Add(&m_defaultValue, sizeof(m_defaultValue));
+    md5.Add(m_isEnabled.c_str(), m_isEnabled.size());
+    return md5;
+    }

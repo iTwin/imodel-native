@@ -50,6 +50,7 @@ ECPRESENTATION_TYPEDEFS(ContentSpecification);
 ECPRESENTATION_TYPEDEFS(RelatedPropertiesSpecification);
 ECPRESENTATION_TYPEDEFS(PropertiesDisplaySpecification);
 ECPRESENTATION_TYPEDEFS(PropertyEditorsSpecification);
+ECPRESENTATION_TYPEDEFS(PropertyEditorParametersSpecification);
 ECPRESENTATION_TYPEDEFS(CalculatedPropertiesSpecification);
 ECPRESENTATION_TYPEDEFS(ContentInstancesOfSpecificClassesSpecification);
 ECPRESENTATION_TYPEDEFS(ContentRelatedInstancesSpecification);
@@ -78,5 +79,6 @@ typedef bvector<CheckBoxRuleP>                      CheckBoxRuleList;
 typedef bvector<RenameNodeRuleP>                    RenameNodeRuleList;
 typedef bvector<SortingRuleP>                       SortingRuleList;
 typedef bvector<ContentModifierP>                   ContentModifierList;
+typedef bvector<PropertyEditorParametersSpecificationP> PropertyEditorParametersList;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -84,6 +84,7 @@ struct IECPresentationManagerTests : ::testing::Test
             }
         TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*ecClass, instanceKey.GetInstanceId());
         node->SetLabel(label);
+        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     
@@ -119,6 +120,7 @@ struct IECPresentationManagerTests : ::testing::Test
             }
         TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*ecClass, label);
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
+        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     
@@ -146,6 +148,7 @@ struct IECPresentationManagerTests : ::testing::Test
             groupingValue.SetInt(rangeIndex);
         TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*ecClass, *ecProperty, label, groupingValue, -1 != rangeIndex);
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
+        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     
@@ -156,6 +159,7 @@ struct IECPresentationManagerTests : ::testing::Test
         {
         TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode(label);
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
+        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     };

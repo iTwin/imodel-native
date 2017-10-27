@@ -85,3 +85,14 @@ void LabelOverride::SetDescription (Utf8String value) { m_description = value; }
 * @bsimethod                                    Aidas.Vaiksnoras                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LabelOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 LabelOverride::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    md5.Add(m_label.c_str(), m_label.size());
+    md5.Add(m_description.c_str(), m_description.size());
+    return md5;
+    }

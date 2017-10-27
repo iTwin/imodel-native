@@ -109,13 +109,15 @@ struct UpdateTasksFactory
 {
 private:
     mutable IUpdateRecordsHandler* m_recordsHandler;
+    SelectionManagerP m_selectionManager;
     NodesCache* m_nodesCache;
     
 public:
     UpdateTasksFactory(NodesCache* nodesCache, ContentCache* contentCache, IUpdateRecordsHandler* recordsHandler) 
-        : m_nodesCache(nodesCache), m_recordsHandler(recordsHandler) 
+        : m_nodesCache(nodesCache), m_recordsHandler(recordsHandler), m_selectionManager(nullptr)
         {}
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_recordsHandler = handler;}
+    void SetSelectionManager(SelectionManagerP manager) {m_selectionManager = manager;}
 
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(bmap<uint64_t, uint64_t> const&) const;
@@ -140,6 +142,7 @@ private:
     ContentCache* m_contentCache;
     IConnectionCacheCR m_connections;
     UpdateTasksFactory m_tasksFactory;
+    SelectionManagerP m_selectionManager;
     IECExpressionsCacheProvider& m_ecexpressionsCacheProvider;
     RefCountedPtr<IUpdateRecordsHandler> m_updateRecordsHandler;
     HierarchyUpdater* m_hierarchyUpdater;
@@ -159,8 +162,10 @@ protected:
     ECPRESENTATION_EXPORT void _OnECInstancesChanged(BeSQLite::EC::ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) override;
 
 public:
-    ECPRESENTATION_EXPORT UpdateHandler(NodesCache*, ContentCache*, IConnectionCacheCR, INodesProviderContextFactoryCR, INodesProviderFactoryCR, IECExpressionsCacheProvider&);
+    ECPRESENTATION_EXPORT UpdateHandler(NodesCache*, ContentCache*, IConnectionCacheCR, INodesProviderContextFactoryCR, 
+        INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
+    void SetSelectionManager(SelectionManagerP manager) {m_selectionManager = manager; m_tasksFactory.SetSelectionManager(manager);}
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_updateRecordsHandler = handler; m_tasksFactory.SetRecordsHandler(handler);}
     void NotifyRulesetDisposed(PresentationRuleSetCR ruleset);
     void NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId);

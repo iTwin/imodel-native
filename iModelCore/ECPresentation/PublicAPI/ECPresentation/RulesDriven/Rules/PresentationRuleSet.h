@@ -19,7 +19,7 @@ PresentationRuleSet is a container of all presentation rules for particular type
 and particular set of schemas .
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationRuleSet : public RefCountedBase
+struct PresentationRuleSet : public RefCountedBase, HashableBase
     {
     private:
         Utf8String                             m_ruleSetId;
@@ -67,6 +67,10 @@ struct PresentationRuleSet : public RefCountedBase
         //Writes PresentationRuleSet to XML.
         void                                            WriteXml (BeXmlDomR xmlDom);
 
+    protected:
+        //! Computes rules set hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     private:
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void);
@@ -96,7 +100,11 @@ struct PresentationRuleSet : public RefCountedBase
             {
             bvector<RuleType*>* list = GetRules<RuleType>();
             if (nullptr != list)
+                {
+                InvalidateHash();
+                rule.SetParent(this);
                 CommonTools::AddToListByPriority(*list, rule);
+                }
             }
 
         //! Removes the presentation rule from this rule set.
@@ -104,7 +112,10 @@ struct PresentationRuleSet : public RefCountedBase
             {
             bvector<RuleType*>* list = GetRules<RuleType>();
             if (nullptr != list)
+                {
+                InvalidateHash();
                 CommonTools::RemoveFromList(*list, rule);
+                }
             }
 
         //! Reads PresentationRuleSet from XmlString.

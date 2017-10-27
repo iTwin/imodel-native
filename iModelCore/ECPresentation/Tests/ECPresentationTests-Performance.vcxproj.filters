@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Published">
+      <UniqueIdentifier>{d8ea076c-649c-4336-93ad-93bed0c169cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NonPublished">
+      <UniqueIdentifier>{76e29d01-9b87-4d03-b546-ecd18d920ec4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BackDoor">
+      <UniqueIdentifier>{eb2356fe-ccd8-4e25-942e-5cdd5ff514a0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\RulesEngine\ECInstanceChangeEventSourceTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\JsonMessageUpdateRecordsHandlerTests.cpp" />
+    <ClCompile Include="BackDoor\Localization.cpp" />
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
+    <ClCompile Include="TestHelpers\IssueReporter.cpp" />
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
+    <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
+    <ClCompile Include="Performance\RulesEngine\ContentPerformanceTests.cpp" />
+    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\StubLocalState.h" />
+    <ClInclude Include="TestUtils\TestRuleSetLocater.h" />
+    <ClInclude Include="TestUtils\TestUserSettings.h" />
+    <ClInclude Include="TestHelpers\TestUserSettings.h" />
+    <ClInclude Include="TestHelpers\ECPresentationTest.h" />
+    <ClInclude Include="TestHelpers\TestConnectionCache.h" />
+    <ClInclude Include="TestHelpers\TestECPresentationManager.h" />
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h" />
+    <ClInclude Include="TestHelpers\IssueReporter.h" />
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
+    <ClInclude Include="TestHelpers\TestSelectionProvider.h" />
+    <ClInclude Include="Performance\RulesEngine\RulesEnginePerformanceTests.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Data\RulesEngineTest.01.00.ecschema.xml" />
+  </ItemGroup>
+</Project>

@@ -112,3 +112,18 @@ bool SortingRule::GetIsPolymorphic (void) const { return m_isPolymorphic; }
 * @bsimethod                                    Aidas.Vaiksnoras                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SortingRule::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 SortingRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    md5.Add(m_schemaName.c_str(), m_schemaName.size());
+    md5.Add(m_className.c_str(), m_className.size());
+    md5.Add(m_propertyName.c_str(), m_propertyName.size());
+    md5.Add(&m_sortAscending, sizeof(m_sortAscending));
+    md5.Add(&m_doNotSort, sizeof(m_doNotSort));
+    md5.Add(&m_isPolymorphic, sizeof(m_isPolymorphic));
+    return md5;
+    }

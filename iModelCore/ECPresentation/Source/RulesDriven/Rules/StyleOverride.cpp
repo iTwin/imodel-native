@@ -90,3 +90,15 @@ Utf8StringCR StyleOverride::GetFontStyle (void) const { return m_fontStyle; }
 * @bsimethod                                    Aidas.Vaiksnoras                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StyleOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Visit(*this); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 StyleOverride::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    md5.Add(m_foreColor.c_str(), m_foreColor.size());
+    md5.Add(m_backColor.c_str(), m_backColor.size());
+    md5.Add(m_fontStyle.c_str(), m_fontStyle.size());
+    return md5;
+    }

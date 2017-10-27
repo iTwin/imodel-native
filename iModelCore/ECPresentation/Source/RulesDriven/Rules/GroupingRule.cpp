@@ -153,8 +153,37 @@ void GroupingRule::_Accept(CustomizationRuleVisitor& visitor) const { visitor._V
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupList const& GroupingRule::GetGroups (void) const            { return m_groups; }
-GroupList& GroupingRule::GetGroupsR (void)                       { return m_groups; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GroupingRule::AddGroup(GroupSpecificationR group)
+    {
+    InvalidateHash();
+    group.SetParent(this);
+    m_groups.push_back(&group);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 GroupingRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    md5.Add(m_schemaName.c_str(), m_schemaName.size());
+    md5.Add(m_className.c_str(), m_className.size());
+    md5.Add(m_contextMenuCondition.c_str(), m_contextMenuCondition.size());
+    md5.Add(m_contextMenuLabel.c_str(), m_contextMenuLabel.size());
+    md5.Add(m_settingsId.c_str(), m_settingsId.size());
+
+    Utf8String currentHash = md5.GetHashString();
+    for (GroupSpecificationP spec : m_groups)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
@@ -210,6 +239,21 @@ void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
 Utf8StringCR GroupSpecification::GetContextMenuLabel (void) const  { return m_contextMenuLabel; }
 Utf8StringCR GroupSpecification::GetDefaultLabel (void) const      { return m_defaultLabel; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 GroupSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_contextMenuLabel.c_str(), m_contextMenuLabel.size());
+    md5.Add(m_defaultLabel.c_str(), m_defaultLabel.size());
+    CharCP name = _GetXmlElementName();
+    md5.Add(name, strlen(name));
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+    return md5;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
@@ -252,6 +296,14 @@ bool SameLabelInstanceGroup::_ReadXml (BeXmlNodeP xmlNode)
 void SameLabelInstanceGroup::_WriteXml (BeXmlNodeP xmlNode) const
     {
     //there are no additioanl options
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 SameLabelInstanceGroup::_ComputeHash(Utf8CP parentHash) const
+    {
+    return GroupSpecification::_ComputeHash(parentHash);
     }
 
 
@@ -326,6 +378,18 @@ Utf8StringCR ClassGroup::GetSchemaName (void) const                { return m_sc
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ClassGroup::GetBaseClassName (void) const             { return m_baseClassName; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ClassGroup::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = GroupSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_createGroupForSingleItem, sizeof(m_createGroupForSingleItem));
+    md5.Add(m_schemaName.c_str(), m_schemaName.size());
+    md5.Add(m_baseClassName.c_str(), m_baseClassName.size());
+    return md5;
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,7 +551,38 @@ Utf8StringCR PropertyGroup::GetPropertyName (void) const        { return m_prope
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyRangeGroupList const& PropertyGroup::GetRanges (void) const { return m_ranges;    }
-PropertyRangeGroupList& PropertyGroup::GetRangesR (void)        { return m_ranges;    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyGroup::AddRange (PropertyRangeGroupSpecificationR range) 
+    {
+    InvalidateHash();
+    range.SetParent(this);
+    m_ranges.push_back(&range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyGroup::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = GroupSpecification::_ComputeHash(parentHash);
+    md5.Add(m_imageId.c_str(), m_imageId.size());
+    md5.Add(&m_createGroupForSingleItem, sizeof(m_createGroupForSingleItem));
+    md5.Add(&m_createGroupForUnspecifiedValues, sizeof(m_createGroupForUnspecifiedValues));
+    md5.Add(&m_groupingValue, sizeof(m_groupingValue));
+    md5.Add(&m_sortingValue, sizeof(m_sortingValue));
+    md5.Add(m_propertyName.c_str(), m_propertyName.size());
+
+    Utf8String currentHash = md5.GetHashString();
+    for (PropertyRangeGroupSpecificationP spec : m_ranges)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -566,3 +661,18 @@ Utf8StringCR PropertyRangeGroupSpecification::GetFromValue (void) const { return
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR PropertyRangeGroupSpecification::GetToValue (void) const   { return m_toValue; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 PropertyRangeGroupSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5;
+    md5.Add(m_label.c_str(), m_label.size());
+    md5.Add(m_imageId.c_str(), m_imageId.size());
+    md5.Add(m_fromValue.c_str(), m_fromValue.size());
+    md5.Add(m_toValue.c_str(), m_toValue.size());
+    if (nullptr != parentHash)
+        md5.Add(parentHash, strlen(parentHash));
+    return md5;
+    }

@@ -114,3 +114,16 @@ Utf8StringCR CustomNodeSpecification::GetImageId (void) const { return m_imageId
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomNodeSpecification::SetImageId (Utf8StringCR value) { m_imageId = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 CustomNodeSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
+    md5.Add(m_type.c_str(), m_type.size());
+    md5.Add(m_label.c_str(), m_label.size());
+    md5.Add(m_description.c_str(), m_description.size());
+    md5.Add(m_imageId.c_str(), m_imageId.size());
+    return md5;
+    }

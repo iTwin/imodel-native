@@ -21,7 +21,8 @@ RulesEnginePublicHeaders      = $(RulesEnginePublicApiDirectory)PresentationMana
                                 $(RulesEnginePublicApiDirectory)UserSettings.h                      \
                                 $(RulesEnginePublicApiDirectory)ECInstanceChangeEvents.h            \
                                 $(RulesEnginePublicApiDirectory)ECInstanceChangeHandlers.h          \
-                                $(RulesEnginePublicApiDirectory)Update.h                          
+                                $(RulesEnginePublicApiDirectory)Update.h                            \
+                                $(RulesEnginePublicApiDirectory)RuleSetEmbedder.h                  
 
 RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h                     \
                                 $(RulesEngineSourceDirectory)RulesPreprocessor.h                    \
@@ -46,7 +47,12 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)ContentProviders.h                     \
                                 $(RulesEngineSourceDirectory)RulesDrivenProviderContext.h           \
                                 $(RulesEngineSourceDirectory)ECInstanceChangesDirector.h            \
-                                $(RulesEngineSourceDirectory)DataSourceInfo.h
+                                $(RulesEngineSourceDirectory)DataSourceInfo.h                       \
+                                $(RulesEngineSourceDirectory)ContentFieldEditors.h                  \
+                                $(RulesEngineSourceDirectory)ContentClassesLocater.h                \
+                                $(RulesEngineSourceDirectory)ContentSpecificationsHandler.h         \
+                                $(RulesEngineSourceDirectory)PropertyInfoStore.h                    \
+                                $(RulesEngineSourceDirectory)ECExpressionOptimizer.h
 
 RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h
 

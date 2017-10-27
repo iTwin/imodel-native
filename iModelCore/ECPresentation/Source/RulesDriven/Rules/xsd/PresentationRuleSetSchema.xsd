@@ -542,15 +542,107 @@
         </xs:choice>
     </xs:complexType>
 
+    <!-- Property Editors -->
     <xs:complexType name="PropertyEditorsDef">
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element name="Editor" type="PropertyEditorDef" />
-      </xs:choice>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Editor" type="PropertyEditorDef" />
+        </xs:choice>
     </xs:complexType>
-
     <xs:complexType name="PropertyEditorDef">
-      <xs:attribute name="PropertyName" type="xs:string"/>
-      <xs:attribute name="EditorName" type="xs:string"/>
+        <xs:sequence minOccurs="0" maxOccurs="1">
+            <xs:element name="JsonParams" type="PropertyEditorJsonParamsDef" minOccurs="0" maxOccurs="1" />
+            <xs:element name="MultilineParams" type="MultilinePropertyEditorParamsDef" minOccurs="0" maxOccurs="1" />
+            <xs:choice minOccurs="0" maxOccurs="1">
+                <xs:element name="RangeParams" type="RangePropertyEditorParamsDef" minOccurs="0" maxOccurs="1" />
+                <xs:element name="SliderParams" type="SliderPropertyEditorParamsDef" minOccurs="0" maxOccurs="1" />
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="PropertyName" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Name of the property to apply editor on</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="EditorName" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Name of the editor</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="PropertyEditorJsonParamsDef">
+        <xs:annotation>
+            <xs:documentation>
+                Custom editor-specific parameters specified in JSON format.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="RequiredStringContentDef" />
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="MultilinePropertyEditorParamsDef">
+        <xs:annotation>
+            <xs:documentation>
+                Parameters for property editors which want to be displayed as multiline text editors. Should only be
+                used on text type properties.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="HeightInRows" type="xs:unsignedInt" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Height of the property editor in number of rows.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="RangePropertyEditorParamsDef">
+        <xs:annotation>
+            <xs:documentation>
+                Parameters for property editors which want to have range restrictions. Should only be
+                used on numeric type properties.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="Minimum" type="xs:double" use="optional">
+            <xs:annotation>
+                <xs:documentation>Minimum value</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Maximum" type="xs:double" use="optional">
+            <xs:annotation>
+                <xs:documentation>Maximum value</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="SliderPropertyEditorParamsDef">
+        <xs:annotation>
+            <xs:documentation>
+                Parameters for property editors which want to be displayed as a slider control. Should only be 
+                used on numeric type properties.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="Minimum" type="xs:double" use="required">
+            <xs:annotation>
+                <xs:documentation>Minimum value</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Maximum" type="xs:double" use="required">
+            <xs:annotation>
+                <xs:documentation>Maximum value</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Intervals" type="xs:unsignedInt" use="optional">
+            <xs:annotation>
+                <xs:documentation>Number of intervals to divide the slider to</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Vertical" type="xs:boolean" default="false" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the slider be display vertical orientation</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ValueFactor" type="xs:unsignedInt" use="optional">
+            <xs:annotation>
+                <xs:documentation>Since slider must work with integer values define factor used to produce a integer (0.1=10, 0.01=100, 0.001=1000)</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="CalculatedPropertyDef" mixed="true">

@@ -264,7 +264,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsByProperty_WhenUsingParentI
     m_ruleset->AddPresentationRule(*sortingRule);
 
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("Basic3", "Class3"));
-    parentNode->SetParentNodeId(NavNode::CreateNodeId());
+    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
    
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.SomeProperty = parent.SomeProperty", "Basic3:Class3", false);
@@ -290,7 +290,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsUsingRelatedInstancePropert
     m_ruleset->AddPresentationRule(*sortingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
-    spec.GetRelatedInstances().push_back(new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget"));
 
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());

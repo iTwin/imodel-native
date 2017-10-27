@@ -63,6 +63,8 @@ ECDbTestProject* DefaultECInstanceChangeHandlerTests::s_project = nullptr;
 TEST_F(DefaultECInstanceChangeHandlerTests, ChangesPrimaryInstanceValue)
     {
     ECEntityClassCP widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
+
+    EXPECT_TRUE(m_handler->CanHandle(s_project->GetECDb(), *widgetClass));
     
     // insert an empty widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
@@ -91,6 +93,8 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
     ECEntityClassCP gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     RelatedClassPath relationshipPath = {RelatedClass(*widgetClass, *gadgetClass, *rel, true)};
+    
+    EXPECT_TRUE(m_handler->CanHandle(s_project->GetECDb(), *widgetClass));
         
     // insert an empty widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
@@ -112,4 +116,22 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
     EXPECT_EQ(SUCCESS, result.GetStatus());
     EXPECT_EQ(valueAfter, result.GetChangedValue());
     EXPECT_EQ(valueAfter, GetInstanceValue(widgetKey, propertyAccessor));
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                06/2017
++===============+===============+===============+===============+===============+======*/
+struct CustomECDb : ECDb
+    {
+    CustomECDb() {ApplyECDbSettings(true, false, false);}
+    };
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultECInstanceChangeHandlerTests, CantHandleECDbsWhichRequireWriteToken)
+    {
+    ECDbTestProject project(new CustomECDb());
+    project.Create("CantHandleECDbsWhichRequireWriteToken", "RulesEngineTest.01.00.ecschema.xml");
+    ECEntityClassCP widgetClass = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
+    EXPECT_FALSE(m_handler->CanHandle(project.GetECDb(), *widgetClass));
     }

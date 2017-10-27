@@ -92,9 +92,14 @@ void ContentRule::_WriteXml (BeXmlNodeP xmlNode) const
 ContentSpecificationList const& ContentRule::GetSpecifications (void) const { return m_specifications; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2016
+* @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentSpecificationList& ContentRule::GetSpecificationsR() {return m_specifications;}
+void ContentRule::AddSpecification(ContentSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_specifications.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   09/2013
@@ -105,3 +110,20 @@ Utf8StringCR ContentRule::GetCustomControl (void)                  { return m_cu
 * @bsimethod                                    Andrius.Zonys                   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentRule::SetCustomControl (Utf8StringCR customControl)    { m_customControl = customControl; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ContentRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationRule::_ComputeHash(parentHash);
+    md5.Add(m_customControl.c_str(), m_customControl.size());
+
+    Utf8String currentHash = md5.GetHashString();
+    for (ContentSpecificationP spec : m_specifications)
+        {
+        Utf8StringCR specHash = spec->GetHash(parentHash);
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }

@@ -170,7 +170,7 @@ TEST_F(CustomNodesProviderTests, OverridesLabelAndDescription)
     m_ruleset->AddPresentationRule(*rule);
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "descr", "imageId");
-    rule->GetSpecificationsR().push_back(spec);    
+    rule->AddSpecification(*spec);    
     m_context->SetRootNodeContext(*rule);
 
     JsonNavNodePtr node;
@@ -196,7 +196,7 @@ TEST_F(CustomNodesProviderTests, OverridesStyle)
     m_ruleset->AddPresentationRule(*rule);
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "", "imageId");
-    rule->GetSpecificationsR().push_back(spec);    
+    rule->AddSpecification(*spec);    
     m_context->SetRootNodeContext(*rule);
 
     JsonNavNodePtr node;
@@ -220,7 +220,7 @@ TEST_F(CustomNodesProviderTests, OverridesImageId)
     m_ruleset->AddPresentationRule(*rule);
 
     CustomNodeSpecification* spec = new CustomNodeSpecification(1, false, "MyCustomNode", "label", "", "imageId");
-    rule->GetSpecificationsR().push_back(spec);    
+    rule->AddSpecification(*spec);    
     m_context->SetRootNodeContext(*rule);
 
     JsonNavNodePtr node;

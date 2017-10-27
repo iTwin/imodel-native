@@ -29,7 +29,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    INavNodeKeysContainerCPtr GetSelection() const {return NavNodeKeySetContainer::Create(m_keys);}
+    INavNodeKeysContainerCPtr GetSelection() const {return NavNodeKeySetContainer::Create(&m_keys);}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
@@ -120,6 +120,27 @@ public:
         m_lastSource = source;
         return true;
         }
+
+    /*-----------------------------------------------------------------------------**//**
+    // @bsimethod                                   Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    bmap<uint64_t, uint64_t> RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
+        {
+        bmap<uint64_t, uint64_t> remapped;
+        for (NavNodeKeyCPtr key : m_keys)
+            {
+            auto remappedIter = const_cast<NavNodeKeyP>(key.get())->RemapNodeId(remapInfo);
+            if (remapInfo.end() != remappedIter)
+                remapped[remappedIter->first] = remappedIter->second;
+            }
+        if (!remapped.empty())
+            {
+            // if any of the keys was remapped, need to make sure the set is reindexed
+            NavNodeKeySet keys(m_keys.begin(), m_keys.end());
+            m_keys.swap(keys);
+            }
+        return remapped;
+        }
 };
 
 //=======================================================================================
@@ -182,6 +203,34 @@ void SelectionManager::OnConnectionClosed(ECDbCR connection) const
         m_selections.erase(iter);
         GetLogger().infov("Selection cleared due to connection close: '%s'", guid.ToString().c_str());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void MergeRemapInfo(bmap<uint64_t, uint64_t>& merged, bmap<uint64_t, uint64_t> const& input)
+    {
+    for (auto pair : input)
+        {
+        BeAssert(merged.end() == merged.find(pair.first) || merged.find(pair.first)->second == pair.second);
+        merged[pair.first] = pair.second;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectionManager::RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
+    {
+    bmap<uint64_t, uint64_t> affected;
+    for (auto selectionsPair : m_selections)
+        {
+        ECDbSelection& selections = *selectionsPair.second;
+        MergeRemapInfo(affected, selections.GetSelection().RemapNodeIds(remapInfo));
+        MergeRemapInfo(affected, selections.GetSubSelection().RemapNodeIds(remapInfo));
+        }
+    for (SelectionSyncHandlerPtr const& syncHandler : m_syncHandlers)
+        syncHandler->_OnSelectedNodesRemapped(affected);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,7 +302,7 @@ void SelectionManager::AddToSelection(ECDbR db, Utf8CP source, bool isSubSelecti
     {
     NavNodeKeyList list;
     list.push_back(&key);
-    AddToSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(list), extendedData);
+    AddToSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -278,7 +327,7 @@ void SelectionManager::RemoveFromSelection(ECDbR db, Utf8CP source, bool isSubSe
     {
     NavNodeKeyList list;
     list.push_back(&key);
-    RemoveFromSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(list), extendedData);
+    RemoveFromSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +352,7 @@ void SelectionManager::ChangeSelection(ECDbR db, Utf8CP source, bool isSubSelect
     {
     NavNodeKeyList list;
     list.push_back(&key);
-    ChangeSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(list), extendedData);
+    ChangeSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -397,7 +446,7 @@ SelectionChangedEvent::SelectionChangedEvent(IConnectionCacheCR connectionCache,
             keys.insert(key);
             }
         }
-    m_keys = NavNodeKeySetContainer::Create(std::move(keys));
+    m_keys = NavNodeKeySetContainer::Create(keys);
 
     if (json.isMember(JSON_MEMBER_ExtendedData) && json[JSON_MEMBER_ExtendedData].isObject() && !json[JSON_MEMBER_ExtendedData].empty())
         {
@@ -449,13 +498,14 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     
     // create content request options
     Json::Value contentOptions = _CreateContentOptionsForSelection(evt);
+    Utf8CP contentDisplayType = _GetContentDisplayType();
 
     // create the selection info
     SelectionInfo selection(*m_manager, evt);
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection(), nullptr, selection, contentOptions);
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection(), contentDisplayType, selection, contentOptions);
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);

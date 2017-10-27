@@ -13,7 +13,7 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
-typedef bvector<ContentSpecificationCP> ContentSpecificationList;
+typedef bvector<ContentSpecificationP> ContentSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 ContentRule defines rules for generating content for selected items.
@@ -35,6 +35,9 @@ struct ContentRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT ContentRule ();
@@ -51,8 +54,8 @@ struct ContentRule : public PresentationRule
         //! Collection ContentSpecifications that will be used to provide content.
         ECPRESENTATION_EXPORT ContentSpecificationList const& GetSpecifications(void) const;
         
-        //! Collection ContentSpecifications that will be used to provide content.
-        ECPRESENTATION_EXPORT ContentSpecificationList&      GetSpecificationsR();
+        //! Adds ContentSpecification that will be used to provide content.
+        ECPRESENTATION_EXPORT void AddSpecification(ContentSpecificationR specification);
 
         //! Returns display type of custom control which should display content of this rule.
         ECPRESENTATION_EXPORT Utf8StringCR                      GetCustomControl (void);

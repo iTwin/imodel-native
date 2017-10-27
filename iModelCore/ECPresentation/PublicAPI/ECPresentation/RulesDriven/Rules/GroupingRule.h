@@ -65,6 +65,9 @@ struct GroupingRule : public CustomizationRule
         //!Accepts customization rule visitor
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor)const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT GroupingRule();
@@ -102,14 +105,16 @@ struct GroupingRule : public CustomizationRule
 
         //! Returns a list of GroupSpecifications.
         ECPRESENTATION_EXPORT GroupList const&     GetGroups (void) const;
-        ECPRESENTATION_EXPORT GroupList&           GetGroupsR (void);
+
+        //! Add GroupSpecification.
+        ECPRESENTATION_EXPORT void AddGroup(GroupSpecificationR group);
     };
 
 /*---------------------------------------------------------------------------------**//**
 GroupSpecification that identifies parameters on how to group ECInstances
 * @bsiclass                                     Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct GroupSpecification
+struct GroupSpecification : HashableBase
     {
 private:
     Utf8String  m_contextMenuLabel;
@@ -136,6 +141,9 @@ protected:
     
     //! Clones this specification.
     virtual GroupSpecification* _Clone() const = 0;
+
+    //! Computes specification hash.
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     //! Virtual destructor.
@@ -184,6 +192,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SameLabelInstanceGroup : public GroupSpecificatio
         //! Clones this specification.
         virtual GroupSpecification* _Clone() const override {return new SameLabelInstanceGroup(*this);}
 
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT SameLabelInstanceGroup ();
@@ -219,6 +230,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
     
         //! Clones this specification.
         virtual GroupSpecification* _Clone() const override {return new ClassGroup(*this);}
+
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -279,6 +293,9 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
         //! Clones this specification.
         virtual GroupSpecification* _Clone() const override {return new PropertyGroup(*this);}
 
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT PropertyGroup ();
@@ -321,7 +338,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
         ECPRESENTATION_EXPORT PropertyRangeGroupList const&  GetRanges (void) const;
-        ECPRESENTATION_EXPORT PropertyRangeGroupList&  GetRangesR (void);
+
+        ECPRESENTATION_EXPORT void AddRange(PropertyRangeGroupSpecificationR range);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,13 +347,16 @@ PropertyGroup that identifies parameters on how to group specific class ECInstan
 by a specific property.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyRangeGroupSpecification
+struct PropertyRangeGroupSpecification : HashableBase
     {
     private:
         Utf8String  m_label;
         Utf8String  m_imageId;
         Utf8String  m_fromValue;
         Utf8String  m_toValue;
+
+    protected:
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

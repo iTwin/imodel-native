@@ -256,13 +256,23 @@ void QueryBuilderHelpers::ApplyDefaultContentFlags(ContentDescriptorR descriptor
     BeAssert(0 == descriptor.GetContentFlags());
 
     if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Grid, displayType))
+        {
         descriptor.AddContentFlag(ContentFlags::ShowLabels);
-    
-    if (DISPLAY_TYPES_EQUAL(ContentDisplayType::PropertyPane, displayType))
+        }
+    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::PropertyPane, displayType))
+        {
         descriptor.AddContentFlag(ContentFlags::MergeResults);
-    
-    if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Graphics, displayType))
+        }
+    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Graphics, displayType))
+        {
+        descriptor.AddContentFlag(ContentFlags::NoFields);
         descriptor.AddContentFlag(ContentFlags::KeysOnly);
+        }
+    else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::List, displayType))
+        {
+        descriptor.AddContentFlag(ContentFlags::NoFields);
+        descriptor.AddContentFlag(ContentFlags::ShowLabels);
+        }
 
     if (spec.GetShowImages())
         descriptor.AddContentFlag(ContentFlags::ShowImages);
@@ -429,27 +439,27 @@ ECValue QueryBuilderHelpers::CreateECValueFromJson(RapidJsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBuilderHelpers::Reverse(RelatedClassPath& path, Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic)
+void RelatedClassPath::Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetPolymorphic)
     {
     // first pass: reverse the order in list
-    for (size_t i = 0; i < path.size() / 2; ++i)
+    for (size_t i = 0; i < size() / 2; ++i)
         {
-        RelatedClass& lhs = path[i];
-        RelatedClass& rhs = path[path.size() - i - 1];
+        RelatedClass& lhs = at(i);
+        RelatedClass& rhs = at(size() - i - 1);
         RelatedClass tmp = lhs;
         lhs = rhs;
         rhs = tmp;
         }
 
     // second pass: reverse each spec
-    for (size_t i = 0; i < path.size(); ++i)
+    for (size_t i = 0; i < size(); ++i)
         {
-        RelatedClass& spec = path[i];
+        RelatedClass& spec = at(i);
         ECClassCP tmp = spec.GetSourceClass();
         spec.SetSourceClass(*spec.GetTargetClass());
         spec.SetTargetClass(*tmp);
-        spec.SetTargetClassAlias((i < path.size() - 1) ? path[i + 1].GetTargetClassAlias() : firstTargetClassAlias);
-        spec.SetIsPolymorphic((i < path.size() - 1) ? path[i + 1].IsPolymorphic() : isFirstTargetPolymorphic);
+        spec.SetTargetClassAlias((i < size() - 1) ? at(i + 1).GetTargetClassAlias() : firstTargetClassAlias);
+        spec.SetIsPolymorphic((i < size() - 1) ? at(i + 1).IsPolymorphic() : isFirstTargetPolymorphic);
         if (nullptr == spec.GetTargetClassAlias() || 0 == *spec.GetTargetClassAlias())
             spec.SetTargetClassAlias(Utf8String(spec.GetTargetClass()->GetName()).ToLower());
         }

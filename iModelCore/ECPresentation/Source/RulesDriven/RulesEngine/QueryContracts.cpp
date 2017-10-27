@@ -743,7 +743,7 @@ static Utf8String GetPointAsJsonStringClause(Utf8StringCR propertyName, Utf8CP p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP prefix)
     {
     if (nullptr != m_foreignKeyClass)
         {
@@ -761,7 +761,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetDisplayLabelClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetDisplayLabelClause(Utf8CP prefix)
     {
     if (nullptr != prefix && !m_groupingPropertyClassAlias.empty())
         prefix = m_groupingPropertyClassAlias.c_str();
@@ -777,7 +777,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetDisplayLabelClause(Utf8CP pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetImageIdClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetImageIdClause(Utf8CP prefix)
     {
     if (m_specification.GetRanges().empty())
         {
@@ -793,7 +793,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetImageIdClause(Utf8CP prefix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause(Utf8CP prefix) const
+Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause(Utf8CP prefix)
     {
     if (m_specification.GetRanges().empty())
         return Utf8PrintfString("group_concat(DISTINCT %s)", GroupingValueFieldName);
@@ -842,8 +842,8 @@ Utf8CP ContentQueryContract::DisplayLabelFieldName = "DisplayLabel";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo)
-    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_queryInfo(queryInfo)
+ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bool skipCompositePropertyFields)
+    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_queryInfo(queryInfo), m_skipCompositePropertyFields(skipCompositePropertyFields)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
@@ -953,7 +953,7 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
     if (prop.GetIsNavigation())
         {
         PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetECInstanceDisplayLabel, 
-            CreateList("ECClassId", "ECInstanceId", "NULL", "NULL"));
+            CreateList("ECClassId", "ECInstanceId", "NULL", "NULL"), true, isDistinct);
         field->SetPrefixOverride(prefix);
         return field;
         }
@@ -1072,7 +1072,10 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
     bvector<Utf8CP> selectAliases = m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
     if (!m_descriptor->OnlyDistinctValues())
         {
-        contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
+        if (0 != GetId())
+            contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", std::to_string(GetId()).c_str(), false));
+        else
+            contractFields.push_back(PresentationQueryContractSimpleField::Create("ContractId", "ContractId", false));
         contractFields.push_back(CreateInstanceKeyField(ECInstanceKeysFieldName, selectAliases.empty() ? nullptr : selectAliases.front(), ECClassId(), m_descriptor->MergeResults()));
         }
 
@@ -1092,18 +1095,21 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             else if (descriptorField->IsPropertiesField())
                 {
                 ContentDescriptor::ECPropertiesField const& propertiesField = *descriptorField->AsPropertiesField();
-                ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(propertiesField, m_class);
-                if (nullptr != fieldPropertyForThisContract)
+                if (!m_skipCompositePropertyFields || !propertiesField.IsCompositePropertiesField())
                     {
-                    Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
-                    ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
-                    contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), 
-                        fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
-                    }
-                else
-                    {
-                    ECPropertyCR ecProperty = propertiesField.GetProperties().front().GetProperty();
-                    contractField = CreateNullPropertySelectField(propertiesField.GetName().c_str(), ecProperty);
+                    ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(propertiesField, m_class);
+                    if (nullptr != fieldPropertyForThisContract)
+                        {
+                        Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
+                        ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
+                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(),
+                            fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
+                        }
+                    else
+                        {
+                        ECPropertyCR ecProperty = propertiesField.GetProperties().front().GetProperty();
+                        contractField = CreateNullPropertySelectField(propertiesField.GetName().c_str(), ecProperty);
+                        }
                     }
                 }
             else if (descriptorField->IsCalculatedPropertyField())

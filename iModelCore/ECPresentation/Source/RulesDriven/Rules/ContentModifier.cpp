@@ -114,9 +114,14 @@ Utf8StringCR ContentModifier::GetSchemaName() const {return m_schemaName;}
 RelatedPropertiesSpecificationList const& ContentModifier::GetRelatedProperties() const {return m_relatedProperties;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                 05/2017
+* @bsimethod                                    Saulius.Skliutas                 10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecificationList&  ContentModifier::GetRelatedPropertiesR()  {return m_relatedProperties;}
+void ContentModifier::AddRelatedProperty(RelatedPropertiesSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_relatedProperties.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                 07/2017
@@ -124,9 +129,14 @@ RelatedPropertiesSpecificationList&  ContentModifier::GetRelatedPropertiesR()  {
 PropertiesDisplaySpecificationList const& ContentModifier::GetPropertiesDisplaySpecifications() const {return m_propertiesDisplaySpecification;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                 07/2017
+* @bsimethod                                    Saulius.Skliutas                 10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertiesDisplaySpecificationList&  ContentModifier::GetPropertiesDisplaySpecificationsR() {return m_propertiesDisplaySpecification;}
+void ContentModifier::AddPropertiesDisplaySpecification(PropertiesDisplaySpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_propertiesDisplaySpecification.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
@@ -136,7 +146,12 @@ CalculatedPropertiesSpecificationList const& ContentModifier::GetCalculatedPrope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertiesSpecificationList& ContentModifier::GetCalculatedPropertiesR() {return m_calculatedProperties;}
+void ContentModifier::AddCalculatedProperty(CalculatedPropertiesSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_calculatedProperties.push_back(&specification);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                 07/2017
@@ -144,7 +159,44 @@ CalculatedPropertiesSpecificationList& ContentModifier::GetCalculatedPropertiesR
 PropertyEditorsSpecificationList const& ContentModifier::GetPropertyEditors() const {return m_propertyEditors;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                 07/2017
+* @bsimethod                                    Saulius.Skliutas                 10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyEditorsSpecificationList& ContentModifier::GetPropertyEditorsR() {return m_propertyEditors;}
+void ContentModifier::AddPropertyEditor(PropertyEditorsSpecificationR specification)
+    {
+    InvalidateHash();
+    specification.SetParent(this);
+    m_propertyEditors.push_back(&specification);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ContentModifier::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationKey::_ComputeHash(parentHash);
+    md5.Add(m_schemaName.c_str(), m_schemaName.size());
+    md5.Add(m_className.c_str(), m_className.size());
+    
+    Utf8String currentHash = md5.GetHashString();
+    for (RelatedPropertiesSpecificationP spec : m_relatedProperties)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (PropertiesDisplaySpecificationP spec : m_propertiesDisplaySpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (CalculatedPropertiesSpecificationP spec : m_calculatedProperties)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (PropertyEditorsSpecificationP spec : m_propertyEditors)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    return md5;
+    }

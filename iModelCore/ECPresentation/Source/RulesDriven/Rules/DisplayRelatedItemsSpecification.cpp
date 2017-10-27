@@ -72,3 +72,15 @@ int DisplayRelatedItemsSpecification::GetNestingDepth (void) const { return m_ne
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR DisplayRelatedItemsSpecification::GetRelationshipClasses (void) const { return m_relationshipClasses; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 DisplayRelatedItemsSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_logicalChildren, sizeof(m_logicalChildren));
+    md5.Add(&m_nestingDepth, sizeof(m_nestingDepth));
+    md5.Add(m_relationshipClasses.c_str(), m_relationshipClasses.size());
+    return md5;
+    }

@@ -17,12 +17,16 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 * Specification for specifying single property that is Calculated.
 * @bsiclass                                     Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CalculatedPropertiesSpecification
+struct CalculatedPropertiesSpecification : HashableBase
     {
     private:
         Utf8String m_label;
         int32_t m_priority;
         Utf8String m_value;
+
+    protected:
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         CalculatedPropertiesSpecification() {}

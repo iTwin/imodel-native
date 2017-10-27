@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelatedInstanceSpecification
+struct RelatedInstanceSpecification : HashableBase
     {
     private:
         RequiredRelationDirection          m_direction;
@@ -23,6 +23,9 @@ struct RelatedInstanceSpecification
         Utf8String                         m_className;
         Utf8String                         m_alias;
         
+    protected:
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor.
         RelatedInstanceSpecification() {}

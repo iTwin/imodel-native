@@ -645,3 +645,68 @@ TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnClassesFrom
     auto classIter = classes.find(classFromHiddenSchema->GetEntityClassCP());
     EXPECT_TRUE(classes.end() == classIter);
     }
+
+struct IdSetHelperTests : ::testing::Test
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdSetHelperTests, CreatesINClauseWithZeroKeys)
+    {
+    Utf8String clause;
+    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, bvector<ECInstanceKey>(), "test1");
+    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
+    EXPECT_STREQ("0", clause.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdSetHelperTests, CreatesINClauseWithSmallEvenNumberOfKeys)
+    {
+    bvector<ECInstanceKey> keys = {
+        ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)),
+        ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)),
+        ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)3)),
+        ECInstanceKey(ECClassId((uint64_t)4), ECInstanceId((uint64_t)4))
+        };
+
+    Utf8String clause;
+    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
+    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
+    EXPECT_STREQ("test1 IN (?,?,?,?)", clause.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdSetHelperTests, CreatesINClauseWithSmallOddNumberOfKeys)
+    {
+    bvector<ECInstanceKey> keys = {
+        ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)),
+        ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)),
+        ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)3))
+        };
+
+    Utf8String clause;
+    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
+    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
+    EXPECT_STREQ("test1 IN (?,?,?)", clause.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IdSetHelperTests, CreatesInVirtualSetClauseWithLargeNumberOfKeys)
+    {
+    bvector<ECInstanceKey> keys;
+    for (uint64_t i = 1; i <= 101; ++i)
+        keys.push_back(ECInstanceKey(ECClassId(i), ECInstanceId(i)));
+
+    Utf8String clause;
+    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
+    EXPECT_EQ(IdSetHelper::BIND_VirtualSet, result);
+    EXPECT_STREQ("InVirtualSet(?, test1)", clause.c_str());
+    }

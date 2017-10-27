@@ -49,7 +49,7 @@ rapidjson::MemoryPoolAllocator<>& JsonNavNode::_GetExtendedDataAllocator() const
 uint64_t JsonNavNode::_GetNodeId() const
     {
     if (!m_json.HasMember(NAVNODE_NodeId))
-        const_cast<JsonNavNode*>(this)->AddMember(NAVNODE_NodeId, rapidjson::Value(CreateNodeId()).Move());
+        return 0;
     return m_json[NAVNODE_NodeId].GetUint64();
     }
 

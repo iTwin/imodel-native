@@ -23,7 +23,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
+void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
     {
     bvector<Utf8String> usedClasses = ECExpressionsHelper(ecexpressionsCache).GetUsedClasses(ecexpression);
     for (Utf8StringCR usedClassName : usedClasses)
@@ -34,14 +34,22 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
             BeAssert(false);
             continue;
             }
-        ECClassCP usedClass = db.Schemas().GetClass(schemaName.c_str(), className.c_str());
-        if (nullptr == usedClass)
+        if (!schemaName.empty())
             {
-            BeAssert(false);
-            continue;
+            ECClassCP usedClass = schemaHelper.GetECClass(schemaName.c_str(), className.c_str());
+            if (nullptr == usedClass)
+                {
+                BeAssert(false);
+                continue;
+                }
+            listener._OnClassUsed(*usedClass, true);
             }
-
-        listener._OnClassUsed(*usedClass, true);
+        else
+            {
+            bvector<ECClassCP> usedClasses = schemaHelper.GetECClassesByName(className.c_str());
+            for (ECClassCP usedClass : usedClasses)
+                listener._OnClassUsed(*usedClass, true);
+            }
         }
     }
 
@@ -49,42 +57,42 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-static void NotifyListenerWithCustomizationRuleClasses(IUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, bvector<T*> const& rules)
+static void NotifyListenerWithCustomizationRuleClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, bvector<T*> const& rules)
     {
     for (T const* rule : rules)
-        UsedClassesHelper::NotifyListenerWithUsedClasses(listener, db, ecexpressionsCache, rule->GetCondition());
+        UsedClassesHelper::NotifyListenerWithUsedClasses(listener, schemaHelper, ecexpressionsCache, rule->GetCondition());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
+void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
     {
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetGroupingRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetSortingRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetLabelOverrides());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetImageIdOverrides());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetStyleOverrides());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetCheckBoxRules());
-    NotifyListenerWithCustomizationRuleClasses(listener, db, ecexpressionsCache, ruleset.GetRenameNodeRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetGroupingRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetSortingRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetLabelOverrides());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetImageIdOverrides());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetStyleOverrides());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetCheckBoxRules());
+    NotifyListenerWithCustomizationRuleClasses(listener, schemaHelper, ecexpressionsCache, ruleset.GetRenameNodeRules());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
+void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
     {
-    ECDbUsedClassesListenerWrapper wrapper(db, listener);
-    NotifyListenerWithUsedClasses(wrapper, db, ecexpressionsCache, ecexpression);
+    ECDbUsedClassesListenerWrapper wrapper(schemaHelper.GetDb(), listener);
+    NotifyListenerWithUsedClasses(wrapper, schemaHelper, ecexpressionsCache, ecexpression);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECDbCR db, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
+void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
     {
-    ECDbUsedClassesListenerWrapper wrapper(db, listener);
-    NotifyListenerWithRulesetClasses(wrapper, db, ecexpressionsCache, ruleset);
+    ECDbUsedClassesListenerWrapper wrapper(schemaHelper.GetDb(), listener);
+    NotifyListenerWithRulesetClasses(wrapper, schemaHelper, ecexpressionsCache, ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1035,7 +1043,7 @@ private:
     ECSchemaHelper const& m_schemaHelper;
     NavigationQueryBuilderParameters const& m_queryBuilderParams;
     ChildNodeSpecificationCR m_specification;
-    int m_specificationId;
+    Utf8StringCR m_specificationHash;
     NavNodeCP m_parentNode;
     NavNodeCPtr m_parentInstanceNode;
 
@@ -1052,15 +1060,14 @@ private:
     bool SpecificationMatches(NavNodeCR node) const
         {
         NavNodeExtendedData extendedData(node);
-        return extendedData.HasSpecificationId() && extendedData.GetSpecificationId() == m_specificationId;
+        return extendedData.HasSpecificationHash() && 0 == strcmp(extendedData.GetSpecificationHash(), m_specificationHash.c_str());
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void Init(NavNodeCP node, int specificationId)
+    void Init(NavNodeCP node)
         {
-        m_specificationId = specificationId;
         m_parentNode = node;
         m_parentInstanceNode = m_parentNode;
         m_parentGrouping = nullptr;
@@ -1089,7 +1096,7 @@ private:
             m_groupingHandlers.push_back(new DisplayLabelGroupingHandler(m_specification.GetDoNotSort()));
 
         GroupingSpecificationsVisitor visitor(m_groupingHandlers, m_schemaHelper, m_specification.GetDoNotSort());
-        RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationId, m_schemaHelper.GetDb(), GetQueryBuilderParams().GetRuleset(), 
+        RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash, m_schemaHelper.GetDb(), GetQueryBuilderParams().GetRuleset(), 
             GetQueryBuilderParams().GetUserSettings(), GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache());
         bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
         for (GroupingRuleCP rule : groupingRules)
@@ -1218,38 +1225,38 @@ private:
         }
 
 public:
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, int specificationId, AllInstanceNodesSpecificationCR specification) 
-        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, AllInstanceNodesSpecificationCR specification) 
+        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
-        Init(node, specificationId);
+        Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(false, specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, int specificationId, AllRelatedInstanceNodesSpecificationCR specification) 
-        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, AllRelatedInstanceNodesSpecificationCR specification)
+        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
-        Init(node, specificationId);
+        Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(specification.GetGroupByRelationship(), specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, int specificationId, RelatedInstanceNodesSpecificationCR specification) 
-        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, RelatedInstanceNodesSpecificationCR specification)
+        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
-        Init(node, specificationId);
+        Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(specification.GetGroupByRelationship(), specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, int specificationId, InstanceNodesOfSpecificClassesSpecificationCR specification) 
-        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, InstanceNodesOfSpecificClassesSpecificationCR specification)
+        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
-        Init(node, specificationId);
+        Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(false, specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, int specificationId, SearchResultInstanceNodesSpecificationCR specification) 
-        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, SearchResultInstanceNodesSpecificationCR specification)
+        : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
-        Init(node, specificationId);
+        Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(false, specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
@@ -1264,7 +1271,7 @@ public:
     NavNodeCP GetParentInstanceNode() const {return m_parentInstanceNode.get();}
     NavigationQueryBuilderParameters const& GetQueryBuilderParams() const {return m_queryBuilderParams;}
     ChildNodeSpecificationCR GetSpecification() const {return m_specification;}
-    int GetSpecificationId() const {return m_specificationId;}
+    Utf8StringCR GetSpecificationHash() const {return m_specificationHash;}
     ECSchemaHelper const& GetSchemaHelper() const {return m_schemaHelper;}
 
     bool IsGroupedByClass() const {return nullptr != m_groupingClass;}
@@ -1543,14 +1550,14 @@ private:
     IUserSettings const& m_userSettings;
     IUsedUserSettingsListener* m_usedSettingsListener;
     ECExpressionsCache& m_ecexpressionsCache;
-    int m_specificationId;
+    Utf8StringCR m_specificationHash;
 
 private:
     bvector<SortingRuleCP> const& GetAllSortingRules() const
         {
         if (nullptr == m_sortingRules)
             {
-            RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationId, GetSchemaHelper().GetDb(), 
+            RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash, GetSchemaHelper().GetDb(), 
                 GetRuleset(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
             m_sortingRules = new bvector<SortingRuleCP>(RulesPreprocessor::GetSortingRules(params));
             }
@@ -1610,9 +1617,9 @@ private:
 protected:
     ECInstanceSortingQueryContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, 
         IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, 
-        NavNodeCP parentNode, NavNodeCP parentInstanceNode, bool doNotSort, int specicificationId) 
+        NavNodeCP parentNode, NavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash) 
         : ECInstanceQueryContext(schemaHelper, ruleset, parentNode, parentInstanceNode), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), 
-        m_ecexpressionsCache(ecexpressionsCache), m_sortingRules(nullptr), m_doNotSort(doNotSort), m_specificationId(specicificationId)
+        m_ecexpressionsCache(ecexpressionsCache), m_sortingRules(nullptr), m_doNotSort(doNotSort), m_specificationHash(specicificationHash)
         {}
     ~ECInstanceSortingQueryContext() {DELETE_AND_CLEAR(m_sortingRules);}
 
@@ -1781,9 +1788,9 @@ protected:
 public:
     static IQueryContextPtr Create(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, 
         IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, NavNodeCP parentNode, 
-        NavNodeCP parentInstanceNode, bool doNotSort, int specicificationId)
+        NavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
         {
-        return new ECInstanceSortingQueryContext(schemaHelper, ruleset, userSettings, usedSettingsListener, ecexpressionsCache, parentNode, parentInstanceNode, doNotSort, specicificationId);
+        return new ECInstanceSortingQueryContext(schemaHelper, ruleset, userSettings, usedSettingsListener, ecexpressionsCache, parentNode, parentInstanceNode, doNotSort, specicificationHash);
         }
 };
 
@@ -1817,7 +1824,7 @@ private:
         query->GetResultParametersR().GetNavNodeExtendedDataR().SetRulesetId(GetRuleset().GetRuleSetId().c_str());
 
         // preserve specification ID in resulting nodes for later use
-        query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationId(m_specification.GetId());
+        query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash(m_specification.GetHash());
 
         return query;
         }
@@ -2120,7 +2127,7 @@ static MultiQueryContextPtr CreateQueryContext(GroupingResolver const& resolver,
     IQueryContextPtr context = ECInstanceSortingQueryContext::Create(resolver.GetSchemaHelper(), resolver.GetQueryBuilderParams().GetRuleset(), 
         resolver.GetQueryBuilderParams().GetUserSettings(), resolver.GetQueryBuilderParams().GetUsedSettingsListener(), 
         resolver.GetQueryBuilderParams().GetECExpressionsCache(), resolver.GetParentNode(), resolver.GetParentInstanceNode(), 
-        resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationId());
+        resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationHash());
     context = PostProcessQueryContext::Create(*context, resolver.GetSpecification());
     return MultiQueryContext::Create(*context, resolver, isSearchContext);
     }
@@ -2319,7 +2326,7 @@ static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo
             }
         }
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationId(), resolver.GetSchemaHelper().GetDb(), 
+    RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash(), resolver.GetSchemaHelper().GetDb(), 
         params.GetRuleset(), params.GetUserSettings(), params.GetUsedSettingsListener(), params.GetECExpressionsCache());
     CallbackOnRuleClasses<SortingRule>(RulesPreprocessor::GetSortingRules(preprocessorParams), params.GetSchemaHelper(), 
         [&customizationRuleInfos](SortingRuleCR rule, ECEntityClassCR ecClass)
@@ -2346,12 +2353,13 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(AllRelatedInstanc
     RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetAlwaysReturnsChildren(),
         specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(), specification.GetGroupByRelationship(),
         specification.GetGroupByLabel(), true, specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
-    relatedInstanceNodesSpecification.SetId(specification.GetId());
 
-    bvector<NavigationQueryPtr> queries = GetQueries(nullptr, relatedInstanceNodesSpecification, specification.GetId(), rule);
+    bvector<NavigationQueryPtr> queries = GetQueries(nullptr, relatedInstanceNodesSpecification, specification.GetHash(), rule);
     for (NavigationQueryPtr query : queries)
+        {
         query->GetResultParametersR().SetSpecification(&specification);
-
+        query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash(specification.GetHash());
+        }
     return queries;
     }
 
@@ -2360,7 +2368,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(AllRelatedInstanc
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(RelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const
     {
-    return GetQueries(nullptr, specification, specification.GetId(), rule);
+    return GetQueries(nullptr, specification, specification.GetHash(), rule);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2395,10 +2403,13 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentN
     RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetAlwaysReturnsChildren(),
         specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(), specification.GetGroupByRelationship(),
         specification.GetGroupByLabel(), true, specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
-    relatedInstanceNodesSpecification.SetId(specification.GetId());
-    bvector<NavigationQueryPtr> queries = GetQueries(&parentNode, relatedInstanceNodesSpecification, specification.GetId(), rule);
+
+    bvector<NavigationQueryPtr> queries = GetQueries(&parentNode, relatedInstanceNodesSpecification, specification.GetHash(), rule);
     for (NavigationQueryPtr query : queries)
+        {
         query->GetResultParametersR().SetSpecification(&specification);
+        query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash(specification.GetHash());
+        }
     return queries;
     }
 
@@ -2414,7 +2425,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentN
         return bvector<NavigationQueryPtr>();
         }
 
-    return GetQueries(&parentNode, specification, specification.GetId(), rule);
+    return GetQueries(&parentNode, specification, specification.GetHash(), rule);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2604,7 +2615,7 @@ static void ApplyInstanceFilter(ComplexNavigationQuery& query, SelectQueryInfo c
 
     if (nullptr != params.GetUsedClassesListener())
         {
-        UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper().GetDb(),
+        UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper(),
             params.GetECExpressionsCache(), instanceFilter);
         }
     }
@@ -2661,7 +2672,7 @@ static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQuery
     RelatedClassPath const& path, SelectionPurpose purpose, ChildNodeSpecificationCR specification)
     {
     RelatedClassPath relatedClassPath = path;
-    QueryBuilderHelpers::Reverse(relatedClassPath, "related", path.back().IsPolymorphic());
+    relatedClassPath.Reverse("related", path.back().IsPolymorphic());
 
     SelectQueryInfo selectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), purpose);
     selectInfo.GetRelatedClassPath() = relatedClassPath;
@@ -2674,7 +2685,7 @@ static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQuery
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
-    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetId(), specification);
+    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
     
     // find the classes to query instances from
@@ -2732,7 +2743,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, int specificationId, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const
     {
     Utf8String supportedSchemas = GetSupportedSchemas(specification);
     if (supportedSchemas.empty())
@@ -2741,7 +2752,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
             "Consider specifying a value for this property as it can affect performance significantly", NativeLogging::LOG_WARNING, true);
         }
 
-    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specificationId, specification);
+    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specificationHash, specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
 
     // this specification can be used only if parent node is ECInstance node
@@ -2802,9 +2813,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
         // find all applying relationship paths
         bmap<ECRelationshipClassCP, int> relationshipCounter;
         ECSchemaHelper::RelationshipClassPathOptions options(*rootClass, relationshipDirection, specification.GetSkipRelatedLevel(), 
-            supportedSchemas, specification.GetRelationshipClassNames(), specification.GetRelatedClassNames(), 
+            supportedSchemas.c_str(), specification.GetRelationshipClassNames().c_str(), specification.GetRelatedClassNames().c_str(), 
             relationshipCounter, groupingResolver.GetGroupingClass());
-        options.SetSpecificationId(specificationId);
         bvector<bpair<RelatedClassPath, bool>> relationshipClassPaths = m_params.GetSchemaHelper().GetRelationshipClassPaths(options);
 
         // create a select info for each path
@@ -2848,7 +2858,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const
     {
-    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetId(), specification);
+    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
     bool areQueriesPolymorphic = specification.GetArePolymorphic() && !groupingResolver.IsGroupedByClass();
 
@@ -3019,7 +3029,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
         return bvector<NavigationQueryPtr>();
         }
 
-    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetId(), specification);
+    GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver, true);
 
     // create a query for each class

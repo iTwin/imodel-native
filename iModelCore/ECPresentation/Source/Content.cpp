@@ -14,7 +14,115 @@
 const Utf8CP ContentDisplayType::Undefined = "Undefined";
 const Utf8CP ContentDisplayType::Grid = "Grid";
 const Utf8CP ContentDisplayType::PropertyPane = "PropertyPane";
+const Utf8CP ContentDisplayType::List = "List";
 const Utf8CP ContentDisplayType::Graphics = "Graphics";
+
+static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR);
+
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+rapidjson::Document ContentDescriptor::Field::TypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("TypeName", rapidjson::Value(m_typeName.c_str(), json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct PrimitiveTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Primitive", json.GetAllocator());
+        return json;
+        }
+public:
+    PrimitiveTypeDescription(Utf8String type) : TypeDescription(type) {}
+};
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct ArrayTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+private:
+    ContentDescriptor::Field::TypeDescriptionPtr m_memberType;
+private:
+    static Utf8String CreateTypeName(TypeDescription const& memberType)
+        {
+        Utf8String typeName = memberType.GetTypeName();
+        typeName.append("[]");
+        return typeName;
+        }
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Array", json.GetAllocator());
+        json.AddMember("MemberType", m_memberType->AsJson(&json.GetAllocator()), json.GetAllocator());
+        return json;
+        }
+public:
+    ArrayTypeDescription(TypeDescription& memberType) : TypeDescription(CreateTypeName(memberType)), m_memberType(&memberType) {}
+};
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct StructTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+private:
+    ECStructClassCR m_struct;
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Struct", json.GetAllocator());
+        rapidjson::Value members(rapidjson::kArrayType);
+        for (ECPropertyCP prop : m_struct.GetProperties())
+            {
+            rapidjson::Value member(rapidjson::kObjectType);
+            member.AddMember("Name", rapidjson::StringRef(prop->GetName().c_str()), json.GetAllocator());
+            member.AddMember("Label", rapidjson::StringRef(prop->GetDisplayLabel().c_str()), json.GetAllocator());
+            member.AddMember("Type", CreateTypeDescription(*prop)->AsJson(&json.GetAllocator()), json.GetAllocator());
+            members.PushBack(member, json.GetAllocator());
+            }
+        json.AddMember("Members", members, json.GetAllocator());
+        return json;
+        }
+public:
+    StructTypeDescription(ECStructClassCR structClass) : TypeDescription(structClass.GetName()), m_struct(structClass) {}
+};
+//===================================================================================
+// @bsiclass                                    Grigas.Petraitis            09/2017
+//===================================================================================
+struct NestedContentTypeDescription : ContentDescriptor::Field::TypeDescription
+{
+private:
+    ContentDescriptor::NestedContentField const& m_field;
+protected:
+    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
+        {
+        rapidjson::Document json = TypeDescription::_AsJson(allocator);
+        json.AddMember("ValueFormat", "Struct", json.GetAllocator());
+        rapidjson::Value members(rapidjson::kArrayType);
+        for (ContentDescriptor::Field const* nestedField : m_field.GetFields())
+            {
+            rapidjson::Value member(rapidjson::kObjectType);
+            member.AddMember("Name", rapidjson::StringRef(nestedField->GetName().c_str()), json.GetAllocator());
+            member.AddMember("Label", rapidjson::StringRef(nestedField->GetLabel().c_str()), json.GetAllocator());
+            member.AddMember("Type", nestedField->GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
+            members.PushBack(member, json.GetAllocator());
+            }
+        json.AddMember("Members", members, json.GetAllocator());
+        return json;
+        }
+public:
+    NestedContentTypeDescription(ContentDescriptor::NestedContentField const& field) : TypeDescription(field.GetContentClass().GetDisplayLabel()), m_field(field) {}
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
@@ -349,9 +457,9 @@ rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::MemoryPoolAll
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    json.AddMember("Name", rapidjson::StringRef(GetName().c_str()), json.GetAllocator());
-    json.AddMember("DisplayLabel", rapidjson::StringRef(GetLabel().c_str()), json.GetAllocator());
-    json.AddMember("Description", rapidjson::StringRef(GetDescription().c_str()), json.GetAllocator());
+    json.AddMember("Name", rapidjson::Value(GetName().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("DisplayLabel", rapidjson::Value(GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Description", rapidjson::Value(GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("Expand", ShouldExpand(), json.GetAllocator());
     json.AddMember("Priority", GetPriority(), json.GetAllocator());
     return json;
@@ -489,6 +597,64 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentFieldEditor::~ContentFieldEditor()
+    {
+    for (Params const* params : m_params)
+        delete params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentFieldEditor::AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();
+    json.AddMember("Name", rapidjson::Value(m_name.c_str(), json.GetAllocator()), json.GetAllocator());
+
+    rapidjson::Value paramsJson(rapidjson::kObjectType);
+    for (Params const* params : m_params)
+        {
+        BeAssert(!paramsJson.HasMember(params->GetName()));
+        paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(&json.GetAllocator()), json.GetAllocator());
+        }
+    json.AddMember("Params", paramsJson, json.GetAllocator());
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentFieldEditor::Equals(ContentFieldEditor const& other) const
+    {
+    if (!m_name.Equals(other.m_name))
+        return false;
+    
+    if (m_params.size() != other.m_params.size())
+        return false;
+    for (size_t i = 0; i < m_params.size(); ++i)
+        {
+        if (!m_params[i]->Equals(*other.m_params[i]))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTypeDescription() const
+    {
+    if (m_type.IsNull())
+        m_type = _CreateTypeDescription();
+    return *m_type;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::Field::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
@@ -498,11 +664,71 @@ rapidjson::Document ContentDescriptor::Field::_AsJson(rapidjson::MemoryPoolAlloc
     json.AddMember("Category", GetCategory().AsJson(&json.GetAllocator()), json.GetAllocator());
     json.AddMember("Name", rapidjson::Value(GetName().c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember("DisplayLabel", rapidjson::Value(GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Type", rapidjson::Value(_GetTypeName().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("Type", GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
     json.AddMember("IsReadOnly", _IsReadOnly(), json.GetAllocator());
     json.AddMember("Priority", _GetPriority(), json.GetAllocator());
-    json.AddMember("Editor", rapidjson::Value(GetEditor().c_str(), json.GetAllocator()), json.GetAllocator());
+    if (nullptr != GetEditor())
+        json.AddMember("Editor", GetEditor()->AsJson(&json.GetAllocator()), json.GetAllocator());
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::DisplayLabelField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("string");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::CalculatedPropertyField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("string");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR prop) 
+    {
+    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
+        return new PrimitiveTypeDescription("enum");
+
+    if (prop.GetIsNavigation())
+        return new PrimitiveTypeDescription("navigation");
+    
+    if (prop.GetIsPrimitiveArray())
+        return new ArrayTypeDescription(*new PrimitiveTypeDescription(prop.GetTypeName()));
+
+    if (prop.GetIsStructArray())
+        return new ArrayTypeDescription(*new StructTypeDescription(prop.GetAsStructArrayProperty()->GetStructElementType()));
+
+    if (prop.GetIsStruct())
+        return new StructTypeDescription(prop.GetAsStructProperty()->GetType());
+
+    return new PrimitiveTypeDescription(prop.GetTypeName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesField::_CreateTypeDescription() const
+    {
+    return CreateTypeDescription(m_properties.front().GetProperty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECPropertiesField::IsCompositePropertiesField() const
+    {
+    if (m_properties.empty())
+        return false;
+
+    ECPropertyCR prop = m_properties.front().GetProperty();
+    return prop.GetIsStruct() || prop.GetIsArray();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -547,18 +773,10 @@ bool ContentDescriptor::ECPropertiesField::_IsReadOnly() const
             return true;
         }
 
-    if (GetProperties().front().GetProperty().GetIsNavigation() && GetEditor().empty())
+    if (GetProperties().front().GetProperty().GetIsNavigation() && nullptr == GetEditor())
         return true;
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Tautvydas.Zinys                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ContentDescriptor::ECPropertiesField::_GetTypeName() const
-    {
-    return m_properties.front().GetProperty().GetTypeName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -615,6 +833,14 @@ int ContentDescriptor::ECPropertiesField::_GetPriority() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::NestedContentField::_CreateTypeDescription() const
+    {
+    return new NestedContentTypeDescription(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
@@ -657,6 +883,14 @@ rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(rapidjson::Me
     json.AddMember("NestedFields", nestedFieldsJson, json.GetAllocator());
 
     return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECInstanceKeyField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("ECInstanceKey");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -716,12 +950,37 @@ bool ContentDescriptor::ECInstanceKeyField::_OnFieldRemoved(ContentDescriptor::F
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas               09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECNavigationInstanceIdField::_Equals(Field const& other) const
+    {
+    if (!other.IsSystemField() || !other.AsSystemField()->IsECNavigationInstanceIdField())
+        return false;
+
+    if (*other.AsSystemField()->AsECNavigationInstanceIdField()->m_propertyField != *m_propertyField)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECNavigationInstanceIdField::_CreateTypeDescription() const
+    {
+    return new PrimitiveTypeDescription("ECInstanceId");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas               08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentDescriptor::ECNavigationInstanceIdField::_OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo)
     {
     auto iter = fieldsRemapInfo.find(m_propertyField);
-    if (fieldsRemapInfo.end() == iter || !iter->second->IsPropertiesField())
+    if (fieldsRemapInfo.end() == iter)
+        return;
+
+    if (!iter->second->IsPropertiesField())
         {
         BeAssert(false);
         return;
@@ -866,20 +1125,35 @@ ECInstanceChangeResult ECInstanceChangeResult::Error(Utf8String message)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceChangeResult ECInstanceChangeResult::Ignore(Utf8String reason)
+    {
+    ECInstanceChangeResult result(SUCCESS);
+    result.m_errorMessage = reason;
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    if (SUCCESS == m_status)
+    if (SUCCESS == m_status && !m_changedValue.IsUninitialized())
         {
-        json.AddMember("IsSuccess", true, json.GetAllocator());
+        json.AddMember("Status", 0, json.GetAllocator());
         json.AddMember("Value", ValueHelpers::GetJsonFromECValue(m_changedValue, &json.GetAllocator()), json.GetAllocator());
+        }
+    else if (SUCCESS == m_status)
+        {
+        json.AddMember("Status", 1, json.GetAllocator());
+        json.AddMember("IgnoreReason", rapidjson::Value(m_errorMessage.c_str(), json.GetAllocator()), json.GetAllocator());
         }
     else
         {
-        json.AddMember("IsSuccess", false, json.GetAllocator());
+        json.AddMember("Status", 2, json.GetAllocator());
         json.AddMember("ErrorMessage", rapidjson::Value(m_errorMessage.c_str(), json.GetAllocator()), json.GetAllocator());
         }
     return json;
@@ -902,7 +1176,7 @@ SelectionInfo::SelectionInfo(bvector<ECClassCP> const& classes)
     NavNodeKeyList keys;
     for (ECClassCP ecClass : classes)
         keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
-    m_keys = NavNodeKeyListContainer::Create(std::move(keys));
+    m_keys = NavNodeKeyListContainer::Create(keys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -930,27 +1204,40 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                05/2016
+* @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SelectionInfo::operator==(SelectionInfo const& other) const
     {
-    if (m_isValid != other.m_isValid || !m_selectionProviderName.Equals(other.m_selectionProviderName) || m_isSubSelection != other.m_isSubSelection)
+    return (!m_isValid && !other.m_isValid)
+        || (m_isSubSelection == other.m_isSubSelection
+            && m_selectionProviderName == other.m_selectionProviderName
+            && m_keys->GetHash() == other.m_keys->GetHash());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SelectionInfo::operator<(SelectionInfo const& other) const
+    {
+    if (!m_isValid && other.m_isValid)
+        return true;
+    if (m_isValid && !other.m_isValid)
         return false;
 
-    if (m_keys->size() != other.m_keys->size())
+    if (!m_isSubSelection && other.m_isSubSelection)
+        return true;
+    if (m_isSubSelection && !other.m_isSubSelection)
         return false;
 
-    for (auto thisIter = m_keys->begin(); thisIter != m_keys->end(); ++thisIter)
-        {
-        for (auto otherIter = other.m_keys->begin(); otherIter != other.m_keys->end(); ++otherIter)
-            {
-            NavNodeKeyCP thisKey = (*thisIter).get();
-            NavNodeKeyCP otherKey = (*otherIter).get();
-            if (0 != thisKey->Compare(*otherKey))
-                return false;
-            }
-        }
-    return true;
+    int selectionProviderNameCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);
+    if (selectionProviderNameCmp < 0)
+        return true;
+    if (selectionProviderNameCmp > 0)
+        return false;
+
+    if (m_keys.IsValid() && other.m_keys.IsValid())
+        return m_keys->GetHash().CompareTo(other.m_keys->GetHash()) < 0;
+    return false;    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -974,46 +1261,6 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR f
     else
         formattedLabel = ecProperty.GetDisplayLabel();
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectionInfo::operator<(SelectionInfo const& other) const
-    {
-    if (!m_isValid)
-        return false;
-
-    if (!m_isSubSelection && other.m_isSubSelection)
-        return true;
-    if (m_isSubSelection && !other.m_isSubSelection)
-        return false;
-
-    int providerCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);
-    if (providerCmp < 0)
-        return true;
-    if (providerCmp > 0)
-        return false;
-
-    if (m_keys->size() < other.m_keys->size())
-        return true;
-    if (m_keys->size() > other.m_keys->size())
-        return false;
-
-    for (auto thisIter = m_keys->begin(); thisIter != m_keys->end(); ++thisIter)
-        {
-        for (auto otherIter = other.m_keys->begin(); otherIter != other.m_keys->end(); ++otherIter)
-            {
-            NavNodeKeyCP thisKey = (*thisIter).get();
-            NavNodeKeyCP otherKey = (*otherIter).get();
-            int keyCmp = thisKey->Compare(*otherKey);
-            if (keyCmp < 0)
-                return true;
-            if (keyCmp > 0)
-                return false;
-            }
-        }
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

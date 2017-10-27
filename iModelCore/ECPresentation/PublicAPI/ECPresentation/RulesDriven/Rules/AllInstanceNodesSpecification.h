@@ -41,6 +41,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AllInstanceNodesSpecification : public ChildNodeS
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const override {return new AllInstanceNodesSpecification(*this);}
 
+        //! Computes specification hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT AllInstanceNodesSpecification ();

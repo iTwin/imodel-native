@@ -49,6 +49,7 @@ struct ItemExtendedData : RapidJsonAccessor
     void SetCheckboxBoundPropertyInversed(bool value) {AddMember(ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed, rapidjson::Value(value));}
 };
 
+#define CONTENTSETITEM_EXTENDEDDATA_ContractId                  "ContractId"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
@@ -60,9 +61,13 @@ struct ContentSetItemExtendedData : ItemExtendedData
     ContentSetItemExtendedData(ContentSetItemExtendedData const& other) : ItemExtendedData(other) {}
     ContentSetItemExtendedData(ContentSetItemR item) : ItemExtendedData(item) {}
     ContentSetItemExtendedData(ContentSetItemCR item) : ItemExtendedData(item) {}
+    
+    bool HasContractId() const {return GetJson().HasMember(CONTENTSETITEM_EXTENDEDDATA_ContractId);}
+    uint64_t GetContractId() const {return GetJson()[CONTENTSETITEM_EXTENDEDDATA_ContractId].GetUint64();}
+    void SetContractId(uint64_t id) {AddMember(CONTENTSETITEM_EXTENDEDDATA_ContractId, rapidjson::Value(id));}
 };
 
-#define NAVNODE_EXTENDEDDATA_SpecificationId                    "SpecificationId"
+#define NAVNODE_EXTENDEDDATA_SpecificationHash                  "SpecificationHash"
 #define NAVNODE_EXTENDEDDATA_RequestedSpecification             "RequestedSpecification"
 #define NAVNODE_EXTENDEDDATA_VirtualParentId                    "VirtualParentId"
 #define NAVNODE_EXTENDEDDATA_ParentECClassId                    "ParentECClassId"
@@ -106,9 +111,9 @@ struct NavNodeExtendedData : ItemExtendedData
     NavNodeExtendedData(NavNodeR node) : ItemExtendedData(node) {}
     NavNodeExtendedData(NavNodeCR node) : ItemExtendedData(node) {}
     
-    bool HasSpecificationId() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_SpecificationId);}
-    int GetSpecificationId() const {return GetJson()[NAVNODE_EXTENDEDDATA_SpecificationId].GetInt();}
-    void SetSpecificationId(int specificationId) {AddMember(NAVNODE_EXTENDEDDATA_SpecificationId, rapidjson::Value(specificationId));}
+    bool HasSpecificationHash() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_SpecificationHash);}
+    Utf8CP GetSpecificationHash() const {return GetJson()[NAVNODE_EXTENDEDDATA_SpecificationHash].GetString();}
+    void SetSpecificationHash(Utf8StringCR specificationHash) {AddMember(NAVNODE_EXTENDEDDATA_SpecificationHash, rapidjson::Value(specificationHash.c_str(), GetAllocator()));}
     
     bool GetRequestedSpecification() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_RequestedSpecification) ? GetJson()[NAVNODE_EXTENDEDDATA_RequestedSpecification].GetBool() : false;}
     void SetRequestedSpecification(bool value) {AddMember(NAVNODE_EXTENDEDDATA_RequestedSpecification, rapidjson::Value(value));}

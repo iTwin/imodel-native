@@ -38,6 +38,9 @@ struct CheckBoxRule : public CustomizationRule
         //! Accept nested cutomization rule visitor
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT CheckBoxRule ();

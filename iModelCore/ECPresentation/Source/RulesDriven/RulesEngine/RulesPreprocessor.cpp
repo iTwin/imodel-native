@@ -9,7 +9,6 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "RulesPreprocessor.h"
 #include "ExtendedData.h"
-#include "ECExpressionContextsProvider.h"
 #include "LoggingHelper.h"
 
 //This constant is used to identify what latest major version is supported by this particular
@@ -155,10 +154,17 @@ PresentationRuleSetPtr RulesPreprocessor::GetPresentationRuleSet(RuleSetLocaterM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RulesPreprocessor::VerifyCondition(Utf8CP condition, ExpressionContextR context, ECExpressionsCache& expressionsCache)
+bool RulesPreprocessor::VerifyCondition(Utf8CP condition, ExpressionContextR context, ECExpressionsCache& expressionsCache, OptimizedExpressionsParameters const* optimizedParams = nullptr)
     {
     if (nullptr == condition || 0 == *condition)
         return true;
+
+    if (nullptr != optimizedParams)
+        {
+        OptimizedExpressionPtr optimizedExp = ECExpressionOptimizer(expressionsCache).GetOptimizedExpression(condition);
+        if (optimizedExp.IsValid())
+            return optimizedExp->Value(*optimizedParams);
+        }
 
     NodePtr node = ECExpressionsHelper(expressionsCache).GetNodeFromExpression(condition);
 
@@ -228,7 +234,7 @@ void RulesPreprocessor::ProcessSubConditions(RuleType const& rule, SubConditionL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesPreprocessor::AddSpecificationsByHierarchy(PresentationRuleSetCR ruleset, int specificationId, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, ChildNodeRuleSpecificationsList& specs, bool& handled, bool& stopProcessing)
+void RulesPreprocessor::AddSpecificationsByHierarchy(PresentationRuleSetCR ruleset, Utf8CP specificationHash, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, ChildNodeRuleSpecificationsList& specs, bool& handled, bool& stopProcessing)
     {
     ChildNodeRuleList childNodeRules;
     for (RootNodeRule* rule : ruleset.GetRootNodesRules())
@@ -236,7 +242,7 @@ void RulesPreprocessor::AddSpecificationsByHierarchy(PresentationRuleSetCR rules
     for (ChildNodeRule* rule : ruleset.GetChildNodesRules())
         childNodeRules.push_back(rule);
 
-    AddSpecificationsByHierarchy(childNodeRules, specificationId, requested, tree, context, ecexpressionsCache, 0, specs, handled, stopProcessing);
+    AddSpecificationsByHierarchy(childNodeRules, specificationHash, requested, tree, context, ecexpressionsCache, 0, specs, handled, stopProcessing);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,13 +262,13 @@ static bvector<ChildNodeRuleP> GetChildNodeRules(PresentationRuleSetCR ruleset)
 * @bsimethod                                    Aidas.Vaiksnoras                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool FindCustomizationRules(bset<CustomizationRuleOrder<CustomizationRule>>& customizationRules, 
-    bvector<ChildNodeRuleP> const& childNodeRules, int specificationId, int depth)
+    bvector<ChildNodeRuleP> const& childNodeRules, Utf8CP specificationHash, int depth)
     {
     for (ChildNodeRule* rule : childNodeRules)
         {
         for (ChildNodeSpecificationP spec : rule->GetSpecifications())
             {
-            if (specificationId == spec->GetId() || FindCustomizationRules(customizationRules, spec->GetNestedRules(), specificationId,  depth+1))
+            if (0 == strcmp(specificationHash, spec->GetHash().c_str()) || FindCustomizationRules(customizationRules, spec->GetNestedRules(), specificationHash,  depth+1))
                 {
                 for (CustomizationRuleP customization : rule->GetCustomizationRules())
                     customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(customization, depth));
@@ -277,7 +283,7 @@ static bool FindCustomizationRules(bset<CustomizationRuleOrder<CustomizationRule
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename RuleType>
-bool RulesPreprocessor::AddSpecificationsByHierarchy(bvector<RuleType*> const& rules, int specificationId, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing)
+bool RulesPreprocessor::AddSpecificationsByHierarchy(bvector<RuleType*> const& rules, Utf8CP specificationHash, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing)
     {
     if (stopProcessing)
         return false;
@@ -285,7 +291,7 @@ bool RulesPreprocessor::AddSpecificationsByHierarchy(bvector<RuleType*> const& r
     bool specificationFound = false;
     for (RuleType* rule : rules)
         {
-        bool specificationFound = ProcessSpecificationsById(*rule, rule->GetSpecifications(), specificationId, requested, tree, 
+        bool specificationFound = ProcessSpecificationsByHash(*rule, rule->GetSpecifications(), specificationHash, requested, tree, 
             context, ecexpressionsCache, depth, specs, handled, stopProcessing);
         if (stopProcessing)
             return false;
@@ -293,7 +299,7 @@ bool RulesPreprocessor::AddSpecificationsByHierarchy(bvector<RuleType*> const& r
         if (specificationFound)
             break;
 
-        specificationFound = ProcessSpecificationsById(*rule, rule->GetSubConditions(), specificationId, requested, tree, 
+        specificationFound = ProcessSpecificationsByHash(*rule, rule->GetSubConditions(), specificationHash, requested, tree, 
             context, ecexpressionsCache, depth, specs, handled, stopProcessing);
         if (stopProcessing)
             return false;
@@ -312,11 +318,11 @@ bool RulesPreprocessor::AddSpecificationsByHierarchy(bvector<RuleType*> const& r
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename RuleType>
-bool RulesPreprocessor::ProcessSpecificationsById(RuleType const& rule, ChildNodeSpecificationList const& searchIn, int specificationId, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing)
+bool RulesPreprocessor::ProcessSpecificationsByHash(RuleType const& rule, ChildNodeSpecificationList const& searchIn, Utf8CP specificationHash, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing)
     {
     for (ChildNodeSpecificationP specification : searchIn)
         {
-        if (specification->GetId() == specificationId)
+        if (0 == strcmp(specification->GetHash().c_str(), specificationHash))
             {
             if (requested)
                 PrioritySortedAdd(specs, ChildNodeRuleSpecification(*specification, rule));
@@ -325,7 +331,7 @@ bool RulesPreprocessor::ProcessSpecificationsById(RuleType const& rule, ChildNod
             stopProcessing |= requested;
             return true;
             }
-        else if (AddSpecificationsByHierarchy(specification->GetNestedRules(), specificationId, requested, tree,
+        else if (AddSpecificationsByHierarchy(specification->GetNestedRules(), specificationHash, requested, tree,
             context, ecexpressionsCache, depth + 1, specs, handled, stopProcessing))
             {
             return true;
@@ -338,17 +344,17 @@ bool RulesPreprocessor::ProcessSpecificationsById(RuleType const& rule, ChildNod
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename RuleType>
-bool RulesPreprocessor::ProcessSpecificationsById(RuleType const& rule, SubConditionList const& subConditions, int specificationId, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing)
+bool RulesPreprocessor::ProcessSpecificationsByHash(RuleType const& rule, SubConditionList const& subConditions, Utf8CP specificationHash, bool requested, RuleTargetTree tree, ExpressionContextR context, ECExpressionsCache& ecexpressionsCache, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing)
     {
     for (SubConditionP subCondition : subConditions)
         {
-        if (ProcessSpecificationsById(rule, subCondition->GetSpecifications(), specificationId, requested, tree, context, ecexpressionsCache, depth, specs, handled, stopProcessing))
+        if (ProcessSpecificationsByHash(rule, subCondition->GetSpecifications(), specificationHash, requested, tree, context, ecexpressionsCache, depth, specs, handled, stopProcessing))
             return true;
 
         if (stopProcessing)
             return false;
 
-        if (ProcessSpecificationsById(rule, subCondition->GetSubConditions(), specificationId, requested, tree, context, ecexpressionsCache, depth, specs, handled, stopProcessing))
+        if (ProcessSpecificationsByHash(rule, subCondition->GetSubConditions(), specificationHash, requested, tree, context, ecexpressionsCache, depth, specs, handled, stopProcessing))
             return true;
 
         if (stopProcessing)
@@ -384,9 +390,9 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::GetChildNodeSpecifications(Ch
     ExpressionContextPtr context = ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
 
     NavNodeExtendedData parentNodeExtendedData(params.GetParentNode());
-    if (parentNodeExtendedData.HasSpecificationId())
+    if (parentNodeExtendedData.HasSpecificationHash())
         {
-        AddSpecificationsByHierarchy(params.GetRuleset(), parentNodeExtendedData.GetSpecificationId(), parentNodeExtendedData.GetRequestedSpecification(), 
+        AddSpecificationsByHierarchy(params.GetRuleset(), parentNodeExtendedData.GetSpecificationHash(), parentNodeExtendedData.GetRequestedSpecification(), 
             params.GetTargetTree(), *context, params.GetECExpressionsCache(), specs, handled, stopProcessing);
         }
 
@@ -399,11 +405,11 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::GetChildNodeSpecifications(Ch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bset<CustomizationRuleOrder<CustomizationRule>> GetNestedCustomizationRules(PresentationRuleSetCR ruleset, int specificationId)
+static bset<CustomizationRuleOrder<CustomizationRule>> GetNestedCustomizationRules(PresentationRuleSetCR ruleset, Utf8CP specificationHash)
     {
     ChildNodeRuleList childNodeRules = GetChildNodeRules(ruleset);
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
-    FindCustomizationRules(customizationRules, childNodeRules, specificationId,  0);
+    FindCustomizationRules(customizationRules, childNodeRules, specificationHash,  0);
     return customizationRules;
     }
 
@@ -433,8 +439,8 @@ LabelOverrideCP RulesPreprocessor::GetLabelOverride(CustomizationRuleParametersC
 
     //Finds nested customization rules
     NavNodeExtendedData nodeExtendedData(params.GetNode());
-    if (nodeExtendedData.HasSpecificationId())
-        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationId());
+    if (nodeExtendedData.HasSpecificationHash())
+        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationHash());
 
     //Adds root level customization rules
     for (LabelOverrideP rule : params.GetRuleset().GetLabelOverrides())
@@ -469,8 +475,8 @@ StyleOverrideCP RulesPreprocessor::GetStyleOverride(CustomizationRuleParametersC
 
     //Finds nested customization rules
     NavNodeExtendedData nodeExtendedData(params.GetNode());
-    if (nodeExtendedData.HasSpecificationId())
-        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationId());
+    if (nodeExtendedData.HasSpecificationHash())
+        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationHash());
 
     //Adds root level customization rules
     for (StyleOverrideP rule : params.GetRuleset().GetStyleOverrides())
@@ -499,7 +505,7 @@ bvector<GroupingRuleCP> RulesPreprocessor::GetGroupingRules(AggregateCustomizati
     ExpressionContextPtr context = ECExpressionContextsProvider::GetNodeRulesContext(contextParams); 
 
     //Finds nested customization rules
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(params.GetRuleset(), params.GetSpecificationId());
+    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(params.GetRuleset(), params.GetSpecificationHash().c_str());
 
     //Adds root level customization rules
     for (GroupingRuleP rule : params.GetRuleset().GetGroupingRules())
@@ -532,7 +538,7 @@ bvector<SortingRuleCP> RulesPreprocessor::GetSortingRules(AggregateCustomization
     ExpressionContextPtr context = ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
 
     //Finds nested customization rules
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(params.GetRuleset(), params.GetSpecificationId());
+    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(params.GetRuleset(), params.GetSpecificationHash().c_str());
 
     //Adds root level customization rules    
     for (SortingRuleP rule : params.GetRuleset().GetSortingRules())
@@ -579,8 +585,8 @@ ImageIdOverrideCP RulesPreprocessor::GetImageIdOverride(CustomizationRuleParamet
     NavNodeExtendedData nodeExtendedData(params.GetNode());
 
     //Finds nested customization rules
-    if (nodeExtendedData.HasSpecificationId())
-        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationId());
+    if (nodeExtendedData.HasSpecificationHash())
+        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationHash());
 
     //Adds root level customization rules
     for (ImageIdOverrideP tempImageIdOverride : params.GetRuleset().GetImageIdOverrides())
@@ -612,8 +618,8 @@ CheckBoxRuleCP RulesPreprocessor::GetCheckboxRule(CustomizationRuleParametersCR 
     NavNodeExtendedData nodeExtendedData(params.GetNode());
 
     //Adds nested customization rules
-    if (nodeExtendedData.HasSpecificationId())
-        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationId());
+    if (nodeExtendedData.HasSpecificationHash())
+        customizationRules = GetNestedCustomizationRules(params.GetRuleset(), nodeExtendedData.GetSpecificationHash());
 
     //Adds root level customization rules
     for (CheckBoxRuleP checkbox : params.GetRuleset().GetCheckBoxRules())
@@ -650,13 +656,14 @@ ContentRuleSpecificationsList RulesPreprocessor::GetContentSpecifications(Conten
             ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName().c_str(),
                 params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), selectedNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
             ExpressionContextPtr context = ECExpressionContextsProvider::GetContentRulesContext(contextParams);
+            OptimizedExpressionsParameters optimizedParams(params.GetConnection(), selectedNodeKey.get(), params.GetPreferredDisplayType().c_str());
 
             for (ContentRuleCP rule : params.GetRuleset().GetContentRules())
                 {
                 if (rule->GetOnlyIfNotHandled() && handledNodes.end() != handledNodes.find(selectedNodeKey.get()))
                     continue;
 
-                if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), *context, params.GetECExpressionsCache()))
+                if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), *context, params.GetECExpressionsCache(), &optimizedParams))
                     {
                     auto iter = specs.find(*rule);
                     if (specs.end() == iter)

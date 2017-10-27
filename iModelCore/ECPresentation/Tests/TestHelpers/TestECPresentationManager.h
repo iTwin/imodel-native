@@ -8,10 +8,12 @@
 #include "ECPresentationTest.h"
 #include <ECPresentation/IECPresentationManager.h>
 
+BEGIN_ECPRESENTATIONTESTS_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
-USING_NAMESPACE_ECPRESENTATIONTESTS
+
 /*=================================================================================**//**
 * @bsiclass                                     Aidas.Vaiksnoras                08/2017
 +===============+===============+===============+===============+===============+======*/
@@ -139,6 +141,10 @@ protected:
     void _OnAllNodesCollapsed(ECDbR db, JsonValueCR options) override {if (nullptr != m_onAllNodesCollapseHandler) m_onAllNodesCollapseHandler(db, options);}
 
     // Content
+    bvector<SelectClassInfo> _GetContentClasses(ECDbR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR options) override
+        {
+        return bvector<SelectClassInfo>();
+        }
     ContentDescriptorCPtr _GetContentDescriptor(ECDbR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options) override 
         {
         if (nullptr != m_contentDescriptorHandler)
@@ -189,3 +195,5 @@ public:
     void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(ECDbR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHanlder = handler;}
     void SetOnCollapseAllNodesHandler(std::function<void(ECDbR, JsonValueCR)> handler) {m_onAllNodesCollapseHandler = handler;}
     };
+
+END_ECPRESENTATIONTESTS_NAMESPACE

@@ -10,7 +10,11 @@
 
 BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 
-typedef bmap<BeSQLite::EC::ECInstanceId, ECN::IECInstancePtr> ECInstanceMap;
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+
+typedef bmap<ECInstanceId, IECInstancePtr> ECInstanceMap;
 typedef const ECInstanceMap& ECInstanceMapCR;
 
 /*=================================================================================**//**
@@ -18,41 +22,32 @@ typedef const ECInstanceMap& ECInstanceMapCR;
 +===============+===============+===============+===============+===============+======*/
 struct ECDbTestProject
 {
-public:
+private:
+    ECDb* m_ecdb;
+    ECSchemaReadContextPtr m_schemaContext;
+    std::map<ECClassCP, std::unique_ptr<ECInstanceInserter>> m_inserterCache;
 
 private:
-    BeSQLite::EC::ECDb*    m_ecdb;
-    ECN::ECSchemaReadContextPtr m_schemaContext;
-    std::map<ECN::ECClassCP, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_inserterCache;
-
-    static bool            s_isInitialized;
-
-    void                   CreateEmpty (Utf8CP ecdbFileName);
-    BentleyStatus          ImportECSchema(ECN::ECSchemaPtr& schema, Utf8CP testSchemaXmlFileName);
-
-    //! Initializes the test environment by setting up the schema read context and search dirs etc.
-    //! Gets implicitly called when constructing an ECDbTestProject, too. Tests that don't use
-    //! the ECDbTestProject can call this method statically.
-    static void            Initialize();
-    static bool            IsInitialized();
+    void CreateEmpty (Utf8CP ecdbFileName);
+    BentleyStatus ImportECSchema(ECSchemaPtr& schema, Utf8CP testSchemaXmlFileName);
 
 public:
-                           ECDbTestProject ();
-                           ~ECDbTestProject ();
-    
-    Utf8CP                 GetECDbPath () const;
+    ECDbTestProject(ECDb* = nullptr);
+    ~ECDbTestProject();
+
+    Utf8CP GetECDbPath() const {return GetECDbCR().GetDbFileName();}
+    ECDb& GetECDb() {return *m_ecdb;}
+    ECDb const& GetECDbCR() const {return *m_ecdb;}
 
     //! Creates an empty DgnDb file without importing a test schema and without inserting any instances.
     //! @return ECDb pointing to the creating DgnDb file
-    BeSQLite::EC::ECDbR    Create (Utf8CP ecdbFileName);
-    BeSQLite::EC::ECDbR    Create (Utf8CP ecdbFileName, Utf8CP testSchemaXmlFileName);
-    BeSQLite::DbResult     Open (Utf8CP ecdbFileName, BeSQLite::EC::ECDb::OpenParams openParams = BeSQLite::EC::ECDb::OpenParams (BeSQLite::EC::ECDb::OpenMode::Readonly));
-    BeSQLite::EC::ECDbR    GetECDb ();
-    BeSQLite::EC::ECDbCR   GetECDbCR () const;
-    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className, bool polymorphic = false);
-    BentleyStatus InsertECInstance (BeSQLite::EC::ECInstanceKey& ecInstanceKey, ECN::IECInstancePtr ecInstance);
-    ECN::IECInstancePtr CreateECInstance(ECN::ECClassCR ecClass);
-    ECN::ECSchemaReadContextP GetSchemaContext() const {return m_schemaContext.get();}
+    ECDb& Create (Utf8CP ecdbFileName);
+    ECDb& Create (Utf8CP ecdbFileName, Utf8CP testSchemaXmlFileName);
+    DbResult Open (Utf8CP ecdbFileName, ECDb::OpenParams openParams = ECDb::OpenParams (ECDb::OpenMode::Readonly));
+    BentleyStatus GetInstances (bvector<IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className, bool polymorphic = false);
+    BentleyStatus InsertECInstance (ECInstanceKey& ecInstanceKey, IECInstancePtr ecInstance);
+    IECInstancePtr CreateECInstance(ECClassCR ecClass);
+    ECSchemaReadContextP GetSchemaContext() const {return m_schemaContext.get();}
     };
 
 

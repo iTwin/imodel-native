@@ -60,7 +60,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -98,7 +98,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // options
@@ -140,7 +140,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "Widget", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "Widget", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -179,7 +179,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "WrongSchemaName", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "WrongSchemaName", "", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -216,7 +216,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     m_locater->AddRuleSet(*rules);
     
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "ClassE", true));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "ClassE", true));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -258,7 +258,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -300,7 +300,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -342,7 +342,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -394,7 +394,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassQ", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassQ", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -436,7 +436,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -472,7 +472,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", m_sprocketClass->GetFullName(), false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", m_sprocketClass->GetFullName(), false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -526,7 +526,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
@@ -566,7 +566,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", true));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", true));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -596,7 +596,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -632,7 +632,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "this.IntProperty=2", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "this.IntProperty=2", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -671,7 +671,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassE", true));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -711,7 +711,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", ""));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -784,7 +784,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -826,7 +826,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:Widget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -871,7 +871,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassAHasBAndC", "RulesEngineTest:BaseOfBAndC"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassAHasBAndC", "RulesEngineTest:BaseOfBAndC"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -927,7 +927,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:DoesNotExist", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:DoesNotExist", ""));
     rules->AddPresentationRule(*rule);
 
     // note: query builder asserts when the class / relationships is not found - ignore that
@@ -967,7 +967,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadget", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadget", ""));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1009,7 +1009,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", ""));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", ""));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1053,7 +1053,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "this.Description=\"Gadget2\"", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "this.Description=\"Gadget2\"", RequiredRelationDirection_Both, "", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1114,7 +1114,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Both, "", "RulesEngineTest:ClassN"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Both, "", "RulesEngineTest:ClassN"));
     rules->AddPresentationRule(*rule);
     
     // options
@@ -1189,7 +1189,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Forward, 
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Forward, 
         "RulesEngineTest:ClassNGroupsClassN,ClassNOwnsClassO,ClassOHasClassP", "RulesEngineTest:ClassN,ClassO,ClassP"));
     rules->AddPresentationRule(*rule);
     
@@ -1229,10 +1229,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    specification->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
-    specification->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
-    specification->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label3", 1200, "this.MyID"));
-    rule->GetSpecificationsR().push_back(specification);
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.MyID"));
+    rule->AddSpecification(*specification);
     rules->AddPresentationRule(*rule);
 
     // options
@@ -1297,12 +1297,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1368,7 +1368,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
     rules->AddPresentationRule(*rule);
         
     // request for content
@@ -1412,37 +1412,44 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
         if (name == "Widget_Description")
             {
             EXPECT_STREQ("MyDescription", value[name.c_str()].GetString());
-            ASSERT_STREQ("string", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("string", (*field)["Type"]["TypeName"].GetString());
             }
         else if (name == "Widget_MyID")
             {
             EXPECT_STREQ("MyID", value[name.c_str()].GetString());
-            ASSERT_STREQ("string", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("string", (*field)["Type"]["TypeName"].GetString());
             }
         else if (name == "Widget_IntProperty")
             {
             EXPECT_EQ(9, value[name.c_str()].GetInt());
-            ASSERT_STREQ("int", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("int", (*field)["Type"]["TypeName"].GetString());
             }
         else if (name == "Widget_BoolProperty")
             {
             EXPECT_TRUE(value[name.c_str()].GetBool());
-            ASSERT_STREQ("boolean", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("boolean", (*field)["Type"]["TypeName"].GetString());
             }
         else if (name == "Widget_DoubleProperty")
             {
             EXPECT_DOUBLE_EQ(7.0, value[name.c_str()].GetDouble());
-            ASSERT_STREQ("double", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("double", (*field)["Type"]["TypeName"].GetString());
             }
         else if (name == "Widget_LongProperty")
             {
             EXPECT_EQ(123, value[name.c_str()].GetInt64());
-            ASSERT_STREQ("long", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("long", (*field)["Type"]["TypeName"].GetString());
             }
         else if (name == "Widget_DateProperty")
             {
             EXPECT_STREQ("2017-05-30T00:00:00.000", value[name.c_str()].GetString());
-            EXPECT_STREQ("dateTime", (*field)["Type"].GetString());
+            EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
+            EXPECT_STREQ("dateTime", (*field)["Type"]["TypeName"].GetString());
             }
         else
             FAIL();
@@ -1459,7 +1466,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesCustomPropertyCategoryS
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
     
     // override the category supplier
@@ -1519,9 +1526,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     rules->AddPresentationRule(*rule);
 
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,MyID", 1000, true));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,MyID", 1000, true));
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1580,9 +1587,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID,IntProperty", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1650,7 +1657,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget,Sprocket", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1744,7 +1751,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1809,7 +1816,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget,Sprocket", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1896,9 +1903,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Sprocket", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -1969,9 +1976,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Sprocket", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Both, 
         "RulesEngineTest:GadgetHasSprockets,WidgetHasGadget", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2032,9 +2039,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget,Sprocket", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Gadget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2070,6 +2077,89 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="BaseRelatedClass">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RelatedProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedRelatedClass">
+        <BaseClass>BaseRelatedClass</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasRelatedInstances" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
+            <Class class="Element" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="classifies" polymorphic="true">
+            <Class class="BaseRelatedClass"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseRelatedClass = GetClass("BaseRelatedClass");
+    ECClassCP derivedRelatedClass = GetClass("DerivedRelatedClass");
+    ECRelationshipClassCP rel = GetRelationshipClass("ElementHasRelatedInstances");
+
+    // set up the dataset
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
+    IECInstancePtr relatedInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element1, *relatedInstance1);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
+    IECInstancePtr relatedInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *baseRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element2, *relatedInstance2);
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+        rel->GetFullName(), baseRelatedClass->GetFullName(), "RelatedProperty", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::PropertyPane, 
+        selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Element.ElementProperty + <BaseRelatedClass.RelatedProperty, DerivedRelatedClass.RelatedProperty>
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+    
+    ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
+        
+    ContentSetItemCPtr record = contentSet.Get(0);
+    bvector<ECInstanceKey> keys = record->GetPropertyValueKeys(fp);
+    ASSERT_EQ(2, keys.size());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance1), keys[0]);
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance2), keys[1]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstanceKeyWhenThereIsNoRelatedInstance)
@@ -2091,9 +2181,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2162,9 +2252,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2235,7 +2325,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2281,7 +2371,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2328,7 +2418,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2372,7 +2462,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2416,7 +2506,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2459,7 +2549,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2499,8 +2589,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassH", false);
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("PointProperty", 1000, true));
-    rule->GetSpecificationsR().push_back(spec);
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+    rule->AddSpecification(*spec);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2548,8 +2638,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
 
     ContentInstancesOfSpecificClassesSpecification *specWidget = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
     ContentInstancesOfSpecificClassesSpecification *specGadget = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    rule->GetSpecificationsR().push_back(specWidget);
-    rule->GetSpecificationsR().push_back(specGadget);
+    rule->AddSpecification(*specWidget);
+    rule->AddSpecification(*specGadget);
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2596,8 +2686,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // options
@@ -2657,7 +2747,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification *specInstance = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(specInstance);
+    rule->AddSpecification(*specInstance);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2737,7 +2827,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification *specInstance = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(specInstance);
+    rule->AddSpecification(*specInstance);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2760,27 +2850,204 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentProviderUseCache)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWhenParametersEqual)
+    {
+    // set up selection
+    SelectionInfo selection("aaa", true, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+        }));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsCachedWhenParametersEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_EQ(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_Connection)
+    {
+    // set up a different connection
+    ECDbTestProject project2;
+    project2.Create("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", "RulesEngineTest.01.00.ecschema.xml");
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, selection, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType)
     {
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentProviderUseCache", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, selection, options.GetJson());
 
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str(), false);
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
 
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider)
+    {
+    // set up selection 1
+    SelectionInfo selection1("A", false, *NavNodeKeyListContainer::Create());
+    
+    // set up selection 2
+    SelectionInfo selection2("B", false, *NavNodeKeyListContainer::Create());
 
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection)
+    {
+    // set up selection 1
+    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create());
+    
+    // set up selection 2
+    SelectionInfo selection2("", true, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys)
+    {
+    // set up selection 1
+    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+        }));
+    
+    // set up selection 2
+    SelectionInfo selection2("", false, *NavNodeKeyListContainer::Create({
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)3)),
+        ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)4))
+        }));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+
+    // verify the two objects are equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId)
+    {
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set 1
+    PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_1", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules1);
+    ContentRuleP rule1 = new ContentRule("", 1, false);
+    rule1->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules1->AddPresentationRule(*rule1);
+    
+    // create the rule set 2
+    PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_2", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules2);
+    ContentRuleP rule2 = new ContentRule("", 1, false);
+    rule2->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules2->AddPresentationRule(*rule2);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options1(rules1->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options1.GetJson());
+    RulesDrivenECPresentationManager::ContentOptions options2(rules2->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options2.GetJson());
+
+    // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
     }
 
@@ -2804,12 +3071,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,Widget", 1000, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,Widget", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2852,12 +3119,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
         "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -2904,12 +3171,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget,Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -2956,12 +3223,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassB,ClassC", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassC");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3014,12 +3281,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:BaseOfBandC", true);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassC");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3069,12 +3336,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*rule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3131,12 +3398,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
     rules->AddPresentationRule(*rule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3207,13 +3474,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassE"));
     rules->AddPresentationRule(*rule);
 
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "NonExistingClass");//There is no such class in database
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyF"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3266,11 +3533,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
 
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
-    rule->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetCalculatedPropertiesR().push_back(new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.MyID"));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3334,7 +3601,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassQ", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3379,10 +3646,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3424,10 +3691,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3472,10 +3739,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentRelatedInstancesSpecification* spec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Widget");
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3515,11 +3782,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 900, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 900, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3559,11 +3826,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID,Description", 900, true));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description", 1000, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 900, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3603,11 +3870,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,LongProperty", 1000, false));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description,IntProperty,LongProperty", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,LongProperty", 1000, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,IntProperty,LongProperty", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3650,11 +3917,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassF", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1500, true)); // base class specification
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty,PropertyF", 1000, false));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1500, true)); // base class specification
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty,PropertyF", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3700,12 +3967,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassF", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
     
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3746,12 +4013,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3791,13 +4058,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 900, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 900, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3837,13 +4104,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
     rules->AddPresentationRule(*modifier);
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID,Description", 900, true));
-    modifier->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("Description", 1000, false));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 900, true));
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description", 1000, false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3883,10 +4150,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("IntProperty", "IntEditor"));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    spec->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "IntEditor"));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3895,8 +4162,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
-
-    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3920,10 +4188,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("MyID", "IDEditor"));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "IDEditor"));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3932,8 +4200,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget_Widget_MyID
-
-    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3957,13 +4226,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("MyID", "IDEditor"));
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "IDEditor"));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
-    modifier->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("MyID", "GadgetEditor"));
+    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "GadgetEditor"));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -3974,8 +4243,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
 
-    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
-    EXPECT_STREQ("GadgetEditor", descriptor->GetVisibleFields()[1]->GetEditor().c_str());
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IDEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[1]->GetEditor());
+    EXPECT_STREQ("GadgetEditor", descriptor->GetVisibleFields()[1]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4001,12 +4273,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
-    modifier->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("IntProperty", "IntEditor"));
+    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "IntEditor"));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4016,8 +4288,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassE_ClassF_IntProperty
-
-    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4046,12 +4319,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->GetPropertiesDisplaySpecificationsR().push_back(new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
-    modifier->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("IntProperty", "ClassFIntEditor"));
+    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "ClassFIntEditor"));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4061,9 +4334,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
-
-    EXPECT_STREQ("ClassFIntEditor", descriptor->GetVisibleFields()[0]->GetEditor().c_str());
-    EXPECT_STREQ("", descriptor->GetVisibleFields()[1]->GetEditor().c_str());
+    
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("ClassFIntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+    
+    ASSERT_TRUE(nullptr == descriptor->GetVisibleFields()[1]->GetEditor());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4089,7 +4364,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4144,7 +4419,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4201,7 +4476,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4268,7 +4543,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4324,7 +4599,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4372,9 +4647,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets",
         "RulesEngineTest:Widget", "", RelationshipMeaning::RelatedInstance));
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4423,7 +4698,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentRelatedInstancesSpecificationP spec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadgets", "");
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -4472,7 +4747,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    contentRule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "",
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "",
         "RulesEngineTest:ClassE,ClassG", false));
     rules->AddPresentationRule(*contentRule);
 
@@ -4500,44 +4775,712 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Note: ignored due to TFS#711829
-* @bsitest                                      Grigas.Petraitis                06/2017
+* @bsitest                                      Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsArrayPropertyValues)
+DEFINE_SCHEMA(LoadsPrimitiveArrayPropertyValue, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayPropertyValue)
     {
     // set up data set
-    ECClassCP classStruct1 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Struct1");
-    ECEntityClassCP classR = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassR")->GetEntityClassCP();
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *classR, [&classStruct1](IECInstanceR instance)
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
         {
-        instance.AddArrayElements("IntsArray", 2);
-        instance.SetValue("IntsArray", ECValue(2), 0);
-        instance.SetValue("IntsArray", ECValue(1), 1);
-        
-        instance.AddArrayElements("StructsArray", 2);
-
-        IECInstancePtr struct1 = classStruct1->GetDefaultStandaloneEnabler()->CreateInstance();
-        struct1->SetValue("StringProperty", ECValue("a"));
-        ECValue structValue1;
-        structValue1.SetStruct(struct1.get());
-        instance.SetValue("StructsArray", structValue1, 0);
-        
-        IECInstancePtr struct2 = classStruct1->GetDefaultStandaloneEnabler()->CreateInstance();
-        struct2->SetValue("StringProperty", ECValue("b"));
-        ECValue structValue2;
-        structValue2.SetStruct(struct2.get());
-        instance.SetValue("StructsArray", structValue2, 1);
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 3);
+        instance.SetValue("ArrayProperty", ECValue(3), 0);
+        instance.SetValue("ArrayProperty", ECValue(4), 1);
+        instance.SetValue("ArrayProperty", ECValue(5), 2);
         });
     
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsArrayPropertyValues", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsPrimitiveArrayPropertyValue", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassR", false);
-    rule->GetSpecificationsR().push_back(spec);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Array",
+        "TypeName": "int[]",
+        "MemberType": {
+            "ValueFormat": "Primitive",
+            "TypeName": "int"
+            }
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"(
+        {
+        "MyClass_ArrayProperty": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"(
+        {
+        "MyClass_ArrayProperty": [3, 4, 5]
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsOfDifferentClasses, R"*(
+    <ECEntityClass typeName="MyClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsOfDifferentClasses)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 3);
+        instance.SetValue("ArrayProperty", ECValue(3), 0);
+        instance.SetValue("ArrayProperty", ECValue(4), 1);
+        instance.SetValue("ArrayProperty", ECValue(5), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyFieldsOfDifferentClasses", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"(
+        {
+        "MyClassA_MyClassB_ArrayProperty": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"(
+        {
+        "MyClassA_MyClassB_ArrayProperty": [3, 4, 5]
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
+    <ECEntityClass typeName="MyClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"(
+        {
+        "MyClassA_MyClassB_ArrayProperty": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent, R"*(
+    <ECEntityClass typeName="MyClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 3);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        instance.SetValue("ArrayProperty", ECValue(3), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_ArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_ArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenValuesEqual, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyValueWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"(
+        {
+        "MyClass_ArrayProperty": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_FALSE(record->IsMerged("MyClass_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 3);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        instance.SetValue("ArrayProperty", ECValue(3), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyValueWhenArraySizesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_ArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(1), 0);
+        instance.SetValue("ArrayProperty", ECValue(2), 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyValueWhenValuesInArrayAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_ArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["ClassA_ArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_ArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("ClassA_ArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsEnumsArrayPropertyValue, R"*(
+    <ECEnumeration typeName="MyEnum" backingTypeName="int" isStrict="True" displayLabel="My Enum">
+        <ECEnumerator value="1" displayLabel="One" />
+        <ECEnumerator value="2" displayLabel="Two" />
+        <ECEnumerator value="3" displayLabel="Three" />
+    </ECEnumeration>
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="EnumsArray" typeName="MyEnum" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValue)
+    {
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("EnumsArray", 2);
+        instance.SetValue("EnumsArray", ECValue(2), 0);
+        instance.SetValue("EnumsArray", ECValue(1), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("EnumsArray", 3);
+        instance.SetValue("EnumsArray", ECValue(1), 0);
+        instance.SetValue("EnumsArray", ECValue(2), 1);
+        instance.SetValue("EnumsArray", ECValue(3), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsEnumsArrayPropertyValue", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Array",
+        "TypeName": "MyEnum[]",
+        "MemberType": {
+            "ValueFormat": "Primitive",
+            "TypeName": "MyEnum"
+            }
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"(
+        {
+        "MyClass_EnumsArray": [2, 1]
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    rapidjson::Document expectedDisplayValues1;
+    expectedDisplayValues1.Parse(R"(
+        {
+        "MyClass_EnumsArray": ["Two", "One"]
+        })");
+    EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["DisplayValues"]);
+
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"(
+        {
+        "MyClass_EnumsArray": [1, 2, 3]
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    rapidjson::Document expectedDisplayValues2;
+    expectedDisplayValues2.Parse(R"(
+        {
+        "MyClass_EnumsArray": ["One", "Two", "Three"]
+        })");
+    EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["DisplayValues"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsStructPropertyValue, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsStructPropertyValue", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4546,7 +5489,1359 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsArrayPropertyValues)
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Struct",
+        "TypeName": "MyStruct",
+        "Members": [{
+            "Name": "IntProperty",
+            "Label": "IntProperty",
+            "Type": {
+                "ValueFormat": "Primitive",
+                "TypeName": "int"
+                }
+            },{
+            "Name": "StringProperty",
+            "Label": "StringProperty",
+            "Type": {
+                "ValueFormat": "Primitive",
+                "TypeName": "string"
+                }
+            }]
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": 456,
+           "StringProperty": "def"
+           }
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyFieldsOfDifferentClasses, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsOfDifferentClasses)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyFieldsOfDifferentClasses", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({
+        "MyClassA_MyClassB_StructProperty": {
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({
+        "MyClassA_MyClassB_StructProperty": {
+           "IntProperty": 456,
+           "StringProperty": "def"
+           }
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClassA_MyClassB_StructProperty": {
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }
+        })");
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_StructProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_StructProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreEqual, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreEqual)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyValuesWhenValuesAreEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }
+        })");
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_FALSE(record->IsMerged("MyClass_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyValuesWhenValuesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClass_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyValueWhenClassesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="ClassA">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWhenClassesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    EXPECT_TRUE(record->GetValues()["ClassA_StructProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_StructProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("ClassA_StructProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsStructArrayPropertyValue, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyValue)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 2);
+
+        IECInstancePtr structInstance1 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance1->SetValue("IntProperty", ECValue(456));
+        structInstance1->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue1;
+        structValue1.SetStruct(structInstance1.get());
+        instance.SetValue("StructArrayProperty", structValue1, 0);
+
+        IECInstancePtr structInstance2 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance2->SetValue("IntProperty", ECValue(789));
+        structInstance2->SetValue("StringProperty", ECValue("ghi"));
+        ECValue structValue2;
+        structValue2.SetStruct(structInstance2.get());
+        instance.SetValue("StructArrayProperty", structValue2, 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsStructArrayPropertyValue", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Array",
+        "TypeName": "MyStruct[]",
+        "MemberType": {
+            "ValueFormat": "Struct",
+            "TypeName": "MyStruct",
+            "Members": [{
+                "Name": "IntProperty",
+                "Label": "IntProperty",
+                "Type": {
+                    "ValueFormat": "Primitive",
+                    "TypeName": "int"
+                    }
+                },{
+                "Name": "StringProperty",
+                "Label": "StringProperty",
+                "Type": {
+                    "ValueFormat": "Primitive",
+                    "TypeName": "string"
+                    }
+                }]
+            }
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({
+        "MyClass_StructArrayProperty": [{
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }]
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({
+        "MyClass_StructArrayProperty": [{
+           "IntProperty": 456,
+           "StringProperty": "def"
+           },{
+           "IntProperty": 789,
+           "StringProperty": "ghi"
+           }]
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyFieldsOfDifferentClasses, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsOfDifferentClasses)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 2);
+
+        IECInstancePtr structInstance1 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance1->SetValue("IntProperty", ECValue(456));
+        structInstance1->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue1;
+        structValue1.SetStruct(structInstance1.get());
+        instance.SetValue("StructArrayProperty", structValue1, 0);
+
+        IECInstancePtr structInstance2 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance2->SetValue("IntProperty", ECValue(789));
+        structInstance2->SetValue("StringProperty", ECValue("ghi"));
+        ECValue structValue2;
+        structValue2.SetStruct(structInstance2.get());
+        instance.SetValue("StructArrayProperty", structValue2, 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyFieldsOfDifferentClasses", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({
+        "MyClassA_MyClassB_StructArrayProperty": [{
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }]
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({
+        "MyClassA_MyClassB_StructArrayProperty": [{
+           "IntProperty": 456,
+           "StringProperty": "def"
+           },{
+           "IntProperty": 789,
+           "StringProperty": "ghi"
+           }]
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClassA_MyClassB_StructArrayProperty": [{
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }]
+        })");
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged("MyClassA_MyClassB_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClassB">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("MyClassA");
+    ECClassCP classB = GetClass("MyClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(456));
+        structInstance->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(record->GetValues()["MyClassA_MyClassB_StructArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["MyClassA_MyClassB_StructArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClassA_MyClassB_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenValuesAreEqual, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenValuesAreEqual)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyValuesWhenValuesAreEqual", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "MyClass_StructArrayProperty": [{
+           "IntProperty": 123,
+           "StringProperty": "abc"
+           }]
+        })");
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_FALSE(record->IsMerged("MyClass_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenArraySizesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenArraySizesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 2);
+
+        IECInstancePtr structInstance1 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance1->SetValue("IntProperty", ECValue(123));
+        structInstance1->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue1;
+        structValue1.SetStruct(structInstance1.get());
+        instance.SetValue("StructArrayProperty", structValue1, 0);
+
+        IECInstancePtr structInstance2 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance2->SetValue("IntProperty", ECValue(456));
+        structInstance2->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue2;
+        structValue2.SetStruct(structInstance2.get());
+        instance.SetValue("StructArrayProperty", structValue2, 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyValuesWhenArraySizesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(456));
+        structInstance->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyValuesWhenArrayValuesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructArrayPropertyValueWhenClassesAreDifferent, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="ClassA">
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyValueWhenClassesAreDifferent)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({classA, classB}), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    EXPECT_TRUE(record->GetValues()["ClassA_StructArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), record->GetDisplayValues()["ClassA_StructArrayProperty"].GetString());
+    EXPECT_TRUE(record->IsMerged("ClassA_StructArrayProperty"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsStructWithArrayPropertyValue, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECArrayProperty propertyName="IntProperty" typeName="int" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropertyValue)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructProperty.IntProperty", 2);
+        instance.SetValue("StructProperty.IntProperty", ECValue(1), 0);
+        instance.SetValue("StructProperty.IntProperty", ECValue(2), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+        {
+        instance.AddArrayElements("StructProperty.IntProperty", 3);
+        instance.SetValue("StructProperty.IntProperty", ECValue(4), 0);
+        instance.SetValue("StructProperty.IntProperty", ECValue(5), 1);
+        instance.SetValue("StructProperty.IntProperty", ECValue(6), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsStructWithArrayPropertyValue", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Struct",
+        "TypeName": "MyStruct",
+        "Members": [{
+            "Name": "IntProperty",
+            "Label": "IntProperty",
+            "Type": {
+                "ValueFormat": "Array",
+                "TypeName": "int[]",
+                "MemberType": {
+                    "ValueFormat": "Primitive",
+                    "TypeName": "int"
+                    }
+                }
+            }]
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": [1, 2]
+           }
+        })");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": [4, 5, 6]
+           }
+        })");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FormatsPrimitiveArrayPropertyValues, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayPropertyValues)
+    {
+    TestPropertyFormatter formatter;
+    m_manager->SetECPropertyFormatter(&formatter);
+
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("FormatsPrimitiveArrayPropertyValues", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
@@ -4557,52 +6852,50 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsArrayPropertyValues)
     ASSERT_EQ(1, contentSet.GetSize());
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassR_IntsArray": [2, 1],
-        "ClassR_StructsArray": [{
-           "IntProperty": null,
-           "StringProperty": "a"
-           },{
-           "IntProperty": null,
-           "StringProperty": "b"
-           }]
+    rapidjson::Document expectedDisplayValues;
+    expectedDisplayValues.Parse(R"(
+        {
+        "MyClass_ArrayProperty": ["_2_", "_1_"]
         })");
-    EXPECT_EQ(expectedValues, recordJson["Values"])
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Note: ignored due to TFS#711829
-* @bsitest                                      Grigas.Petraitis                06/2017
+* @bsitest                                      Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, MergesArrayPropertyValuesForWhenMergingRows)
+DEFINE_SCHEMA(FormatsStructPropertyValues, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues)
     {
-    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+    TestPropertyFormatter formatter;
+    m_manager->SetECPropertyFormatter(&formatter);
 
     // set up data set
-    ECEntityClassCP classR = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassR")->GetEntityClassCP();
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classR, [](IECInstanceR instance)
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
         {
-        instance.AddArrayElements("IntsArray", 1);
-        instance.SetValue("IntsArray", ECValue(1), 0);
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classR, [](IECInstanceR instance)
-        {
-        instance.AddArrayElements("IntsArray", 1);
-        instance.SetValue("IntsArray", ECValue(2), 0);
-        });
-
+    
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsArrayPropertyValues", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("FormatsStructPropertyValues", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassR", false);
-    rule->GetSpecificationsR().push_back(spec);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4611,14 +6904,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesArrayPropertyValuesFo
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
-
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4626,39 +6915,102 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesArrayPropertyValuesFo
     ASSERT_EQ(1, contentSet.GetSize());
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({
-        "ClassR_IntsArray": null,
-        "ClassR_StructsArray": null
+    rapidjson::Document expectedDisplayValues;
+    expectedDisplayValues.Parse(R"({
+        "MyClass_StructProperty": {
+           "IntProperty": "_123_",
+           "StringProperty": "_abc_"
+           }
         })");
-    expectedValues["ClassR_IntsArray"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
-
-    EXPECT_EQ(expectedValues, recordJson["Values"])
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="ChildClass">
+        <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ParentClass">
+        <ECProperty propertyName="ParentProperty" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="ClassD Has ClassE" polymorphic="False">
+            <Class class="ParentClass" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassE Has ClassD" polymorphic="False">
+            <Class class="ChildClass" />
+        </Target>
+    </ECRelationshipClass>
+)*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays)
     {
     // set up data set
-    ECEntityClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
-    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP parentClass = GetClass("ParentClass");
+    ECClassCP childClass = GetClass("ChildClass");
+    ECRelationshipClassCP rel = GetRelationshipClass("ParentHasChildren");
+    IECInstancePtr parent = RulesEngineTestHelpers::InsertInstance(*s_project, *parentClass);
+    IECInstancePtr child1 = RulesEngineTestHelpers::InsertInstance(*s_project, *childClass, [&](IECInstanceR instance)
         {
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetInstanceId(), rel));
         instance.SetValue("IntProperty", ECValue(1));
-        instance.SetValue("LongProperty", ECValue((int64_t)111));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD).GetInstanceId(), rel));
+        instance.SetValue("StringProperty", ECValue("111"));
+        
+        instance.AddArrayElements("ArrayProperty", 2);
+        instance.SetValue("ArrayProperty", ECValue(2), 0);
+        instance.SetValue("ArrayProperty", ECValue(1), 1);
+        
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        
+        instance.AddArrayElements("StructArrayProperty", 1);
+        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance->SetValue("IntProperty", ECValue(123));
+        structInstance->SetValue("StringProperty", ECValue("abc"));
+        ECValue structValue;
+        structValue.SetStruct(structInstance.get());
+        instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    IECInstancePtr instanceE2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr child2 = RulesEngineTestHelpers::InsertInstance(*s_project, *childClass, [&](IECInstanceR instance)
         {
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetInstanceId(), rel));
         instance.SetValue("IntProperty", ECValue(2));
-        instance.SetValue("LongProperty", ECValue((int64_t)222));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD).GetInstanceId(), rel));
+        instance.SetValue("StringProperty", ECValue("222"));
+        
+        instance.AddArrayElements("ArrayProperty", 1);
+        instance.SetValue("ArrayProperty", ECValue(3), 0);
+        
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+
+        instance.AddArrayElements("StructArrayProperty", 2);
+
+        IECInstancePtr structInstance1 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance1->SetValue("IntProperty", ECValue(456));
+        structInstance1->SetValue("StringProperty", ECValue("def"));
+        ECValue structValue1;
+        structValue1.SetStruct(structInstance1.get());
+        instance.SetValue("StructArrayProperty", structValue1, 0);
+
+        IECInstancePtr structInstance2 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        structInstance2->SetValue("IntProperty", ECValue(789));
+        structInstance2->SetValue("StringProperty", ECValue("ghi"));
+        ECValue structValue2;
+        structValue2.SetStruct(structInstance2.get());
+        instance.SetValue("StructArrayProperty", structValue2, 1);
         });
 
     // create the rule set
@@ -4668,11 +7020,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
-
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
-        "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", parentClass->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), 
+        childClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4681,8 +7032,92 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ParentClass_ParentProperty, Nested<5 ChildClass properties>
     
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Struct",
+        "TypeName": "ChildClass",
+        "Members": [{
+            "Name": "ChildClass_IntProperty",
+            "Label": "IntProperty",
+            "Type": {
+                "ValueFormat": "Primitive",
+                "TypeName": "int"
+                }
+            },{
+            "Name": "ChildClass_StringProperty",
+            "Label": "StringProperty",
+            "Type": {
+                "ValueFormat": "Primitive",
+                "TypeName": "string"
+                }
+            },{
+            "Name": "ChildClass_ArrayProperty",
+            "Label": "ArrayProperty",
+            "Type": {
+                "ValueFormat": "Array",
+                "TypeName": "int[]",
+                "MemberType": {
+                    "ValueFormat": "Primitive",
+                    "TypeName": "int"
+                    }
+                }
+            },{
+            "Name": "ChildClass_StructProperty",
+            "Label": "StructProperty",
+            "Type": {
+                "ValueFormat": "Struct",
+                "TypeName": "MyStruct",
+                "Members": [{
+                    "Name": "IntProperty",
+                    "Label": "IntProperty",
+                    "Type": {
+                        "ValueFormat": "Primitive",
+                        "TypeName": "int"
+                        }
+                    },{
+                    "Name": "StringProperty",
+                    "Label": "StringProperty",
+                    "Type": {
+                        "ValueFormat": "Primitive",
+                        "TypeName": "string"
+                        }
+                    }]
+                }
+            },{
+            "Name": "ChildClass_StructArrayProperty",
+            "Label": "StructArrayProperty",
+            "Type": {
+                "ValueFormat": "Array",
+                "TypeName": "MyStruct[]",
+                "MemberType": {
+                    "ValueFormat": "Struct",
+                    "TypeName": "MyStruct",
+                    "Members": [{
+                        "Name": "IntProperty",
+                        "Label": "IntProperty",
+                        "Type": {
+                            "ValueFormat": "Primitive",
+                            "TypeName": "int"
+                            }
+                        },{
+                        "Name": "StringProperty",
+                        "Label": "StringProperty",
+                        "Type": {
+                            "ValueFormat": "Primitive",
+                            "TypeName": "string"
+                            }
+                        }]
+                    }
+                }
+            }]
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[1]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
     // request for content
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
     ASSERT_TRUE(content.IsValid());
@@ -4694,33 +7129,75 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(R"({
-        "ClassD_StringProperty": null,
-        "ClassD_ClassE": [{
+        "ParentClass_ParentProperty": null,
+        "ParentClass_ChildClass": [{
             "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
             "Values": {
-                "ClassE_IntProperty": 1,
-                "ClassE_LongProperty": 111
+                "ChildClass_IntProperty": 1,
+                "ChildClass_StringProperty": "111",
+                "ChildClass_ArrayProperty": [2, 1],
+                "ChildClass_StructProperty": {
+                    "IntProperty": 123,
+                    "StringProperty": "abc"
+                    },
+                "ChildClass_StructArrayProperty": [{
+                   "IntProperty": 123,
+                   "StringProperty": "abc"
+                   }]
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": 1,
-                "ClassE_LongProperty": 111
+                "ChildClass_IntProperty": 1,
+                "ChildClass_StringProperty": "111",
+                "ChildClass_ArrayProperty": [2, 1],
+                "ChildClass_StructProperty": {
+                    "IntProperty": 123,
+                    "StringProperty": "abc"
+                    },
+                "ChildClass_StructArrayProperty": [{
+                   "IntProperty": 123,
+                   "StringProperty": "abc"
+                   }]
                 }
             },{
             "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
             "Values": {
-                "ClassE_IntProperty": 2,
-                "ClassE_LongProperty": 222
+                "ChildClass_IntProperty": 2,
+                "ChildClass_StringProperty": "222",
+                "ChildClass_ArrayProperty": [3],
+                "ChildClass_StructProperty": {
+                    "IntProperty": 456,
+                    "StringProperty": "def"
+                    },
+                "ChildClass_StructArrayProperty": [{
+                   "IntProperty": 456,
+                   "StringProperty": "def"
+                   },{
+                   "IntProperty": 789,
+                   "StringProperty": "ghi"
+                   }]
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": 2,
-                "ClassE_LongProperty": 222
+                "ChildClass_IntProperty": 2,
+                "ChildClass_StringProperty": "222",
+                "ChildClass_ArrayProperty": [3],
+                "ChildClass_StructProperty": {
+                    "IntProperty": 456,
+                    "StringProperty": "def"
+                    },
+                "ChildClass_StructArrayProperty": [{
+                   "IntProperty": 456,
+                   "StringProperty": "def"
+                   },{
+                   "IntProperty": 789,
+                   "StringProperty": "ghi"
+                   }]
                 }
             }]
         })");
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][0]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(instanceE1->GetInstanceId().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][0]["ECClassId"].SetString(classE->GetId().ToString().c_str(), expectedValues.GetAllocator());
-    expectedValues["ClassD_ClassE"][1]["PrimaryKeys"][0]["ECInstanceId"].SetString(instanceE2->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    expectedValues["ParentClass_ChildClass"][0]["PrimaryKeys"][0]["ECClassId"].SetString(childClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["ParentClass_ChildClass"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(child1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    expectedValues["ParentClass_ChildClass"][1]["PrimaryKeys"][0]["ECClassId"].SetString(childClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["ParentClass_ChildClass"][1]["PrimaryKeys"][0]["ECInstanceId"].SetString(child2->GetInstanceId().c_str(), expectedValues.GetAllocator());
 
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -4802,9 +7279,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
         "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -4931,9 +7408,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
         "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -5048,9 +7525,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassD", false);
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
 
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", 
         "RulesEngineTest:ClassE", "", RelationshipMeaning::RelatedInstance));
 
     // options
@@ -5114,10 +7591,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
-    spec->GetRelatedPropertiesR().back()->GetNestedRelatedPropertiesR().push_back(
-        new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    spec->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -5207,10 +7684,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->GetSpecificationsR().push_back(spec);
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
-    spec->GetRelatedPropertiesR().back()->GetNestedRelatedPropertiesR().push_back(
-        new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_WG->GetFullName(), m_gadgetClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
+    spec->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel_GS->GetFullName(), m_sprocketClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -5273,7 +7750,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("SelectedNode.ECInstance.IsOfClass(\"ClassE\", \"RulesEngineTest\") ANDALSO SelectedNode.ClassName = \"ClassF\"", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -5298,7 +7775,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("SelectedNode.ECInstance.IntProperty = 123", 1, false);
-    rule->GetSpecificationsR().push_back(new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -5328,9 +7805,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     ContentRuleP rule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification();
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
         "IntProperty", RelationshipMeaning::SameInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -5372,9 +7849,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     ContentRuleP rule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification();
-    spec->GetRelatedPropertiesR().push_back(new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget",
         "IntProperty", RelationshipMeaning::RelatedInstance));
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -5417,7 +7894,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
 
     ContentRuleP rule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification();
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
@@ -5450,7 +7927,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -5480,10 +7957,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    RapidJsonValueCR values1 = contentSet.Get(0)->AsJson()["Values"];
+    RapidJsonValueCR values1 = contentSet.Get(0)->GetValues();
     ASSERT_EQ(1, values1.MemberCount());
     EXPECT_STREQ("Test1", values1["Widget_MyID"].GetString());
-    RapidJsonValueCR values2 = contentSet.Get(1)->AsJson()["Values"];
+    RapidJsonValueCR values2 = contentSet.Get(1)->GetValues();
     ASSERT_EQ(1, values2.MemberCount());
     EXPECT_STREQ("Test2", values2["Widget_MyID"].GetString());
     }
@@ -5513,7 +7990,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget,Gadget", false);
-    contentRule->GetSpecificationsR().push_back(spec);
+    contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
     // options
@@ -5543,8 +8020,63 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    RapidJsonValueCR jsonValues = contentSet.Get(0)->AsJson()["Values"];
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
     EXPECT_STREQ("GadgetID", jsonValues["Gadget_Widget_MyID"].GetString());
-    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->AsJson()["Values"];
+    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
     EXPECT_STREQ("WidgetID", jsonValues2["Gadget_Widget_MyID"].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNavigationPropertiesFromDifferentContentSpecifications)
+    {
+    // prepare dataset
+    ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP gadgetHasSprockets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget, *sprocket);
+
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetsContentDescriptorWithNavigationPropertiesFromDifferentContentSpecifications", 1, 0, false, "", "", "", true);
+    m_locater->AddRuleSet(*ruleSet);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ruleSet->AddPresentationRule(*rule);
+    ContentInstancesOfSpecificClassesSpecificationP gadgetSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", true);
+    ContentInstancesOfSpecificClassesSpecificationP sprocketSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Sprocket", true);
+    gadgetSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Widget", 1500, true));
+    sprocketSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Gadget", 1500, true));
+    rule->AddSpecification(*gadgetSpec);
+    rule->AddSpecification(*sprocketSpec);
+
+    // validate content descriptor
+    RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
+
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
+    ECInstanceNodeKeyPtr gadgetKey = ECInstanceNodeKey::Create(*gadget);
+
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
+    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
+    EXPECT_TRUE(jsonValues["Sprocket_Gadget"].IsNull());
+    RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
+    EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
+    EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
     }

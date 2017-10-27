@@ -8,8 +8,43 @@
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+#include <Bentley/md5.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+Base class for providing hashing functionality.
+* @bsiclass                                     Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct HashableBase
+    {
+    private:
+        HashableBase* m_parent;
+        mutable Utf8String m_hash;
+
+    private:
+        void ComputeHash();
+
+    protected:
+        HashableBase() : m_parent(nullptr) {}
+        virtual ~HashableBase() {}
+        virtual MD5 _ComputeHash(Utf8CP parentHash) const = 0;
+
+/*__PUBLISH_SECTION_END__*/
+    public:
+        Utf8StringCR GetHash(Utf8CP parentHash);
+/*__PUBLISH_SECTION_START__*/
+
+    public:
+        //! Get hash.
+        ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
+
+        //! Invalidates current hash.
+        ECPRESENTATION_EXPORT void InvalidateHash();
+
+        //! Sets parent.
+        void SetParent(HashableBase* parent) {m_parent = parent;}
+    };
 
 //! This enumerator contains trees for which the rule can be applied.
 enum RuleTargetTree
@@ -26,7 +61,7 @@ enum RuleTargetTree
 Base class for all custom PresentationKeys. It represents any presentation configuration.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE PresentationKey
+struct EXPORT_VTABLE_ATTRIBUTE PresentationKey : HashableBase
     {
 private:
     int m_priority;
@@ -47,6 +82,9 @@ protected:
     //! Writes rule information to given XmlNode.
     ECPRESENTATION_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
+    //! Computes rule hash.
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
 public:
     //! Virtual destructor.
     virtual ~PresentationKey(){}
@@ -59,7 +97,6 @@ public:
 
     //! Priority of the rule, defines the order in which rules are evaluated and executed.
     ECPRESENTATION_EXPORT int                    GetPriority (void) const;
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,6 +122,9 @@ protected:
     //! Writes rule information to given XmlNode.
     ECPRESENTATION_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const override;
 
+    //! Compute rule hash.
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
     ECPRESENTATION_EXPORT Utf8StringCR              GetCondition (void) const;
@@ -100,11 +140,12 @@ struct PresentationRuleSpecificationVisitor;
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE PresentationRuleSpecification
+struct EXPORT_VTABLE_ATTRIBUTE PresentationRuleSpecification : HashableBase
 {
 protected:
     virtual ~PresentationRuleSpecification() {}
     virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const {}
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     //! Allows the visitor to visit this specification.

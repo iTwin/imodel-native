@@ -22,6 +22,7 @@
 #include "QueryBuilder.h"
 #include "ECExpressionContextsProvider.h"
 #include "ECInstanceChangesDirector.h"
+#include "ContentClassesLocater.h"
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
@@ -45,6 +46,25 @@ static bool IsRulesetSupported(ECDbCR connection, PresentationRuleSetCR ruleset)
     RelatedPathsCache relatedPathsCache;
     ECSchemaHelper helper(connection, relatedPathsCache, nullptr);
     return helper.AreSchemasSupported(ruleset.GetSupportedSchemas());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static PresentationRuleSetPtr FindRuleset(RuleSetLocaterManager const& locaters, ECDbCR connection, Utf8CP rulesetId)
+    {
+    PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(locaters, connection, rulesetId);
+    if (!ruleset.IsValid())
+        {
+        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
+        return nullptr;
+        }
+    if (!IsRulesetSupported(connection, *ruleset))
+        {
+        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", rulesetId).c_str(), LOG_INFO);
+        return nullptr;
+        }
+    return ruleset;
     }
 
 /*=================================================================================**//**
@@ -208,17 +228,9 @@ protected:
         {
         // get the ruleset
         RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Get ruleset", NativeLogging::LOG_TRACE);
-        PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(m_manager.GetLocaters(), connection, rulesetId);
+        PresentationRuleSetPtr ruleset = FindRuleset(m_manager.GetLocaters(), connection, rulesetId);
         if (!ruleset.IsValid())
-            {
-            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
             return nullptr;
-            }
-        if (!IsRulesetSupported(connection, *ruleset))
-            {
-            LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", rulesetId).c_str(), LOG_INFO);
-            return nullptr;
-            }
         _l2 = nullptr;
 
         // get various caches
@@ -228,7 +240,8 @@ protected:
         ECSqlStatementCache& statementsCache = m_manager.m_statementCache->GetCache(connection);
 
         // notify listener with ECClasses used in this ruleset
-        UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, connection, ecexpressionsCache, *ruleset);
+        ECSchemaHelper schemaHelper(connection, relatedPathsCache, &statementsCache);
+        UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, schemaHelper, ecexpressionsCache, *ruleset);
 
         // set up the nodes provider context
         _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Create context", NativeLogging::LOG_TRACE);
@@ -247,7 +260,6 @@ public:
 };
 
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_RulesetId = "RulesetId";
-const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_UseCache = "UseCache";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
@@ -255,28 +267,31 @@ const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_Di
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& paths)
+RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& paths, bool disableDiskCache)
     : m_localState(nullptr), m_userSettings(paths.GetTemporaryDirectory(), this), m_selectionManager(nullptr), 
     m_categorySupplier(nullptr), m_ecPropertyFormatter(nullptr), m_localizationProvider(nullptr)
     {
     GetLocaters().SetRulesetCallbacksHandler(this);
+    GetConnections().AddListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
     m_customFunctions = new CustomFunctionsInjector();
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, GetConnections());
+    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, 
+        GetConnections(), disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
     m_contentCache = new ContentCache();
     m_statementCache = new ECDbStatementsCache();
     m_relatedPathsCache = new ECDbRelatedPathsCache();
     m_userSettings.SetLocalizationProvider(&GetLocalizationProvider());
-    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, GetConnections(), *m_nodesProviderContextFactory, *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
+    m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, GetConnections(), *m_nodesProviderContextFactory, 
+        *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
     m_usedClassesListener = new UsedClassesListener(*this);
 
     BeFileName supplementalRulesetsDirectory = paths.GetAssetsDirectory();
     supplementalRulesetsDirectory.append(L"UI\\");
     supplementalRulesetsDirectory.append(L"PresentationRules\\");
-    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(supplementalRulesetsDirectory));
+    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalRulesetsDirectory.GetNameUtf8().c_str())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,6 +300,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
 RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
     {
     GetLocaters().SetRulesetCallbacksHandler(nullptr);
+    GetConnections().DropListener(*this);
     DELETE_AND_CLEAR(m_updateHandler);
     DELETE_AND_CLEAR(m_statementCache);
     DELETE_AND_CLEAR(m_relatedPathsCache);
@@ -319,6 +335,7 @@ void RulesDrivenECPresentationManager::_OnRulesetCreated(PresentationRuleSetCR r
     {
     UserSettings& settings = m_userSettings.GetSettings(ruleset.GetRuleSetId().c_str());
     settings.InitFrom(ruleset.GetUserSettings());
+    m_nodesCache->OnRulesetCreated(ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,6 +354,30 @@ void RulesDrivenECPresentationManager::_OnSettingChanged(Utf8CP rulesetId, Utf8C
     {
     CustomFunctionsManager::GetManager()._OnSettingChanged(rulesetId, settingId);
     m_updateHandler->NotifySettingChanged(rulesetId, settingId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnConnectionEvent(ConnectionEvent const& evt)
+    {
+    if (evt.GetEventType() == ConnectionEventType::Opened)
+        {
+        ECDbCR connection = evt.GetConnection();
+        RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[&connection] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(connection));
+        GetLocaters().RegisterLocater(*locater);
+        }
+    else if (evt.GetEventType() == ConnectionEventType::Closed)
+        {
+        auto iter = m_embeddedRuleSetLocaters.find(&evt.GetConnection());
+        if (m_embeddedRuleSetLocaters.end() == iter)
+            {
+            BeAssert(false);
+            return;
+            }
+        GetLocaters().UnregisterLocater(*iter->second);
+        m_embeddedRuleSetLocaters.erase(iter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,27 +573,15 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager] GetContentProvider", NativeLogging::LOG_TRACE);
 
     OnConnection(connection);
-    SpecificationContentProviderPtr provider;
-    if (options.GetUseCache())
-        {
-        provider = m_contentCache->GetProvider(key);
-        if (provider.IsValid())
-            return provider;
-        }
+    SpecificationContentProviderPtr provider = m_contentCache->GetProvider(key);
+    if (provider.IsValid())
+        return provider;
 
     // get the ruleset
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager::GetContentProvider] Get ruleset", NativeLogging::LOG_TRACE);
-    PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(GetLocaters(), connection, options.GetRulesetId());
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, options.GetRulesetId());
     if (!ruleset.IsValid())
-        {
-        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", options.GetRulesetId()).c_str(), LOG_ERROR);
         return nullptr;
-        }
-    if (!IsRulesetSupported(connection, *ruleset))
-        {
-        LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", options.GetRulesetId()).c_str(), LOG_INFO);
-        return nullptr;
-        }
     _l2 = nullptr;
 
     // get ruleset-related caches
@@ -585,8 +614,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManager::GetContentPro
     if (!provider.IsValid())
         return nullptr;
 
-    if (options.GetUseCache())
-        m_contentCache->CacheProvider(key, *provider);
+    m_contentCache->CacheProvider(key, *provider);
     return provider;
     }
 
@@ -603,6 +631,39 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManager::GetContentProv
     SpecificationContentProviderPtr provider = cachedProvider->Clone();
     provider->SetContentDescriptor(descriptor);
     return provider;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<SelectClassInfo> RulesDrivenECPresentationManager::_GetContentClasses(ECDbR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR jsonOptions)
+    {
+    RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager] GetContentClasses", NativeLogging::LOG_TRACE);
+
+    if (nullptr == preferredDisplayType || 0 == *preferredDisplayType) 
+        preferredDisplayType = ContentDisplayType::Undefined;
+
+    ContentOptions options(jsonOptions);
+
+    // get the ruleset
+    RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManager::GetContentProvider] Get ruleset", NativeLogging::LOG_TRACE);
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, options.GetRulesetId());
+    if (!ruleset.IsValid())
+        return bvector<SelectClassInfo>();
+    _l2 = nullptr;
+    
+    // get ruleset-related caches
+    IUserSettings const& settings = m_userSettings.GetSettings(ruleset->GetRuleSetId().c_str());
+    ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
+
+    // get connection-related caches
+    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection);
+    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection);
+
+    // locate the classes
+    ECSchemaHelper schemaHelper(connection, relatedPathsCache, &statementCache);
+    ContentClassesLocater::Context locaterContext(schemaHelper, *ruleset, preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
+    return ContentClassesLocater(locaterContext).Locate(classes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -727,10 +788,16 @@ void RulesDrivenECPresentationManager::RegisterUpdateRecordsHandler(IUpdateRecor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetSelectionManager(SelectionManagerR manager)
+void RulesDrivenECPresentationManager::SetSelectionManager(SelectionManagerP manager)
     {
-    m_selectionManager = &manager;
-    manager.AddListener(*this);
+    if (nullptr != m_selectionManager)
+        m_selectionManager->RemoveListener(*this);
+    
+    if (nullptr != manager)
+        manager->AddListener(*this);
+    
+    m_updateHandler->SetSelectionManager(manager);
+    m_selectionManager = manager;
     }
 
 /*---------------------------------------------------------------------------------**//**

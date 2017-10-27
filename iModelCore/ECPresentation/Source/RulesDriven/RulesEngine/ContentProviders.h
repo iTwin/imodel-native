@@ -24,6 +24,7 @@ private:
     INavNodeLocaterCR m_nodesLocater;
     IPropertyCategorySupplierR m_categorySupplier;
     bool m_isNestedContent;
+    bool m_createFields;
 
     // Selection context
     bool m_isSelectionContext;
@@ -92,8 +93,10 @@ private:
 
 private:
     void Initialize();
-    NestedContentProviderPtr GetNestedContentProvider(ContentDescriptor::NestedContentField const&) const;
-    void LoadNestedContentFieldValues(ContentSetItemR) const;
+    NestedContentProviderPtr GetNestedContentProvider(ContentDescriptor::NestedContentField const&, bool) const;
+    void LoadNestedContent(ContentSetItemR) const;
+    void LoadNestedContentFieldValue(ContentSetItemR, ContentDescriptor::NestedContentField const&, bool) const;
+    void LoadCompositePropertiesFieldValue(ContentSetItemR, ContentDescriptor::ECPropertiesField const&) const;
     
 protected:
     ECPRESENTATION_EXPORT ContentProvider(ContentProviderContextR);
@@ -181,6 +184,7 @@ public:
         {
         return new NestedContentProvider(context, nestedContentField);
         }
+    ContentDescriptor::NestedContentField const& GetContentField() const {return m_field;}
     void SetPrimaryInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const&);
     void SetPrimaryInstanceKey(BeSQLite::EC::ECInstanceKeyCR);
 };

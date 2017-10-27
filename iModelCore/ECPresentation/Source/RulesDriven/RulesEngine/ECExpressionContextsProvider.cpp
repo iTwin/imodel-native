@@ -348,8 +348,9 @@ private:
     ECDbCR m_connection;
     INavNodeLocaterCR m_locater;
     NavNodeKeyCP m_key;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key) 
-        : m_rootContext(rootContext), m_connection(connection), m_locater(locater), m_key(key) 
+    SymbolExpressionContextPtr m_context;
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
+        : m_rootContext(rootContext), m_connection(connection), m_locater(locater), m_key(key), m_context(nullptr)
         {}
 public:
     static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
@@ -358,6 +359,9 @@ public:
         }
     virtual ExpressionContextPtr _GetContext() override
         {
+        if (m_context.IsValid())
+            return m_context;
+
         NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(*m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
@@ -366,9 +370,9 @@ public:
             }
 
         NodeSymbolsProvider nodeSymbols(m_rootContext.AddContext(*new NodeSymbolsProvider::Context(m_connection, node.get())));
-        SymbolExpressionContextPtr context = SymbolExpressionContext::Create(nullptr);
-        nodeSymbols.PublishSymbols(*context, bvector<Utf8String>());
-        return context;
+        m_context = SymbolExpressionContext::Create(nullptr);
+        nodeSymbols.PublishSymbols(*m_context, bvector<Utf8String>());
+        return m_context;
         }
 };
 
@@ -847,6 +851,16 @@ private:
             m_ecsql.append(prefix).append(".");
         Append("[ECClassId]");
         Comma();
+
+        if (nullptr != node.GetArguments() && 2 == node.GetArguments()->GetArgumentCount())
+            {
+            NodeCP classNameArg = node.GetArguments()->GetArgument(0);
+            NodeCP schemaNameArg = node.GetArguments()->GetArgument(1);
+            Utf8String qualifiedClassName = schemaNameArg->ToString().Trim("\"");
+            qualifiedClassName.append(":").append(classNameArg->ToString().Trim("\""));
+            m_usedClasses.push_back(qualifiedClassName);
+            }
+
         return true;
         }
 
@@ -1113,6 +1127,18 @@ private:
         {
         Append(node.ToString());
         }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    void HandleEqualtyNode(ComparisonNodeCR node)
+        {
+        Append(node.ToString());
+
+        Utf8String left = node.GetLeftCP()->ToExpressionString();
+        if (left.EndsWith(".ClassName"))
+            m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
+        }
 
 public:
     bool StartArrayIndex(NodeCR) override {BeAssert(false); return false;}
@@ -1191,13 +1217,16 @@ public:
             case TOKEN_GreaterEqual:
             case TOKEN_Less:
             case TOKEN_LessEqual:
-            case TOKEN_Equal:
-            case TOKEN_NotEqual:
             case TOKEN_Minus:
             case TOKEN_Plus:
             case TOKEN_Star:
             case TOKEN_Slash:
                 Append(node.ToString());
+                break;
+            case TOKEN_Equal:
+            case TOKEN_NotEqual:
+                BeAssert(nullptr != dynamic_cast<ComparisonNodeCP>(&node));
+                HandleEqualtyNode(static_cast<ComparisonNodeCR>(node));
                 break;
             case TOKEN_StringConst:
                 BeAssert(nullptr != dynamic_cast<LiteralNode const*>(&node) 
@@ -1341,11 +1370,32 @@ NodePtr ECExpressionsCache::Get(Utf8CP expression) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OptimizedExpressionPtr ECExpressionsCache::GetOptimized(Utf8CP expression) const
+    {
+    auto iter = m_optimizedCache.find(expression);
+    if (m_optimizedCache.end() == iter)
+        return nullptr;
+    return iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const {return m_optimizedCache.end() != m_optimizedCache.find(expression);}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECExpressionsCache::Add(Utf8CP expression, Node& node) {m_cache.Insert(expression, &node);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) { m_optimizedCache.Insert(expression, &node); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Clear() {m_cache.clear();}
+void ECExpressionsCache::Clear() {m_cache.clear(); m_optimizedCache.clear();}

@@ -145,3 +145,18 @@ Utf8StringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) c
 * @bsimethod                                    Kelly.Shiptoski                 06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentRelatedInstancesSpecification::SetRelatedClassNames (Utf8StringCR value) { m_relatedClassNames = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ContentRelatedInstancesSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = ContentSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_skipRelatedLevel, sizeof(m_skipRelatedLevel));
+    md5.Add(&m_isRecursive, sizeof(m_isRecursive));
+    md5.Add(m_instanceFilter.c_str(), m_instanceFilter.size());
+    md5.Add(&m_requiredDirection, sizeof(m_requiredDirection));
+    md5.Add(m_relationshipClassNames.c_str(), m_relationshipClassNames.size());
+    md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
+    return md5;
+    }

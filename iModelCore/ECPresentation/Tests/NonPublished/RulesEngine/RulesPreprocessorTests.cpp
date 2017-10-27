@@ -237,7 +237,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_NoConditions)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     rules->AddPresentationRule(*new RootNodeRule("", 1, false, TargetTree_MainTree, false));
-    rules->GetRootNodesRules()[0]->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification());
     
     RulesPreprocessor::RootNodeRuleParameters params(s_project->GetECDbCR(), *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
@@ -251,7 +251,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_RulesSortedByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     rule = new RootNodeRule("", 2, false, TargetTree_MainTree, false);
     rule->SetStopFurtherProcessing(true);
@@ -269,9 +269,9 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_SpecsSortedByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     rules->AddPresentationRule(*new RootNodeRule("", 1, false, TargetTree_MainTree, false));
-    rules->GetRootNodesRules()[0]->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(2, false, false, false, false, false, ""));
-    rules->GetRootNodesRules()[0]->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(3, false, false, false, false, false, ""));
-    rules->GetRootNodesRules()[0]->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, ""));
+    rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(2, false, false, false, false, false, ""));
+    rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(3, false, false, false, false, false, ""));
+    rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, ""));
     
     RulesPreprocessor::RootNodeRuleParameters params(s_project->GetECDbCR(), *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
     RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
@@ -288,10 +288,10 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithConditions)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     RootNodeRule* rule = new RootNodeRule("1 = 2", 1, false, TargetTree_MainTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     rule = new RootNodeRule("1 = 1", 1, false, TargetTree_MainTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     
     RulesPreprocessor::RootNodeRuleParameters params(s_project->GetECDbCR(), *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
@@ -306,13 +306,13 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithTargetTree)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, true, "1"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, true, "1"));
     rules->AddPresentationRule(*rule);
     rule = new RootNodeRule("", 1, false, TargetTree_SelectionTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, true, "2"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, true, "2"));
     rules->AddPresentationRule(*rule);
     rule = new RootNodeRule("", 1, false, TargetTree_Both, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, true, false, false, true, true, "3"));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, true, "3"));
     rules->AddPresentationRule(*rule);
     
     // note: using "supported schemas" as a way to know which rule the specification came from
@@ -343,7 +343,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithOnlyIfNotHandled)
     RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
     rules->AddPresentationRule(*rule);
     rule = new RootNodeRule("", 1, true, TargetTree_MainTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     
     RulesPreprocessor::RootNodeRuleParameters params(s_project->GetECDbCR(), *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
@@ -359,12 +359,12 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithStopFurtherProcess
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
     rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
     rule->SetStopFurtherProcessing(true);
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
     
     RulesPreprocessor::RootNodeRuleParameters params(s_project->GetECDbCR(), *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
@@ -381,12 +381,12 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_IncludesSpecsFromSubCo
     RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
     
     SubCondition* subcondition = new SubCondition("1 = 1");
-    subcondition->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
-    rule->GetSubConditionsR().push_back(subcondition);
+    subcondition->AddSpecification(*new AllInstanceNodesSpecification());
+    rule->AddSubCondition(*subcondition);
 
     SubCondition* subcondition2 = new SubCondition();
-    subcondition2->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
-    subcondition->GetSubConditionsR().push_back(subcondition2);
+    subcondition2->AddSpecification(*new AllInstanceNodesSpecification());
+    subcondition->AddSubCondition(*subcondition2);
 
     rules->AddPresentationRule(*rule);
     
@@ -402,7 +402,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
+    rules->GetChildNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification());
     
     TestNavNodePtr node = TestNavNode::Create();
     RulesPreprocessor::ChildNodeRuleParameters params(s_project->GetECDbCR(), *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
@@ -423,24 +423,24 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationId)
 
     AllInstanceNodesSpecification* spec1 = new AllInstanceNodesSpecification();
     ChildNodeRule* nestedRule = new ChildNodeRule();
-    nestedRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "one"));
-    nestedRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "two"));
-    spec1->GetNestedRules().push_back(nestedRule);
-    spec1->GetNestedRules().push_back(stopRule);
-    rule->GetSpecificationsR().push_back(spec1);
+    nestedRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "one"));
+    nestedRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "two"));
+    spec1->AddNestedRule(*nestedRule);
+    spec1->AddNestedRule(*stopRule);
+    rule->AddSpecification(*spec1);
 
     AllInstanceNodesSpecification* spec2 = new AllInstanceNodesSpecification();
     nestedRule = new ChildNodeRule();
-    nestedRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "three"));
-    spec2->GetNestedRules().push_back(nestedRule);
-    spec2->GetNestedRules().push_back(new ChildNodeRule(*stopRule));
-    rule->GetSpecificationsR().push_back(spec2);
+    nestedRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "three"));
+    spec2->AddNestedRule(*nestedRule);
+    spec2->AddNestedRule(*new ChildNodeRule(*stopRule));
+    rule->AddSpecification(*spec2);
 
     rules->AddPresentationRule(*rule);
     
     TestNavNodePtr node = TestNavNode::Create();
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec1->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec1->GetHash());
     RulesPreprocessor::ChildNodeRuleParameters params1(s_project->GetECDbCR(), *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
     ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params1);
 
@@ -450,7 +450,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationId)
     ASSERT_STREQ("one", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
     ASSERT_STREQ("two", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
 
-    nodeExtendedDataWriter.SetSpecificationId(spec2->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec2->GetHash());
     RulesPreprocessor::ChildNodeRuleParameters params2(s_project->GetECDbCR(), *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
     specs = RulesPreprocessor::GetChildNodeSpecifications(params2);
     // all sub-specs of the the spec that generated the node
@@ -474,22 +474,22 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationIdWithR
     spec->SetSupportedSchemas("requested");
 
     ChildNodeRule* nestedRule = new ChildNodeRule();
-    nestedRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "one"));
-    nestedRule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification(1, false, false, false, false, false, "two"));
-    spec->GetNestedRules().push_back(nestedRule);
+    nestedRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "one"));
+    nestedRule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "two"));
+    spec->AddNestedRule(*nestedRule);
     ChildNodeRule* stopRule = new ChildNodeRule();
     stopRule->SetStopFurtherProcessing(true);
-    spec->GetNestedRules().push_back(stopRule);
+    spec->AddNestedRule(*stopRule);
 
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     ChildNodeRule* rule = new ChildNodeRule();
-    rule->GetSpecificationsR().push_back(new AllInstanceNodesSpecification());
-    rule->GetSpecificationsR().push_back(spec);
+    rule->AddSpecification(*new AllInstanceNodesSpecification());
+    rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
     TestNavNodePtr node = TestNavNode::Create();
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
     nodeExtendedDataWriter.SetRequestedSpecification(true);
 
     RulesPreprocessor::ChildNodeRuleParameters params(s_project->GetECDbCR(), *node, *rules, TargetTree_MainTree, m_userSettings, nullptr, m_expressionsCache);
@@ -933,12 +933,12 @@ TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_DoesNotFindRulesDefinedDee
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
-    nestedChildNodeRule->GetCustomizationRulesR().push_back(new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
-    spec->GetNestedRules().push_back(nestedChildNodeRule);
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new GroupingRule("", 1, false, "TestSchemaName2", "", "", "", ""));
+    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
+    spec->AddNestedRule(*nestedChildNodeRule);
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName2", "", "", "", ""));
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, spec->GetId(), s_project->GetECDbCR(), *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, spec->GetHash(), s_project->GetECDbCR(), *rules, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     // Returns only root level and nested level customization rules, because specification nested rule doesn't have specification 
     ASSERT_EQ(2, groupingRules.size());
@@ -958,13 +958,13 @@ TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_FindsMostlyNestedRule_Retu
 
     AllInstanceNodesSpecification* nestedSpec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
-    nestedChildNodeRule->GetCustomizationRulesR().push_back(new GroupingRule("", 2, false, "TestSchemaName2", "", "", "", ""));
-    nestedChildNodeRule->GetSpecificationsR().push_back(nestedSpec);
-    spec->GetNestedRules().push_back(nestedChildNodeRule);
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
+    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 2, false, "TestSchemaName2", "", "", "", ""));
+    nestedChildNodeRule->AddSpecification(*nestedSpec);
+    spec->AddNestedRule(*nestedChildNodeRule);
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, nestedSpec->GetId(), s_project->GetECDbCR(), *rules, m_userSettings, nullptr, m_expressionsCache);
+    RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, nestedSpec->GetHash(), s_project->GetECDbCR(), *rules, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
     // Returns all rules from all nested levels
     ASSERT_EQ(3, groupingRules.size());
@@ -982,13 +982,13 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_SamePriorit
     rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new LabelOverride("", 5, "LabelOverrideLabelValue1", "LabelOverrideDescriptionValue"));
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new LabelOverride("", 5, "LabelOverrideLabelValue2", "LabelOverrideDescriptionValue2"));
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new LabelOverride("", 5, "LabelOverrideLabelValue1", "LabelOverrideDescriptionValue"));
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new LabelOverride("", 5, "LabelOverrideLabelValue2", "LabelOverrideDescriptionValue2"));
 
     TestNavNodePtr node = TestNavNode::Create();
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
     RulesPreprocessor::CustomizationRuleParameters params(s_project->GetECDbCR(), *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
@@ -1006,13 +1006,13 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_DifferentPr
     rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new ImageIdOverride("", 1, "ImageIdOverrideTestValue1"));
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new ImageIdOverride("", 3, "ImageIdOverrideTestValue2"));
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new ImageIdOverride("", 1, "ImageIdOverrideTestValue1"));
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new ImageIdOverride("", 3, "ImageIdOverrideTestValue2"));
 
     TestNavNodePtr node = TestNavNode::Create();
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
     RulesPreprocessor::CustomizationRuleParameters params(s_project->GetECDbCR(), *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
     ImageIdOverrideCP imageOverride = RulesPreprocessor::GetImageIdOverride(params);
@@ -1031,12 +1031,12 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_Diffe
     rules->AddPresentationRule(*new StyleOverride("", 2, "Green", "Red", "Bold"));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new StyleOverride("", 1, "Blue", "Red", "Bold"));
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new StyleOverride("", 1, "Blue", "Red", "Bold"));
 
     TestNavNodePtr node = TestNavNode::Create();
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
     RulesPreprocessor::CustomizationRuleParameters params(s_project->GetECDbCR(), *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
@@ -1055,12 +1055,12 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_SameP
     rules->AddPresentationRule(*new CheckBoxRule("", 1, false, "CheckBoxPropertyName2", false, false, ""));
     
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new CheckBoxRule("", 1, false, "CheckBoxPropertyName1", false, false, ""));
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new CheckBoxRule("", 1, false, "CheckBoxPropertyName1", false, false, ""));
 
     TestNavNodePtr node = TestNavNode::Create(); 
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
     RulesPreprocessor::CustomizationRuleParameters params(s_project->GetECDbCR(), *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
     CheckBoxRuleCP checkBox = RulesPreprocessor::GetCheckboxRule(params);
@@ -1078,13 +1078,13 @@ TEST_F(RulesPreprocessorTests, GetCustomizationRule_WithConditions)
     rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    rules->GetChildNodesRules()[0]->GetSpecificationsR().push_back(spec);
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new LabelOverride("2=3", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
-    rules->GetChildNodesRules()[0]->GetCustomizationRulesR().push_back(new LabelOverride("2=2", 1, "LabelOverrideLabelValue2", "LabelOverrideDescriptionValue2"));
+    rules->GetChildNodesRules()[0]->AddSpecification(*spec);
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new LabelOverride("2=3", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new LabelOverride("2=2", 1, "LabelOverrideLabelValue2", "LabelOverrideDescriptionValue2"));
 
     TestNavNodePtr node = TestNavNode::Create();
     NavNodeExtendedData nodeExtendedDataWriter(*node);
-    nodeExtendedDataWriter.SetSpecificationId(spec->GetId());
+    nodeExtendedDataWriter.SetSpecificationHash(spec->GetHash());
 
     RulesPreprocessor::CustomizationRuleParameters params(s_project->GetECDbCR(), *node, nullptr, *rules, m_userSettings, nullptr, m_expressionsCache);
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);

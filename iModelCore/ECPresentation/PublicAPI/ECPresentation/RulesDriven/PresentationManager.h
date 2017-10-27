@@ -52,7 +52,7 @@ typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationCo
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener
+struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener, IConnectionsListener
 {
     struct ECDbStatementsCache;
     struct ECDbRelatedPathsCache;
@@ -130,7 +130,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     struct ContentOptions : JsonCppAccessor
         {
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_UseCache;
 
         //! Constructor. Creates a read-only accessor.
         ContentOptions(JsonValueCR data) : JsonCppAccessor(data) {}
@@ -143,8 +142,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ContentOptions(Utf8CP rulesetId) : JsonCppAccessor() {SetRulesetId(rulesetId);}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
-        //! @param[in] useCache Defines whether content caching is enabled
-        ContentOptions(Utf8CP rulesetId, bool useCache) : JsonCppAccessor() {SetRulesetId(rulesetId); SetUseCache(useCache);}
+        ContentOptions(Utf8StringCR rulesetId) : ContentOptions(rulesetId.c_str()) {}
         
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
@@ -152,11 +150,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         Utf8CP GetRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId) ? GetJson()[OPTION_NAME_RulesetId].asCString() : "";}
         //! Set the ruleset ID.
         void SetRulesetId(Utf8CP rulesetId) {AddMember(OPTION_NAME_RulesetId, rulesetId);}
-
-        //! Get whether cache should be used
-        bool GetUseCache() const {return GetJson().isMember(OPTION_NAME_UseCache) ? GetJson()[OPTION_NAME_UseCache].asBool() : true;}
-        //! Set whether cache should be used
-        void SetUseCache(bool useCache) {AddMember(OPTION_NAME_UseCache, useCache);}
         };
 
 private:
@@ -180,6 +173,7 @@ private:
     IPropertyCategorySupplier* m_categorySupplier;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     ILocalizationProvider const* m_localizationProvider;
+    bmap<ECDb const*, RuleSetLocaterPtr> m_embeddedRuleSetLocaters;
     
 //__PUBLISH_SECTION_END__
 private:
@@ -209,6 +203,9 @@ protected:
 
     // IUserSettingsChangeListener
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
+
+    // IConnectionListener
+    ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
     
     // IECPresentationManager: Navigation
     ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetRootNodes(ECDbR, PageOptionsCR, JsonValueCR) override;
@@ -226,6 +223,7 @@ protected:
     ECPRESENTATION_EXPORT void _OnAllNodesCollapsed(ECDbR, JsonValueCR options) override;
     
     // IECPresentationManager: Content
+    ECPRESENTATION_EXPORT bvector<SelectClassInfo> _GetContentClasses(ECDbR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR) override;
     ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(ECDbR, Utf8CP preferredDisplayType, SelectionInfo const&, JsonValueCR) override;
     ECPRESENTATION_EXPORT ContentCPtr _GetContent(ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT size_t _GetContentSetSize(ECDbR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override;
@@ -236,7 +234,9 @@ protected:
 public:
     //! Constructor.
     //! @param[in] paths Application paths provider.
-    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Paths const& paths);
+    //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep this enabled unless being used
+    //! for testing.
+    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Paths const& paths, bool disableDiskCache = false);
 
     //! Destructor.
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManager();
@@ -256,7 +256,7 @@ public:
     //! Set the selection manager. 
     //! @details Selection manager is used to listen for selection events and invalidate caches 
     //! that depend on selection.
-    ECPRESENTATION_EXPORT void SetSelectionManager(SelectionManagerR);
+    ECPRESENTATION_EXPORT void SetSelectionManager(SelectionManagerP);
     
     //! Set custom localization provider. By default BeSQLite::L10N is used.
     ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const*);

@@ -24,12 +24,15 @@ SubCondition can be used in ChildNodeRule or RootNodeRule in order to separate
 specifications by using sub-conditions.
 * @bsiclass                                     Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SubCondition
+struct SubCondition : HashableBase
     {
     private:
         Utf8String                 m_condition;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
+
+    protected:
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -55,12 +58,15 @@ struct SubCondition
 
         //! Collection of sub-conditions that can be used to separate specifications.
         ECPRESENTATION_EXPORT SubConditionList const&        GetSubConditions (void) const;
-        ECPRESENTATION_EXPORT SubConditionList&              GetSubConditionsR (void);
+
+        //! Add sub-condition.
+        ECPRESENTATION_EXPORT void AddSubCondition(SubConditionR subCondition);
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
         ECPRESENTATION_EXPORT ChildNodeSpecificationList const& GetSpecifications (void) const;
-        ECPRESENTATION_EXPORT ChildNodeSpecificationList&    GetSpecificationsR (void);
 
+        //! Add ChildNodeSpecification.
+        ECPRESENTATION_EXPORT void AddSpecification(ChildNodeSpecificationR specification);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,6 +92,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
 
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT ChildNodeRule ();
@@ -103,16 +112,22 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
         ECPRESENTATION_EXPORT RuleTargetTree                 GetTargetTree (void) const;
 
         //! Collection of sub-conditions that can be used to separate specifications.
-        ECPRESENTATION_EXPORT SubConditionList&              GetSubConditionsR (void);
         ECPRESENTATION_EXPORT SubConditionList const&        GetSubConditions (void) const;
 
+        //! Add sub-condition.
+        ECPRESENTATION_EXPORT void AddSubCondition(SubConditionR subCondition);
+
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECPRESENTATION_EXPORT ChildNodeSpecificationList&        GetSpecificationsR (void);
         ECPRESENTATION_EXPORT ChildNodeSpecificationList const&  GetSpecifications (void) const;
 
+        //! Add ChildNodesSpecification.
+        ECPRESENTATION_EXPORT void AddSpecification(ChildNodeSpecificationR specification);
+
         //! Nested customization rules applied on nodes created by this rule
-        ECPRESENTATION_EXPORT ChildNodeCustomizationRuleList&         GetCustomizationRulesR (void);
         ECPRESENTATION_EXPORT ChildNodeCustomizationRuleList const&   GetCustomizationRules (void) const;
+
+        //! Add customization rule.
+        ECPRESENTATION_EXPORT void AddCustomizationRule(CustomizationRuleR customizationRule);
 
         //! If this flag is set, this rule will stop any further processing of rules.
         //! This helps in cases when recursion suppression is needed.
@@ -143,6 +158,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
+
+        //! Computes rule hash.
+        ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

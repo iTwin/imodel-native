@@ -15,19 +15,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ChildNodeSpecification::GetNewSpecificationId ()
-    {
-    static int counter = 0;
-    return counter++;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecification::ChildNodeSpecification ()
 : m_priority (1000), m_alwaysReturnsChildren (false), m_hideNodesInHierarchy (false), m_hideIfNoChildren (false), m_extendedData (L""), m_doNotSort (false)
     {
-    m_id = GetNewSpecificationId ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -36,14 +26,13 @@ ChildNodeSpecification::ChildNodeSpecification ()
 ChildNodeSpecification::ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren)
 : m_priority (priority), m_alwaysReturnsChildren (alwaysReturnsChildren), m_hideNodesInHierarchy (hideNodesInHierarchy), m_hideIfNoChildren (hideIfNoChildren), m_extendedData (L""), m_doNotSort (false)
     {
-    m_id = GetNewSpecificationId ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecification::ChildNodeSpecification(ChildNodeSpecificationCR other)
-    : m_priority(other.m_priority), m_id(other.m_id), m_alwaysReturnsChildren(other.m_alwaysReturnsChildren),
+    : m_priority(other.m_priority), m_alwaysReturnsChildren(other.m_alwaysReturnsChildren),
     m_hideNodesInHierarchy(other.m_hideNodesInHierarchy), m_hideIfNoChildren(other.m_hideIfNoChildren),
     m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData)
     {
@@ -125,19 +114,6 @@ int ChildNodeSpecification::GetPriority (void) const
 void ChildNodeSpecification::SetPriority (int value) { m_priority = value; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::SetId(int id) {m_id = id;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ChildNodeSpecification::GetId (void) const
-    {
-    return m_id;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const
@@ -211,7 +187,57 @@ void ChildNodeSpecification::SetDoNotSort (bool doNotSort)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRuleList& ChildNodeSpecification::GetNestedRules (void)
+ChildNodeRuleList const& ChildNodeSpecification::GetNestedRules (void)
     {
     return m_nestedRules;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::AddNestedRule(ChildNodeRuleR rule)
+    {
+    InvalidateHash();
+    rule.SetParent(this);
+    m_nestedRules.push_back(&rule);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance)
+    {
+    InvalidateHash();
+    relatedInstance.SetParent(this);
+    m_relatedInstances.push_back(&relatedInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ChildNodeSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
+    md5.Add(&m_priority, sizeof(m_priority));
+    md5.Add(&m_alwaysReturnsChildren, sizeof(m_alwaysReturnsChildren));
+    md5.Add(&m_hideNodesInHierarchy, sizeof(m_hideNodesInHierarchy));
+    md5.Add(&m_hideIfNoChildren, sizeof(m_hideIfNoChildren));
+    md5.Add(&m_doNotSort, sizeof(m_doNotSort));
+    md5.Add(m_extendedData.c_str(), m_extendedData.size());
+    CharCP name = _GetXmlElementName();
+    md5.Add(name, strlen(name));
+
+    Utf8String currentHash = md5.GetHashString();
+    for (RelatedInstanceSpecificationP spec : m_relatedInstances)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (ChildNodeRuleP rule : m_nestedRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
+    return md5;
     }

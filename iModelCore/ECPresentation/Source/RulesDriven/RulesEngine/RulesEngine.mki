@@ -77,6 +77,20 @@ $(o)ContentCache$(oext):                 $(RulesEngineSourceDirectory)ContentCac
 
 $(o)SelectionSyncHandler$(oext):         $(RulesEngineSourceDirectory)SelectionSyncHandler.cpp $(RulesEngineDependencies)
 
+$(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressionOptimizer.cpp $(RulesEngineDependencies)
+
+$(o)ContentFieldEditors$(oext):          $(RulesEngineSourceDirectory)ContentFieldEditors.cpp $(RulesEngineDependencies)
+
+$(o)ContentClassesLocater$(oext):        $(RulesEngineSourceDirectory)ContentClassesLocater.cpp $(RulesEngineDependencies)
+
+$(o)ContentDescriptorBuilder$(oext):     $(RulesEngineSourceDirectory)ContentDescriptorBuilder.cpp $(RulesEngineDependencies)
+
+$(o)ContentSpecificationsHandler$(oext): $(RulesEngineSourceDirectory)ContentSpecificationsHandler.cpp $(RulesEngineDependencies)
+
+$(o)PropertyInfoStore$(oext):            $(RulesEngineSourceDirectory)PropertyInfoStore.cpp $(RulesEngineDependencies)
+
+$(o)RuleSetEmbedder$(oext):              $(RulesEngineSourceDirectory)RuleSetEmbedder.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =
