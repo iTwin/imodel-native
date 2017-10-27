@@ -1615,7 +1615,9 @@ TEST(HSV,PrintFloatingPointGranularity)
         }
     }
 // This tests if the current CPU settings and atan2 function treat atan2(-0.0,-1) differently from atan2 (+0,-1)
-// 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Angle,Atan2Zero)
     {
     double thetaPlus = atan2(0.0, -1.0);

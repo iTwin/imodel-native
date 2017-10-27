@@ -38,6 +38,10 @@ DPlane3d MakePlane (DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR vectorC)
     DVec3d normal = DVec3d::FromNormalizedCrossProduct (vectorC, vectorAB);
     return DPlane3d::FromOriginAndNormal (pointA, normal);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonOps,PlaneIntersection)
     {
     double a = 3;
@@ -127,6 +131,10 @@ bool CheckClosestPoint (DSegment3dCR segment, bool extend0, bool extend1, double
     Check::EndScope ();
     return stat;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolygonOps,Extend01Test)
     {
     DSegment3d segment = DSegment3d::From (1,2,3, 7,11,13);

@@ -193,6 +193,9 @@ bool IsPointInOrOnPolyface (PolyfaceVisitorR visitor, DPoint3d xyz)
 
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,RayInclusion)
     {
     auto mesh = CreatePolyface_ExtrudedL (0,0,  10,5, 3,12, 7);
@@ -220,7 +223,9 @@ TEST(Polyface,RayInclusion)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceVisitor,StrokeSearch_scaledSheet)
     {
     int numEdge = 5;
@@ -291,6 +296,9 @@ TEST(PolyfaceVisitor,StrokeSearch_scaledSheet)
     Check::Size (10, edges.size ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceVisitor,StrokeSearch_Closed)
     {
     DgnConeDetail coneDetail (DPoint3d::From (0,0,0), DPoint3d::From (0,10,0), 1, 0.9, true);
@@ -370,6 +378,9 @@ bool CheckCounts ( bvector<PolyfacePolygonPicker::StrokePick> const &picks, size
     return numFail == 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceVisitor,StrokeSearch_PartiallyVisible)
     {
     auto mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -453,6 +464,9 @@ TEST(PolyfaceVisitor,StrokeSearch_PartiallyVisible)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceVisitor,SmallFacetA)
     {
     bvector<DPoint3d> points

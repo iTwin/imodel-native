@@ -178,8 +178,9 @@ TEST(Clip,XYVisibilityAB)
     Check::ClearGeometry ("Clip.XYVisibilityAB");
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Polyface,PartitionReadIndicesByNormal)
     {
     IFacetOptionsPtr options = IFacetOptions::Create ();
