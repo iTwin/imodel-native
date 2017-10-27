@@ -14,7 +14,7 @@
         <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
@@ -42,7 +42,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
@@ -63,7 +63,7 @@
     </Part>
     
     <Part Name="AwsTraverser" BentleyBuildMakeFile="RealityAdmin\AwsTraverser\AwsTraverser.mke">
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <Bindings>
@@ -72,7 +72,7 @@
     </Part>
 
     <Part Name="RealityDataServicePerformanceTests" BentleyBuildMakeFile="Tests\PerformanceTests\RealityDataServicePerformanceTests.mke">
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <Bindings>
@@ -81,7 +81,7 @@
     </Part>
     
     <Part Name="LoadTestBase" BentleyBuildMakeFile="RealityAdmin\LoadTesters\LoadTestBase.mke">
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="BentleyDesktopClient-Api"/>
@@ -92,7 +92,7 @@
     </Part>
     
     <Part Name="GCSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\GCSLoadTester\GCSLoadTest.mke">
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
@@ -103,7 +103,7 @@
     </Part>
     
     <Part Name="RDSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\RDSLoadTester\RDSLoadTest.mke">
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="BentleyDesktopClient-Api"/>
@@ -114,7 +114,7 @@
     </Part>
     
     <Part Name="3CSLoadTest" BentleyBuildMakeFile="RealityAdmin\LoadTesters\3CSLoadTester\3CSLoadTest.mke">
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
         <SubPart PartName="BentleyDesktopClient-Api"/>
@@ -150,7 +150,7 @@
     </Part>
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
@@ -168,7 +168,7 @@
     </Part>
 
     <Part Name="DownloadEngineExample" BentleyBuildMakeFile="RealityPlatform\Example\DownloadEngineExample.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -178,7 +178,7 @@
     </Part>
 
     <Part Name="RealityDataServiceExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceExample.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -188,7 +188,7 @@
     </Part>
 
     <Part Name="RealityDataServiceErrorReportingExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceErrorReportingExample.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -198,7 +198,7 @@
     </Part>
 
     <Part Name="RealityDataServiceUploader" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceUploader.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -208,7 +208,7 @@
     </Part>
     
     <Part Name="RealityDataServiceDownloader" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceDownloader.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -218,7 +218,7 @@
     </Part>
 
     <Part Name="RealityDataServiceToolsExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceToolsExample.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -228,7 +228,7 @@
     </Part>
 
     <Part Name="RealityDataServiceConsole" BentleyBuildMakeFile="RealityAdmin\RealityDataServiceConsole\RealityDataServiceConsole.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -239,7 +239,7 @@
     </Part>
 
     <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatform\Example\WSGServicesExample.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -249,7 +249,7 @@
     </Part>
 
     <Part Name="GeoCoordinationServiceExample" BentleyBuildMakeFile="RealityPlatform\Example\GeoCoordinationServiceExample.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
@@ -259,7 +259,7 @@
     </Part>
     
     <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityAdmin\Example\ConversionToolsTester.mke">
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPackage"/>
