@@ -811,7 +811,7 @@ struct DGN_point_value : ScalarFunction
 /**
     An rtree MATCH function that only accepts objects from the spatial index whose range overlap an aabb (axis-aligned bounding box).
     <p><b>Example (C++)</b>
-    <p>Here is an example of DGN_spatial_overlap_aabb that searches for elements using both an axis-aligned bounding box and addtional WHERE criteria.
+    <p>Here is an example of DGN_spatial_overlap_aabb that searches for elements using both an axis-aligned bounding box and additonal WHERE criteria.
     __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_spatial_overlap_aabb.sampleCode
 */
 void DGN_spatial_overlap_aabb(DGN_aabb);
