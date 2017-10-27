@@ -747,8 +747,8 @@ struct TestRegistry : RefCounted<IModelBridgeRegistry>
 static void populateRegistryWithFooBar(TestRegistry& testRegistry, WCharCP bridgeRegSubKey)
     {
     testRegistry.m_bridgeRegSubKey = bridgeRegSubKey;
-    iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1");
-    iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2");
+    iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2", "");
     testRegistry.m_docPropsByFilename[BeFileName(L"Foo")] = fooDocProps;
     testRegistry.m_docPropsByFilename[BeFileName(L"Bar")] = barDocProps;
     testRegistry.m_docPropsByGuid[s_fooGuid] = fooDocProps;
