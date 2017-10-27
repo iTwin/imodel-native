@@ -20,6 +20,8 @@
         <SubProduct ProductName="DwgImporterTests" />
         <!-- Internal sample parts -->
         <SubPart PartName="Samples" />
+        <!-- Run unit tests -->
+        <SubPart PartName="RunDwgImporterTests" />
     </Part>
 
     <!-- Build the resources as a separate SubPart which will be shared by both parts to avoid sharing issues from multithreads -->
@@ -165,7 +167,8 @@
         <ProductDirectory Name="VendorNotices"              Path="Notices" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="Notices" />
         <ProductDirectory Name="VendorNotices"              Deliver="false" LibType="static" />
-        <ProductDirectory Name="Assemblies"                                                 RelativeTo="ApplicationRoot" />
+        <ProductDirectory Name="Assemblies"                 Deliver="false" LibType="static" />
+        <ProductDirectory Name="Assemblies"                 Deliver="true"                  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="PublisherLoggingConfigXml"                                  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="Assets"                     Path="Assets"                   RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="Assets"                     Path="Assets" LibType="static"  RelativeTo="ApplicationRoot" />
