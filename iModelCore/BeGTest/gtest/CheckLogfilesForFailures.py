@@ -140,6 +140,9 @@ if __name__ == '__main__':
     dir = sys.argv[1]
     breakonfailure = False
 
+    if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
+        breakonfailure = True
+    
     advicestr = ''
     summarystr = ''
     exename = ''
@@ -170,4 +173,3 @@ if __name__ == '__main__':
 
     print advicestr
     exit(breakonfailure)
-
