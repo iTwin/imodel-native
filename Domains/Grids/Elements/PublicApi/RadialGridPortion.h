@@ -49,7 +49,7 @@ public:
         //! @param[in] height               height of grid lines
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 0)) :
+                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 1)) :
             T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()), Dgn::DgnCode(model->GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_RadialGridPortion), modeledElementId, name))),
             m_model(model),
             m_planeCount(planeCount),
