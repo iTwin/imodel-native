@@ -53,7 +53,7 @@
 
         <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
         <!--SubPart PartName="OpenGLSubParts"/-->
-        <SubPart PartName="ttlapi"             PartFile="ttl"              Repository="libsrc-ttl"/>
+        <SubPart PartName="Ttl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="Loki" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="FastDelegate" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <!--<SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>-->
