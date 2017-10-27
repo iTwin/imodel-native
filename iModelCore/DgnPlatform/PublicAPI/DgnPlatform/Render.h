@@ -1944,7 +1944,6 @@ namespace Quantization
 //=======================================================================================
 //! Represents a DPoint3d quantized within some known range to a triplet of 16-bit
 //! integers. This is a lossy compression technique.
-//! known range.
 // @bsistruct                                                   Ray.Bentley     01/2017
 //=======================================================================================
 struct QPoint3d
