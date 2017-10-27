@@ -8,20 +8,85 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include "FakeRenderSystem.h"
+#include <DgnPlatform/TileIO.h>
 
 using namespace FakeRender;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectEqualDouble(double a, double b)
+    {
+    EXPECT_TRUE(DoubleOps::AlmostEqual(a, b));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectEqualPoints(DPoint3dCR a, DPoint3dCR b)
+    {
+    ExpectEqualDouble(a.x, b.x);
+    ExpectEqualDouble(a.y, b.y);
+    ExpectEqualDouble(a.z, b.z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectEqualRange(DRange3dCR a, DRange3dCR b)
+    {
+    ExpectEqualPoints(a.low, b.low);
+    ExpectEqualPoints(a.high, b.high);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectEqualBytes(ByteStream const& a, ByteStream const& b)
+    {
+    EXPECT_EQ(a.size(), b.size());
+    if (a.size() == b.size())
+        EXPECT_EQ(0, memcmp(a.data(), b.data(), a.size()));
+    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/17
 //=======================================================================================
-struct DisjointCurvesTest : DgnDbTestFixture, GraphicProcessor
+struct GraphicProcessorTest : DgnDbTestFixture, GraphicProcessor
 {
 protected:
     GraphicProcessorSystem m_system;
+
+    GraphicProcessorTest() : m_system(*this) { }
+
+    template<typename T> void PopulateGraphic(T populateGraphic)
+        {
+        // Using view coords because have no viewport from which to determine appropriate facet tolerance
+        GraphicBuilderPtr gf = m_system._CreateGraphic(GraphicBuilder::CreateParams::View(GetDgnDb()));
+        ActivateGraphicParams(*gf);
+        populateGraphic(*gf);
+        gf->Finish();
+        }
+
+    void ActivateGraphicParams(GraphicBuilderR gf, ColorDef fillColor = ColorDef::Blue())
+        {
+        GeometryParams geomParams(GetDefaultCategoryId());
+        geomParams.Resolve(GetDgnDb(), nullptr);
+        GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::Red(), fillColor, 5, LinePixels::Solid);
+        gf.ActivateGraphicParams(gfParams, &geomParams);
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/17
+//=======================================================================================
+struct DisjointCurvesTest : GraphicProcessorTest
+{
+protected:
     uint32_t m_numDisjoint = 0;
     uint32_t m_numContinuous = 0;
 
-    DisjointCurvesTest() : m_system(*this) { }
+    DisjointCurvesTest() { }
 
     void ExpectDisjoint(uint32_t num) const { EXPECT_EQ(num, m_numDisjoint); }
     void ExpectContinuous(uint32_t num) const { EXPECT_EQ(num, m_numContinuous); }
@@ -38,11 +103,7 @@ protected:
         {
         m_numDisjoint = m_numContinuous = 0;
 
-        // Using view coords because have no viewport from which to determine appropriate facet tolerance
-        GraphicBuilderPtr gf = m_system._CreateGraphic(GraphicBuilder::CreateParams::View(GetDgnDb()));
-        ActivateGraphicParams(*gf);
-        createGraphic(*gf);
-        gf->Finish();
+        PopulateGraphic(createGraphic);
 
         EXPECT_EQ(numDisjoint, m_numDisjoint);
         EXPECT_EQ(numContinuous, m_numContinuous);
@@ -50,11 +111,6 @@ protected:
 
     template<typename T> void ExpectDisjoint(T createGraphic) { Test(1, 0, createGraphic); }
     template<typename T> void ExpectContinuous(T createGraphic) { Test(0, 1, createGraphic); }
-
-    static void ActivateGraphicParams(GraphicBuilderR gf)
-        {
-        gf.SetSymbology(ColorDef::Red(), ColorDef::Blue(), 5);
-        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,4 +219,272 @@ TEST_F(DisjointCurvesTest, CurveVector)
     ExpectContinuous(addCurveVector);
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/17
+//=======================================================================================
+struct MeshBuilderTest : GraphicProcessorTest
+{
+    friend struct TestGraphic;
+protected:
+    FeatureTable    m_features;
+    MeshBuilderMap  m_builders;
+    uint64_t        m_curElemId = 0ull;
+
+    MeshBuilderTest() : m_features(100) { }
+
+    struct TestContext : ViewContext
+    {
+        SystemR m_system;
+
+        explicit TestContext(PrimitiveBuilderR gf) : m_system(gf.GetSystem())
+            {
+            SetDgnDb(gf.GetDgnDb());
+            Attach(gf.GetViewport(), DrawPurpose::NotSpecified);
+            }
+
+        SystemP _GetRenderSystem() const override { return &m_system; }
+        GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
+        GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
+    };
+
+    // Accumulates geometric primitives into a MeshBuilderMap.
+    struct TestGraphic : PrimitiveBuilder
+    {
+        MeshBuilderTest&    m_test;
+
+        TestGraphic(SystemR sys, CreateParamsCR params, MeshBuilderTest& test, DgnElementId elemId) : PrimitiveBuilder(sys, params, elemId), m_test(test)
+            {
+            // Using view coords so tolerance is trivially computable...
+            BeAssert(params.IsViewCoordinates());
+            }
+
+        GraphicPtr _FinishGraphic(GeometryAccumulatorR accum) override
+            {
+            TestContext context(*this);
+            GeometryOptions opts;
+            m_test.m_builders = accum.ToMeshBuilders(opts, ComputeTolerance(accum), &m_test.m_features, context);
+
+            return GetSystem()._CreateGraphicList(std::move(m_primitives), GetDgnDb());
+            }
+
+        void BeginNewElement() { SetElementId(m_test.GetNextElementId()); }
+    };
+
+    GraphicBuilderPtr CreateGraphic(SystemR sys, GraphicBuilder::CreateParamsCR params) override
+        {
+        m_features.clear();
+        return new TestGraphic(sys, params, *this, GetNextElementId());
+        }
+
+    DgnElementId GetNextElementId() { return DgnElementId(++m_curElemId); }
+    Render::Primitives::GeometryCollection GetGeometryCollection(ElementAlignedBox3dR contentRange, DPoint3dR centroid) const
+        {
+        contentRange = ElementAlignedBox3d(DRange3d::NullRange());
+        Render::Primitives::GeometryCollection geom;
+        for (auto const& kvp : m_features)
+            geom.Meshes().m_features.Insert(kvp.first, kvp.second);
+
+        for (auto& builder : m_builders)
+            {
+            MeshP mesh = builder.second->GetMesh();
+            if (!mesh->IsEmpty())
+                {
+                geom.Meshes().push_back(mesh);
+                if (contentRange.IsNull())
+                    contentRange = ElementAlignedBox3d(mesh->GetRange());
+                else
+                    contentRange.Extend(mesh->GetRange());
+                }
+            }
+
+        centroid.Interpolate(contentRange.low, 0.5, contentRange.high);
+        return geom;
+        }
+
+    void BuildGraphic(GraphicBuilderR gf);
+    void BeginNewElement(GraphicBuilderR gf)
+        {
+        BeAssert(nullptr != dynamic_cast<TestGraphic*>(&gf));
+        static_cast<TestGraphic&>(gf).BeginNewElement();
+        }
+
+    template<typename T> void RoundTripGeometryCollection(T populateGraphic);
+    template<typename T> void RoundTripMeshBuilders(T populateGraphic);
+
+    void RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, size_t nTotalElems);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Test that we can write a GeometryCollection to a binary+json stream, read it back,
+* and obtain an equivalent GeometryCollection.
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populateGraphic)
+    {
+    PopulateGraphic(populateGraphic);
+
+    // Write the geometry to a stream buffer
+    ElementAlignedBox3d contentRange;
+    DPoint3d centroid;
+    auto geom = GetGeometryCollection(contentRange, centroid);
+
+    GeometricModelR model = *GetDefaultPhysicalModel();
+    bool isLeaf = true;
+    TileTree::StreamBuffer writeBytes;
+    EXPECT_EQ(SUCCESS, TileTree::TileIO::WriteDgnTile(writeBytes, contentRange, geom, model, centroid, isLeaf));
+
+    // Read the geometry back from the buffer
+    ElementAlignedBox3d readContentRange;
+    Render::Primitives::GeometryCollection readGeom;
+    bool readIsLeaf = false;
+    writeBytes.SetPos(0);
+    EXPECT_TRUE(TileTree::TileIO::ReadStatus::Success == TileTree::TileIO::ReadDgnTile(readContentRange, readGeom, writeBytes, model, m_system, readIsLeaf));
+
+    EXPECT_EQ(isLeaf, readIsLeaf);
+    EXPECT_EQ(geom.Meshes().size(), readGeom.Meshes().size());
+    ExpectEqualRange(contentRange, readContentRange);
+
+    // Write it back to a stream buffer, confirm same bytes
+    TileTree::StreamBuffer roundTripBytes;
+    EXPECT_EQ(SUCCESS, TileTree::TileIO::WriteDgnTile(roundTripBytes, readContentRange, readGeom, model, centroid, readIsLeaf));
+    ExpectEqualBytes(writeBytes, roundTripBytes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that we can write a GeometryCollection to a binary+json stream and read it back
+* into a MeshBuilderMap, optionally omitting some elements when reading it back.
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void MeshBuilderTest::RoundTripMeshBuilders(T populateGraphic)
+    {
+    // Populate the graphic with various elements (1 per geometric primitive)
+    uint64_t firstElemId = m_curElemId + 1;
+
+    PopulateGraphic(populateGraphic);
+
+    uint64_t lastElemId = m_curElemId;
+    size_t nFeatures = m_features.size();
+    EXPECT_EQ(nFeatures, lastElemId + 1 - firstElemId);
+
+    DgnElementIdSet allElemIds;
+    for (uint64_t id = firstElemId; id <= lastElemId; id++)
+        allElemIds.insert(DgnElementId(id));
+
+    // Serialize to stream buffer
+    ElementAlignedBox3d contentRange;
+    DPoint3d centroid;
+    auto geom = GetGeometryCollection(contentRange, centroid);
+    TileTree::StreamBuffer writeBytes;
+    GeometricModelR model = *GetDefaultPhysicalModel();
+    EXPECT_EQ(SUCCESS, TileTree::TileIO::WriteDgnTile(writeBytes, contentRange, geom, model, centroid, true));
+
+    // Round-trip, omitting no elements
+    RoundTripMeshBuilders(writeBytes, DgnElementIdSet(), nFeatures);
+
+    // Round-trip, omitting all elements
+    RoundTripMeshBuilders(writeBytes, allElemIds, nFeatures);
+
+    // Round-trip, omitting one element
+    DgnElementIdSet skipElems;
+    skipElems.insert(*allElemIds.begin());
+    RoundTripMeshBuilders(writeBytes, skipElems, nFeatures);
+
+    // Round-trip, omitting all but one element
+    skipElems = allElemIds;
+    skipElems.erase(*allElemIds.begin());
+    RoundTripMeshBuilders(writeBytes, skipElems, nFeatures);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, size_t nTotalElems)
+    {
+    // Read into mesh builder map
+    m_builders.clear();
+    m_features.clear();
+    TileTree::TileIO::Flags flags;
+    writeBytes.SetPos(0);
+    GeometricModelR model = *GetDefaultPhysicalModel();
+    EXPECT_EQ(TileTree::TileIO::ReadStatus::Success, TileTree::TileIO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, skipElems));
+
+    // Confirm we really skipped the elems specified
+    EXPECT_EQ(nTotalElems - skipElems.size(), m_features.size());
+    for (auto const& skipElem : skipElems)
+        {
+        uint32_t featIndex;
+        EXPECT_FALSE(m_features.FindIndex(featIndex, Feature(skipElem, DgnCategory::GetDefaultSubCategoryId(GetDefaultCategoryId()), DgnGeometryClass::Primary)));
+        }
+
+    ElementAlignedBox3d readContentRange;
+    DPoint3d readCentroid;
+    auto geom = GetGeometryCollection(readContentRange, readCentroid);
+    EXPECT_EQ(nTotalElems == skipElems.size(), geom.Meshes().empty());
+
+    // Serialize the new geometry collection, compare to input
+    TileTree::StreamBuffer roundTripBytes;
+    EXPECT_EQ(SUCCESS, TileTree::TileIO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, readCentroid, true));
+    if (skipElems.empty())
+        ExpectEqualBytes(writeBytes, roundTripBytes);
+    else
+        EXPECT_TRUE(roundTripBytes.size() < writeBytes.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderTest::BuildGraphic(GraphicBuilderR gf)
+    {
+    DPoint2d pts[5] =
+        {
+        DPoint2d::From(0, 0),
+        DPoint2d::From(10, 0),
+        DPoint2d::From(10, 10),
+        DPoint2d::From(0, 10),
+        DPoint2d::From(0, 0)
+        };
+
+    auto adjustShapePts = [&]()
+        {
+        for (auto& pt : pts)
+            pt.y += 20;
+        };
+
+    gf.AddArc(DEllipse3d::FromCenterRadiusXY(DPoint3d::FromXYZ(50, 50, 0), 10), false, false);
+
+    BeginNewElement(gf);
+    gf.AddLineString2d(3, pts, 0);
+
+    BeginNewElement(gf);
+    gf.AddShape2d(5, pts, true, 0);
+
+    ColorDef fillColors[5] = { ColorDef::Orange(), ColorDef::Magenta(), ColorDef::Green(), ColorDef::White(), ColorDef::DarkRed() };
+    for (uint32_t i = 0; i < 5; i++)
+        {
+        adjustShapePts();
+        BeginNewElement(gf);
+        ActivateGraphicParams(gf, fillColors[i]);
+        gf.AddShape2d(5, pts, true, 0);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MeshBuilderTest, RoundTripTileIO)
+    {
+    SetupSeedProject();
+
+    RoundTripGeometryCollection([&](GraphicBuilderR gf) { BuildGraphic(gf); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MeshBuilderTest, RoundTripMeshBuilders)
+    {
+    SetupSeedProject();
+
+    RoundTripMeshBuilders([&](GraphicBuilderR gf) { BuildGraphic(gf); });
+    }
 

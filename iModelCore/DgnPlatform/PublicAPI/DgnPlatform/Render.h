@@ -264,6 +264,7 @@ struct Task : RefCounted<NonCopyableClass>
         RenderFrame,
         RenderTile,
         ResetTarget,
+        SetFlash,
         SetHiliteSet,
     };
 
@@ -1665,6 +1666,7 @@ struct ColorIndex
 
     ColorIndex() { Reset(); }
 
+    bool IsValid() const { return m_numColors > 0; }
     bool IsUniform() const { BeAssert(m_numColors > 0); return 1 == m_numColors; }
     bool HasAlpha() const { return IsUniform() ? 0 != (m_uniform & 0xff000000) : m_nonUniform.m_hasAlpha; }
 
@@ -2258,16 +2260,15 @@ public:
     MeshPolyline () : m_startDistance(0.0) { }
     MeshPolyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
     MeshPolyline (float startDistance, FPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     float GetStartDistance() const { return m_startDistance; }
     FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     
-
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
 };
-
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
@@ -2393,7 +2394,6 @@ struct Decorations
     DecorationListPtr   m_world;        // drawn with zbuffer, with default lighting, smooth shading
     DecorationListPtr   m_worldOverlay; // drawn in overlay mode, world units
     DecorationListPtr   m_viewOverlay;  // drawn in overlay mode, view units
-    DgnElementId        m_flashedElem;  // the ID of the element currently flashed by the locate cursor
 };
 
 //=======================================================================================
@@ -2600,12 +2600,11 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+    void clear() { m_map.clear(); }
 
     // Used by tile reader...
     void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
-
-
 };
 
 //=======================================================================================
@@ -3085,7 +3084,7 @@ protected:
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
-        static void RecordGraphicsStats();
+    static void RecordGraphicsStats();
     virtual void _OnDestroy() {}
     virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
     virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
@@ -3099,6 +3098,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
+    virtual void _SetFlashed(DgnElementId, double) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;

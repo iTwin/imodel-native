@@ -163,6 +163,11 @@ protected:
     ViewUndoStack m_backStack;
     EventHandlerList<Tracker> m_trackers;
     IViewportAnimatorPtr m_animator;
+    BeTimePoint m_flashUpdateTime;  // time the current flash started
+    double m_flashIntensity;        // current flash intensity from [0..1]
+    double m_flashDuration;         // the length of time that the flash intensity will increase (in seconds)
+    DgnElementId m_flashedElem;
+    DgnElementId m_lastFlashedElem;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
@@ -180,6 +185,7 @@ protected:
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
     DGNPLATFORM_EXPORT void Animate();
+    DGNVIEW_EXPORT bool ProcessFlash();
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
@@ -188,6 +194,8 @@ public:
     void SetFlashingTransparency(Byte val) {m_flashingTransparency = val;}
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
+
+    void SetFlashed(DgnElementId id, double duration) {m_lastFlashedElem = m_flashedElem; m_flashedElem = id; m_flashDuration = duration;}
 
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
 

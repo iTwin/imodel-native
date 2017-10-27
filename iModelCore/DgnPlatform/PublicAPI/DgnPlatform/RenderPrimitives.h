@@ -20,12 +20,10 @@ BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilderMap);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryList);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyface);
@@ -41,14 +39,11 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
-DEFINE_REF_COUNTED_PTR(MeshPart);
 DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
 
-typedef bvector<MeshInstance>           MeshInstanceList;
-typedef bvector<MeshPartPtr>            MeshPartList;
 typedef bvector<Polyface>               PolyfaceList;
 typedef bvector<Strokes>                StrokesList;
 typedef bvector<Render::MeshPolyline>   PolylineList;
@@ -249,21 +244,6 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct MeshInstance
-{
-private:
-    Feature     m_feature;
-    Transform   m_transform;
-public:
-    MeshInstance(FeatureCR feature, TransformCR transform) : m_feature(feature), m_transform(transform) { }
-
-    FeatureCR GetFeature() const { return m_feature; }
-    TransformCR GetTransform() const { return m_transform; }
-};
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct MeshList : bvector<MeshPtr>
@@ -275,28 +255,6 @@ struct MeshList : bvector<MeshPtr>
     FeatureTableCR  FeatureTable() const { return m_features; }
     FeatureTableR  FeatureTable()  { return m_features; }
 };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct MeshPart : RefCountedBase
-{
-private:
-    MeshList            m_meshes;
-    MeshInstanceList    m_instances;
-
-    MeshPart(MeshList&& meshes) : m_meshes(std::move(meshes)) { }
-
-    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
-public:
-    static MeshPartPtr Create(MeshList&& meshes) { return new MeshPart(std::move(meshes)); }
-
-    MeshList const& Meshes() const { return m_meshes; }
-    MeshList& Meshes() { return m_meshes; }
-    MeshInstanceList const& Instances() const { return m_instances; }
-    void AddInstance(MeshInstanceCR instance) { m_instances.push_back(instance); }
-};
-
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -364,6 +322,7 @@ private:
     bool    m_quantized;
 public:
     QVertex3d() { }
+    explicit QVertex3d(QPoint3dCR qpt) : m_q(*reinterpret_cast<Quantized const*>(&qpt)), m_quantized(true) { } // onus on caller to ensure in quantization range...
     QVertex3d(DPoint3dCR dpt, ParamsCR params) : QVertex3d(FPoint3d::From(dpt), params) { }
     QVertex3d(FPoint3dCR fpt, ParamsCR params)
         {
@@ -537,35 +496,77 @@ public:
     void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
 };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct MeshMergeKey
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ToleranceRatio
 {
-    DisplayParamsCP     m_params;                                                                                                                                                     
-    Mesh::PrimitiveType m_primitiveType;
-    bool                m_hasNormals;
-    bool                m_isPlanar;
+    static constexpr double Vertex() { return .1; }
+    static constexpr double FacetArea() { return .1; }
+};
 
-    MeshMergeKey() : m_params(nullptr), m_primitiveType(Mesh::PrimitiveType::Mesh), m_hasNormals(false), m_isPlanar(false) { }
-    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
-    MeshMergeKey(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar)
-        : m_params(&params), m_primitiveType(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   10/17
+//=======================================================================================
+struct MeshBuilderMap
+{
+    struct Key
+    {
+        friend struct MeshBuilderMap;
+    private:
+        DisplayParamsCP     m_params;
+        Mesh::PrimitiveType m_type;
+        bool                m_hasNormals;
+        bool                m_isPlanar;
 
-    bool operator<(MeshMergeKey const& rhs) const
-        {
-        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
-        if (m_primitiveType != rhs.m_primitiveType)
-            return m_primitiveType < rhs.m_primitiveType;
+        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
+    public:
+        Key() : Key(nullptr, Mesh::PrimitiveType::Mesh,false, false) { }
+        explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
+        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar) : Key(&params, type, hasNormals, isPlanar) { }
 
-        if (m_isPlanar != rhs.m_isPlanar)
-            return !m_isPlanar;
+        bool operator<(Key const& rhs) const
+            {
+            BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+            if (m_type != rhs.m_type)
+                return m_type < rhs.m_type;
 
-        if (m_hasNormals != rhs.m_hasNormals)
-            return !m_hasNormals;
+            if (m_isPlanar != rhs.m_isPlanar)
+                return !m_isPlanar;
 
-        return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
-        }
+            if (m_hasNormals != rhs.m_hasNormals)
+                return !m_hasNormals;
+
+            return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
+            }
+    };
+private:
+    typedef bmap<Key, MeshBuilderPtr> Map;
+
+    Map             m_map;
+    double          m_vertexTolerance;
+    double          m_facetAreaTolerance;
+    DRange3d        m_range;
+    FeatureTableP   m_featureTable;
+    bool            m_is2d;
+public:
+    MeshBuilderMap(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d) : m_vertexTolerance(tolerance*ToleranceRatio::Vertex()),
+        m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()), m_featureTable(features), m_range(range), m_is2d(is2d) { }
+    MeshBuilderMap() : MeshBuilderMap(0.0, nullptr, DRange3d::NullRange(), false) { }
+
+    DGNPLATFORM_EXPORT MeshBuilderR operator[](Key const& key);
+
+    using const_iterator = Map::const_iterator;
+
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+    void clear() { m_map.clear(); }
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+
+    DRange3dCR GetRange() const { return m_range; }
+    void SetMaxFeatures(uint32_t maxFeatures) { if (nullptr != m_featureTable) m_featureTable->SetMaxFeatures(maxFeatures); }
+    FeatureTableP GetFeatureTable() { return m_featureTable; }
 };
 
 //=======================================================================================
@@ -583,6 +584,7 @@ struct VertexKey
 
     VertexKey() { }
     VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr);
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param);
 
     OctEncodedNormalCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
     DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
@@ -647,6 +649,7 @@ public:
 
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
@@ -835,14 +838,12 @@ struct GeometryCollection
 {
 private:
     MeshList            m_meshes;
-    MeshPartList        m_parts;
     bool                m_isComplete = true;
     bool                m_curved = false;
 public:
     MeshList& Meshes()              { return m_meshes; }
     MeshList const& Meshes() const  { return m_meshes; }
-    MeshPartList& Parts()           { return m_parts; }
-    bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
+    bool IsEmpty() const            { return m_meshes.empty(); }
     bool IsComplete() const         { return m_isComplete; }
     bool ContainsCurves() const     { return m_curved; }
     void MarkIncomplete()           { m_isComplete = false; }
@@ -869,6 +870,8 @@ private:
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, bool disjoint);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range, bool disjoint);
+
+    MeshBuilderMap ToMeshBuilderMap(GeometryOptionsCR, double tolerance, FeatureTableP, ViewContextR) const;
 public:
     GeometryAccumulator(DgnDbR db, System& system, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
     GeometryAccumulator(DgnDbR db, System& system, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
@@ -900,7 +903,8 @@ public:
     bool WantSurfacesOnly() const { return m_surfacesOnly; }
 
     //! Convert the geometry accumulated by this builder into a set of meshes.
-    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR) const;
+    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR, FeatureTableP featureTable=nullptr) const;
+    DGNPLATFORM_EXPORT MeshBuilderMap ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
     DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR) const;
@@ -917,15 +921,6 @@ public:
     //! If enabled, TextString range will be tested against chord tolerance to determine whether the text should be stroked or rendered as a simple box.
     //! By default, it is always stroked.
     void SetCheckGlyphBoxes(bool check) { m_checkGlyphBoxes = check; }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
-//=======================================================================================
-struct ToleranceRatio
-{
-    static constexpr double Vertex() { return .1; }
-    static constexpr double FacetArea() { return .1; }
 };
 
 //=======================================================================================
@@ -974,7 +969,6 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 
         return IsValid();
         }
-
 };
 
 //=======================================================================================
@@ -1098,6 +1092,7 @@ protected:
     void AddTile(TileCorners const& corners, DisplayParamsCR params);
     void AddCurveVector(CurveVectorR curves, bool isFilled, bool isDisjoint);
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
+    void SetElementId(DgnElementId id) { m_accum.SetElementId(id); }
 public:
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
@@ -1135,9 +1130,9 @@ protected:
 
     void AddTriMesh(TriMeshArgsCR args);
 
-    double ComputeTolerance(GeometryAccumulatorR) const;
+    DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:
-    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(system, params) { }
+    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params, DgnElementId elemId=DgnElementId()) : GeometryListBuilder(system, params, elemId) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

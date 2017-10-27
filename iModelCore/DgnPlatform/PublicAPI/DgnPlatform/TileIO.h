@@ -20,6 +20,8 @@ static const uint32_t s_dgnTileVersion         = 0;
 
 
 //=======================================================================================
+// DgnTiles are tiles with GLTF like structure (JSon with binary data) - but optimized
+// for caching tiles (storing feature table directly etc.)
 // @bsistruct                                                   Ray.Bentley     06/2017
 //=======================================================================================
 struct TileIO
@@ -52,12 +54,11 @@ struct TileIO
         IsLeaf          = 0x0001 << 2,
         };
 
-    // DgnTiles are tiles with GLTF like structure (JSon with binary data) - but optimized for caching tiles (storing feature table directly etc.)
-    static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, DPoint3dCR centroid, bool isLeaf);
-    static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf);
+    DGNPLATFORM_EXPORT static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, DPoint3dCR centroid, bool isLeaf);
+    DGNPLATFORM_EXPORT static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf);
 
+    // Read meshes from cache data into a MeshBuilderMap, optionally excluding specific elements.
+    DGNPLATFORM_EXPORT static ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builderMap, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, Flags& flags, DgnElementIdSet const& skipElems=DgnElementIdSet());
 };  
-
-
 
 END_TILETREE_NAMESPACE
