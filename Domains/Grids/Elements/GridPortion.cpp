@@ -219,4 +219,17 @@ Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
     return model;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+GridPortionPtr GridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
+    {
+    return db.Elements().GetForEdit<Grids::GridPortion>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
+                                                                                                                    GRIDS_AUTHORITY_GridPortion,
+                                                                                                                    parentId,
+                                                                                                                    gridName));
+    }
+
+
 END_GRIDS_NAMESPACE
+

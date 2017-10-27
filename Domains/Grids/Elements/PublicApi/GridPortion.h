@@ -95,6 +95,8 @@ public:
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 
+    //! Returns a grid portion with given parent element and name
+    GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
     };
 
 END_GRIDS_NAMESPACE

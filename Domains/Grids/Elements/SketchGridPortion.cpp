@@ -42,10 +42,30 @@ DVec3d                      normal
 SketchGridPortionPtr        SketchGridPortion::Create
 (
 Dgn::DgnModelCR model,
-DVec3d          normal
+DVec3d          normal,
+Utf8CP          name
 )
     {
-    return new SketchGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
+    return new SketchGridPortion(GeometricElement3d::CreateParams(model.GetDgnDb(),
+                                                                  model.GetModelId(),
+                                                                  QueryClassId(model.GetDgnDb()),
+                                                                  SpatialCategory::QueryCategoryId(model.GetDgnDb().GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized),
+                                                                  Placement3d(),
+                                                                  Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_SketchGridPortion),
+                                                                               model.GetModeledElementId(),
+                                                                               name)),
+                                 normal);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+SketchGridPortionPtr SketchGridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
+    {
+    return db.Elements().GetForEdit<Grids::SketchGridPortion>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
+                                                                                                                           GRIDS_AUTHORITY_SketchGridPortion,
+                                                                                                                           parentId,
+                                                                                                                           gridName));
     }
 
 
