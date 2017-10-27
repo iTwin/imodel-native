@@ -177,6 +177,7 @@
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" LibType="Static" Deliver="false" />
         <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="Assets" Deliver="false"/>
         <ProductDirectory Name="Assets" LibType="static" Deliver="false"/>
     </ProductDirectoryList>
