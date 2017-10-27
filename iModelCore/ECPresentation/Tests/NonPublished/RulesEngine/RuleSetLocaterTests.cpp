@@ -16,6 +16,30 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2016
++===============+===============+===============+===============+===============+======*/
+struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
+    {
+    typedef std::function<void(PresentationRuleSetCR)> CallbackHandler;
+    CallbackHandler m_onCreatedHandler;
+    CallbackHandler m_onDisposedHandler;
+
+    void SetCreatedHandler(CallbackHandler const& handler) {m_onCreatedHandler = handler;}
+    void SetDisposedHandler(CallbackHandler const& handler) {m_onDisposedHandler = handler;}
+
+    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset) override
+        {
+        if (nullptr != m_onCreatedHandler)
+            m_onCreatedHandler(ruleset);
+        }
+    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset) override
+        {
+        if (nullptr != m_onDisposedHandler)
+            m_onDisposedHandler(ruleset);
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -146,6 +170,68 @@ TEST(RulesetLocaterManager, InvalidateCacheForwardsCallToRegisteredLocaters)
     manager.InvalidateCache();
     EXPECT_TRUE(locater1->GetRuleSetIds().empty());
     EXPECT_TRUE(locater2->GetRuleSetIds().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RuleSetLocater, CallsRulesetCallbacksHandlerWhenHandlerIsSetAfterOnRulesetCreatedCall)
+    {
+    TestRulesetCallbacksHandler handler;
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 1, false, "", "", "", false);
+    // note: AddRuleSet calls OnRuleSetCreated callback
+    locater->AddRuleSet(*ruleset);
+
+    int onCreatedCallbackCallCount = 0;
+    handler.SetCreatedHandler([&](PresentationRuleSetCR callbackRuleset)
+        {
+        EXPECT_EQ(ruleset.get(), &callbackRuleset);
+        ++onCreatedCallbackCallCount;
+        });
+
+    // make sure the handler got called
+    locater->SetRulesetCallbacksHandler(&handler);
+    EXPECT_EQ(1, onCreatedCallbackCallCount);
+
+    // reset
+    onCreatedCallbackCallCount = 0;
+    locater->SetRulesetCallbacksHandler(nullptr);
+    EXPECT_EQ(0, onCreatedCallbackCallCount);
+    
+    // set again to make sure it doesn't get called more than once
+    onCreatedCallbackCallCount = 0;
+    locater->SetRulesetCallbacksHandler(&handler);
+    EXPECT_EQ(0, onCreatedCallbackCallCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RuleSetLocater, DoesntCallRulesetCallbacksHandlerWhenHandlerIsSetAfterOnRulesetCreatedAndDisposedCalls)
+    {
+    TestRulesetCallbacksHandler handler;
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 1, false, "", "", "", false);
+    // note: AddRuleSet calls OnRuleSetCreated callback
+    locater->AddRuleSet(*ruleset);
+    // note: Clear calls OnRuleSetDisposed callback for each added ruleset
+    locater->Clear();
+
+    int onCreatedCallbackCallCount = 0;
+    handler.SetCreatedHandler([&](PresentationRuleSetCR)
+        {
+        ++onCreatedCallbackCallCount;
+        });
+    int onDisposedCallbackCallCount = 0;
+    handler.SetDisposedHandler([&](PresentationRuleSetCR)
+        {
+        ++onDisposedCallbackCallCount;
+        });
+
+    locater->SetRulesetCallbacksHandler(&handler);
+    EXPECT_EQ(0, onCreatedCallbackCallCount);
+    EXPECT_EQ(0, onDisposedCallbackCallCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,30 +370,6 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSetsInSubdirectories)
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(2, rulesets.size());
     }
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2016
-+===============+===============+===============+===============+===============+======*/
-struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
-    {
-    typedef std::function<void(PresentationRuleSetCR)> CallbackHandler;
-    CallbackHandler m_onCreatedHandler;
-    CallbackHandler m_onDisposedHandler;
-
-    void SetCreatedHandler(CallbackHandler const& handler) {m_onCreatedHandler = handler;}
-    void SetDisposedHandler(CallbackHandler const& handler) {m_onDisposedHandler = handler;}
-
-    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset)
-        {
-        if (nullptr != m_onCreatedHandler)
-            m_onCreatedHandler(ruleset);
-        }
-    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset)
-        {
-        if (nullptr != m_onDisposedHandler)
-            m_onDisposedHandler(ruleset);
-        }
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                01/2016

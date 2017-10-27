@@ -231,6 +231,12 @@ void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetCR ruleset) const
     {
     if (nullptr != m_rulesetCallbacksHandler)
         m_rulesetCallbacksHandler->_OnRulesetDispose(ruleset);
+    else
+        {
+        auto iter = std::find(m_createdRulesets.begin(), m_createdRulesets.end(), &ruleset);
+        if (m_createdRulesets.end() != iter)
+            m_createdRulesets.erase(iter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,12 +246,24 @@ void RuleSetLocater::OnRulesetCreated(PresentationRuleSetCR ruleset) const
     {
     if (nullptr != m_rulesetCallbacksHandler)
         m_rulesetCallbacksHandler->_OnRulesetCreated(ruleset);
+    else
+        m_createdRulesets.push_back(&ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocater::SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler) {m_rulesetCallbacksHandler = handler;}
+void RuleSetLocater::SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler)
+    {
+    m_rulesetCallbacksHandler = handler;
+
+    if (nullptr != m_rulesetCallbacksHandler)
+        {
+        for (RefCountedPtr<PresentationRuleSet const> const& ruleset : m_createdRulesets)
+            OnRulesetCreated(*ruleset);
+        m_createdRulesets.clear();
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015

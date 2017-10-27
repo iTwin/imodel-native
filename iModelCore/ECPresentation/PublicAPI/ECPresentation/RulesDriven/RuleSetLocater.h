@@ -46,6 +46,7 @@ struct RuleSetLocater : IRefCounted
 {
 private:
     IRulesetCallbacksHandler* m_rulesetCallbacksHandler;
+    mutable bvector<RefCountedPtr<PresentationRuleSet const>> m_createdRulesets;
 
 protected:
     //! Called to find matching rulesets.
