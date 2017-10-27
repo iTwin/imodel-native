@@ -76,13 +76,13 @@ RealityData::CachePtr DgnDb::ElementTileCache() const
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettings().GetCrudWriteToken();}
+ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettingsManager().GetCrudWriteToken();}
 
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetSchemaImportToken(); }
+SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/12

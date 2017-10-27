@@ -135,7 +135,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     Json::Value json;
     Status      status;
 
-    if (Status::Success != (status = GetViewsetJson (json, groundPoint, m_defaultViewId)))
+    if (Status::Success != (status = GetViewsetJson (json, groundPoint, m_defaultViewId, params.GetGlobeMode())))
         return status;
 
     Json::Value viewerOptions = params.GetViewerOptions();

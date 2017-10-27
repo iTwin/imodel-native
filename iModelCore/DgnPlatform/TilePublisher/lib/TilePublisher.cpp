@@ -1244,7 +1244,7 @@ void AddGeometry(PublishableTileGeometryR geometry, DRange3dCR classifiedRange, 
 
             default:
                 {
-                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::Cyan() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
+                static ColorDef s_colors[] = { ColorDef::DarkGrey(),  /* Off */ ColorDef::White() /* On */, ColorDef::DarkGrey() /* Dimmed */, ColorDef::Magenta() /* Hilite*/ };
 
                 for (auto& curr : attributes)
                     m_elementColors[curr.first.GetElementId()] = s_colors[m_classifier.GetInsideDisplay()].GetValue();
@@ -1369,7 +1369,7 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     writer.Write(outputFile, m_tile, m_context.GetDgnDb());
 
     m_tile.SetPublishedRange (contentRange);
-    }
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
@@ -3122,8 +3122,8 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_generationFilter(nullptr), m_currentClassifier(nullptr)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode, GlobeMode globeMode)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_generationFilter(nullptr), m_currentClassifier(nullptr), m_globeMode(globeMode)
     {
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
@@ -3946,7 +3946,7 @@ Json::Value PublisherContext::GetViewDefinitionsJson()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId)
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId, GlobeMode globeMode)
     {
     Utf8String rootNameUtf8(m_rootName.c_str());
     json["name"] = rootNameUtf8;
@@ -4140,8 +4140,20 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
     json["viewFlags"] = style.GetViewFlags().ToJson();
 
     auto style3d = style.ToDisplayStyle3d();
-    if (nullptr != style3d)
-        json["isGlobeVisible"] = style3d->IsGroundPlaneEnabled();
+    switch (m_globeMode)
+        {
+        case GlobeMode::Off:
+            json["isGlobeVisible"] = false;
+            break;
+
+        case GlobeMode::On:
+            json["isGlobeVisible"] = true;
+            break;
+
+        case GlobeMode::FromDisplayStyle:
+            if (nullptr != style3d)
+                json["isGlobeVisible"] = style3d->IsGroundPlaneEnabled();
+        }
 
     return json;
     }

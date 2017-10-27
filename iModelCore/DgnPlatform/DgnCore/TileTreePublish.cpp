@@ -137,12 +137,13 @@ struct Context
     double                          m_leafTolerance;
     GeometricModelP                 m_model;
     ClipVectorPtr                   m_clip;
+    std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> m_requestTileQueue;
 
-    Context(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, ClipVectorCP clip, TileGenerator::ITileCollector* collector, double leafTolerance, GeometricModelP model) : 
-            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
+    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, TransformCR transformFromDgn, ClipVectorCP clip, TileGenerator::ITileCollector* collector, double leafTolerance, GeometricModelP model, std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> requestTileQueue) :
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model), m_requestTileQueue(requestTileQueue){ if (nullptr != clip) m_clip = clip->Clone(nullptr); }
 
     Context(TileP outputTile, TileTree::TileP inputTile, Context const& inContext) :
-            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model), m_requestTileQueue(inContext.m_requestTileQueue) { }
 
 };
 
@@ -226,22 +227,31 @@ virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) co
 
 using namespace TileTreePublish;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static folly::Future<BentleyStatus> requestTile(Context context)
+{
+    if (context.m_inputTile->_HasChildren() && context.m_inputTile->IsNotLoaded())
+    {
+        std::shared_ptr<RenderSystem> renderSystem = std::make_shared<RenderSystem>(*context.m_outputTile, context.m_clip);
+        TileTree::TileLoadStatePtr loadState;
+        return context.m_requestTileQueue->Push([=]()
+        {
+            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get());
+        });
+    }
+        
+    return SUCCESS;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static TileGenerator::FutureGenerateTileResult generateParentTile (Context context)
     {
-    RenderSystem*   renderSystem = new RenderSystem(context);
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
-        {  
-        return context.m_inputTile->IsNotLoaded() ? TileTree::TileIO::WriteCesiumTile(BeFileName(), *context.m_inputTile, *context.m_model) : TileTree::TileIO::WriteStatus::Success;
-        })
-    .then([=](TileTree::TileIO::WriteStatus status)
+    return requestTile(context).then([=](BentleyStatus status)
         {
-        delete renderSystem;
-
         if (TileTree::TileIO::WriteStatus::Success != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
 
@@ -306,6 +316,8 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
     if (!tileRoot.IsValid())
         return folly::makeFuture(TileGeneratorStatus::NoGeometry);
 
+    auto requestTileQueue = std::make_shared<BeFolly::LimitingTaskQueue<BentleyStatus>>(BeFolly::ThreadPool::GetIoPool(), 20);
+
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
         return collector->_BeginProcessModel(*model);
@@ -318,7 +330,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
         Transform           transformFromDgn = Transform::FromProduct(GetTransformFromDgn(*model), tileRoot->GetLocation());
         TilePtr             outputTile = Tile::Create(*model, *tileRoot->GetRootTile(), transformFromDgn, 0, 0, nullptr);
         TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
-        Context             context(outputTile.get(), inputTile.get(), transformFromDgn, clip.get(), collector, leafTolerance, model);
+        Context             context(outputTile, inputTile, transformFromDgn, clip.get(), collector, leafTolerance, model, requestTileQueue);
 
         return generateParentTile(context).then([=](GenerateTileResult result) { return generateChildTiles(result.m_status, context); });
         })

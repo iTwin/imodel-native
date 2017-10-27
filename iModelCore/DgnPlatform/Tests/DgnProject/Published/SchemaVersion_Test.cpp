@@ -19,7 +19,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(AnotherTestElement)
 DEFINE_REF_COUNTED_PTR(AnotherTestElement)
 
 // Turn this on for debugging.
-// #define DUMP_REVISION 1
+//#define DUMP_REVISION 1
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
 
@@ -593,90 +593,12 @@ TEST_F(SchemaVersionTestFixture, IncompatibleUpgrade)
     m_db = nullptr;
 
     /* Upgrade schema with incompatible changes (property and class deleted) */
+
     SchemaVersionTestDomain::GetDomain().SetVersion("02.02.04");
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)));
-    EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeFailed);
+    EXPECT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, result);
     EXPECT_TRUE(!m_db.IsValid());
 
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso)));
-    EXPECT_TRUE(result == BE_SQLITE_OK);
-
-    // Validate that instances with deleted classes are flushed
-    el = m_db->Elements().GetForEdit<TestElement>(elId);
-    EXPECT_TRUE(el.IsValid());
-    elA = m_db->Elements().GetForEdit<AnotherTestElement>(elIdA);
-    EXPECT_FALSE(elA.IsValid());
-
-    // Validate that class has been flushed
-    ECPropertyCP testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty1");
-    EXPECT_TRUE(testProperty == nullptr);
-    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("StringProperty1");
-    EXPECT_TRUE(testProperty != nullptr);
-    ECClassCP anotherTestClass = m_db->Schemas().GetClass(AnotherTestElement::QueryClassId(*m_db));
-    EXPECT_TRUE(anotherTestClass == nullptr);
-
-    // Create a new instance
-    TestElementPtr el2 = TestElement::Create(*GetDefaultPhysicalModel(), GetDefaultCategoryId());
-    el2->SetPropertyValue("StringProperty1", "Test");
-    TestElementCPtr cEl2 = m_db->Elements().Insert<TestElement>(*el2, &status);
-    EXPECT_TRUE(cEl2.IsValid());
-    DgnElementId elId2 = cEl2->GetElementId();
-
-    SaveDb();
-    DgnRevisionPtr revision2 = CreateRevision();
-    DumpRevision(*revision2, "Revision 2");
-    el = nullptr;
-    el2 = nullptr;
-    cEl2 = nullptr;
-    elA = nullptr;
-    CloseDb();
-
-    /* Test merging of revisions */
-    RestoreTestFile();
-
-    SchemaVersionTestDomain::GetDomain().SetVersion("02.02.03");
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision1)));
-    EXPECT_TRUE(result == BE_SQLITE_OK);
-
-    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty1");
-    EXPECT_TRUE(testProperty != nullptr);
-
-    el = m_db->Elements().GetForEdit<TestElement>(elId);
-    EXPECT_TRUE(el.IsValid());
-
-    testProperty = m_db->Schemas().GetClass(AnotherTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty5");
-    EXPECT_TRUE(testProperty != nullptr);
-
-    elA = m_db->Elements().GetForEdit<AnotherTestElement>(elIdA);
-    EXPECT_TRUE(elA.IsValid());
-
-    el = nullptr;
-    elA = nullptr;
-    CloseDb();
-
-    SchemaVersionTestDomain::GetDomain().ClearHandlers();
-    SchemaVersionTestDomain::GetDomain().RegisterHandler(TestElementHandler::GetHandler());
-
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(*revision2)));
-    EXPECT_TRUE(result == BE_SQLITE_OK);
-
-    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty1");
-    EXPECT_TRUE(testProperty == nullptr);
-    testProperty = m_db->Schemas().GetClass(TestElement::QueryClassId(*m_db))->GetPropertyP("StringProperty1");
-    EXPECT_TRUE(testProperty != nullptr);
-    anotherTestClass = m_db->Schemas().GetClass(AnotherTestElement::QueryClassId(*m_db));
-    EXPECT_TRUE(anotherTestClass == nullptr);
-
-    el = m_db->Elements().GetForEdit<TestElement>(elId);
-    EXPECT_TRUE(el.IsValid());
-    el2 = m_db->Elements().GetForEdit<TestElement>(elId2);
-    EXPECT_TRUE(el2.IsValid());
-    elA = m_db->Elements().GetForEdit<AnotherTestElement>(elIdA);
-    EXPECT_FALSE(elA.IsValid());
-
-    el = nullptr;
-    el2 = nullptr;
-    cEl2 = nullptr;
-    elA = nullptr;
-    CloseDb();
+    EXPECT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, result);
     }

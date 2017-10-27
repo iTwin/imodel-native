@@ -317,19 +317,16 @@ private:
     Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
     void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
-	
+
     void ApplyTxnChanges(TxnId, TxnAction);
     BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
-	void OnChangesApplied(BeSQLite::IChangeSet& changeset);
-	
+    void OnChangesApplied(BeSQLite::IChangeSet& changeset);
     OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
-	
-	BentleyStatus PropagateChanges();
+    BentleyStatus PropagateChanges();
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
-	
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
     DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);

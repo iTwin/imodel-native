@@ -639,6 +639,13 @@
         </Bindings>
     </Part>
 
+    <!-- Presentation rules for tile publisher -->
+    <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
+        <Bindings>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules" SourceName="Delivery/Assets/PresentationRules"/>
+        </Bindings>
+    </Part>
+
     <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
@@ -655,7 +662,8 @@
         <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
 		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
         <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
-    
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
+        <SubPart PartName="TilePublisherAssets" PartFile="DgnPlatform"          Repository="DgnPlatform"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
@@ -756,6 +764,7 @@
 
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon-Windows" />
+    <SubProduct ProductName="iModelJsNodeAddon-Windows-New" />
     <SubProduct ProductName="iModelJsNodeAddon-Linux" />
   </Product>
 
@@ -765,11 +774,17 @@
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
+  <!-- Preview of a new version of nodejs support that is coming ... -->
+  <Product Name="iModelJsNodeAddon-Windows-New">
+    <SubPart PartName="iModelJsNodeAddonLib-Windows-New" LibType="Dynamic" />
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+  </Product>
+
   <Product Name="iModelJsNodeAddon-Linux">
     <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
-    
+
   <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">
     <ProductDirectory Name="AddonRoot" Path="Addon" />
     <ProductDirectory Name="iModelJsNode_node_module" RelativeTo="AddonRoot"/>
@@ -799,6 +814,21 @@
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
         Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node,
         Delivery/iModelJsNodeAddon/N_8_2_1/package.json
+      </Files>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>
+    </Bindings>
+  </Part>
+
+  <!-- Preview of a new version of nodejs support that is coming ... -->
+  <Part Name="iModelJsNodeAddonLib-Windows-New" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_7_0" >
+    <SubPart PartName="node-gyp-standalone_8_7_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <Bindings>
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_7">
+        Delivery/iModelJsNodeAddon/N_8_7_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_7_0/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml

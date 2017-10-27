@@ -585,6 +585,7 @@ protected:
     DGNPLATFORM_EXPORT void DrawSkyBox(DecorateContextR);
 
 public:
+    virtual double _ForceMinFrontDist() const {return 0.0;}
     void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
