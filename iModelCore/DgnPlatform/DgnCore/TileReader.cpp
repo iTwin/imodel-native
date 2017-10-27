@@ -1072,11 +1072,16 @@ private:
 
         OctEncodedNormalCP GetNormal(size_t index) const { return nullptr != m_normals ? reinterpret_cast<OctEncodedNormalCP>(m_normals+index) : nullptr; }
         FPoint2d const* GetParam(size_t index) const { return nullptr != m_params ? m_params+index : nullptr; }
-        uint16_t GetColorIndex(size_t index) const
+        uint16_t GetColorIndex(size_t vertIndex) const
+            {
+            return m_colorIndices.IsValid() ? m_colorIndices[vertIndex] : 0;
+            }
+        uint32_t GetColorByIndex(uint16_t index) const
             {
             if (!m_colorIndices.IsValid())
                 {
                 BeAssert(1 == m_colorsByIndex.size());
+                BeAssert(0 == index);
                 return m_colorsByIndex[0];
                 }
             else
@@ -1084,6 +1089,7 @@ private:
                 return m_colorsByIndex[index];
                 }
             }
+        uint32_t GetVertexColor(uint32_t vertIndex) const { return GetColorByIndex(GetColorIndex(vertIndex)); }
         uint32_t RemapIndex(uint32_t oldIndex) const
             {
             auto iter = m_indexMap.find(oldIndex);
@@ -1298,8 +1304,7 @@ uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitiv
     uint32_t index = mesh.m_indices[indexIndex];
 
     QPoint3dCR pos = mesh.m_vertices[index];
-    uint16_t colorIdx = mesh.GetColorIndex(index);
-    uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
+    uint32_t fillColor = mesh.GetVertexColor(index);
     OctEncodedNormalCP normal = mesh.GetNormal(index);
     FPoint2dCP param = mesh.GetParam(index);
 
@@ -1434,8 +1439,7 @@ void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value 
             }
 
         // Fill color will also be the same for all vertices
-        uint16_t colorIdx = mesh.GetColorIndex(firstIndex);
-        uint32_t fillColor = mesh.m_colorsByIndex[colorIdx];
+        uint32_t fillColor = mesh.GetVertexColor(firstIndex);
         builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter);
         }
     }
