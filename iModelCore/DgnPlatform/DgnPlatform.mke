@@ -241,8 +241,6 @@ $(CoreObjs)ClipPrimitive$(oext) :                   $(DgnCoreDir)ClipPrimitive.c
 
 $(CoreObjs)ClipVector$(oext) :                      $(DgnCoreDir)ClipVector.cpp $(DgnPlatformAPISrc)ClipPrimitive.h $(DgnPlatformAPISrc)ClipVector.h ${MultiCompileDepends}
 
-$(CoreObjs)SectionClip$(oext) :                     $(DgnCoreDir)SectionClip.cpp $(DgnPlatformAPISrc)SectionClip.h ${MultiCompileDepends}
-
 $(CoreObjs)TransformClipStack$(oext) :              $(DgnCoreDir)TransformClipStack.cpp $(DgnPlatformAPISrc)TransformClipStack.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnCorePolyfaceClip$(oext) :             $(DgnCoreDir)DgnCorePolyfaceClip.cpp $(DgnPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
