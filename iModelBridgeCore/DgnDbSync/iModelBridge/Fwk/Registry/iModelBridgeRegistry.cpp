@@ -61,11 +61,11 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
         {
         MUSTBEOK(m_stateDb.OpenBeSQLiteDb(m_stateFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
-        // Double-check that this really is a fwk state db
+        // Double-check that this really is a fwk registry db
         Utf8String propStr;
         if (BE_SQLITE_ROW != m_stateDb.QueryProperty(propStr, s_schemaVerPropSpec))
             {
-            LOG.fatalv(L"%ls - this is an invalid fwk state db. Re-creating ...", m_stateFileName.c_str());
+            LOG.fatalv(L"%ls - this is an invalid fwk registry db. Re-creating ...", m_stateFileName.c_str());
             m_stateDb.CloseDb();
             m_stateFileName.BeDeleteFile();
             }
@@ -113,12 +113,21 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridgeRegistry::iModelBridgeRegistry(BeFileNameCR stagingDir, Utf8StringCR iModelName)
+iModelBridgeRegistry::iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbname)
     {
     m_stagingDir = stagingDir;
-    m_stateFileName = stagingDir;
-    m_stateFileName.AppendToPath(WString(iModelName.c_str(), true).c_str());
-    m_stateFileName.append(L".fwk-registry.db");
+    m_stateFileName = dbname;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridgeRegistry::MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName)
+    {
+    BeFileName dbName = stagingDir;
+    dbName.AppendToPath(WString(iModelName.c_str(), true).c_str());
+    dbName.append(L".fwk-registry.db");
+    return dbName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -743,7 +752,8 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
         return -1;
         }
 
-    Dgn::iModelBridgeRegistry app(args.m_stagingDir, args.m_repositoryName);
+    auto dbname = MakeDbName(args.m_stagingDir, args.m_repositoryName);
+    Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
 
     auto dbres = app.OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
@@ -765,7 +775,24 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameCR stagingDir, Utf8StringCR iModelName)
     {
-    RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, iModelName);
+    // Staging dir is probably a subdirectory of the main job work directory. The registry db is stored in the main job work dir.
+    // Look up the parent directory chain until we find it.
+    auto jobWorkDir = stagingDir;
+    BeFileName dbname;
+    while (!jobWorkDir.empty())
+        {
+        dbname = MakeDbName(jobWorkDir, iModelName);
+        if (dbname.DoesPathExist())
+            break;
+        jobWorkDir.PopDir();
+        }
+
+    if (!dbname.DoesPathExist())
+        {
+        LOG.errorv(L"%ls - cannot find fwk registry db in this directory or any of its parents. Creating an empty db.", stagingDir.c_str());
+        }
+
+    RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, dbname);
     if (BE_SQLITE_OK != reg->OpenOrCreateStateDb())
         return nullptr;
     return reg;

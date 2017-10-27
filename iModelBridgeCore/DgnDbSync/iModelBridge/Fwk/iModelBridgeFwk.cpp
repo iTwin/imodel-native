@@ -539,7 +539,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bargptrs, argc, argv)) || (BSISUCCESS != ParseDocProps()) || (BSISUCCESS != m_jobEnvArgs.Validate(argc, argv)))
+    if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bargptrs, argc, argv)) || (BSISUCCESS != m_jobEnvArgs.Validate(argc, argv)))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
@@ -561,6 +561,10 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         PrintUsage(argv[0]);
         return BSIERROR;
         }
+
+    // Now that we have the server arguments (including the repository name), we can access and parse the arguments that are parked in the registry db
+    if (BSISUCCESS != ParseDocProps())
+        return BSIERROR;
 
     return BSISUCCESS;
     }
