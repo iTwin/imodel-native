@@ -515,6 +515,7 @@ public:
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
         virtual void _OnHilitedSetChanged(DgnDbR) {}
+        virtual void _OnNewTileReady(DgnDbR) {}
 
         Host()
             {
