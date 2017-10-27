@@ -630,6 +630,14 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         bvector<Utf8String> docsDeleted;
         } m_expect;
 
+    Utf8String ComputeJobSubjectCodeValue()
+        {
+        // note that the jobs are root specific and so the job subject's code must include the input filename
+        Utf8String jobCode("iModelBridgeTests_Test1_Bridge - ");
+        jobCode.append(Utf8String(_GetParams().GetInputFileName()).c_str());
+        return jobCode;
+        }
+
     WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
     void _DeleteSyncInfo() override {iModelBridgeSyncInfoFile::DeleteSyncInfoFileFor(_GetParams().GetBriefcaseName());}
@@ -653,7 +661,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
     SubjectCPtr _FindJob() override
         {
-        DgnCode jobCode = Subject::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        DgnCode jobCode = Subject::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         auto jobId = GetDgnDbR().Elements().QueryElementIdByCode(jobCode);
         EXPECT_EQ(m_expect.findJobSubject, jobId.IsValid());
         return GetDgnDbR().Elements().Get<Subject>(jobId);
@@ -667,10 +675,14 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
 
         // Set up the model and category that my superclass's DoTest method uses
-        DgnDbTestUtils::InsertPhysicalModel(GetDgnDbR(), "PhysicalModel");
-        DgnDbTestUtils::InsertSpatialCategory(GetDgnDbR(), "SpatialCategory");
+        DgnCode partitionCode = PhysicalPartition::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "PhysicalModel");
+        if (!GetDgnDbR().Elements().QueryElementIdByCode(partitionCode).IsValid())
+            {
+            DgnDbTestUtils::InsertPhysicalModel(GetDgnDbR(), "PhysicalModel");
+            DgnDbTestUtils::InsertSpatialCategory(GetDgnDbR(), "SpatialCategory");
+            }
 
-        auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
         return subjectObj->InsertT<Subject>();
         }
@@ -1023,7 +1035,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         {
         // convert another document
         testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
-        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.findJobSubject = false; // since this is a new "root" document, it must have its own jobsubject
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
         iModelBridgeFwk fwk;
