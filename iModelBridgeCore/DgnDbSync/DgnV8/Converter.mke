@@ -194,6 +194,7 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
 
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
