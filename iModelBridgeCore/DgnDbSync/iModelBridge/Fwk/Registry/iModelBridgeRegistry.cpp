@@ -61,11 +61,11 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
         {
         MUSTBEOK(m_stateDb.OpenBeSQLiteDb(m_stateFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
-        // Double-check that this really is a fwk state db
+        // Double-check that this really is a fwk registry db
         Utf8String propStr;
         if (BE_SQLITE_ROW != m_stateDb.QueryProperty(propStr, s_schemaVerPropSpec))
             {
-            LOG.fatalv(L"%ls - this is an invalid fwk state db. Re-creating ...", m_stateFileName.c_str());
+            LOG.fatalv(L"%ls - this is an invalid fwk registry db. Re-creating ...", m_stateFileName.c_str());
             m_stateDb.CloseDb();
             m_stateFileName.BeDeleteFile();
             }
@@ -87,7 +87,8 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
                                                                 DocGuid TEXT UNIQUE COLLATE NoCase,\
                                                                 DesktopURN TEXT COLLATE NoCase,\
                                                                 WebURN TEXT COLLATE NoCase, \
-                                                                OtherPropertiesJSON TEXT"));
+                                                                AttributesJSON TEXT, \
+                                                                SpatialRootTransformJSON TEXT"));
 
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
 
@@ -112,12 +113,21 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridgeRegistry::iModelBridgeRegistry(BeFileNameCR stagingDir, Utf8StringCR iModelName)
+iModelBridgeRegistry::iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbname)
     {
     m_stagingDir = stagingDir;
-    m_stateFileName = stagingDir;
-    m_stateFileName.AppendToPath(WString(iModelName.c_str(), true).c_str());
-    m_stateFileName.append(L".fwk-registry.db");
+    m_stateFileName = dbname;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridgeRegistry::MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName)
+    {
+    BeFileName dbName = stagingDir;
+    dbName.AppendToPath(WString(iModelName.c_str(), true).c_str());
+    dbName.append(L".fwk-registry.db");
+    return dbName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -742,7 +752,8 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
         return -1;
         }
 
-    Dgn::iModelBridgeRegistry app(args.m_stagingDir, args.m_repositoryName);
+    auto dbname = MakeDbName(args.m_stagingDir, args.m_repositoryName);
+    Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
 
     auto dbres = app.OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
@@ -764,7 +775,24 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameCR stagingDir, Utf8StringCR iModelName)
     {
-    RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, iModelName);
+    // Staging dir is probably a subdirectory of the main job work directory. The registry db is stored in the main job work dir.
+    // Look up the parent directory chain until we find it.
+    auto jobWorkDir = stagingDir;
+    BeFileName dbname;
+    while (!jobWorkDir.empty())
+        {
+        dbname = MakeDbName(jobWorkDir, iModelName);
+        if (dbname.DoesPathExist())
+            break;
+        jobWorkDir.PopDir();
+        }
+
+    if (!dbname.DoesPathExist())
+        {
+        LOG.errorv(L"%ls - cannot find fwk registry db in this directory or any of its parents. Creating an empty db.", stagingDir.c_str());
+        }
+
+    RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, dbname);
     if (BE_SQLITE_OK != reg->OpenOrCreateStateDb())
         return nullptr;
     return reg;
@@ -783,7 +811,7 @@ void iModelBridgeRegistry::EnsureDocumentPropertiesFor(BeFileNameCR fn)
 #ifdef TEST_REGISTRY_FAKE_GUIDS
     BeGuid testGuid;
     testGuid.Create();
-    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,OtherPropertiesJSON) VALUES(?,?,'', '', '')");
+    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,AttributesJSON,SpatialRootTransformJSON) VALUES(?,?,'', '', '', '')");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);
 #else
@@ -801,16 +829,17 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentP
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0         1           2       3
-    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
+    //                                               0         1           2       3              4
+    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
         return BSIERROR;
 
-    props.m_docGuid             = stmt->GetValueText(0);
-    props.m_desktopURN          = stmt->GetValueText(1);
-    props.m_webURN              = stmt->GetValueText(2);
-    props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    props.m_docGuid        = stmt->GetValueText(0);
+    props.m_desktopURN     = stmt->GetValueText(1);
+    props.m_webURN         = stmt->GetValueText(2);
+    props.m_attributesJSON = stmt->GetValueText(3);
+    props.m_spatialRootTransformJSON = stmt->GetValueText(4);
     return BSISUCCESS;
     }
 
@@ -822,8 +851,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0               1           2       3
-    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, OtherPropertiesJSON FROM DocumentProperties WHERE (docGuid=?)");
+    //                                               0               1           2       3              4
+    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (docGuid=?)");
 #ifdef WIP_GUID_BINARY
     stmt->BindGuid(1, docGuid);
 #else
@@ -838,7 +867,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     localFileName    = BeFileName(stmt->GetValueText(0), true);
     props.m_desktopURN          = stmt->GetValueText(1);
     props.m_webURN              = stmt->GetValueText(2);
-    props.m_otherPropertiesJSON = stmt->GetValueText(3);
+    props.m_attributesJSON      = stmt->GetValueText(3);
+    props.m_spatialRootTransformJSON = stmt->GetValueText(4);
     return BSISUCCESS;
     }
 

@@ -8,6 +8,16 @@
 #include "Tests.h"
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ImporterViewManager : ViewManager
+{
+protected:
+    virtual Display::SystemContext* _GetSystemContext() override {return nullptr;}
+    virtual bool _DoesHostHaveFocus() override {return true;}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -23,7 +33,15 @@ L10N::SqlangFiles ImporterTestsHost::_SupplySqlangFiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::Host::IKnownLocationsAdmin& ImporterTestsHost::_SupplyIKnownLocationsAdmin()
+ViewManager& ImporterTestsHost::_SupplyViewManager()
+    {
+    return *new ImporterViewManager();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewLib::Host::IKnownLocationsAdmin& ImporterTestsHost::_SupplyIKnownLocationsAdmin()
     {
     return *new KnownDesktopLocationsAdmin();
     }

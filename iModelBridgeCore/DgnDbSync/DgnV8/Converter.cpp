@@ -3431,9 +3431,10 @@ void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model,
     m_rootFile = rootV8Model.GetDgnFileP();
     _ComputeCoordinateSystemTransform();
 
-    Transform bridgeCorrection;
-    if (BSISUCCESS == JobSubjectUtils::GetTransform(bridgeCorrection, jobSubject))
-        m_rootTrans = Transform::FromProduct(bridgeCorrection, m_rootTrans);
+    Transform jobTrans = iModelBridge::GetSpatialDataTransform(_GetParams(), jobSubject);
+    if (jobTrans.IsIdentity())
+        return;
+    m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
     }
 
 /*---------------------------------------------------------------------------------**//**

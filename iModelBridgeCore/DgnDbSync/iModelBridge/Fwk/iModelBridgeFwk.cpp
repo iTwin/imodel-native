@@ -61,7 +61,7 @@ void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 void* iModelBridgeFwk::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
     {
@@ -79,7 +79,7 @@ void* iModelBridgeFwk::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP func
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 T_iModelBridge_getInstance* iModelBridgeFwk::JobDefArgs::LoadBridge()
     {
@@ -242,7 +242,7 @@ iModelBridgeFwk::JobDefArgs::JobDefArgs()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
@@ -423,7 +423,40 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
+// @bsimethod                                   Sam.Wilson                      10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridgeFwk::JobDefArgs::ParseJsonArgs(JsonValueCR obj)
+    {
+    for (auto const& propName : obj.getMemberNames())
+        {
+        if (propName.EqualsI("transform"))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, obj["transform"].asCString()))
+                return BSIERROR;
+            }
+        else if (propName.EqualsI("gcs"))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(m_inputGcs, obj["gcs"].asCString()))
+                return BSIERROR;
+            }
+
+        else if (propName.EqualsI("geoCalculation"))
+            {
+            if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(m_gcsCalculationMethod, obj["geoCalculation"].asCString()))
+                return BSIERROR;
+            }
+        else
+            {
+            fprintf(stderr, "%s - unrecognized JSON document property", propName.c_str());
+            return BSIERROR;
+            }
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
     {
@@ -470,6 +503,32 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::ParseDocProps()
+    {
+    // The iModelBridge Job Configuration UI allows the user to specify things like the transform for a root model.
+    // Merge that data into the params, so that it is passed through to the bridge like any other data.
+
+    if (m_jobEnvArgs.m_inputFileName.empty())
+        return BSISUCCESS;
+
+    iModelBridgeDocumentProperties docProps;
+    _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
+    if (docProps.m_spatialRootTransformJSON.empty())
+        return BSISUCCESS;
+
+    Json::Value jsonValue = Json::Value::From(docProps.m_spatialRootTransformJSON);
+    if (jsonValue.isNull())
+        {
+        fprintf(stderr, "%s - invalid JSON syntax\n", docProps.m_spatialRootTransformJSON.c_str());
+        return BSIERROR;
+        }
+
+    return m_jobEnvArgs.ParseJsonArgs(jsonValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
     {
     if (argc < 2)
@@ -502,6 +561,10 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         PrintUsage(argv[0]);
         return BSIERROR;
         }
+
+    // Now that we have the server arguments (including the repository name), we can access and parse the arguments that are parked in the registry db
+    if (BSISUCCESS != ParseDocProps())
+        return BSIERROR;
 
     return BSISUCCESS;
     }
@@ -1073,7 +1136,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::InitCrt(false);
 
-    //  Open our state db. (That's where bridge assignments are, too.)
+    //  Open our state db.
     dbres = OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
         return RETURN_STATUS_LOCAL_ERROR;
@@ -1090,10 +1153,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     if (m_jobEnvArgs.m_bridgeAssetsDir.empty())
-        {
         m_jobEnvArgs.m_bridgeAssetsDir = findBridgeAssetsDir(m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName());
-
-        }
 
     // Put out this info message, so that we can relate all subsequent logging messages to this bridge.
     // The log on this machine may have messages from many bridge jobs.
@@ -1115,7 +1175,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     fwkDb3.AppendToPath(L"sqlang");
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
-    Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, ""); // *** TBD: product name = job name
+    Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str());
     DgnViewLib::Initialize(host, true);
 
     //  Initialize the bridge-specific L10N

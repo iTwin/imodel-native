@@ -116,16 +116,17 @@ IRepositoryManagerP DgnDbServerClientUtils::GetRepositoryManager(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static iModelInfoPtr getRepositoryInfoByName(Error& err, Client& client, Utf8String projectId, Utf8StringCR name)
+static iModelInfoPtr getRepositoryInfo(Error& err, Client& client, Utf8String projectId, Utf8StringCR repoId)
     {
-    auto result = client.GetiModelByName(projectId, name)->GetResult();
-    if (!result.IsSuccess())
-        {
-        err = result.GetError();
-        return nullptr;
-        }
-
-    return result.GetValue();
+    auto result = client.GetiModelById(projectId, repoId)->GetResult();
+    if (result.IsSuccess())
+        return result.GetValue();
+    
+    result = client.GetiModelByName(projectId, repoId)->GetResult();
+    if (result.IsSuccess())
+        return result.GetValue();
+    
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,9 +145,9 @@ static Http::Request::ProgressCallback getHttpProgressMeter()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnDbServerClientUtils::AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName)
+StatusInt DgnDbServerClientUtils::AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId)
     {
-    auto ri = getRepositoryInfoByName(m_lastServerError, *m_client, m_projectId, repositoryName);
+    auto ri = getRepositoryInfo(m_lastServerError, *m_client, m_projectId, repoId);
     if (ri.IsNull())
         {
         m_lastServerError = Error::Id::iModelDoesNotExist;

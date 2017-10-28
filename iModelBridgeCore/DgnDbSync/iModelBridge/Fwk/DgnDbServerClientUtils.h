@@ -100,7 +100,7 @@ public:
 
 //    StatusInt GetRepositories(bvector<DgnDbServer::RepositoryInfoPtr>& repos) override;
     StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override;
-    StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) override;
+    StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId) override;
     StatusInt OpenBriefcase(Dgn::DgnDbR db) override;
     StatusInt PullMergeAndPush(Utf8CP) override;
     StatusInt PullAndMerge() override;

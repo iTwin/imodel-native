@@ -74,7 +74,7 @@
         <priority value="error"/>
     </category>
 
-    <category name="DgnV8Converter">
+    <category name="DwgImporter">
         <priority value="error"/>
     </category>
 

@@ -73,10 +73,12 @@ private:
 
     static void InitCrt(bool quietAsserts);
 
-    iModelBridgeRegistry(BeFileNameCR stagingDir, Utf8StringCR iModelName);
+    iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
     ~iModelBridgeRegistry();
 
 public:
+    //! @private
+    static BeFileName MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName);
     //! @private
     static int ComputeAffinityMain(int argc, WCharCP argv[]);
     //! @private

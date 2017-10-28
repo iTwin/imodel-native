@@ -31,7 +31,7 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="VersionedV8_InternalSDK" />
-        <SubPart PartName="rapidxml2jsonapi" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
+        <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
@@ -82,7 +82,7 @@
       <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
       <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
       <SubPart PartName="ScalableMeshV8SDK" />
-      <SubPart PartName="rapidxml2jsonapi" PartFile="rapidxml2json" Repository="Libsrc-RapidXml2Json"/>
+      <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
       <SubPart PartName="PublicAPI"/>
       <SubPart PartName="ImagePP"               PartFile="ImagePP"          Repository="ImagePP" />
       <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
@@ -135,6 +135,7 @@
         <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
         <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
@@ -245,7 +246,7 @@
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="DgnV8ConverterDLL" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterSqlang" />
@@ -276,7 +277,7 @@
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="ConceptStationDgnV8ConverterDLL" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="ConceptStationDgnV8ConverterSqlang" />
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>

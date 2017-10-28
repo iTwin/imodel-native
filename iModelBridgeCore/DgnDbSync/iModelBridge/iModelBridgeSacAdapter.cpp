@@ -332,7 +332,7 @@ void iModelBridgeSacAdapter::Params::PrintUsage()
 "--expiration=                  (optional) The expiration date of the file.\n"
 "--job-name=                    (optional) The code for the new job subject when creating a dgndb.\n"
 "--input-guid=                  (optional) The document GUID of the input file.\n"
-"--doc-props=                   (optional) Document properties for the input file (in JSON format).\n"
+"--doc-attributes=              (optional) Document atttributes for the input file (in JSON format).\n"
 "--transform=                   (optional) 3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
     );
     }
@@ -372,9 +372,9 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
-    if (argv[iArg] == wcsstr(argv[iArg], L"--doc-props="))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--doc-attributes="))
         {
-        SetOtherDocPropsJson(iModelBridge::GetArgValue(argv[iArg]).c_str());
+        SetDocAttributesJson(iModelBridge::GetArgValue(argv[iArg]).c_str());
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
@@ -438,8 +438,8 @@ void iModelBridgeSacAdapter::Params::GetDocumentProperties(iModelBridgeDocumentP
     {
     if (m_docGuid.IsValid())
         props.m_docGuid = m_docGuid.ToString();
-    if (!m_otherDocPropsJson.empty())
-        props.m_otherPropertiesJSON = m_otherDocPropsJson;
+    if (!m_attributesJSON.empty())
+        props.m_attributesJSON = m_attributesJSON;
     }
 
 /*---------------------------------------------------------------------------------**//**

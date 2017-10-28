@@ -619,6 +619,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestiModelHubFX& m_testiModelHubFX;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
+    int m_changeCount = 0;
 
     struct
         {
@@ -629,6 +630,14 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         bool jobTransChanged = false;
         bvector<Utf8String> docsDeleted;
         } m_expect;
+
+    Utf8String ComputeJobSubjectCodeValue()
+        {
+        // note that the jobs are root specific and so the job subject's code must include the input filename
+        Utf8String jobCode("iModelBridgeTests_Test1_Bridge - ");
+        jobCode.append(Utf8String(_GetParams().GetInputFileName()).c_str());
+        return jobCode;
+        }
 
     WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
@@ -653,7 +662,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
     SubjectCPtr _FindJob() override
         {
-        DgnCode jobCode = Subject::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        DgnCode jobCode = Subject::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         auto jobId = GetDgnDbR().Elements().QueryElementIdByCode(jobCode);
         EXPECT_EQ(m_expect.findJobSubject, jobId.IsValid());
         return GetDgnDbR().Elements().Get<Subject>(jobId);
@@ -667,10 +676,14 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
 
         // Set up the model and category that my superclass's DoTest method uses
-        DgnDbTestUtils::InsertPhysicalModel(GetDgnDbR(), "PhysicalModel");
-        DgnDbTestUtils::InsertSpatialCategory(GetDgnDbR(), "SpatialCategory");
+        DgnCode partitionCode = PhysicalPartition::CreateCode(*GetDgnDbR().Elements().GetRootSubject(), "PhysicalModel");
+        if (!GetDgnDbR().Elements().QueryElementIdByCode(partitionCode).IsValid())
+            {
+            DgnDbTestUtils::InsertPhysicalModel(GetDgnDbR(), "PhysicalModel");
+            DgnDbTestUtils::InsertSpatialCategory(GetDgnDbR(), "SpatialCategory");
+            }
 
-        auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), "iModelBridgeTests_Test1_Bridge");
+        auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
         return subjectObj->InsertT<Subject>();
         }
@@ -747,8 +760,8 @@ struct TestRegistry : RefCounted<IModelBridgeRegistry>
 static void populateRegistryWithFooBar(TestRegistry& testRegistry, WCharCP bridgeRegSubKey)
     {
     testRegistry.m_bridgeRegSubKey = bridgeRegSubKey;
-    iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1");
-    iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2");
+    iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2", "");
     testRegistry.m_docPropsByFilename[BeFileName(L"Foo")] = fooDocProps;
     testRegistry.m_docPropsByFilename[BeFileName(L"Bar")] = barDocProps;
     testRegistry.m_docPropsByGuid[s_fooGuid] = fooDocProps;
@@ -808,6 +821,7 @@ void iModelBridgeTests_Test1_Bridge::ConvertItem(TestSourceItemWithId& item, iMo
         return;
         }
     
+    ++m_changeCount;
     ASSERT_TRUE(m_expect.anyChanges);
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = iModelBridgeTests::CreateGenericPhysicalObject(*m_db);
@@ -1023,7 +1037,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
         {
         // convert another document
         testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
-        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.findJobSubject = false; // since this is a new "root" document, it must have its own jobsubject
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
         iModelBridgeFwk fwk;
@@ -1163,6 +1177,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
         testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
@@ -1170,6 +1185,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        EXPECT_EQ(0, testBridge.m_changeCount);
         }
 
     if (true)
@@ -1180,6 +1196,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
         testBridge.m_expect.jobTransChanged = true;
+        testBridge.m_changeCount = 0;
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
@@ -1188,8 +1205,75 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         args.pop_back();
+        args.pop_back();
 
         // *** TBD: Check that the elements moved
+        EXPECT_EQ(2, testBridge.m_changeCount);
+        }
+
+    if (true)
+        {
+        // Run an update with same transform => verify no changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        args.pop_back();
+        EXPECT_EQ(0, testBridge.m_changeCount);
+        }
+
+    if (true)
+        {
+        // Run an update with same transform passed via doc props => verify no changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+        fooDocProps.m_spatialRootTransformJSON = "{\"transform\" : \"(1,0,0)0\"}";
+        //args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        EXPECT_EQ(0, testBridge.m_changeCount);
+        }
+
+    if (true)
+        {
+        // Run an update with a new transform passed via doc props => verify 2 changes
+        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = true;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+        fooDocProps.m_spatialRootTransformJSON = "{\"transform\" : \"(1,0,0)45\"}";
+        //args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        EXPECT_EQ(2, testBridge.m_changeCount);
         }
 
     }
