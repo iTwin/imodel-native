@@ -20,9 +20,9 @@ std::unique_ptr<EnumValueExp> PropertyNameExp::ParseAsEnumValueExp(ECDbCR& ecdb)
     if (m_propertyPath.Size() != 3)
         return nullptr;
    
-    const Utf8StringCR schemaNameOrAlias = m_propertyPath[0].GetName();
-    const Utf8StringCR enumerationName = m_propertyPath[1].GetName();
-    const Utf8StringCR enumeratorName = m_propertyPath[2].GetName();
+    Utf8StringCR schemaNameOrAlias = m_propertyPath[0].GetName();
+    Utf8StringCR enumerationName = m_propertyPath[1].GetName();
+    Utf8StringCR enumeratorName = m_propertyPath[2].GetName();
     const ECN::ECEnumerationCP enumeration = ecdb.Schemas().GetEnumeration(schemaNameOrAlias, enumerationName, SchemaLookupMode::AutoDetect);
     if (enumeration == nullptr)
         return nullptr;
