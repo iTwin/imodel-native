@@ -117,6 +117,7 @@ private:
 
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
+    
     //root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;
@@ -213,7 +214,7 @@ private:
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
     IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
-
+    static void ResolveEnumerators(Exp& exp, ECDbCR ecdb);
     static bool IsPredicate(connectivity::OSQLParseNode const&);
     static Utf8CP SqlDataTypeKeywordToString(sal_uInt32 sqlKeywordId);
 

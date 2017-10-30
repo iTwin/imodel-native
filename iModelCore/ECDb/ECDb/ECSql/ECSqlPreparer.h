@@ -62,6 +62,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareLikeRhsValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LikeRhsValueExp const&);
         static ECSqlStatus PrepareLimitOffsetExp(ECSqlPrepareContext&, LimitOffsetExp const&);
         static ECSqlStatus PrepareLiteralValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LiteralValueExp const&);
+        static ECSqlStatus PrepareEnumValueExp(NativeSqlBuilder::List& , ECSqlPrepareContext&, EnumValueExp const&);
         static ECSqlStatus PrepareNaturalJoinExp(ECSqlPrepareContext&, NaturalJoinExp const&);
         static ECSqlStatus PrepareNullExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ComputedExp const&, size_t targetExpNativeSqlSnippetCount);
         static ECSqlStatus PrepareOrderByExp(ECSqlPrepareContext&, OrderByExp const&);
