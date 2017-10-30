@@ -81,14 +81,18 @@ extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAff
         if (!rootModelP)
             return;
 
-        DgnV8Api::SchemaInfo schemaInfo(Bentley::ECN::SchemaKey(L"Bentley_Civil__Model_Geometry", 0, 0), *dgnFilePtr, L"", L"", 0);
-        auto& dgnECManager = DgnV8Api::DgnECManager::GetManager();
-        Bentley::ECN::ECSchemaPtr nativeSchema = dgnECManager.LocateSchemaInDgnFile(schemaInfo, Bentley::ECN::SCHEMAMATCHTYPE_Latest);
-        if (!nativeSchema.IsNull())
+        auto cifConnPtr = ConsensusConnection::Create(*rootModelP);
+        auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
+        if (cifModelPtr.IsValid())
             {
-            bridgeAffinity.m_bridgeRegSubKey = ORDBridge::GetRegistrySubKey();
-            bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::ExactMatch;
-            return;
+            auto geomModelsPtr = cifModelPtr->GetActiveGeometricModels();
+            while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())
+                {
+                // At least one CIF geometric model found...
+                bridgeAffinity.m_bridgeRegSubKey = ORDBridge::GetRegistrySubKey();
+                bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::ExactMatch;
+                return;
+                }
             }
 
         bridgeAffinity.m_bridgeRegSubKey = L"MicroStation";
