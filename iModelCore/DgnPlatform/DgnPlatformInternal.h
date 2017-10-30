@@ -55,7 +55,6 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/RegionUtil.h>
 #include <DgnPlatform/RenderMaterial.h>
-#include <DgnPlatform/SectionClip.h>
 #include <DgnPlatform/SimplifyGraphic.h>
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/VecMath.h>

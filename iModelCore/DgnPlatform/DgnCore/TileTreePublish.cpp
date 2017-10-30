@@ -9,7 +9,6 @@
 #include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_RENDER
-                         
 
 namespace TileTreePublish
 {

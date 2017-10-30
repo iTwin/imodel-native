@@ -29,7 +29,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
   - \c DgnCoordSystem::View   - coordinates are relative to the upper left corner of the viewport.
   - \c DgnCoordSystem::Npc    - (<b>N</b>ormalized <b>P</b>lane <b>C</b>oordinates) the left bottom rear of the view is (0.0, 0.0, 0.0) and
                             the right top front of the view is coordinate (1.0, 1.0, 1.0)
-  - \c DgnCoordSystem::World  - For PhyscialViews, the <i>world</i> coordinate system is the DgnDb coordinate system. For DrawingViews, 
+  - \c DgnCoordSystem::World  - For PhysicalViews, the <i>world</i> coordinate system is the DgnDb coordinate system. For DrawingViews, 
                          the world coordinate system is the drawing's coordinate system.
 
   @see DgnCoordSystem
@@ -525,7 +525,7 @@ public:
     void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
     //! Read the current image from this viewport from the Rendering system. 
-    //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specfy a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
+    //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specify a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
     //! @param[in] targetSize The size of the Image to be returned. The size can be larger or smaller than the original view. If not specified, the returned image is full size.
     //! @note By using a combination of \a viewRect and \a targetSize, you can tell this function to both clip and
     //! scale the image in the view. For example, use \a viewRect to specify a rectangle within the view to get a clipped image.
