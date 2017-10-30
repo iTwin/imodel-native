@@ -21,7 +21,7 @@ static int runBridge(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
 
-    auto* iModelBridgeP = iModelBridge_getInstance();
+    auto* iModelBridgeP = iModelBridge_getInstance(ORDBridge::GetRegistrySubKey());
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*iModelBridgeP, saparams, argc, argv))

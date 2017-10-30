@@ -31,6 +31,7 @@ protected:
     BentleyStatus Create2dView(Dgn::DefinitionModelR, Dgn::CategorySelectorR, Dgn::DgnModelId, Dgn::DisplayStyle2dR);
     BentleyStatus Create3dView(Dgn::DefinitionModelR, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR);
     void UpdateProjectExtents(Dgn::SpatialModelR);
+    Utf8String ComputeJobSubjectName(Utf8StringCR docId);
     Utf8String ComputeJobSubjectName();
 
     Dgn::SubjectCPtr CreateAndInsertJobSubject(Dgn::DgnDbR db, Utf8CP jobName);
@@ -47,12 +48,14 @@ public:
     virtual Dgn::SubjectCPtr _FindJob() override;
     virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
 
+    static WCharCP GetRegistrySubKey() { return L"OpenRoads Designer Bridge"; }
+
     ORDBridge() {}
 };
 
 extern "C"
 {
-ORDBRIDGE_EXPORT Dgn::iModelBridge* iModelBridge_getInstance();
+ORDBRIDGE_EXPORT Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName);
 ORDBRIDGE_EXPORT void iModelBridge_getAffinity(Dgn::iModelBridge::BridgeAffinity& bridgeAffinity,
     BeFileName const& affinityLibraryPath, BeFileName const& sourceFileName);
 };

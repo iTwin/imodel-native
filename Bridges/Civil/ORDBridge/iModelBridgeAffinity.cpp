@@ -86,7 +86,7 @@ extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAff
         Bentley::ECN::ECSchemaPtr nativeSchema = dgnECManager.LocateSchemaInDgnFile(schemaInfo, Bentley::ECN::SCHEMAMATCHTYPE_Latest);
         if (!nativeSchema.IsNull())
             {
-            bridgeAffinity.m_bridgeRegSubKey = L"OpenRoads Designer Bridge";
+            bridgeAffinity.m_bridgeRegSubKey = ORDBridge::GetRegistrySubKey();
             bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::ExactMatch;
             return;
             }

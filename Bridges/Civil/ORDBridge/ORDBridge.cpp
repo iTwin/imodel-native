@@ -29,6 +29,9 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     {
     AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
+    if (_GetParams().GetBridgeRegSubKey().empty())
+        _GetParams().SetBridgeRegSubKey(GetRegistrySubKey());
+
     // The call to iModelBridge::_Initialize is the time to register domains.
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(AlignmentBim::RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -88,9 +91,27 @@ Dgn::SubjectCPtr ORDBridge::QueryJobSubject(DgnDbR db, Utf8CP jobName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
+Utf8String ORDBridge::ComputeJobSubjectName(Utf8StringCR docId)
+    {
+    Utf8String name(GetRegistrySubKey());
+    name.append(":");
+    name.append(docId.c_str());
+    return name;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
 Utf8String ORDBridge::ComputeJobSubjectName()
     {
-    return Utf8String (_GetParams().GetInputFileName());
+    Utf8String docId;
+    BeSQLite::BeGuid docGuid = QueryDocumentGuid(_GetParams().GetInputFileName());
+    if (docGuid.IsValid())
+        docId = docGuid.ToString();                                 // Use the document GUID, if available, to ensure a stable and unique Job subject name.
+    else
+        docId = Utf8String(_GetParams().GetInputFileName());        // fall back on using local file name -- not as stable!
+
+    return ComputeJobSubjectName(docId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -207,8 +228,9 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-extern "C" Dgn::iModelBridge* iModelBridge_getInstance()
+extern "C" Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
     {
+    BeAssert(0 == BeStringUtilities::Wcsicmp(bridgeName, ORDBridge::GetRegistrySubKey()));
     return new ORDBridge();
     }
 
