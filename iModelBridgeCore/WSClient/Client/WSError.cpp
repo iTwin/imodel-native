@@ -130,6 +130,14 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         return;
         }
 
+    if (HttpStatus::ProxyAuthenticationRequired == httpResponse.GetHttpStatus())
+        {
+        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_status = Status::ReceivedError;
+        m_id = Id::ProxyAuthenticationRequired;
+        return;
+        }
+
     SetStatusServerNotSupported();
     }
 

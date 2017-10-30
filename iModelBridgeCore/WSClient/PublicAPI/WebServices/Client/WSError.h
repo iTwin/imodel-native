@@ -70,7 +70,8 @@ struct WSError : public AsyncError
             // Additional error ids for handling specific errors
             ServerError,
             BadRequest,
-            Conflict
+            Conflict,
+            ProxyAuthenticationRequired
             };
 
     private:

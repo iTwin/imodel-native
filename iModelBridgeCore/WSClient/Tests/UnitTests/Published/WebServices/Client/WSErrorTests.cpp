@@ -199,13 +199,23 @@ TEST_F(WSErrorTests, Ctor_ConflictError_SetsRecievedMessageAndDescriptionForUser
     EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
     }
 
-TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMessage)
+TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdAndLocalizedMessage)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
 
     EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
     EXPECT_EQ(WSError::Id::LoginFailed, error.GetId());
     EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::Unauthorized).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_ProxyAuthenticationRequiredResponse_SetsIdAndLocalizedMessage)
+    {
+    WSError error(StubHttpResponseWithUrl(HttpStatus::ProxyAuthenticationRequired));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::ProxyAuthenticationRequired, error.GetId());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::ProxyAuthenticationRequired).GetDisplayMessage(), error.GetDisplayMessage());
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
