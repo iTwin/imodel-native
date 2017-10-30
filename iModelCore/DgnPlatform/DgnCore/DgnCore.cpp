@@ -221,9 +221,9 @@ StatusInt NotificationManager::OutputActivityMessage(Utf8CP messageText, int32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dan.East                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void      NotificationManager::CancelActivityMessage() 
+StatusInt NotificationManager::EndActivityMessage(ActivityMessageEndReason reason) 
     {
-    T_HOST.GetNotificationAdmin()._CancelActivityMessage();
+    return T_HOST.GetNotificationAdmin()._EndActivityMessage(reason);
     }
 
 static DgnPlatformLib::Host* s_host = nullptr;

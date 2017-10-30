@@ -408,8 +408,8 @@ public:
             //! Output an activity message to the user.
             virtual StatusInt _OutputActivityMessage(Utf8CP messageText, int32_t percentComplete) {return SUCCESS;}
 
-            //! Cancel an activity message.
-            virtual void      _CancelActivityMessage() {}
+            //! End an activity message.
+            virtual StatusInt _EndActivityMessage(ActivityMessageEndReason reason) {return SUCCESS;}
 
             //! MicroStation internal only.
             DGNPLATFORM_EXPORT static void ChangeAdmin(NotificationAdmin&);

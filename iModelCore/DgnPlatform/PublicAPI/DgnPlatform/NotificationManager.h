@@ -35,6 +35,13 @@ enum class RelativePosition
     BottomRight = 7
 };
 
+//! Reason for ending the activity message via NotificationManager::EndActivityMessage
+enum class ActivityMessageEndReason
+{
+    Completed   = 0,
+    Cancelled   = 1
+};
+
 //=======================================================================================
 //! Specifies the details of a message to be displayed to the user through the NotificationManager.
 // @bsiclass                                                      Keith.Bentley   10/07
@@ -153,7 +160,7 @@ public:
     //! Implement if cancellation is supported.
     virtual void _OnActivityCancelled () const {}
 
-    //! Activity completed.
+    //! Activity completed successfully.
     virtual void _OnActivityCompleted () const {}
 };
 
@@ -223,14 +230,16 @@ public:
     //! @return SUCCESS if the message was displayed, ERROR if an invalid priority is specified.
     DGNPLATFORM_EXPORT static StatusInt SetupActivityMessage(ActivityMessageDetails const * details);
 
-    //! Output an activity message to the user. Once percentComplete reaches 100, the message will be dismissed.
+    //! Output an activity message to the user.
     //! @param[in] messageText      The message text.
     //! @param[in] percentComplete  The percentage of completion.
     //! @return SUCCESS if the message was displayed, ERROR if the message could not be displayed.
     DGNPLATFORM_EXPORT static StatusInt OutputActivityMessage(Utf8CP messageText, int32_t percentComplete);
 
-    //! Cancel an activity message.
-    DGNPLATFORM_EXPORT static void      CancelActivityMessage();
+    //! End an activity message.
+    //! @param[in] reason       Reason for the end of the Activity Message.
+    //! @return SUCCESS if the message was ended successfully, ERROR if the activitymessage could not be ended.
+    DGNPLATFORM_EXPORT static StatusInt EndActivityMessage(ActivityMessageEndReason reason);
 };
 
 END_BENTLEY_DGN_NAMESPACE
