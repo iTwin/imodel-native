@@ -137,9 +137,17 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
     if (ImsClient::IsLoginRedirect(httpResponse) ||                 // Bentley CONNECT login redirect
         HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
         {
-        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_message = HttpError(ConnectionStatus::OK, HttpStatus::Unauthorized).GetDisplayMessage();
         m_status = Status::ReceivedError;
         m_id = Id::LoginFailed;
+        return;
+        }
+
+    if (HttpStatus::ProxyAuthenticationRequired == httpResponse.GetHttpStatus())
+        {
+        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_status = Status::ReceivedError;
+        m_id = Id::ProxyAuthenticationRequired;
         return;
         }
 
