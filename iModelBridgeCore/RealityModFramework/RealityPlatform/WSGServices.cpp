@@ -401,14 +401,14 @@ NavNode::NavNode(Utf8StringCR schema, Utf8String id, Utf8StringCR typeSystem, Ut
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-Utf8String NavNode::GetNavString()  { return m_navString; }
-Utf8String NavNode::GetTypeSystem() { return m_typeSystem; }
-Utf8String NavNode::GetSchemaName() { return m_schemaName; }
-Utf8String NavNode::GetECClassName()  { return m_className; }
-Utf8String NavNode::GetInstanceId() { return m_instanceId; }
-Utf8String NavNode::GetLabel()      { return m_label; }
-Utf8String NavNode::GetRootNode()   { return m_rootNode; }
-Utf8String NavNode::GetRootId()     { return m_rootId; }
+Utf8String NavNode::GetNavString() const    { return m_navString; }
+Utf8String NavNode::GetTypeSystem() const   { return m_typeSystem; }
+Utf8String NavNode::GetSchemaName() const   { return m_schemaName; }
+Utf8String NavNode::GetECClassName() const  { return m_className; }
+Utf8String NavNode::GetInstanceId() const   { return m_instanceId; }
+Utf8String NavNode::GetLabel() const        { return m_label; }
+Utf8String NavNode::GetRootNode() const     { return m_rootNode; }
+Utf8String NavNode::GetRootId() const       { return m_rootId; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017

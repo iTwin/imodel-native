@@ -147,12 +147,8 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentTest)
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataDocument.json");
         }));
 
-    ConnectedRealityDataDocument doc = ConnectedRealityDataDocument();
+    ConnectedRealityDataDocument doc = ConnectedRealityDataDocument("72adad30-c07c-465d-a1fe-2f2dfac950a7");
 
-    doc.SetId("72adad30-c07c-465d-a1fe-2f2dfac950a7");
-    ConnectedResponse response = doc.GetInfo();
-
-    EXPECT_TRUE(response.simpleSuccess);
     EXPECT_EQ(doc.GetName(), "Production_Helsinki_3MX_ok.3mx");
     }
 
@@ -170,11 +166,8 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderTest)
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataFolder.json");
         }));
 
-    ConnectedRealityDataFolder folder = ConnectedRealityDataFolder();
-    folder.SetId("72adad30-c07c-465d-a1fe-2f2dfac950a7");
-    ConnectedResponse response = folder.GetInfo();
+    ConnectedRealityDataFolder folder = ConnectedRealityDataFolder("72adad30-c07c-465d-a1fe-2f2dfac950a7");
 
-    EXPECT_TRUE(response.simpleSuccess);
     EXPECT_EQ(folder.GetName(), "Scene123");
     }
 
@@ -192,10 +185,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
         }));
 
-    ConnectedRealityData rd = ConnectedRealityData();
-    rd.SetUltimateId("72adad30-c07c-465d-a1fe-2f2dfac950a5");
-    ConnectedResponse response = rd.GetInfo();
-
-    EXPECT_TRUE(response.simpleSuccess);
+    ConnectedRealityData rd = ConnectedRealityData("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+    
     EXPECT_EQ(rd.GetName(), "Helsinki");
     }

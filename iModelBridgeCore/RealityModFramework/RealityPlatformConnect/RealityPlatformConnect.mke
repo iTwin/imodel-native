@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-appName         = RealityPlatformConnect
+appName         = RealityPlatform
 baseDir         = $(SrcRoot)RealityModFramework/RealityPlatform/
 deskDir         = $(_MakeFilePath)
 
@@ -90,7 +90,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BeZLib$(libext) \
+                       $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext)

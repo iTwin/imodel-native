@@ -1,3 +1,0 @@
-This document ensures the presence of the
-D:\RealityModFrameworkBackupDev\src\RealityModFramework\PublicApi\RealityPlatformConnect
-folder, in the source tree. This folder is required in order for the RealityPlatformConnect part to build.

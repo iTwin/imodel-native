@@ -255,16 +255,16 @@ public:
     REALITYDATAPLATFORM_EXPORT NavNode();
     REALITYDATAPLATFORM_EXPORT NavNode(Utf8StringCR schema, Utf8String id, Utf8StringCR typeSystem, Utf8StringCR className);
 
-    REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetSchemaName();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetECClassName();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetLabel();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetRootNode();
-    REALITYDATAPLATFORM_EXPORT Utf8String GetRootId();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetNavString() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetSchemaName() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetECClassName() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetLabel() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetRootNode() const;
+    REALITYDATAPLATFORM_EXPORT Utf8String GetRootId() const;
 
-private:
+protected:
     Utf8String m_navString;
     Utf8String m_typeSystem;
     Utf8String m_schemaName;
