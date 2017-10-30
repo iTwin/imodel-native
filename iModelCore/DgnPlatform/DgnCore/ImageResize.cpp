@@ -183,7 +183,7 @@ int32_t*            outBuf          /* output Buffer */
 
                 tab++;
                 }
-            *outBuf++ = *inBuf * tab->wa + inBuf[1]*tab->wb;
+            *outBuf++ = *inBuf * tab->wa + inBuf[m_bytesPerPixel]*tab->wb;
             break;
             }
         }
