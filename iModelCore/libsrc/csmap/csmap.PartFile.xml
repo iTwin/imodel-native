@@ -88,14 +88,14 @@
         <SubPart PartName="GeoCoordDataMinimal"/>
     </Product>
 
-    <NuGetProduct Name="CSMap" Description="CSMap">
+    <NuGetProduct Name="CSMapNuget" Description="CSMap">
         <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
         <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
         <SubPart PartName="csmapStatic" LibType="Static"/>
         <SubPart PartName="GeoCoordData"/>
     </NuGetProduct>
 
-    <NuGetProduct Name="CSMapMinimal" Description="CSMapMinimal">
+    <NuGetProduct Name="CSMapMinimalNuget" Description="CSMapMinimal">
         <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
         <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
         <SubPart PartName="csmapStatic" LibType="Static"/>
