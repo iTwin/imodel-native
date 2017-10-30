@@ -58,6 +58,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Cache\BackgroundSyncNotifier.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
     <ClInclude Include="Connect\ConnectionClientInterface.h" />
     <ClInclude Include="Connect\WrapperTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\BackgroundSyncNotifier.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
