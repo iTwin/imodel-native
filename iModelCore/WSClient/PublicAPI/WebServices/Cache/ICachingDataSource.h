@@ -56,6 +56,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             RemoteOrCachedData = 4  // Query server first to update the cache or return cached data if query failed 
             };
 
+        enum class DataSyncStatus
+            {
+            NotSynced,        // There was no attempt to synchronize data from server
+            SyncError,        // There was an error during synchronization with server.
+            Synced,           // Synchronized succesfully.
+            NotModified       // Synchronized succesfully data not changed on server.
+            };
+
         struct SelectProvider;
         
         struct Progress;
@@ -400,15 +408,17 @@ struct ICachingDataSource::KeysData
     private:
         std::shared_ptr<ECInstanceKeyMultiMap> m_data;
         DataOrigin m_origin;
+        DataSyncStatus m_syncStatus;
 
     public:
         WSCACHE_EXPORT KeysData();
-        WSCACHE_EXPORT KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin);
+        WSCACHE_EXPORT KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin, DataSyncStatus syncStatus);
 
         WSCACHE_EXPORT std::shared_ptr<ECInstanceKeyMultiMap> GetKeysPtr();
         WSCACHE_EXPORT const ECInstanceKeyMultiMap& GetKeys() const;
         WSCACHE_EXPORT ECInstanceKeyMultiMap& GetKeys();
         WSCACHE_EXPORT DataOrigin GetOrigin() const;
+        WSCACHE_EXPORT DataSyncStatus GetSyncStatus() const;
     };
 
 /*--------------------------------------------------------------------------------------+
