@@ -1,4 +1,5 @@
-#include "PublicApi/GridSplineSurface.h"
+
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
@@ -27,8 +28,9 @@ CreateParams const& params
 GridSplineSurface::GridSplineSurface
 (
 CreateParams const& params,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
-) : T_Super(params, surface) 
+) : T_Super(params, gridAxis, surface) 
     {
     }
 
@@ -38,17 +40,23 @@ ISolidPrimitivePtr  surface
 GridSplineSurfacePtr                 GridSplineSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    return new GridSplineSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
+    return new GridSplineSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridSplineSurfacePtr GridSplineSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+GridSplineSurfacePtr GridSplineSurface::Create
+(
+Dgn::SpatialLocationModelCR model, 
+GridAxisCPtr gridAxis,
+DgnExtrusionDetail extDetail
+)
     {
-    return GridSplineSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
+    return GridSplineSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 END_GRIDS_NAMESPACE

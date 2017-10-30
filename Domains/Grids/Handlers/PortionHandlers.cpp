@@ -6,8 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/PortionHandlers.h"
-#include "PublicApi/GridSurfaceCreatesGridCurveHandler.h"
+#include <Grids/gridsApi.h>
 
 USING_NAMESPACE_GRIDS
 

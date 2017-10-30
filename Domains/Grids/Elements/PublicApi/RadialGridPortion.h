@@ -11,9 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include "GridPortion.h"
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (RadialGridPortion)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -71,6 +69,10 @@ public:
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params);
     explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params, DVec3d normal);
+
+
+    static GridElementVector CreateGridPreview (CreateParams params, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
+
     friend struct RadialGridPortionHandler;
 
 public:
@@ -87,11 +89,6 @@ public:
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPortionPtr CreateAndInsert (CreateParams params);
-
-    //! Creates radial grid and returns it as a map where DEFAULT_AXIS maps to grid elements
-    //! @param[in] params   grid parameters containing information about the grid. For more info look up CreateParams
-    //! @return             GridAxisMap containing the grid surfaces
-    GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview(CreateParams params);
 
 };
 

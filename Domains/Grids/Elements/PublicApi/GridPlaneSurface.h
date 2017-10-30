@@ -12,10 +12,7 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
 #include <ConstraintSystem/ConstraintSystemApi.h>
-#include <Grids/Domain/GridsMacros.h>
-#include "GridSurface.h"
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridPlaneSurface)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -31,8 +28,8 @@ private:
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params, CurveVectorPtr surfaceVector);
-    explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params, ISolidPrimitivePtr  surface);
+    explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
+    explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr  surface);
     friend struct GridPlaneSurfaceHandler;
 
 public:
@@ -47,19 +44,19 @@ public:
     //! @param[in]  model           model for the grid surface
     //! @param[in]  surfaceVector   surface geometry
     //! @return                     gridplane surface
-    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, CurveVectorPtr surfaceVector);
+    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
 
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  surface         surface geometry
     //! @return                     gridplane surface
-    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, ISolidPrimitivePtr  surface);
+    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, ISolidPrimitivePtr  surface);
 
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridplane surface
-    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, DgnExtrusionDetail  extDetail);
+    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, DgnExtrusionDetail  extDetail);
 
 
     //! sets curveVector for this gridPlane

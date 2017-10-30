@@ -63,6 +63,8 @@
 #define GRIDS_CODESPEC_CODE(categoryName)                     GRIDS_SCHEMA_NAME "::" categoryName
 
 #define GRIDS_REL_GridSurfaceCreatesGridCurve                   "GridSurfaceCreatesGridCurve"
+#define GRIDS_REL_GridPortionHasAxes                            "GridPortionHasAxes"
+#define GRIDS_REL_GridAxisContainsGridSurfaces                  "GridAxisContainsGridSurfaces"
 
 #define GRIDS_CLASS_SurfaceSet                                  "SurfaceSet"
 #define GRIDS_CLASS_GridPortion                                 "GridPortion"

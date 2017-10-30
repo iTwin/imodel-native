@@ -11,11 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include "SurfaceSet.h"
-#include "GridSurface.h"
-
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridPortion)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -90,6 +86,8 @@ public:
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 
+    //! Make an iterator over gridAxis that compose this Grid
+    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeAxesIterator () const;
     };
 
 END_GRIDS_NAMESPACE

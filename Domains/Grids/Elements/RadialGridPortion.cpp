@@ -6,13 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/RadialGridPortion.h"
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include "PublicApi\GridPlaneSurface.h"
-#include "PublicApi\GridArcSurface.h"
 #include <ConstraintSystem/ConstraintSystemApi.h>
 
 BEGIN_GRIDS_NAMESPACE
@@ -60,7 +58,7 @@ DVec3d                      normal
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
+GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params, GridAxisPtr planeAxis, GridAxisPtr arcAxis)
     {
     GridElementVector radialGrid;
 
@@ -74,12 +72,16 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
     if (params.m_extendHeight)
         extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
 
-    GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*params.m_model, extDetail);
+
+    GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*params.m_model, planeAxis, extDetail);
     if (!baseGridPlane.IsValid())
         return GridElementVector();
 
+    if (params.m_planeCount > 0)
+        radialGrid.push_back (baseGridPlane);
+
     // Create plane grids
-    for (int i = 0; i <= params.m_planeCount; ++i)
+    for (int i = 1; i <= params.m_planeCount; ++i)
         {
         GridPlaneSurfacePtr planeSurface = dynamic_cast<GridPlaneSurface *>(baseGridPlane->Clone().get());
         if (!planeSurface.IsValid())
@@ -96,7 +98,7 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
         if (params.m_extendHeight)
             extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
         
-        GridArcSurfacePtr arcSurface = GridArcSurface::Create(*params.m_model, extDetail);
+        GridArcSurfacePtr arcSurface = GridArcSurface::Create(*params.m_model, arcAxis, extDetail);
         if (!arcSurface.IsValid())
             return GridElementVector();
 
@@ -121,7 +123,14 @@ RadialGridPortionPtr RadialGridPortion::CreateAndInsert (CreateParams params)
     GridAxisMap grid;
     CreateParams alteredParams = params;
     alteredParams.m_model = thisGrid->GetSurfacesModel ().get();
-    GridElementVector radialGrid = CreateGridPreview (params);
+
+
+    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
+
+    GridAxisPtr planeAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+    GridAxisPtr arcAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+
+    GridElementVector radialGrid = CreateGridPreview (params, planeAxis, arcAxis);
     grid[DEFAULT_AXIS] = radialGrid;
 
     InsertGridMapElements (grid);

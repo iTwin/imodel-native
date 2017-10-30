@@ -6,14 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/Domain/GridsDomain.h>
-#include <Grids/Handlers/DrivingSurfaceHandler.h>
-#include <Grids/Handlers/GridSurfaceHandler.h>
-#include <Grids/Handlers/GridPlaneSurfaceHandler.h>
-#include <Grids/Handlers/PortionHandlers.h>
-#include <Grids/Handlers/IntersectionCurveHandlers.h>
-#include <Grids/Handlers/GridArcSurfaceHandler.h>
-#include <Grids/Handlers/GridSurfaceCreatesGridCurveHandler.h>
-#include <Grids/Handlers/GridHandlers.h>
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnCategory.h>
 
 #define GRIDLINE_STYLE_NAME "GridlineStyle1"

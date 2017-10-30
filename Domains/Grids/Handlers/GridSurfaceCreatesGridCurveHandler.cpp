@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/GridSurfaceCreatesGridCurveHandler.h"
 #include <dgnPlatform/DgnModel.h>
 #include <dgnPlatform/ViewController.h>
 #include <DgnPlatform/DgnDb.h>
@@ -17,8 +16,7 @@
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #include <ConstraintSystem/ConstraintSystemApi.h>
-#include <Grids/Elements/GridCurve.h>
-#include <Grids/Elements/GridPlaneSurface.h>
+#include <Grids/gridsApi.h>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN

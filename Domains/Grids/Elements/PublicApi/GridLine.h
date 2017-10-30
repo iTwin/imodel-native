@@ -11,8 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <Grids/Domain/GridsMacros.h>
-#include "GridCurve.h"
+#include <Grids/gridsApi.h>
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridLine)
 

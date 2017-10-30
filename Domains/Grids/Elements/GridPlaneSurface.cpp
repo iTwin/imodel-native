@@ -1,4 +1,5 @@
-#include "PublicApi/GridPlaneSurface.h"
+
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
@@ -26,8 +27,9 @@ CreateParams const& params
 GridPlaneSurface::GridPlaneSurface
 (
 CreateParams const& params,
+GridAxisCPtr gridAxis,
 CurveVectorPtr  surfaceVector
-) : T_Super(params, surfaceVector) 
+) : T_Super(params, gridAxis, surfaceVector) 
     {
     }
 
@@ -37,8 +39,9 @@ CurveVectorPtr  surfaceVector
 GridPlaneSurface::GridPlaneSurface
 (
 CreateParams const& params,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr surface
-) : T_Super(params, surface) 
+) : T_Super(params, gridAxis, surface) 
     {
     }
 
@@ -48,10 +51,11 @@ ISolidPrimitivePtr surface
 GridPlaneSurfacePtr             GridPlaneSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
+GridAxisCPtr gridAxis,
 CurveVectorPtr  surfaceVector
 )
     {
-    return new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surfaceVector);
+    return new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surfaceVector);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,10 +64,11 @@ CurveVectorPtr  surfaceVector
 GridPlaneSurfacePtr             GridPlaneSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr surface
 )
     {
-    return new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
+    return new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,9 +180,14 @@ bool                            GridPlaneSurface::StretchGeomIdToPlane
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridPlaneSurfacePtr GridPlaneSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+GridPlaneSurfacePtr GridPlaneSurface::Create
+(
+Dgn::SpatialLocationModelCR model,
+GridAxisCPtr gridAxis, 
+DgnExtrusionDetail extDetail
+)
     {
-    return GridPlaneSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
+    return GridPlaneSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 END_GRIDS_NAMESPACE

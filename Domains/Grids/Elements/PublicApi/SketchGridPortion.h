@@ -11,9 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include "GridPortion.h"
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (SketchGridPortion)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -38,10 +36,10 @@ public:
     //! @return             sketch grid
     GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal);
 
-    //! Creates an empty sketch grid
+    //! Creates an empty sketch axis
     //! @param[in]  gridSurface   gridSurfacel for the sketchgridportion
     //! @return             SUCCESS if successful
-    GRIDELEMENTS_EXPORT         BentleyStatus AddGridSurface (GridSurfacePtr gridSurface);
+    GRIDELEMENTS_EXPORT         BentleyStatus AddGridAxis (GridAxisPtr gridAxis);
 };
 
 END_GRIDS_NAMESPACE

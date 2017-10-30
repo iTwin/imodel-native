@@ -11,10 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include "GridPortion.h"
-#include "GridAxis.h"
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (OrthogonalGridPortion)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -122,11 +119,6 @@ protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct OrthogonalGridPortionHandler;
 
-    //! Creates orthogonal grid and returns it as a map where HORIZONTAL_AXIS maps to horizontal grid planes and VERTICAL_AXIS maps to vertical grid planes
-    //! @param[in] params    grid parameters containing information about the grid. For more info look up CreateParams
-    //! @return              GridAxisMap containing the grid planes
-    GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview (StandardCreateParams const& params);
-
     //! Creates horizontal or vertical orthogonal grid portion
     //! @param[in] params       parameters for creating the grid portion
     //! @param[in] isHorizontal true if horizontal elements should be created, false if vertical
@@ -143,11 +135,11 @@ protected:
 
     //! Adds dimensions between elements
     //! @param[in] element1 first element for dimension 
-    //! @param[in] element2 second element for dimension
+    //! @param[in] element2 second element for 
     //! @param[in] distance distance between elements
     GRIDELEMENTS_EXPORT static void AddDimensionsToOrthogonalGrid(Grids::GridSurfacePtr element1, Grids::GridSurfacePtr element2, double distance);
 
-    BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, CreateParams const& params);
+    BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisPtr gridAxis, CreateParams const& params);
 
 //TODO: remove all protected below:
 

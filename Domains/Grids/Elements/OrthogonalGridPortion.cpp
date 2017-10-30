@@ -6,13 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/OrthogonalGridPortion.h"
-#include "PublicApi/GridAxis.h"
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include "PublicApi\GridPlaneSurface.h"
 //#include <DimensionHandler.h>
 #include <ConstraintSystem/ConstraintSystemApi.h>
 #include <BeSQLite/BeSQLite.h>
@@ -97,6 +95,7 @@ StandardCreateParams const& params
 BentleyStatus                   OrthogonalGridPortion::CreateCoplanarGridPlanes
 (
 bvector<CurveVectorPtr> const& surfaces,
+GridAxisPtr gridAxis,
 CreateParams const& params
 )
     {
@@ -106,12 +105,13 @@ CreateParams const& params
     if (subModel.IsValid ())
         {
         status = BentleyStatus::SUCCESS;
+
         //not putting into same method yet.. will do as GridAxis element is introduced.
         GridPlaneSurfacePtr lastGridPlane = nullptr;
         DPlane3d planeLast;
         for (CurveVectorPtr gridPlaneGeom : surfaces)
             {
-            GridPlaneSurfacePtr gridPlane = GridPlaneSurface::Create (*subModel, gridPlaneGeom);
+            GridPlaneSurfacePtr gridPlane = GridPlaneSurface::Create (*subModel, gridAxis, gridPlaneGeom);
             BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
             gridPlane->Insert ();
             DPlane3d planeThis;
@@ -152,8 +152,14 @@ CreateParams const& params
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 
-    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, params) ||
-        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, params))
+
+    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
+
+    GridAxisPtr verticalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+
+    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, verticalAxis, params) ||
+        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, horizontalAxis, params))
         BeAssert (!"error inserting gridSurfaces into orthogonal grid.. shouldn't get here..");
     return thisGrid;
     }
@@ -292,27 +298,13 @@ GridElementVector OrthogonalGridPortion::CreateGridElements (StandardCreateParam
         if (params.m_extendHeight)
             extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
 
-        GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, extDetail);
+        GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, gridAxis, extDetail);
         if (!baseGridPlane.IsValid())
             return GridElementVector();
 
         baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
         orthogonalGrid.push_back(baseGridPlane);
         }
-
-    return orthogonalGrid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-GridElementVector OrthogonalGridPortion::CreateGridPreview(StandardCreateParams const& params)
-    {
-    GridElementVector horizontalElements = CreateGridElements(params, params.m_model, true);
-    GridElementVector verticalElements = CreateGridElements(params, params.m_model, false);
-
-    GridElementVector orthogonalGrid = horizontalElements;
-    orthogonalGrid.insert(orthogonalGrid.end(), verticalElements.begin(), verticalElements.end());
 
     return orthogonalGrid;
     }

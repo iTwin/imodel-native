@@ -1,11 +1,15 @@
-#include "PublicApi/GridPortion.h"
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Grids/Elements/GridPortion.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
-#include "PublicApi\GridArcSurface.h"
-#include "PublicApi\GridPlaneSurface.h"
 #include <ConstraintSystem/ConstraintSystemApi.h>
 //#include <DimensionHandler.h>
 
@@ -202,6 +206,21 @@ Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
         return nullptr;
 
     return model;
+    }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator GridPortion::MakeAxesIterator () const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridAxis), "WHERE Grid=?");
+    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA, GRIDS_REL_GridPortionHasAxes);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
+        {
+        pStmnt->BindNavigationValue (1, GetElementId (), relClassId);
+        }
+    return iterator;
     }
 
 END_GRIDS_NAMESPACE

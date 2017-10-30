@@ -11,13 +11,9 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <Grids/Domain/GridsMacros.h>
-#include "GridCurve.h"
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridArc)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
-
 //=======================================================================================
 //! Physical building element
 //=======================================================================================

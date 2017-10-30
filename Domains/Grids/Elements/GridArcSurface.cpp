@@ -1,4 +1,5 @@
-#include "PublicApi/GridArcSurface.h"
+
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
@@ -27,8 +28,9 @@ CreateParams const& params
 GridArcSurface::GridArcSurface
 (
 CreateParams const& params,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
-) : T_Super(params, surface) 
+) : T_Super(params, gridAxis, surface) 
     {
     }
 
@@ -38,17 +40,23 @@ ISolidPrimitivePtr  surface
 GridArcSurfacePtr                 GridArcSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    return new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
+    return new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridArcSurfacePtr GridArcSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+GridArcSurfacePtr GridArcSurface::Create
+(
+Dgn::SpatialLocationModelCR model, 
+GridAxisCPtr gridAxis,
+DgnExtrusionDetail extDetail
+)
     {
-    return GridArcSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
+    return GridArcSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 END_GRIDS_NAMESPACE

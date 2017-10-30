@@ -11,10 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include "GridPortion.h"
-#include <Grids/Domain/GridsMacros.h>
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridAxis)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -34,9 +31,6 @@ protected:
 
     BE_PROP_NAME (Grid)
 
-    //! Sets opening's isEgress value
-    //! @param isEgress a value to set
-    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId); };
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
@@ -45,11 +39,23 @@ public:
     //! @param[in]  model   model for the axis
     //! @param[in]  grid    grid this axis belongs to
     //! @return             sketch grid
+    GRIDELEMENTS_EXPORT static GridAxisPtr Create (Dgn::DgnModelCR model, GridPortionCR grid);
+
+    //! Creates and inserts an empty grid axis
+    //! @param[in]  model   model for the axis
+    //! @param[in]  grid    grid this axis belongs to
+    //! @return             sketch grid
     GRIDELEMENTS_EXPORT static GridAxisPtr CreateAndInsert (Dgn::DgnModelCR model, GridPortionCR grid);
 
-    //! @return element id of the grid
-    GRIDELEMENTS_EXPORT Dgn::DgnElementId GetGridId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Grid ()); };
+    //! Sets gridAxis grid Id value
+    //! @param gridId a value to set
+    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId); };
 
+    //! @return element id of the grid
+    Dgn::DgnElementId GetGridId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Grid ()); };
+
+    //! Make an iterator over gridSurfaces that compose this GridAxis
+    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 };
 
 END_GRIDS_NAMESPACE

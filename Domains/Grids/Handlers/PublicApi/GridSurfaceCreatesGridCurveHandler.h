@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Grids/Domain/GridsMacros.h>
-#include <Grids/Elements/GridSurface.h>
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/ElementHandler.h>
 #include <DgnPlatform/DgnElementDependency.h>
 #include <Geom/CurveVector.h>

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/GridHandlers.h"
+#include <Grids/gridsApi.h>
 
 USING_NAMESPACE_GRIDS
 

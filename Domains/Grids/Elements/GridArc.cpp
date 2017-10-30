@@ -1,4 +1,5 @@
-#include "PublicApi/GridArc.h"
+
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>

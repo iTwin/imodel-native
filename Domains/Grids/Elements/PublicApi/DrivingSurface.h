@@ -11,9 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <Grids/Domain/GridsMacros.h>
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (DrivingSurface)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 

@@ -1,4 +1,5 @@
-#include "PublicApi/GridAxis.h"
+
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
@@ -46,9 +47,7 @@ Dgn::DgnModelCR model,
 GridPortionCR grid
 )
     {
-    GridAxisPtr thisAxis = new GridAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
-
-    thisAxis->SetGridId (grid.GetElementId ());
+    GridAxisPtr thisAxis = GridAxis::Create (model, grid);
 
     BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
@@ -58,5 +57,34 @@ GridPortionCR grid
     return thisAxis;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GridAxisPtr                 GridAxis::Create
+(
+Dgn::DgnModelCR model,
+GridPortionCR grid
+)
+    {
+    GridAxisPtr thisAxis = new GridAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+
+    thisAxis->SetGridId (grid.GetElementId ());
+
+    return thisAxis;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator GridPortion::MakeIterator () const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Axis=?");
+    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA, GRIDS_REL_GridAxisContainsGridSurfaces);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
+        {
+        pStmnt->BindNavigationValue (1, GetElementId (), relClassId);
+        }
+    return iterator;
+    }
 
 END_GRIDS_NAMESPACE

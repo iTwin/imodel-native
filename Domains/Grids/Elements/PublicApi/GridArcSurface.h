@@ -11,8 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <Grids/Domain/GridsMacros.h>
-#include "GridSurface.h"
+#include <Grids/gridsApi.h>
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridArcSurface)
 
@@ -27,7 +26,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GridArcSurface : GridSurface
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params, ISolidPrimitivePtr surface);
+    explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
     friend struct GridArcSurfaceHandler;
 
 public:
@@ -37,13 +36,13 @@ public:
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridarc surface
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, ISolidPrimitivePtr surface);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
 
     //! Creates a gridarc surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridarc surface
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, DgnExtrusionDetail extDetail);
 };
 
 END_GRIDS_NAMESPACE

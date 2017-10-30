@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Grids/Elements/DrivingSurface.h>
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/ElementHandler.h>
 #include <DgnPlatform/ViewController.h>
 

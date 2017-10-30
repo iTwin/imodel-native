@@ -11,10 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <Grids/Domain/GridsMacros.h>
-#include "DrivingSurface.h"
-
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridSurface)
+#include <Grids/gridsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -27,9 +24,15 @@ struct EXPORT_VTABLE_ATTRIBUTE GridSurface : DrivingSurface
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, CurveVectorPtr surfaceVector);
-    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, ISolidPrimitivePtr surface);
+    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
+    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
     friend struct GridSurfaceHandler;
+
+    BE_PROP_NAME(Axis)
+
+    //! Sets gridsurface axis Id
+    //! @param[in] axisId to set
+    void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId); };
 
     static GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId);
 public:
@@ -50,6 +53,9 @@ public:
     //! Translates grid to given point
     //! @param[in] translation   vector to translate by
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
+
+    //! @return axis id of the surface
+    GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
 
 };
 

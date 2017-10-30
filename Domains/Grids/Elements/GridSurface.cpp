@@ -6,14 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/GridSurface.h"
+#include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
 #include <ConstraintSystem/ConstraintSystemApi.h>
-#include "PublicApi\GridArcSurface.h"
-#include "PublicApi\GridPlaneSurface.h"
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
@@ -38,9 +36,12 @@ CreateParams const& params
 GridSurface::GridSurface
 (
 CreateParams const& params,
+GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
 ) : T_Super(params, surface) 
     {
+    BeAssert (gridAxis->GetElementId ().IsValid ());
+    SetAxisId (gridAxis->GetElementId ());
     }
 
 
@@ -50,9 +51,12 @@ ISolidPrimitivePtr  surface
 GridSurface::GridSurface
 (
 CreateParams const& params,
+GridAxisCPtr gridAxis,
 CurveVectorPtr  surfaceVector
 ) : T_Super(params, surfaceVector) 
     {
+    BeAssert (gridAxis->GetElementId ().IsValid ());
+    SetAxisId (gridAxis->GetElementId ());
     }
 
 /*---------------------------------------------------------------------------------**//**
