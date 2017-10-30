@@ -816,6 +816,10 @@ ICancellationTokenPtr ct
 
                 if (!response.IsModified())
                     {
+                    // TODO: This may be misleading and loosing info:
+                    // Technically server check was done, but it did not indicated that data didi not changed.
+                    // UI may want to know this and do not do any more checks.
+                    // On the other hand, such check might be done on DataOrigin::CachedData to refresh data.
                     returningDataOrigin = DataOrigin::CachedData;
                     }
 
