@@ -17,6 +17,8 @@ void ConvertV8TagToDgnDbExtension::Register()
     RegisterExtension(DgnV8Api::TagElementHandler::GetInstance(), *instance);
     }
 
+#ifdef WIP_TAGS
+
 //---------------------------------------------------------------------------------------
 // Mostly identical to Sam's implementation in Graphite0505.
 // @bsimethod                                                   Jeff.Marker     06/2016
@@ -185,11 +187,14 @@ static void createClassPropertyThumbprint(WString& thumbprint, V8ECN::ECClassCR 
         }
     }
 
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2016
 //---------------------------------------------------------------------------------------
 void RootModelConverter::_ConvertDgnV8Tags()
     {
+#ifdef WIP_TAGS
     //...............................................................................................................................................
     //...............................................................................................................................................
     
@@ -568,6 +573,7 @@ void RootModelConverter::_ConvertDgnV8Tags()
                 { BeAssert(false); }
             }
         }
+#endif
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

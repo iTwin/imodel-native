@@ -456,7 +456,6 @@ struct IChangeDetector
     //! @param attachment If the V8 model is a root model, this will be nullptr. Otherwise, this will be the attachment that was used to reach the V8 model.
     virtual void _OnModelInserted(Converter&, ResolvedModelMapping const& rmm, DgnV8Api::DgnAttachment const* attachment) = 0;
 
-    virtual void _OnSchemasConverted(Converter&, bvector<ECN::ECSchemaCP> const&) = 0;
     //! @}
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
@@ -633,24 +632,6 @@ struct Converter
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
         bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
     };
-
-#ifndef DOCUMENTATION_GENERATOR
-    //=======================================================================================
-    //!Convenience class that simplifies finalizing the schema conversion process. The destructor
-    //! does all the work necessary to clean-up after schema conversion is done.
-    // @bsiclass
-    //=======================================================================================
-    struct SchemaConversionScope : NonCopyableClass
-        {
-        private:
-            Converter& m_converter;
-            bool m_succeeded;
-        public:
-            explicit SchemaConversionScope(Converter&);
-            ~SchemaConversionScope();
-            void SetSucceeded() {m_succeeded = true;}
-        };
-#endif
 
     //! Guides the search for attachments with proxy graphics
     struct ProxyGraphicsDetector
@@ -926,7 +907,6 @@ protected:
     bool                 m_hasLoadedWorkspaceFonts = false;
     bool                 m_skipECContent = true;
     bool                 m_addDebugDgnCodes = false;
-    bool                 m_needReimportSchemas = false;
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
     uint32_t             m_elementsConverted = 0;
@@ -963,13 +943,9 @@ protected:
     LinkConverter*       m_linkConverter = nullptr;
     RangePartIdMap       m_rangePartIdMap;
     DgnV8Api::IDgnProgressMeter* m_v8meter = nullptr;
-    ECN::ECSchemaReadContextPtr m_schemaReadContext;
-    ECN::ECSchemaReadContextPtr m_syncReadContext;
     ElementConverter*   m_elementConverter = nullptr;
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
-
-    BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel, DgnV8Api::ECSchemaPersistence persistence);
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1264,31 +1240,6 @@ public:
 
     void ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle const& v8displayStyle);
     void ConvertSceneLighting(DisplayStyle3dR displayStyle, DgnV8ViewInfoCR, DgnV8ModelR);
-    //! @}
-
-    //! @name BIS ECSchemas
-    //! @{
-    void SetSkipECContent(bool v) {m_skipECContent = v;}
-    void CheckECSchemasForModel(DgnV8ModelR, bmap<Utf8String, uint32_t>& syncInfoChecksums);
-    //! @}
-
-    //! @name V8 ECSchema Conversion
-    //! @{
-    BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel);
-    static bool IsDynamicSchema(ECObjectsV8::ECSchemaCR schema);
-    static bool IsWellKnownDynamicSchema(Bentley::Utf8StringCR schemaName);
-    static bool IsDynamicSchema(Bentley::Utf8StringCR schemaName, Bentley::Utf8StringCR schemaXml);
-    BentleyStatus ConsolidateV8ECSchemas();
-    BentleyStatus MergeV8ECSchemas(struct ECSchemaXmlDeserializer& deserializer, bmap<Utf8String, bvector<bpair<ECN::SchemaKey, Utf8String>>> const& schemaXmlMap) const;
-    BentleyStatus SupplementV8ECSchemas();
-    BentleyStatus ConvertToBisBasedECSchemas();
-    BentleyStatus ImportTargetECSchemas();
-    void AnalyzeECContent(DgnV8ModelR, DgnModelP targetModel);
-    BentleyStatus Analyze(DgnV8Api::ElementHandle const&, DgnModelP targetModel);
-    BentleyStatus DoAnalyze(DgnV8Api::ElementHandle const&, DgnModelP targetModel);
-    void InitializeECSchemaConversion();
-    void FinalizeECSchemaConversion();
-    DGNDBSYNC_EXPORT virtual void _AddSupplementalSchemas(bvector<ECN::ECSchemaP>& supplementalSchemas, ECN::ECSchemaReadContextR readContext) {}
     //! @}
 
     //! @name V8 ECRelationship Conversion
@@ -1758,7 +1709,6 @@ public:
     //! @}
 
     DGNDBSYNC_EXPORT virtual DgnStyleId _RemapLineStyle(double&unitsScale, DgnV8Api::DgnFile&, int32_t v8LineStyleId, bool required);
-    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
 
 
     //! Call this once before working with Converter
@@ -2033,7 +1983,6 @@ struct CreatorChangeDetector : IChangeDetector
     void _OnElementSeen(Converter&, DgnElementId) override {}
     void _OnModelSeen(Converter&, ResolvedModelMapping const&) override {}
     void _OnModelInserted(Converter&, ResolvedModelMapping const&, DgnV8Api::DgnAttachment const*) override {}
-    void _OnSchemasConverted(Converter&, bvector<ECN::ECSchemaCP> const&) override {}
     void _DetectDeletedElements(Converter&, SyncInfo::ElementIterator&) override {}
     void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedElementsEnd(Converter&) override {}
@@ -2072,7 +2021,6 @@ struct ChangeDetector : IChangeDetector
     bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR) override {return false;}
     DGNDBSYNC_EXPORT void _OnModelSeen(Converter&, ResolvedModelMapping const&);
     DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&, DgnV8Api::DgnAttachment const*);
-    void _OnSchemasConverted(Converter&, bvector<ECN::ECSchemaCP> const&) override {}
     DGNDBSYNC_EXPORT bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) ;
     DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override;
 
@@ -2418,12 +2366,6 @@ protected:
     SpatialParams const& _GetSpatialParams() const override {return m_params;}
     //! @}
 
-    //! @name ECSchemas
-    //! @{
-    DGNDBSYNC_EXPORT void CheckNoECSchemaChanges();
-    DGNDBSYNC_EXPORT virtual void _ConvertSchemas();
-    //! @}
-
     //! @name  Models
     //! @{
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
@@ -2498,6 +2440,8 @@ public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
+
+    DGNDBSYNC_EXPORT bool UpgradeDynamicSchema();
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.

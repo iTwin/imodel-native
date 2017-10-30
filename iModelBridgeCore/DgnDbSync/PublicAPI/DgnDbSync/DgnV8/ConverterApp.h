@@ -98,6 +98,7 @@ protected:
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
     BentleyStatus _DetectDeletedDocuments() override;
+    bool _UpgradeDynamicSchema(DgnDbR) override;
 
 public:
     RootModelConverterApp()

@@ -102,7 +102,7 @@ Utf8CP BisClassConverter::GetAspectClassSuffix(BisConversionRule conversionRule)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(SchemaConversionContext& context, ECN::ECClassCP childClass, BisConversionRule childRule, bvector<ECClassP> classes, bool isBaseClassCheck)
     {
-    Converter& converter = context.GetConverter();
+    DynamicSchemaGenerator& converter = context.GetConverter();
     for (BECN::ECClassP ecClass : classes)
         {
         ECClassName v8ClassName(*ecClass);
@@ -177,7 +177,7 @@ BentleyStatus BisClassConverter::EnsureBaseClassesAndDerivedClassesAreSet(Schema
 //static
 BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& context)
     {
-    Converter& converter = context.GetConverter();
+    DynamicSchemaGenerator& converter = context.GetConverter();
     ECClassRemovalContext removeContext(context);
     for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
         {
@@ -203,7 +203,7 @@ BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& c
 
             //Determine class based rule. This also evaluates the ConversionRule CA on the class, if it exists
             BisConversionRule rule;
-            if (BSISUCCESS != BisConversionRuleHelper::ConvertToBisConversionRule(rule, converter, *v8Class))
+            if (BSISUCCESS != BisConversionRuleHelper::ConvertToBisConversionRule(rule, *v8Class))
                 return BSIERROR;
 
             if (alreadyExists && (rule == existingRule || BisConversionRuleHelper::ClassNeedsBisification(rule)))
@@ -1129,7 +1129,7 @@ void findBase(ECClassCP &inputClass)
 // @bsimethod                                                 Simi.Hartstein      06/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, Converter& converter, ECSchemaReadContext& syncReadContext, ECSchemaP schema, bool autoDetect)
+BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, DynamicSchemaGenerator& converter, ECSchemaReadContext& syncReadContext, ECSchemaP schema, bool autoDetect)
 	{
 	// autodetect SmartPlant schema
 	if (autoDetect && schema->GetName().StartsWithI("SP3D"))
@@ -1158,7 +1158,7 @@ BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::Mix
 	if (mixinAttr == nullptr)
 		return BSIERROR;
 
-	auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, Converter& converter)
+	auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, DynamicSchemaGenerator& converter)
 		{
 		Utf8String error;
 		error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName());
@@ -1204,7 +1204,7 @@ BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::Mix
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& converter, BECN::ECSchemaReadContext& schemaReadContext, BECN::ECSchemaReadContext& syncReadContext, bool autoDetectMixinParams)
+BisClassConverter::SchemaConversionContext::SchemaConversionContext(DynamicSchemaGenerator& converter, BECN::ECSchemaReadContext& schemaReadContext, BECN::ECSchemaReadContext& syncReadContext, bool autoDetectMixinParams)
     : m_converter(converter), m_domainRelationshipBaseClass(nullptr), m_defaultConstraintClass(nullptr)
     {
     //need a schema map keyed on name only. SchemaCache doesn't support that
@@ -1254,7 +1254,7 @@ BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& c
         m_baseSchemaCache[FUNCTIONAL_DOMAIN_NAME] = functionalSchema.get();
         }
 
-	auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, Converter& converter)
+	auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, DynamicSchemaGenerator& converter)
 		{
 		Utf8String error;
 		error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName());

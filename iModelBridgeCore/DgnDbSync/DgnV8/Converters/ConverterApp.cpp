@@ -435,12 +435,23 @@ void ConverterApp::_DeleteSyncInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OnConvertToBim(DgnDbR db)
+bool RootModelConverterApp::_UpgradeDynamicSchema(DgnDbR db)
     {
     m_converter.reset(new RootModelConverter(m_params));
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
-    return m_converter->AttachSyncInfo();
+    m_converter->AttachSyncInfo();
+
+    m_converter->UpgradeDynamicSchema();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverterApp::_OnConvertToBim(DgnDbR db)
+    {
+    BeAssert((m_converter.get() != nullptr) && "_UpgradeDynamicSchema should have been called before this."):
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -624,22 +624,6 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void ConverterTestBaseFixture::AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext)
-    {
-    _AddSupplementalSchemas(supplementalSchemas, readContext);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void TestRootModelCreator::_AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext)
-    {
-    m_testFixture->AddSupplementalSchemas(supplementalSchemas, readContext);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

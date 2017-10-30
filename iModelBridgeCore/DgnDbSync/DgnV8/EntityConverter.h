@@ -10,6 +10,8 @@
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
+struct DynamicSchemaGenerator;
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2015
 //+===============+===============+===============+===============+===============+======
@@ -34,7 +36,7 @@ struct BisClassConverter
 				typedef Bentley::bpair<ECN::ECClassCP, ECN::ECClassCP> MixinContext;
 
             private:
-                Converter& m_converter;
+                DynamicSchemaGenerator& m_converter;
                 mutable ECN::ECEntityClassP m_defaultConstraintClass = nullptr;
                 bmap<Utf8String, ECN::ECSchemaP> m_inputSchemaMap;
 
@@ -56,7 +58,7 @@ struct BisClassConverter
                 void ReportIssueV(Converter::IssueSeverity severity, BentleyApi::Utf8CP message, va_list args) const;
 
             public:
-                SchemaConversionContext(Converter&, ECN::ECSchemaReadContext& schemaReadContext, ECN::ECSchemaReadContext& syncReadContext, bool autoDetectMixinParams);
+                SchemaConversionContext(DynamicSchemaGenerator&, ECN::ECSchemaReadContext& schemaReadContext, ECN::ECSchemaReadContext& syncReadContext, bool autoDetectMixinParams);
 
                 BentleyStatus AddClassMapping(ECN::ECClassCR inputClass, ECN::ECClassR aspectClass, bool isAspectOnly, ECN::ECClassCR aspectBaseClass);
 				BentleyStatus AddMixinAppliesToMapping(ECN::ECClassCP mixinClass, ECN::ECClassP appliesToClass);
@@ -66,7 +68,7 @@ struct BisClassConverter
                 std::vector<std::pair<ECN::ECClassCP, ElementAspectDefinition>> const& GetAspectMappings() const { return m_aspectMappings; }
                 ElementAspectDefinition const* TryGetAspectMapping(ECN::ECClassCR) const;
 
-                Converter& GetConverter() const { return m_converter; }
+                DynamicSchemaGenerator& GetConverter() const { return m_converter; }
                 DgnDbR GetDgnDb() const { return m_converter.GetDgnDb(); }
 
                 ECN::ECEntityClassP GetDefaultConstraintClass() const;
@@ -111,7 +113,7 @@ struct BisClassConverter
 
 		static bool ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, SchemaConversionContext& context);
 		static BentleyStatus ConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, ECN::ECClassCR appliesTo);
-		static BentleyStatus CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, Converter& converter, ECN::ECSchemaReadContext& syncReadContext, ECN::ECSchemaP schema, bool autoDetect);
+		static BentleyStatus CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, DynamicSchemaGenerator& converter, ECN::ECSchemaReadContext& syncReadContext, ECN::ECSchemaP schema, bool autoDetect);
 		static void FindCommonBaseClass(ECN::ECClassP& commonClass, ECN::ECClassP currentClass, ECN::ECBaseClassesList const& classes, const bvector<ECN::ECClassCP> propogationFilter);
         
 		static void GetBisBaseClasses(ECN::ECClassCP& elementBaseClass, ECN::ECClassCP& elementAspectClass, SchemaConversionContext&, BisConversionRule);
