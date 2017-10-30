@@ -11575,6 +11575,10 @@ DPoint3dCR      inCartesian         // => cartesian, in GCS's units.
 ) const
     {
     DPoint3d    internalCartesian;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     InternalCartesianFromCartesian (internalCartesian, inCartesian);
     return (ReprojectStatus) CSMap::CS_cs3ll (m_csParameters, &outLatLong, &internalCartesian);
     }
@@ -11589,6 +11593,10 @@ DPoint2dCR      inCartesian         // => cartesian, in GCS's units.
 ) const
     {
     DPoint2d    internalCartesian;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     InternalCartesianFromCartesian2D (internalCartesian, inCartesian);
 
     // unfortunately, CS_cs2ll takes 3d points.
@@ -11612,6 +11620,9 @@ GeoPointCR      inLatLong           // => latitude longitude
     ReprojectStatus     status;
     DPoint3d    internalCartesian;
 
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     status = (ReprojectStatus) CSMap::CS_ll3cs (m_csParameters, &internalCartesian, &inLatLong);
 
     // In case a hard error occured ... we zero out all values
@@ -11633,6 +11644,9 @@ GeoPoint2dCR    inLatLong           // => latitude longitude
 ) const
     {
     StatusInt   status;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
     GeoPoint    inLatLong3d;
     inLatLong3d.Init (inLatLong.longitude, inLatLong.latitude, 0.0);
@@ -11867,6 +11881,12 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
     if (&destinationGCS != m_destinationGCS)
         SetupDatumConverterFor(destinationGCS);
 
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
+	if (NULL == destinationGCS.m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     ReprojectStatus status = REPROJECT_Success;
     if (NULL != m_datumConverter)
         status = m_datumConverter->ConvertLatLong3D (outLatLong, inLatLong);
@@ -11890,6 +11910,11 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
 ) const
     {
 
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
+	if (NULL == destinationGCS.m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
     // make sure datum converter is set up for the destination.
     if (&destinationGCS != m_destinationGCS)
