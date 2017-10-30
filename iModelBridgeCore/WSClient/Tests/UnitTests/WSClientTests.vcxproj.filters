@@ -162,6 +162,8 @@
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectionClientInterface.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">

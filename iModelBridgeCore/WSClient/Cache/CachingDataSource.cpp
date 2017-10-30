@@ -14,6 +14,7 @@
 #include <WebServices/Cache/ServerQueryHelper.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Cache/Util/FileUtil.h>
+#include <WebServices/Cache/SyncNotifier.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <Bentley/BeTimeUtilities.h>
 
@@ -812,7 +813,7 @@ ICancellationTokenPtr ct
             {
             if (txn.GetCache().IsResponseCached(responseKey))
                 {
-                result->SetSuccess({DataOrigin::CachedData, DataSyncStatus::NotSynced});
+                result->SetSuccess({DataOrigin::CachedData, SyncStatus::NotSynced});
                 return;
                 }
             else if (DataOrigin::CachedData == origin)
@@ -829,7 +830,7 @@ ICancellationTokenPtr ct
             {
             auto txn = StartCacheTransaction();
             DataOrigin returningDataOrigin = DataOrigin::RemoteData;
-            DataSyncStatus returningDataSyncStatus = DataSyncStatus::Synced;
+            SyncStatus returningSyncStatus = SyncStatus::Synced;
             if (objectsResult.IsSuccess())
                 {
                 WSObjectsResponseCR response = objectsResult.GetValue();
@@ -845,7 +846,7 @@ ICancellationTokenPtr ct
                 if (!response.IsModified())
                     {
                     returningDataOrigin = DataOrigin::CachedData;
-                    returningDataSyncStatus = DataSyncStatus::NotModified;
+                    returningSyncStatus = SyncStatus::NotModified;
                     }
 
                 if (!response.IsFinal())
@@ -864,7 +865,7 @@ ICancellationTokenPtr ct
                         {
                         if (instancesResult.IsSuccess())
                             {
-                            result->SetSuccess({returningDataOrigin, returningDataSyncStatus});
+                            result->SetSuccess({returningDataOrigin, returningSyncStatus});
                             }
                         else
                             {
@@ -880,7 +881,7 @@ ICancellationTokenPtr ct
                     txn.GetCache().IsResponseCached(responseKey))
                     {
                     returningDataOrigin = DataOrigin::CachedData;
-                    returningDataSyncStatus = DataSyncStatus::SyncError;
+                    returningSyncStatus = SyncStatus::SyncError;
                     }
                 else
                     {
@@ -890,7 +891,7 @@ ICancellationTokenPtr ct
                 }
 
             txn.Commit();
-            result->SetSuccess({returningDataOrigin, returningDataSyncStatus});
+            result->SetSuccess({returningDataOrigin, returningSyncStatus});
             });
         })
             ->Then<DataOriginResult>([=]
@@ -932,8 +933,49 @@ ICancellationTokenPtr ct
             return ObjectsResult::Error(Status::InternalCacheError);
             }
 
-        return ObjectsResult::Success({cachedInstances, result.GetValue().dataOrigin});
+        return ObjectsResult::Success({cachedInstances, result.GetValue().origin});
         });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::CacheObjectsInBackgroundIfNeeded
+(
+SyncNotifierPtr backgroundSyncNotifier, 
+CachedResponseKeyCR responseKey,
+WSQueryCR query,
+DataOrigin requestedOrigin, 
+DataOriginResult result,
+ICancellationTokenPtr ct
+)
+    {
+    if (!backgroundSyncNotifier)
+        return;
+
+    if (requestedOrigin != DataOrigin::CachedData && requestedOrigin != DataOrigin::CachedOrRemoteData)
+        return;
+
+    if (result.GetValue().syncStatus != SyncStatus::NotSynced)
+        return;
+
+    auto finalBackgroundSyncResult = std::make_shared <SyncResult>();
+    auto backgroundSyncTask = m_cacheAccessThread->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+        {
+        CacheObjects(responseKey, query, DataOrigin::RemoteData, GetInitialSkipToken(), 0, ct)
+            ->Then(m_cacheAccessThread, [=] (DataOriginResult& result)
+            {
+            if (!result.IsSuccess())
+                finalBackgroundSyncResult->SetError(result.GetError());
+            else
+                finalBackgroundSyncResult->SetSuccess(result.GetValue().syncStatus);
+            });
+        })
+            ->Then<SyncResult>([=]
+            {
+            return *finalBackgroundSyncResult;
+            });
+        backgroundSyncNotifier->AddTask(backgroundSyncTask);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -944,7 +986,8 @@ AsyncTaskPtr<CachingDataSource::KeysResult> CachingDataSource::GetObjectsKeys
 CachedResponseKeyCR responseKey,
 WSQueryCR query,
 DataOrigin origin,
-ICancellationTokenPtr ct
+ICancellationTokenPtr ct,
+SyncNotifierPtr backgroundSyncNotifier
 )
     {
     ct = CreateCancellationToken(ct);
@@ -967,7 +1010,9 @@ ICancellationTokenPtr ct
             return KeysResult::Error(status);
             }
 
-        return KeysResult::Success({keys, result.GetValue().dataOrigin, result.GetValue().dataSyncStatus});
+        CacheObjectsInBackgroundIfNeeded(backgroundSyncNotifier, responseKey, query, origin, result, ct);
+
+        return KeysResult::Success({keys, result.GetValue().origin, result.GetValue().syncStatus});
         });
     }
 
@@ -1054,7 +1099,7 @@ ICancellationTokenPtr ct
             return ObjectsResult::Error(Status::InternalCacheError);
             }
 
-        return ObjectsResult::Success({cachedInstances, result.GetValue().dataOrigin});
+        return ObjectsResult::Success({cachedInstances, result.GetValue().origin});
         });
     }
 
@@ -1093,7 +1138,7 @@ ICancellationTokenPtr ct
             return KeysResult::Error(status);
             }
 
-        return KeysResult::Success({keys, result.GetValue().dataOrigin, result.GetValue().dataSyncStatus});
+        return KeysResult::Success({keys, result.GetValue().origin, result.GetValue().syncStatus});
         });
     }
 
