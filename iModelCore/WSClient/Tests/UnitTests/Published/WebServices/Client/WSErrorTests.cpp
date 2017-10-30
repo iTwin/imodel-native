@@ -199,7 +199,7 @@ TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMess
 
     EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
     EXPECT_EQ(WSError::Id::LoginFailed, error.GetId());
-    EXPECT_EQ(HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized), error.GetDisplayMessage());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::Unauthorized).GetDisplayMessage(), error.GetDisplayMessage());
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
