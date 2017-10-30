@@ -344,6 +344,7 @@ bool TileMesh::HasNonPlanarNormals() const
     }
 
 #if defined(WIP_TILETREE_PUBLISH)
+// Nobody calls this function...
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -361,11 +362,12 @@ void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tile
     AddTriangle(TileTriangle(0, 1, 2, false));
     AddTriangle(TileTriangle(1, 3, 2, false));
     }
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam)
+void TileMesh::AddTriMesh(Render::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam)
     {
     m_points.resize(triMesh.m_numPoints);
 
@@ -375,29 +377,28 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
     if (nullptr != triMesh.m_textureUV)
         m_uvParams.resize(triMesh.m_numPoints);
 
-    for (int32_t i=0; i<triMesh.m_numPoints; i++)
+    for (uint32_t i=0; i<triMesh.m_numPoints; i++)
         {
-        transform.Multiply (m_points.at(i), DPoint3d::From((double) triMesh.m_points[i].x, (double) triMesh.m_points[i].y, (double) triMesh.m_points[i].z));
+        transform.Multiply (m_points[i], DPoint3d::From((double) triMesh.m_points[i].x, (double) triMesh.m_points[i].y, (double) triMesh.m_points[i].z));
         if (nullptr != triMesh.m_normals)
-            m_normals.at(i).Init((double) triMesh.m_normals[i].x, (double) triMesh.m_normals[i].y, (double) triMesh.m_normals[i].z);
+            m_normals[i] = triMesh.m_normals[i].Decode();
 
         if (nullptr != triMesh.m_textureUV)
-            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
+            m_uvParams[i].Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
 #define DEFAULT_ATTRIBUTE_VALUE 1
 #ifdef DEFAULT_ATTRIBUTE_VALUE
         m_attributes.resize(triMesh.m_numPoints);
 
-        for (int32_t i=0; i<triMesh.m_numPoints; i++)
+        for (uint32_t i=0; i<triMesh.m_numPoints; i++)
             m_attributes[i] = DEFAULT_ATTRIBUTE_VALUE;
 
         m_validIdsPresent = true;
 #endif
     
-    for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
+    for (uint32_t i=0; i<triMesh.m_numIndices; i += 3)
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1542,6 +1543,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
+    // ###TODO: This is not ready for primetime...
 #ifdef GENERATE_FROM_TILE_TREE_DIRECTLY
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
