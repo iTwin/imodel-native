@@ -52,13 +52,19 @@ TEST_F(WSErrorTests, Ctor_CanceledHttpResponse_SetsStatusCanceled)
     EXPECT_EQ(WSError::Status::Canceled, error.GetStatus());
     }
 
-TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusConnectionError)
+TEST_F(WSErrorTests, Ctor_HttpResponseWithNotHandledConnectionStatuses_SetsStatusConnectionError)
     {
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::None)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetStatus());
+    for (int i = (int) ConnectionStatus::None; i <= (int) ConnectionStatus::UnknownError; i++)
+        {
+        auto status = (ConnectionStatus) i;
+        if (status == ConnectionStatus::OK)
+            continue;
+        if (status == ConnectionStatus::Canceled)
+            continue;
+        if (status == ConnectionStatus::CertificateError)
+            continue;
+        EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(status)).GetStatus());
+        }
     }
 
 TEST_F(WSErrorTests, Ctor_HttpResponseWithCertificateError_SetsStatusCertificateError)
@@ -392,7 +398,7 @@ TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMess
 
     EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
     EXPECT_EQ(WSError::Id::LoginFailed, error.GetId());
-    EXPECT_EQ(HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized), error.GetDisplayMessage());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::Unauthorized).GetDisplayMessage(), error.GetDisplayMessage());
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 
