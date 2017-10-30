@@ -183,7 +183,7 @@ using namespace TileTreePublish;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static folly::Future<BentleyStatus> requestTile(Context context)
 {
-    if (context.m_inputTile->_HasChildren() && context.m_inputTile->IsNotLoaded())
+    if (context.m_inputTile->IsNotLoaded())
     {
         std::shared_ptr<RenderSystem> renderSystem = std::make_shared<RenderSystem>(*context.m_outputTile, context.m_clip);
         TileTree::TileLoadStatePtr loadState;
