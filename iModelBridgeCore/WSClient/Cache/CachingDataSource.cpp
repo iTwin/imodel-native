@@ -812,7 +812,7 @@ ICancellationTokenPtr ct
             {
             if (txn.GetCache().IsResponseCached(responseKey))
                 {
-                result->SetSuccess(DataOrigin::CachedData);
+                result->SetSuccess({DataOrigin::CachedData, DataSyncStatus::NotSynced});
                 return;
                 }
             else if (DataOrigin::CachedData == origin)
@@ -829,6 +829,7 @@ ICancellationTokenPtr ct
             {
             auto txn = StartCacheTransaction();
             DataOrigin returningDataOrigin = DataOrigin::RemoteData;
+            DataSyncStatus returningDataSyncStatus = DataSyncStatus::Synced;
             if (objectsResult.IsSuccess())
                 {
                 WSObjectsResponseCR response = objectsResult.GetValue();
@@ -848,6 +849,7 @@ ICancellationTokenPtr ct
                     // UI may want to know this and do not do any more checks.
                     // On the other hand, such check might be done on DataOrigin::CachedData to refresh data.
                     returningDataOrigin = DataOrigin::CachedData;
+                    returningDataSyncStatus = DataSyncStatus::NotModified;
                     }
 
                 if (!response.IsFinal())
@@ -866,7 +868,7 @@ ICancellationTokenPtr ct
                         {
                         if (instancesResult.IsSuccess())
                             {
-                            result->SetSuccess(returningDataOrigin);
+                            result->SetSuccess({returningDataOrigin, returningDataSyncStatus});
                             }
                         else
                             {
@@ -882,6 +884,7 @@ ICancellationTokenPtr ct
                     txn.GetCache().IsResponseCached(responseKey))
                     {
                     returningDataOrigin = DataOrigin::CachedData;
+                    returningDataSyncStatus = DataSyncStatus::SyncError;
                     }
                 else
                     {
@@ -891,7 +894,7 @@ ICancellationTokenPtr ct
                 }
 
             txn.Commit();
-            result->SetSuccess(returningDataOrigin);
+            result->SetSuccess({returningDataOrigin, returningDataSyncStatus});
             });
         })
             ->Then<DataOriginResult>([=]
@@ -933,7 +936,7 @@ ICancellationTokenPtr ct
             return ObjectsResult::Error(Status::InternalCacheError);
             }
 
-        return ObjectsResult::Success({cachedInstances, result.GetValue()});
+        return ObjectsResult::Success({cachedInstances, result.GetValue().dataOrigin});
         });
     }
 
@@ -968,7 +971,7 @@ ICancellationTokenPtr ct
             return KeysResult::Error(status);
             }
 
-        return KeysResult::Success({keys, result.GetValue()});
+        return KeysResult::Success({keys, result.GetValue().dataOrigin, result.GetValue().dataSyncStatus});
         });
     }
 
@@ -1055,7 +1058,7 @@ ICancellationTokenPtr ct
             return ObjectsResult::Error(Status::InternalCacheError);
             }
 
-        return ObjectsResult::Success({cachedInstances, result.GetValue()});
+        return ObjectsResult::Success({cachedInstances, result.GetValue().dataOrigin});
         });
     }
 
@@ -1094,7 +1097,7 @@ ICancellationTokenPtr ct
             return KeysResult::Error(status);
             }
 
-        return KeysResult::Success({keys, result.GetValue()});
+        return KeysResult::Success({keys, result.GetValue().dataOrigin, result.GetValue().dataSyncStatus});
         });
     }
 
