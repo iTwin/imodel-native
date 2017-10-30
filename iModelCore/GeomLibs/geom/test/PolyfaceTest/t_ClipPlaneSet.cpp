@@ -175,3 +175,26 @@ TEST(ClipPlaneSet,Undercut2)
     Check::ClearGeometry ("ClipPlaneSet.Undercut2");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,MingagusDoubleVertexHit)
+    {
+    // rectangle cuts diamond in half.
+    // With exact hits on diamond points, the "cut" count in the plane clip was never incremented,
+    // and the (properly!!) cut polygon was not swapped in as the right one.
+    // verify that the output area is half the input ...
+    bvector<DPoint3d> poly1 {{0,10,0},{-10,0,0},{0,-10,0},{10,0,0},{0,10,0}};
+    bvector<DPoint3d> poly2 {{-20,-20,0},{0,-20,0},{0,20,0},{-20,20,0},{-20,-20,0}};
+    Check::SaveTransformed (poly1);
+    Check::SaveTransformed (poly2);
+    ConvexClipPlaneSet clipPlaneSet;
+    clipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
+    bvector<DPoint3d> clippedRegion, work;
+    clipPlaneSet.ConvexPolygonClip(poly1, clippedRegion, work);
+    Check::Shift (30,0,0);
+    Check::SaveTransformed (clippedRegion);
+
+    Check::Near (0.5 * PolygonOps::AreaXY (poly1), PolygonOps::AreaXY (clippedRegion), "Diamond cut in half");
+    Check::ClearGeometry ("ClipPlaneSet.MingaagusDoubleVertexHit");
+    }

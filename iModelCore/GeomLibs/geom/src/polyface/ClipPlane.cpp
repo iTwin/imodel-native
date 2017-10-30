@@ -300,7 +300,7 @@ void ClipPlane::OffsetDistance (double offset) { m_distance += offset; }
 void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work) const
     {
     work.clear ();
-    size_t numSplit = 0;
+    size_t numNegative = 0;
     static double s_fractionTol = 1.0e-8;
     if (xyz.size () > 2)
         {
@@ -311,6 +311,8 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
         for (auto &xyz1 : xyz)
             {
             double a1 = EvaluatePoint (xyz1);
+            if (a1 < 0)
+                numNegative++;
             if (a0 * a1 < 0.0)
                 {
                 // simple crossing ..
@@ -321,7 +323,6 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
                     }
                 else
                     work.push_back (DPoint3d::FromInterpolate (xyz0, f, xyz1));
-                    numSplit++;
                 }
             if (a1 >= 0.0)
                 work.push_back (xyz1);
@@ -332,7 +333,7 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
 
     if (work.size () <= 2)
         xyz.clear ();
-    else if (numSplit > 0)
+    else if (numNegative > 0)
         work.swap (xyz);
     // If no splits happened, no need to swap
     }

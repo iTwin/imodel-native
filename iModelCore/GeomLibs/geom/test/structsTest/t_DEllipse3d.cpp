@@ -2418,3 +2418,98 @@ TEST(DEllipse3d,STurn)
 
     Check::ClearGeometry ("DEllipse3d.STurn");
     }
+
+#ifdef VerifyCivilArcConstruction
+// This xml fragment is given (Scott Devoe, Oct 22 2017)
+// The code below makes an arc that matches.
+#ifdef RawXMLArcDefinitions
+<Curve rot="ccw" crvType="arc" radius="550.000000000" length="1558.934318418" chord="1087.052172758" dirStart="2.201767682562" dirEnd="5.650526956255" staStart="363.352882000"> 
+<Start code="PC"> 
+ 1495977.055739300 556616.979535724 105.109956645 
+</Start> 
+<Center code="CC"> 
+ 1496421.155911220 556941.440684858 0.000000000 
+</Center> 
+<End code="PT"> 
+ 1496746.365793140 557384.992860710 124.597816952 
+</End>
+
+#endif
+
+// return the angle (in Radians) from the positive Y axis to the xy part of the vector.
+double CCWAngleFromY (DVec3dCR vector)
+    {
+    double radians = atan2 (-vector.x, vector.y);
+    if (radians < 0.0)
+        return radians + Angle::TwoPi ();
+    return radians;
+    }
+
+TEST(DEllipse3d,ScottDConstructionFromXML)
+    {
+    auto start = DPoint3d::From ( 1495977.055739300, 556616.979535724,105.109956645);
+    auto center = DPoint3d::From ( 1496421.155911220, 556941.440684858, 0.000000000);
+    auto end = DPoint3d::From (1496746.365793140, 557384.992860710,124.597816952);
+
+    auto centerToStart = DVec3d::FromStartEnd (center, start);
+    auto centerToEnd   = DVec3d::FromStartEnd (center, end);
+
+    auto radius = 550.0;
+    double dirStart = 2.201767682562;
+    double dirEnd   = 5.650526956255;
+
+    // length of vectors for visualizing start end bearings:
+    double startTangentLength = radius * 0.4;
+    double endTangentLength = 0.25 * startTangentLength;
+
+    auto startTarget = DPoint3d::FromSumOf (start, DVec3d::From (-startTangentLength * cos (dirStart), -startTangentLength * sin (dirStart)));
+    auto endTarget = DPoint3d::FromSumOf (end, DVec3d::From ( -endTangentLength * cos (dirEnd), -endTangentLength * sin (dirEnd)));
+
+
+    auto startRadiusLines = bvector<DPoint3d>
+        {
+        DPoint3d::FromInterpolateAndPerpendicularXY (start, 0.8, startTarget, -0.2),
+        startTarget,
+        start,
+        center,
+        };
+
+    auto endRadiusLines = bvector<DPoint3d>
+        {
+        center,
+        end,
+        endTarget,
+        DPoint3d::FromInterpolateAndPerpendicularXY (end, 0.8, endTarget, -0.2)
+        };
+
+
+    auto xyArc = DEllipse3d::FromCenterRadiusXY (center, radius);
+    Check::SaveTransformed (startRadiusLines);
+    Check::SaveTransformed (endRadiusLines);
+    double markerSize = 10.0;
+    Check::SaveTransformedMarker (center, markerSize);
+    Check::SaveTransformed (xyArc);
+
+    auto radius0 = center.Distance (start);
+    auto radius1 = center.Distance (end);
+
+    GEOMAPI_PRINTF (" Stated Radius %.17le\n", radius);
+    GEOMAPI_PRINTF (" Actual center to start %.17le     XY %.17le\n", center.Distance (start), center.DistanceXY (start));
+    GEOMAPI_PRINTF (" Actual center to start %.17le     XY %.17le\n", center.Distance (end), center.DistanceXY (end));
+
+    GEOMAPI_PRINTF (" Stated start and end bearing %.17le %.17le\n", dirStart, dirEnd);
+    GEOMAPI_PRINTF (" Angle:  X to Center-to-start %.17le\n", CCWAngleFromY (centerToStart));
+    GEOMAPI_PRINTF (" Angle:  X to Center-to-end %.17le\n", CCWAngleFromY (centerToEnd));
+
+    auto xyArcAtStartZ = DEllipse3d::From (
+                center.x, center.y, start.z,        // center point, but z from start
+                0, radius, 0,                       // positive Y direction is 0-degrees for bearing measurements
+                -radius, 0, 0,                      // negative X direction is 90-degrees for bearing measurements
+                dirStart,                           // start bearing (FROM NORTH TO WEST)
+                dirEnd - dirStart                   // sweep bearing (NORTH TO WEST (i.e. CCW) is positive)
+                );
+    Check::SaveTransformed (xyArcAtStartZ);
+    Check::ClearGeometry ("DEllipse3d.ScottDConstructionFromXML");
+
+    }
+#endif
