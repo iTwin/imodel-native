@@ -42,7 +42,14 @@ struct CachingDataSource :
         typedef AsyncResult<CachingDataSourcePtr, Error> OpenResult;
 
     private:
-        typedef AsyncResult<DataOrigin, Error> DataOriginResult;
+        struct DataOriginStatus
+            {
+            DataOrigin dataOrigin;
+            DataSyncStatus dataSyncStatus;
+            };
+
+    private:
+        typedef AsyncResult<DataOriginStatus, Error> DataOriginResult;
 
     private:
         bool                                        m_isOpen = false;

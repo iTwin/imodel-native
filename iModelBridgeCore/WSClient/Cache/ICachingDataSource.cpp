@@ -290,15 +290,16 @@ ICachingDataSource::DataOrigin ICachingDataSource::ObjectsData::GetOrigin() cons
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICachingDataSource::KeysData::KeysData() :
-KeysData(nullptr, DataOrigin::CachedData)
+KeysData(nullptr, DataOrigin::CachedData, DataSyncStatus::NotSynced)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::KeysData::KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin) :
+ICachingDataSource::KeysData::KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin, DataSyncStatus syncStatus) :
 m_data(data ? data : std::make_shared<ECInstanceKeyMultiMap>()),
-m_origin(origin)
+m_origin(origin),
+m_syncStatus(syncStatus)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -331,6 +332,14 @@ ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys()
 ICachingDataSource::DataOrigin ICachingDataSource::KeysData::GetOrigin() const
     {
     return m_origin;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::DataSyncStatus ICachingDataSource::KeysData::GetSyncStatus() const
+    {
+    return m_syncStatus;
     }
 
 /*--------------------------------------------------------------------------------------+

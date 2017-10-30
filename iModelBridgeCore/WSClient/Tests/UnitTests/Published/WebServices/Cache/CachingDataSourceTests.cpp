@@ -2139,6 +2139,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::Synced, result.GetValue().GetSyncStatus());
     EXPECT_EQ(1, result.GetValue().GetKeys().size());
     auto cachedInstanceKey = ds->StartCacheTransaction().GetCache().FindInstance({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cachedInstanceKey, result.GetValue().GetKeys()));
@@ -2162,6 +2163,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::NotSynced, result.GetValue().GetSyncStatus());
     EXPECT_EQ(1, result.GetValue().GetKeys().size());
     auto cachedInstanceKey = ds->StartCacheTransaction().GetCache().FindInstance({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cachedInstanceKey, result.GetValue().GetKeys()));
@@ -2206,6 +2208,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::SyncError, result.GetValue().GetSyncStatus());
     EXPECT_EQ(1, result.GetValue().GetKeys().size());
     auto cachedInstanceKey = ds->StartCacheTransaction().GetCache().FindInstance({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cachedInstanceKey, result.GetValue().GetKeys()));
@@ -2236,6 +2239,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::Synced, result.GetValue().GetSyncStatus());
     EXPECT_EQ(1, result.GetValue().GetKeys().size());
     auto cachedInstanceKey = ds->StartCacheTransaction().GetCache().FindInstance({"TestSchema.TestClass", "B"});
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cachedInstanceKey, result.GetValue().GetKeys()));
@@ -2305,6 +2309,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ResponseDoesNotContainPreviouslyCa
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::Synced, result.GetValue().GetSyncStatus());
     EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
@@ -2336,6 +2341,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndResponseNotModified_R
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::NotModified, result.GetValue().GetSyncStatus());
     EXPECT_THAT(result.GetValue().GetKeys(), ContainerEq(expectedInstances));
     }
 
@@ -2454,6 +2460,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokens_Queri
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(CachingDataSource::DataOrigin::RemoteData, result.GetValue().GetOrigin());
+    EXPECT_EQ(ICachingDataSource::DataSyncStatus::Synced, result.GetValue().GetSyncStatus());
 
     auto txn = ds->StartCacheTransaction();
 
