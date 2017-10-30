@@ -32,7 +32,7 @@ protected:
     friend struct GridSurfaceHandler;
 
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
-    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) = 0;
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) { return false; };
 
     static GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId);
 public:
