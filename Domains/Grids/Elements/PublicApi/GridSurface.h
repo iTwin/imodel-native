@@ -30,6 +30,8 @@ protected:
 
     BE_PROP_NAME(Axis)
 
+    virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) { return false; };
     //! Sets gridsurface axis Id
     //! @param[in] axisId to set
     void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId); };
@@ -41,6 +43,11 @@ public:
     //! Rotates grid by given angle in radians
     //! @param[in] theta            angle in radians
     GRIDELEMENTS_EXPORT void RotateXY(double theta);
+
+    //! Rotates grid around point by given angle in radians
+    //! @param[in] point            point to rotate around
+    //! @param[in] theta            angle in radians
+    GRIDELEMENTS_EXPORT void RotateXY(DPoint3d point, double theta);
 
     //! Translates grid to given point
     //! @param[in] target   point to move
@@ -57,6 +64,8 @@ public:
     //! @return axis id of the surface
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
 
+    //! Sets geometry for this grid surface
+    GRIDELEMENTS_EXPORT BentleyStatus SetGrometry(ISolidPrimitivePtr surface);
 };
 
 END_GRIDS_NAMESPACE

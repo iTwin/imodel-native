@@ -76,10 +76,10 @@ GridPortionCR grid
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::ElementIterator GridPortion::MakeIterator () const
+Dgn::ElementIterator GridAxis::MakeIterator () const
     {
     Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Axis=?");
-    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA, GRIDS_REL_GridAxisContainsGridSurfaces);
+    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces);
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
         {
         pStmnt->BindNavigationValue (1, GetElementId (), relClassId);

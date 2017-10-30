@@ -34,6 +34,7 @@ public:
         double m_circularInterval;
         double m_length;
         double m_height;
+        DVec3d m_normal;
         bool m_extendHeight;    //TODO: Remove, needs to be handled by the tools
 
         //! Creates create parameters for radial grid
@@ -45,9 +46,9 @@ public:
         //! @param[in] length               length of grid lines
         //! @param[in] height               height of grid lines
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
-        CreateParams(Dgn::SpatialLocationModelCP model, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height, bool extendHeight = false) :
-            T_Super(Dgn::DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()))),
+        CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
+                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 1)) :
+            T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()), Dgn::DgnCode(model->GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_RadialGridPortion), modeledElementId, name))),
             m_model(model),
             m_planeCount(planeCount),
             m_circularCount(circularCount),
@@ -55,7 +56,8 @@ public:
             m_circularInterval(circularInterval),
             m_length(length),
             m_height(height),
-            m_extendHeight(extendHeight)
+            m_extendHeight(extendHeight),
+            m_normal(normal)
             {
             }
 

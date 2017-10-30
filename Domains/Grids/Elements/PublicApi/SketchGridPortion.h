@@ -34,12 +34,15 @@ public:
     //! @param[in]  model   model for the radialgridportion
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal);
+    GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal, Utf8CP name);
 
     //! Creates an empty sketch axis
     //! @param[in]  gridSurface   gridSurfacel for the sketchgridportion
     //! @return             SUCCESS if successful
     GRIDELEMENTS_EXPORT         BentleyStatus AddGridAxis (GridAxisPtr gridAxis);
+
+    //! Returns a sketch grid portion with given parent element and name
+    GRIDELEMENTS_EXPORT static SketchGridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
 };
 
 END_GRIDS_NAMESPACE

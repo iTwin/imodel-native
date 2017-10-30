@@ -113,7 +113,7 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params, Grid
 //---------------------------------------------------------------------------------------
 RadialGridPortionPtr RadialGridPortion::CreateAndInsert (CreateParams params)
     {
-    RadialGridPortionPtr thisGrid = new RadialGridPortion (params);
+    RadialGridPortionPtr thisGrid = new RadialGridPortion (params, params.m_normal);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting Radial grid");
 
@@ -130,7 +130,7 @@ RadialGridPortionPtr RadialGridPortion::CreateAndInsert (CreateParams params)
     GridAxisPtr planeAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
     GridAxisPtr arcAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
 
-    GridElementVector radialGrid = CreateGridPreview (params, planeAxis, arcAxis);
+    GridElementVector radialGrid = CreateGridPreview (alteredParams, planeAxis, arcAxis);
     grid[DEFAULT_AXIS] = radialGrid;
 
     InsertGridMapElements (grid);

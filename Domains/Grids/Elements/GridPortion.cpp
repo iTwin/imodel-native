@@ -156,6 +156,21 @@ RepositoryStatus GridPortion::TranslateToPoint (DPoint3d point)
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridPortion::GetGridRotationAngleXY(double& angle) const
+    {
+    bvector<DgnElementId> gridElementIds = MakeIterator().BuildIdList<DgnElementId>();
+    if (gridElementIds.empty() || !gridElementIds.front().IsValid())
+        return BentleyStatus::ERROR;
+
+    GridSurfaceCPtr firstElem = GetDgnDb().Elements().Get<GridSurface>(gridElementIds.front());
+    angle = GeometryUtils::PlacementToAngleXY(firstElem->GetPlacement());
+
+    return BentleyStatus::SUCCESS;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/17
 //---------------+---------------+---------------+---------------+---------------+------
@@ -215,12 +230,24 @@ Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
 Dgn::ElementIterator GridPortion::MakeAxesIterator () const
     {
     Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridAxis), "WHERE Grid=?");
-    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA, GRIDS_REL_GridPortionHasAxes);
+    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridPortionHasAxes);
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
         {
         pStmnt->BindNavigationValue (1, GetElementId (), relClassId);
         }
     return iterator;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+GridPortionPtr GridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
+    {
+    return db.Elements().GetForEdit<Grids::GridPortion>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
+                                                                                                                    GRIDS_AUTHORITY_GridPortion,
+                                                                                                                    parentId,
+                                                                                                                    gridName));
+    }
+
 
 END_GRIDS_NAMESPACE
+

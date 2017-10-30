@@ -83,11 +83,19 @@ public:
     //! @param[in] theta    angle to rotate to
     GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY (double theta);
 
+    //! Returns an angle the grid elements have rotated to
+    //! @param[out] angle   angle that the grid elements have rotated to 
+    //! @return BentleyStatus::ERROR if grid has no elements
+    GRIDELEMENTS_EXPORT BentleyStatus GetGridRotationAngleXY(double& angle) const;
+
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 
     //! Make an iterator over gridAxis that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeAxesIterator () const;
+    
+    //! Returns a grid portion with given parent element and name
+    GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
     };
 
 END_GRIDS_NAMESPACE

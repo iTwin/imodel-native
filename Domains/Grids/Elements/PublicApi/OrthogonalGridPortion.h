@@ -167,6 +167,11 @@ public:
     //! @return     grid with gridsurfaces in submodel
     GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr CreateAndInsertBySurfaces (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
 
+    //!Rotates orthogonal grid by given angle in radians on XY plane
+    //! @param[in] theta            angle to rotate on XY plane
+    //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
+    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta, bool updateDimensions = false);
+
 
 public:     //TODO: remove all below
 

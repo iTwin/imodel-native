@@ -88,6 +88,16 @@ void GridSurface::RotateXY(double theta)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
+void GridSurface::RotateXY(DPoint3d point, double theta)
+    {
+    Placement3d placement = GetPlacement();
+    GeometryUtils::RotatePlacementAroundPointXY(placement, point, theta);
+    SetPlacement(placement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
 void GridSurface::MoveToPoint(DPoint3d target)
     {
     Placement3d placement = GetPlacement();
@@ -113,6 +123,34 @@ void GridSurface::Translate(DVec3d translation)
     Placement3d placement = GetPlacement();
     GeometryUtils::TranslatePlacement(placement, translation);
     SetPlacement(placement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridSurface::SetGrometry(ISolidPrimitivePtr surface)
+    {
+    if (_ValidateGeometry(surface))
+        return _SetGeometry(surface);
+
+    return BentleyStatus::ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridSurface::_SetGeometry(ISolidPrimitivePtr surface)
+    {
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
+
+    if (builder->Append(*surface, Dgn::GeometryBuilder::CoordSystem::World))
+        {
+        if (SUCCESS != builder->Finish(*geomElem))
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
     }
 
 END_GRIDS_NAMESPACE

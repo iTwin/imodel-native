@@ -45,6 +45,25 @@ ISolidPrimitivePtr surface
     {
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  10/17
+//---------------------------------------------------------------------------------------
+bool GridPlaneSurface::_ValidateGeometry(ISolidPrimitivePtr surface)
+    {
+    DgnExtrusionDetail extrDetail;
+    if (!surface->TryGetDgnExtrusionDetail(extrDetail))
+        return false;
+
+    ICurvePrimitivePtr curve = *(extrDetail.m_baseCurve)->begin();
+
+    if (nullptr == curve->GetLineStringCP() &&
+        nullptr == curve->GetPointStringCP() &&
+        nullptr == curve->GetLineCP())
+        return false;
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

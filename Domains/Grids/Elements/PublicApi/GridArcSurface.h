@@ -29,6 +29,8 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
     friend struct GridArcSurfaceHandler;
 
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) override;
+
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArcSurface, GRIDELEMENTS_EXPORT)
 
