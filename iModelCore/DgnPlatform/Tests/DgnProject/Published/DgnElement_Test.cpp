@@ -2349,9 +2349,9 @@ TEST_F(ImodelJsTest, MeasureInsertPerformance)
         el->SetPropertyValue("PointProperty2", pt);
         el->SetPropertyValue("PointProperty3", pt);
         el->SetPropertyValue("PointProperty4", pt);
-        DateTime dtUtc;
-        DateTime::FromString(dtUtc, "2013-09-15 12:05:39Z");
-        el->SetPropertyValue("dtUtc", dtUtc);
+        //DateTime dtUtc;
+        //DateTime::FromString(dtUtc, "2013-09-15 12:05:39Z");
+        //el->SetPropertyValue("dtUtc", dtUtc);
 
         ASSERT_TRUE(el->Insert().IsValid());
         if (0 == (i % 100))

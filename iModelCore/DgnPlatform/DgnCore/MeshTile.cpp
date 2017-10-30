@@ -2718,7 +2718,7 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Beastings 09/2017
+* @bsimethod                                                    Brien.Bastings 09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if defined (BENTLEYCONFIG_PARASOLID) 
 static bool hasBRep(GeometrySourceCR source)
