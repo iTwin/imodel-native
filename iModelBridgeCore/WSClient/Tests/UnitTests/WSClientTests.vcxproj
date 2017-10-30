@@ -32,6 +32,8 @@
     <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
     <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
     <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />

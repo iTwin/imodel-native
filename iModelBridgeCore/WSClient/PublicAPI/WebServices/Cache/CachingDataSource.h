@@ -44,8 +44,8 @@ struct CachingDataSource :
     private:
         struct DataOriginStatus
             {
-            DataOrigin dataOrigin;
-            DataSyncStatus dataSyncStatus;
+            DataOrigin origin;
+            SyncStatus syncStatus;
             };
 
     private:
@@ -116,6 +116,16 @@ struct CachingDataSource :
             DataOrigin origin,
             Utf8StringCR skipToken,
             uint64_t page,
+            ICancellationTokenPtr ct
+            );
+
+        void CacheObjectsInBackgroundIfNeeded
+            (
+            SyncNotifierPtr backgroundSyncNotifier,
+            CachedResponseKeyCR responseKey,
+            WSQueryCR query,
+            DataOrigin requestedOrigin, 
+            DataOriginResult result,
             ICancellationTokenPtr ct
             );
 
@@ -229,7 +239,8 @@ struct CachingDataSource :
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            SyncNotifierPtr backgroundSyncNotifier = nullptr
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<ObjectsResult> GetNavigationChildren
