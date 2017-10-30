@@ -172,27 +172,27 @@ void RevisionComparisonViewController::_OverrideGraphicParams(Render::OvrGraphic
         return;
         }
 
-    DbOpcode persistentOpcode = m_persistentOpcodeCache[elementId];
-    DbOpcode transientOpcode = m_transientOpcodeCache[elementId];
+    bmap<DgnElementId,DbOpcode>::const_iterator persistent = m_persistentOpcodeCache.find(elementId);
+    bmap<DgnElementId,DbOpcode>::const_iterator transient = m_transientOpcodeCache.find(elementId);
 
     // Get the override for element IDs
-    if (WantShowCurrent() && !m_visitingTransientElements && persistentOpcode != (DbOpcode)0)
+    if (WantShowCurrent() && !m_visitingTransientElements && persistent != m_persistentOpcodeCache.end())
         {
-        m_symbology.GetCurrentRevisionOverrides(persistentOpcode, symbologyOverrides);
+        m_symbology.GetCurrentRevisionOverrides(persistent->second, symbologyOverrides);
         return;
         }
 
     // Get the override from the temporary elements
     if (WantShowTarget())
         {
-        if (transientOpcode != (DbOpcode)0 && m_visitingTransientElements)
+        if (transient != m_transientOpcodeCache.end() && m_visitingTransientElements)
             {
-            m_symbology.GetTargetRevisionOverrides(transientOpcode, symbologyOverrides);
+            m_symbology.GetTargetRevisionOverrides(transient->second, symbologyOverrides);
             return;
             }
 
         // Elements that are modified need to be transparent if we are in "Target-only" view
-        if (!WantShowBoth() && persistentOpcode != (DbOpcode)0)
+        if (!WantShowBoth() && persistent != m_persistentOpcodeCache.end())
             {
             symbologyOverrides.SetLineTransparency(255);
             symbologyOverrides.SetFillTransparency(255);
