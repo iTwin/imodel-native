@@ -26,6 +26,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 typedef std::shared_ptr<struct ICachingDataSource> ICachingDataSourcePtr;
 typedef std::shared_ptr<const Utf8String> Utf8StringCPtr;
+typedef std::shared_ptr<struct SyncNotifier> SyncNotifierPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    01/2013
@@ -56,12 +57,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             RemoteOrCachedData = 4  // Query server first to update the cache or return cached data if query failed 
             };
 
-        enum class DataSyncStatus
+        enum class SyncStatus
             {
-            NotSynced,        // There was no attempt to synchronize data from server
-            SyncError,        // There was an error during synchronization with server.
-            Synced,           // Synchronized succesfully.
-            NotModified       // Synchronized succesfully data not changed on server.
+            Synced,          // Synchronized succesfully.
+            NotModified,     // Synchronized succesfully data not changed on server.
+            NotSynced,       // There was no attempt to synchronize data from server
+            SyncError        // There was an error during synchronization with server.
             };
 
         struct SelectProvider;
@@ -186,12 +187,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param[in] query - server query
         //! @param[in] origin - specify what data to try returning
         //! @param[in] ct - (optional)
+        //! @param[in] backgroundSyncNotifier - (optional) if not null and there was no attempt to pull data from server - executes GetObjectKeys with DataOrigin::RemoteData in the background
         virtual AsyncTaskPtr<KeysResult> GetObjectsKeys
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            SyncNotifierPtr backgroundSyncNotifier = nullptr
             ) = 0;
 
         //! Get navigation instances.
@@ -408,17 +411,17 @@ struct ICachingDataSource::KeysData
     private:
         std::shared_ptr<ECInstanceKeyMultiMap> m_data;
         DataOrigin m_origin;
-        DataSyncStatus m_syncStatus;
+        SyncStatus m_syncStatus;
 
     public:
         WSCACHE_EXPORT KeysData();
-        WSCACHE_EXPORT KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin, DataSyncStatus syncStatus);
+        WSCACHE_EXPORT KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin, SyncStatus syncStatus);
 
         WSCACHE_EXPORT std::shared_ptr<ECInstanceKeyMultiMap> GetKeysPtr();
         WSCACHE_EXPORT const ECInstanceKeyMultiMap& GetKeys() const;
         WSCACHE_EXPORT ECInstanceKeyMultiMap& GetKeys();
         WSCACHE_EXPORT DataOrigin GetOrigin() const;
-        WSCACHE_EXPORT DataSyncStatus GetSyncStatus() const;
+        WSCACHE_EXPORT SyncStatus GetSyncStatus() const;
     };
 
 /*--------------------------------------------------------------------------------------+

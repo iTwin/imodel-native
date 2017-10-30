@@ -387,6 +387,9 @@
     <ClCompile Include="Connect\ConnectionClientInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\BackgroundSyncNotifier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -860,10 +863,13 @@
     <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Connect\IConnectionClientInterface.h">
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h">
+    <ClInclude Include="Connect\ConnectionClientInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\BackgroundSyncNotifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
