@@ -723,6 +723,9 @@ template<typename T> void TileBuilder::AddPolyface(PolyfaceQueryCR geom, bool fi
             if (addFaceData)
                 polyface->BuildPerFaceFaceData();
 
+            if (!geom.HasConvexFacets() && facetOptions->GetConvexFacetsRequired())
+                polyface->Triangulate(3);
+
             if (addEdgeChains)
                 polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
             }
