@@ -11,7 +11,6 @@
 #include "DgnPlatform.h"
 #include "IAuxCoordSys.h"
 #include "ViewContext.h"
-#include "SectionClip.h"
 #include "UpdatePlan.h"
 #include "ViewDefinition.h"
 #include <Bentley/BeThread.h>
@@ -312,7 +311,7 @@ public:
     //! Gets the DgnViewId of the ViewDefinition of this view.
     DgnViewId GetViewId() const {return m_definition->GetViewId();}
 
-    //! Change whether a DgnCatetory is displayed in the CategorySelector of this view.
+    //! Change whether a DgnCategory is displayed in the CategorySelector of this view.
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
@@ -613,18 +612,18 @@ public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
 
     //! Get the Level-of-Detail filtering size for scene creation for this SpatialViewController. This is the size, in pixels, of one side of a square. 
-    //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
+    //! Elements whose aabb projects onto the view an area less than this box are skipped during scene creation.
     double GetSceneLODSize() const {return m_sceneLODSize;}
     void SetSceneLODSize(double val) {m_sceneLODSize=val;} //!< see GetSceneLODSize
 
     //! Get the Level-of-Detail filtering size for non-scene (background) elements this SpatialViewController. This is the size, in pixels, of one side of a square. 
-    //! Elements whose aabb projects onto the view an area less than this box are skippped during background-element display.
+    //! Elements whose aabb projects onto the view an area less than this box are skipped during background-element display.
     double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
 };
 
 //=======================================================================================
-//! A OrthographicViewController controls orthogrphic projections of views of SpatialModels
+//! A OrthographicViewController controls orthographic projections of views of SpatialModels
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================

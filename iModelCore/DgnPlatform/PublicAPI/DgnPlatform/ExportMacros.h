@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ExportMacros.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,10 +17,6 @@
 
 #if defined (__DGNVIEW_BUILD__)
 #define DGNVIEW_EXPORT            EXPORT_ATTRIBUTE
-#endif
-
-#if defined (__VISEDGESLIB_BUILD__)
-#define VISEDGESLIB_EXPORT            EXPORT_ATTRIBUTE
 #endif
 
 #if defined (__DGNTOOLS_BUILD__)
@@ -42,11 +38,6 @@
 #define SOLIDINTEROP_EXPORT         EXPORT_ATTRIBUTE
 #endif
 
-#if defined (__MSACIS_BUILD__)
-#define __DGNHOST_BUILD__
-#define MSACIS_EXPORT             EXPORT_ATTRIBUTE
-#endif
-
 #if defined (__MSPFACET_BUILD__)
 #define __DGNHOST_BUILD__
 #define MSPFACET_EXPORT             EXPORT_ATTRIBUTE
@@ -61,10 +52,6 @@
 
 #if defined (__IMAGELIB_BUILD__)
 #define IMAGELIB_EXPORT EXPORT_ATTRIBUTE
-#endif
-
-#if defined (__VIDEOLIB_BUILD__)
-#define VIDEOLIB_EXPORT EXPORT_ATTRIBUTE
 #endif
 
 #if defined (__RASTERLIB_BUILD__)
@@ -93,10 +80,6 @@
 
 #if defined (__RASTERVALIDATE_BUILD__)
 #define RASTERVALIDATE_EXPORT EXPORT_ATTRIBUTE
-#endif
-
-#if defined (__ECXDATATREE_BUILD__)
-#define ECXDATATREE_EXPORT            EXPORT_ATTRIBUTE
 #endif
 
 #if defined (__MARKUPLIB_BUILD__)

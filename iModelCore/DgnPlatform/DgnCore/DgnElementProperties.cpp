@@ -578,7 +578,7 @@ void ElementAutoHandledPropertiesECInstanceAdapter::SetDirty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
     {
-    // Thread-safety - Since properties are lazy-loaded, we must double-check and then do the loading all within a mutex
+    // Thread-safety - Since properties are lazy-loaded, we must do the loading all within a mutex
     BeMutexHolder _v_(m_element.GetDgnDb().Elements().GetMutex());
 
     if (DgnElement::PropState::Unknown != m_element.m_flags.m_propState)
@@ -605,6 +605,16 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         {
         BeAssert(0 == m_element.m_ecPropertyDataSize);
         AllocateBuffer(CalculateInitialAllocation(_GetClassLayout()));
+        }
+
+    if (!m_element.GetElementId().IsValid())
+        {
+        // If the element is certainly not persistent, then there's obviously no point in trying to "load" existing properties.
+		// Preparing the statement and doing the step is significantly time-consuming, so this optimization has a big payoff in 
+		// workflows such as bulk import.
+        // Note that we must be sure that that buffer is allocated (in the step above) before returning early!
+        m_element.m_flags.m_propState = DgnElement::PropState::InBuffer;
+        return BSISUCCESS; // element is not persistent => all props are null at this point
         }
 
     CachedECSqlStatementPtr stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(selectProps.c_str());

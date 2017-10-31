@@ -402,6 +402,15 @@ public:
             //! Return true if you want SQLite to log errors. Should be used only for limited debugging purposes.
             virtual bool _GetLogSQLiteErrors() {return false;}
 
+            //! Set up for activity messages.
+            virtual StatusInt _SetupActivityMessage(ActivityMessageDetails const* details) {return SUCCESS;}
+
+            //! Output an activity message to the user.
+            virtual StatusInt _OutputActivityMessage(Utf8CP messageText, int32_t percentComplete) {return SUCCESS;}
+
+            //! End an activity message.
+            virtual StatusInt _EndActivityMessage(ActivityMessageEndReason reason) {return SUCCESS;}
+
             //! MicroStation internal only.
             DGNPLATFORM_EXPORT static void ChangeAdmin(NotificationAdmin&);
             };
