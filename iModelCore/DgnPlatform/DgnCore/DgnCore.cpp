@@ -205,7 +205,7 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dan.East                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt NotificationManager::SetupActivityMessage(ActivityMessageDetails const* details)
+StatusInt NotificationManager::SetupActivityMessage(ActivityMessageDetails* details)
     {
     return T_HOST.GetNotificationAdmin()._SetupActivityMessage(details);
     }

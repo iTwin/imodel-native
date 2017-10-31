@@ -137,6 +137,7 @@ private:
     bool            m_showProgressBar;
     bool            m_showPercentInMessage;
     bool            m_supportsCancellation;
+    bool            m_wasCancelled;
 
 public:
     //! Construct a ActivityMessageDetails
@@ -148,6 +149,7 @@ public:
         m_showProgressBar = showProgressBar;
         m_showPercentInMessage = showPercentInMessage;
         m_supportsCancellation = supportsCancellation;
+        m_wasCancelled = false;
         }
 
     //! Destructor for ActivityMessageDetails
@@ -157,11 +159,17 @@ public:
     bool GetShowPercentInMessage() const { return m_showPercentInMessage; } //!< Gets the property to show the percentage complete in the activity message text.
     bool GetSupportsCancellation() const { return m_supportsCancellation; } //!< Gets the property to show the Cancel button, giving the user the ability to cancel the operation.
 
+    bool WasCancelled() const { return m_wasCancelled; } //!< Determines if the activity was cancelled.
+
+    void OnActivityCancelled() { m_wasCancelled = true;  _OnActivityCancelled(); } //!< Called from NotificationAdmin when the user cancels the activity.
+    void OnActivityCompleted() { m_wasCancelled = false; _OnActivityCompleted(); } //!< Called from NotificationAdmin when the activity completes successfully.
+
+protected:
     //! Implement if cancellation is supported.
-    virtual void _OnActivityCancelled () const {}
+    virtual void _OnActivityCancelled() {}
 
     //! Activity completed successfully.
-    virtual void _OnActivityCompleted () const {}
+    virtual void _OnActivityCompleted() {}
 };
 
 //=======================================================================================
@@ -228,7 +236,7 @@ public:
     //! Set up for activity messages.
     //! @param[in] details      The activity message details.
     //! @return SUCCESS if the message was displayed, ERROR if an invalid priority is specified.
-    DGNPLATFORM_EXPORT static StatusInt SetupActivityMessage(ActivityMessageDetails const * details);
+    DGNPLATFORM_EXPORT static StatusInt SetupActivityMessage(ActivityMessageDetails* details);
 
     //! Output an activity message to the user.
     //! @param[in] messageText      The message text.
