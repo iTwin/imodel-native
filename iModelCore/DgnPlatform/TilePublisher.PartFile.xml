@@ -25,7 +25,7 @@
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
-        <SubPart PartName="CSMapData"        PartFile="Libsrc-Nugets"        Repository="bsicommon"/>
+        <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="DgnPlatformDll"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
         <SubPart PartName="CrunchLib"           PartFile="Crunch"               Repository="libsrc-crunch"/>
         <SubPart PartName="Planning"            PartFile="Planning"             Repository="DgnDomains-Planning"/>
