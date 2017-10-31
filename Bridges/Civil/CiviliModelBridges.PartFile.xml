@@ -21,6 +21,7 @@
     <ProductDirectoryList ListName="ORDBridgeDirectoryList">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
         <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="ApplicationRoot"/>
@@ -84,6 +85,7 @@
     <ProductDirectoryList ListName="ORDBridgeTestAppDirectoryList">
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
