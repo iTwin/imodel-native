@@ -1086,9 +1086,6 @@ public:
     //! Note that this cannot be done until the ImportJob has been created (when creating a new ImportJob) or read from syncinfo (when updating).
     void GetOrCreateJobPartitions();
 
-    //! This is called once in the lifetime of a briefcase, at the start of the initial conversion.
-    void CreateJobStructure_ImportSchemas();
-
     //! Look up the ImportJob that was created by a prior run of the converter for this V8 file, assuming that there is only one. This method
     //! fails if there is no ImportJob or if there is more than one ImportJob.
     ResolvedImportJob FindSoleImportJobForFile(DgnV8FileR rootFile);
@@ -2441,7 +2438,7 @@ public:
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
 
-    DGNDBSYNC_EXPORT bool UpgradeDynamicSchema();
+    DGNDBSYNC_EXPORT bool MakeSchemaChanges();
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
@@ -2971,5 +2968,105 @@ public:
     //! contains only sheets and drawings as a root.
     DgnV8Api::ModelId GetRootModelId() { return _GetRootModelId(); }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+struct ElementConverter
+    {
+    private:
+        mutable bmap<Utf8CP, ECN::ECInstanceReadContextPtr> m_instanceReadContextCache;
+
+        ECN::ECInstanceReadContextPtr LocateInstanceReadContext(ECN::ECSchemaCR schema) const;
+
+    protected:
+        ECN::IECInstancePtr Transform(ECObjectsV8::IECInstance const& v8Instance, ECN::ECClassCR dgnDbClass, bool transformAsAspect = false) const;
+        //---------------------------------------------------------------------------------------
+        // @bsiclass                                   Carole.MacDonald            01/2016
+        //---------------+---------------+---------------+---------------+---------------+-------
+        struct SchemaRemapper : ECN::IECSchemaRemapper
+            {
+            private:
+                typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
+                typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
+                Converter& m_converter;
+                mutable ECN::ECSchemaPtr m_convSchema;
+                bool m_remapAsAspect;
+                mutable T_ClassPropertiesMap m_renamedClassProperties;
+
+                virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
+                virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
+
+            public:
+                explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
+                ~SchemaRemapper() {}
+                void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
+            };
+
+        struct UnitResolver : ECN::ECInstanceReadContext::IUnitResolver
+            {
+            private:
+                mutable ECN::ECSchemaPtr m_convSchema;
+
+                virtual Utf8String _ResolveUnitName(ECN::ECPropertyCR ecProperty) const override;
+            };
+
+        Converter& m_converter;
+        mutable SchemaRemapper m_schemaRemapper;
+        mutable UnitResolver m_unitResolver;
+
+        ECN::ECClassCP GetDgnDbClass(ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
+        static Utf8String ToInstanceLabel(ECObjectsV8::IECInstance const& v8Instance);
+
+    public:
+        explicit ElementConverter(Converter& converter) : m_converter(converter), m_schemaRemapper(converter) {}
+        BentleyStatus ConvertToElementItem(ElementConversionResults&, ECObjectsV8::IECInstance const* v8PrimaryInstance, BisConversionRule const* primaryInstanceConversionRule) const;
+
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      03/2015
+//+===============+===============+===============+===============+===============+======
+struct ElementAspectConverter : ElementConverter
+    {
+    private:
+        BentleyStatus ConvertToAspect(ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
+
+    public:
+        explicit ElementAspectConverter(Converter& converter) : ElementConverter(converter) {}
+        BentleyStatus ConvertToAspects(ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      02/2015
+//+===============+===============+===============+===============+===============+======
+struct ECInstanceInfo : NonCopyableClass
+    {
+private:
+    ECInstanceInfo ();
+    ~ECInstanceInfo ();
+
+public:
+    static BeSQLite::EC::ECInstanceKey Find (bool& isElement, DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key);
+    static BentleyStatus Insert (DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement);
+    static BentleyStatus CreateTable (DgnDbR db);
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      03/2015
+//+===============+===============+===============+===============+===============+======
+struct V8NamedGroupInfo : NonCopyableClass
+    {
+private:
+    static bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> s_namedGroupsWithOwnershipHint;
+
+    V8NamedGroupInfo();
+    ~V8NamedGroupInfo();
+
+public:
+    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR);
+    static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, SyncInfo::V8FileSyncInfoId);
+    static void Reset();
+    };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

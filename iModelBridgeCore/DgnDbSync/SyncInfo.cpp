@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include "DgnV8/DynamicSchemaGenerator/ECConversion.h"
 
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"DgnDbSync"))

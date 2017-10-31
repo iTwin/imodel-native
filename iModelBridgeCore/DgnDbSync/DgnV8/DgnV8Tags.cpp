@@ -508,7 +508,6 @@ void RootModelConverter::_ConvertDgnV8Tags()
                 v8FilesWithImportedTagSetDefSchema.insert(targetFileId.GetValue());
                 (*foundV8TargetFile)->GetDictionaryModel().SetReadOnly(false);
 
-                // *** WIP_BRIDGE: Must call ImportV8LegacySchemas
                 if (DgnV8Api::SCHEMAIMPORT_Success != v8ECManager.ImportSchema(*tagSetDefSchema, **foundV8TargetFile))
                     { BeAssert(false); continue; }
                 }

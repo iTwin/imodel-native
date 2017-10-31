@@ -1,11 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/EntityConverter.cpp $
+|     $Source: DgnV8/DynamicSchemaGenerator/EntityConverter.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include "ECConversion.h"
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -25,7 +26,7 @@ using namespace BECN;
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-ECClassName BisClassConverter::GetElementBisBaseClassName(BisConversionRule conversionRule)
+ECClassName BisConversionRuleHelper::GetElementBisBaseClassName(BisConversionRule conversionRule)
     {
     switch (conversionRule)
         {
@@ -53,7 +54,7 @@ ECClassName BisClassConverter::GetElementBisBaseClassName(BisConversionRule conv
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-ECClassName BisClassConverter::GetElementAspectBisBaseClassName(BisConversionRule conversionRule)
+ECClassName BisConversionRuleHelper::GetElementAspectBisBaseClassName(BisConversionRule conversionRule)
     {
     BisConversionRuleHelper::ElementAspectKind aspectKind;
     if (BSISUCCESS != BisConversionRuleHelper::TryDetermineElementAspectKind(aspectKind, conversionRule))
@@ -79,7 +80,7 @@ ECClassName BisClassConverter::GetElementAspectBisBaseClassName(BisConversionRul
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP BisClassConverter::GetAspectClassSuffix(BisConversionRule conversionRule)
+Utf8CP BisConversionRuleHelper::GetAspectClassSuffix(BisConversionRule conversionRule)
     {
     BisConversionRuleHelper::ElementAspectKind aspectKind;
     if (BSISUCCESS != BisConversionRuleHelper::TryDetermineElementAspectKind(aspectKind, conversionRule))
@@ -562,7 +563,7 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
         {
         //create ElementAspect class
         Utf8String elementAspectClassName(inputClass.GetName());
-        Utf8CP aspectSuffix = GetAspectClassSuffix(BisConversionRule::ToAspectOnly);
+        Utf8CP aspectSuffix = BisConversionRuleHelper::GetAspectClassSuffix(BisConversionRule::ToAspectOnly);
         BeAssert(!Utf8String::IsNullOrEmpty(aspectSuffix));
         elementAspectClassName.append(aspectSuffix);
 
@@ -963,10 +964,10 @@ void BisClassConverter::GetBisBaseClasses(BECN::ECClassCP& elementBaseClass, BEC
     {
     if (conversionRule != BisConversionRule::ToAspectOnly)
         {
-        elementBaseClass = context.GetBaseClass(GetElementBisBaseClassName(conversionRule));
+        elementBaseClass = context.GetBaseClass(BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule));
         BeAssert(elementBaseClass != nullptr);
         }
-    elementAspectBaseClass = context.GetBaseClass(GetElementAspectBisBaseClassName(BisConversionRule::ToAspectOnly));
+    elementAspectBaseClass = context.GetBaseClass(BisConversionRuleHelper::GetElementAspectBisBaseClassName(BisConversionRule::ToAspectOnly));
 
     }
 
@@ -1639,278 +1640,6 @@ BentleyStatus BisClassConverter::ECClassRemovalContext::FixClassHierarchies()
                 }
             }
         }
-
-    return BSISUCCESS;
-    }
-
-//****************************************************************************************
-// ElementConverter
-//****************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementConverter::ConvertToElementItem(ElementConversionResults& results, ECObjectsV8::IECInstance const* v8Instance, BisConversionRule const* primaryInstanceConversionRule) const
-    {
-    if (v8Instance == nullptr)
-        return BSISUCCESS;
-
-    BeAssert(primaryInstanceConversionRule != nullptr);
-
-    BECN::ECClassCP dgnDbClass = GetDgnDbClass(*v8Instance, nullptr);
-    if (dgnDbClass == nullptr)
-        {
-        Utf8String error;
-        error.Sprintf("Inserting properties for %s failed. Could not find target ECClass in the DgnDb file.", ToInstanceLabel(*v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
-        return BSIERROR;
-        }
-
-    ECN::IECInstancePtr targetInstance = Transform(*v8Instance, *dgnDbClass);
-    if (targetInstance == nullptr)
-        {
-        Utf8String error;
-        error.Sprintf("Inserting properties for %s failed. Transforming v8 ECInstance to ECInstance failed.", ToInstanceLabel(*v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
-        return BSIERROR;
-        }
-    results.m_v8PrimaryInstance = V8ECInstanceKey(ECClassName(v8Instance->GetClass()), v8Instance->GetInstanceId().c_str());
-    return (DgnDbStatus::Success == results.m_element->SetPropertyValues(*targetInstance))? BSISUCCESS: BSIERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-BECN::ECInstanceReadContextPtr ElementConverter::LocateInstanceReadContext(BECN::ECSchemaCR schema) const
-    {
-    auto it = m_instanceReadContextCache.find(schema.GetName().c_str());
-    if (it != m_instanceReadContextCache.end())
-        return it->second;
-
-    BECN::ECInstanceReadContextPtr context = BECN::ECInstanceReadContext::CreateContext(schema);
-    m_instanceReadContextCache[schema.GetName().c_str()] = context;
-    return context;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const& v8Instance, BECN::ECClassCR dgnDbClass, bool transformAsAspect) const
-    {
-    Bentley::Utf8String ecInstanceXml;
-    const ECObjectsV8::InstanceWriteStatus writeStat = const_cast<ECObjectsV8::IECInstance&> (v8Instance).WriteToXmlString(ecInstanceXml, true,
-                                                                                                                           false); //don't bring over v8 instance id, to make clear to DgnElement that it should not attempt to update the instance and instead insert right away
-    if (writeStat != ECObjectsV8::INSTANCE_WRITE_STATUS_Success)
-        return nullptr;
-
-    BECN::ECInstanceReadContextPtr context = LocateInstanceReadContext(dgnDbClass.GetSchema());
-    context->SetUnitResolver(&m_unitResolver);
-    context->SetSchemaRemapper(&m_schemaRemapper);
-    m_schemaRemapper.SetRemapAsAspect(transformAsAspect);
-
-    BECN::IECInstancePtr dgnDbECInstance = nullptr;
-    const BECN::InstanceReadStatus readStat = BECN::IECInstance::ReadFromXmlString(dgnDbECInstance, (Utf8CP) ecInstanceXml.c_str(), *context);
-    if (readStat != BECN::InstanceReadStatus::Success)
-        return nullptr;
-
-    return dgnDbECInstance;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-BECN::ECClassCP ElementConverter::GetDgnDbClass(ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
-    {
-    ECObjectsV8::ECClassCR aspectClass = v8Instance.GetClass();
-    Utf8String schemaName(aspectClass.GetSchema().GetName().c_str());
-    Utf8String className(aspectClass.GetName().c_str());
-    if (aspectClassSuffix != nullptr)
-        className.append(aspectClassSuffix);
-
-    return m_converter.GetDgnDb().Schemas().GetClass(schemaName.c_str(), className.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-Utf8String ElementConverter::ToInstanceLabel(ECObjectsV8::IECInstance const& v8Instance)
-    {
-    Utf8String label;
-    label.Sprintf("v8 '%s' instance '%s'",
-                  Bentley::Utf8String(v8Instance.GetClass().GetFullName()).c_str(),
-                  Bentley::Utf8String(v8Instance.GetInstanceId()).c_str());
-
-    return label;
-    }
-
-//****************************************************************************************
-// ElementConverter::SchemaRemapper
-//****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-bool ElementConverter::SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::ECSchemaCR ecSchema) const
-    {
-    BisConversionRule conversionRule;
-    bool hasSecondary;
-    if (!V8ECClassInfo::TryFind(conversionRule, m_converter.GetDgnDb(),
-                                ECClassName(ecSchema.GetName().c_str(), serializedClassName.c_str()), hasSecondary))
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    if (hasSecondary && m_remapAsAspect)
-        conversionRule = BisConversionRule::ToAspectOnly;
-    Utf8CP suffix = BisClassConverter::GetAspectClassSuffix(conversionRule);
-    if (!Utf8String::IsNullOrEmpty(suffix))
-        serializedClassName.append(suffix);
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const
-    {
-    if (!m_convSchema.IsValid())
-        {
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-        SchemaKey key("ECv3ConversionAttributes", 1, 0);
-        m_convSchema = ECSchema::LocateSchema(key, *context);
-        if (!m_convSchema.IsValid())
-            {
-            BeAssert(false);
-            return false;
-            }
-        }
-
-    if (ECSchema::IsSchemaReferenced(ecClass.GetSchema(), *m_convSchema))
-        {
-        T_propertyNameMappings properties;
-        T_ClassPropertiesMap::iterator mappedClassIter = m_renamedClassProperties.find(ecClass.GetFullName());
-        if (mappedClassIter == m_renamedClassProperties.end())
-            {
-            IECInstancePtr renameInstance = ecClass.GetCustomAttributeLocal("ECv3ConversionAttributes", "RenamedPropertiesMapping");
-            if (renameInstance.IsValid())
-                {
-                ECValue v;
-                renameInstance->GetValue(v, "PropertyMapping");
-
-                bvector<Utf8String> components;
-                BeStringUtilities::Split(v.GetUtf8CP(), ";", components);
-                for (Utf8String mapping : components)
-                    {
-                    bvector<Utf8String> components2;
-                    BeStringUtilities::Split(mapping.c_str(), "|", components2);
-                    bpair<Utf8String, Utf8String> pair(components2[0], components2[1]);
-                    properties.insert(pair);
-                    }
-                }
-            bpair<Utf8String, T_propertyNameMappings> pair2(Utf8String(ecClass.GetFullName()), properties);
-            m_renamedClassProperties.insert(pair2);
-            }
-        else
-            properties = mappedClassIter->second;
-
-        T_propertyNameMappings::iterator mappedPropertiesIterator = properties.find(serializedPropertyName);
-        if (mappedPropertiesIterator != properties.end())
-            {
-            serializedPropertyName = mappedPropertiesIterator->second;
-            return true;
-            }
-        }
-
-    for (ECClassP baseClass : ecClass.GetBaseClasses())
-        {
-        if (_ResolvePropertyName(serializedPropertyName, *baseClass))
-            return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ElementConverter::UnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
-    {
-    if (!m_convSchema.IsValid())
-        {
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-        SchemaKey key("ECv3ConversionAttributes", 1, 0);
-        m_convSchema = ECSchema::LocateSchema(key, *context);
-        if (!m_convSchema.IsValid())
-            {
-            BeAssert(false);
-            return "";
-            }
-        }
-
-    if (ECSchema::IsSchemaReferenced(ecProperty.GetClass().GetSchema(), *m_convSchema))
-        {
-        IECInstancePtr instance = ecProperty.GetCustomAttribute("ECv3ConversionAttributes", "OldPersistenceUnit");
-        if (instance.IsValid())
-            {
-            ECValue unitName;
-            instance->GetValue(unitName, "Name");
-
-            if (!unitName.IsNull() && unitName.IsUtf8())
-                return unitName.GetUtf8CP();
-            }
-        }
-    
-    return "";
-    }
-
-//****************************************************************************************
-// ElementAspectConverter
-//****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ElementAspectConverter::ConvertToAspects(ElementConversionResults& results,
-                                                       std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const
-    {
-    for (std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule> const& v8SecondaryInstance : secondaryInstances)
-        {
-        if (BSISUCCESS != ConvertToAspect(results, *v8SecondaryInstance.first, BisClassConverter::GetAspectClassSuffix(v8SecondaryInstance.second)))
-            return BSIERROR;
-        }
-
-    return BSISUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& results, ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
-    {
-    BECN::ECClassCP aspectClass = GetDgnDbClass(v8Instance, aspectClassSuffix);
-    if (aspectClass == nullptr)
-        {
-        Utf8String error;
-        error.Sprintf("Inserting aspect for %s failed. Could not find target aspect ECClass in the DgnDb file.", ToInstanceLabel(v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
-        return BSIERROR;
-        }
-
-    ECN::IECInstancePtr targetInstance = Transform(v8Instance, *aspectClass, true);
-    if (targetInstance == nullptr)
-        {
-        Utf8String error;
-        error.Sprintf("Inserting aspect for %s failed. Transforming v8 ECInstance to aspect ECInstance failed.", ToInstanceLabel(v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
-        return BSIERROR;
-        }
-
-    DgnElement::GenericMultiAspect::AddAspect(*results.m_element, *targetInstance);
-
-    results.m_v8SecondaryInstanceMappings.push_back(bpair<V8ECInstanceKey, BECN::IECInstancePtr>(
-        V8ECInstanceKey(ECClassName(v8Instance.GetClass()), v8Instance.GetInstanceId().c_str()),
-        targetInstance));
 
     return BSISUCCESS;
     }

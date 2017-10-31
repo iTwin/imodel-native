@@ -18,6 +18,7 @@
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include "Registry/iModelBridgeRegistry.h"
+#include "../iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -798,13 +799,18 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     //  Note: iModelBridge::_Initialize will register domains, and some of them may be required.
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
-
-    //  Create a new repository. (This will import all required domains and their schemas.)
-    m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
-    if (!m_briefcaseDgnDb.IsValid())
+    if (true)
         {
-        // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
-        return BSIERROR;
+        iModelBridgeHelpers::CallTerminate callTerminate(*m_bridge);
+
+        //  Create a new repository. (This will import all required domains and their schemas.)
+        m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
+        if (!m_briefcaseDgnDb.IsValid())
+            {
+            // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
+            return BSIERROR;
+            }
+        callTerminate.m_status = BSISUCCESS;
         }
 
     auto rc = m_briefcaseDgnDb->SaveChanges();
@@ -1256,70 +1262,69 @@ int iModelBridgeFwk::UpdateExistingBim()
     // Now initialize the bridge.
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
-
-    // Open the briefcase
-    // Note that iModelBridge::_Initialize may have registered new or changed domains, so we have to permit schema changes.
-    bool madeSchemaChanges = false;
-    bool hasDynamicSchemaChanges = false;
-    m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
-    if (!m_briefcaseDgnDb.IsValid())
+    if (true)
         {
-        GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
-        return BentleyStatus::ERROR;
-        }
+        iModelBridgeHelpers::CallTerminate callTerminate(*m_bridge);
 
-    if (madeSchemaChanges || hasDynamicSchemaChanges)
-        {
-        // We must isolate schema changes in their own revision, before we let the bridge move on to making data changes.
-        m_briefcaseDgnDb->SaveChanges();
-        if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
-            return RETURN_STATUS_SERVER_ERROR;
-        Briefcase_ReleaseSharedLocks();
-        }
-
-    //If we had a schema change, we cannot process the dynamic schema change in the same transaction. So reopen the db.
-    if (madeSchemaChanges)
-        {
-        m_briefcaseDgnDb->CloseDb();
-        m_briefcaseDgnDb = nullptr;
-
+        // Open the briefcase
+        // Note that iModelBridge::_Initialize may have registered new or changed domains, so we have to permit schema changes.
+        // Note that OpenBim also calls _OnOpenBim and _OpenSource
+        bool madeSchemaChanges = false;
+        bool hasDynamicSchemaChanges = false;
         m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
         if (!m_briefcaseDgnDb.IsValid())
             {
             GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
             return BentleyStatus::ERROR;
             }
-        if (hasDynamicSchemaChanges)
+        iModelBridgeHelpers::CallCloseSource callCloseSource(*m_bridge, false);
+        iModelBridgeHelpers::CallOnBimClose callOnBimClose(*m_bridge, false);
+
+        if (madeSchemaChanges || hasDynamicSchemaChanges)
             {
+            // We must isolate schema changes in their own revision, before we let the bridge move on to making data changes.
             m_briefcaseDgnDb->SaveChanges();
             if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
                 return RETURN_STATUS_SERVER_ERROR;
             Briefcase_ReleaseSharedLocks();
             }
-        }
 
-#ifdef COMMENT_OUT
-    // if we acquire shared locks up front, then we can fail fast if we can't get them. However, we will also
-    // incur a performance penalty, even if there are no updates
-    // to any shared models. All in all, it's better to let the briefcase manager detect the need for
-    // such locks, along with all other locking requirements, and then try to acquire them at the end.
-    // Failure then will be more expensive -- we'll have to rollback and then retry the entire conversion later --
-    // but this should be rare for a correctly written bridge that does not try to write to shared models.
-    if (RepositoryStatus::Success != acquireSharedLocks(*m_briefcaseDgnDb))
-        {
-        m_briefcaseDgnDb = nullptr;
-        return RETURN_STATUS_SERVER_ERROR;
-        }
-#endif
+        // If we had a schema change, we cannot process the dynamic schema change in the same transaction. 
+        // So, we must call OpenBim again, this time giving the bridge a chance to generate dynamic schema changes.
+        if (madeSchemaChanges)
+            {
+            m_bridge->_CloseSource(BSISUCCESS);
+            m_bridge->_OnCloseBim(BSISUCCESS);
 
-    //  Now, finally, we can convert data
-    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
+            m_briefcaseDgnDb->CloseDb();
+            m_briefcaseDgnDb = nullptr;
+
+            m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges); // calls _OnOpenBim and _OpenSource
+            if (!m_briefcaseDgnDb.IsValid())
+                {
+                GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
+                return BentleyStatus::ERROR;
+                }
+            if (hasDynamicSchemaChanges)
+                {
+                m_briefcaseDgnDb->SaveChanges();
+                if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
+                    return RETURN_STATUS_SERVER_ERROR;
+                Briefcase_ReleaseSharedLocks();
+                }
+            }
+
+        //  Now, finally, we can convert data
+        BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
-    if (BSISUCCESS != bridgeCvtStatus)
-        {
-        m_briefcaseDgnDb->AbandonChanges();
-        m_briefcaseDgnDb = nullptr;
-        return RETURN_STATUS_CONVERTER_ERROR;
+        if (BSISUCCESS != bridgeCvtStatus)
+            {
+            m_briefcaseDgnDb->AbandonChanges();
+            m_briefcaseDgnDb = nullptr;
+            return RETURN_STATUS_CONVERTER_ERROR;
+            }
+
+        callCloseSource.m_status = callOnBimClose.m_status = BSISUCCESS;
         }
 
     dbres = m_briefcaseDgnDb->SaveChanges();
@@ -1355,7 +1360,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
     // POST-CONDITIONS
     BeAssert((!anyTxnsInFile(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState())) && "Local changes should have been pushed");
-    // *** TBD: briefcase should not be holding any shared locks
+    // *** TBD: check that briefcase is NOT holding any shared locks
 
     m_briefcaseDgnDb = nullptr;
 

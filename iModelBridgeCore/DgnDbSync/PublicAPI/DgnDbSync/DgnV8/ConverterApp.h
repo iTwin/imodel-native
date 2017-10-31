@@ -92,13 +92,13 @@ protected:
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
     Dgn::SubjectCPtr _InitializeJob() override;
-    BentleyStatus _OnConvertToBim(DgnDbR db) override;
-    void _OnConvertedToBim(BentleyStatus) override;
+    BentleyStatus _OnOpenBim(DgnDbR db) override;
+    void _OnCloseBim(BentleyStatus) override;
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
     BentleyStatus _DetectDeletedDocuments() override;
-    bool _UpgradeDynamicSchema(DgnDbR) override;
+    bool _MakeSchemaChanges() override;
 
 public:
     RootModelConverterApp()

@@ -47,8 +47,8 @@ protected:
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _FindJob () override;
     DGNDBSYNC_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
-    DGNDBSYNC_EXPORT BentleyStatus  _OnConvertToBim (DgnDbR db) override;
-    DGNDBSYNC_EXPORT void           _OnConvertedToBim (BentleyStatus) override;
+    DGNDBSYNC_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
+    DGNDBSYNC_EXPORT void           _OnCloseBim (BentleyStatus) override;
     DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;
     DGNDBSYNC_EXPORT void           _CloseSource (BentleyStatus) override;
     DGNDBSYNC_EXPORT void           _DeleteSyncInfo () override;

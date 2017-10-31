@@ -442,13 +442,14 @@ TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
     // *** NB: the root subject is NOT the correct subject to pass to _ConvertToBim in a real world scenario.
     //          I am just using here, because I need a subject, and it does not matter which, as I am not writing to the BIM in this test.
 
-    ASSERT_EQ(BSISUCCESS, b._OnConvertToBim(*db));  // this is how we pass the Db to the bridge
+    ASSERT_EQ(BSISUCCESS, b._OnOpenBim(*db));  // this is how we pass the Db to the bridge
     ASSERT_EQ(BSISUCCESS, b._OpenSource());
 
     ASSERT_EQ(BentleyStatus::SUCCESS, b._ConvertToBim(*subj));      // Nearly all of the testing is done in here.
 
     b._CloseSource(BSISUCCESS);
-    b._OnConvertedToBim(BSISUCCESS);
+    b._OnCloseBim(BSISUCCESS);
+    b._Terminate(BSISUCCESS);
 
     db->SaveChanges();
     }

@@ -1672,64 +1672,11 @@ BentleyStatus Converter::AttachSyncInfo()
     return SUCCESS;
     }
 
-//=======================================================================================
-// @bsiclass 
-//=======================================================================================
-struct     SchemaImportCaller : public DgnV8Api::IEnumerateAvailableHandlers
-    {
-    DgnDbR m_db;
-    SchemaImportCaller(DgnDbR db)
-        :m_db(db)
-        {
-        }
-    virtual StatusInt _ProcessHandler(DgnV8Api::Handler& handler)
-        {
-        ConvertToDgnDbElementExtension* extension = ConvertToDgnDbElementExtension::Cast(handler);
-        if (NULL == extension)
-            return SUCCESS;
-
-        extension->_ImportSchema(m_db);
-        return SUCCESS;
-        }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void     ImportHandlerExtensionsSchema(DgnDbR db)
-    {
-    SchemaImportCaller importer(db);
-    DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(importer);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::CreateJobStructure_ImportSchemas()
-    {
-    BeFileName projectName = _GetParams().GetBriefcaseName();
-    SetStepName(ProgressMessage::STEP_CREATING(), Utf8String(projectName).c_str());
-    Utf8String subjectName(projectName.GetFileNameWithoutExtension());
-    
-    ImportHandlerExtensionsSchema(*m_dgndb);
-
-    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
-        {
-        DgnV8FileProvenance::CreateTable(*m_dgndb);
-        DgnV8ModelProvenance::CreateTable(*m_dgndb);
-        DgnV8ElementProvenance::CreateTable(*m_dgndb);
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::GetOrCreateJobPartitions()
     {
-    // Instead of separating the initialization logic that CREATES the various documentmodels and categories from the loading logic that LOOKS THEM UP,
-    // we have create and lookup mixed together, and we have a bunch of separate get-or-create functions. 
-    // *** NEEDS WORK: Some day, clean this up, so that we can do the creation in the initialization step only.
-
     InitGroupModel();
     InitDrawingListModel();
     InitSheetListModel();
@@ -1944,8 +1891,8 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
                 BisConversionRule rule = BisConversionRuleHelper::ConvertToBisConversionRule(content.m_v8ElementType, &targetModel, namedGroupOwnsMembersFlag, !isNewElement);
                 if (isNewElement)
                     {
-                    ECClassName previousECClass = BisClassConverter::GetElementBisBaseClassName(conversionRule);
-                    ECClassName newECClass = BisClassConverter::GetElementBisBaseClassName(rule);
+                    ECClassName previousECClass = BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule);
+                    ECClassName newECClass = BisConversionRuleHelper::GetElementBisBaseClassName(rule);
                     if (previousECClass != newECClass)
                         {
                         Utf8String msg;
@@ -2161,7 +2108,7 @@ DgnClassId Converter::_ComputeElementClass(DgnV8EhCR v8eh, V8ElementECContent co
     if (ecContent.HasPrimaryInstance())                                                                                 
         elementClassName = ECClassName(ecContent.m_primaryV8Instance->GetClass());                          
     else
-        elementClassName = BisClassConverter::GetElementBisBaseClassName(ecContent.m_elementConversionRule);
+        elementClassName = BisConversionRuleHelper::GetElementBisBaseClassName(ecContent.m_elementConversionRule);
 
     ECN::ECClassId classId = m_dgndb->Schemas().GetClassId(elementClassName.GetSchemaName(), elementClassName.GetClassName());
     return DgnClassId(classId);

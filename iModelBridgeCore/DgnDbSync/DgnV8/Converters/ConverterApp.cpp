@@ -435,31 +435,28 @@ void ConverterApp::_DeleteSyncInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootModelConverterApp::_UpgradeDynamicSchema(DgnDbR db)
+bool RootModelConverterApp::_MakeSchemaChanges()
+    {
+    return m_converter->MakeSchemaChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     {
     m_converter.reset(new RootModelConverter(m_params));
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
-    m_converter->AttachSyncInfo();
-
-    m_converter->UpgradeDynamicSchema();
+    return m_converter->AttachSyncInfo();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OnConvertToBim(DgnDbR db)
+void RootModelConverterApp::_OnCloseBim(BentleyStatus)
     {
-    BeAssert((m_converter.get() != nullptr) && "_UpgradeDynamicSchema should have been called before this."):
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_OnConvertedToBim(BentleyStatus)
-    {
-    m_converter.reset(nullptr);
+    m_converter.reset(nullptr); // this also has the side effect of closing the source files
     }
 
 /*---------------------------------------------------------------------------------**//**

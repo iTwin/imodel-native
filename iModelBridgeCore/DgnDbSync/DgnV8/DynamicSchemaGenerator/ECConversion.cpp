@@ -1,11 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/ECConversion.cpp $
+|     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include "ECConversion.h"
+#include "ECDiff.h"
 #include <regex>
 
 #define TEMPTABLE_ATTACH(name) "temp." name
@@ -413,92 +415,6 @@ BentleyStatus V8ECClassInfo::CreateTable(DgnDbR db)
     return BSISUCCESS;
     }
 
-
-//****************************************************************************************
-// ECInstanceInfo
-//****************************************************************************************
-#define ECINSTANCE_TABLE SYNCINFO_TABLE("ECInstance")
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key)
-    {
-    isElement = false;
-
-    CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT ECClassId,ECInstanceId,IsElement FROM " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " WHERE V8SchemaName = ? AND V8ClassName = ? AND V8InstanceId = ? AND V8FileSyncInfoId = ?");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
-        return ECInstanceKey();
-        }
-
-    stmt->BindText(1, v8Key.GetClassName().GetSchemaName(), Statement::MakeCopy::No);
-    stmt->BindText(2, v8Key.GetClassName().GetClassName(), Statement::MakeCopy::No);
-    stmt->BindText(3, v8Key.GetInstanceId(), Statement::MakeCopy::No);
-    stmt->BindInt64(4, fileId.GetValue());
-
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return ECInstanceKey();
-
-    ECInstanceKey foundKey(stmt->GetValueId<BECN::ECClassId>(0), stmt->GetValueId<ECInstanceId>(1));
-    isElement = stmt->GetValueInt(2) == 1;
-
-    if (stmt->Step() == BE_SQLITE_ROW)
-        {
-        BeAssert(false && "Only one result row expected when looking up instance key for v8 instance key.");
-        return ECInstanceKey();
-        }
-
-    return foundKey;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus ECInstanceInfo::Insert(DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement)
-    {
-    if (!v8Key.IsValid() || !key.IsValid())
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName,V8ClassName,V8InstanceId, ECClassId,ECInstanceId,IsElement,V8FileSyncInfoId) VALUES (?,?,?,?,?,?,?)");
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement for ECInstanceInfo::Insert.");
-        return BSIERROR;
-        }
-
-    stmt->BindText(1, v8Key.GetClassName().GetSchemaName(), Statement::MakeCopy::No);
-    stmt->BindText(2, v8Key.GetClassName().GetClassName(), Statement::MakeCopy::No);
-    stmt->BindText(3, v8Key.GetInstanceId(), Statement::MakeCopy::No);
-    stmt->BindId(4, key.GetClassId());
-    stmt->BindId(5, key.GetInstanceId());
-    stmt->BindInt(6, isElement ? 1 : 0);
-    stmt->BindInt64(7, fileId.GetValue());
-    stat = stmt->Step();
-
-    return stat == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus ECInstanceInfo::CreateTable(DgnDbR db)
-    {
-    if (db.TableExists(SYNCINFO_ATTACH(ECINSTANCE_TABLE)))
-        return BSISUCCESS;
-
-    return db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, V8InstanceId TEXT NOT NULL, ECClassId INTEGER NOT NULL, ECInstanceId INTEGER NOT NULL, IsElement BOOL NOT NULL, V8FileSyncInfoId INTEGER NOT NULL,"
-                         "PRIMARY KEY (V8SchemaName, V8ClassName, V8InstanceId, V8FileSyncInfoId))") == BE_SQLITE_OK ? BSISUCCESS : BSIERROR;
-    }
 //****************************************************************************************
 // V8ElementECClassInfo
 //****************************************************************************************
@@ -557,50 +473,6 @@ bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName
         return false;
 
     return true;
-    }
-
-//****************************************************************************************
-// V8NamedGroupInfo
-//****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-//static
-bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_namedGroupsWithOwnershipHint;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-//static
-void V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(DgnV8EhCR v8eh)
-    {
-    s_namedGroupsWithOwnershipHint[Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-//static
-void V8NamedGroupInfo::Reset()
-    {
-    s_namedGroupsWithOwnershipHint.clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-//static
-bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*& namedGroupsWithOwnershipHintPerFile, SyncInfo::V8FileSyncInfoId v8FileId)
-    {
-    auto it = s_namedGroupsWithOwnershipHint.find(v8FileId);
-    const bool found = it != s_namedGroupsWithOwnershipHint.end();
-
-    if (found)
-        namedGroupsWithOwnershipHintPerFile = &it->second;
-    else
-        namedGroupsWithOwnershipHintPerFile = nullptr;
-
-    return found;
     }
 
 //****************************************************************************************
@@ -1481,7 +1353,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
 
-    if (SchemaStatus::Success != GetDgnDb().ImportV8LegacySchemas(constSchemas))
+    if (SchemaStatus::Success != GetDgnDb().ImportSchemas(constSchemas))
         {
         return BentleyApi::ERROR;
         }
@@ -1872,7 +1744,7 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
         {
         SetTaskName(Converter::ProgressMessage::TASK_ANALYZE_EC_CONTENT(), Converter::IssueReporter::FmtModel(*v8Model).c_str());
 
-        AnalyzeECContent(v8Model, &modelMapping.GetDgnModel());
+        AnalyzeECContent(*v8Model, nullptr); // *** WIP_WIP_WIP_WIP_WIP *** &modelMapping.GetDgnModel());
         if (WasAborted())
             return;
         }
@@ -1912,6 +1784,36 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
     scope.SetSucceeded();
     }
 
+//=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct     SchemaImportCaller : public DgnV8Api::IEnumerateAvailableHandlers
+    {
+    DgnDbR m_db;
+    SchemaImportCaller(DgnDbR db)
+        :m_db(db)
+        {
+        }
+    virtual StatusInt _ProcessHandler(DgnV8Api::Handler& handler)
+        {
+        ConvertToDgnDbElementExtension* extension = ConvertToDgnDbElementExtension::Cast(handler);
+        if (NULL == extension)
+            return SUCCESS;
+
+        extension->_ImportSchema(m_db);
+        return SUCCESS;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     importHandlerExtensionsSchema(DgnDbR db)
+    {
+    SchemaImportCaller importer(db);
+    DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(importer);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1927,13 +1829,13 @@ void DynamicSchemaGenerator::GenerateSchemas(bset<DgnV8ModelP> const& uniqueMode
             return;
         }
         
-    (uniqueModels);
+    BisifyV8Schemas(uniqueModels);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootModelConverter::UpgradeDynamicSchema()
+bool RootModelConverter::MakeSchemaChanges()
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
@@ -1941,6 +1843,17 @@ bool RootModelConverter::UpgradeDynamicSchema()
     StopWatch timer(true);
 
     bool anyImported = false;
+
+    // Create some fixed tables
+    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
+        {
+        DgnV8FileProvenance::CreateTable(*m_dgndb);
+        DgnV8ModelProvenance::CreateTable(*m_dgndb);
+        DgnV8ElementProvenance::CreateTable(*m_dgndb);
+        anyImported = true;
+        }
+
+    // Bis-ify the V8 schemas
     if (true)
         {
         // *** WIP_SCHEMAS - discover all V8 models
@@ -1952,6 +1865,12 @@ bool RootModelConverter::UpgradeDynamicSchema()
         m_skipECContent = gen.GetEcConversionFailed();
         anyImported = gen.GetAnyImported();
         }
+
+    if (WasAborted())
+        return false;
+
+    // Let handler extensions import schemas
+    importHandlerExtensionsSchema(*m_dgndb);
 
     if (WasAborted())
         return false;

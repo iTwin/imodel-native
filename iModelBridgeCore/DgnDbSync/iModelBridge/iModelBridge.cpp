@@ -10,6 +10,7 @@
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
 #include <DgnPlatform/JsonUtils.h>
+#include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -20,32 +21,38 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 static L10NLookup* s_bridgeL10NLookup = NULL;
 
-// Helper class to ensure that bridge book mark functions are called
-struct CallBookmarkFunctions
+// Helper class to ensure that bridge _CloseSource function is called
+struct CallCloseSource
     {
-    BentleyStatus m_bstatus;
-    BentleyStatus m_sstatus = BSIERROR;
     iModelBridge& m_bridge;
-    BentleyStatus m_updateStatus = BSIERROR;
-    bool m_doOpenSource;
+    BentleyStatus m_status = BSIERROR;
+    bool m_closeOnErrorOnly;
 
-    CallBookmarkFunctions(iModelBridge& bridge, DgnDbR db, bool doOpenSource) : m_bridge(bridge), m_doOpenSource(doOpenSource)
-        {
-        m_bstatus = m_bridge._OnConvertToBim(db);
-        if (m_doOpenSource && (BSISUCCESS == m_bstatus))
-            m_sstatus = m_bridge._OpenSource();
-        }
-    ~CallBookmarkFunctions()
-        {
-        if (BSISUCCESS == m_bstatus)
-            {
-            if (m_doOpenSource && (BSISUCCESS == m_sstatus))
-                m_bridge._CloseSource(m_updateStatus);
-            m_bridge._OnConvertedToBim(m_updateStatus);
-            }
-        }
+    CallCloseSource(iModelBridge& bridge, bool closeOnErrorOnly) : m_bridge(bridge), m_closeOnErrorOnly(closeOnErrorOnly) {}
 
-    bool IsBridgeReady() const {return (BSISUCCESS==m_bstatus) && (!m_doOpenSource || (BSISUCCESS==m_sstatus));}
+    ~CallCloseSource()
+        {
+        if (m_closeOnErrorOnly && (BSISUCCESS == m_status)) // if we should only close in case of error and there is no error
+            return;                                         //  don't close
+        m_bridge._CloseSource(m_status);
+        }
+    };
+
+// Helper class to ensure that bridge _Converted function is called
+struct CallOnBimClose
+    {
+    iModelBridge& m_bridge;
+    BentleyStatus m_status = BSIERROR;
+    bool m_closeOnErrorOnly;
+
+    CallOnBimClose(iModelBridge& bridge, bool closeOnErrorOnly) : m_bridge(bridge), m_closeOnErrorOnly(closeOnErrorOnly) {}
+
+    ~CallOnBimClose() 
+        {
+        if (m_closeOnErrorOnly && (BSISUCCESS == m_status)) // if we should only close in case of error and there is no error
+            return;                                         //  don't close
+        m_bridge._OnCloseBim(m_status);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,15 +127,24 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     _GetParams().SetIsCreatingNewDgnDb(true);
     _GetParams().SetIsUpdating(false);
 
-    _DeleteSyncInfo(); // Make sure that there is no old syncinfo file hanging around
-
-    // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, *db, true);
-    if (!bookMarkFunctions.IsBridgeReady())
+    //  Tell the bridge that the briefcase is now open
+    if (BSISUCCESS != _OnOpenBim(*db))
         {
-        LOG.fatalv("Bridge not ready to populate new repository");
+        LOG.fatalv("Bridge is not ready");
         return nullptr;
         }
+    CallOnBimClose callOnBimClose(*this, false); // Be sure to call _OnBimClose 
+
+    // Tell the bridge to open the source file(s). We do this before calling _MakeSchemaChanges, so that the bridge can discover schemas dynamically from source content.
+    if (BSISUCCESS != _OpenSource())
+        {
+        LOG.fatalv("Bridge cannot open source files");
+        return nullptr;
+        }
+    CallCloseSource callCloseSource(*this, false);  // Be sure to call _CloseSource
+
+    // Tell the bridge to generate schemas
+    _MakeSchemaChanges();
 
     auto jobsubj = _InitializeJob();
     if (!jobsubj.IsValid())
@@ -145,7 +161,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         return nullptr;
         }
 
-    bookMarkFunctions.m_updateStatus = BSISUCCESS;
+    callCloseSource.m_status = callOnBimClose.m_status = BSISUCCESS;
 
     bvector<DgnModelId> models;
     queryAllModels(models, *db);
@@ -166,45 +182,88 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
     {
     madeSchemaChanges = false;
 
-    //  Common case: Just open the BIM
-    auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    if (db.IsValid())
-        {
-        hasDynamicSchemaChange = _UpgradeDynamicSchema(*db);
-        if (!hasDynamicSchemaChange)
-            return db;// Common case
+    // ***
+    // ***
+    // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
+    // *** Talk to Sam Wilson if you need to make a change.
+    // ***
+    // ***
 
+    //  See if we can just open the BIM without any schema changes. That's the common case.
+    auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    if (!db.IsValid())
+        {
+        if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
+            return nullptr;
+
+        // We must do a schema upgrade.
+        // Probably, the bridge registered some required domains, and they must be imported
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
+        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
+        if (!db.IsValid())
+            return nullptr;
+
+        dbres = db->SaveChanges();
+        if (BeSQLite::BE_SQLITE_OK != dbres)
+            {
+            BeAssert(false);
+            LOG.fatalv("Failed to save results of importing domain schemas");
+            return nullptr;
+            }
+
+        madeSchemaChanges = true;
+
+        // ... close and re-open, so that the side-effects of the schema changes are reflected in the open DgnDb.
+        db->CloseDb();
+        db = nullptr;
+
+        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        if (!db.IsValid())
+            {
+            BeAssert(false);
+            LOG.fatalv("Failed to save results of importing domain schemas");
+            return nullptr;
+            }
+
+        // If we had a schema change, we cannot process an additional dynamic schema change in the same transaction. So return now.
+        // The caller must process this change and then call OpenBim again.
+        return db;
+        }
+
+    //  Tell the bridge that the briefcase is now open
+    if (BSISUCCESS != _OnOpenBim(*db))
+        {
+        LOG.fatalv("Bridge is not ready");
+        return nullptr;
+        }
+    CallOnBimClose callOnBimClose(*this, true); // Be sure to call _OnBimClose in case of error
+
+    // Tell the bridge to open the source file(s). We do this before calling _MakeSchemaChanges, so that the bridge can discover schemas dynamically from source content.
+    if (BSISUCCESS != _OpenSource())
+        {
+        LOG.fatalv("Bridge cannot open source files");
+        return nullptr;
+        }
+    CallCloseSource callCloseSource(*this, true); // Be sure to call _CloseSource in case of error
+
+    //  Now let the bridge generate schema changes
+    hasDynamicSchemaChange = _MakeSchemaChanges();
+    if (hasDynamicSchemaChange)
+        {
+        _OnCloseBim(BSISUCCESS);
+        _CloseSource(BSISUCCESS);
         db->SaveChanges();
         db->CloseDb();
         db = nullptr;
-        return DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        _OnOpenBim(*db);
+        _OpenSource();
         }
 
-    if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
-        return nullptr;
+    callOnBimClose.m_status = callCloseSource.m_status = BSISUCCESS;    // don't call _CloseSource or _OnCloseBim
 
-    // We must do a schema upgrade.
-    // Probably, the bridge registered some required domains, and they must be imported
-    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
-    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
-    db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
-    if (!db.IsValid())
-        return nullptr;
-    dbres = db->SaveChanges();
-    if (BeSQLite::BE_SQLITE_OK != dbres)
-        {
-        BeAssert(false);
-        LOG.fatalv("Failed to save results of importing domain schemas");
-        return nullptr;
-        }
-
-    madeSchemaChanges = true;
-
-    // ... close and re-open, so that the side-effects of the schema changes are reflected in the open DgnDb.
-    db->CloseDb();
-    db = nullptr;
-
-    return DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    return db;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,13 +287,9 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
     //      That is because it often does things like Db::AttachDb and create temp table,
     //		which need to commit the txn. We cannot commit while in bulk insert mode.
 
-    // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, db, haveInputFile);
-    if (!bookMarkFunctions.IsBridgeReady())
-        {
-        LOG.fatalv("Bridge not ready to update briefcase");
-        return BSIERROR;
-        }
+    // Note: OpenBim already called _OnOpenBim and _OpenSource.
+    CallOnBimClose callOnBimClose(*this, false);   // Be sure to call _OnBimClose before returning.
+    CallCloseSource callCloseSource(*this, false); // Be sure to call _CloseSource before returning.
 
     //  go into bulk import mode. (Note that any locks and codes required by _OnConvertToBim would have to have been acquired immediately, the normal way.)
     db.BriefcaseManager().StartBulkOperation();
@@ -273,7 +328,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
         return BSIERROR;
         }
 
-    bookMarkFunctions.m_updateStatus = BSISUCCESS;
+    callCloseSource.m_status = callOnBimClose.m_status = BSISUCCESS;
 
     return BSISUCCESS;
     // Call bridge's _CloseSource and _OnConvertedToBim

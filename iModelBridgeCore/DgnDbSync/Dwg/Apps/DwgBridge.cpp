@@ -151,7 +151,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
+BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
     {
     // instantiate a new importer to begin a new job
     m_importer.reset (this->_CreateDwgImporter());
@@ -166,7 +166,7 @@ BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DwgBridge::_OnConvertedToBim (BentleyStatus status)
+void DwgBridge::_OnCloseBim (BentleyStatus status)
     {
     // remove the importer
     m_importer.reset (nullptr);

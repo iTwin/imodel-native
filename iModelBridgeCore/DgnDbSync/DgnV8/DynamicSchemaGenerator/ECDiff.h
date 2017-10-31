@@ -1,13 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/ECDiff.h $
+|     $Source: DgnV8/DynamicSchemaGenerator/ECDiff.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include "ConverterInternal.h"
 
 #include <stack>
 #include <set>

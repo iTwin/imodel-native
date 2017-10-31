@@ -597,12 +597,11 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before creating the job");
     BeAssert(!jobName.empty());
 
-    // 0. Make sure that the domains/schemas and other fixed tables that I use are imported
-    CreateJobStructure_ImportSchemas();
-
+    // Make sure that we don't already have a job for this root ...
     if (FindImportJobForModel(*GetRootModelP()).IsValid())
         return ImportJobCreateStatus::FailedExistingRoot;
 
+    // ... and that we don't already have this V8 model mapped in as a reference to some other root.
     SyncInfo::V8ModelMapping mapping;
     if (BSISUCCESS == GetSyncInfo().FindModel(&mapping, *GetRootModelP(), &m_rootTrans, GetCurrentIdPolicy()))
         return ImportJobCreateStatus::FailedExistingNonRootModel;

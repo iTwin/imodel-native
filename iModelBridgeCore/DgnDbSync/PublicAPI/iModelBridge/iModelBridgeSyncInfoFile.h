@@ -220,9 +220,9 @@ method and not in its _ConvertToBim method.
 * The change detector is making the inference that the only reason why an item was not seen is because it is not there.
 *
 * <h2>Attach and Detach</h2>
-* A bridge must attach syncinfo in iModelBridge::_OnConvertToBim and detach syncinfo in iModelBridge::_OnConvertedToBim. 
+* A bridge must attach syncinfo in iModelBridge::_OnOpenBim and detach syncinfo in iModelBridge::_OnCloseBim. 
 * It must not try to do either of these operations in iModelBridge::_ConvertToBim.
-* iModelBridgeWithSyncInfoBase overrides _OnConvertToBim and _OnConvertedToBim in order to handle attach and detach for you.
+* iModelBridgeWithSyncInfoBase overrides _OnOpenBim and _OnCloseBim in order to handle attach and detach for you.
 *
 * <h2>Complex Mappings</h2>
 *
@@ -630,8 +630,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
 //=======================================================================================
 //! Base class for iModel bridges that use iModelBridgeSyncInfoFile. This base class implements
-//! the bridge methods that must deal with syncinfo, including _OnConvertToBim to attach and 
-//! _OnConvertedToBim to detach.
+//! the bridge methods that must deal with syncinfo, including _OnOpenBim to attach and 
+//! _OnCloseBim to detach.
 //! @ingroup GROUP_iModelBridge
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
@@ -646,9 +646,12 @@ public:
     iModelBridgeSyncInfoFile& GetSyncInfo() {return m_syncInfo;}
     
     //! Attaches syncinfo to the BIM
-    IMODEL_BRIDGE_EXPORT BentleyStatus _OnConvertToBim(DgnDbR db) override;
+    IMODEL_BRIDGE_EXPORT BentleyStatus _OnOpenBim(DgnDbR db) override;
     //! Detaches syncinfo from the BIM
-    IMODEL_BRIDGE_EXPORT void _OnConvertedToBim(BentleyStatus status) override;
+    IMODEL_BRIDGE_EXPORT void _OnCloseBim(BentleyStatus) override;
+
+    void _Terminate(BentleyStatus) override {}
+
     //! Deletes the syncinfo file
     IMODEL_BRIDGE_EXPORT void _DeleteSyncInfo() override;
     //! Detects and cleans up after deleted documents

@@ -1,16 +1,156 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/EntityConverter.h $
+|     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECConversion.h"
+#include "../ECSchemaMappings.h"
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 struct DynamicSchemaGenerator;
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      02/2015
+//+===============+===============+===============+===============+===============+======
+struct V8ECSchemaXmlInfo
+    {
+public:
+    struct Iterable : BeSQLite::DbTableIterator
+        {
+        struct Entry : BeSQLite::DbTableIterator::Entry, std::iterator <std::input_iterator_tag, Entry const>
+            {
+        private:
+            friend struct Iterable;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) {}
+
+        public:
+            ECN::SchemaKey GetSchemaKey () const;
+            Utf8CP GetSchemaXml () const;
+            SyncInfo::ECSchemaMappingType GetMappingType () const;
+            Entry const& operator* () const {return *this;}
+            };
+
+        explicit Iterable (DgnDbCR db) : BeSQLite::DbTableIterator ((BeSQLite::DbCR) db)
+            {}
+
+        typedef Entry const_iterator;
+        const_iterator begin () const;
+        const_iterator end () const { return Entry (nullptr, false); }
+        };
+
+private:
+    V8ECSchemaXmlInfo ();
+    ~V8ECSchemaXmlInfo ();
+
+public:
+    static BeSQLite::DbResult Insert (DgnDbR db, ECN::ECSchemaId schemaId, BentleyApi::Utf8CP schemaXml);
+    static BeSQLite::DbResult CreateTable (DgnDbR db);
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      10/2014
+//+===============+===============+===============+===============+===============+======
+struct ECSchemaXmlDeserializer : public ECN::IECSchemaLocater
+    {
+private:
+    bmap<Utf8String, bvector<bpair<ECN::SchemaKey, Utf8String>>> m_schemaXmlMap;
+    ECN::ECSchemaCache m_schemaCache;
+    DynamicSchemaGenerator& m_converter;
+
+    virtual ECN::ECSchemaPtr _LocateSchema (ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+
+public:
+    ECSchemaXmlDeserializer (DynamicSchemaGenerator& converter) : m_converter(converter) {}
+
+    void AddSchemaXml(Utf8CP schemaName, ECN::SchemaKeyCR key, Utf8CP xml);
+    BentleyStatus DeserializeSchemas (ECN::ECSchemaReadContextR, ECN::SchemaMatchType);
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2015
+//+===============+===============+===============+===============+===============+======
+struct DynamicSchemaGenerator
+    {
+
+#ifndef DOCUMENTATION_GENERATOR
+    //=======================================================================================
+    //!Convenience class that simplifies finalizing the schema conversion process. The destructor
+    //! does all the work necessary to clean-up after schema conversion is done.
+    // @bsiclass
+    //=======================================================================================
+    struct SchemaConversionScope : NonCopyableClass
+        {
+        private:
+            DynamicSchemaGenerator& m_converter;
+            bool m_succeeded;
+        public:
+            explicit SchemaConversionScope(DynamicSchemaGenerator&);
+            ~SchemaConversionScope();
+            void SetSucceeded() {m_succeeded = true;}
+        };
+#endif
+
+    private:
+    bool m_skipECContent = false;
+    bool m_needReimportSchemas = false;
+    bool m_ecConversionFailed = false;
+    bool m_anyImported = false;
+    Converter& m_converter;
+    ECN::ECSchemaReadContextPtr m_schemaReadContext;
+    ECN::ECSchemaReadContextPtr m_syncReadContext;
+
+    void CheckECSchemasForModel(DgnV8ModelR, bmap<Utf8String, uint32_t>& syncInfoChecksums);
+    BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel);
+    BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel, DgnV8Api::ECSchemaPersistence persistence);
+    static bool IsDynamicSchema(ECObjectsV8::ECSchemaCR schema);
+    static bool IsWellKnownDynamicSchema(Bentley::Utf8StringCR schemaName);
+    static bool IsDynamicSchema(Bentley::Utf8StringCR schemaName, Bentley::Utf8StringCR schemaXml);
+    BentleyStatus ConsolidateV8ECSchemas();
+    BentleyStatus MergeV8ECSchemas(struct ECSchemaXmlDeserializer& deserializer, bmap<Utf8String, bvector<bpair<ECN::SchemaKey, Utf8String>>> const& schemaXmlMap) const;
+    BentleyStatus SupplementV8ECSchemas();
+    BentleyStatus ConvertToBisBasedECSchemas();
+    BentleyStatus ImportTargetECSchemas();
+    void AnalyzeECContent(DgnV8ModelR, DgnModelP targetModel);
+    BentleyStatus Analyze(DgnV8Api::ElementHandle const&, DgnModelP targetModel);
+    BentleyStatus DoAnalyze(DgnV8Api::ElementHandle const&, DgnModelP targetModel);
+    void InitializeECSchemaConversion();
+    void FinalizeECSchemaConversion();
+    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
+
+    SyncInfo& GetSyncInfo() {return m_converter.GetSyncInfo();}
+    bool IsUpdating() const {return m_converter.IsUpdating();}
+
+    void CheckNoECSchemaChanges(bset<DgnV8ModelP> const&);
+    void BisifyV8Schemas(bset<DgnV8ModelP> const&);
+
+    public:
+
+    bool WasAborted() const {return m_converter.WasAborted();}
+    void ReportProgress() const {m_converter.ReportProgress();}
+    template<typename ...Args> void SetStepName(Converter::ProgressMessage::StringId a, Args... args) const {m_converter.SetStepName(a, args...);}
+    void AddTasks(int32_t n) const {m_converter.AddTasks(n);}
+    template<typename ...Args> void SetTaskName(Converter::ProgressMessage::StringId a, Args... args) const {m_converter.SetTaskName(a, args...);}
+    void ReportError(Converter::IssueCategory::StringId a, Converter::Issue::StringId b, Utf8CP c) {m_converter.ReportError(a,b,c);}
+    void ReportIssue(Converter::IssueSeverity a, Converter::IssueCategory::StringId b, Converter::Issue::StringId c, Utf8CP d, Utf8CP e = nullptr) {m_converter.ReportIssue(a,b,c,d,e);}
+    template<typename ...Args> void ReportIssueV(Converter::IssueSeverity a, Converter::IssueCategory::StringId b, Converter::Issue::StringId c, Utf8CP d, Args... args) {m_converter.ReportIssueV(a,b,c,d,args...);}
+    void ReportSyncInfoIssue(Converter::IssueSeverity a, Converter::IssueCategory::StringId b, Converter::Issue::StringId c, Utf8CP d) {m_converter.ReportSyncInfoIssue(a,b,c,d);}
+    template<typename ...Args> BentleyStatus OnFatalError(Converter::IssueCategory::StringId a=Converter::IssueCategory::Unknown(), Converter::Issue::StringId b=Converter::Issue::FatalError(), Args... args) const {return m_converter.OnFatalError(a,b,args...);}
+    DgnDbR GetDgnDb() {return m_converter.GetDgnDb();}
+    iModelBridge::Params const& GetParams() const {return m_converter._GetParams();}
+    Converter::Config const& GetConfig() const {return m_converter.GetConfig();}
+
+    DynamicSchemaGenerator(Converter& c) : m_converter(c) {}
+
+    void SetEcConversionFailed() {m_ecConversionFailed=true;}
+    bool GetEcConversionFailed() const {return m_ecConversionFailed;}
+    bool GetAnyImported() const {return m_anyImported;}
+
+    void GenerateSchemas(bset<DgnV8ModelP> const&);
+
+    };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2015
@@ -118,8 +258,6 @@ struct BisClassConverter
         
 		static void GetBisBaseClasses(ECN::ECClassCP& elementBaseClass, ECN::ECClassCP& elementAspectClass, SchemaConversionContext&, BisConversionRule);
 
-        static ECClassName GetElementAspectBisBaseClassName(BisConversionRule);
-
         //! Injecting a BIS base class might lead to collisions between ECDbMap custom attributes used on the BIS base class and the domain class.
         //! The BIS base class custom attributes should be preferred, therefore the hint on the domain class is deleted.
         static BentleyStatus RemoveDuplicateClassMapCustomAttributes(ECN::ECClassR);
@@ -148,77 +286,5 @@ struct BisClassConverter
         //! Second step of the conversion process which is carried out once the first step is done for all ECClasses that 
         //! have ECInstances in the v8 file.
         static BentleyStatus FinalizeConversion(SchemaConversionContext&);
-
-        static ECClassName GetElementBisBaseClassName(BisConversionRule);
-        static Utf8CP GetAspectClassSuffix(BisConversionRule);
     };
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-struct ElementConverter
-    {
-    private:
-        mutable bmap<Utf8CP, ECN::ECInstanceReadContextPtr> m_instanceReadContextCache;
-
-        ECN::ECInstanceReadContextPtr LocateInstanceReadContext(ECN::ECSchemaCR schema) const;
-
-    protected:
-        ECN::IECInstancePtr Transform(ECObjectsV8::IECInstance const& v8Instance, ECN::ECClassCR dgnDbClass, bool transformAsAspect = false) const;
-        //---------------------------------------------------------------------------------------
-        // @bsiclass                                   Carole.MacDonald            01/2016
-        //---------------+---------------+---------------+---------------+---------------+-------
-        struct SchemaRemapper : ECN::IECSchemaRemapper
-            {
-            private:
-                typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
-                typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
-                Converter& m_converter;
-                mutable ECN::ECSchemaPtr m_convSchema;
-                bool m_remapAsAspect;
-                mutable T_ClassPropertiesMap m_renamedClassProperties;
-
-                virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
-                virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
-
-            public:
-                explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
-                ~SchemaRemapper() {}
-                void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
-            };
-
-        struct UnitResolver : ECN::ECInstanceReadContext::IUnitResolver
-            {
-            private:
-                mutable ECN::ECSchemaPtr m_convSchema;
-
-                virtual Utf8String _ResolveUnitName(ECN::ECPropertyCR ecProperty) const override;
-            };
-
-        Converter& m_converter;
-        mutable SchemaRemapper m_schemaRemapper;
-        mutable UnitResolver m_unitResolver;
-
-        ECN::ECClassCP GetDgnDbClass(ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
-        static Utf8String ToInstanceLabel(ECObjectsV8::IECInstance const& v8Instance);
-
-    public:
-        explicit ElementConverter(Converter& converter) : m_converter(converter), m_schemaRemapper(converter) {}
-        BentleyStatus ConvertToElementItem(ElementConversionResults&, ECObjectsV8::IECInstance const* v8PrimaryInstance, BisConversionRule const* primaryInstanceConversionRule) const;
-
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      03/2015
-//+===============+===============+===============+===============+===============+======
-struct ElementAspectConverter : ElementConverter
-    {
-    private:
-        BentleyStatus ConvertToAspect(ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
-
-    public:
-        explicit ElementAspectConverter(Converter& converter) : ElementConverter(converter) {}
-        BentleyStatus ConvertToAspects(ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
-    };
-
 END_DGNDBSYNC_DGNV8_NAMESPACE

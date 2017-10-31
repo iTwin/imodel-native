@@ -18,6 +18,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnIModel.h>
+#include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -179,16 +180,29 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
     else
         {
         BeSQLite::DbResult dbres;
-        bool madeSchemaChanges_dont_care, madeDynamicSchemaChange;
-        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care, madeDynamicSchemaChange);
+        bool madeSchemaChanges = false, madeDynamicSchemaChange = false;
+        db = bridge.OpenBim(dbres, madeSchemaChanges, madeDynamicSchemaChange);
         if (!db.IsValid())
             {
             fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
             return BSIERROR;
             }
 
-        BentleyStatus bstatus(BSISUCCESS);
-        bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
+        if (madeSchemaChanges)  // Must call OpenBim again, this time to give the bridge a chance to make dynamic schema changes.
+            {
+            bridge._CloseSource(BSISUCCESS);
+            bridge._OnCloseBim(BSISUCCESS);
+            db->SaveChanges();
+            db->CloseDb();
+            madeSchemaChanges = madeDynamicSchemaChange = false;
+            db = bridge.OpenBim(dbres, madeSchemaChanges, madeDynamicSchemaChange); // calls _OnOpenBim and _OpenSource
+
+            BeAssert(!madeSchemaChanges);
+            if (madeDynamicSchemaChange)
+                db->SaveChanges();
+            }
+
+        BentleyStatus bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
         
         if (BSISUCCESS != bstatus)
             {
@@ -233,30 +247,40 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
 
-    if (isBimExt(inputFileName) && isImodelExt(outputFileName))
+    iModelBridgeHelpers::CallTerminate callTerminate(bridge);
+    callTerminate.m_status = BSISUCCESS;
+    bool isNewFile = false;
+    if (true)
         {
-        CreateIModel(outputFileName, inputFileName, saparams);
-        return BSISUCCESS;
-        }
-    if (isImodelExt(inputFileName) && isBimExt(outputFileName))
-        {
-        return ExtractFromIModel(outputFileName, inputFileName);
-        }
-
-    if (!saparams.ShouldTryUpdate())
-        BeFileName::BeDeleteFile(outputFileName);
-
-    bool isNewFile = !outputFileName.DoesPathExist();
-    
-    bridge._GetParams().SetInputFileName(inputFileName);
-    if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
-        {
-        if (isNewFile)
+        if (isBimExt(inputFileName) && isImodelExt(outputFileName))
             {
-            outputFileName.BeDeleteFile();
+            CreateIModel(outputFileName, inputFileName, saparams);
+            return BSISUCCESS;
+            }
+        if (isImodelExt(inputFileName) && isBimExt(outputFileName))
+            {
+            return ExtractFromIModel(outputFileName, inputFileName);
+            }
+
+        if (!saparams.ShouldTryUpdate())
+            {
+            BeFileName::BeDeleteFile(outputFileName);
             bridge._DeleteSyncInfo();
             }
-        return BSIERROR;
+
+        isNewFile = !outputFileName.DoesPathExist();
+    
+        bridge._GetParams().SetInputFileName(inputFileName);
+        if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
+            {
+            if (isNewFile)
+                {
+                outputFileName.BeDeleteFile();
+                bridge._DeleteSyncInfo();
+                }
+            callTerminate.m_status = BSIERROR;
+            return BSIERROR;
+            }
         }
 
     /* NEEDS WORK
