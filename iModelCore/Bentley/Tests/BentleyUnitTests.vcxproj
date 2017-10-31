@@ -10,6 +10,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
     <ClCompile Include="NonPublished\BeStringUtilitiesTests.cpp" />

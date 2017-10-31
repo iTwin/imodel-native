@@ -39,6 +39,11 @@ CCompPDBName    =% $(appName)
 dirToSearch = $(BuildContext)VendorAPI/icu4c/
 %include cincapnd.mki
 
+%if defined (DEBUG)
+    nameToDefine=DEBUG
+    %include cdefapnd.mki
+%endif
+
 o = $(OutputRootDir)build/$(appName)/
 
 always:
@@ -89,6 +94,8 @@ $(o)DirectoryObserver$(oext)    : $(bentleyDir)DirectoryObserver.cpp $(BentleyAP
 $(o)BeThread$(oext)             : $(nonportDir)BeThread.cpp $(BentleyAPISrc)BeThreadLocalStorage.h $(BentleyAPISrc)BeThread.h ${MultiCompileDepends}
 
 $(o)BeDebugLog$(oext)           : $(nonportDir)BeDebugLog.cpp $(BentleyAPISrc)BeDebugLog.h ${MultiCompileDepends}
+
+$(o)BeDebugUtilities$(oext)     : $(nonportDir)BeDebugUtilities.cpp $(BentleyAPISrc)BeDebugUtilities.h ${MultiCompileDepends}
 
 $(o)ValueFormat$(oext)          : $(nonportDir)ValueFormat.cpp $(BentleyAPISrc)ValueFormat.h ${MultiCompileDepends}
 
@@ -147,6 +154,10 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(libext)
+
+%if defined(DEBUG) && $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES        + Dbghelp.lib
+%endif
 
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
     LINKER_LIBRARIES           + $(CLibs)
