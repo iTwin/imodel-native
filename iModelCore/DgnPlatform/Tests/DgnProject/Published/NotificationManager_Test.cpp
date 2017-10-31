@@ -116,3 +116,60 @@ TEST_F(NotificationManagerTest, GetDetailedMsg_SetDetailedMsg)
     ASSERT_STREQ(tooLongMsg, x.GetDetailedMsg().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NotificationManagerTest, PointerTypeDetails_defaults)
+    {
+    OutputMessagePriority priority = OutputMessagePriority::Info;
+    Utf8CP brief = "This is a test";
+    NotifyMessageDetails x(priority, brief);
+    ASSERT_EQ(4000, x.GetDisplayTime());    // 4 seconds is the default
+    ASSERT_EQ(nullptr, x.GetPointerTypeViewport());
+    ASSERT_EQ(0, x.GetPointerTypeDisplayPoint().x);
+    ASSERT_EQ(0, x.GetPointerTypeDisplayPoint().y);
+    ASSERT_EQ(RelativePosition::TopRight, x.GetPointerTypeRelativePosition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NotificationManagerTest, SetDisplayTime_get)
+    {
+    OutputMessagePriority priority = OutputMessagePriority::Info;
+    Utf8CP brief = "This is a test";
+    NotifyMessageDetails x(priority, brief);
+    x.SetDisplayTime(5000);
+    ASSERT_EQ(5000, x.GetDisplayTime());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NotificationManagerTest, SetPointerTypeDetails_get)
+    {
+    OutputMessagePriority priority = OutputMessagePriority::Info;
+    Utf8CP brief = "This is a test";
+    Point2d testPoint = Point2d::From(10, 11);
+    NotifyMessageDetails x(priority, brief);
+    x.SetPointerTypeDetails((DgnViewportCP)0x1111, testPoint, RelativePosition::BottomRight);
+
+    ASSERT_EQ((DgnViewportCP)0x1111, x.GetPointerTypeViewport());
+    ASSERT_EQ(10, x.GetPointerTypeDisplayPoint().x);
+    ASSERT_EQ(11, x.GetPointerTypeDisplayPoint().y);
+    ASSERT_EQ(RelativePosition::BottomRight, x.GetPointerTypeRelativePosition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Dan.East        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NotificationManagerTest, ActivityMessageDetails_get)
+    {
+    ActivityMessageDetails x(true, false, true);
+    ASSERT_TRUE(x.GetShowProgressBar());
+    ASSERT_FALSE(x.GetShowPercentInMessage());
+    ASSERT_TRUE(x.GetSupportsCancellation());
+    }
+
+
+
