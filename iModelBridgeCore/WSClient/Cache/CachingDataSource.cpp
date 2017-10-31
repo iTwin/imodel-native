@@ -946,18 +946,17 @@ ICancellationTokenPtr ct
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CachingDataSource::CacheObjectsInBackgroundIfNeeded
 (
-SyncNotifierPtr backgroundSyncNotifier, 
 CachedResponseKeyCR responseKey,
 WSQueryCR query,
-DataOrigin requestedOrigin, 
+RetrieveOptions retrieveOptions,
 DataOriginResult result,
 ICancellationTokenPtr ct
 )
     {
-    if (!backgroundSyncNotifier)
+    if (!retrieveOptions.GetSyncNotifier())
         return;
 
-    if (requestedOrigin != DataOrigin::CachedData && requestedOrigin != DataOrigin::CachedOrRemoteData)
+    if (retrieveOptions.GetOrigin() != DataOrigin::CachedData && retrieveOptions.GetOrigin() != DataOrigin::CachedOrRemoteData)
         return;
 
     if (result.GetValue().syncStatus != SyncStatus::NotSynced)
@@ -979,7 +978,7 @@ ICancellationTokenPtr ct
             {
             return *finalBackgroundSyncResult;
             });
-        backgroundSyncNotifier->AddTask(backgroundSyncTask);
+        retrieveOptions.GetSyncNotifier()->AddTask(backgroundSyncTask);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -989,14 +988,13 @@ AsyncTaskPtr<CachingDataSource::KeysResult> CachingDataSource::GetObjectsKeys
 (
 CachedResponseKeyCR responseKey,
 WSQueryCR query,
-DataOrigin origin,
-ICancellationTokenPtr ct,
-SyncNotifierPtr backgroundSyncNotifier
+RetrieveOptions retrieveOptions,
+ICancellationTokenPtr ct
 )
     {
     ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
+    return CacheObjects(responseKey, query, retrieveOptions.GetOrigin(), GetInitialSkipToken(), 0, ct)
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -1014,7 +1012,7 @@ SyncNotifierPtr backgroundSyncNotifier
             return KeysResult::Error(status);
             }
 
-        CacheObjectsInBackgroundIfNeeded(backgroundSyncNotifier, responseKey, query, origin, result, ct);
+        CacheObjectsInBackgroundIfNeeded(responseKey, query, retrieveOptions, result, ct);
 
         return KeysResult::Success({keys, result.GetValue().origin, result.GetValue().syncStatus});
         });

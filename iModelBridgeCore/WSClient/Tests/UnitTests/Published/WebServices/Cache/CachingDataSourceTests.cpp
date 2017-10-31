@@ -2515,7 +2515,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseNotCache
     WSQuery query("TestSchema", "TestClass");
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), nullptr)->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::Status::DataNotCached, result.GetError().GetStatus());
@@ -2544,7 +2544,8 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBa
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedData, nullptr, backgroundSync)->GetResult();
+
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, result.GetValue().GetSyncStatus());
@@ -2576,7 +2577,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBa
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, result.GetValue().GetSyncStatus());
@@ -2605,7 +2606,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBa
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, result.GetValue().GetSyncStatus());
@@ -2631,7 +2632,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataNetworkErrorsBackgroundS
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), nullptr)->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
 
@@ -2659,7 +2660,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataNotModifiedBackgroundSyn
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -2682,8 +2683,9 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataBackgroundSync_DoesNotSy
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
-    auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, backgroundSync)->GetResult();
+    auto backgroundSync = SyncNotifier::Create(); 
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), nullptr)->GetResult();
+
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -2713,7 +2715,8 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), nullptr)->GetResult();
+
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -2733,7 +2736,8 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), nullptr)->GetResult();
+
     ASSERT_FALSE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -2756,7 +2760,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -2785,7 +2789,8 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataResponseCachedAn
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), nullptr)->GetResult();
+
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -2805,7 +2810,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataResponseNotCache
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), nullptr)->GetResult();
     ASSERT_FALSE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -2832,7 +2837,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataNotModifiedBackg
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -2859,7 +2864,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataBackgroundSync_D
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, backgroundSync)->GetResult();
+    auto result = ds->GetObjectsKeys(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
