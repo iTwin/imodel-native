@@ -190,7 +190,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
-    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK" && response_header.data["HTTP"] != "1.1 200 Connection Established" && false)
+    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
         {
         //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
@@ -337,7 +337,7 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSource &dataSource, D
 size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
     if (userp == nullptr) return 0;
-
+ 
     struct CURLDataResponseHeader *header = (struct CURLDataResponseHeader *)userp;
 
     std::istringstream resp((char*)contents);
@@ -353,7 +353,17 @@ size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * content
             }
         else if ((index = line.find('/', 0)) != std::string::npos)
             {
-            header->data.insert(std::make_pair(line.substr(0, index), line.substr(index + 1)));
+            std::map<std::string, std::string>::iterator findIter(header->data.find(line.substr(0, index)));
+                
+            if (findIter == header->data.end())
+                { 
+                header->data.insert(std::make_pair(line.substr(0, index), line.substr(index + 1)));
+                }
+            else //When doing proxy connection multiple http statements are sent, keep the last one.
+            if (stricmp(findIter->first.c_str(), "http") == 0)
+                {
+                findIter->second = line.substr(index + 1);                
+                }            
             }
         }
 
