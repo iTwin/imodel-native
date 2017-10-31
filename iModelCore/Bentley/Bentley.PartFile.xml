@@ -222,5 +222,5 @@
             <Libs>Delivery/$(libprefix)BeXml$(libext)</Libs>
         </Bindings>
     </Part>
-	
+    
 </BuildContext>
