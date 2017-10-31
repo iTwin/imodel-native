@@ -33,6 +33,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
     BE_JSON_NAME(srcToDb)
 
 public:
+    virtual uint32_t _GetExcessiveRefCountThreshold() const { return 0x7fffffff; } // tile publisher makes lots of referrents...
+
     struct CreateParams : T_Super::CreateParams
         {
         DEFINE_T_SUPER(RasterModel::CreateParams);
