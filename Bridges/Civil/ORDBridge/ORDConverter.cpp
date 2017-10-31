@@ -804,6 +804,8 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
             if (geomModelPtr.IsValid())
                 {
                 auto currentDgnFileP = geomModelPtr->GetDgnModelP()->GetDgnFileP();
+                converterLib.ConvertModelMaterials(*geomModelPtr->GetDgnModelP());
+
                 if (dgnFileSet.end() == dgnFileSet.find(currentDgnFileP))
                     {
                     converterLibraryParams.AddDrawingOrSheetFile(BeFileName(currentDgnFileP->GetFileName().c_str()));
