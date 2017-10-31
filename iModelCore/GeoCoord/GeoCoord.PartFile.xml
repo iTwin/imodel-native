@@ -11,7 +11,7 @@
     <!-- To Use the GeoCoord part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="B02">
-        <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="csmapStatic"             PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoordHeaderFiles" />
         <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
         <SubPart PartName="GeomDlls"                PartFile="geomlibs"             Repository="GeomLibs" />
@@ -38,7 +38,7 @@
     <!-- Geographic Native Parts, plus minimal Geographic Data. Used by viewers that don't want full footprint -->
     <Part Name="GeoCoordMinimal" PrgOutputDir="GeoCoordLib">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="CSMapMinimalData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="GeoCoordDataMinimal"  PartFile="csmap"          Repository="libsrc-csmap" />
     </Part>
 
     <!-- Standalone GeoCoord delivery, uses full GeographicData -->
@@ -46,7 +46,7 @@
         <SubPart PartName="GeoCoordMinimal" />
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="GeoCoordManaged" />
-        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
     </Part>
 
     
@@ -58,7 +58,7 @@
     
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
