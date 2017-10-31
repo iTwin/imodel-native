@@ -3856,42 +3856,54 @@ static void getChildElementIdSet(DgnElementIdSet& assemblyIdSet, DgnElementId pa
         getChildElementIdSet(assemblyIdSet, childId, dgnDb);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ElementAssemblyUtil::GetAssemblyParentId(DgnElementCR el)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  09/2016
+//---------------------------------------------------------------------------------------
+static bool hasChildren(DgnElementCR el)
+    {
+    return (el.QueryChildren().size() > 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  10/2017
+//---------------------------------------------------------------------------------------
+DgnElementId ElementAssemblyUtil::GetAssemblyParentId (DgnElementCR el, bool topMost)
     {
     DgnElementId parentId = el.GetParentId();
+
+    if ((!topMost || !parentId.IsValid()) && hasChildren(el))
+        return el.GetElementId();
 
     if (!parentId.IsValid())
         return DgnElementId();
 
-#if ORIGINAL_WAY // Note: this recursion causes a problem for Navigator on import plant imodels.
-                 // Joe G and Josh decided that for now assembly lock will only move up to 
-                 // its immediate parent.
-    DgnElementId thisParentId;
-
-    do
+    if (topMost)
         {
+        DgnElementId thisParentId;
+
+        do
+            {
+            DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
+            if (!parentEl.IsValid())
+                return DgnElementId(); // Missing parent...
+
+            // the parent must be a GeometrySource to continue up chain
+            if (nullptr == parentEl->ToGeometrySource())
+                return parentId;
+
+            thisParentId = parentEl->GetParentId();
+            if (thisParentId.IsValid())
+                parentId = thisParentId;
+
+            } while (thisParentId.IsValid());
+        }
+    else
+        {
+        // make sure the parent element is valid
         DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
-
-        GeometrySource* geom = parentEl->ToGeometrySource();
-
         if (!parentEl.IsValid() || nullptr == parentEl->ToGeometrySource())
-            return DgnElementId(); // Missing or non-geometric parent...
-
-        // NOTE: For plant applications, it might be a good idea to stop at the first non-geometric parent to avoid selecting the entire plant with assembly lock???
-        thisParentId = parentEl->GetParentId();
-
-        if (thisParentId.IsValid())
-            parentId = thisParentId;
-
-        } while (thisParentId.IsValid());
-#else
-    DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
-    if (!parentEl.IsValid() || nullptr == parentEl->ToGeometrySource())
-        return DgnElementId(); // Missing or non-geometric parent...
-#endif
+            return DgnElementId(); // Invalid or non-GeometrySource parent...
+        }
 
     return parentId;
     }
