@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="TilePublisherPublicAPI" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="TilePublisher" />
+        </Bindings>
+    </Part>
+
+    <Part Name="CesiumJs" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
+        </Bindings>
+    </Part>
+
+    <!-- Presentation rules for tile publisher -->
+    <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
+        <Bindings>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules" SourceName="Delivery/Assets/PresentationRules"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+        <SubPart PartName="CesiumJs" />
+        <SubPart PartName="TilePublisherPublicAPI" />
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
+        <SubPart PartName="CSMapData"        PartFile="Libsrc-Nugets"        Repository="bsicommon"/>
+        <SubPart PartName="DgnPlatformDll"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
+        <SubPart PartName="CrunchLib"           PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Planning"            PartFile="Planning"             Repository="DgnDomains-Planning"/>
+        <SubPart PartName="PlanningView"        PartFile="Planning"             Repository="DgnDomains-Planning"/>
+        <SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
+        <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
+        <SubPart PartName="TilePublisherAssets" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="TilePublisherExe" />
+    </Part>
+    <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+        <SubPart PartName="TilePublisherExe" />
+    </Part>
+    <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
+        <SubPart PartName="TilePublisherLib" />
+        <SubPart PartName="DgnPlatformSqlang"   PartFile="DgnPlatform"          Repository="DgnPlatform"/>
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
+        <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+        <Bindings>
+            <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Product Name="TilePublisher">
+        <SubPart PartName="TilePublisherExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="TilePublisherExe-Unix" LibType="Static"/>
+        <Directories DirectoryListName="TilePublisherDirs" />
+    </Product>
+
+    <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="TilePublisher" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="TilePublisherDirs" >
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
+    </ProductDirectoryList>
+
+</BuildContext>
