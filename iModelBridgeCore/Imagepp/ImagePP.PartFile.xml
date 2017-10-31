@@ -102,7 +102,7 @@
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="GeoCoordData"                    PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
         <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
