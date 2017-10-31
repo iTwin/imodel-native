@@ -2693,11 +2693,12 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                             newIndices.push_back(newIndex);
                             newPoints.push_back(toLoadPoints[pointInd]);
                             FloatXY uv = toLoadUv[uvInd];
+                            static const float tolerance = 1.e-05f;
 #ifndef WIP_MESH_IMPORT
-                            assert(uv.x <= 1.f && uv.x >= 0.f);
-                            assert(uv.y <= 1.f && uv.y >= 0.f);
+                            assert(uv.x <= 1.f + tolerance && uv.x >= -tolerance);
+                            assert(uv.y <= 1.f + tolerance && uv.y >= -tolerance);
 #endif
-                            newUVs.push_back({ uv.x, uv.y <= 1.f ? 1.f - uv.y : uv.y }); // Different convention in QV (or ScalableMesh bug?)
+                            newUVs.push_back({ uv.x, uv.y <= 1.f + tolerance ? 1.f - uv.y : uv.y }); // Different convention in QV (or ScalableMesh bug?)
                             }
                         else
                             {
