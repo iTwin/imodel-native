@@ -202,7 +202,9 @@
     <None Include="Tasks\Tasks.mki" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Bentley.PartFile.xml" />
+    <Xml Include="Bentley.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <Text Include="bentley-notice.txt" />
@@ -249,8 +251,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NMakeBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll build</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
     <IncludePath>$(ProjectDir);$(ProjectDir)PublicAPI\;$(ProjectDir)Bentley\;$(ProjectDir)Bentley\nonport\;$(IncludePath);</IncludePath>
   </PropertyGroup>
@@ -270,7 +272,14 @@
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
