@@ -121,10 +121,9 @@ struct CachingDataSource :
 
         void CacheObjectsInBackgroundIfNeeded
             (
-            SyncNotifierPtr backgroundSyncNotifier,
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
-            DataOrigin requestedOrigin, 
+            RetrieveOptions retrieveOptions,
             DataOriginResult result,
             ICancellationTokenPtr ct
             );
@@ -238,9 +237,8 @@ struct CachingDataSource :
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
-            DataOrigin origin,
-            ICancellationTokenPtr ct = nullptr,
-            SyncNotifierPtr backgroundSyncNotifier = nullptr
+            RetrieveOptions retrieveOptions,
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<ObjectsResult> GetNavigationChildren

@@ -65,6 +65,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             SyncError        // There was an error during synchronization with server.
             };
 
+        struct RetrieveOptions;
+
         struct SelectProvider;
         
         struct Progress;
@@ -185,16 +187,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
-        //! @param[in] origin - specify what data to try returning
+        //! @param[in] RetrieveOptions - specify what data to try returning
         //! @param[in] ct - (optional)
-        //! @param[in] backgroundSyncNotifier - (optional) if not null and there was no attempt to pull data from server - executes GetObjectKeys with DataOrigin::RemoteData in the background
         virtual AsyncTaskPtr<KeysResult> GetObjectsKeys
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
-            DataOrigin origin,
-            ICancellationTokenPtr ct = nullptr,
-            SyncNotifierPtr backgroundSyncNotifier = nullptr
+            RetrieveOptions retrieveOptions,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Get navigation instances.
@@ -381,6 +381,25 @@ struct ICachingDataSource::Error : public AsyncError
 
         WSCACHE_EXPORT ICachingDataSource::Status GetStatus() const;
         WSCACHE_EXPORT WSErrorCR GetWSError() const;
+    };
+    
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                  
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ICachingDataSource::RetrieveOptions
+    {
+    private:
+        DataOrigin m_origin;
+        SyncNotifierPtr m_syncNotifier;
+
+    public:
+        //! @param[in] DataOrigin origin - specify what data to try returning
+        //! @param[in] backgroundSyncNotifier - (optional) if not null and there was no attempt to pull data from server - repeats the call with DataOrigin::RemoteData in the background
+        WSCACHE_EXPORT RetrieveOptions(DataOrigin origin, SyncNotifierPtr syncNotifier = nullptr) : 
+            m_origin(origin), m_syncNotifier(syncNotifier) { }
+
+        WSCACHE_EXPORT DataOrigin GetOrigin() const { return m_origin; }
+        WSCACHE_EXPORT SyncNotifierPtr GetSyncNotifier() const { return m_syncNotifier; }
     };
 
 /*--------------------------------------------------------------------------------------+
