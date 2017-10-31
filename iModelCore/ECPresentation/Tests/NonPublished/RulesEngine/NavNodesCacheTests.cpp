@@ -766,13 +766,13 @@ void NodesCacheTests::Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHas
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(GetDb().GetDbGuid());
     extendedData.SetRulesetId("ruleset_id");
-    uint64_t nodeId = node->GetNodeId();
     EXPECT_FALSE(node->DeterminedChildren());
 
     // cache node
     m_cache->Cache(*node, true);
 
     // cache child data source
+    uint64_t nodeId = node->GetNodeId();
     DataSourceInfo childrenInfo(GetDb().GetDbGuid(), info.GetRulesetId(), &nodeId, &nodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 

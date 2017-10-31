@@ -1967,7 +1967,7 @@ void NodesCache::Persist() {m_db.SaveChanges();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavNodeCPtr> NodesCache::GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const
     {
-    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [ex].[NodeId], [n].[Id]"
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId]"
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id] "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
