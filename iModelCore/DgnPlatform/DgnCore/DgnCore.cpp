@@ -202,6 +202,30 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
     return T_HOST.GetNotificationAdmin()._OpenMessageBox(mbType, message, icon);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt NotificationManager::SetupActivityMessage(ActivityMessageDetails* details)
+    {
+    return T_HOST.GetNotificationAdmin()._SetupActivityMessage(details);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt NotificationManager::OutputActivityMessage(Utf8CP messageText, int32_t percentComplete)
+    {
+    return T_HOST.GetNotificationAdmin()._OutputActivityMessage(messageText, percentComplete);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt NotificationManager::EndActivityMessage(ActivityMessageEndReason reason) 
+    {
+    return T_HOST.GetNotificationAdmin()._EndActivityMessage(reason);
+    }
+
 static DgnPlatformLib::Host* s_host = nullptr;
 
 /*---------------------------------------------------------------------------------**//**

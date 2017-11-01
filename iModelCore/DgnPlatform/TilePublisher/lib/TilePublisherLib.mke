@@ -43,8 +43,6 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)Units.lib             \
                       $(SubpartLibs)BeJsonCpp.lib         \
                       $(SubpartLibs)BaseGeoCoord.lib      \
-                      $(SubpartLibs)ThreeMx.lib           \
-                      $(SubpartLibs)PointCloud.lib        \
                       $(SubpartLibs)$(libprefix)Planning.lib \
                       $(SubpartLibs)iModelHubClient.lib   \
                       $(SubpartLibs)BeHttp.lib \
@@ -52,8 +50,6 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)VersionCompare.lib \
                       $(SubpartLibs)ECPresentation.lib \
                       $(SubpartLibs)BeFolly.lib     
-                
-                            
 
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)

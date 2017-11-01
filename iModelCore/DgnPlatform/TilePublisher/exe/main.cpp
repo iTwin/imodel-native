@@ -418,7 +418,12 @@ private:
         printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
         }
 public:
-    Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
+    Host() { EnsureAssertHandler(); }
+
+    static void EnsureAssertHandler()
+        {
+        // Stupid Raster creates its own Host for ImagePP, which replaces the stupid static BeAssertHandler, replacing our Host's _OnAssert()...
+        BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
 };
 
 
@@ -491,6 +496,7 @@ int wmain(int ac, wchar_t const** av)
 
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
+    Host::EnsureAssertHandler();
 
 #ifdef HISTORY_SUPPORT
     if (createParams.WantHistory())
@@ -534,4 +540,4 @@ int wmain(int ac, wchar_t const** av)
     return static_cast<int>(status);
     }
 
-                       
+
