@@ -155,16 +155,20 @@
 
     <ProductDirectoryList ListName="DgnV8BridgeDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
-	    <ProductDirectory Name="Assemblies"     Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assemblies"     Path="lib/x64"  RelativeTo="applicationroot"/>
+	    <ProductDirectory Name="Assemblies" LibType="Static" Path="lib/x64"  RelativeTo="applicationroot"/>
 	    <ProductDirectory Name="DgnV8ConverterLibs" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyDesktopClientApi" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnV8Dlls"      Path="DgnV8"    RelativeTo="Assemblies"/>
         <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PublicApi" LibType="Static" Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="VersionedDgnV8Api" Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="VendorApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="VendorApi" LibType="Static" Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="Libs"           Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="Libs" LibType="Static" Path=""         RelativeTo="Assemblies"/>
         <ProductDirectory Name="DgnV8ConverterLibs" Path=""     RelativeTo="Assemblies"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""     RelativeTo="Assemblies"/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""     RelativeTo="Assemblies" />
