@@ -94,7 +94,7 @@ struct DynamicSchemaGenerator
 #endif
 
     private:
-    bool m_skipECContent = false;
+    bool m_skipECContent = true;
     bool m_needReimportSchemas = false;
     bool m_ecConversionFailed = false;
     bool m_anyImported = false;
@@ -142,7 +142,7 @@ struct DynamicSchemaGenerator
     iModelBridge::Params const& GetParams() const {return m_converter._GetParams();}
     Converter::Config const& GetConfig() const {return m_converter.GetConfig();}
 
-    DynamicSchemaGenerator(Converter& c) : m_converter(c) {}
+    DynamicSchemaGenerator(Converter& c) : m_converter(c), m_skipECContent(c.SkipECContent()) {}
 
     void SetEcConversionFailed() {m_ecConversionFailed=true;}
     bool GetEcConversionFailed() const {return m_ecConversionFailed;}

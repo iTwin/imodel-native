@@ -17,6 +17,7 @@ Welcome to the iModelBridge API from <a href="http://www.bentley.com/">Bentley</
 
 The main classes are:
 - @ref BentleyApi::Dgn::iModelBridge
+- @ref ANCHOR_BridgeCheckList "iModelBridge implementation checklist"
 */
 
 /**

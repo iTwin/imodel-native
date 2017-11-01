@@ -954,6 +954,8 @@ public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
 
+    bool SkipECContent() const {return m_skipECContent;}
+
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 

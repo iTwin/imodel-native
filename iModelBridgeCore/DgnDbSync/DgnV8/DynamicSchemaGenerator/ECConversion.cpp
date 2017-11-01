@@ -1894,12 +1894,6 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
 
-    // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
-    for (auto model : uniqueModels)
-        {
-        GetV8FileSyncInfoId(*model->GetDgnFileP());
-        }
-
     // Create some fixed tables
     if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
         {
@@ -1908,8 +1902,19 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
         DgnV8ElementProvenance::CreateTable(*m_dgndb);
         }
 
+    // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
+    // *** TRICKY: Do this *after* creating DgnV8FileProvenance table!
+    for (auto model : uniqueModels)
+        {
+        GetV8FileSyncInfoId(*model->GetDgnFileP());
+        }
+
     // Bis-ify the V8 schemas
-    if (true)
+    if (m_config.GetOptionValueBool("SkipECContent", false))
+        {
+        m_skipECContent = true;
+        }
+    else
         {
         DynamicSchemaGenerator gen(*this);
         gen.GenerateSchemas(uniqueModels);

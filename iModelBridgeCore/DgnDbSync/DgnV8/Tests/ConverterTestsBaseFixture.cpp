@@ -384,8 +384,8 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
-        updater.MakeSchemaChanges();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
+        updater.MakeSchemaChanges();
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
         updater.Process();
         ASSERT_EQ(expectFailure, updater.WasAborted());
@@ -399,8 +399,8 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
-        updater.MakeSchemaChanges();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
+        updater.MakeSchemaChanges();
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
         updater.ConvertRootModel();
         for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
