@@ -186,4 +186,33 @@ BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, d
     return qty;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  10/2017
+//---------------------------------------------------------------------------------------
+BEF::FormatUnitGroup ECQuantityFormatting::CreateFUGfromKOQ(KindOfQuantityCR koq)
+    {
+    Formatting::FormatUnitSetCR persistenceFus = koq.GetPersistenceUnit();
+    Utf8String fusListString = persistenceFus.ToText(true);
+    fusListString.append(" ");
+    bool first = true;
+
+    for (Formatting::FormatUnitSetCR fus : koq.GetPresentationUnitList())
+        {
+        if (fus.HasProblem())
+            {
+            LOG.errorv(" KindOfQuantity '%s' has problem: '%s'", koq.GetName().c_str(), fus.GetProblemDescription().c_str());
+            continue;
+            }
+        if (!first)
+            fusListString.append (",");
+        first = false;
+        fusListString += fus.ToText(true);
+        }
+
+    return BEF::FormatUnitGroup(koq.GetFullName().c_str(), fusListString.c_str());
+    }
+
+
+
 END_BENTLEY_ECOBJECT_NAMESPACE

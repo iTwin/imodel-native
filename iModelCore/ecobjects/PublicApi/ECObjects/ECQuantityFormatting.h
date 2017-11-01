@@ -38,7 +38,10 @@ struct ECQuantityFormatting
     ECOBJECTS_EXPORT ECValue static GetQuantityValue(BEU::QuantityCR qty, UnitCP useUnit = nullptr);
     ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
     ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist = nullptr, KindOfQuantityCP koq = nullptr, size_t indx = 0, Formatting::FormatProblemCode* prob = nullptr);
-    
+
+    //! Create FormatUnitGroup from a KindOfQuantity. Use FormatUnitGroup::HasProblem to test returned FormatUnitGroup.
+    ECOBJECTS_EXPORT static BEF::FormatUnitGroup CreateFUGfromKOQ(KindOfQuantityCR koq);
+
     // functions below are using FormatUnitGroup as a "surrogate" of KOQ. creating KOQ's on the fly is problematic since each KOQ must belong to some schema\
     //   FormatUnitGroup's can be easily created for various purposes when only the essential Unit/Format parts of the KOQ are
     //    actually needed
