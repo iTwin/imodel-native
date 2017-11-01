@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/RenderPrimitives.h>
-#include <DgnPlatform/TileIO.h>
+#include <DgnPlatform/TileReader.h>
 
 USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_TILETREE
@@ -15,20 +15,6 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 BEGIN_TILETREE_IO_NAMESPACE
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   10/17
-//=======================================================================================
-struct BufferView
-{
-    void const* pData = nullptr;
-    size_t      count;
-    size_t      byteLength;
-    uint32_t    type;
-    Json::Value accessor;
-
-    bool IsValid() const { return nullptr != pData; }
-};
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     06/2017
