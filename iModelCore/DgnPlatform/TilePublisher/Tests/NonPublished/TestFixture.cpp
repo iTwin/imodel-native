@@ -30,3 +30,33 @@ void TestFixture::SetupDb(WCharCP name)
     ASSERT_EQ(BeSQLite::BE_SQLITE_OK, status) << status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelSelectorCPtr TestFixture::InsertModelSelector(DgnModelIdSet const& modelIds, Utf8CP name)
+    {
+    DgnDbR db = GetDb();
+    ModelSelector sel(db.GetDictionaryModel(), name);
+    sel.GetModelsR() = modelIds;
+    
+    auto ret = db.Elements().Insert(sel);
+    EXPECT_TRUE(ret.IsValid());
+
+    return ret;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CategorySelectorCPtr TestFixture::InsertCategorySelector(DgnCategoryIdSet const& catIds, Utf8CP name)
+    {
+    DgnDbR db = GetDb();
+    CategorySelector sel(db.GetDictionaryModel(), name);
+    sel.GetCategoriesR() = catIds;
+
+    auto ret = db.Elements().Insert(sel);
+    EXPECT_TRUE(ret.IsValid());
+
+    return ret;
+    }
+
