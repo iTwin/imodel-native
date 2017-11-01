@@ -632,6 +632,7 @@ struct FormatUnitSet
         Utf8String GetUnitName() const { return m_unitName; };
         UNITS_EXPORT Utf8String ToText(bool useAlias) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
+        NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
         UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty) const;
         UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
         UNITS_EXPORT Json::Value ToJson(bool useAlias) const;
