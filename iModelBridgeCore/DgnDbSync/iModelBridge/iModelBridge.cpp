@@ -127,7 +127,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     _GetParams().SetIsCreatingNewDgnDb(true);
     _GetParams().SetIsUpdating(false);
 
-    iModelBridgeHelpers::CallOpenCloseFunctions callCloseOnReturn(*this, *db);
+    iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*this, *db);
     if (!callCloseOnReturn.IsReady())
         {
         LOG.fatalv("Bridge is not ready or could not open source file");
@@ -146,7 +146,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
-    iModelBridgeHelpers::LockOutTxnMonitor prohibitTxnSave;
+    iModelBridgeLockOutTxnMonitor prohibitTxnSave(*db);
 
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
@@ -235,7 +235,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
 
         _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
-        iModelBridgeHelpers::LockOutTxnMonitor prohibitTxnSave;
+        iModelBridgeLockOutTxnMonitor prohibitTxnSave(db);
 
         if (BSISUCCESS != _ConvertToBim(*jobsubj))
             {

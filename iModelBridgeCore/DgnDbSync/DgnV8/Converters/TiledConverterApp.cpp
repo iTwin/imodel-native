@@ -27,6 +27,7 @@ private:
     iModelBridge::Params& _GetParams() override {return m_params;}
     CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]);
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
+    BentleyStatus _MakeSchemaChanges() {m_converter->MakeSchemaChanges(); return m_converter->WasAborted()? BSIERROR: BSISUCCESS;}
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     Dgn::SubjectCPtr _InitializeJob() override;
     BentleyStatus _OnOpenBim(DgnDbR db) override;

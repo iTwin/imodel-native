@@ -235,6 +235,7 @@ protected:
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus LoadBridge();
     BentleyStatus InitBridge();
+    int ProcessSchemaChange();
 
 public:
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();

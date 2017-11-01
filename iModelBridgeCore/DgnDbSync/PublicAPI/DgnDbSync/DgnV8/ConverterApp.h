@@ -98,7 +98,7 @@ protected:
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
     BentleyStatus _DetectDeletedDocuments() override;
-    void _MakeSchemaChanges() override;
+    BentleyStatus _MakeSchemaChanges() override;
 
 public:
     RootModelConverterApp()

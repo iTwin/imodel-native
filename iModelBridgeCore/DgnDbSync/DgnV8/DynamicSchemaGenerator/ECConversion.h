@@ -113,9 +113,9 @@ struct DynamicSchemaGenerator
     BentleyStatus SupplementV8ECSchemas();
     BentleyStatus ConvertToBisBasedECSchemas();
     BentleyStatus ImportTargetECSchemas();
-    void AnalyzeECContent(DgnV8ModelR, DgnModelP targetModel);
-    BentleyStatus Analyze(DgnV8Api::ElementHandle const&, DgnModelP targetModel);
-    BentleyStatus DoAnalyze(DgnV8Api::ElementHandle const&, DgnModelP targetModel);
+    void AnalyzeECContent(DgnV8ModelR, bool is3d);
+    BentleyStatus Analyze(DgnV8Api::ElementHandle const&, bool is3d);
+    BentleyStatus DoAnalyze(DgnV8Api::ElementHandle const&, bool is3d);
     void InitializeECSchemaConversion();
     void FinalizeECSchemaConversion();
     static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}

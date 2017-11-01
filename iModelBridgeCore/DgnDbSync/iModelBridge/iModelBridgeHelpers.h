@@ -10,26 +10,23 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct iModelBridgeHelpers
-{
-
 /*=================================================================================**//**
 * Helper class to ensure that bridge open/close functions are called
 * @bsiclass                                                     Sam.Wilson      10/17
 +===============+===============+===============+===============+===============+======*/
-struct CallOpenCloseFunctions
+struct iModelBridgeCallOpenCloseFunctions
     {
     BentleyStatus m_bstatus;
     BentleyStatus m_sstatus = BSIERROR;
     iModelBridge& m_bridge;
     BentleyStatus m_status = BSIERROR;
 
-    CallOpenCloseFunctions(iModelBridge& bridge, DgnDbR db) : m_bridge(bridge)
+    iModelBridgeCallOpenCloseFunctions(iModelBridge& bridge, DgnDbR db) : m_bridge(bridge)
         {
         CallOpenFunctions(db);
         }
 
-    ~CallOpenCloseFunctions()
+    ~iModelBridgeCallOpenCloseFunctions()
         {
         CallCloseFunctions();
         }
@@ -60,27 +57,31 @@ struct CallOpenCloseFunctions
 * Helper class to ensure that bridge _Terminate function is called
 * @bsiclass                                                     Sam.Wilson      10/17
 +===============+===============+===============+===============+===============+======*/
-struct CallTerminate
+struct iModelBridgeCallTerminate
     {
     iModelBridge& m_bridge;
     BentleyStatus m_status = BSIERROR;
-    CallTerminate(iModelBridge& bridge) : m_bridge(bridge) {}
-    ~CallTerminate() {m_bridge._Terminate(m_status);}
+    iModelBridgeCallTerminate(iModelBridge& bridge) : m_bridge(bridge) {}
+    ~iModelBridgeCallTerminate() {m_bridge._Terminate(m_status);}
     };
 
 /*=================================================================================**//**
 * Put an instance of this class on the stack to flag down calls to DgnDb::SaveChanges or undo/redo.
 * @bsiclass                                                     Sam.Wilson      10/17
 +===============+===============+===============+===============+===============+======*/
-struct LockOutTxnMonitor : TxnMonitor
+struct iModelBridgeLockOutTxnMonitor : TxnMonitor
     {
-    LockOutTxnMonitor()
+    DgnDbR m_dgndb;
+
+    iModelBridgeLockOutTxnMonitor(DgnDbR db) : m_dgndb(db)
         {
         DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
+        m_dgndb.Domains().DisableSchemaImport();
         }
-    ~LockOutTxnMonitor()
+    ~iModelBridgeLockOutTxnMonitor()
         {
         DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
+        m_dgndb.Domains().EnableSchemaImport();
         }
     void _OnCommit(TxnManager& txnMgr) override
         {
@@ -96,6 +97,5 @@ struct LockOutTxnMonitor : TxnMonitor
         }
 
     };
-};
 
 END_BENTLEY_DGN_NAMESPACE

@@ -435,9 +435,10 @@ void ConverterApp::_DeleteSyncInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_MakeSchemaChanges()
+BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
     {
     m_converter->MakeSchemaChanges();
+    return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

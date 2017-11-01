@@ -189,7 +189,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             }
 
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
-        iModelBridgeHelpers::CallOpenCloseFunctions callCloseOnReturn(bridge, *db);
+        iModelBridgeCallOpenCloseFunctions callCloseOnReturn(bridge, *db);
         if (!callCloseOnReturn.IsReady())
             {
             LOG.fatalv("Bridge is not ready or could not open source file");
@@ -262,7 +262,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
 
-    iModelBridgeHelpers::CallTerminate callTerminate(bridge);
+    iModelBridgeCallTerminate callTerminate(bridge);
     callTerminate.m_status = BSISUCCESS;
     bool isNewFile = false;
     if (true)

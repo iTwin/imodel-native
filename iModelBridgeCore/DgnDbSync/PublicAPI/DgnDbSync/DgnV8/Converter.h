@@ -2135,6 +2135,8 @@ protected:
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
+    void MakeSchemaChanges(bset<DgnV8ModelP> const&);
+
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
 
 public:
@@ -2433,6 +2435,9 @@ protected:
     //! @private
     void UpdateCalculatedProperties();
 
+    void FindSchemaDefinitionsSpatial(bset<DgnV8ModelP>& uniqueModels, DgnV8ModelRefR thisModelRef);
+    void FindSchemaDefinitionsDrawings(bset<DgnV8ModelP>& uniqueModels);
+
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
 
@@ -2528,6 +2533,7 @@ public:
     DGNDBSYNC_EXPORT void ConvertRootModel();
     DGNDBSYNC_EXPORT void ConvertTile(BeFileNameCR);
     DGNDBSYNC_EXPORT void FinishedConversion() {_FinishConversion(); _OnConversionComplete();}
+    DGNDBSYNC_EXPORT void MakeSchemaChanges();
 
 };
 

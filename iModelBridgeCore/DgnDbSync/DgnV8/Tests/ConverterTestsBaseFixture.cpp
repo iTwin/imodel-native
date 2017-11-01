@@ -335,6 +335,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.SetIsUpdating(false);
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        creator.MakeSchemaChanges();
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
         creator.Process();
         DgnDbR db = creator.GetDgnDb();
@@ -351,6 +352,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.SetIsUpdating(false);
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        creator.MakeSchemaChanges();
         ASSERT_EQ(TiledFileConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
         creator.ConvertRootModel();
         for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
@@ -382,6 +384,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
+        updater.MakeSchemaChanges();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
         updater.Process();
@@ -396,6 +399,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
+        updater.MakeSchemaChanges();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
         updater.ConvertRootModel();

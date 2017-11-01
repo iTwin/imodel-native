@@ -37,7 +37,7 @@ Utf8String ECClassName::GetClassFullName() const
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BisConversionRule BisConversionRuleHelper::ConvertToBisConversionRule(V8ElementType v8ElementType, DgnModel *targetModel, const bool namedGroupOwnsMembersFlag, bool isSecondaryInstancesClass)
+BisConversionRule BisConversionRuleHelper::ConvertToBisConversionRule(V8ElementType v8ElementType, const bool is3d, const bool namedGroupOwnsMembersFlag, bool isSecondaryInstancesClass)
     {
     if (isSecondaryInstancesClass)
         return BisConversionRule::ToAspectOnly;
@@ -51,9 +51,9 @@ BisConversionRule BisConversionRuleHelper::ConvertToBisConversionRule(V8ElementT
         }
 
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-    return targetModel.IsSpatialModel() || nullptr != dynamic_cast<ComponentModel*>(&targetModel) ? BisConversionRule::ToPhysicalElement : BisConversionRule::ToDrawingGraphic;
+    return is3d.IsSpatialModel() || nullptr != dynamic_cast<ComponentModel*>(&is3d) ? BisConversionRule::ToPhysicalElement : BisConversionRule::ToDrawingGraphic;
 #endif
-    return nullptr != targetModel && targetModel->Is2dModel() ? BisConversionRule::ToDrawingGraphic : BisConversionRule::ToPhysicalElement;
+    return !is3d ? BisConversionRule::ToDrawingGraphic : BisConversionRule::ToPhysicalElement;
     }
 
 //---------------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ bool V8ECClassInfo::TryFind(BECN::ECClassId& v8ClassId, BisConversionRule& rule,
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, DgnModel *targetModel)
+BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, bool is3d)
     {
     const V8ElementType v8ElementType = V8ElementTypeHelper::GetType(v8Eh);
 
@@ -283,11 +283,11 @@ BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR
     BisConversionRule rule = BisConversionRule::ToDefaultBisBaseClass;
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8Eh.GetHandler());
     if (nullptr != upx)
-        rule = upx->_DetermineBisConversionRule(v8Eh, converter.GetDgnDb(), targetModel->Is3dModel());
+        rule = upx->_DetermineBisConversionRule(v8Eh, converter.GetDgnDb(), is3d);
     for (auto xdomain : XDomainRegistry::s_xdomains)
-        xdomain->_DetermineBisConversionRule(rule, v8Eh, converter.GetDgnDb(), targetModel->Is3dModel());
+        xdomain->_DetermineBisConversionRule(rule, v8Eh, converter.GetDgnDb(), is3d);
     if (BisConversionRule::ToDefaultBisBaseClass == rule)
-        rule = BisConversionRuleHelper::ConvertToBisConversionRule(v8ElementType, targetModel, namedGroupOwnsMembers, isSecondaryInstancesClass);
+        rule = BisConversionRuleHelper::ConvertToBisConversionRule(v8ElementType, is3d, namedGroupOwnsMembers, isSecondaryInstancesClass);
 
     ECDiagnostics::LogV8InstanceDiagnostics(v8Eh, v8ElementType, v8ClassName, isSecondaryInstancesClass, rule);
 
@@ -1045,7 +1045,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, DgnModel* targetModel)
+void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, bool is3d)
     {
     if (m_skipECContent)
         return;
@@ -1064,7 +1064,7 @@ void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, DgnModel* tar
             //TODO if (_FilterElement(v8eh))
             //TODO     continue;
 
-            Analyze(v8eh, targetModel);
+            Analyze(v8eh, is3d);
             }
         }
 
@@ -1080,7 +1080,7 @@ void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, DgnModel* tar
             //TODO if (_FilterElement(v8eh))
             //TODO     continue;
 
-            Analyze(v8eh, targetModel);
+            Analyze(v8eh, is3d);
             }
         }
     }
@@ -1088,13 +1088,13 @@ void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, DgnModel* tar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandle const& v8Element, DgnModel* targetModel)
+BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandle const& v8Element, bool is3d)
     {
-    DoAnalyze(v8Element, targetModel);
+    DoAnalyze(v8Element, is3d);
     //recurse into component elements (if the element has any)
     for (DgnV8Api::ChildElemIter childIt(v8Element); childIt.IsValid(); childIt = childIt.ToNext())
         {
-        Analyze(childIt, targetModel);
+        Analyze(childIt, is3d);
         }
 
     return BentleyApi::SUCCESS;
@@ -1104,7 +1104,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHandle const& v8Element, DgnModel* targetModel)
+BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHandle const& v8Element, bool is3d)
     {
     auto& v8ECManager = DgnV8Api::DgnECManager::GetManager();
     DgnV8Api::ElementECClassInfo classes;
@@ -1128,7 +1128,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             if (nullptr != ecClass)
                 namedGroupOwnsMembers = ecClass->GetCustomAttribute("NamedGroupOwnsMembers") != nullptr;
             }
-        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModel))
+        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, is3d))
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
@@ -1744,7 +1744,8 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
         {
         SetTaskName(Converter::ProgressMessage::TASK_ANALYZE_EC_CONTENT(), Converter::IssueReporter::FmtModel(*v8Model).c_str());
 
-        AnalyzeECContent(*v8Model, nullptr); // *** WIP_WIP_WIP_WIP_WIP *** &modelMapping.GetDgnModel());
+        bool is3d = m_converter.ShouldConvertToPhysicalModel(*v8Model);
+        AnalyzeECContent(*v8Model, is3d);
         if (WasAborted())
             return;
         }
@@ -1830,14 +1831,74 @@ void DynamicSchemaGenerator::GenerateSchemas(bset<DgnV8ModelP> const& uniqueMode
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::FindSchemaDefinitionsSpatial(bset<DgnV8ModelP>& uniqueModels, DgnV8ModelRefR thisModelRef)
+    {
+    DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
+
+    if (!uniqueModels.insert(&thisV8Model).second)   // Already seen this model?
+        return;
+
+    DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
+
+    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+
+    // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
+    ClassifyNormal2dModels (thisV8File);
+
+    if (true)
+        {
+        auto fillMsg = ProgressMessage::GetString(ProgressMessage::TASK_FILLING_V8_MODELS());
+        DgnV8Api::IDgnProgressMeter::TaskMark loading(Bentley::WString(fillMsg.c_str(),true).c_str());
+        DgnV8Api::DgnAttachmentLoadOptions loadOptions;
+        loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
+        loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
+        thisModelRef.ReadAndLoadDgnAttachments(loadOptions);
+        }
+
+    if (nullptr == thisModelRef.GetDgnAttachmentsP())
+        return; 
+
+    // All attachments to a spatial model are spatial, unless they are specifically DgnModelType::Drawing or DgnModelType::Sheet, which BIM doesn't support.
+    ForceAttachmentsToSpatial (*thisModelRef.GetDgnAttachmentsP());
+
+    for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
+        {                  
+        if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
+            continue; // missing reference 
+
+        if (!IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
+            continue; // this leads to models in another bridge's territory. Stay out.
+
+        if (ShouldConvertToPhysicalModel(*attachment->GetDgnModelP()))
+            {
+            FindSchemaDefinitionsSpatial(uniqueModels, *attachment);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::MakeSchemaChanges()
+void RootModelConverter::FindSchemaDefinitionsDrawings(bset<DgnV8ModelP>& uniqueModels)
+    {
+    // *** TBD: 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueModels)
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
 
-    StopWatch timer(true);
+    // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
+    for (auto model : uniqueModels)
+        {
+        GetV8FileSyncInfoId(*model->GetDgnFileP());
+        }
 
     // Create some fixed tables
     if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
@@ -1850,9 +1911,6 @@ void RootModelConverter::MakeSchemaChanges()
     // Bis-ify the V8 schemas
     if (true)
         {
-        // *** WIP_SCHEMAS - discover all V8 models
-        bset<DgnV8ModelP> uniqueModels;
-
         DynamicSchemaGenerator gen(*this);
         gen.GenerateSchemas(uniqueModels);
 
@@ -1861,6 +1919,9 @@ void RootModelConverter::MakeSchemaChanges()
 
     if (WasAborted())
         return;
+
+    // V8TagSets -> generate schemas
+    // *** TBD
 
     // Let handler extensions import schemas
     importHandlerExtensionsSchema(*this);
@@ -1882,6 +1943,37 @@ void RootModelConverter::MakeSchemaChanges()
         SetStepName(Converter::ProgressMessage::STEP_CREATE_CLASS_VIEWS());
         GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
         }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::MakeSchemaChanges()
+    {
+    StopWatch timer(true);
+
+    bset<DgnV8ModelP> uniqueModels;
+    BeAssert(nullptr != GetRootModelRefP());
+    FindSchemaDefinitionsSpatial(uniqueModels, *GetRootModelRefP());
+    FindSchemaDefinitionsDrawings(uniqueModels);
+
+    T_Super::MakeSchemaChanges(uniqueModels);
+
+    ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TiledFileConverter::MakeSchemaChanges()
+    {
+    StopWatch timer(true);
+
+    bset<DgnV8ModelP> uniqueModels;
+    uniqueModels.insert(GetRootModelP());
+
+    T_Super::MakeSchemaChanges(uniqueModels);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
     }

@@ -510,8 +510,9 @@ public:
     //! By overriding this function, the bridge may make changes to schemas in the briefcase.
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
     //! The bridge may generate a schema dynamically, based on the content of the source files. Or, in the case of an update, the bridge can upgrade or change a previously generated schema. 
-    //! @note The bridge should not convert elements or models in this function.
-    virtual void _MakeSchemaChanges() {;}
+    //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    //! @note The bridge should *not* convert elements or models in this function.
+    virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
 
     //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
     //! This is called prior to _ConvertToBim.

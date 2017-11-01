@@ -96,6 +96,7 @@ TEST_F(ConverterTests, DuplicateTile)
     creator.SetIsUpdating(false);
     creator.AttachSyncInfo();
     ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+    creator.MakeSchemaChanges();
     creator.InitializeJob();
     creator.ConvertRootModel();
     creator.ConvertTile(m_v8FileName);
