@@ -60,7 +60,7 @@ protected:
 //! This class returns the size in KB currently used.
 //=====================================================================================
 struct RealityDataEnterpriseStatRequest : public RealityDataUrl
-{
+    {
 public:
     // Only identifier is required to retreive RealityData
     REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStatRequest(Utf8StringCR ultimateId, DateTime date = DateTime::GetCurrentTimeUtc()) { m_validRequestString = false; m_id = ultimateId; m_date = date;}
@@ -71,7 +71,7 @@ protected:
 private:
     RealityDataEnterpriseStatRequest() {}
     DateTime m_date;
-};
+    };
 
 //=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
@@ -79,7 +79,7 @@ private:
 //! This class returns the size in KB currently used.
 //=====================================================================================
 struct RealityDataAllEnterpriseStatsRequest : public RealityDataUrl
-{
+    {
 public:
     // Only identifier is required to retreive RealityData
     REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest(DateTime date) { m_validRequestString = false; m_date = date;}
@@ -90,7 +90,7 @@ protected:
 private:
 
     DateTime m_date;
-};
+    };
 
 //=====================================================================================
 //! Overview:
