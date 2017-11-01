@@ -692,6 +692,12 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         return SchemaStatus::DbIsReadonly;
         }
 
+    if (!m_allowSchemaImport)
+        {
+        BeAssert(false && "ImportSchemas is prohibited");
+        return SchemaStatus::SchemaImportFailed;
+        }
+
     if (dgndb.Txns().HasLocalChanges())
         {
         BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
