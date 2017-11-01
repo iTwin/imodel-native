@@ -1856,6 +1856,8 @@ void RootModelConverter::FindSchemaDefinitionsSpatial(bset<DgnV8ModelP>& uniqueM
         DgnV8Api::DgnAttachmentLoadOptions loadOptions;
         loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
         loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
+        if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
+            loadOptions.m_loadRasterRefs = true;
         thisModelRef.ReadAndLoadDgnAttachments(loadOptions);
         }
 
