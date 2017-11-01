@@ -146,6 +146,8 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
+    iModelBridgeHelpers::LockOutTxnMonitor prohibitTxnSave;
+
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
@@ -171,13 +173,6 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges)
     {
-    // ***
-    // ***
-    // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
-    // *** Talk to Sam Wilson if you need to make a change.
-    // ***
-    // ***
-
     // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
     // of detecting the case where we do have domain schema changes (by looking for an error result).
 
@@ -222,22 +217,6 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
     _GetParams().SetIsCreatingNewDgnDb(false);
     _GetParams().SetIsUpdating(true);
 
-    // ***
-    // ***
-    // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
-    // *** Talk to Sam Wilson if you need to make a change.
-    // ***
-    // ***
-
-    // NB: _OnConvertBim must be called before we start "bulk insert" mode.
-    //      That is because it often does things like Db::AttachDb and create temp table,
-    //		which need to commit the txn. We cannot commit while in bulk insert mode.
-
-    // Note: OpenBimAndMergeSchemaChanges already called _OnOpenBim and _OpenSource.
-    CallOnBimClose callOnBimClose(*this, false);   // Be sure to call _OnBimClose before returning.
-    CallCloseSource callCloseSource(*this, false); // Be sure to call _CloseSource before returning.
-
-    //  go into bulk import mode. (Note that any locks and codes required by _OnConvertToBim would have to have been acquired immediately, the normal way.)
     db.BriefcaseManager().StartBulkOperation();
 
     if (haveInputFile)
@@ -256,10 +235,12 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
 
         _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
+        iModelBridgeHelpers::LockOutTxnMonitor prohibitTxnSave;
+
         if (BSISUCCESS != _ConvertToBim(*jobsubj))
             {
             LOG.fatalv("_ConvertToBim failed");
-            return BSIERROR;
+            return BSIERROR; // caller must call abandon changes
             }
         }
 
@@ -274,10 +255,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
         return BSIERROR;
         }
 
-    callCloseSource.m_status = callOnBimClose.m_status = BSISUCCESS;
-
     return BSISUCCESS;
-    // Call bridge's _CloseSource and _OnConvertedToBim
     }
 
 // *******************

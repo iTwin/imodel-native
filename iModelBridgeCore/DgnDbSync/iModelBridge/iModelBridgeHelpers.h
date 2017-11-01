@@ -6,13 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelBridgeHelpers
 {
 
-// Helper class to ensure that bridge book mark functions are called
+/*=================================================================================**//**
+* Helper class to ensure that bridge open/close functions are called
+* @bsiclass                                                     Sam.Wilson      10/17
++===============+===============+===============+===============+===============+======*/
 struct CallOpenCloseFunctions
     {
     BentleyStatus m_bstatus;
@@ -52,7 +56,10 @@ struct CallOpenCloseFunctions
     };
 
 
-// Helper class to ensure that bridge _Terminate function is called
+/*=================================================================================**//**
+* Helper class to ensure that bridge _Terminate function is called
+* @bsiclass                                                     Sam.Wilson      10/17
++===============+===============+===============+===============+===============+======*/
 struct CallTerminate
     {
     iModelBridge& m_bridge;
@@ -61,6 +68,34 @@ struct CallTerminate
     ~CallTerminate() {m_bridge._Terminate(m_status);}
     };
 
+/*=================================================================================**//**
+* Put an instance of this class on the stack to flag down calls to DgnDb::SaveChanges or undo/redo.
+* @bsiclass                                                     Sam.Wilson      10/17
++===============+===============+===============+===============+===============+======*/
+struct LockOutTxnMonitor : TxnMonitor
+    {
+    LockOutTxnMonitor()
+        {
+        DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
+        }
+    ~LockOutTxnMonitor()
+        {
+        DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
+        }
+    void _OnCommit(TxnManager& txnMgr) override
+        {
+        BeAssert(false);
+        TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "SaveChanges not permitted");
+        txnMgr.ReportError(err);
+        }
+    void _OnAppliedChanges(TxnManager& txnMgr) override
+        {
+        BeAssert(false);
+        TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Undo/redo and change-merging not permitted");
+        txnMgr.ReportError(err);
+        }
+
+    };
 };
 
 END_BENTLEY_DGN_NAMESPACE
