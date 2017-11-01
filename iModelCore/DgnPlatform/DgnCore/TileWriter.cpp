@@ -73,12 +73,12 @@ BentleyStatus Writer::WriteGltf(DPoint3dCR centroid)
     uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size());
 
     long    startPosition =  m_buffer.GetSize();
-    m_buffer.Append((const uint8_t*) Gltf::Magic(), 4);
-    m_buffer.Append(Gltf::Version2());
+    m_buffer.Append(Format::Gltf);
+    m_buffer.Append(Gltf::Version2);
     long    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);
     m_buffer.Append((const uint8_t*) &sceneStrLength, sizeof(sceneStrLength));
-    m_buffer.Append((const uint8_t*) Gltf::SceneFormat(), 4);
+    m_buffer.Append((const uint8_t*) Gltf::SceneFormat, 4);
     m_buffer.Append((const uint8_t*) sceneStr.data(), sceneStrLength);
     if (!m_binaryData.empty())
         m_buffer.Append((const uint8_t*) m_binaryData.data(), BinaryDataSize());
@@ -169,19 +169,19 @@ void Writer::AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* att
 
     // Use uint8 if possible to save space in tiles and memory in browser
     bvector<uint8_t> attributes8;
-    auto             componentType = Gltf::UnsignedByte;
+    auto             componentType = Gltf::DataType::UnsignedByte;
 
     for (size_t i=0; i<nAttributes; i++)
         {
         if (attributes16[i] > 0xff)
             {
-            componentType = Gltf::UnsignedShort;
+            componentType = Gltf::DataType::UnsignedShort;
             break;
             }
         }
 
 
-    if (Gltf::UnsignedByte == componentType)
+    if (Gltf::DataType::UnsignedByte == componentType)
         {
         attributes8.reserve(nAttributes);
         for (size_t i=0; i<nAttributes; i++)
@@ -261,11 +261,11 @@ Json::Value Writer::CreateDecodeQuantizeValues(double const* min, double const* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Writer::AddAccessor(uint32_t componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type)
+void Writer::AddAccessor(Gltf::DataType componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type)
     {
     Json::Value         accessor   = Json::objectValue;
 
-    accessor["componentType"] = componentType;
+    accessor["componentType"] = static_cast<int32_t>(componentType);
     accessor["bufferView"] = bufferViewId;
     accessor["byteOffset"] = 0;
     accessor["count"] = count;
@@ -286,7 +286,7 @@ Utf8String Writer::AddQuantizedPointsAttribute(QPoint3dCP qPoints, size_t nPoint
     DRange3d            range = params.GetRange();
 
     AddBufferView(bufferViewId.c_str(), qPoints, nPoints);
-    AddAccessor(Gltf::UnsignedShort, accessorId, bufferViewId, nPoints, "VEC3");
+    AddAccessor(Gltf::DataType::UnsignedShort, accessorId, bufferViewId, nPoints, "VEC3");
 
     m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
     m_json["accessors"][accessorId]["extensions"]["WEB3D_quantized_attributes"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
@@ -309,7 +309,7 @@ Utf8String Writer::AddQuantizedParamAttribute(FPoint2d const* params, size_t nPa
     DRange2d            range = qParams.GetParams().GetRange();
 
     AddBufferView(bufferViewId.c_str(), qParams);
-    AddAccessor(Gltf::UnsignedShort, accessorId, bufferViewId, nParams, "VEC2");
+    AddAccessor(Gltf::DataType::UnsignedShort, accessorId, bufferViewId, nParams, "VEC2");
     m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
     m_json["accessors"][accessorId]["extensions"]["WEB3D_quantized_attributes"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 2);
 
@@ -326,7 +326,7 @@ Utf8String    Writer::AddParamAttribute(FPoint2d const* params, size_t nParams, 
                         bufferViewId = Utf8String("bv") + nameId;
 
     AddBufferView(bufferViewId.c_str(), params, nParams);
-    AddAccessor(Gltf::Float, accessorId, bufferViewId, nParams, "VEC2");
+    AddAccessor(Gltf::DataType::Float, accessorId, bufferViewId, nParams, "VEC2");
     m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
 
     return accessorId;
@@ -374,7 +374,7 @@ Utf8String Writer::AddMeshIndices(Utf8StringCR name, uint32_t const* indices, si
         AddBufferView(bvIndexId.c_str(), indices, numIndices);
         }
     m_json["bufferViews"][bvIndexId]["target"] =  Gltf::ElementArrayBuffer;
-    AddAccessor(useShortIndices ? Gltf::UnsignedShort : Gltf::UInt32, accIndexId, bvIndexId, numIndices, "SCALAR");
+    AddAccessor(useShortIndices ? Gltf::DataType::UnsignedShort : Gltf::DataType::UInt32, accIndexId, bvIndexId, numIndices, "SCALAR");
 
     return accIndexId;
     }
@@ -428,7 +428,7 @@ Json::Value Writer::AddNormals (OctEncodedNormalCP normals, size_t numNormals, U
                bufferViewId = Utf8String("bv") + nameId;
 
     AddBufferView(bufferViewId.c_str(), normals, numNormals);
-    AddAccessor(Gltf::UnsignedByte, accessorId, bufferViewId, numNormals, "VEC2");
+    AddAccessor(Gltf::DataType::UnsignedByte, accessorId, bufferViewId, numNormals, "VEC2");
 
     m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
 
@@ -445,7 +445,7 @@ Json::Value Writer::AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs
                bufferViewId = Utf8String("bv") + nameId;
 
     AddBufferView(bufferViewId.c_str(), pairs, numPairs);
-    AddAccessor(Gltf::UnsignedByte, accessorId, bufferViewId, numPairs, "VEC4");
+    AddAccessor(Gltf::DataType::UnsignedByte, accessorId, bufferViewId, numPairs, "VEC4");
 
     m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
 
@@ -492,7 +492,7 @@ Json::Value Writer::AddPolylines(PolylineList const& polylines, size_t maxIndex,
     bufferViewJson["byteLength"] = m_binaryData.size() -  bufferViewOffset;
     m_json["bufferViews"][bufferViewId] = bufferViewJson;
 
-    AddAccessor(useShortIndices ? Gltf::UnsignedShort : Gltf::UInt32, accessorId, bufferViewId, polylines.size(), "PLINE");
+    AddAccessor(useShortIndices ? Gltf::DataType::UnsignedShort : Gltf::DataType::UInt32, accessorId, bufferViewId, polylines.size(), "PLINE");
     return accessorId;
     }
 

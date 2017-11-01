@@ -385,10 +385,10 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddTechniqueParameter(Json::Value& technique, Utf8CP name, int type, Utf8CP semantic)
+void TilePublisher::AddTechniqueParameter(Json::Value& technique, Utf8CP name, Gltf::DataType type, Utf8CP semantic)
     {
     auto& param = technique["parameters"][name];
-    param["type"] = type;
+    param["type"] = static_cast<int32_t>(type);
     if (nullptr != semantic)
         param["semantic"] = semantic;
     }
@@ -404,7 +404,7 @@ void TilePublisher::AppendProgramAttribute(Json::Value& program, Utf8CP attrName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddShader(Json::Value& shaders, Utf8CP name, int type, Utf8CP buffer)
+void TilePublisher::AddShader(Json::Value& shaders, Utf8CP name, int32_t type, Utf8CP buffer)
     {
     auto& shader = (shaders[name] = Json::objectValue);
     shader["type"] = type;
@@ -543,8 +543,8 @@ PublisherContext::Status TilePublisher::Publish()
         // Composite header.
         uint32_t        tileCount = (publishableGeometry.Meshes().empty() ? 0 : 1) + publishableGeometry.Parts().size();
 
-        std::fwrite(Composite::Magic(), 1, 4, outputFile);
-        FWriteValue(Composite::Version(), outputFile);
+        FWriteValue(Format::Composite, outputFile);
+        FWriteValue(Composite::Version, outputFile);
         long    compositeSizeLocation = ftell (outputFile);
         FWriteValue((uint32_t) 0, outputFile);                   // Filled in below...
         FWriteValue(tileCount, outputFile);
@@ -643,8 +643,8 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
                     featureTableStrLen = featureTableStr.size(),
                     featureTableBinaryLength = pointCloud.Points().size() * (3 * sizeof(int16_t) + (rgbPresent ?  sizeof(TileMeshPointCloud::Rgb) : 0));
 
-    std::fwrite(PointCloud::Magic(), 1, 4, outputFile);
-    FWriteValue(PointCloud::Version(), outputFile);                                                                                                                                  
+    FWriteValue(Format::PointCloud, outputFile);
+    FWriteValue(PointCloud::Version, outputFile);                                                                                                                                  
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue((int32_t) 0, outputFile);    // Total length filled in below.
     FWriteValue(featureTableStrLen, outputFile);          
@@ -824,8 +824,8 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     long            startPosition = ftell(outputFile);
 
-    std::fwrite(I3dm::Magic(), 4, 1, outputFile);
-    FWriteValue(I3dm::Version(), outputFile);
+    FWriteValue(Format::I3dm, outputFile);
+    FWriteValue(I3dm::Version, outputFile);
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue(zero, outputFile);        // Filled in later.
     FWriteValue(featureTableJsonLength, outputFile);
@@ -875,8 +875,8 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     Utf8String      featureTableStr = getJsonString(featureTable);
 
     long    startPosition = ftell (outputFile);
-    std::fwrite(B3dm::Magic(), 1, 4, outputFile);
-    FWriteValue(B3dm::Version(), outputFile);
+    FWriteValue(Format::B3dm, outputFile);
+    FWriteValue(B3dm::Version, outputFile);
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue(0, outputFile);    // Filled in below.
     FWriteValue((uint32_t) featureTableStr.size(), outputFile);   
@@ -1328,8 +1328,8 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
                         featureTableStr = getJsonString(m_featureTable);
 
     long    startPosition = ftell (outputFile);
-    std::fwrite(Vector::Magic(), 1, 4, outputFile);
-    FWriteValue(Vector::Version(), outputFile);
+    FWriteValue(Format::Vector, outputFile);
+    FWriteValue(Vector::Version, outputFile);
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue((uint32_t) 0, outputFile);    // Filled in below.
     FWriteValue((uint32_t) featureTableStr.size(), outputFile);                                                                 // Feature table Json.
@@ -1380,12 +1380,12 @@ void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData const& tile
     uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size());
 
     long    startPosition = ftell(outputFile);
-    std::fwrite(Gltf::Magic(), 1, 4, outputFile);
-    FWriteValue(Gltf::Version(), outputFile);
+    FWriteValue(Format::Gltf, outputFile);
+    FWriteValue(Gltf::Version, outputFile);
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue((uint32_t) 0, outputFile);        // Filled in below.
     FWriteValue(sceneStrLength, outputFile);
-    FWriteValue(Gltf::SceneFormat(), outputFile);
+    FWriteValue(Gltf::SceneFormat, outputFile);
 
     std::fwrite(sceneStr.data(), 1, sceneStrLength, outputFile);
     if (!tileData.m_binaryData.empty())
@@ -1479,8 +1479,8 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
     Utf8String  bvImageId = Utf8String ("imageBufferView") + suffix;
 
     tileData.m_json["textures"][textureId] = Json::objectValue;
-    tileData.m_json["textures"][textureId]["format"] = hasAlpha ? Gltf::Rgba : Gltf::Rgb;
-    tileData.m_json["textures"][textureId]["internalFormat"] = hasAlpha ? Gltf::Rgba : Gltf::Rgb;
+    tileData.m_json["textures"][textureId]["format"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
+    tileData.m_json["textures"][textureId]["internalFormat"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
     tileData.m_json["textures"][textureId]["sampler"] = "sampler_0";
     tileData.m_json["textures"][textureId]["source"] = imageId;
 
@@ -1624,8 +1624,8 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, TilePublish::
     bvImageId.append(suffix);
 
     auto& texture = tileData.m_json["textures"][textureId] = Json::objectValue;
-    texture["format"] = Gltf::Rgba;
-    texture["internalFormat"] = Gltf::Rgba;
+    texture["format"] = static_cast<int32_t>(Gltf::DataType::Rgba);
+    texture["internalFormat"] = static_cast<int32_t>(Gltf::DataType::Rgba);
     texture["sampler"] = "sampler_1";
     texture["source"] = imageId;
 
@@ -1696,20 +1696,20 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
 
     Json::Value technique(Json::objectValue);
 
-    AddTechniqueParameter(technique, "mv", Gltf::FloatMat4, "CESIUM_RTC_MODELVIEW");
-    AddTechniqueParameter(technique, "proj", Gltf::FloatMat4, "PROJECTION");
-    AddTechniqueParameter(technique, "pos", Gltf::FloatVec3, "POSITION");
+    AddTechniqueParameter(technique, "mv", Gltf::DataType::FloatMat4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", Gltf::DataType::FloatMat4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", Gltf::DataType::FloatVec3, "POSITION");
     if (!mat.IgnoresLighting())
         {
-        AddTechniqueParameter(technique, "n", Gltf::IntVec2, "NORMAL");
-        AddTechniqueParameter(technique, "nmx", Gltf::FloatMat3, "MODELVIEWINVERSETRANSPOSE");
+        AddTechniqueParameter(technique, "n", Gltf::DataType::IntVec2, "NORMAL");
+        AddTechniqueParameter(technique, "nmx", Gltf::DataType::FloatMat3, "MODELVIEWINVERSETRANSPOSE");
         }
 
     if (doBatchIds)
-        AddTechniqueParameter(technique, "batch", Gltf::Float, "_BATCHID");
+        AddTechniqueParameter(technique, "batch", Gltf::DataType::Float, "_BATCHID");
 
     if (!mat.IsTextured())
-        AddTechniqueParameter(technique, "colorIndex", Gltf::Float, "_COLORINDEX");
+        AddTechniqueParameter(technique, "colorIndex", Gltf::DataType::Float, "_COLORINDEX");
 
 
     Utf8String         programName               = prefix + "Program";
@@ -2011,8 +2011,8 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
     auto& techniqueUniforms = technique["uniforms"];
     if (TilePublish::ColorIndex::Dimension::Zero != dim)
         {
-        TilePublisher::AddTechniqueParameter(technique, "tex", Gltf::Sampler2d, "_3DTILESDIFFUSE");
-        TilePublisher::AddTechniqueParameter(technique, "colorIndex", Gltf::Float, "_COLORINDEX");
+        TilePublisher::AddTechniqueParameter(technique, "tex", Gltf::DataType::Sampler2d, "_3DTILESDIFFUSE");
+        TilePublisher::AddTechniqueParameter(technique, "colorIndex", Gltf::DataType::Float, "_COLORINDEX");
 
         techniqueUniforms["u_tex"] = "tex";
         techniqueUniforms["u_texStep"] = "texStep";
@@ -2028,19 +2028,19 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
 
         if (TilePublish::ColorIndex::Dimension::Two == dim)
             {
-            TilePublisher::AddTechniqueParameter(technique, "texWidth", Gltf::Float, nullptr);
-            TilePublisher::AddTechniqueParameter(technique, "texStep", Gltf::FloatVec4, nullptr);
+            TilePublisher::AddTechniqueParameter(technique, "texWidth", Gltf::DataType::Float, nullptr);
+            TilePublisher::AddTechniqueParameter(technique, "texStep", Gltf::DataType::FloatVec4, nullptr);
 
             techniqueUniforms["u_texWidth"] = "texWidth";
             }
         else
             {
-            TilePublisher::AddTechniqueParameter(technique, "texStep", Gltf::FloatVec2, nullptr);
+            TilePublisher::AddTechniqueParameter(technique, "texStep", Gltf::DataType::FloatVec2, nullptr);
             }
         }
     else
         {
-        TilePublisher::AddTechniqueParameter(technique, "color", Gltf::FloatVec4, "_3DTILESDIFFUSE");
+        TilePublisher::AddTechniqueParameter(technique, "color", Gltf::DataType::FloatVec4, "_3DTILESDIFFUSE");
         techniqueUniforms["u_color"] = "color";
         }
 
@@ -2057,8 +2057,8 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
     BeAssert (IsTextured());
     if (IsTextured())
         {
-        TilePublisher::AddTechniqueParameter(technique, "tex", Gltf::Sampler2d, "_3DTILESDIFFUSE");
-        TilePublisher::AddTechniqueParameter(technique, "texc", Gltf::FloatVec2, "TEXCOORD_0");
+        TilePublisher::AddTechniqueParameter(technique, "tex", Gltf::DataType::Sampler2d, "_3DTILESDIFFUSE");
+        TilePublisher::AddTechniqueParameter(technique, "texc", Gltf::DataType::FloatVec2, "TEXCOORD_0");
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;
         data.m_json["samplers"]["sampler_0"]["minFilter"] = Gltf::Linear;
@@ -2087,10 +2087,10 @@ void MeshMaterial::AddTechniqueParameters(Json::Value& technique, Json::Value& p
     if (!IgnoresLighting())
         {
         // Specular...
-        TilePublisher::AddTechniqueParameter(technique, "specularColor", Gltf::FloatVec3, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "specularColor", Gltf::DataType::FloatVec3, nullptr);
         technique["uniforms"]["u_specularColor"] = "specularColor";
 
-        TilePublisher::AddTechniqueParameter(technique, "specularExponent", Gltf::Float, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "specularExponent", Gltf::DataType::Float, nullptr);
         technique["uniforms"]["u_specularExponent"] = "specularExponent";
         }
     }
@@ -2240,11 +2240,11 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
         return techniqueName;
 
     Json::Value technique(Json::objectValue);
-    AddTechniqueParameter(technique, "mv", Gltf::FloatMat4, "CESIUM_RTC_MODELVIEW");
-    AddTechniqueParameter(technique, "proj", Gltf::FloatMat4, "PROJECTION");
-    AddTechniqueParameter(technique, "pos", Gltf::FloatVec3, "POSITION");
+    AddTechniqueParameter(technique, "mv", Gltf::DataType::FloatMat4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", Gltf::DataType::FloatMat4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", Gltf::DataType::FloatVec3, "POSITION");
     if (doBatchIds)
-        AddTechniqueParameter(technique, "batch", Gltf::Float, "_BATCHID");
+        AddTechniqueParameter(technique, "batch", Gltf::DataType::Float, "_BATCHID");
 
     auto& enableStates = technique["states"]["enable"] = Json::arrayValue;
     enableStates.append(Gltf::DepthTest);
@@ -2292,14 +2292,14 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     if (mat.IsTesselated())
         {
         // NB: reference to "attributes" and "uniforms" declared above is potentially invalid after adding to parent node...due to use of btree instead of bmap in Json::Value...
-        AddTechniqueParameter(technique, "color", Gltf::FloatVec4, nullptr);
-        AddTechniqueParameter(technique, "width", Gltf::Float, nullptr);
+        AddTechniqueParameter(technique, "color", Gltf::DataType::FloatVec4, nullptr);
+        AddTechniqueParameter(technique, "width", Gltf::DataType::Float, nullptr);
         technique["uniforms"]["u_color"] = "color";
         technique["uniforms"]["u_width"] = "width";
 
-        AddTechniqueParameter(technique, "prev", Gltf::FloatVec3, "PREV");
-        AddTechniqueParameter(technique, "next", Gltf::FloatVec3, "NEXT");
-        AddTechniqueParameter(technique, "param", Gltf::FloatVec2, "PARAM");
+        AddTechniqueParameter(technique, "prev", Gltf::DataType::FloatVec3, "PREV");
+        AddTechniqueParameter(technique, "next", Gltf::DataType::FloatVec3, "NEXT");
+        AddTechniqueParameter(technique, "param", Gltf::DataType::FloatVec2, "PARAM");
 
 
         technique["attributes"]["a_prev"] = "prev";
@@ -2312,16 +2312,16 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
 
     if (mat.IsTextured())
         {
-        AddTechniqueParameter(technique, "texLength", Gltf::Float, nullptr);
+        AddTechniqueParameter(technique, "texLength", Gltf::DataType::Float, nullptr);
         technique["uniforms"]["u_texLength"] = "texLength";
 
-        AddTechniqueParameter(technique, "texScalePnt", Gltf::FloatVec3, "TEXSCALEPNT");
+        AddTechniqueParameter(technique, "texScalePnt", Gltf::DataType::FloatVec3, "TEXSCALEPNT");
         technique["attributes"]["a_texScalePnt"] = "texScalePnt";
         AppendProgramAttribute(programRoot, "a_texScalePnt");
 
         technique["attributes"]["a_distance"] = "distance";
         AppendProgramAttribute(programRoot, "a_distance");
-        AddTechniqueParameter(technique, "distance", Gltf::Float, "DISTANCE");
+        AddTechniqueParameter(technique, "distance", Gltf::DataType::Float, "DISTANCE");
         }
 
 
@@ -2375,7 +2375,7 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
             {
             double      range = (double) (0xffff);
         
-            accessor["componentType"] = Gltf::UnsignedShort;
+            accessor["componentType"] = static_cast<int32_t>(Gltf::DataType::UnsignedShort);
                 
             auto&       quantizeExtension = accessor["extensions"]["WEB3D_quantized_attributes"];
             auto&       decodeMatrix = quantizeExtension["decodeMatrix"] = Json::arrayValue;
@@ -2416,7 +2416,7 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
             {
             bvector <float>     floatValues;
 
-            accessor["componentType"] = Gltf::Float;
+            accessor["componentType"] = static_cast<int32_t>(Gltf::DataType::Float);
 
             for (size_t i=0; i<nValues; i++)
                 floatValues.push_back ((float) values[i]);
@@ -2433,7 +2433,7 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
             for (size_t i=0; i<nAttributes; i++)
                 octEncodedNormals.push_back(octEncodeNormal(normals[i]));
 
-            accessor["componentType"] = Gltf::UnsignedByte;
+            accessor["componentType"] = static_cast<int32_t>(Gltf::DataType::UnsignedByte);
             for (size_t i=0; i<3; i++)
                 {
                 accessor["min"].append (0);
@@ -2476,18 +2476,18 @@ void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Val
 
     // Use uint8 if possible to save space in tiles and memory in browser
     bvector<uint8_t> attributes8;
-    auto componentType = Gltf::UnsignedByte;
+    auto componentType = Gltf::DataType::UnsignedByte;
     for (auto attribute : attributes16)
         {
         if (attribute > 0xff)
             {
-            componentType = Gltf::UnsignedShort;
+            componentType = Gltf::DataType::UnsignedShort;
             break;
             }
         }
 
     size_t nBytes = attributes16.size() * sizeof(uint16_t);
-    if (Gltf::UnsignedByte == componentType)
+    if (Gltf::DataType::UnsignedByte == componentType)
         {
         attributes8.reserve(attributes16.size());
         for (auto attribute : attributes16)
@@ -2502,7 +2502,7 @@ void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Val
     bv["byteLength"] = nBytes;
     bv["target"] = Gltf::ArrayBuffer;
 
-    if (Gltf::UnsignedByte == componentType)
+    if (Gltf::DataType::UnsignedByte == componentType)
         tileData.AddBinaryData(attributes8.data(), nBytes);
     else
         tileData.AddBinaryData(attributes16.data(), nBytes);
@@ -2510,7 +2510,7 @@ void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Val
     auto& acc = tileData.m_json["accessors"][accId];
     acc["bufferView"] = bvId;
     acc["byteOffset"] = 0;
-    acc["componentType"] = componentType;
+    acc["componentType"] = static_cast<int32_t>(componentType);
     acc["count"] = attributes16.size();
     acc["type"] = "SCALAR";
     }
@@ -2534,14 +2534,14 @@ void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Val
         if (attribute > maxAttribute)
             maxAttribute = attribute;
 
-    uint32_t  componentType;
+    Gltf::DataType componentType;
 
     if (maxAttribute > 0xffff)
-        componentType = Gltf::Float;
+        componentType = Gltf::DataType::Float;
     else if (maxAttribute > 0xff)
-        componentType = Gltf::UnsignedShort;
+        componentType = Gltf::DataType::UnsignedShort;
     else
-        componentType = Gltf::UnsignedByte;
+        componentType = Gltf::DataType::UnsignedByte;
 
     bvector<uint8_t> attributes8;
     bvector<uint16_t> attributes16;
@@ -2552,7 +2552,7 @@ void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Val
 
     switch (componentType)
         {
-        case Gltf::Float:
+        case Gltf::DataType::Float:
             dataSize = sizeof(float);
             attributesFloat.reserve(attributes.size());
             for (auto attribute : attributes)
@@ -2560,7 +2560,7 @@ void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Val
             pData = attributesFloat.data();
             break;
 
-        case Gltf::UnsignedShort:
+        case Gltf::DataType::UnsignedShort:
             dataSize = sizeof(uint16_t);
             attributes16.reserve(attributes.size());
             for (auto attribute : attributes)
@@ -2568,7 +2568,7 @@ void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Val
             pData = attributes16.data();
             break;
 
-        case Gltf::UnsignedByte:
+        case Gltf::DataType::UnsignedByte:
             dataSize = sizeof(uint8_t);
             attributes8.reserve(attributes.size());
             for (auto attribute : attributes)
@@ -2590,7 +2590,7 @@ void TilePublisher::AddMeshUInt32Attributes(PublishTileData& tileData, Json::Val
     auto& acc = tileData.m_json["accessors"][accId];
     acc["bufferView"] = bvId;
     acc["byteOffset"] = 0;
-    acc["componentType"] = componentType;
+    acc["componentType"] = static_cast<int32_t>(componentType);
     acc["count"] = attributes.size();
     acc["type"] = "SCALAR";
     }
@@ -2652,7 +2652,7 @@ Utf8String TilePublisher::AddMeshIndices(PublishTileData& tileData, Utf8CP name,
     tileData.m_json["accessors"][accIndexId] = Json::objectValue;
     tileData.m_json["accessors"][accIndexId]["bufferView"] = bvIndexId;
     tileData.m_json["accessors"][accIndexId]["byteOffset"] = 0;
-    tileData.m_json["accessors"][accIndexId]["componentType"] = useShortIndices ? Gltf::UnsignedShort : Gltf::UInt32;
+    tileData.m_json["accessors"][accIndexId]["componentType"] = static_cast<int32_t>(useShortIndices ? Gltf::DataType::UnsignedShort : Gltf::DataType::UInt32);
     tileData.m_json["accessors"][accIndexId]["count"] = indices.size();
     tileData.m_json["accessors"][accIndexId]["type"] = "SCALAR";
 
@@ -2706,7 +2706,7 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 
     MeshMaterial meshMat = AddMeshMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
     primitive["material"] = meshMat.GetName();
-    primitive["mode"] = Gltf::Triangles;
+    primitive["mode"] = static_cast<int32_t>(Gltf::PrimitiveType::Triangles);
 
     Utf8String      accPositionId =  AddMeshVertexAttributes (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"] = accPositionId;
@@ -2974,7 +2974,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     DRange3d        pointRange = DRange3d::From(tesselation.m_points), paramRange = DRange3d::From(tesselation.m_params, 0.0);
 
     primitive["material"] = mat.GetName();
-    primitive["mode"] = Gltf::Triangles;
+    primitive["mode"] = static_cast<int32_t>(Gltf::PrimitiveType::Triangles);
 
     Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &tesselation.m_points.front().x, "Position", idStr.c_str(), 3, tesselation.m_points.size(), "VEC3",  VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
@@ -3060,7 +3060,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     DRange3d        pointRange = DRange3d::From(points);
 
     primitive["material"] = mat.GetName();
-    primitive["mode"] = Gltf::Lines;
+    primitive["mode"] = static_cast<int32_t>(Gltf::PrimitiveType::Lines);
 
     Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;

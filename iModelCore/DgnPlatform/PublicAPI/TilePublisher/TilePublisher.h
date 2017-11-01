@@ -13,6 +13,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/ModelSpatialClassifier.h>
+#include <DgnPlatform/TileIO.h>
 #include <stdio.h>
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
@@ -448,7 +449,7 @@ private:
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
     static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
-    static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
+    static void AddShader(Json::Value&, Utf8CP name, int32_t type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
     void WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud);
@@ -496,7 +497,7 @@ public:
     TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
     static WCharCP GetBinaryDataFileExtension(bool containsParts) { return containsParts ? L"cmpt" : L"b3dm"; }
 
-    static void AddTechniqueParameter(Json::Value&, Utf8CP name, int type, Utf8CP semantic);
+    static void AddTechniqueParameter(Json::Value&, Utf8CP name, TileTree::IO::Gltf::DataType type, Utf8CP semantic);
     static void AppendProgramAttribute(Json::Value&, Utf8CP);
 };
 

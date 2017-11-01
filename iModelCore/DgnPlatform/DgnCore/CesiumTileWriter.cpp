@@ -486,7 +486,7 @@ struct CesiumTileWriter : TileTree::IO::Writer
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
     {
-    primitiveJson["mode"] = Gltf::Triangles;
+    primitiveJson["mode"] = static_cast<int32_t>(Gltf::PrimitiveType::Triangles);
 
     Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
     primitiveJson["attributes"]["POSITION"] = accPositionId;
@@ -542,8 +542,8 @@ void BeginBatchedModel(uint32_t& startPosition, uint32_t& lengthDataPosition, Re
     Utf8String      featureTableStr = getJsonString(featureTableJson);
 
     startPosition = m_buffer.GetSize();
-    m_buffer.Append((const uint8_t *) B3dm::Magic(), 4);
-    m_buffer.Append(B3dm::Version());                                                          
+    m_buffer.Append(Format::B3dm);
+    m_buffer.Append(B3dm::Version);                                                          
     lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);                                                      // total length - filled in later.
     m_buffer.Append(static_cast<uint32_t>(featureTableStr.size()));                        // feature table JSon length.

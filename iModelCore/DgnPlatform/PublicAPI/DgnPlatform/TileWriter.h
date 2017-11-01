@@ -66,7 +66,7 @@ protected:
     void                AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes16, size_t nAttributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
     void                AddBatchIds(Json::Value& primitive, Render::FeatureIndex const& featureIndex, size_t nVertices, Utf8StringCR idStr);
     void                AddColors(Json::Value& primitive, Render::ColorIndex const& colorIndex, size_t nVertices, Utf8StringCR idStr);
-    void                AddAccessor(uint32_t componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type);
+    void                AddAccessor(Gltf::DataType componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type);
     Utf8String          AddQuantizedPointsAttribute(Render::QPoint3dCP qPoints, size_t nPoints, Render::QPoint3d::Params params, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddQuantizedParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id); 

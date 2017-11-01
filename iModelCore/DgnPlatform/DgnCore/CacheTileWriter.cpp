@@ -239,17 +239,17 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid, bool isLeaf)
     {
-    uint32_t    startPosition = m_buffer.GetSize();
-    Flags       flags = isLeaf ? Flags::IsLeaf : Flags::None;
+    uint32_t        startPosition = m_buffer.GetSize();
+    DgnTile::Flags  flags = isLeaf ? DgnTile::Flags::IsLeaf : DgnTile::Flags::None;
 
     if (geometry.ContainsCurves())
-        flags |=  TileTree::IO::Flags::ContainsCurves;
+        flags |=  DgnTile::Flags::ContainsCurves;
 
     if (!geometry.IsComplete())
-        flags |= TileTree::IO::Flags::Incomplete;
+        flags |= DgnTile::Flags::Incomplete;
 
-    m_buffer.Append((const uint8_t *) DgnTile::Magic(), 4);
-    m_buffer.Append(DgnTile::Version());
+    m_buffer.Append(Format::Dgn);
+    m_buffer.Append(DgnTile::Version);
     m_buffer.Append(static_cast<uint32_t>(flags));
     m_buffer.Append(contentRange);
 
