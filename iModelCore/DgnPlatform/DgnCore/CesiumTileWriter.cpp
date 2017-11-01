@@ -12,18 +12,15 @@
 #include <DgnPlatform/TileWriter.h>
 #include <folly/BeFolly.h>
 
-#include "../TilePublisher/lib/Constants.h" // ###TODO: Move this stuff.
-
-
+USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_TILETREE
-USING_NAMESPACE_TILEWRITER
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
        
 
 static double s_minToleranceRatio = 512.0;
 
-BEGIN_TILEWRITER_NAMESPACE
+BEGIN_TILETREE_IO_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -479,9 +476,9 @@ struct MeshMaterial
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     06/2017
 //=======================================================================================
-struct CesiumTileWriter : TileWriter::Writer
+struct CesiumTileWriter : TileTree::IO::Writer
 {
-    CesiumTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : TileWriter::Writer(streamBuffer, model) { }
+    CesiumTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : TileTree::IO::Writer(streamBuffer, model) { }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,7 +486,7 @@ struct CesiumTileWriter : TileWriter::Writer
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
     {
-    primitiveJson["mode"] = GLTF_TRIANGLES;
+    primitiveJson["mode"] = Gltf::Triangles;
 
     Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
     primitiveJson["attributes"]["POSITION"] = accPositionId;
@@ -545,8 +542,8 @@ void BeginBatchedModel(uint32_t& startPosition, uint32_t& lengthDataPosition, Re
     Utf8String      featureTableStr = getJsonString(featureTableJson);
 
     startPosition = m_buffer.GetSize();
-    m_buffer.Append((const uint8_t *) s_b3dmMagic, 4);
-    m_buffer.Append(s_b3dmVersion);                                                          
+    m_buffer.Append((const uint8_t *) B3dm::Magic(), 4);
+    m_buffer.Append(B3dm::Version());                                                          
     lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);                                                      // total length - filled in later.
     m_buffer.Append(static_cast<uint32_t>(featureTableStr.size()));                        // feature table JSon length.
@@ -660,10 +657,10 @@ virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR db) const overri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus WriteTile(PublishedTileR outputTile)
+WriteStatus WriteTile(PublishedTileR outputTile)
     {
     if (m_range.IsNull())
-        return TileIO::WriteStatus::NoGeometry;
+        return WriteStatus::NoGeometry;
 
     m_writer.WriteBatchedModel(m_featureTable, m_range.LocalToGlobal(.5, .5, .5));
 
@@ -671,12 +668,12 @@ TileIO::WriteStatus WriteTile(PublishedTileR outputTile)
 
     if (BeFileStatus::Success != outputFile.Create (outputTile.GetFileName()) ||
         BeFileStatus::Success != outputFile.Write (nullptr, m_streamBuffer.data(), m_streamBuffer.size()))
-        return TileIO::WriteStatus::UnableToOpenFile;
+        return WriteStatus::UnableToOpenFile;
    
     outputFile.Close();
     outputTile.SetPublishedRange(m_range);
 
-    return TileIO::WriteStatus::Success;
+    return WriteStatus::Success;
     }
         
 };  // RenderSystem
@@ -704,7 +701,7 @@ struct Context
 
 };
 
-typedef folly::Future<TileIO::WriteStatus> FutureWriteStatus;
+typedef folly::Future<WriteStatus> FutureWriteStatus;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017 
@@ -726,9 +723,9 @@ PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDire
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus writeCesiumTile(Context context)
+WriteStatus writeCesiumTile(Context context)
     {
-    TileWriter::RenderSystem*    renderSystem = new TileWriter::RenderSystem(*context.m_model);
+    TileTree::IO::RenderSystem*    renderSystem = new TileTree::IO::RenderSystem(*context.m_model);
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
         {                                
@@ -739,13 +736,13 @@ TileIO::WriteStatus writeCesiumTile(Context context)
     .then([=](BentleyStatus status)
         {
         if (SUCCESS != status)
-            return TileIO::WriteStatus::UnableToLoadTile;
+            return WriteStatus::UnableToLoadTile;
         
-        TileIO::WriteStatus writeStatus = renderSystem->WriteTile(*context.m_outputTile);
+        WriteStatus writeStatus = renderSystem->WriteTile(*context.m_outputTile);
         delete renderSystem;
         return writeStatus;
         })
-    .then([=](TileIO::WriteStatus status)
+    .then([=](WriteStatus status)
         {
         return status;
         }).get();
@@ -763,12 +760,12 @@ static FutureWriteStatus generateParentTile (Context context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
-static FutureWriteStatus generateChildTiles (TileIO::WriteStatus parentStatus, Context context)
+static FutureWriteStatus generateChildTiles (WriteStatus parentStatus, Context context)
     {
     double      parentTolerance = context.m_outputTile->GetTolerance();
 
     if (parentTolerance < context.m_leafTolerance)
-        return folly::makeFuture(TileIO::WriteStatus::Success);
+        return folly::makeFuture(WriteStatus::Success);
 
     auto const& children = context.m_inputTile->_GetChildren(true);
 
@@ -787,9 +784,9 @@ static FutureWriteStatus generateChildTiles (TileIO::WriteStatus parentStatus, C
         childFutures.push_back(std::move(childFuture));
         }
 
-    return folly::unorderedReduce(childFutures, TileIO::WriteStatus::Success, [=](TileIO::WriteStatus reduced, TileIO::WriteStatus next)
+    return folly::unorderedReduce(childFutures, WriteStatus::Success, [=](WriteStatus reduced, WriteStatus next)
         {
-        return TileIO::WriteStatus::Aborted == reduced || TileIO::WriteStatus::Aborted == next ? TileIO::WriteStatus::Aborted : TileIO::WriteStatus::Success;
+        return WriteStatus::Aborted == reduced || WriteStatus::Aborted == next ? WriteStatus::Aborted : WriteStatus::Success;
         });
     }
 
@@ -799,21 +796,21 @@ static FutureWriteStatus generateChildTiles (TileIO::WriteStatus parentStatus, C
 +---------------+---------------+---------------+---------------+---------------+------*/
 FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModelP model, TransformCR transformFromDgn, double leafTolerance)
     {
-    TileWriter::RenderSystem        renderSystem(*model);
+    TileTree::IO::RenderSystem        renderSystem(*model);
     TileTree::RootCPtr              tileRoot = model->GetTileTree(&renderSystem);
     ClipVectorPtr                   clip;
     PublishedTilePtr                publishedRoot = new PublishedTile(*tileRoot->GetRootTile(), publisher->_GetOutputDirectory(*model));
 
     if (!tileRoot.IsValid())
-        return folly::makeFuture(TileIO::WriteStatus::NoGeometry);
+        return folly::makeFuture(WriteStatus::NoGeometry);
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
         return publisher->_BeginProcessModel(*model);
         })
-    .then([=](TileIO::WriteStatus status)
+    .then([=](WriteStatus status)
         {
-        if (TileIO::WriteStatus::Success != status)
+        if (WriteStatus::Success != status)
             return folly::makeFuture(status);
 
         Transform           transformFromRoot = Transform::FromProduct(transformFromDgn, tileRoot->GetLocation());
@@ -827,18 +824,14 @@ FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModel
         return folly::makeFuture(publisher->_EndProcessModel(*model, *publishedRoot, status.value()));   
         });
     }
-END_TILEWRITER_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bewntley    08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus ICesiumPublisher::WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance)
+WriteStatus ICesiumPublisher::WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance)
     {
-    return TileWriter::writeCesiumTileset(&publisher, const_cast<GeometricModelP> (&model), transformFromDgn, leafTolerance).get();
+    return TileTree::IO::writeCesiumTileset(&publisher, const_cast<GeometricModelP> (&model), transformFromDgn, leafTolerance).get();
     }
 
-
-
-
-
+END_TILETREE_IO_NAMESPACE
 

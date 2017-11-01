@@ -85,11 +85,11 @@ protected:
     BeFileName      GetTilesetFileName(DgnModelId modelId);
     Utf8String      GetTilesetName(DgnModelId modelId, bool asClassifier);
     Status          PublishViewModels (DRange3dR range);
-    void            WriteModelMetadataTree (DRange3dR range, Json::Value& root, TileTree::TileWriter::PublishedTileCR tile, GeometricModelCR model);
+    void            WriteModelMetadataTree (DRange3dR range, Json::Value& root, TileTree::IO::PublishedTileCR tile, GeometricModelCR model);
     Status          WriteWebApp(DPoint3dCR groundPoint, TilePublish::Cesium::PublisherParams const& params);
     void            OutputStatistics(TileGenerator::Statistics const& stats) const;
     FutureStatus    GenerateTilesFromModels(DgnModelIdSet const& modelIds);
-    Utf8String      GetTileUrl(TileTree::TileWriter::PublishedTileCR tile, GeometricModelCR model) const;
+    Utf8String      GetTileUrl(TileTree::IO::PublishedTileCR tile, GeometricModelCR model) const;
     DgnDbR          GetDgnDb() const { return m_db; }
     bool            IsGeolocated () const;
 
@@ -106,11 +106,11 @@ public:
     Status          InitializeDirectories(BeFileNameCR dataDir);
     void            CleanDirectories(BeFileNameCR dataDir);
     double          GetLeafTolerance() const { return m_leafTolerance; }
-    void            WriteModelTileset(GeometricModelCR model, TileTree::TileWriter::PublishedTileCR tile);
+    void            WriteModelTileset(GeometricModelCR model, TileTree::IO::PublishedTileCR tile);
     BeFileNameCR    GetDataDirectory() const { return m_dataDir; }
     WStringCR       GetRootName() const { return m_rootName; }
     BeFileNameCR    GetOutputDirectory() const { return m_outputDir; }
-    static Status   ConvertStatus(TileTree::TileIO::WriteStatus status);
+    static Status   ConvertStatus(TileTree::IO::WriteStatus status);
     void            AddModelRange(DgnModelId modelId, DRange3dCR modelRange);
 
 

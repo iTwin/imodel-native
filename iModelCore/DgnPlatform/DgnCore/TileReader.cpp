@@ -9,17 +9,12 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
 
-#include "../TilePublisher/lib/Constants.h" // ###TODO: Move this stuff.
-
+USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
-#define BEGIN_TILEREADER_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileReader {
-#define END_TILEREADER_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
-
-BEGIN_TILEREADER_NAMESPACE
-
+BEGIN_TILETREE_IO_NAMESPACE
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/17
@@ -92,10 +87,10 @@ struct GltfReader
     MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featureTable);
 
     // Initializes the members m_binaryData, m_materialValues, m_accessors, and m_bufferViews; and returns the JSON representation of the meshes.
-    TileIO::ReadStatus InitGltf(Json::Value& meshValues);
+    ReadStatus InitGltf(Json::Value& meshValues);
 
     // Reads gltf data into a GeometryCollection
-    TileIO::ReadStatus ReadGltf(Render::Primitives::GeometryCollectionR geometryCollection);
+    ReadStatus ReadGltf(Render::Primitives::GeometryCollectionR geometryCollection);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,7 +153,7 @@ BentleyStatus   GltfReader::ReadIndices(bvector<uint32_t>& indices, Json::Value 
 
     switch(type)
         {
-        case  GLTF_UNSIGNED_SHORT:
+        case  Gltf::UnsignedShort:
             {
             if(indicesCount * sizeof(uint16_t) != indicesByteLength)
                 {
@@ -174,7 +169,7 @@ BentleyStatus   GltfReader::ReadIndices(bvector<uint32_t>& indices, Json::Value 
             break;
             }
 
-        case  GLTF_UINT32:
+        case  Gltf::UInt32:
             {
             if(indicesCount * sizeof(uint32_t) != indicesByteLength)
                 {
@@ -236,7 +231,7 @@ BentleyStatus GltfReader::ReadVertexAttributes(bvector<double>& values, Json::Va
 
     switch (type)
         {
-        case GLTF_UNSIGNED_SHORT:
+        case Gltf::UnsignedShort:
             {
             if(nValues * sizeof(uint16_t) != byteLength)    
                 {
@@ -271,7 +266,7 @@ BentleyStatus GltfReader::ReadVertexAttributes(bvector<double>& values, Json::Va
             break;
             }
 
-        case GLTF_FLOAT:
+        case Gltf::Float:
             {
             if(nValues * sizeof(float) != byteLength)    
                 {
@@ -304,7 +299,7 @@ BentleyStatus GltfReader::ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json:
     Json::Value     accessor;
 
     if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, primitiveValue["attributes"], "BATCHID") ||
-        type != GLTF_UNSIGNED_SHORT)
+        type != Gltf::UnsignedShort)
         return ERROR;
 
     if (byteLength != count * sizeof(uint16_t))
@@ -335,7 +330,7 @@ BentleyStatus GltfReader::ReadVertices(QVertex3dListR vertexList, Json::Value co
 
     switch (accessor["componentType"].asInt())
         {
-        case GLTF_UNSIGNED_SHORT:
+        case Gltf::UnsignedShort:
             {
             Json::Value     extensions, quantized, min, max;
 
@@ -379,7 +374,7 @@ BentleyStatus GltfReader::ReadNormals(OctEncodedNormalListR normals, Json::Value
 
     switch (accessor["componentType"].asInt())
         {
-        case GLTF_UNSIGNED_BYTE:
+        case Gltf::UnsignedByte:
                 {
                 normals.resize(count);
                 memcpy (normals.data(), pData, count * sizeof(OctEncodedNormal));
@@ -408,7 +403,7 @@ BentleyStatus GltfReader::ReadNormalPairs(OctEncodedNormalPairListR pairs, Json:
 
     switch (accessor["componentType"].asInt())
         {
-        case GLTF_UNSIGNED_BYTE:
+        case Gltf::UnsignedByte:
             {
             pairs.resize(count);
             memcpy(pairs.data(), pData, count * sizeof(OctEncodedNormalPair));
@@ -435,7 +430,7 @@ BentleyStatus GltfReader::ReadParams(bvector<FPoint2d>& params, Json::Value cons
 
     switch (accessor["componentType"].asInt())
         {
-        case GLTF_FLOAT:
+        case Gltf::Float:
             {
             BeAssert (byteLength == count * sizeof(FPoint2d));
             params.resize(count);
@@ -464,14 +459,14 @@ void GltfReader::ReadColors(bvector<uint16_t>& colors, Json::Value const& primit
 
     switch (type)
         {
-        case GLTF_UNSIGNED_SHORT:
+        case Gltf::UnsignedShort:
             {
             colors.resize(count);
             memcpy (colors.data(), pData, count * sizeof(uint16_t));
             break;
             }
 
-        case GLTF_UNSIGNED_BYTE:
+        case Gltf::UnsignedByte:
             {
             uint8_t const*  pByteData = static_cast<uint8_t const*> (pData);
             colors.resize(count);
@@ -529,7 +524,7 @@ BentleyStatus GltfReader::ReadPolylines(bvector<MeshPolyline>& polylines, Json::
         CopyAndIncrement(&nIndices, pData, sizeof(nIndices));
 
         indices.resize(nIndices);
-        if (GLTF_UNSIGNED_SHORT == type)
+        if (Gltf::UnsignedShort == type)
             {
             for (size_t j=0; j<nIndices; j++)
                 {
@@ -685,11 +680,11 @@ MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, Feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  GltfReader::ReadGltf(Render::Primitives::GeometryCollectionR geometryCollection)
+ReadStatus  GltfReader::ReadGltf(Render::Primitives::GeometryCollectionR geometryCollection)
     {
     Json::Value meshValues;
-    TileIO::ReadStatus status = InitGltf(meshValues);
-    if (TileIO::ReadStatus::Success != status)
+    ReadStatus status = InitGltf(meshValues);
+    if (ReadStatus::Success != status)
         return status;
 
     for(auto& mesh : meshValues)
@@ -711,13 +706,13 @@ TileIO::ReadStatus  GltfReader::ReadGltf(Render::Primitives::GeometryCollectionR
             }
         }
 
-    return TileIO::ReadStatus::Success; 
+    return ReadStatus::Success; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
+ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
     {
     char            gltfMagic[4];
     uint32_t        gltfVersion, gltfLength, sceneStrLength, gltfSceneFormat;
@@ -725,14 +720,14 @@ TileIO::ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
     ByteCP          startPosition = m_buffer.GetCurrent();
 
     if(!m_buffer.ReadBytes(gltfMagic, 4) ||
-        0 != memcmp(gltfMagic, s_gltfMagic, 4) ||
+        0 != memcmp(gltfMagic, Gltf::Magic(), 4) ||
         !m_buffer.Read(gltfVersion) ||
-        (gltfVersion != s_gltfVersion && gltfVersion != s_gltfVersion2) ||
+        (gltfVersion != Gltf::Version1() && gltfVersion != Gltf::Version2()) ||
         !m_buffer.Read(gltfLength) ||
         !m_buffer.Read(sceneStrLength) ||
         !m_buffer.Read(gltfSceneFormat) ||
-        gltfSceneFormat != s_gltfSceneFormat)
-        return TileIO::ReadStatus::ReadError;
+        gltfSceneFormat != Gltf::SceneFormat())
+        return ReadStatus::ReadError;
 
     m_binaryData = startPosition + gltfLength;
 
@@ -740,10 +735,10 @@ TileIO::ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
     Json::Value         sceneValue;
     
     if(! m_buffer.ReadBytes(sceneStrData.data(), sceneStrLength))
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
 
     if(!reader.parse(sceneStrData.data(), sceneStrData.data() + sceneStrLength, sceneValue))
-        return TileIO::ReadStatus::SceneParseError;
+        return ReadStatus::SceneParseError;
 
     meshValues     = sceneValue["meshes"];
 
@@ -755,9 +750,9 @@ TileIO::ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
         !m_materialValues.isObject() ||
         !m_accessors.isObject() ||
         !m_bufferViews.isObject())
-        return TileIO::ReadStatus::SceneDataError;
+        return ReadStatus::SceneDataError;
 
-    return TileIO::ReadStatus::Success;
+    return ReadStatus::Success;
     }
 
 /*=================================================================================**//**
@@ -769,30 +764,30 @@ struct BatchedModelReader : GltfReader
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
+ReadStatus  ReadTile(Render::Primitives::GeometryCollectionR geometry)
     {
     char            b3dmMagic[4];
     uint32_t        b3dmLength, b3dmVersion, batchTableStrLen, batchTableBinaryLen, b3dmNumBatches; 
 
     if (! m_buffer.ReadBytes(b3dmMagic, 4) ||  
-        0 != memcmp(b3dmMagic, s_b3dmMagic, 4) ||
+        0 != memcmp(b3dmMagic, B3dm::Magic(), 4) ||
         !m_buffer.Read(b3dmVersion) ||  
-        b3dmVersion != s_b3dmVersion ||
+        b3dmVersion != B3dm::Version() ||
         !m_buffer.Read(b3dmLength) ||
         !m_buffer.Read(batchTableStrLen) ||
         !m_buffer.Read(batchTableBinaryLen) ||
         !m_buffer.Read(b3dmNumBatches))
-        return TileIO::ReadStatus::InvalidHeader;
+        return ReadStatus::InvalidHeader;
 
     bvector<char>       batchTableData(batchTableStrLen);
     Json::Value         batchTableValue;
     Json::Reader        reader;                                                                                                                        
     
     if(!m_buffer.ReadBytes(batchTableData.data(), batchTableStrLen))
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
     
     if(! reader.parse(batchTableData.data(), batchTableData.data() + batchTableStrLen, m_batchData))
-        return TileIO::ReadStatus::BatchTableParseError;
+        return ReadStatus::BatchTableParseError;
 
     return ReadGltf (geometry);
     }
@@ -835,14 +830,14 @@ struct DgnTileHeader
 {
     char                magic[4];
     uint32_t            version;
-    uint32_t            flags;
+    TileTree::IO::Flags flags;
     ElementAlignedBox3d contentRange;
     uint32_t            length;
 
     bool Read(StreamBufferR buffer)
         {
-        return buffer.ReadBytes(magic, 4) && 0 == memcmp(magic, s_dgnTileMagic, 4)
-            && buffer.Read(version) && version == s_dgnTileVersion
+        return buffer.ReadBytes(magic, 4) && 0 == memcmp(magic, DgnTile::Magic(), 4)
+            && buffer.Read(version) && version == DgnTile::Version()
             && buffer.Read(flags) && buffer.Read(contentRange) && buffer.Read(length);
         }
 };
@@ -881,13 +876,13 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
+ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
     {
     uint32_t startPos = m_buffer.GetPos();
 
     FeatureTableHeader header;
     if (!header.Read(m_buffer))
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
 
     featureTable.SetMaxFeatures(header.maxFeatures);
 
@@ -904,7 +899,7 @@ TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
             !m_buffer.Read(index))
             {
             BeAssert(false);
-            return TileIO::ReadStatus::FeatureTableError;;
+            return ReadStatus::FeatureTableError;;
             }
 
         featureTable.Insert(Feature(DgnElementId(elementId), DgnSubCategoryId(subCategoryId), static_cast<DgnGeometryClass>(geometryClass)), index);
@@ -912,30 +907,30 @@ TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
     
     m_buffer.SetPos(startPos + header.length);
 
-    return TileIO::ReadStatus::Success;
+    return ReadStatus::Success;
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, bool& isLeaf)
+ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, bool& isLeaf)
     {
     DgnTileHeader header;
     if (!header.Read(m_buffer))
-        return TileIO::ReadStatus::InvalidHeader;
+        return ReadStatus::InvalidHeader;
 
-    TileIO::ReadStatus status = ReadFeatureTable(geometry.Meshes().FeatureTable());
-    if (TileIO::ReadStatus::Success != status)
+    ReadStatus status = ReadFeatureTable(geometry.Meshes().FeatureTable());
+    if (ReadStatus::Success != status)
         return status;
 
-    if (0 != (header.flags & TileIO::Flags::ContainsCurves))
+    if (Flags::None != (header.flags & Flags::ContainsCurves))
         geometry.MarkCurved();
 
-    if (0 != (header.flags & TileIO::Flags::Incomplete))
+    if (Flags::None != (header.flags & Flags::Incomplete))
         geometry.MarkIncomplete();
 
-    isLeaf = 0 != (header.flags & TileIO::Flags::IsLeaf);
+    isLeaf = Flags::None != (header.flags & Flags::IsLeaf);
     contentRange = header.contentRange;
 
     return ReadGltf (geometry);
@@ -1019,7 +1014,7 @@ private:
 
         bvector<Entry>  m_entries;
 
-        TileIO::ReadStatus Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems);
+        ReadStatus Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems);
         bool RejectFeature(uint32_t index) const { BeAssert(index < m_entries.size()); return m_entries[index].m_omit; }
 
         // Returns nullptr if the feature is to be excluded
@@ -1113,10 +1108,10 @@ private:
     Features ReadFeatures(Json::Value const& json);
     bvector<uint32_t> ReadColorIndex(Json::Value const& json);
 
-    TileIO::ReadStatus ReadFeatureTable(DgnElementIdSet const& skipElems);
-    TileIO::ReadStatus ReadGltf();
-    TileIO::ReadStatus ReadMeshPrimitive(Json::Value const& primitive);
-    TileIO::ReadStatus AddMeshPrimitive(Features features, Json::Value const& primitive);
+    ReadStatus ReadFeatureTable(DgnElementIdSet const& skipElems);
+    ReadStatus ReadGltf();
+    ReadStatus ReadMeshPrimitive(Json::Value const& primitive);
+    ReadStatus AddMeshPrimitive(Features features, Json::Value const& primitive);
 
     BufferView32 ReadMeshIndices(uint32_t& numIndices, Json::Value const& json) { return ReadBufferView32(json, "indices", &numIndices); }
     FPoint2d const* ReadParams(Json::Value const&);
@@ -1134,19 +1129,19 @@ public:
     DgnCacheTileRebuilder(StreamBufferR buffer, DgnModelR model, Render::System& system, Render::Primitives::MeshBuilderMapR builders)
         : GltfReader(buffer, model, system), m_builders(builders) { }
 
-    TileIO::ReadStatus ReadTile(TileIO::Flags& flags, DgnElementIdSet const& skipElems);
+    ReadStatus ReadTile(Flags& flags, DgnElementIdSet const& skipElems);
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::ReadFeatureTable(DgnElementIdSet const& skipElems)
+ReadStatus DgnCacheTileRebuilder::ReadFeatureTable(DgnElementIdSet const& skipElems)
     {
     uint32_t startPos = m_buffer.GetPos();
 
     FeatureTableHeader header;
     if (!header.Read(m_buffer))
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
 
     m_builders.SetMaxFeatures(header.maxFeatures);
 
@@ -1158,7 +1153,7 @@ TileIO::ReadStatus DgnCacheTileRebuilder::ReadFeatureTable(DgnElementIdSet const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::FeatureList::Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems)
+ReadStatus DgnCacheTileRebuilder::FeatureList::Read(StreamBufferR buffer, FeatureTableHeader const& header, DgnElementIdSet const& skipElems)
     {
     m_entries.resize(header.count);
     for (uint32_t i = 0; i < header.count; i++)
@@ -1171,7 +1166,7 @@ TileIO::ReadStatus DgnCacheTileRebuilder::FeatureList::Read(StreamBufferR buffer
         if (!buffer.Read(elemId) || !buffer.Read(subCatId) || !buffer.Read(geomClass) || !buffer.Read(index))
             {
             BeAssert(false);
-            return TileIO::ReadStatus::FeatureTableError;
+            return ReadStatus::FeatureTableError;
             }
 
         BeAssert(index < m_entries.size());
@@ -1179,30 +1174,30 @@ TileIO::ReadStatus DgnCacheTileRebuilder::FeatureList::Read(StreamBufferR buffer
         m_entries[index] = Entry(feature, skipElems.end() != skipElems.find(feature.GetElementId()));
         }
 
-    return TileIO::ReadStatus::Success;
+    return ReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Json::Value const& json)
+ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Json::Value const& json)
     {
     MeshPrimitive mesh;
 
     auto materialName = json["material"];
     if (!materialName.isString())
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
 
     auto materialValue = m_materialValues[materialName.asString()];
     if (!materialValue.isObject())
         {
         BeAssert(false && "Material not found");
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
         }
 
     mesh.m_displayParams = _CreateDisplayParams(materialValue);
     if (mesh.m_displayParams.IsNull())
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
 
     mesh.m_vertices = ReadVertices(mesh.m_numVertices, json);
     mesh.m_features = features;
@@ -1214,7 +1209,7 @@ TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Js
     if (nullptr == mesh.m_vertices || mesh.m_colorsByIndex.empty())
         {
         BeAssert(false);
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
         }
 
     switch (mesh.m_type)
@@ -1223,13 +1218,13 @@ TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Js
             {
             mesh.m_indices = ReadMeshIndices(mesh.m_numIndices, json);
             if (!mesh.m_indices.IsValid())
-                return TileIO::ReadStatus::ReadError;
+                return ReadStatus::ReadError;
 
             if (!mesh.m_displayParams->IgnoresLighting())
                 {
                 mesh.m_normals = ReadNormals(json);
                 if (nullptr == mesh.m_normals)
-                    return TileIO::ReadStatus::ReadError;
+                    return ReadStatus::ReadError;
                 }
 
             mesh.m_params = ReadParams(json);
@@ -1242,10 +1237,10 @@ TileIO::ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Js
             break;
         default:
             BeAssert(false && "Invalid mesh primitive type");
-            return TileIO::ReadStatus::ReadError;
+            return ReadStatus::ReadError;
         }
 
-    return TileIO::ReadStatus::Success;
+    return ReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1289,7 +1284,7 @@ FPoint2d const* DgnCacheTileRebuilder::ReadParams(Json::Value const& json)
     BufferView view = GetBufferView(json["attributes"], "TEXCOORD_0");
     if (view.IsValid())
         {
-        BeAssert(GLTF_FLOAT == view.accessor["componentType"].asInt());
+        BeAssert(Gltf::Float == view.accessor["componentType"].asInt());
         return reinterpret_cast<FPoint2d const*>(view.pData);
         }
 
@@ -1410,8 +1405,8 @@ void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value 
         return;
         }
 
-    bool useShortIndices = GLTF_UNSIGNED_SHORT == view.type;
-    BeAssert(useShortIndices || GLTF_UINT32 == view.type);
+    bool useShortIndices = Gltf::UnsignedShort == view.type;
+    BeAssert(useShortIndices || Gltf::UInt32 == view.type);
 
     // Add line/point strings, skipping those which belong to excluded features
     bvector<QPoint3d> points;
@@ -1457,8 +1452,8 @@ void DgnCacheTileRebuilder::AddPolylineEdges(MeshEdgesR edges, MeshPrimitive con
     if (!view.IsValid())
         return;
 
-    bool useShortIndices = GLTF_UNSIGNED_SHORT == view.type;
-    BeAssert(useShortIndices || GLTF_UINT32 == view.type);
+    bool useShortIndices = Gltf::UnsignedShort == view.type;
+    BeAssert(useShortIndices || Gltf::UInt32 == view.type);
 
     void const* pData = view.pData;
     bvector<uint32_t> newIndices;
@@ -1550,8 +1545,8 @@ DgnCacheTileRebuilder::BufferView32 DgnCacheTileRebuilder::ReadBufferView32(Json
     if (nullptr != pCount)
         *pCount = static_cast<uint32_t>(view.count);
 
-    bool isShort = GLTF_UNSIGNED_SHORT == view.type;
-    BeAssert(isShort || GLTF_UINT32 == view.type);
+    bool isShort = Gltf::UnsignedShort == view.type;
+    BeAssert(isShort || Gltf::UInt32 == view.type);
     return BufferView32(view.pData, isShort);
     }
 
@@ -1567,29 +1562,29 @@ DgnCacheTileRebuilder::BufferView16 DgnCacheTileRebuilder::ReadBufferView16(Json
     if (nullptr != pCount)
         *pCount = static_cast<uint32_t>(view.count);
 
-    bool isByte = GLTF_UNSIGNED_BYTE == view.type;
-    BeAssert(isByte || GLTF_UNSIGNED_SHORT == view.type);
+    bool isByte = Gltf::UnsignedByte == view.type;
+    BeAssert(isByte || Gltf::UnsignedShort == view.type);
     return BufferView16(view.pData, isByte);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::ReadMeshPrimitive(Json::Value const& prim)
+ReadStatus DgnCacheTileRebuilder::ReadMeshPrimitive(Json::Value const& prim)
     {
     Features features = ReadFeatures(prim);
     if (!features.IsValid())
-        return TileIO::ReadStatus::ReadError;
+        return ReadStatus::ReadError;
 
     if (!features.IsValid())
         {
         BeAssert(false);
-        return TileIO::ReadStatus::Success;
+        return ReadStatus::Success;
         }
 
     // If only one feature, can trivially skip this mesh
     if (features.IsUniform() && m_featureList.RejectFeature(features.m_uniform))
-        return TileIO::ReadStatus::Success;
+        return ReadStatus::Success;
 
     return AddMeshPrimitive(features, prim);
     }
@@ -1597,11 +1592,11 @@ TileIO::ReadStatus DgnCacheTileRebuilder::ReadMeshPrimitive(Json::Value const& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::ReadGltf()
+ReadStatus DgnCacheTileRebuilder::ReadGltf()
     {
     Json::Value meshes;
     auto status = InitGltf(meshes);
-    if (TileIO::ReadStatus::Success != status)
+    if (ReadStatus::Success != status)
         return status;
 
     for (auto& mesh : meshes)
@@ -1614,46 +1609,45 @@ TileIO::ReadStatus DgnCacheTileRebuilder::ReadGltf()
             }
 
         for (auto& primitive : primitives)
-            if (TileIO::ReadStatus::Success != (status = ReadMeshPrimitive(primitive)))
+            if (ReadStatus::Success != (status = ReadMeshPrimitive(primitive)))
                 return status;
         }
 
-    return TileIO::ReadStatus::Success;
+    return ReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus DgnCacheTileRebuilder::ReadTile(TileIO::Flags& flags, DgnElementIdSet const& skipElems)
+ReadStatus DgnCacheTileRebuilder::ReadTile(Flags& flags, DgnElementIdSet const& skipElems)
     {
     DgnTileHeader header;
     if (!header.Read(m_buffer))
-        return TileIO::ReadStatus::InvalidHeader;
+        return ReadStatus::InvalidHeader;
 
-    flags = static_cast<TileIO::Flags>(header.flags);
+    flags = static_cast<Flags>(header.flags);
 
-    TileIO::ReadStatus status = ReadFeatureTable(skipElems);
-    if (TileIO::ReadStatus::Success != status)
+    ReadStatus status = ReadFeatureTable(skipElems);
+    if (ReadStatus::Success != status)
         return status;
 
     return ReadGltf();
     }
 
-END_TILEREADER_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus TileIO::ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf)
+ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf)
     {
-    return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
+    return DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus TileIO::ReadDgnTile(Render::Primitives::MeshBuilderMapR builders, StreamBufferR buffer, GeometricModelR model, Render::System& system, TileIO::Flags& flags, DgnElementIdSet const& skipElems)
+ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builders, StreamBufferR buffer, GeometricModelR model, Render::System& system, Flags& flags, DgnElementIdSet const& skipElems)
     {
-    return TileReader::DgnCacheTileRebuilder(buffer, model, system, builders).ReadTile(flags, skipElems);
+    return DgnCacheTileRebuilder(buffer, model, system, builders).ReadTile(flags, skipElems);
     }
 
+END_TILETREE_IO_NAMESPACE
