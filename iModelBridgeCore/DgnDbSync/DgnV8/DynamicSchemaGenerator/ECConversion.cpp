@@ -1353,7 +1353,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
 
-    if (SchemaStatus::Success != GetDgnDb().ImportSchemas(constSchemas))
+    if ((RepositoryStatus::Success != GetDgnDb().BriefcaseManager().LockSchemas().Result()) || (SchemaStatus::Success != GetDgnDb().ImportSchemas(constSchemas)))
         {
         return BentleyApi::ERROR;
         }
@@ -1789,18 +1789,15 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
 //=======================================================================================
 struct     SchemaImportCaller : public DgnV8Api::IEnumerateAvailableHandlers
     {
-    DgnDbR m_db;
-    SchemaImportCaller(DgnDbR db)
-        :m_db(db)
-        {
-        }
+    Converter& m_converter;
+    SchemaImportCaller(Converter& cvt) : m_converter(cvt) {}
     virtual StatusInt _ProcessHandler(DgnV8Api::Handler& handler)
         {
         ConvertToDgnDbElementExtension* extension = ConvertToDgnDbElementExtension::Cast(handler);
         if (NULL == extension)
             return SUCCESS;
 
-        extension->_ImportSchema(m_db);
+        extension->_ImportSchema(m_converter.GetDgnDb());
         return SUCCESS;
         }
     };
@@ -1808,9 +1805,9 @@ struct     SchemaImportCaller : public DgnV8Api::IEnumerateAvailableHandlers
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     importHandlerExtensionsSchema(DgnDbR db)
+static void     importHandlerExtensionsSchema(Converter& cvt)
     {
-    SchemaImportCaller importer(db);
+    SchemaImportCaller importer(cvt);
     DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(importer);
     }
 
@@ -1835,14 +1832,12 @@ void DynamicSchemaGenerator::GenerateSchemas(bset<DgnV8ModelP> const& uniqueMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootModelConverter::MakeSchemaChanges()
+void RootModelConverter::MakeSchemaChanges()
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
 
     StopWatch timer(true);
-
-    bool anyImported = false;
 
     // Create some fixed tables
     if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
@@ -1850,7 +1845,6 @@ bool RootModelConverter::MakeSchemaChanges()
         DgnV8FileProvenance::CreateTable(*m_dgndb);
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
         DgnV8ElementProvenance::CreateTable(*m_dgndb);
-        anyImported = true;
         }
 
     // Bis-ify the V8 schemas
@@ -1863,17 +1857,24 @@ bool RootModelConverter::MakeSchemaChanges()
         gen.GenerateSchemas(uniqueModels);
 
         m_skipECContent = gen.GetEcConversionFailed();
-        anyImported = gen.GetAnyImported();
         }
 
     if (WasAborted())
-        return false;
+        return;
 
     // Let handler extensions import schemas
-    importHandlerExtensionsSchema(*m_dgndb);
+    importHandlerExtensionsSchema(*this);
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        if (BSISUCCESS != xdomain->_ImportSchema(*m_dgndb))
+            {
+            OnFatalError();
+            }
+        }
 
     if (WasAborted())
-        return false;
+        return;
 
     // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
     if (GetConfig().GetOptionValueBool("CreateECClassViews", true))
@@ -1883,8 +1884,6 @@ bool RootModelConverter::MakeSchemaChanges()
         }
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
-
-    return !WasAborted() && anyImported;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

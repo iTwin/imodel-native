@@ -197,9 +197,11 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             }
 
         //  Let the bridge generate schema changes
-        bool hadDynamicSchemaChanges = bridge._MakeSchemaChanges();
+        bridge._MakeSchemaChanges();
 
-        if (hadDynamicSchemaChanges) // if _MakeSchemaChanges made any dynamic schema changes, we close and re-open in order to accommodate them.
+        bool madeDynamicSchemaChanges = db->Txns().HasChanges(); // see if _MakeSchemaChanges made any changes.
+
+        if (madeDynamicSchemaChanges) // if _MakeSchemaChanges made any dynamic schema changes, we close and re-open in order to accommodate them.
             {
             callCloseOnReturn.CallCloseFunctions();
 

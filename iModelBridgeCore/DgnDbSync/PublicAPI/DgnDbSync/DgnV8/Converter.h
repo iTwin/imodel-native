@@ -2438,7 +2438,7 @@ public:
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
 
-    DGNDBSYNC_EXPORT bool MakeSchemaChanges();
+    DGNDBSYNC_EXPORT void MakeSchemaChanges();
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
@@ -2609,7 +2609,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) {/* do nothing to accept basic conversion */ }
     virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) {return false; /* caller will derive placement transform from geometry */ }
     virtual void _InitDgnDomain() {}/*Callers can initialize their domain here and register with DgnDomains*/
-    virtual void _ImportSchema(DgnDbR ) {}
+    virtual void _ImportSchema(DgnDbR) {} /* extension may import schemas. NB: call db.BriefcaseManager().LockSchemas() before calling db.ImportSchemas */
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
 };
@@ -2643,6 +2643,9 @@ struct XDomain
     // converted element.
     // After this function returns, the element will be written.
     virtual void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) {}
+
+    /* XDomain may import schemas. NB: call db.BriefcaseManager().LockSchemas() before you call db.ImportSchemas */
+    virtual BentleyStatus _ImportSchema(DgnDbR) {return BSISUCCESS;} 
 
     // Override the BIS conversion rule that will be applied to this element. Called after the applicable ConvertToDgnDbElementExtension is called.
     virtual void _DetermineBisConversionRule(BisConversionRule&, DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) {;}

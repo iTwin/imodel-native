@@ -435,9 +435,9 @@ void ConverterApp::_DeleteSyncInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootModelConverterApp::_MakeSchemaChanges()
+void RootModelConverterApp::_MakeSchemaChanges()
     {
-    return m_converter->MakeSchemaChanges();
+    m_converter->MakeSchemaChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1287,7 +1287,9 @@ int iModelBridgeFwk::UpdateExistingBim()
             }
 
         //  Let the bridge generate schema changes
-        madeSchemaChanges |= m_bridge->_MakeSchemaChanges();
+        m_bridge->_MakeSchemaChanges();
+
+        madeSchemaChanges |= m_briefcaseDgnDb->Txns().HasChanges(); // see if _MakeSchemaChanges made any changes.
 
         if (madeSchemaChanges)
             {
