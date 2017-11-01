@@ -32,6 +32,7 @@ struct ORDConverterUtils
 public:
     static BeSQLite::BeGuid CifSyncIdToBeGuid(Bentley::WStringCR cifSyncId);
     static bool AssignFederationGuid(DgnElementR bimElement, Bentley::WStringCR cifSyncId);
+    static void AssignFeatureDefinition(DgnElementR bimElement, Bentley::WStringCR featureDefinitionName);
 }; // ORDConverterUtils
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,6 +70,16 @@ bool ORDConverterUtils::AssignFederationGuid(DgnElementR bimElement, Bentley::WS
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverterUtils::AssignFeatureDefinition(DgnElementR bimElement, Bentley::WStringCR featureDefinitionName)
+    {
+    ECN::AdHocJsonValue userProps = bimElement.GetUserProperties("OpenRoadsDesigner");
+    userProps.SetValueText("FeatureDefinitionName", Utf8String(featureDefinitionName.c_str()).c_str());
+    bimElement.SetUserProperties("OpenRoadsDesigner", userProps);
     }
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ORDAlignmentsConverter)
@@ -269,6 +280,14 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     if (bimCode.IsValid())
         bimAlignmentPtr->SetCode(bimCode);
     
+    Bentley::WString featureDefName;
+    if (cifAlignment.GetFeatureDefinition().IsValid())
+        {
+        featureDefName = cifAlignment.GetFeatureDefinition()->GetName();
+        if (!Bentley::WString::IsNullOrEmpty(featureDefName.c_str()))
+            ORDConverterUtils::AssignFeatureDefinition(*bimAlignmentPtr, featureDefName);
+        }
+
     ORDConverterUtils::AssignFederationGuid(*bimAlignmentPtr, cifSyncId);
 
     iModelBridgeSyncInfoFile::ConversionResults results;
@@ -286,6 +305,9 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     auto bimHorizAlignmPtr = AlignmentBim::HorizontalAlignment::Create(*bimAlignmentPtr, *bimHorizGeometryPtr);
     if (bimCode.IsValid())
         bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimCode.GetValueUtf8()));
+
+    if (!Bentley::WString::IsNullOrEmpty(featureDefName.c_str()))
+        ORDConverterUtils::AssignFeatureDefinition(*bimHorizAlignmPtr, featureDefName);
 
     bimHorizAlignmPtr->GenerateElementGeom();
     if (bimHorizAlignmPtr->Insert().IsNull())
@@ -346,6 +368,14 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
 
     auto verticalModelCPtr = AlignmentBim::VerticalAlignmentModel::Get(alignment.GetDgnDb(), verticalModelId);;
     auto verticalAlignmPtr = AlignmentBim::VerticalAlignment::Create(*verticalModelCPtr, *bimVertGeometryPtr);
+
+    if (cifProfile.GetFeatureDefinition().IsValid())
+        {
+        auto featureDefName = cifProfile.GetFeatureDefinition()->GetName();
+        if (!Bentley::WString::IsNullOrEmpty(featureDefName.c_str()))
+            ORDConverterUtils::AssignFeatureDefinition(*verticalAlignmPtr, featureDefName);
+        }
+
     verticalAlignmPtr->GenerateElementGeom();
 
     iModelBridgeSyncInfoFile::ConversionResults verticalResults;
