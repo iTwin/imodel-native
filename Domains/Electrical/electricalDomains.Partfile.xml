@@ -45,7 +45,6 @@
 	
 	<Product Name="DesignModelingDomainsSDK"  SaveProduct="true">
         <SubPart PartName="ElectricalDomain"/>
-        <SubPart PartName="BeIcu4cLibrary"                  PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
         <Directories DirectoryListName="DesignModelingDomainsSDK"/>
     </Product>
 
