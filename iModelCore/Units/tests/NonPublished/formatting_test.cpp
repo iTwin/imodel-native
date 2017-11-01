@@ -112,6 +112,10 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4)", "_");
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4u)", "_");
 
+    FormattingTestFixture::ShowQuantity(98765.4321, "FT", "FT", "stop100-2u", nullptr);
+    FormattingTestFixture::ShowQuantity(98765.4321, "FT", "FT", "stop100-2-4u", nullptr);
+    FormattingTestFixture::ShowQuantity(98765.4321, "FT", "M", "stop1000-2-4u", nullptr);
+
     FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_MM");
     if (nacc.HasProblem())
         LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
@@ -124,6 +128,23 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("ft");
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("IN");
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("in");
+    }
+
+TEST(FormattingTest, SchemaValidation)
+    {
+    LOG.infov("================  Formatting Log ===========================");
+    //FormattingDividers fdiv = FormattingDividers("()[]{}");
+    //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
+
+    //BeFileName bfn = BeFileName("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt", false);
+    //Utf8String fnam = Utf8String("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt");
+    //FormattingTestData::FileHexDump(fnam);
+
+    if (FormattingTestFixture::OpenTestData())
+        {
+        LOG.infov("================  Reading Data File ===========================");
+        //int len = 256;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -402,9 +423,9 @@ TEST(FormattingTest, PhysValues)
     FormattingTestFixture::TestFUS("CUB.FT(real)", "CUB.FT(DefaultReal)", "CUB.FT(real)");
     FormattingTestFixture::TestFUS("W/(M*C)(DefaultReal)", "W/(M*C)(DefaultReal)", "W/(M*C)(real)");
 
-    FormattingTestFixture::TestFUG("KOQgroup", "FT(fract8)  IN(fract8), M(real4), MM(Real2)", 
-                                    "KOQgroup FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", 
-                                    "KOQgroup FT(fract8),IN(fract8),M(real4),MM(real2)");
+    FormattingTestFixture::TestFUG("KOQgroup", "FT(fract8)  IN(fract8), M(real4), MM(Real2), M(Stop1000-2-4)", 
+                                    "KOQgroup FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2),M(Stop1000-2-4)", 
+                                    "KOQgroup FT(fract8),IN(fract8),M(real4),MM(real2),M(stop1000-2-4)");
 
 
     // preparing pointers to various Unit definitions used in the following tests

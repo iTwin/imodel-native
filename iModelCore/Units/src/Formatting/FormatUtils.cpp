@@ -1269,7 +1269,8 @@ Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias
 //----------------------------------------------------------------------------------------
 FormatUnitGroup::FormatUnitGroup(Utf8CP name, Utf8CP description)
     {
-    FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
+    Utf8CP div = " ,;(){}";
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, div);
     m_problem = FormatProblemDetail();
     m_name = name;
     curs.SkipBlanks();

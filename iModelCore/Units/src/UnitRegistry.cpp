@@ -608,6 +608,25 @@ size_t  UnitRegistry::LoadSynonyms(Json::Value jval) const
     return num;
     }
 
+PhenomenonCP UnitRegistry::LoadSynonym(Utf8CP unitName, Utf8CP synonym) const
+    {
+    if (Utf8String::IsNullOrEmpty(unitName) || Utf8String::IsNullOrEmpty(synonym))
+        return nullptr;
+      UnitCP unit = UnitRegistry::Instance().LookupUnitCI(unitName);
+      PhenomenonCP ph = (nullptr == unit)? nullptr : unit->GetPhenomenon();
+      if (nullptr != ph)
+          {
+           UnitCP un = ph->FindSynonym(synonym);
+           if (un == nullptr)  // a new synonym
+               {
+
+               }
+          }
+
+      return ph;
+    }
+
+
 Json::Value UnitRegistry::SynonymsToJson() const
     {
     Json::Value jMap;
