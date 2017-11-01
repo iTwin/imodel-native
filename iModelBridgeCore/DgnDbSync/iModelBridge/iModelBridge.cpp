@@ -127,21 +127,12 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     _GetParams().SetIsCreatingNewDgnDb(true);
     _GetParams().SetIsUpdating(false);
 
-    //  Tell the bridge that the briefcase is now open
-    if (BSISUCCESS != _OnOpenBim(*db))
+    iModelBridgeHelpers::CallOpenCloseFunctions callCloseOnReturn(*this, *db);
+    if (!callCloseOnReturn.IsReady())
         {
-        LOG.fatalv("Bridge is not ready");
+        LOG.fatalv("Bridge is not ready or could not open source file");
         return nullptr;
         }
-    CallOnBimClose callOnBimClose(*this, false); // Be sure to call _OnBimClose 
-
-    // Tell the bridge to open the source file(s). We do this before calling _MakeSchemaChanges, so that the bridge can discover schemas dynamically from source content.
-    if (BSISUCCESS != _OpenSource())
-        {
-        LOG.fatalv("Bridge cannot open source files");
-        return nullptr;
-        }
-    CallCloseSource callCloseSource(*this, false);  // Be sure to call _CloseSource
 
     // Tell the bridge to generate schemas
     _MakeSchemaChanges();
@@ -161,7 +152,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         return nullptr;
         }
 
-    callCloseSource.m_status = callOnBimClose.m_status = BSISUCCESS;
+    callCloseOnReturn.m_status = BSISUCCESS;
 
     bvector<DgnModelId> models;
     queryAllModels(models, *db);
@@ -178,10 +169,8 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, bool& hasDynamicSchemaChange)
+DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges)
     {
-    madeSchemaChanges = false;
-
     // ***
     // ***
     // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
@@ -189,7 +178,12 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
     // ***
     // ***
 
-    //  See if we can just open the BIM without any schema changes. That's the common case.
+    // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
+    // of detecting the case where we do have domain schema changes (by looking for an error result).
+
+    // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
+
+    madeSchemaChanges = false;
     auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     if (!db.IsValid())
         {
@@ -213,55 +207,7 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
             }
 
         madeSchemaChanges = true;
-
-        // ... close and re-open, so that the side-effects of the schema changes are reflected in the open DgnDb.
-        db->CloseDb();
-        db = nullptr;
-
-        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        if (!db.IsValid())
-            {
-            BeAssert(false);
-            LOG.fatalv("Failed to save results of importing domain schemas");
-            return nullptr;
-            }
-
-        // If we had a schema change, we cannot process an additional dynamic schema change in the same transaction. So return now.
-        // The caller must process this change and then call OpenBim again.
-        return db;
         }
-
-    //  Tell the bridge that the briefcase is now open
-    if (BSISUCCESS != _OnOpenBim(*db))
-        {
-        LOG.fatalv("Bridge is not ready");
-        return nullptr;
-        }
-    CallOnBimClose callOnBimClose(*this, true); // Be sure to call _OnBimClose in case of error
-
-    // Tell the bridge to open the source file(s). We do this before calling _MakeSchemaChanges, so that the bridge can discover schemas dynamically from source content.
-    if (BSISUCCESS != _OpenSource())
-        {
-        LOG.fatalv("Bridge cannot open source files");
-        return nullptr;
-        }
-    CallCloseSource callCloseSource(*this, true); // Be sure to call _CloseSource in case of error
-
-    //  Now let the bridge generate schema changes
-    hasDynamicSchemaChange = _MakeSchemaChanges();
-    if (hasDynamicSchemaChange)
-        {
-        _OnCloseBim(BSISUCCESS);
-        _CloseSource(BSISUCCESS);
-        db->SaveChanges();
-        db->CloseDb();
-        db = nullptr;
-        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        _OnOpenBim(*db);
-        _OpenSource();
-        }
-
-    callOnBimClose.m_status = callCloseSource.m_status = BSISUCCESS;    // don't call _CloseSource or _OnCloseBim
 
     return db;
     }
@@ -287,7 +233,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
     //      That is because it often does things like Db::AttachDb and create temp table,
     //		which need to commit the txn. We cannot commit while in bulk insert mode.
 
-    // Note: OpenBim already called _OnOpenBim and _OpenSource.
+    // Note: OpenBimAndMergeSchemaChanges already called _OnOpenBim and _OpenSource.
     CallOnBimClose callOnBimClose(*this, false);   // Be sure to call _OnBimClose before returning.
     CallCloseSource callCloseSource(*this, false); // Be sure to call _CloseSource before returning.
 

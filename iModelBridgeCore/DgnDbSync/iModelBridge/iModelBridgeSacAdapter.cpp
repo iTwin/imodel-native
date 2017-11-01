@@ -180,26 +180,39 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
     else
         {
         BeSQLite::DbResult dbres;
-        bool madeSchemaChanges = false, madeDynamicSchemaChange = false;
-        db = bridge.OpenBim(dbres, madeSchemaChanges, madeDynamicSchemaChange);
+        bool _hadDomainSchemaChanges = false;
+        db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges);
         if (!db.IsValid())
             {
             fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
             return BSIERROR;
             }
 
-        if (madeSchemaChanges)  // Must call OpenBim again, this time to give the bridge a chance to make dynamic schema changes.
+        //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
+        iModelBridgeHelpers::CallOpenCloseFunctions callCloseOnReturn(bridge, *db);
+        if (!callCloseOnReturn.IsReady())
             {
-            bridge._CloseSource(BSISUCCESS);
-            bridge._OnCloseBim(BSISUCCESS);
-            db->SaveChanges();
-            db->CloseDb();
-            madeSchemaChanges = madeDynamicSchemaChange = false;
-            db = bridge.OpenBim(dbres, madeSchemaChanges, madeDynamicSchemaChange); // calls _OnOpenBim and _OpenSource
+            LOG.fatalv("Bridge is not ready or could not open source file");
+            return BentleyStatus::ERROR;
+            }
 
-            BeAssert(!madeSchemaChanges);
-            if (madeDynamicSchemaChange)
-                db->SaveChanges();
+        //  Let the bridge generate schema changes
+        bool hadDynamicSchemaChanges = bridge._MakeSchemaChanges();
+
+        if (hadDynamicSchemaChanges) // if _MakeSchemaChanges made any dynamic schema changes, we close and re-open in order to accommodate them.
+            {
+            callCloseOnReturn.CallCloseFunctions();
+
+            _hadDomainSchemaChanges = false;
+            db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges);
+            if (!db.IsValid())
+                {
+                fwprintf(stderr, L"%ls - open failed with error %x\n", inputFileName.GetName(), (int)dbres);
+                return BentleyStatus::ERROR;
+                }
+            BeAssert(!_hadDomainSchemaChanges);
+            
+            callCloseOnReturn.CallOpenFunctions(*db);
             }
 
         BentleyStatus bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());

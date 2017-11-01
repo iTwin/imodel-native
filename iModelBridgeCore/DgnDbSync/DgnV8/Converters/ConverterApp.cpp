@@ -490,6 +490,7 @@ BentleyStatus RootModelConverterApp::_OpenSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverterApp::_CloseSource(BentleyStatus)
     {
+    // _OnCloseBim will close the source files
     }
 
 /*---------------------------------------------------------------------------------**//**

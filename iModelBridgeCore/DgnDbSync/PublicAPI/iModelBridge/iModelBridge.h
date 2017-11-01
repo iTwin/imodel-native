@@ -384,9 +384,8 @@ struct iModelBridge
     //! @private
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
-    //! @param[out] madeSchemaChanges Set to true if OpenDgnDb imported or upgraded schemas.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
-    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, bool& hasDynamicSchemaChange);
+    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges);
 
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
@@ -394,7 +393,7 @@ struct iModelBridge
     //! @param[in] detectDeletedFiles If true, the bridge will also detect deleted files and delete content that was extracted from them.
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
-    //! @see OpenBim
+    //! @see OpenBimAndMergeSchemaChanges
     IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
 
     //! @}
