@@ -78,7 +78,7 @@ BentleyStatus Writer::WriteGltf(DPoint3dCR centroid)
     long    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);
     m_buffer.Append((const uint8_t*) &sceneStrLength, sizeof(sceneStrLength));
-    m_buffer.Append((const uint8_t*) Gltf::SceneFormat, 4);
+    m_buffer.Append((uint32_t)Gltf::SceneFormat);
     m_buffer.Append((const uint8_t*) sceneStr.data(), sceneStrLength);
     if (!m_binaryData.empty())
         m_buffer.Append((const uint8_t*) m_binaryData.data(), BinaryDataSize());
