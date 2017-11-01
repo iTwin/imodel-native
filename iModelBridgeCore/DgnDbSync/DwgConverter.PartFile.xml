@@ -228,6 +228,7 @@
     </Product>
 
     <Part Name="RunDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <RequiredRepository>BeGTest</RequiredRepository>
         <SubProduct ProductName="DwgImporterTests" />
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgImporterTests.log</Files>
