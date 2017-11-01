@@ -109,7 +109,6 @@
         <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
         <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/>
         <SubPart PartName="AecUnitsDomain"                  PartFile="AecUnits"                 Repository="DgnDomains-DesignModelingUnits"/>
-        <SubPart PartName="BeIcu4cLibrary"                  PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
         <SubPart PartName="BuildingDomain"/>
         <Directories DirectoryListName="DesignModelingDomainsSDK"/>
     </Product>
