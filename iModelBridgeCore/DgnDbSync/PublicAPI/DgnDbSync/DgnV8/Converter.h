@@ -2138,6 +2138,7 @@ protected:
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     void MakeSchemaChanges(bset<DgnV8ModelP> const&);
+    void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
 

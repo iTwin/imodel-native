@@ -386,10 +386,14 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
         updater.MakeSchemaChanges();
-        ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
-        updater.Process();
         ASSERT_EQ(expectFailure, updater.WasAborted());
-        m_count = updater.GetElementsConverted();
+        if (!updater.WasAborted())
+            {
+            ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
+            updater.Process();
+            ASSERT_EQ(expectFailure, updater.WasAborted());
+            m_count = updater.GetElementsConverted();
+            }
         }
     else
         {
@@ -401,13 +405,17 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
         updater.MakeSchemaChanges();
-        ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
-        updater.ConvertRootModel();
-        for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
-            updater.ConvertTile(tileName);
-        updater.FinishedConversion();
         ASSERT_EQ(expectFailure, updater.WasAborted());
-        m_count = updater.GetElementsConverted();
+        if (!updater.WasAborted())
+            {
+            ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
+            updater.ConvertRootModel();
+            for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
+                updater.ConvertTile(tileName);
+            updater.FinishedConversion();
+            ASSERT_EQ(expectFailure, updater.WasAborted());
+            m_count = updater.GetElementsConverted();
+            }
         }
     db->SaveChanges();
     }

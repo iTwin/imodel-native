@@ -1842,6 +1842,8 @@ void RootModelConverter::FindSchemaDefinitionsSpatial(bset<DgnV8ModelP>& uniqueM
 
     DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
 
+    GetV8FileSyncInfoId(thisV8File); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
+
     bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
 
     // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
@@ -1889,6 +1891,19 @@ void RootModelConverter::FindSchemaDefinitionsDrawings(bset<DgnV8ModelP>& unique
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialConverterBase::CreateProvenanceTables()
+    {
+    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
+        {
+        DgnV8FileProvenance::CreateTable(*m_dgndb);
+        DgnV8ModelProvenance::CreateTable(*m_dgndb);
+        DgnV8ElementProvenance::CreateTable(*m_dgndb);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueModels)
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
@@ -1900,13 +1915,6 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
         DgnV8FileProvenance::CreateTable(*m_dgndb);
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
         DgnV8ElementProvenance::CreateTable(*m_dgndb);
-        }
-
-    // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
-    // *** TRICKY: Do this *after* creating DgnV8FileProvenance table!
-    for (auto model : uniqueModels)
-        {
-        GetV8FileSyncInfoId(*model->GetDgnFileP());
         }
 
     // Bis-ify the V8 schemas
@@ -1958,6 +1966,8 @@ void RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
+    CreateProvenanceTables();   // TRICKY: do this before anyone calls GetV8FileSyncInfoId
+
     bset<DgnV8ModelP> uniqueModels;
     BeAssert(nullptr != GetRootModelRefP());
     FindSchemaDefinitionsSpatial(uniqueModels, *GetRootModelRefP());
@@ -1975,8 +1985,11 @@ void TiledFileConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
+    CreateProvenanceTables();   // TRICKY: do this before anyone calls GetV8FileSyncInfoId
+
     bset<DgnV8ModelP> uniqueModels;
     uniqueModels.insert(GetRootModelP());
+    GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     T_Super::MakeSchemaChanges(uniqueModels);
 
