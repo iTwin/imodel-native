@@ -284,23 +284,27 @@ StatusInt Process (BaseGCSR baseGCS, WCharCP wktChar)
 
     // First thing we do is allocate the m_csParameter structure of the GCS (using a known definition)
     baseGCS.SetFromCSName (L"LL84");
+
+    // The only way the above can fail is if no valid csParameter were provided and no dictionary present.
+    if (NULL == baseGCS.GetCSParameters())
+        return ERROR;
+        
     baseGCS.SetName (L"");
     baseGCS.SetDescription (L"");
     baseGCS.SetSource(L"");
     // Wipe the group name for future definition complete
-    if (baseGCS.GetCSParameters() != NULL)
-        {
-        baseGCS.GetCSParameters()->csdef.group[0] = '\0';
-        // Wipe min / max so they can be computed
-        baseGCS.GetCSParameters()->csdef.ll_min[LNG] = 0.0;
-        baseGCS.GetCSParameters()->csdef.ll_min[LAT] = 0.0;
-        baseGCS.GetCSParameters()->csdef.ll_max[LNG] = 0.0;
-        baseGCS.GetCSParameters()->csdef.ll_max[LAT] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_min[XX] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_min[YY] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_max[XX] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_max[YY] = 0.0;
-        }
+
+    baseGCS.GetCSParameters()->csdef.group[0] = '\0';
+    // Wipe min / max so they can be computed
+    baseGCS.GetCSParameters()->csdef.ll_min[LNG] = 0.0;
+    baseGCS.GetCSParameters()->csdef.ll_min[LAT] = 0.0;
+    baseGCS.GetCSParameters()->csdef.ll_max[LNG] = 0.0;
+    baseGCS.GetCSParameters()->csdef.ll_max[LAT] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_min[XX] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_min[YY] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_max[XX] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_max[YY] = 0.0;
+
 
     if ((wkt.length() >= 6) && (wkt.substr (0, 6) == (L"PROJCS")))
         status = GetProjected (baseGCS, wkt);
@@ -5969,6 +5973,9 @@ int                     quadrant
         return cs_Error;
         }
 
+    // Clear out the error that may have come from a previous init attempt
+    m_csError = 0;
+
     m_sourceLibrary = LibraryManager::Instance()->GetSystemLibrary();
 
     m_coordSysId = COORDSYS_AZMEA;
@@ -6053,7 +6060,6 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
             char    csErrorMsg[512];
             CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
             warningOrErrorMsg->AssignA (csErrorMsg);
-//            assert (false);
             }
         // process warnings.
         if ((status & ~(StatusInt)(cs_EL2WKT_NMTRUNC | cs_DT2WKT_NMTRUNC | cs_CS2WKT_NMTRUNC | cs_DT2WKT_DTDEF | cs_DT2WKT_NODEF)) == 0)
@@ -6089,11 +6095,11 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
             m_csError = cs_Error;
             status = cs_Error;
             }
-        }
         else
-        {
+            {
             // The datum is valid and defined in the system library
             m_sourceLibrary = LibraryManager::Instance()->GetSystemLibrary();
+            }
         }
 
     // This section was added as an alternate WKT parser. For some reason the CSMAP parser
@@ -6124,6 +6130,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
         try {
 
             SRSWKTParser theWKTParser;
+            Int32 previousCsError = m_csError; // Save previous error as process clears out the error.
             StatusInt status2 = theWKTParser.Process (*this, wellKnownText);
             if ((SUCCESS == status2) && (IsValid()))
                 {
@@ -6138,6 +6145,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                 // This must be done in case of error since the parser allocates the structure but cannot destroy it
                 CSMAP_FREE_AND_CLEAR (m_csParameters);
 
+                // Restore error to value prior to WKT parsing attempt. is status is SUCCESS it should already be SUCCESS
+                m_csError = previousCsError;
                 if (SUCCESS == status)
                     {
                     // If we get here it is because the CSMAP succeeded parsing yet it was one of the variation we did not support
@@ -6168,6 +6177,9 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
 
     // this will cause the type 66 to be saved with coordSysId set the same as projType.
     m_coordSysId = 0;
+
+    // There should always be a source library set if successful. (And for WKT it is the system library)
+    assert(nullptr != m_sourceLibrary || SUCCESS != status);
 
     return status;
     }
