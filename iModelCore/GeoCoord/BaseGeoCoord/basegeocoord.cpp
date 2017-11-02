@@ -6278,7 +6278,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
         try {
 
             SRSWKTParser theWKTParser;
-            Int32 previousCsError = m_csError; // Save previous error as process clears out the error.
+            int32_t previousCsError = m_csError; // Save previous error as process clears out the error.
             StatusInt status2 = theWKTParser.Process (*this, wellKnownText);
             if ((SUCCESS == status2) && (IsValid()))
                 {
@@ -6410,9 +6410,7 @@ int                     epsgCode
     char        csKeyName[128];
     for (index = 0; (0 < CSMap::CS_csEnum (index, csKeyName, sizeof(csKeyName))); index++)
         {
-        WString keyNameString (csKeyName);
-
-        if (NULL != (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, WString(csKeyName).c_str())))
+        if (NULL != (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, WString(csKeyName, false).c_str())))
             {
             if (epsgCode == m_csParameters->csdef.epsgNbr)
                 {
