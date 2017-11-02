@@ -796,7 +796,7 @@ bool CS_wktDatumLookUp (const char* datumNameInWkt, char* csDatumName)
     
     for (rowInd = 0 ; rowInd < numRows; ++rowInd)
     {        
-        if (wcsicmp(DatumMap[rowInd][mapTypeIndex], datumNameToFind) == 0)
+        if (wcscmp(DatumMap[rowInd][mapTypeIndex], datumNameToFind) == 0)
         {    
             colInd = mapTypeIndex;
             break;
@@ -807,7 +807,7 @@ bool CS_wktDatumLookUp (const char* datumNameInWkt, char* csDatumName)
             {
                 if (colInd == mapTypeIndex) continue;
 
-                if (wcsicmp(DatumMap[rowInd][colInd], datumNameToFind) == 0)
+                if (wcscmp(DatumMap[rowInd][colInd], datumNameToFind) == 0)
                 {            
                     break;
                 }
@@ -848,7 +848,7 @@ bool CS_wktEllipsoidLookUp (const char* ellipsoidNameInWkt, char* csEllipsoidNam
     
     for (rowInd = 0 ; rowInd < numRows; ++rowInd)
     {        
-        if (wcsicmp(EllipsoidMap[rowInd][mapTypeIndex], ellipsoidNameToFind) == 0)
+        if (wcscmp(EllipsoidMap[rowInd][mapTypeIndex], ellipsoidNameToFind) == 0)
         {    
             colInd = mapTypeIndex;
             break;
@@ -859,7 +859,7 @@ bool CS_wktEllipsoidLookUp (const char* ellipsoidNameInWkt, char* csEllipsoidNam
             {
                 if (colInd == mapTypeIndex) continue;
 
-                if (wcsicmp(EllipsoidMap[rowInd][colInd], ellipsoidNameToFind) == 0)
+                if (wcscmp(EllipsoidMap[rowInd][colInd], ellipsoidNameToFind) == 0)
                 {            
                     break;
                 }
