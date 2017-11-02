@@ -211,7 +211,7 @@ TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdAndLocalizedMessage)
 
 TEST_F(WSErrorTests, Ctor_ProxyAuthenticationRequiredResponse_SetsIdAndLocalizedMessage)
     {
-    WSError error(StubHttpResponseWithUrl(HttpStatus::ProxyAuthenticationRequired));
+    WSError error(StubHttpResponse(HttpStatus::ProxyAuthenticationRequired));
 
     EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
     EXPECT_EQ(WSError::Id::ProxyAuthenticationRequired, error.GetId());
