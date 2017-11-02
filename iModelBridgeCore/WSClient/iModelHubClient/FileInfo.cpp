@@ -110,7 +110,7 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
         DateTime::FromString(info->m_uploadedDate, dateStr.c_str());
 
     info->m_initialized = properties.HasMember(ServerSchema::Property::InitializationState) ?
-		(InitializationState)properties[ServerSchema::Property::InitializationState].GetInt() : InitializationState::NotStarted;
+        (InitializationState)properties[ServerSchema::Property::InitializationState].GetInt() : InitializationState::NotStarted;
 
     return info;
     }
@@ -239,7 +239,8 @@ FileAccessKeyPtr FileAccessKey::Parse(RapidJsonValueCR properties)
 //---------------------------------------------------------------------------------------
 void FileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectString)
     {
-    selectString.Sprintf("%s,%s-forward-%s.DownloadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
+    selectString.Sprintf("%s,%s-forward-%s.DownloadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, 
+                         ServerSchema::Class::AccessKey);
     }
 
 //---------------------------------------------------------------------------------------
@@ -247,6 +248,7 @@ void FileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectString)
 //---------------------------------------------------------------------------------------
 void FileAccessKey::AddUploadAccessKeySelect(Utf8StringR selectString)
     {
-    selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
+    selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, 
+                         ServerSchema::Class::AccessKey);
     }
 

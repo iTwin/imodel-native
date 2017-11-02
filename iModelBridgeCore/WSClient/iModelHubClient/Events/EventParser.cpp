@@ -21,41 +21,41 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //---------------------------------------------------------------------------------------
 std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Event::EventType eventType)
     {
-	Json::Reader reader;
-	Json::Value data(Json::objectValue);
-	if (!reader.parse(jsonString, data) && !data.isArray())
-		return nullptr;
+    Json::Reader reader;
+    Json::Value data(Json::objectValue);
+    if (!reader.parse(jsonString, data) && !data.isArray())
+        return nullptr;
 
-	bool isSuccess = false;
-	switch (eventType)
-	    {
-	    case BentleyB0200::iModel::Hub::Event::LockEvent:
-	        {
-		    if (
-			    data.isMember(Event::EventTopic) &&
-			    data.isMember(Event::FromEventSubscriptionId) &&
-			    data.isMember(Event::LockEventProperties::ObjectIds) && 
-			    data[Event::LockEventProperties::ObjectIds].isArray() &&
-			    data.isMember(Event::LockEventProperties::LockType) &&
-			    data.isMember(Event::LockEventProperties::LockLevel) &&
-			    data.isMember(Event::LockEventProperties::BriefcaseId) &&
-			    data.isMember(Event::LockEventProperties::ReleasedWithChangeSet)
-			    )
-			    isSuccess = true;
-		    break;
-	        }
-	    case BentleyB0200::iModel::Hub::Event::ChangeSetPostPushEvent:
-	        {
-		    if (
-			    data.isMember(Event::EventTopic) &&
-			    data.isMember(Event::FromEventSubscriptionId) &&
-			    data.isMember(Event::ChangeSetPostPushEventProperties::ChangeSetId) &&
-			    data.isMember(Event::ChangeSetPostPushEventProperties::ChangeSetIndex) &&
-				data.isMember(Event::ChangeSetPostPushEventProperties::BriefcaseId)
-			    )
-			    isSuccess = true;
-		    break;
-	        }
+    bool isSuccess = false;
+    switch (eventType)
+        {
+        case BentleyB0200::iModel::Hub::Event::LockEvent:
+            {
+            if (
+                data.isMember(Event::EventTopic) &&
+                data.isMember(Event::FromEventSubscriptionId) &&
+                data.isMember(Event::LockEventProperties::ObjectIds) &&
+                data[Event::LockEventProperties::ObjectIds].isArray() &&
+                data.isMember(Event::LockEventProperties::LockType) &&
+                data.isMember(Event::LockEventProperties::LockLevel) &&
+                data.isMember(Event::LockEventProperties::BriefcaseId) &&
+                data.isMember(Event::LockEventProperties::ReleasedWithChangeSet)
+                )
+                isSuccess = true;
+            break;
+            }
+        case BentleyB0200::iModel::Hub::Event::ChangeSetPostPushEvent:
+            {
+            if (
+                data.isMember(Event::EventTopic) &&
+                data.isMember(Event::FromEventSubscriptionId) &&
+                data.isMember(Event::ChangeSetPostPushEventProperties::ChangeSetId) &&
+                data.isMember(Event::ChangeSetPostPushEventProperties::ChangeSetIndex) &&
+                data.isMember(Event::ChangeSetPostPushEventProperties::BriefcaseId)
+                )
+                isSuccess = true;
+            break;
+            }
         case BentleyB0200::iModel::Hub::Event::ChangeSetPrePushEvent:
             {
             if (
@@ -65,54 +65,54 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Even
                 isSuccess = true;
             break;
             }
-	    case BentleyB0200::iModel::Hub::Event::CodeEvent:
-	        {
-		    if (
-			    data.isMember(Event::EventTopic) &&
-			    data.isMember(Event::FromEventSubscriptionId) &&
-			    data.isMember(Event::CodeEventProperties::CodeSpecId) &&
-			    data.isMember(Event::CodeEventProperties::CodeScope) &&
-			    data.isMember(Event::CodeEventProperties::Values) &&
-			    data[Event::CodeEventProperties::Values].isArray() &&
-			    data.isMember(Event::CodeEventProperties::State) &&
-			    data.isMember(Event::CodeEventProperties::BriefcaseId)
-			    )
-			    isSuccess = true;
-		    break;
-	        }
-	    case BentleyB0200::iModel::Hub::Event::AllLocksDeletedEvent:
-	    case BentleyB0200::iModel::Hub::Event::AllCodesDeletedEvent:
-	        {
-		    if (
-			    data.isMember(Event::EventTopic) &&
-			    data.isMember(Event::FromEventSubscriptionId) &&
-			    data.isMember(Event::DeletedEventProperties::BriefcaseId) &&
-			    !CheckForEventProperties(jsonString, Event::LockEvent) &&
-			    !CheckForEventProperties(jsonString, Event::CodeEvent) &&
-				!CheckForEventProperties(jsonString, Event::ChangeSetPostPushEvent)
-			    )
-			    isSuccess = true;
-		    break;
-	        }
-		case BentleyB0200::iModel::Hub::Event::VersionEvent:
-		    {
-		    if (
-			    data.isMember(Event::EventTopic) &&
-			    data.isMember(Event::FromEventSubscriptionId) &&
-			    data.isMember(Event::VersionEventProperties::VersionId) &&
-			    data.isMember(Event::VersionEventProperties::VersionName) &&
-			    data.isMember(Event::VersionEventProperties::ChangeSetId)
-			    )
-			    isSuccess = true;
+        case BentleyB0200::iModel::Hub::Event::CodeEvent:
+            {
+            if (
+                data.isMember(Event::EventTopic) &&
+                data.isMember(Event::FromEventSubscriptionId) &&
+                data.isMember(Event::CodeEventProperties::CodeSpecId) &&
+                data.isMember(Event::CodeEventProperties::CodeScope) &&
+                data.isMember(Event::CodeEventProperties::Values) &&
+                data[Event::CodeEventProperties::Values].isArray() &&
+                data.isMember(Event::CodeEventProperties::State) &&
+                data.isMember(Event::CodeEventProperties::BriefcaseId)
+                )
+                isSuccess = true;
             break;
-		    }
-	    case BentleyB0200::iModel::Hub::Event::UnknownEventType:
-	    default:
-	        {
-		    break;
-	        }
-	    }
-	return (isSuccess) ? std::make_shared<Json::Value>(data) : nullptr;
+            }
+        case BentleyB0200::iModel::Hub::Event::AllLocksDeletedEvent:
+        case BentleyB0200::iModel::Hub::Event::AllCodesDeletedEvent:
+            {
+            if (
+                data.isMember(Event::EventTopic) &&
+                data.isMember(Event::FromEventSubscriptionId) &&
+                data.isMember(Event::DeletedEventProperties::BriefcaseId) &&
+                !CheckForEventProperties(jsonString, Event::LockEvent) &&
+                !CheckForEventProperties(jsonString, Event::CodeEvent) &&
+                !CheckForEventProperties(jsonString, Event::ChangeSetPostPushEvent)
+                )
+                isSuccess = true;
+            break;
+            }
+        case BentleyB0200::iModel::Hub::Event::VersionEvent:
+            {
+            if (
+                data.isMember(Event::EventTopic) &&
+                data.isMember(Event::FromEventSubscriptionId) &&
+                data.isMember(Event::VersionEventProperties::VersionId) &&
+                data.isMember(Event::VersionEventProperties::VersionName) &&
+                data.isMember(Event::VersionEventProperties::ChangeSetId)
+                )
+                isSuccess = true;
+            break;
+            }
+        case BentleyB0200::iModel::Hub::Event::UnknownEventType:
+        default:
+            {
+            break;
+            }
+        }
+    return (isSuccess) ? std::make_shared<Json::Value>(data) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------

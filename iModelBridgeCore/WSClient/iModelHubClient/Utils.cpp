@@ -47,7 +47,7 @@ bool BeInt64IdFromJson(BeInt64Id& id, RapidJsonValueCR value)
         id = BeInt64Id(idParsed);
         }
     else
-        id = BeInt64Id((uint64_t) value.GetInt64());
+        id = BeInt64Id((uint64_t)value.GetInt64());
 
     return true;
     }
@@ -133,7 +133,8 @@ bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet
         lockSet.insert(DgnLock(LockableId(type, id), level));
         }
 
-    if (!serverJson.HasMember(ServerSchema::Property::ReleasedWithChangeSet) || !StringFromJson(changeSetId, serverJson[ServerSchema::Property::ReleasedWithChangeSet]))
+    if (!serverJson.HasMember(ServerSchema::Property::ReleasedWithChangeSet) || 
+        !StringFromJson(changeSetId, serverJson[ServerSchema::Property::ReleasedWithChangeSet]))
         changeSetId = nullptr;
 
     return true;
@@ -218,7 +219,7 @@ bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& co
     if (!StringFromJson(value, serverJson[ServerSchema::Property::Value]) &&
         !StringFromJson(valuePattern, serverJson[ServerSchema::Property::ValuePattern]))
         return false;
-    
+
     codeSequence = CodeSequence(CodeSpecId(codeSpecId.GetValue()), scope, value, valuePattern);
 
     return true;
@@ -227,21 +228,21 @@ bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& co
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR changeSetId)
+void AddLockInfoToList(DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR changeSetId)
     {
-    DgnLockInfo&      info = *lockInfos.insert (DgnLockInfo (dgnLock.GetLockableId ())).first;
-    DgnLockOwnershipR ownership = info.GetOwnership ();
+    DgnLockInfo&      info = *lockInfos.insert(DgnLockInfo(dgnLock.GetLockableId())).first;
+    DgnLockOwnershipR ownership = info.GetOwnership();
 
-    if (LockLevel::Exclusive == dgnLock.GetLevel ())
-        ownership.SetExclusiveOwner (briefcaseId);
-    else if (LockLevel::Shared == dgnLock.GetLevel ())
-        ownership.AddSharedOwner (briefcaseId);
+    if (LockLevel::Exclusive == dgnLock.GetLevel())
+        ownership.SetExclusiveOwner(briefcaseId);
+    else if (LockLevel::Shared == dgnLock.GetLevel())
+        ownership.AddSharedOwner(briefcaseId);
 
-    if (!changeSetId.empty ())
-        info.SetRevisionId (changeSetId);
+    if (!changeSetId.empty())
+        info.SetRevisionId(changeSetId);
 
-    if (info.IsOwned () || !changeSetId.empty ())
-        info.SetTracked ();
+    if (info.IsOwned() || !changeSetId.empty())
+        info.SetTracked();
     }
 
 //---------------------------------------------------------------------------------------
@@ -253,8 +254,8 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR stateValue, BeS
         return false;
 
     int parsedState;
-	parsedState = stateValue.GetInt();
-    
+    parsedState = stateValue.GetInt();
+
     if (1 == parsedState)
         {
         codeState.SetReserved(briefcaseId);
@@ -292,7 +293,7 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
     auto values = serverJson[ServerSchema::Property::Values].GetArray();
     if (0 == values.Size())
         return false;
-    
+
     for (auto it = values.begin(); it != values.end(); ++it)
         {
         Utf8String value = "";
@@ -348,12 +349,12 @@ rapidjson::Document ToRapidJson(JsonValueCR source)
 void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, DgnCodeCR dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId)
     {
     DgnCodeInfo&      info = *codeInfos.insert(DgnCodeInfo(dgnCode)).first;
-    
+
     if (codeState.IsAvailable())
         {
         info.SetAvailable();
         }
-    else if(codeState.IsReserved())
+    else if (codeState.IsReserved())
         {
         info.SetReserved(briefcaseId);
         }
@@ -400,7 +401,7 @@ void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevision
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-bool IsErrorForRetry(Error::Id errorId) 
+bool IsErrorForRetry(Error::Id errorId)
     {
     static bset<Error::Id> set;
     if (set.empty())

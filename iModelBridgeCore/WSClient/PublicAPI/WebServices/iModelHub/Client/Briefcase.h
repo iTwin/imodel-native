@@ -39,27 +39,33 @@ private:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
     static BriefcasePtr Create(Dgn::DgnDbPtr db, iModelConnectionPtr connection) { return new Briefcase(db, connection); }
 
-    ChangeSetsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
-    ChangeSetsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                                          ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0);
+    ChangeSetsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, 
+                                               Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
+                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+                                               ICancellationTokenPtr cancellationToken = nullptr) const;
+    ChangeSetsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, 
+                                               Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
+                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+                                               ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, 
+                                               int delay = 0);
 
-    RevisionStatus AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) const;
+    RevisionStatus AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    void CheckCreatingChangeSet() const;
-    void WaitForChangeSetEvent() const;
+    void CheckCreatingChangeSet(ICancellationTokenPtr cancellationToken = nullptr) const;
+    void WaitForChangeSetEvent(ICancellationTokenPtr cancellationToken = nullptr) const;
     void SubscribeForChangeSetEvents();
     void UnsubscribeChangeSetEvents();
 
 public:
     //!< Briefcase file.
-    Dgn::DgnDbR GetDgnDb() const {return *m_db;} 
+    Dgn::DgnDbR GetDgnDb() const {return *m_db;}
 
     //!< Briefcase Id.
     BeSQLite::BeBriefcaseId GetBriefcaseId() const {return GetDgnDb().GetBriefcaseId();}
 
     //!< Last changeSet that was pulled by this briefcase.
-    Utf8String GetLastChangeSetPulled() const { return GetDgnDb().Revisions().HasReversedRevisions() ? GetDgnDb().Revisions().GetReversedRevisionId() : GetDgnDb().Revisions().GetParentRevisionId(); }
+    Utf8String GetLastChangeSetPulled() const {return GetDgnDb().Revisions().HasReversedRevisions() ? 
+        GetDgnDb().Revisions().GetReversedRevisionId() : GetDgnDb().Revisions().GetParentRevisionId();}
 
     //!< Connection to a iModel on server.
     iModelConnectionCR GetiModelConnection() const {return *m_imodelConnection;}
@@ -79,7 +85,7 @@ public:
     //! Merge changeSets.
     //! @param[in] changeSets ChangeSets to merge.
     //! @return Asynchronous task that returns success or an error.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr Merge(ChangeSets const& changeSets) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr Merge(ChangeSets const& changeSets, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Send the outgoing ChangeSets.
     //! @param[in] description ChangeSet description.
@@ -88,14 +94,15 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
-        Http::Request::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr, 
+                                              ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming changeSets.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Blocking task that returns success or an error and list of pulled and merged changeSets.
     IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullAndMerge(Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming ChangeSets and then send the outgoing ChangeSets.
     //! @param[in] description ChangeSet description.
@@ -106,8 +113,10 @@ public:
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
     IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
-        Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1);
+                                                              Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
+                                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+                                                              ICancellationTokenPtr cancellationToken = nullptr, 
+                                                              int attemptsCount = 1);
 
     //! Returns true if briefcase is up to date and there are no ChangeSets pending. This will end up sending request to the server.
     //! @param[in] cancellationToken
@@ -117,25 +126,27 @@ public:
     //! Return true if able to subscribe to given event types
     //! @param[in] eventTypes Event types callback function must be called for
     //! @param[in] callback   Callback method that is called after one of eventTypes event occurs
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr  SubscribeEventsCallback (EventTypeSet* eventTypes, EventCallbackPtr callback) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr  SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback) const;
 
     //! Stops catching events and calling callback
     //! @param[in] callback   Callback that should be stopped calling
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr  UnsubscribeEventsCallback (EventCallbackPtr callback) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr  UnsubscribeEventsCallback(EventCallbackPtr callback) const;
 
     //! Updates briefcase to specified Version
     //! @param[in] versionId
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Updates briefcase to specified ChangeSet
     //! @param[in] changeSetId
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

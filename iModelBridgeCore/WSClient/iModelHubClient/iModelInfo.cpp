@@ -75,9 +75,11 @@ iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModel
     {
     Utf8String name = properties[ServerSchema::Property::iModelName].GetString();
     Utf8String description = properties[ServerSchema::Property::iModelDescription].GetString();
-    Utf8String userUploaded = properties.HasMember(ServerSchema::Property::UserCreated) ? properties[ServerSchema::Property::UserCreated].GetString() : "";
+    Utf8String userUploaded = properties.HasMember(ServerSchema::Property::UserCreated) ? 
+                                                   properties[ServerSchema::Property::UserCreated].GetString() : "";
     DateTime createdDate;
-    Utf8String dateStr = properties.HasMember(ServerSchema::Property::CreatedDate) ? properties[ServerSchema::Property::CreatedDate].GetString() : "";
+    Utf8String dateStr = properties.HasMember(ServerSchema::Property::CreatedDate) ? 
+        properties[ServerSchema::Property::CreatedDate].GetString() : "";
     if (!dateStr.empty())
         DateTime::FromString(createdDate, dateStr.c_str());
     return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo);

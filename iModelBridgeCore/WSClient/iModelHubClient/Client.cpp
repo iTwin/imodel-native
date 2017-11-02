@@ -19,7 +19,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGN
 
-BriefcaseFileNameCallback Client::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, iModelInfoCR iModelInfo, FileInfoCR fileInfo)
+BriefcaseFileNameCallback Client::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, iModelInfoCR iModelInfo, 
+                                                               FileInfoCR fileInfo)
     {
     baseDirectory.AppendToPath(BeFileName(iModelInfo.GetId()));
     BeFileName briefcaseId;
@@ -81,7 +82,7 @@ iModelConnectionTaskPtr Client::ConnectToiModel(Utf8StringCR projectId, Utf8Stri
         }
 
     return GetiModelById(projectId, iModelId, cancellationToken)
-        ->Then<iModelConnectionResult>([=] (iModelResultCR result)
+        ->Then<iModelConnectionResult>([=](iModelResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -105,19 +106,25 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<WSObjectsResult> ExecuteOnQueryFailure(WSObjectsResult result, ICancellationTokenPtr cancellationToken, IWSRepositoryClientPtr client, WSQuery query)
-{
-    if (!result.IsSuccess())
+AsyncTaskPtr<WSObjectsResult> ExecuteOnQueryFailure
+(
+WSObjectsResult result, 
+ICancellationTokenPtr cancellationToken, 
+IWSRepositoryClientPtr client, 
+WSQuery query
+)
     {
+    if (!result.IsSuccess())
+        {
         // TODO: This check should be removed after UserInfo will be available in PROD.
         if (WSError::Id::ClassNotFound == result.GetError().GetId())
             {
             return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken);
             }
         return CreateCompletedAsyncTask<WSObjectsResult>(WSObjectsResult::Error(result.GetError()));
-    }
+        }
     return CreateCompletedAsyncTask<WSObjectsResult>(result);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -150,18 +157,18 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", projectId.c_str());
 
     std::shared_ptr<iModelsResult> finalResult = std::make_shared<iModelsResult>();
-  
+
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const & result)
-        { 
+        {
         WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
         ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
             {
             if (!result.IsSuccess())
-               {
-               LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-               finalResult->SetError(result.GetError());
-               return;
-               }
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                finalResult->SetError(result.GetError());
+                return;
+                }
             bvector<iModelInfoPtr> iModels;
             for (const auto& iModel : result.GetValue().GetInstances())
                 {
@@ -172,10 +179,10 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
             finalResult->SetSuccess(iModels);
             });
-    })->Then<iModelsResult>([=] 
-        {
-        return *finalResult;
-        });
+        })->Then<iModelsResult>([=]
+            {
+            return *finalResult;
+            });
 
 
     }
@@ -214,8 +221,8 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const & result)
-        { 
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const & result)
+        {
         WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
         query.SetFilter(filter);
         ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
@@ -279,32 +286,32 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const & result)
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const & result)
         {
         WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
         query.SetFilter(filter);
-            ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
+        ExecuteOnQueryFailure(result, cancellationToken, client, query)->Then([=](WSObjectsResult const & result)
+            {
+            if (!result.IsSuccess())
                 {
-                if (!result.IsSuccess())
-                    {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                    finalResult->SetError(result.GetError());
-                    return;
-                    }
-            
-                auto iModelInfoInstances = result.GetValue().GetInstances();
-                if (iModelInfoInstances.Size() == 0)
-                    {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
-                    finalResult->SetError(Error::Id::iModelDoesNotExist);
-                    return;
-                    }
-                iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-                finalResult->SetSuccess(iModelInfo);
-                });
-        })->Then<iModelResult>([=] 
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                finalResult->SetError(result.GetError());
+                return;
+                }
+
+            auto iModelInfoInstances = result.GetValue().GetInstances();
+            if (iModelInfoInstances.Size() == 0)
+                {
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
+                finalResult->SetError(Error::Id::iModelDoesNotExist);
+                return;
+                }
+            iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
+            finalResult->SetSuccess(iModelInfo);
+            });
+        })->Then<iModelResult>([=]
             {
             return *finalResult;
             });
@@ -329,7 +336,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
-                                                               ICancellationTokenPtr cancellationToken) const
+                                           ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateiModelInstance";
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
@@ -348,7 +355,8 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
             Json::Value json;
             createiModelResult.GetValue().GetJson(json);
             JsonValueCR iModelInstance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            auto iModelInfo = iModelInfo::Parse(ToRapidJson(iModelInstance[ServerSchema::Properties]), iModelInstance[ServerSchema::InstanceId].asString(), nullptr, m_serverUrl);
+            auto iModelInfo = iModelInfo::Parse(ToRapidJson(iModelInstance[ServerSchema::Properties]), 
+                                                iModelInstance[ServerSchema::InstanceId].asString(), nullptr, m_serverUrl);
             finalResult->SetSuccess(iModelInfo);
             return;
             }
@@ -404,8 +412,9 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, bool waitForInitialized,
-    Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, 
+                                      bool waitForInitialized, Http::Request::ProgressCallbackCR callback, 
+                                      ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateNewiModel";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -437,7 +446,7 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, U
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating iModel instance. Name: %s.", iModelName.c_str());
     return CreateiModelInstance(projectId, iModelName, description, cancellationToken)
-        ->Then([=] (iModelResultCR createiModelResult)
+        ->Then([=](iModelResultCR createiModelResult)
         {
         if (!createiModelResult.IsSuccess())
             {
@@ -451,7 +460,7 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, U
 
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Successfully created iModel instance. Instance ID: %s.", iModelInfo->GetId().c_str());
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to created iModel.");
-        ConnectToiModel(*iModelInfo, cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
+        ConnectToiModel(*iModelInfo, cancellationToken)->Then([=](iModelConnectionResultCR connectionResult)
             {
             if (!connectionResult.IsSuccess())
                 {
@@ -461,7 +470,8 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, U
                 }
             iModelConnectionPtr connection = connectionResult.GetValue();
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Uploading new seed file.");
-            connection->UploadNewSeedFile(filePath, *fileInfo, waitForInitialized, callback, cancellationToken)->Then([=] (FileResultCR fileUploadResult)
+            connection->UploadNewSeedFile(filePath, *fileInfo, waitForInitialized, callback, cancellationToken)
+                ->Then([=](FileResultCR fileUploadResult)
                 {
                 if (!fileUploadResult.IsSuccess())
                     {
@@ -483,7 +493,7 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, U
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
 iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, bool waitForInitialized, Http::Request::ProgressCallbackCR callback,
-    ICancellationTokenPtr cancellationToken) const
+                                      ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateNewiModel";
     if (!db.GetFileName().DoesPathExist())
@@ -504,7 +514,7 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, b
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Request::ProgressCallbackCR callback,
-    ICancellationTokenPtr cancellationToken) const
+                                       ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::OpenBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -530,11 +540,12 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
     if (iModelInfo->GetServerURL() != m_serverUrl)
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Briefcase belongs to another server.");
-        return CreateCompletedAsyncTask<BriefcaseResult>(BriefcaseResult::Error({Error::Id::InvalidServerURL, ErrorLocalizedString(MESSAGE_BriefcaseWrongURL)}));
+        return CreateCompletedAsyncTask<BriefcaseResult>(BriefcaseResult::Error({Error::Id::InvalidServerURL, 
+                                                                                ErrorLocalizedString(MESSAGE_BriefcaseWrongURL)}));
         }
     std::shared_ptr<BriefcaseResult> finalResult = std::make_shared<BriefcaseResult>();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to iModel %s.", iModelInfo->GetName().c_str());
-    return ConnectToiModel(*iModelInfo, cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
+    return ConnectToiModel(*iModelInfo, cancellationToken)->Then([=](iModelConnectionResultCR connectionResult)
         {
         if (!connectionResult.IsSuccess())
             {
@@ -546,7 +557,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
         FileInfoPtr fileInfo = FileInfo::Create(*db, "");
         auto connection = connectionResult.GetValue();
         connection->ValidateBriefcase(fileInfo->GetFileId(), briefcaseId, cancellationToken)
-            ->Then([=] (StatusResultCR validationResult)
+            ->Then([=](StatusResultCR validationResult)
             {
             if (!validationResult.IsSuccess())
                 {
@@ -558,7 +569,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
             if (doSync)
                 {
                 LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
-                briefcase->PullAndMerge(callback, cancellationToken)->Then([=] (const ChangeSetsResult& result)
+                briefcase->PullAndMerge(callback, cancellationToken)->Then([=](const ChangeSetsResult& result)
                     {
                     if (result.IsSuccess())
                         {
@@ -580,7 +591,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
                 finalResult->SetSuccess(briefcase);
                 }
             });
-        })->Then<BriefcaseResult>([=] ()
+        })->Then<BriefcaseResult>([=]()
             {
             return *finalResult;
             });
@@ -590,7 +601,7 @@ BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Requ
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::ProgressCallbackCR callback,
-                                                       ICancellationTokenPtr cancellationToken) const
+                                       ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::RecoverBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -660,7 +671,8 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
     BeFileNameStatus status = BeFileName::BeMoveFile(originalFilePath, backupPath);
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
-    try {
+    try
+        {
         BreakHelper::HitBreakpoint(Breakpoints::Client_AfterDeleteBriefcase);
         }
     catch (...)
@@ -750,9 +762,9 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Download successful.");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Download successful.");
 
-    BriefcaseInfoPtr briefcaseInfo = new BriefcaseInfo (briefcaseID);
+    BriefcaseInfoPtr briefcaseInfo = new BriefcaseInfo(briefcaseID);
     briefcaseInfo->SetLocalPath(filePath);
     return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Success(briefcaseInfo));
     }
@@ -760,29 +772,31 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
-DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions)
-{
+DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
+                                               SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions)
+    {
     bvector<DgnRevisionCP> changeSetsToMerge;
     ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
 
     auto upgradeOptions = SchemaUpgradeOptions(changeSetsToMerge);
     upgradeOptions.SetUpgradeFromDomains(domainUpgradeOptions);
-    return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, upgradeOptions));
-}
+    return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, 
+                                                                          upgradeOptions));
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets)
-{
+    {
     return OpenWithSchemaUpgradeInternal(status, filePath, changeSets);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
 StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, FileInfoCR fileInfo,
-                                                        bool doSync, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+                                       bool doSync, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::DownloadBriefcase";
     if (!doSync)
@@ -801,9 +815,11 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     handler.AddCallback(briefcaseCallback, 80.0f);
     
     Utf8String mergedChangeSetId = seedFileInfoResult->GetValue()->GetMergedChangeSetId();
-    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
+    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, 
+                                                                                 cancellationToken);
 
-    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), briefcaseCallback, cancellationToken);
+    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), 
+                                                                     briefcaseCallback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, briefcaseResult.GetError().GetMessage().c_str());
@@ -827,7 +843,8 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return StatusResult::Error(pullChangeSetsResult.GetError());
         }
 
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", fileInfo.GetMergedChangeSetId().c_str());
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", 
+                   fileInfo.GetMergedChangeSetId().c_str());
 
     // If seedFile and briefacase id's do not match, query new changeset's
     Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
@@ -856,7 +873,8 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath)
+StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
+                                              ICancellationTokenPtr cancellationToken)
     {
     const Utf8String methodName = "Client::MergeChangeSetsIntoDgnDb";
 
@@ -910,8 +928,9 @@ StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
-BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFileNameCR baseDirectory, bool doSync, BriefcaseFileNameCallback const& fileNameCallback,
-                                                                   Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFileNameCR baseDirectory, bool doSync, 
+                                                   BriefcaseFileNameCallback const& fileNameCallback, Http::Request::ProgressCallbackCR callback, 
+                                                   ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::AcquireBriefcaseToDir";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -987,7 +1006,7 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 BriefcaseInfoTaskPtr Client::AcquireBriefcase(iModelInfoCR iModelInfo, BeFileNameCR localFileName, bool doSync,
-                                                              Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+                                              Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::AcquireBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -996,7 +1015,8 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcase(iModelInfoCR iModelInfo, BeFileNam
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "File already exists.");
         return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::FileAlreadyExists));
         }
-    return AcquireBriefcaseToDir(iModelInfo, localFileName, doSync, [=] (BeFileName baseDirectory, BeBriefcaseId, iModelInfoCR iModelInfo, FileInfoCR fileInfo)
+    return AcquireBriefcaseToDir(iModelInfo, localFileName, doSync, [=](BeFileName baseDirectory, BeBriefcaseId, iModelInfoCR iModelInfo, 
+                                                                        FileInfoCR fileInfo)
         {
         if (baseDirectory.IsDirectory())
             baseDirectory.AppendToPath(BeFileName(fileInfo.GetFileName()));
@@ -1013,7 +1033,8 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, m_customHandler);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, 
+                                                               m_customHandler);
     client->SetCredentials(m_credentials);
 
     Utf8String briefcaseIdString;
@@ -1021,7 +1042,7 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     ObjectId iModelId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending abandon briefcase request. iModel ID: %s.", iModelInfo.GetId().c_str());
-    return client->SendDeleteObjectRequest(iModelId, cancellationToken)->Then<StatusResult>([=] (WSDeleteObjectResult const& result)
+    return client->SendDeleteObjectRequest(iModelId, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
         {
         if (!result.IsSuccess())
             {
@@ -1068,10 +1089,11 @@ StatusTaskPtr Client::DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelIn
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             09/2016
 //---------------------------------------------------------------------------------------
-iModelManagerTaskPtr Client::CreateiModelManager(iModelInfoCR iModelInfo, FileInfoCR fileInfo, BriefcaseInfoCR briefcaseInfo, ICancellationTokenPtr cancellationToken)
+iModelManagerTaskPtr Client::CreateiModelManager(iModelInfoCR iModelInfo, FileInfoCR fileInfo, BriefcaseInfoCR briefcaseInfo, 
+                                                 ICancellationTokenPtr cancellationToken)
     {
     iModelManagerResultPtr finalResult = std::make_shared<iModelManagerResult>();
-    return ConnectToiModel(iModelInfo, cancellationToken)->Then([=] (iModelConnectionResultCR connectionResult)
+    return ConnectToiModel(iModelInfo, cancellationToken)->Then([=](iModelConnectionResultCR connectionResult)
         {
         if (!connectionResult.IsSuccess())
             {
@@ -1079,7 +1101,7 @@ iModelManagerTaskPtr Client::CreateiModelManager(iModelInfoCR iModelInfo, FileIn
             return;
             }
         auto connection = connectionResult.GetValue();
-        connection->ValidateBriefcase(fileInfo.GetFileId(), briefcaseInfo.GetId(), cancellationToken)->Then([=] (StatusResultCR result)
+        connection->ValidateBriefcase(fileInfo.GetFileId(), briefcaseInfo.GetId(), cancellationToken)->Then([=](StatusResultCR result)
             {
             if (!result.IsSuccess())
                 {
@@ -1090,16 +1112,22 @@ iModelManagerTaskPtr Client::CreateiModelManager(iModelInfoCR iModelInfo, FileIn
                 finalResult->SetSuccess(iModelManager::Create(connection));
                 }
             });
-        })->Then<iModelManagerResult>([=] ()
-                {
-                return *finalResult;
-                });
+        })->Then<iModelManagerResult>([=]()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion
+(
+iModelInfoCR iModelInfo, Utf8String versionId, 
+LocalBriefcaseFileNameCallback const & fileNameCallBack,
+Http::Request::ProgressCallbackCR callback,
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Client::DownloadStandaloneBriefcaseUpdatedToVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1142,7 +1170,14 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet
+(
+iModelInfoCR iModelInfo, 
+Utf8String changeSetId, 
+LocalBriefcaseFileNameCallback const & fileNameCallback, 
+Http::Request::ProgressCallbackCR callback, 
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Client::DownloadStandaloneBriefcaseUpdatedToChangeSet";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1194,7 +1229,8 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelIn
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const & fileNameCallback, 
+                                                      Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::DownloadStandaloneBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1236,7 +1272,16 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, L
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal
+(
+iModelConnectionPtr connection, 
+iModelInfoCR iModelInfo, 
+FileInfoCR fileInfo, 
+bvector<ChangeSetInfoPtr> changeSetsToMerge, 
+LocalBriefcaseFileNameCallback const & fileNameCallback, 
+Http::Request::ProgressCallback callback, 
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Client::DownloadStandaloneBriefcaseInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1281,7 +1326,8 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPt
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, 
+                                                                                       SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
