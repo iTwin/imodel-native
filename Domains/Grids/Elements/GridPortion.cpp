@@ -108,7 +108,9 @@ void GridPortion::RotateToAngleXY(GridElementVector& grid, double theta)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     09/17
 //---------------------------------------------------------------------------------------
-DPlane3d GridPortion::GetPlane ()
+DPlane3d GridPortion::GetPlane 
+(
+) const
     {
     DPlane3d plane;
     plane.Zero ();
@@ -246,6 +248,51 @@ GridPortionPtr GridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, U
                                                                                                                     GRIDS_AUTHORITY_GridPortion,
                                                                                                                     parentId,
                                                                                                                     gridName));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridPortion::Validate
+(
+) const
+    {
+    DPlane3d plane = GetPlane ();
+    if (bsiDPlane3d_isZero(&plane)) //plane must be set
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    return Dgn::DgnDbStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridPortion::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnInsert ();
+    if (status == Dgn::DgnDbStatus::Success)
+        {
+        return Validate ();
+        }
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridPortion::_OnUpdate
+(
+    Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate (original);
+    if (status == Dgn::DgnDbStatus::Success)
+        {
+        return Validate ();
+        }
+    return status;
     }
 
 

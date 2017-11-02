@@ -53,6 +53,20 @@ protected:
     GRIDELEMENTS_EXPORT static BentleyStatus InsertGridMapElements(GridAxisMap elements);
 
     GRIDELEMENTS_EXPORT static GridPortionPtr Create(Dgn::DgnModelCR model, DVec3d normal);
+
+    Dgn::DgnDbStatus Validate () const;
+
+    //! Called when an element is about to be inserted into the DgnDb.
+    //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert () override;
+
+    //! Called when this element is about to be replace its original element in the DgnDb.
+    //! @param [in] original the original state of this element.
+    //! Subclasses may override this method to control whether their instances are updated.
+    //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPortion, GRIDELEMENTS_EXPORT)
 
@@ -73,7 +87,7 @@ public:
 
     //! gets the perpendicularity plane of this Grid
     //! @return             perpendicularity plane of this Grid
-    GRIDELEMENTS_EXPORT DPlane3d    GetPlane ();
+    GRIDELEMENTS_EXPORT DPlane3d    GetPlane () const;
 
     //! Translates grid to given point, 
     //! @param[in] point    point to translate to

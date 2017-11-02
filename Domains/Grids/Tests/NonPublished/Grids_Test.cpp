@@ -111,3 +111,57 @@ TEST_F (GridsTestFixture, CreateOrthogonalGrid_Constrained)
     }
 
 
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Jonas.Valiunas                  10/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
+    {
+    DgnDbR db = *DgnClientApp::App ().Project ();
+
+
+    {
+    // create new definition model
+    GridSurfaceHandler& handler = GridSurfaceHandler::GetHandler ();
+    DgnClassId classId = db.Domains ().GetClassId (handler);
+    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
+
+    GeometricElement3dPtr element = dynamic_cast<GeometricElement3d*>(handler.Create (params).get());
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), GRIDS_CATEGORY_CODE_Uncategorized);
+
+    element->SetCategoryId (categoryId);
+    element->Insert ();
+
+    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert surface created via handler";
+    }
+
+    {
+    // create new definition model
+    GridPortionHandler& handler = GridPortionHandler::GetHandler ();
+    DgnClassId classId = db.Domains ().GetClassId (handler);
+    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
+
+    GeometricElement3dPtr element = dynamic_cast<GeometricElement3d*>(handler.Create (params).get ());
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), GRIDS_CATEGORY_CODE_Uncategorized);
+
+    element->SetCategoryId (categoryId);
+    element->Insert ();
+
+    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert portion created via handler";
+    }
+
+    {
+    // create new definition model
+    GridAxisHandler& handler = GridAxisHandler::GetHandler ();
+    DgnClassId classId = db.Domains ().GetClassId (handler);
+    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
+
+    DgnElementPtr element = handler.Create (params);
+    element->Insert ();
+
+    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert axis created via handler";
+    }
+    db.SaveChanges ();
+    //TODO: check geometry & positions of all gridplaneSurfaces
+    //TODO: check other methods - transform rotate etc
+    }
