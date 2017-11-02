@@ -59,6 +59,7 @@
         <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot" LibType="Static"/>
         <ProductDirectory Name="Libs"                      Path=""          RelativeTo="Assemblies"/>
+        <ProductDirectory Name="Libs"                      Path=""          RelativeTo="Assemblies" LibType="Static"/>
         <ProductDirectory Name="PublicApi"                 Path="include"   RelativeTo="applicationroot"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies" LibType="Static"/>
