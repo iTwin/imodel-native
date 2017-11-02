@@ -201,9 +201,13 @@ iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAffinity, BentleyApi::BeFileName const& thisLibraryPath, BentleyApi::BeFileName const& sourceFileName)
+void iModelBridge_getAffinity(WCharP buffer,
+                              const size_t bufferSize,
+                              iModelBridgeAffinityLevel& affinityLevel,
+                              WCharCP affinityLibraryPath,
+                              WCharCP sourceFileNam)
     {
     // I cannot tell if a given V8 file is part of a tiled file set or not. So, I cannot report any affinity to V8 files.
     // The bridge fwk must some other means, perhaps direct user input, to determine when to use a tiled file bridge instead of a root model bridge.
-    bridgeAffinity.m_affinity = BentleyApi::Dgn::iModelBridge::Affinity::None;
+    affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::None;
     }
