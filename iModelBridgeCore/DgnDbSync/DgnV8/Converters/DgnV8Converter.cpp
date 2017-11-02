@@ -30,12 +30,18 @@ iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAffinity, BentleyApi::BeFileName const& thisLibraryPath, BentleyApi::BeFileName const& sourceFileName)
+void iModelBridge_getAffinity(WCharP buffer,
+                              const size_t bufferSize,
+                              iModelBridgeAffinityLevel& affinityLevel,
+                              WCharCP affinityLibraryPathStr,
+                              WCharCP sourceFileNameStr)
     {
-    if (BSISUCCESS == Converter::CheckCanOpenFile(sourceFileName, thisLibraryPath))
+    BentleyB0200::BeFileName sourceFileName(sourceFileNameStr);
+    BentleyB0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
+    if (BSISUCCESS == Converter::CheckCanOpenFile(sourceFileName, affinityLibraryPath))
         {
-        bridgeAffinity.m_affinity = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-        bridgeAffinity.m_bridgeRegSubKey = L"DgnV8Bridge";
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DgnV8Bridge");
         }
 
 #ifdef COMMENT_OUT_EXAMPLE_CODE

@@ -615,10 +615,11 @@ int iModelBridgeRegistry::ComputeAffinityMain(int argc, WCharCP argv[])
         {
         BeFileName filePath(filePathUtf8, true);
         filePath.RemoveQuotes();
-        iModelBridgeWithAffinity bridge;
-        bridge.m_bridgeRegSubKey = L"dummy";    // *** TRICKY: See comment below "Don't pass empty string to bridge"
-        getAffinity(bridge, affinityLibraryPath, filePath);
-        fprintf(stdout, "%d\n%s\n", (int)bridge.m_affinity, Utf8String(bridge.m_bridgeRegSubKey).c_str());
+        
+        WChar registryName[MAX_PATH] = {0};
+        iModelBridgeAffinityLevel affinity;
+        getAffinity(registryName, MAX_PATH, affinity, affinityLibraryPath.c_str(), filePath.c_str());
+        fprintf(stdout, "%d\n%s\n", (int) affinity, Utf8String(registryName).c_str());
         fflush(stdout);
         }
 
