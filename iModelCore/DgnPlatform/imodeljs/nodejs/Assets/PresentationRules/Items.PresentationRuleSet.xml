@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <PresentationRuleSet RuleSetId="Items" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
-                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                     xsi:noNamespaceSchemaLocation="../../../ECPresentation/Source/RulesDriven/Rules/xsd/PresentationRuleSetSchema.xsd">
 
     <!-- Label overrides -->
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Volume", "ProStructures")' Label='this.NAME' OnlyIfNotHandled='true' />
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Equipment", "AutoPlantPDWPersistenceStrategySchema")' Label='this.TAG' OnlyIfNotHandled='true' />
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Pipeline", "AutoPlantPDWPersistenceStrategySchema")' Label='this.NAME' OnlyIfNotHandled='true' />
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Component", "AutoPlantPDWPersistenceStrategySchema")' Label='this.COMPONENT_ID' OnlyIfNotHandled='true' />
     <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("DefinitionPartition", "BisCore") ANDALSO ThisNode.InstanceId = "16"' Label='"Dictionary"' Priority='200'/>
     <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("LinkPartition", "BisCore") ANDALSO ThisNode.InstanceId = "14"' Label='"Reality Data Links"' Priority='200'/>
     <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' Label='IIF(IsNull(this.UserLabel) OR this.UserLabel="", this.CodeValue, this.UserLabel)' OnlyIfNotHandled='true' Priority='100' />
@@ -27,10 +24,11 @@
             RelationshipClassNames='BisCore:SubjectOwnsPartitionElements' RequiredDirection='Forward' 
             RelatedClassNames='BisCore:InformationPartitionElement'
             GroupByClass='false' GroupByLabel='false'/>
+        <!-- No such relationship: BisCore:SubjectOwnsChildSubjects
         <RelatedInstances 
-            RelationshipClassNames='BisCore:SubjectOwnsSubjects' RequiredDirection='Forward' 
+            RelationshipClassNames='BisCore:SubjectOwnsChildSubjects' RequiredDirection='Forward' 
             RelatedClassNames='BisCore:Subject'
-            GroupByClass='false' GroupByLabel='false'/>
+            GroupByClass='false' GroupByLabel='false'/>-->
     </ChildNodeRule>
 
     <!-- Navigation of InformationPartitionElement / Model hierarchy -->
@@ -98,7 +96,7 @@
     <ChildNodeRule Condition='ParentNode.IsInstanceNode ANDALSO ParentNode.ECInstance.IsOfClass("RenderMaterial", "BisCore")'>
         <RelatedInstances
             RelationshipClassNames='BisCore:RenderMaterialOwnsRenderMaterials' RequiredDirection='Forward'
-            RelatedClassNames='BisCore:MaterialElement'
+            RelatedClassNames='BisCore:RenderMaterial'
             GroupByClass='false' GroupByLabel='false'/>
     </ChildNodeRule>
 
@@ -168,35 +166,28 @@
 
 
     <!-- Content rules -->
-    <!-- Selection scope: Model -->
-    <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Model", "BisCore")' OnlyIfNotHandled='true'>
+    <!-- Grid / DGN view -->
+    <ContentRule Condition='(ContentDisplayType = "Grid" OR ContentDisplayType = "Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Model", "BisCore")' OnlyIfNotHandled='true'>
         <ContentRelatedInstances RelationshipClassNames='BisCore:ModelContainsElements' RequiredDirection='Forward' />
     </ContentRule>
-    <!-- Selection scope: Category -->
-    <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Category", "BisCore")' OnlyIfNotHandled='true'>
+    <ContentRule Condition='(ContentDisplayType = "Grid" OR ContentDisplayType = "Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Category", "BisCore")' OnlyIfNotHandled='true'>
         <ContentRelatedInstances RelationshipClassNames='BisCore:GeometricElement2dIsInCategory,GeometricElement3dIsInCategory' RequiredDirection='Backward' />
     </ContentRule>
-    <!-- Selection scope: Top Assembly / Assembly -->
-    <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore")' OnlyIfNotHandled='true'>
+    <ContentRule Condition='(ContentDisplayType = "Grid" OR ContentDisplayType = "Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore")' OnlyIfNotHandled='true'>
         <ContentRelatedInstances RelationshipClassNames='BisCore:ElementOwnsChildElements' RelatedClassNames='BisCore:Element' RequiredDirection='Forward' IsRecursive='true' />
         <SelectedNodeInstances />
     </ContentRule>
-    <!-- Selection scope: PhysicalElement -->
-    <ContentRule Condition='SelectedNode.ECInstance.IsOfClass("PhysicalElement", "BisCore")' OnlyIfNotHandled='true'>
-        <SelectedNodeInstances>
-            <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
-        </SelectedNodeInstances>
-    </ContentRule>
-    <!-- Selection scope: SpatialLocationElement -->
-    <ContentRule Condition='SelectedNode.ECInstance.IsOfClass("SpatialLocationElement", "BisCore")' OnlyIfNotHandled='true'>
-        <SelectedNodeInstances>
-            <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
-        </SelectedNodeInstances>
-    </ContentRule>
-    <!-- Selection scope: Any other (including Element) -->
+    <!-- Any other (property pane, list, other) -->
     <ContentRule OnlyIfNotHandled='true'>
         <SelectedNodeInstances />
     </ContentRule>
 
+    <!-- Content modifiers that apply to any content rule -->
+    <ContentModifier ClassName="PhysicalElement" SchemaName="BisCore">
+        <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
+    </ContentModifier>
+    <ContentModifier ClassName="SpatialLocationElement" SchemaName="BisCore">
+        <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
+    </ContentModifier>
 
 </PresentationRuleSet>

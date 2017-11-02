@@ -68,10 +68,16 @@
         <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
-        <SubPart LibType="Static" PartName="CSMap" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
         <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
+
+        <!--
+            Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
+            JM: We end up with the full geocoord set on Windows and iOS due to other platform-specific parts including it. These are missing on Android, and it is suspected to cause problems. Based on the description above, I am unifying DgnPlatformDLL to use the full set, so at least we're consistent across platforms.
+        -->
+        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
@@ -617,84 +623,6 @@
        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
     </ProductDirectoryList>
     
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // TilePublisher                                                           // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-
-    <Part Name="TilePublisherPublicAPI" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="TilePublisher" />
-        </Bindings>
-    </Part>
-
-    <Part Name="CesiumJs" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
-        <Bindings>
-            <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
-        </Bindings>
-    </Part>
-
-    <!-- Presentation rules for tile publisher -->
-    <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
-        <Bindings>
-            <Directory ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules" SourceName="Delivery/Assets/PresentationRules"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
-        <SubPart PartName="CesiumJs" />
-        <SubPart PartName="TilePublisherPublicAPI" />
-        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
-        <SubPart PartName="CSMapData" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
-        <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
-        <SubPart PartName="Crunch" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="Planning"            PartFile="Planning" 			Repository="DgnDomains-Planning"/>
-        <SubPart PartName="PlanningView"        PartFile="Planning" 			Repository="DgnDomains-Planning"/>
-		<SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
-        <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
-        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
-        <SubPart PartName="TilePublisherAssets" PartFile="DgnPlatform"          Repository="DgnPlatform"/>
-
-        <Bindings>
-            <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-    
-    <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubProduct ProductName="TilePublisher" />
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
-        </Bindings>
-    </Part>
-
-    <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="TilePublisherExe" />
-    </Part>
-  																																																		                    
-    <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
-        <SubPart PartName="TilePublisherExe" />
-    </Part>																																										 
-
-    <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
-        <SubPart PartName="TilePublisherLib" />
-        <SubPart PartName="DgnPlatformSqlang" />
-        <Bindings>
-            <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Product Name="TilePublisher">
-        <SubPart PartName="TilePublisherExe-Windows" LibType="Dynamic" />
-        <SubPart PartName="TilePublisherExe-Unix" LibType="Static"/>
-        <Directories DirectoryListName="TilePublisherDirs" />
-    </Product>
-
     <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <SubPart PartName="DgnPlatformDLL" />
@@ -702,19 +630,6 @@
             <Assemblies>Delivery/Bentley.DgnPlatformNET.dll</Assemblies>
         </Bindings>
     </Part>
-
-    <ProductDirectoryList ListName="TilePublisherDirs" >
-        <ProductDirectory Name="ApplicationRoot" Path=""/>
-        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot" LibType="Static"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
-        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
-        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
-        <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
-        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
-    </ProductDirectoryList>
 
     <!-- *********************************************************** -->
     <!-- **** NuGet package creation                            **** -->
