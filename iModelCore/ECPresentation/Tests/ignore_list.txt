@@ -10,8 +10,3 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-MemoryNodesCacheTests.GetFilteredNodes
-MemoryNodesCacheTests.GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren
-DiskNodesCacheTests.GetFilteredNodes
-DiskNodesCacheTests.GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren
-RulesDrivenECPresentationManagerNavigationTests.ReturnsFilteredNodesFromNotExpandedHierarchy
