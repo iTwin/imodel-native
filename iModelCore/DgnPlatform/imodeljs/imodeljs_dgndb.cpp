@@ -335,23 +335,6 @@ DgnDbStatus IModelJs::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value c
     return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, JsonValueR result, DgnDbR dgndb, Utf8CP eidstr)
-    {
-    DgnElementId elemId(DgnElementId::FromString(eidstr).GetValueUnchecked());
-    if (!elemId.IsValid())
-        {
-        status = DgnDbStatus::InvalidId;
-        return BSIERROR;
-        }
-
-    //DgnECPersistence is deprecated -> use PresentationRules instead
-    return BSIERROR;
-    }
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
