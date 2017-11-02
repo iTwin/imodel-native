@@ -13,6 +13,8 @@
 //  have to disallow "using namespace BentleyB0200".
 #define NO_USING_NAMESPACE_BENTLEY 1
 
-#include <ORDBridge/ORDBridgeApi.h>
+#include <CS06Bridge/CS06BridgeApi.h>
+
+USING_NAMESPACE_BENTLEY_DGN
 
 #endif

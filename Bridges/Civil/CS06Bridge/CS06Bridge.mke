@@ -44,11 +44,9 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-#$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(appPublicApi)ORDBridge.h
-#
-#$(o)ORDBridge$(oext) : $(_MakeFilePath)ORDBridge.cpp ${MultiCompileDepends} $(appPublicApi)ORDBridge.h
-#
-#$(o)ORDConverter$(oext) : $(_MakeFilePath)ORDConverter.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDConverter.h
+$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(appPublicApi)CS06Bridge.h
+
+$(o)CS06Bridge$(oext) : $(_MakeFilePath)CS06Bridge.cpp ${MultiCompileDepends} $(appPublicApi)CS06Bridge.h
 
 %include MultiCppCompileGo.mki
 
@@ -73,7 +71,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSeria
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
+#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
 #LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 #LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)

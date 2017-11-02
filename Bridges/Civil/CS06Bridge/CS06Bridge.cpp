@@ -147,12 +147,17 @@ void CS06Bridge::UpdateProjectExtents(SpatialModelR spatialModel)
         }
     }
 
+void CS06Bridge::_OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docSyncInfoid)
+	{
+	// TODO: Implement this.
+	}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
     {
-    auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
+    //auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
     /*ORDConverter converter;
     converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr);
@@ -167,17 +172,9 @@ BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
     RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(jobSubject, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);*/
 
     // Infer deletions
-    changeDetectorPtr->_DeleteElementsNotSeen();
+    //changeDetectorPtr->_DeleteElementsNotSeen();
 
     return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CS06Bridge::_OnSourceFileDeleted()
-    {
-    // TODO
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -194,6 +194,7 @@
   <ProductDirectoryList ListName="CS06BridgeDirectoryList">
     <ProductDirectory Name="ApplicationRoot" Path=""/>
     <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
     <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
     <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
     <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="ApplicationRoot"/>
@@ -203,6 +204,7 @@
     <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="ApplicationRoot"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="CSDgnDb06Dlls"  RelativeTo="ApplicationRoot" Path="CSDgnDb06"/>
   </ProductDirectoryList>
 
   <Part Name="CS06BridgeLibrary" BentleyBuildMakeFile="CS06Bridge/CS06Bridge.mke" >
