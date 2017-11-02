@@ -1576,6 +1576,10 @@ public:
     //! This is merely a templated shortcut to dynamic_cast the return of CopyForEdit to a subclass of DgnElement.
     template<class T> RefCountedPtr<T> MakeCopy() const {return dynamic_cast<T*>(CopyForEdit().get());}
 
+    //! Make a writable copy of the supplied DgnElement so that the copy may be edited. Also see @ref ElementCopying.
+    //! This is merely a templated shortcut to dynamic_cast the return of CopyForEdit to a the supplied DgnElement's actual class.
+    template<class T> static RefCountedPtr<T> MakeCopy(T const& elem) {auto clone=elem.CopyForEdit(); BeAssert(clone.IsNull() || nullptr != dynamic_cast<T*>(clone.get())); return static_cast<T*>(clone.get());}
+
     //! Create a copy of this DgnElement and all of its extended content in a destination model.
     //! The copied element will be persistent in the destination DgnDb. Also see @ref ElementCopying.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.

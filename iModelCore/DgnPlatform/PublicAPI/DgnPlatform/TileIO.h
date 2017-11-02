@@ -82,7 +82,7 @@ struct TileHeader
         {
         bool valid = buffer.Read(format) && buffer.Read(version) && IsValidFormat(format);
         if (!valid)
-            format = Format::Unknown;
+            Invalidate();
 
         return valid;
         }

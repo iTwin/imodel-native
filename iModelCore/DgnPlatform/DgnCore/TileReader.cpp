@@ -1106,7 +1106,7 @@ DgnCacheTileRebuilder::Features DgnCacheTileRebuilder::ReadFeatures(Json::Value 
 QPoint3dCP DgnCacheTileRebuilder::ReadVertices(uint32_t& numVertices, Json::Value const& json)
     {
     auto view = ReadBufferData16(json["attributes"], "POSITION", &numVertices);
-    BeAssert(Gltf::DataType::UnsignedShort == view.m_dataType);
+    BeAssert(Gltf::DataType::UnsignedShort == view.m_storageType);
     return reinterpret_cast<QPoint3dCP>(view.m_data);
     }
 
@@ -1116,7 +1116,7 @@ QPoint3dCP DgnCacheTileRebuilder::ReadVertices(uint32_t& numVertices, Json::Valu
 uint16_t const* DgnCacheTileRebuilder::ReadNormals(Json::Value const& json)
     {
     BufferData16 view = ReadBufferData16(json["attributes"], "NORMAL");
-    BeAssert(Gltf::DataType::UnsignedByte == view.m_dataType); // Ray writes each normal as a Vec2 of 2 bytes...
+    BeAssert(Gltf::DataType::UnsignedByte == view.m_storageType); // Ray writes each normal as a Vec2 of 2 bytes...
     return reinterpret_cast<uint16_t const*>(view.m_data);
     }
 

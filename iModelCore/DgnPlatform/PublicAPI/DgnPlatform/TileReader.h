@@ -30,30 +30,37 @@ struct BufferView
 };
 
 //=======================================================================================
-//! Define conversions between compatible GLTF data types.
-//! A data type is considered 'compatible' if it is a smaller version of the given type
 // @bsistruct                                                   Paul.Connelly   11/17
 //=======================================================================================
-template<Gltf::DataType T> struct DataTypeConversion
+template<Gltf::DataType T, typename UnderlyingType> struct DataTypeConverter
 {
     static bool IsConvertible(Gltf::DataType type) { return T == type; }
+    static UnderlyingType ConvertFrom(void const* data, size_t index, Gltf::DataType type) { return reinterpret_cast<UnderlyingType const*>(data)[index]; }
 };
-template<> struct DataTypeConversion<Gltf::DataType::UnsignedShort>
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct DataTypeConverter16
 {
     using UnderlyingType = uint16_t;
     static bool IsConvertible(Gltf::DataType type) { return Gltf::DataType::UnsignedShort == type || Gltf::DataType::UnsignedByte == type; }
-    static UnderlyingType ConvertFrom(void const* data, size_t index, Gltf::DataType type)
+    static uint16_t ConvertFrom(void const* data, size_t index, Gltf::DataType type)
         {
         return Gltf::DataType::UnsignedShort == type ? reinterpret_cast<uint16_t const*>(data)[index] : reinterpret_cast<uint8_t const*>(data)[index];
         }
 };
-template<> struct DataTypeConversion<Gltf::DataType::UInt32>
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct DataTypeConverter32
 {
     using UnderlyingType = uint32_t;
-    static bool IsConvertible(Gltf::DataType type) { return Gltf::DataType::UInt32 == type || DataTypeConversion<Gltf::DataType::UnsignedShort>::IsConvertible(type); }
-    static UnderlyingType ConvertFrom(void const* data, size_t index, Gltf::DataType type)
+    static bool IsConvertible(Gltf::DataType type) { return Gltf::DataType::UInt32 == type || DataTypeConverter16::IsConvertible(type); }
+    static uint32_t ConvertFrom(void const* data, size_t index, Gltf::DataType type)
         {
-        return Gltf::DataType::UInt32 == type ? reinterpret_cast<uint32_t const*>(data)[index] : DataTypeConversion<Gltf::DataType::UnsignedShort>::ConvertFrom(data, index, type);
+        return Gltf::DataType::UInt32 == type ? reinterpret_cast<uint32_t const*>(data)[index] : DataTypeConverter16::ConvertFrom(data, index, type);
         }
 };
 
@@ -64,32 +71,35 @@ template<> struct DataTypeConversion<Gltf::DataType::UInt32>
 //! on retrieval.
 // @bsistruct                                                   Paul.Connelly   11/17
 //=======================================================================================
-template<Gltf::DataType T> struct BufferData
+template<typename Converter> struct BufferData
 {
     void const*     m_data;
-    Gltf::DataType  m_dataType;
+    Gltf::DataType  m_storageType;
 
     BufferData() : m_data(nullptr) { }
-    BufferData(void const* data, Gltf::DataType type) : m_dataType(type)
+    BufferData(void const* data, Gltf::DataType storageType) : m_storageType(storageType)
         {
-        BeAssert(DataTypeConversion<T>::IsConvertible(type));
-        m_data = DataTypeConversion<T>::IsConvertible(type) ? data : nullptr;
+        BeAssert(Converter::IsConvertible(storageType));
+        m_data = Converter::IsConvertible(storageType) ? data : nullptr;
         }
 
     bool IsValid() const { return nullptr != m_data; }
 
-    auto operator[](size_t index) const -> typename DataTypeConversion<T>::UnderlyingType
+    auto operator[](size_t index) const -> typename Converter::UnderlyingType
         {
         BeAssert(IsValid());
-        return DataTypeConversion<T>::ConvertFrom(m_data, index, m_dataType);
+        return Converter::ConvertFrom(m_data, index, m_storageType);
         }
 };
 
 //! Exposes a GLTF buffer as an array of uint32_t
-typedef BufferData<Gltf::DataType::UInt32> BufferData32;
+using BufferData32 = BufferData<DataTypeConverter32>;
 
 //! Exposes a GLTF buffer as an array of uint16_t
-typedef BufferData<Gltf::DataType::UnsignedShort> BufferData16;
+using BufferData16 = BufferData<DataTypeConverter16>;
+
+//! Exposes a GLTF buffer as an array of float
+using BufferDataFloat = BufferData<DataTypeConverter<Gltf::DataType::Float, float>>;
 
 /*=================================================================================**//**
 * Reads GLTF data.
