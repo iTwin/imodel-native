@@ -278,7 +278,7 @@ public:
 
 //=======================================================================================
 //! A 8-byte value that is locally unique within a BeBriefcase. Since BeBriefcaseId's are forced to be unique externally, a BeBriefcaseBasedId
-//! can be assumed to be globally unique. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
+//! can be assumed to be unique for a given DgnDb. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct BeBriefcaseBasedId : BeInt64Id
