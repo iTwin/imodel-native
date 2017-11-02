@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/BaseMockHttpHandlerTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,24 +11,22 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
-BaseMockHttpHandlerTest::BaseMockHttpHandlerTest ()
-:
-m_handler (std::make_shared<MockHttpHandler> ()),
-m_client (nullptr, m_handler)
-    {
-    }
+BaseMockHttpHandlerTest::BaseMockHttpHandlerTest() :
+m_handler(std::make_shared<MockHttpHandler>()),
+m_client(nullptr, m_handler)
+    {}
 
-HttpClientCR BaseMockHttpHandlerTest::GetClient () const
+HttpClientCR BaseMockHttpHandlerTest::GetClient() const
     {
     return m_client;
     }
 
-MockHttpHandler& BaseMockHttpHandlerTest::GetHandler () const
+MockHttpHandler& BaseMockHttpHandlerTest::GetHandler() const
     {
     return *m_handler;
     }
 
-std::shared_ptr<MockHttpHandler> BaseMockHttpHandlerTest::GetHandlerPtr () const
+std::shared_ptr<MockHttpHandler> BaseMockHttpHandlerTest::GetHandlerPtr() const
     {
     return m_handler;
     }

@@ -2,12 +2,13 @@
 |
 |     $Source: Tests/UnitTests/Published/TestsHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
+#include "ValuePrinter.h"
 #include <Bentley/BeTest.h>
 #include <BeHttp/Http.h>
 

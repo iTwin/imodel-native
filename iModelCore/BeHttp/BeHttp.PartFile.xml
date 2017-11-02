@@ -16,7 +16,7 @@
     <Part Name="BeCasablancaPublicAPIShim" OnlyPlatforms="WinRT*,x86,x64">
         <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
     </Part>
-         
+
     <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=folly">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="FollyShim"/>
@@ -43,17 +43,17 @@
             <Directory ProductDirectoryName="Assets" ProductSubDirectory="http" SourceName="Delivery/http"/>
         </Bindings>
     </Part>
-    
+
     <Part Name="BeHttpLibrary-Curl">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
     </Part>
-    
+
     <Part Name="BeHttp">
         <SubPart PartName="PublishedAPI" />
         <SubPart PartName="BeHttpLibrary" />
         <SubPart PartName="BeHttp-Xliffs"/>
     </Part>
-    
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -201,6 +201,20 @@
         </Bindings>
     </Part>
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N SQLANG For tests                                                  // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part
+        Name="BeHttpSqlang-en"
+        BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
+        BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/BeHttp/sqlang/BeHttp_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="BeHttp-Xliffs" />
+        <Bindings>
+            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/BeHttp_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
     <!-- ******************************** Unit Tests ************************************** -->
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
         <SubPart PartName="BeHttpLibrary" />
@@ -212,6 +226,7 @@
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublishedAPI" />
+        <SubPart PartName="BeHttpSqlang-en" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
@@ -220,13 +235,12 @@
     <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published"/>
-    
-        <!-- Ensure that builds, run manually if needed -->
-        <SubProduct ProductName="BeHttp-IntegrationGtest"/>
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
     <Product Name="BeHttp-Tests">
+        <!-- Just ensure that builds, run manually if needed -->
+        <SubProduct ProductName="BeHttp-IntegrationGtest"/>
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
@@ -249,15 +263,15 @@
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BeHttp-Gtest -dGTEST_NAME=BeHttpTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="BeHttp-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-      <Bindings>
-        <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeHttpTest.log</Files>
-      </Bindings>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeHttpTest.log</Files>
+        </Bindings>
     </Part>
-	
-	<!-- Memory leak testing of BeHttp tests. Only called on demand -->
-	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=BeHttp-Gtest -dGTEST_NAME=BeHttpTest" OnlyPlatforms="x64">
-		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
-		<SubProduct ProductName="BeHttp-Gtest" />
+
+    <!-- Memory leak testing of BeHttp tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=BeHttp-Gtest -dGTEST_NAME=BeHttpTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="BeHttp-Gtest" />
     </Part>
 
 
@@ -280,10 +294,10 @@
     <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=BeHttp-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="BeHttp-AndroidJUnit"/>
         <Bindings>
-          <Files SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/BeHttp-AndroidJUnit.log</Files>
+            <Files SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/BeHttp-AndroidJUnit.log</Files>
         </Bindings>
     </Part>
-    
+
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
@@ -299,14 +313,14 @@
         <SubPart PartName="iOSXCTest" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-    
+
     <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=BeHttp-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="BeHttp-iOSXCTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/BeHttp-iOSXCTest.log</Files>
         </Bindings>
     </Part>
-	    <!-- *********************************************************** -->
+    <!-- *********************************************************** -->
     <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
     <!-- *********************************************************** -->
     <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
@@ -342,12 +356,13 @@
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/BeHttp-UwpTest.log</Files>
         </Bindings>
     </Part>
-	
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <Product Name="BeHttp-IntegrationGtest" OnlyPlatforms="x64">
         <SubPart PartName="Integration-Gtest"/>
+        <SubPart PartName="BeHttpSqlang-en" />
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
@@ -366,10 +381,14 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="IntegrationTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi" OnlyPlatforms="x64">
+    <Part Name="IntegrationTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dUsePublishedApi" OnlyPlatforms="x64">
         <SubPart PartName="BeHttp" />
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/IntegrationTests/Published" SourceName="Delivery/BeHttpIntegrationTests/Objects"/>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="BeHttpIntegrationTests" SourceName="Delivery/BeHttpIntegrationTests/Assets"/>
+        </Bindings>
     </Part>
 
 </BuildContext>

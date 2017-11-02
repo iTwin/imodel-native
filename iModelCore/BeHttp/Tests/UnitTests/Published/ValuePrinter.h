@@ -36,12 +36,11 @@ std::ostream& operator << (std::ostream &o, BeVersionCR version);
 std::ostream& operator << (std::ostream &o, AsyncTask::Priority value);
 
 // Bentley types
-BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
-
+BEGIN_BENTLEY_NAMESPACE
 
 void PrintTo(const WString& value, ::std::ostream* os);
 void PrintTo(const Utf8String& value, ::std::ostream* os);
 void PrintTo(BentleyStatus value, ::std::ostream* os);
 
-END_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
+END_BENTLEY_NAMESPACE
 #endif

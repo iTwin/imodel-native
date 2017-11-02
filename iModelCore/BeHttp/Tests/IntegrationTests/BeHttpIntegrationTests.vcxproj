@@ -46,13 +46,27 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="IntegrationTests.mke" />
+    <None Include="Scripts\Executables\file-server.bat" />
+    <None Include="Scripts\Executables\proxy-server.bat" />
+    <None Include="Scripts\Executables\proxy2.py" />
+    <None Include="Scripts\Executables\RegistryFix\PACCachingDisable.reg" />
+    <None Include="Scripts\Executables\RegistryFix\PACCachingEnable.reg" />
+    <None Include="Scripts\Resources\Data\pac1.js" />
+    <None Include="Scripts\Resources\Data\pac2.js" />
+    <None Include="Scripts\Resources\Data\pac3.js" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BeHttp\HttpRequestTests.cpp" />
+    <ClCompile Include="Scripts\ScriptRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BeHttp\HttpRequestTests.h" />
+    <ClInclude Include="BeHttp\AsyncTestCheckpoint.h" />
     <ClInclude Include="BeHttp\Tests.h" />
+    <ClInclude Include="Scripts\ScriptRunner.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Scripts\Executables\RegistryFix\readme.txt" />
+    <Text Include="Scripts\Resources\Data\Test.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

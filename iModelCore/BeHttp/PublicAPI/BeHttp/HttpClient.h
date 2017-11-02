@@ -27,7 +27,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 * @bsiclass                                                     Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct HttpClient
-{
+    { 
 private:
     IHttpHeaderProviderPtr m_defaultHeadersProvider;
     IHttpHandlerPtr m_handler;
@@ -58,6 +58,10 @@ public:
     //! Handle date formats specified in RFC 822 (updated by RFC 1123), RFC 850 (obsoleted by RFC 1036) and ANSI C's asctime() format.
     BEHTTP_EXPORT static BentleyStatus HttpDateToUnixMillis(uint64_t& unixMilliseconds, Utf8CP dateStr);
 
+    //! Enable full logging that could contain sensitive information. Enabled on DEBUG builds by default, disabled otherwise.
+    BEHTTP_EXPORT static void EnableFullLogging(bool enable);
+    BEHTTP_EXPORT static bool IsFullLoggingEnabled();
+
     // Set authorization for request
     void SetCredentials(Credentials credentials) {m_credentials = std::move(credentials);}
 
@@ -71,7 +75,7 @@ public:
     // Compression options to use when creating requests
     BEHTTP_EXPORT void SetCompressionOptions(CompressionOptions options) {m_compressionOptions = std::move(options);}
     BEHTTP_EXPORT CompressionOptionsCR GetCompressionOptions() const {return m_compressionOptions;}
-};
+    };
 
 typedef HttpClient& HttpClientR;
 typedef const HttpClient& HttpClientCR;

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/MockAuthenticationHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,11 +10,8 @@
 
 #ifdef USE_GTEST
 #include <gmock/gmock.h>
-#else
-#include <Bentley/BeTest.h>
-#endif
-
 #include <BeHttp/AuthenticationHandler.h>
+
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_HTTP
 
@@ -29,7 +26,6 @@ struct MockAuthenticationHandler : public AuthenticationHandler
             {
             }
 
-#ifdef USE_GTEST
         MOCK_METHOD1 (_RetrieveAuthorization, AsyncTaskPtr<AuthorizationResult> (AttemptCR previousAttempt));
-#endif
     };
+#endif

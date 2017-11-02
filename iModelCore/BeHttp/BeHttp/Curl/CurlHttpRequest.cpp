@@ -14,7 +14,9 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Base64Utilities.h>
 #include <BeHttp/HttpClient.h>
-#include <map>
+#include <BeHttp/HttpProxy.h>
+
+#include "CurlTaskRunner.h"
 #include "../WebLogging.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
@@ -24,11 +26,12 @@ USING_NAMESPACE_BENTLEY_TASKS
 
 #define HTTP_STATUS_PARTIALCONTENT 206
 
-BeMutex  CurlHttpRequest::s_transfersCS;
+BeMutex                                 CurlHttpRequest::s_transfersCS;
 bset<CurlHttpRequest::TransferInfo*>    CurlHttpRequest::s_transfers;
+std::function<void()>                   CurlHttpRequest::s_transfersChangeListener = [] {};
 
-BeMutex  CurlHttpRequest::s_numberCS;
-uint64_t CurlHttpRequest::s_number = 0;
+BeMutex                                 CurlHttpRequest::s_numberCS;
+uint64_t                                CurlHttpRequest::s_number = 0;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2013
@@ -41,13 +44,13 @@ struct ProgressInfo
             Request::ProgressCallbackCR m_onProgressChange;
             double m_lastBytesCompleted;
             double m_lastBytesTotal;
+
         public:
             TransferProgress(Request::ProgressCallbackCR onProgressChange) :
                 m_onProgressChange(onProgressChange),
                 m_lastBytesCompleted(-1),
                 m_lastBytesTotal(-1)
-                {
-                }
+                {}
             void SendTransferProgress(double bytesStarted, double bytesTransfered, double bytesTotal);
         };
 
@@ -62,8 +65,7 @@ struct ProgressInfo
         cancellationToken(cancellationToken),
         timeMillisLastProgressReported(0),
         wasCanceled(false)
-        {
-        }
+        {}
 
     TransferProgress upload;
     TransferProgress download;
@@ -95,35 +97,48 @@ bool CurlHttpRequest::ShouldCompressRequestBody(Request request)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CurlHttpRequest::TransferInfo
     {
+    bool                isActive = false;
+
+    ConnectionStatus    status = ConnectionStatus::None;
+
     ProgressInfo        progressInfo;
     HttpResponseContentPtr responseContent;
 
-    uint64_t            bytesStarted;
-    uint64_t            bytesDownloaded;
+    uint64_t            bytesStarted = 0;
+    uint64_t            bytesDownloaded = 0;
 
-    uint64_t            bytesUploaded;
+    uint64_t            bytesUploaded = 0;
     HttpBodyPtr         requestBody;
 
-    bool                bodyPositionSet;
-    unsigned            retriesLeft;
-    CURL*               curl;
+    bool                bodyPositionSet = false;
+    unsigned            retriesLeft = 0;
+    CURL*               curl = nullptr;
     BeAtomic<bool>      requestNeedsToReset;
+    bool                requestCouldNotConnectRetried = false;
+    bvector<HttpProxy>  proxies;
 
     TransferInfo(HttpResponseContentPtr responseContent, const ProgressInfo& progressInfo) :
         progressInfo(progressInfo),
         responseContent(responseContent),
-        bytesStarted(0),
-        bytesDownloaded(0),
-        bytesUploaded(0),
-        retriesLeft(0),
-        bodyPositionSet(false),
         requestNeedsToReset(false)
-        {
-        RegisterTransferInfo(this);
-        }
+        {}
 
     ~TransferInfo()
         {
+        BeAssert(!isActive);
+        if (isActive)
+            UnregisterTransferInfo(this);
+        }
+
+    void SetActive()
+        {
+        isActive = true;
+        RegisterTransferInfo(this);
+        }
+
+    void SetInactive()
+        {
+        isActive = false;
         UnregisterTransferInfo(this);
         }
     };
@@ -133,8 +148,9 @@ struct CurlHttpRequest::TransferInfo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlHttpRequest::RegisterTransferInfo(TransferInfo* transfer)
     {
-    BeMutexHolder holder(s_transfersCS);
+    BeMutexHolder lock(s_transfersCS);
     s_transfers.insert(transfer);
+    s_transfersChangeListener();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -142,20 +158,39 @@ void CurlHttpRequest::RegisterTransferInfo(TransferInfo* transfer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlHttpRequest::UnregisterTransferInfo(TransferInfo* transfer)
     {
-    BeMutexHolder holder(s_transfersCS);
+    BeMutexHolder lock(s_transfersCS);
     s_transfers.erase(transfer);
+    s_transfersChangeListener();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlHttpRequest::SetOnActiveRequestCountChanged(std::function<void()> listener)
+    {
+    BeMutexHolder lock(s_transfersCS);
+    s_transfersChangeListener = listener;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurlHttpRequest::ResetAllRequests()
+void CurlHttpRequest::ResetAllActiveRequests()
     {
-    BeMutexHolder holder(s_transfersCS);
+    BeMutexHolder lock(s_transfersCS);
     for (CurlHttpRequest::TransferInfo* transfer : s_transfers)
         {
         transfer->requestNeedsToReset.store(true);
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t CurlHttpRequest::GetActiveRequestCount()
+    {
+    BeMutexHolder lock(s_transfersCS);
+    return s_transfers.size();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -177,8 +212,7 @@ m_transferInfo(nullptr),
 m_curl(nullptr),
 m_headers(nullptr),
 m_number(GetNextNumber())
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
@@ -256,6 +290,9 @@ int CurlHttpRequest::CurlProgressCallback(CurlHttpRequest* request, double dltot
 +---------------+---------------+---------------+---------------+---------------+------*/
 int CurlHttpRequest::CurlDebugCallback(CURL* handle, curl_infotype type, char* data, size_t size, CurlHttpRequest* request)
     {
+    if (type != CURLINFO_TEXT && !HttpClient::IsFullLoggingEnabled())
+        return 0;
+
     Utf8CP text;
 
     switch (type)
@@ -287,9 +324,7 @@ int CurlHttpRequest::CurlDebugCallback(CURL* handle, curl_infotype type, char* d
     if (type == CURLINFO_DATA_IN || type == CURLINFO_DATA_OUT)
         {
         if (!LOG.isSeverityEnabled(NativeLogging::LOG_TRACE))
-            {
             return 0;
-            }
 
         // Show only ASCII symbols
         char* buffer = new char[size];
@@ -319,6 +354,9 @@ int CurlHttpRequest::CurlDebugCallback(CURL* handle, curl_infotype type, char* d
         }
     else
         {
+        if (!LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+            return 0;
+
         // Log headers and connection info as seperate lines
         Utf8String dataStr(data, size);
         dataStr.ReplaceAll("\r\n", "\n");
@@ -402,8 +440,8 @@ void CurlHttpRequest::SetupCurl()
         }
     else
         {
-        curl_easy_setopt(m_curl, CURLOPT_USERNAME, NULL);
-        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, NULL);
+        curl_easy_setopt(m_curl, CURLOPT_USERNAME, nullptr);
+        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, nullptr);
         }
 
     // Request method
@@ -429,22 +467,42 @@ void CurlHttpRequest::SetupCurl()
         curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 0L);
         }
 
-    if (!m_httpRequest.GetProxy().empty())
+    if (m_transferInfo->proxies.empty())
         {
-        curl_easy_setopt(m_curl, CURLOPT_PROXY, m_httpRequest.GetProxy().c_str());
-
-        CredentialsCR proxyCredentials = m_httpRequest.GetProxyCredentials();
-        if (proxyCredentials.IsValid())
+        if (!m_httpRequest.GetProxy().empty())
             {
-            Utf8String usernamePasswordOption(BeStringUtilities::UriEncode(proxyCredentials.GetUsername().c_str()));
+            m_transferInfo->proxies.push_back(HttpProxy(m_httpRequest.GetProxy(), m_httpRequest.GetProxyCredentials()));
+            }
+        else
+            {
+            HttpProxy defaultProxy = HttpProxy::GetDefaultProxy();
+            m_transferInfo->proxies = defaultProxy.GetProxiesForUrl(m_httpRequest.GetUrl());
+            }
+        }
+
+    if (!m_transferInfo->proxies.empty())
+        {
+        HttpProxyCR proxy = m_transferInfo->proxies.front();
+        LOG.tracev("* #%lld Will use proxy: %s", GetNumber(), proxy.ToString().c_str());
+
+        CredentialsCR credentials = proxy.GetCredentials();
+        // Note: empty URL means that PAC script specified "DIRECT" as one of the proxies.
+        // We want to treat that as a valid entry in the proxyUrls list, and setting
+        // CURLOPT_PROXY to an empty string disables the proxy, which is what we want.
+        curl_easy_setopt(m_curl, CURLOPT_PROXY, proxy.GetProxyUrl().c_str());
+
+        if (credentials.IsValid())
+            {
+            Utf8String usernamePasswordOption(BeStringUtilities::UriEncode(credentials.GetUsername().c_str()));
             usernamePasswordOption.append(":");
-            usernamePasswordOption.append(BeStringUtilities::UriEncode(proxyCredentials.GetPassword().c_str()));
+            usernamePasswordOption.append(BeStringUtilities::UriEncode(credentials.GetPassword().c_str()));
             curl_easy_setopt(m_curl, CURLOPT_PROXYUSERPWD, usernamePasswordOption.c_str());
 
             // Not sure if this is required, or it has any drawbacks. Using mainly so CURL may attempt to use CURLAUTH_NTLM on Windows if
             // CURLAUTH_BASIC authentication fails.
             curl_easy_setopt(m_curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
             }
+        m_transferInfo->proxies.erase(m_transferInfo->proxies.begin());
         }
 
     // Without this Unix app will crash after timeout in multithread environment http://curl.haxx.se/libcurl/c/curl_easy_setopt.html#CURLOPTNOSIGNAL
@@ -453,9 +511,9 @@ void CurlHttpRequest::SetupCurl()
     // Will timeout where transfer speed is less than CURLOPT_LOW_SPEED_LIMIT for CURLOPT_LOW_SPEED_TIME seconds.
     // Detect lost connection when transfer hangs
     curl_easy_setopt(m_curl, CURLOPT_LOW_SPEED_LIMIT, 1L); // B/s
-    curl_easy_setopt(m_curl, CURLOPT_LOW_SPEED_TIME, (long)m_httpRequest.GetTransferTimeoutSeconds());
+    curl_easy_setopt(m_curl, CURLOPT_LOW_SPEED_TIME, (long) m_httpRequest.GetTransferTimeoutSeconds());
     // Timeout for connecting to server
-    curl_easy_setopt(m_curl, CURLOPT_CONNECTTIMEOUT, (long)m_httpRequest.GetConnectionTimeoutSeconds());
+    curl_easy_setopt(m_curl, CURLOPT_CONNECTTIMEOUT, (long) m_httpRequest.GetConnectionTimeoutSeconds());
 
     if (m_httpRequest.GetValidateCertificate())
         {
@@ -472,11 +530,18 @@ void CurlHttpRequest::SetupCurl()
         {
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(m_curl, CURLOPT_CAINFO, NULL);
+        curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
         }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         {
+        static bool versionLogged = false;
+        if (!versionLogged)
+            {
+            LOG.debugv("HTTP API implementation: %s", curl_version());
+            versionLogged = true;
+            }
+
         curl_easy_setopt(m_curl, CURLOPT_DEBUGFUNCTION, CurlDebugCallback);
         curl_easy_setopt(m_curl, CURLOPT_DEBUGDATA, this);
         curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L);
@@ -587,8 +652,8 @@ void CurlHttpRequest::PrepareRequest()
             (
             responseContent,
             ProgressInfo(m_httpRequest.GetUploadProgressCallback(),
-                          m_httpRequest.GetDownloadProgressCallback(),
-                          m_httpRequest.GetCancellationToken())
+                m_httpRequest.GetDownloadProgressCallback(),
+                m_httpRequest.GetCancellationToken())
             );
         m_transferInfo->retriesLeft = m_httpRequest.GetMaxRetries();
         m_transferInfo->requestBody = requestBody;
@@ -598,8 +663,10 @@ void CurlHttpRequest::PrepareRequest()
         {
         m_transferInfo->requestBody->SetPosition(0);
         }
+
     SetupCurl();
 
+    m_transferInfo->status = ConnectionStatus::None;
     m_transferInfo->responseContent->GetHeaders().Clear();
     m_transferInfo->bodyPositionSet = false;
 
@@ -610,41 +677,28 @@ void CurlHttpRequest::PrepareRequest()
         {
         LOG.infov("> HTTP #%lld %s %s", GetNumber(), m_httpRequest.GetMethod().c_str(), m_httpRequest.GetUrl().c_str());
         }
+
+    m_transferInfo->SetActive();
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    04/2013
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CurlHttpRequest::ShouldRetry(ConnectionStatus status)
+void CurlHttpRequest::FinalizeRequest(CURLcode curlStatus)
     {
-    bool retry = false;
+    m_transferInfo->SetInactive();
+    m_transferInfo->status = ResolveConnectionStatus(curlStatus);
+    }
 
-    if (ConnectionStatus::Timeout != status &&
-        ConnectionStatus::ConnectionLost != status)
-        {
-        retry = false;
-        }
-
-    else if (Request::RetryOption::DontRetry == m_httpRequest.GetRetryOption())
-        {
-        retry = false;
-        }
-
-    else if (0 == m_httpRequest.GetMaxRetries())
-        {
-        retry = true;
-        }
-
-    else if (m_transferInfo->retriesLeft > 0)
-        {
-        m_transferInfo->retriesLeft--;
-        retry = true;
-        }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurlHttpRequest::ShouldRetry()
+    {
+    bool retry = GetShouldRetry();
 
     if (retry && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
-        LOG.infov("RETRY HTTP #%lld %s", GetNumber(), GetDebugStatusString(status, HttpStatus::None).c_str());
-        }
+        LOG.infov("RETRY HTTP #%lld %s", GetNumber(), Response::ToStatusString(m_transferInfo->status, HttpStatus::None).c_str());
 
     return retry;
     }
@@ -652,27 +706,62 @@ bool CurlHttpRequest::ShouldRetry(ConnectionStatus status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Response CurlHttpRequest::ResolveResponse(ConnectionStatus connectionStatus)
+bool CurlHttpRequest::GetShouldRetry()
+    {
+    ConnectionStatus status = m_transferInfo->status;
+
+    if (!m_transferInfo->proxies.empty() &&
+        (
+        ConnectionStatus::CouldNotConnect == status ||
+        ConnectionStatus::CouldNotResolveProxy == status
+        ))
+        return true; // More proxies to try. Do this BEFORE checking GetRetryOption.
+
+    if (Request::RetryOption::DontRetry == m_httpRequest.GetRetryOption())
+        return false;
+
+    if (ConnectionStatus::CouldNotConnect == status &&
+        m_httpRequest.GetRetryOnCouldNotConnect() &&
+        !m_transferInfo->requestCouldNotConnectRetried)
+        {
+        m_transferInfo->requestCouldNotConnectRetried = true;
+        return true;
+        }
+
+    if (ConnectionStatus::Timeout != status &&
+        ConnectionStatus::ConnectionLost != status)
+        return false;
+
+    if (0 == m_httpRequest.GetMaxRetries())
+        return true;
+
+    if (m_transferInfo->retriesLeft <= 0)
+        return false;
+
+    m_transferInfo->retriesLeft--;
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+Response CurlHttpRequest::ResolveResponse()
     {
     if (!m_transferInfo->requestBody.IsNull())
-        {
         m_transferInfo->requestBody->Close();
-        }
 
     long httpStatusCode = 0;
     curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &httpStatusCode);
 
     HttpStatus httpStatus = HttpStatus::None;
 
-    if (connectionStatus == ConnectionStatus::OK)
-        {
+    if (m_transferInfo->status == ConnectionStatus::OK)
         httpStatus = ResolveHttpStatus(httpStatusCode);
-        }
 
     char* effectiveUrl = nullptr;
     curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &effectiveUrl);
 
-    Response response(m_transferInfo->responseContent, effectiveUrl, connectionStatus, httpStatus);
+    Response response(m_transferInfo->responseContent, effectiveUrl, m_transferInfo->status, httpStatus);
 
     m_transferInfo->responseContent->GetBody()->Close();
     m_transferInfo = nullptr;
@@ -684,7 +773,7 @@ Response CurlHttpRequest::ResolveResponse(ConnectionStatus connectionStatus)
         {
         LOG.infov("< HTTP #%lld %s %s",
             GetNumber(),
-            GetDebugStatusString(response.GetConnectionStatus(), response.GetHttpStatus()).c_str(),
+            Response::ToStatusString(response.GetConnectionStatus(), response.GetHttpStatus()).c_str(),
             response.GetEffectiveUrl().c_str());
         }
 
@@ -718,12 +807,13 @@ HttpStatus CurlHttpRequest::ResolveHttpStatus(int httpStatusInt)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectionStatus CurlHttpRequest::GetConnectionStatus(CURLcode curlStatus)
+ConnectionStatus CurlHttpRequest::ResolveConnectionStatus(CURLcode curlStatus)
     {
+    if (CURLE_OK != curlStatus && LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv("* HTTP #%lld Connection error: '%s'", GetNumber(), curl_easy_strerror(curlStatus));
+
     if (m_transferInfo->requestNeedsToReset)
-        {
         return ConnectionStatus::ConnectionLost;
-        }
 
     if (m_transferInfo->progressInfo.wasCanceled)
         {
@@ -743,6 +833,8 @@ ConnectionStatus CurlHttpRequest::GetConnectionStatus(CURLcode curlStatus)
         case CURLE_COULDNT_RESOLVE_HOST:
         case CURLE_SSL_CONNECT_ERROR:                       // Something wrong with server SSL configuration
             return ConnectionStatus::CouldNotConnect;
+        case CURLE_COULDNT_RESOLVE_PROXY:                   // TODO: In some cases CURLE_RECV_ERROR is returned when proxy password is wrong and HTTPS URL was accessed
+            return ConnectionStatus::CouldNotResolveProxy;
         case CURLE_ABORTED_BY_CALLBACK:                     // Aborted from curl callback
             return ConnectionStatus::Canceled;
         case CURLE_OPERATION_TIMEDOUT:                      // Connection or transfer timeout
@@ -752,36 +844,13 @@ ConnectionStatus CurlHttpRequest::GetConnectionStatus(CURLcode curlStatus)
         case CURLE_RECV_ERROR:                              // Server killed or other error
             return ConnectionStatus::ConnectionLost;
         case CURLE_SSL_CACERT:
+        case CURLE_PEER_FAILED_VERIFICATION:
             return ConnectionStatus::CertificateError;      // Server uses invalid certificate or one that we cannot validate
         default:
-            LOG.errorv("Curl status '%d' not handled", curlStatus);
-            BeAssert(false);
+            LOG.errorv("* HTTP #%lld CURL status '%d' not handled: '%s'", GetNumber(), curlStatus, curl_easy_strerror(curlStatus));
+            BeAssert(false && "CULR status not handled");
             return ConnectionStatus::UnknownError;
         }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CurlHttpRequest::GetDebugStatusString(ConnectionStatus status, HttpStatus httpStatus)
-    {
-    static std::map<ConnectionStatus, Utf8String> connectionStatusStrings = {
-            {ConnectionStatus::Canceled, "Canceled"},
-            {ConnectionStatus::ConnectionLost, "ConnectionLost"},
-            {ConnectionStatus::CouldNotConnect, "CouldNotConnect"},
-            {ConnectionStatus::CertificateError, "CertificateError"},
-            {ConnectionStatus::None, "None"},
-            {ConnectionStatus::OK, "OK"},
-            {ConnectionStatus::Timeout, "Timeout"},
-            {ConnectionStatus::UnknownError, "UnknownError"},
-        };
-
-    if (status == ConnectionStatus::OK)
-        {
-        return Utf8PrintfString("%d", httpStatus);
-        }
-
-    return connectionStatusStrings[status];
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -790,7 +859,7 @@ Utf8String CurlHttpRequest::GetDebugStatusString(ConnectionStatus status, HttpSt
 size_t CurlHttpRequest::OnWriteHeaders(void* buffer, size_t size, size_t count)
     {
     size_t bufferSize = size * count;
-    Utf8String header((char*)buffer, bufferSize);
+    Utf8String header((char*) buffer, bufferSize);
 
     if (header.compare(0, 5, "HTTP/") == 0)
         {
@@ -843,7 +912,7 @@ size_t CurlHttpRequest::OnWriteData(void* buffer, size_t size, size_t count)
         }
 
     size_t bufferSize = size * count;
-    size_t bytesWritten = m_transferInfo->responseContent->GetBody()->Write((char*)buffer, bufferSize);
+    size_t bytesWritten = m_transferInfo->responseContent->GetBody()->Write((char*) buffer, bufferSize);
     m_transferInfo->bytesDownloaded += bytesWritten;
 
     return bytesWritten;
@@ -870,7 +939,7 @@ size_t CurlHttpRequest::OnReadData(void* buffer, size_t size, size_t count)
         chunkSize = bufferSize;
         }
 
-    return m_transferInfo->requestBody->Read((char*)buffer, static_cast<size_t>(chunkSize));
+    return m_transferInfo->requestBody->Read((char*) buffer, static_cast<size_t>(chunkSize));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -902,8 +971,9 @@ void CurlHttpRequest::SendProgressCallback(double dltotal, double dlnow, double 
 
     uint64_t currentTimeMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     uint64_t timePassedMillis = currentTimeMillis - progressInfo.timeMillisLastProgressReported;
+    bool isFinalProgress = (dltotal != 0 && dltotal == dlnow) || (ultotal != 0 && ultotal == ulnow);
 
-    if (timePassedMillis >= PROGRESS_REPORT_INTERVAL_MILLIS)
+    if (timePassedMillis >= PROGRESS_REPORT_INTERVAL_MILLIS || isFinalProgress)
         {
         progressInfo.timeMillisLastProgressReported = currentTimeMillis;
 
@@ -918,9 +988,7 @@ void CurlHttpRequest::SendProgressCallback(double dltotal, double dlnow, double 
 void ProgressInfo::TransferProgress::SendTransferProgress(double bytesStarted, double bytesTransfered, double bytesTotal)
     {
     if (!m_onProgressChange)
-        {
         return;
-        }
 
     double previousLastBytesCompleted = m_lastBytesCompleted;
     double previousLastBytesTotal = m_lastBytesTotal;
@@ -929,9 +997,11 @@ void ProgressInfo::TransferProgress::SendTransferProgress(double bytesStarted, d
     m_lastBytesCompleted = bytesStarted + bytesTransfered;
     m_lastBytesTotal = bytesStarted + bytesTotal;
 
-    if (previousLastBytesCompleted != m_lastBytesCompleted ||
-        previousLastBytesTotal != m_lastBytesTotal)
-        {
-        m_onProgressChange(m_lastBytesCompleted, m_lastBytesTotal);
-        }
+    if (previousLastBytesCompleted == m_lastBytesCompleted && previousLastBytesTotal == m_lastBytesTotal)
+        return;
+
+    if (m_lastBytesCompleted != m_lastBytesTotal && CurlTaskRunner::IsSuspended())
+        return;
+
+    m_onProgressChange(m_lastBytesCompleted, m_lastBytesTotal);
     }

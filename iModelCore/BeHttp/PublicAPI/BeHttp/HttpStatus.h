@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpStatus.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,7 +83,10 @@ enum class HttpStatus
     VariantAlsoNegotiates           = 506,
     InsufficientStorage             = 507,
     LoopDetected                    = 508,
-    NotExtended                     = 510
+    NotExtended                     = 510,
+
+    // Maximum value. Used in error handling, it is not an actual http status code.
+    NoneLast
 };
 
 END_BENTLEY_HTTP_NAMESPACE

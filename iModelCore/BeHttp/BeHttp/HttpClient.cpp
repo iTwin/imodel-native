@@ -6,22 +6,27 @@
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpClient.h>
+
 #include <Bentley/BeThread.h>
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <fstream>
 #include <ostream>
-#include "NetworkIndicator.h"
-
-#if defined (HTTP_LIB_CURL)
 #include <curl/curl.h>
 #include <openssl/ssl.h>
-#endif
+
+#include "ApplicationEvents.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 
 static BeFileName s_assetsDirectoryPath;
 static BeAtomic<int> s_tasksInProgressCount;
+
+#if defined(DEBUG)
+bool s_isFullLoggingEnabled = true;
+#else
+bool s_isFullLoggingEnabled = false;
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
@@ -46,8 +51,7 @@ BeFileNameCR HttpClient::GetAssetsDirectoryPath()
 HttpClient::HttpClient(IHttpHeaderProviderPtr defaultHeadersProvider, IHttpHandlerPtr customHandler) :
 m_defaultHeadersProvider(nullptr == defaultHeadersProvider ? HttpHeaderProvider::Create() : defaultHeadersProvider),
 m_handler(customHandler)
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     02/2014
@@ -55,7 +59,7 @@ m_handler(customHandler)
 void HttpClient::BeginNetworkActivity()
     {
     if (++s_tasksInProgressCount == 1)
-        NetworkIndicator::SetVisible(true);
+        ApplicationEventsManager::SetNetworkActivityIndicatorVisible(true);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -64,7 +68,7 @@ void HttpClient::BeginNetworkActivity()
 void HttpClient::EndNetworkActivity()
     {
     if (--s_tasksInProgressCount == 0)
-        NetworkIndicator::SetVisible(false);
+        ApplicationEventsManager::SetNetworkActivityIndicatorVisible(false);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -80,50 +84,50 @@ bool HttpClient::IsNetworkActive()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String HttpClient::EscapeString(Utf8StringCR inStr)
     {
-#if defined (HTTP_LIB_CURL)
-    Utf8P escapedStr = curl_escape(inStr.c_str(), (int)inStr.length());
+    Utf8P escapedStr = curl_escape(inStr.c_str(), (int) inStr.length());
     Utf8String outStr = escapedStr;
     curl_free(escapedStr);
     return outStr;
-#else
-    return BeStringUtilities::UriEncode(inStr.c_str());
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jonathan Que     02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HttpClient::UnescapeString (Utf8StringCR inStr)
+Utf8String HttpClient::UnescapeString(Utf8StringCR inStr)
     {
-#if defined (HTTP_LIB_CURL)
-    Utf8P unescapedStr = curl_unescape (inStr.c_str(), (int)inStr.length());
+    Utf8P unescapedStr = curl_unescape(inStr.c_str(), (int) inStr.length());
     Utf8String outStr = unescapedStr;
-    curl_free (unescapedStr);
+    curl_free(unescapedStr);
     return outStr;
-#else
-    return BeStringUtilities::UriDecode (inStr.c_str ());
-#endif
     }
-    
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
 BentleyStatus HttpClient::HttpDateToUnixMillis(uint64_t& unixMilliseconds, Utf8CP dateStr)
     {
-#if defined (HTTP_LIB_CURL)
     time_t time = curl_getdate(dateStr, nullptr);
-
     if (-1 == time)
         return ERROR;
 
     unixMilliseconds = time * 1000;
-
     return SUCCESS;
-#else
-    #error unknown http lib
-    return ERROR;
-#endif
+    }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Giedrius.Kairys    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpClient::EnableFullLogging(bool enable)
+    {
+    s_isFullLoggingEnabled = enable;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Giedrius.Kairys    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HttpClient::IsFullLoggingEnabled()
+    {
+    return s_isFullLoggingEnabled;
     }
 
 /*--------------------------------------------------------------------------------------+

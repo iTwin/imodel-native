@@ -2,7 +2,7 @@
 #
 #     $Source: BeHttpCompileOptions.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -16,8 +16,8 @@ ENABLE_CPP_CX_EXTENSIONS = 1
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
     # Ignore inheritance via dominance warning
     cDefs + -wd4250
-	#Ignore unknown pragmas (i.e. pragma mark)
-	cDefs + -wd4068
+    #Ignore unknown pragmas (i.e. pragma mark)
+    cDefs + -wd4068
 %endif
 
 #--------------------------------------------------------------------------------------

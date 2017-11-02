@@ -21,6 +21,7 @@
     <Text Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Published\AuthenticationChallengeValueTests.cpp" />
     <ClCompile Include="Published\AuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\BaseMockHttpHandlerTest.cpp" />
     <ClCompile Include="Published\FSTest.cpp" />
@@ -31,7 +32,9 @@
     <ClCompile Include="Published\HttpBody\HttpRangeBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpStringBodyTests.cpp" />
     <ClCompile Include="Published\HttpClientTests.cpp" />
+    <ClCompile Include="Published\HttpErrorTests.cpp" />
     <ClCompile Include="Published\HttpHeadersTests.cpp" />
+    <ClCompile Include="Published\HttpResponseTests.cpp" />
     <ClCompile Include="Published\MockHttpHandler.cpp" />
     <ClCompile Include="Published\ProxyHttpHandlerTests.cpp" />
     <ClCompile Include="Published\TestIntegration\Http\HttpRequestTests.cpp" />
@@ -54,6 +57,7 @@
     <ClInclude Include="Published\MockAuthenticationHandler.h" />
     <ClInclude Include="Published\MockHttpHandler.h" />
     <ClInclude Include="Published\ProxyHttpHandlerTests.h" />
+    <ClInclude Include="Published\StubAuthenticationHandler.h" />
     <ClInclude Include="Published\TestIntegration\Http\HttpRequestTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\ValuePrinter.h" />

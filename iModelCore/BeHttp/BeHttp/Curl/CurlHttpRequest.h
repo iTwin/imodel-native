@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>
@@ -42,6 +43,8 @@ struct CurlHttpRequest
     private:
         static BeMutex s_transfersCS;
         static bset<TransferInfo*> s_transfers;
+        static std::function<void()> s_transfersChangeListener;
+
         static BeMutex s_numberCS;
         static uint64_t s_number;
 
@@ -60,6 +63,7 @@ struct CurlHttpRequest
 
         static void RegisterTransferInfo(TransferInfo* transfer);
         static void UnregisterTransferInfo(TransferInfo* transfer);
+
         static uint64_t GetNextNumber();
 
         static size_t CurlWriteHeaderCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
@@ -72,7 +76,9 @@ struct CurlHttpRequest
         void SetupHeaders();
         void SetupCurlCallbacks();
 
+        ConnectionStatus ResolveConnectionStatus(CURLcode curlStatus);
         HttpStatus ResolveHttpStatus(int httpStatusInt);
+        bool GetShouldRetry();
 
         void SendProgressCallback(double dltotal, double dlnow, double ultotal, double ulnow);
 
@@ -83,20 +89,26 @@ struct CurlHttpRequest
 
     public:
         //! Call this method when HttpRequests are stuck. On iOS this happens when application switches from background to foreground.
-        static void ResetAllRequests();
+        static void ResetAllActiveRequests();
+        static size_t GetActiveRequestCount();
+        static void SetOnActiveRequestCountChanged(std::function<void()> listener);
 
         CurlHttpRequest(RequestCR httpRequest, CurlPool& curlPool);
         ~CurlHttpRequest();
 
-        CURL* GetCurlHandle();
         RequestCR GetHttpRequest() const;
         uint64_t GetNumber() const;
-        void PrepareRequest();
 
-        ConnectionStatus GetConnectionStatus(CURLcode curlStatus);
-        bool ShouldRetry(ConnectionStatus curlStatus);
-        Response ResolveResponse(ConnectionStatus curlStatus);
-        static Utf8String GetDebugStatusString(ConnectionStatus status, HttpStatus httpStatus);
+        //! Should be called before request execution. GetCurlHandle() should be called after this.
+        void PrepareRequest();
+        //! Get CURL handle and execute request. FinalizeRequest() should be called after execution.
+        CURL* GetCurlHandle();
+        //! Should be called after request execution. ShouldRetry() should be called after this.
+        void FinalizeRequest(CURLcode curlStatus);
+        //! Check if request should be re-executed. ResolveResponse() should be called if false. PrepareRequest() should be called if true.
+        bool ShouldRetry();
+        //! Get final request result - response
+        Response ResolveResponse();
     };
 
 END_BENTLEY_HTTP_NAMESPACE

@@ -6,7 +6,7 @@
 #
 #---------------------------------------------------------------------------------------+
 
-# %include mdl.mki - the include of BuildUnitTests.mke below does this, and would otherwise emit a warnings.
+%include mdl.mki
 
 beHttpUnitTestsDir = $(SrcRoot)BeHttp/Tests/UnitTests/Published/
 
@@ -17,7 +17,8 @@ baseDir = $(_MakeFilePath)
 
 BEGTEST_NAME = BeHttpIntegrationTests
 BEGTEST_INPUT = $(baseDir)
-BEGTEST_OUTPUT = $(OutputRootDir)build/
+BEGTEST_OUTPUT = $(OutputRootDir)build/BeHttp/IntegrationTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/Objects/
 
 dirToSearch = $(beHttpUnitTestsDir)
 %include cincapnd.mki
@@ -27,11 +28,16 @@ dirToSearch = $(OutRoot)Winx64/BuildContexts/BeHttp/PublicAPI
 %include cincapnd.mki
 
 # Generate <prg.h> version file for tests
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki 
 
-%include $(SrcRoot)bsicommon/sharedmki/BuildUnitTests.mke
-# $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
+#---------------------------------------------------------------------------------------+
+#   Build test files
+#---------------------------------------------------------------------------------------+
+
+NO_DEFAULT_CLANG_WARNINGS=1
+%include mdl.mki
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 #---------------------------------------------------------------------------------------+
 #   Compile test utilities
@@ -53,37 +59,28 @@ $(o)FSTest$(oext)                   : $(beHttpUnitTestsDir)FSTest.cpp ${MultiCom
 %include MultiCppCompileGo.mki
 
 #---------------------------------------------------------------------------------------+
-#   Link test executable
+#   Deliver objects
 #---------------------------------------------------------------------------------------+
 
-%undef CPchOpts
-%undef CCPchOpts
+$(BuildContext)Delivery/BeHttpIntegrationTests/Objects : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
-GUNITTEST_NAME      = $(BEGTEST_NAME)
-GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
-GUNITTEST_OUT       = $(o)
-GUNITTEST_DEST      = $(o)
-GUNITTEST_PATH      = $(o) 
-GUNITTEST_SYMB      = $(o)
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
 
-GTEST_MAIN_IS_SUPPLIED = 1
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/Assets/
 
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(o)*.obj]
+$(o)Scripts/Executables:
+    @CreateSymLinks.py -d"$(o)Scripts/Executables=$(baseDir)Scripts/Executables"
 
-LIB_DIR =  $(BuildContext)SubParts/Libs/
+$(o)Scripts/Resources/Data:
+    @CreateSymLinks.py -d"$(o)Scripts/Resources/Data=$(baseDir)Scripts/Resources/Data"
 
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)Bentley$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeFolly$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeHttp$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLite$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeIcu4c$(libext)
-GUNITTEST_LIBS + $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gmock$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gtest$(libext)
+%ifnofile $(o)Scripts/Resources/Logs
+always:
+    mkdir $(o)Scripts/Resources/Logs
+%endif
 
-# Don't run tests after build
-GUNITTEST_NOEXEC = 1
-
-%include $(SrcRoot)bsicommon/sharedmki/gunittest.mki
+$(BuildContext)Delivery/BeHttpIntegrationTests/Assets : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

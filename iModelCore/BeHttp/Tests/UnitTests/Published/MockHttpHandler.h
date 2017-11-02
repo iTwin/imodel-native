@@ -2,19 +2,20 @@
 |
 |     $Source: Tests/UnitTests/Published/MockHttpHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
+#include "TestsHelper.h"
 #include <BeHttp/HttpClient.h>
 #include <map>
-#include "TestsHelper.h"
-USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_TASKS
 
 BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_HTTP
+USING_NAMESPACE_BENTLEY_TASKS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014

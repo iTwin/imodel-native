@@ -2,12 +2,13 @@
 |
 |     $Source: BeHttp/HttpHeaders.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <BeHttp/HttpHeaders.h>
 #include <Bentley/Base64Utilities.h>
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_HTTP
 
@@ -176,3 +177,37 @@ Utf8String ContentRangeHeaderValue::ToString() const
     return stringValue;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AuthenticationChallengeValue::Parse(Utf8CP stringValue, AuthenticationChallengeValue& valueOut)
+    {
+    if (stringValue == nullptr)
+        return ERROR;
+
+    std::regex regex(R"rx((^[^ ]+)( +realm="([^"]*)")?[\s]*$)rx", std::regex_constants::icase);
+    std::cmatch matches;
+    std::regex_search(stringValue, matches, regex);
+
+    if (matches.empty())
+        return ERROR;
+
+    if (matches.size() != 4)
+        return ERROR;
+
+    if (matches[1].matched)
+        valueOut.m_type = matches[1].str().c_str();
+
+    if (matches[3].matched)
+        valueOut.m_realm = matches[3].str().c_str();
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String AuthenticationChallengeValue::ToString() const
+    {
+    return "";
+    }

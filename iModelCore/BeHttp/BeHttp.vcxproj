@@ -50,16 +50,21 @@
     <None Include="BeHttp.mke" />
     <None Include="BeHttpCompileOptions.mki" />
     <None Include="BeHttpXliffs.mke" />
-    <None Include="BeHttp\Curl\ApplicationEvents.mm" />
+    <None Include="BeHttp\ApplicationEvents.mm" />
     <None Include="BeHttp\Curl\cabundle.pem" />
-    <None Include="BeHttp\NetworkIndicator.mm" />
     <None Include="Http.mki" />
     <None Include="l10n-BeHttp.mke" />
     <None Include="prewire.mke" />
+    <None Include="Tests\IntegrationTests\IntegrationTests.mke" />
+    <None Include="Tests\UnitTests\BuildTests.mke" />
+    <None Include="Tests\UnitTests\Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BeHttp\AuthenticationHandler.cpp" />
+    <ClCompile Include="BeHttp\Backdoor.cpp" />
+    <ClCompile Include="BeHttp\BeUri.cpp" />
     <ClCompile Include="BeHttp\Credentials.cpp" />
+    <ClCompile Include="BeHttp\ApplicationEvents.cpp" />
     <ClCompile Include="BeHttp\Curl\CurlHttpHandler.cpp" />
     <ClCompile Include="BeHttp\Curl\CurlHttpRequest.cpp" />
     <ClCompile Include="BeHttp\Curl\CurlPool.cpp" />
@@ -71,14 +76,36 @@
     <ClCompile Include="BeHttp\HttpClient.cpp" />
     <ClCompile Include="BeHttp\HttpError.cpp" />
     <ClCompile Include="BeHttp\HttpHeaders.cpp" />
+    <ClCompile Include="BeHttp\HttpProxy.cpp" />
     <ClCompile Include="BeHttp\HttpRequest.cpp" />
     <ClCompile Include="BeHttp\HttpRequestTests.cpp" />
     <ClCompile Include="BeHttp\HttpResponse.cpp" />
     <ClCompile Include="BeHttp\HttpStatusHelper.cpp" />
-    <ClCompile Include="BeHttp\NetworkIndicator.cpp" />
     <ClCompile Include="BeHttp\ProxyHttpHandler.cpp" />
+    <ClCompile Include="Tests\IntegrationTests\BeHttp\HttpRequestTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\AuthenticationChallengeValueTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\AuthenticationHandlerTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\FSTest.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpBinaryBodyTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpCompressedBodyTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpFileBodyTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpMultipartBodyTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpRangeBodyTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpStringBodyTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpErrorTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpHeadersTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\HttpResponseTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\MockHttpHandler.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\ProxyHttpHandlerTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\TestsHelper.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\ValuePrinter.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebTestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BeHttp\Backdoor.h" />
+    <ClInclude Include="BeHttp\ApplicationEvents.h" />
     <ClInclude Include="BeHttp\Curl\CurlHttpHandler.h" />
     <ClInclude Include="BeHttp\Curl\CurlHttpRequest.h" />
     <ClInclude Include="BeHttp\Curl\CurlPool.h" />
@@ -87,11 +114,11 @@
     <ClInclude Include="BeHttp\Curl\ThreadCurlHttpHandler.h" />
     <ClInclude Include="BeHttp\HttpError.xliff.h" />
     <ClInclude Include="BeHttp\HttpRequestTests.h" />
-    <ClInclude Include="BeHttp\NetworkIndicator.h" />
     <ClInclude Include="BeHttp\SimplePackagedAsyncTask.h" />
     <ClInclude Include="BeHttp\Tests.h" />
     <ClInclude Include="BeHttp\WebLogging.h" />
     <ClInclude Include="PublicAPI\BeHttp\AuthenticationHandler.h" />
+    <ClInclude Include="PublicAPI\BeHttp\BeUri.h" />
     <ClInclude Include="PublicAPI\BeHttp\CompressionOptions.h" />
     <ClInclude Include="PublicAPI\BeHttp\Credentials.h" />
     <ClInclude Include="PublicAPI\BeHttp\DefaultHttpHandler.h" />
@@ -102,6 +129,7 @@
     <ClInclude Include="PublicAPI\BeHttp\HttpError.h" />
     <ClInclude Include="PublicAPI\BeHttp\HttpHeaderProvider.h" />
     <ClInclude Include="PublicAPI\BeHttp\HttpHeaders.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpProxy.h" />
     <ClInclude Include="PublicAPI\BeHttp\HttpRequest.h" />
     <ClInclude Include="PublicAPI\BeHttp\HttpResponse.h" />
     <ClInclude Include="PublicAPI\BeHttp\HttpStatus.h" />
@@ -109,9 +137,34 @@
     <ClInclude Include="PublicAPI\BeHttp\IHttpHandler.h" />
     <ClInclude Include="PublicAPI\BeHttp\IHttpHeaderProvider.h" />
     <ClInclude Include="PublicAPI\BeHttp\ProxyHttpHandler.h" />
+    <ClInclude Include="Tests\IntegrationTests\BeHttp\HttpRequestTests.h" />
+    <ClInclude Include="Tests\IntegrationTests\BeHttp\Tests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\AuthenticationHandlerTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Tests\UnitTests\Published\FSTest.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpBinaryBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpCompressedBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpFileBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpMultipartBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpRangeBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpStringBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpHeadersTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\MockAuthenticationHandler.h" />
+    <ClInclude Include="Tests\UnitTests\Published\MockHttpHandler.h" />
+    <ClInclude Include="Tests\UnitTests\Published\ProxyHttpHandlerTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\StubAuthenticationHandler.h" />
+    <ClInclude Include="Tests\UnitTests\Published\TestsHelper.h" />
+    <ClInclude Include="Tests\UnitTests\Published\ValuePrinter.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebTestsHelper.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="BeHttp.PartFile.xml" />
+    <Xml Include="BeHttp.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Tests\UnitTests\ignore_list.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

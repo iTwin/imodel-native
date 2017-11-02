@@ -45,6 +45,9 @@ public:
     // Return reference to internal map
     HttpHeaderMap const& GetMap() const {return m_headers;}
 
+    // Return referance to internal map. Always use Set/Add methods instead of directly modifying map when possible.
+    HttpHeaderMap& GetMap() { return m_headers; };
+
     // Set header field value. Pass empty to remove previous value
     BEHTTP_EXPORT void SetValue(Utf8StringCR field, Utf8StringCR value);
 
@@ -138,6 +141,10 @@ struct HttpResponseHeaders : HttpHeaders
     // Cache-Control header
     void SetCacheControl(Utf8StringCR cacheControl) {SetValue("Cache-Control", cacheControl);}
     Utf8CP GetCacheControl() const {return GetValue("Cache-Control");}
+
+    // Proxy-Authenticate header. Use AuthenticationChallengeValue to parse it
+    void SetProxyAuthenticate(Utf8StringCR value) {SetValue("Proxy-Authenticate", value);}
+    Utf8CP GetProxyAuthenticate() const {return GetValue("Proxy-Authenticate");}
 };
 
 /*--------------------------------------------------------------------------------------+
@@ -186,5 +193,25 @@ public:
     uint64_t GetTo() const {return m_to;}
     uint64_t GetLength() const {return m_length;}
 };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AuthenticationChallengeValue
+    {
+private:
+    Utf8String m_type;
+    Utf8String m_realm;
+
+public:
+    AuthenticationChallengeValue() = default;
+    AuthenticationChallengeValue(Utf8String type, Utf8String realm) : m_type(type), m_realm(realm) {}
+
+    BEHTTP_EXPORT static BentleyStatus Parse(Utf8CP stringValue, AuthenticationChallengeValue& valueOut);
+    BEHTTP_EXPORT Utf8String ToString() const;
+
+    Utf8StringCR GetType() const {return m_type;}
+    Utf8StringCR GetRealm() const {return m_realm;}
+    };
 
 END_BENTLEY_HTTP_NAMESPACE

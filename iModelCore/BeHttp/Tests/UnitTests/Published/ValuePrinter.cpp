@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -67,7 +67,7 @@ std::ostream& operator << (std::ostream &o, AsyncTask::Priority value)
     return o;
     }
 
-BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 void PrintTo(const Utf8String& value, ::std::ostream* os)
     {
@@ -76,7 +76,7 @@ void PrintTo(const Utf8String& value, ::std::ostream* os)
 
 void PrintTo(const WString& value, ::std::ostream* os)
     {
-    PrintTo(Utf8String(value), os);
+    *os << '"' << Utf8String(value) << '"';
     }
 
 void PrintTo(BentleyStatus value, ::std::ostream* os)
@@ -92,4 +92,4 @@ void PrintTo(BentleyStatus value, ::std::ostream* os)
     *os << name;
     }
 
-END_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
+END_BENTLEY_NAMESPACE

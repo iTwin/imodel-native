@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeHttp/HttpRequest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,6 +57,7 @@ private:
     unsigned m_retriesMax = 0;
     bool m_followRedirects = true;
     bool m_useNewConnection = false;
+    bool m_retryOnCouldNotConnect = false;
     IHttpHandlerPtr m_httpHandler;
     CompressionOptions m_compressionOptions;
 
@@ -111,6 +112,11 @@ public:
     // https://sourceforge.net/p/curl/bugs/1275/
     void SetUseNewConnection(bool useNewConnection) {m_useNewConnection = useNewConnection;}
     bool GetUseNewConnection() const {return m_useNewConnection;}
+    
+    // Used to workaround a CURL bug:
+    // https://github.com/curl/curl/issues/1294/
+    void SetRetryOnCouldNotConnect(bool doRetry) { m_retryOnCouldNotConnect = doRetry; };
+    bool GetRetryOnCouldNotConnect() const { return m_retryOnCouldNotConnect; };
 
     // Use this if you want to specify settings for poor conectivity. Useful for downloads.
     // Retries if connection lost happen for maximumRetries or indefinetely if maximumRetries = 0

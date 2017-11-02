@@ -25,6 +25,9 @@
     <ClCompile Include="Published\HttpBody\HttpCompressedBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpBinaryBodyTests.cpp" />
     <ClCompile Include="Published\TestIntegration\Http\HttpRequestTests.cpp" />
+    <ClCompile Include="Published\AuthenticationChallengeValueTests.cpp" />
+    <ClCompile Include="Published\HttpErrorTests.cpp" />
+    <ClCompile Include="Published\HttpResponseTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\AuthenticationHandlerTests.h" />
@@ -45,5 +48,6 @@
     <ClInclude Include="Published\HttpBody\HttpBinaryBodyTests.h" />
     <ClInclude Include="Published\TestIntegration\Http\HttpRequestTests.h" />
     <ClInclude Include="Published\HttpBody\HttpCompressedBodyTests.h" />
+    <ClInclude Include="Published\StubAuthenticationHandler.h" />
   </ItemGroup>
 </Project>

@@ -2,17 +2,19 @@
  |
  |     $Source: BeHttp/Curl/CurlTaskRunner.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
 #include "CurlTaskRunner.h"
+
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/TaskScheduler.h>
 #include <BeHttp/HttpClient.h>
 #include "../SimplePackagedAsyncTask.h"
 #include "CurlHttpRequest.h"
 #include "NotificationPipe.h"
+
 #include <Bentley/BeTimeUtilities.h>
 #include "../WebLogging.h"
 
@@ -20,6 +22,117 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
+
+BeMutex CurlTaskRunner::s_suspendedMutex;
+BeConditionVariable CurlTaskRunner::s_suspendedCondition;
+volatile bool CurlTaskRunner::s_isOnActiveRequestCountChangedInitialized = false;
+volatile bool CurlTaskRunner::s_doSuspendNewRequests = false;
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::Suspend()
+    {
+    BeMutexHolder lock(s_suspendedMutex);
+    if (!s_isOnActiveRequestCountChangedInitialized)
+        {
+        s_isOnActiveRequestCountChangedInitialized = true;
+        CurlHttpRequest::SetOnActiveRequestCountChanged([]
+            {
+            s_suspendedCondition.notify_all();
+            });
+        };
+
+    s_doSuspendNewRequests = true;
+
+    s_suspendedCondition.notify_all();
+    NotificationPipe::GetDefault().Notify();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::Activate()
+    {
+    BeMutexHolder lock(s_suspendedMutex);
+
+    s_doSuspendNewRequests = false;
+
+    s_suspendedCondition.notify_all();
+    NotificationPipe::GetDefault().Notify();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurlTaskRunner::IsSuspended()
+    {
+    BeMutexHolder lock(s_suspendedMutex);
+    return s_doSuspendNewRequests;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::WaitWhileSuspended()
+    {
+    struct Predicate : IConditionVariablePredicate
+        {
+        virtual bool _TestCondition(BeConditionVariable &cv) override
+            {
+            return !s_doSuspendNewRequests;
+            }
+        };
+
+    Predicate predicate;
+    s_suspendedCondition.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::WaitWhileSuspendedAndRunning()
+    {
+    struct Predicate : IConditionVariablePredicate
+        {
+        virtual bool _TestCondition(BeConditionVariable &cv) override
+            {
+            LOG.errorv("CURL WaitWhileSuspendedAndRunning _TestCondition suspended: %i, requests: %d", s_doSuspendNewRequests, CurlHttpRequest::GetActiveRequestCount());
+
+            if (!s_doSuspendNewRequests)
+                return true;
+
+            // Check global request count due to ThreadCurlHttpHandler issuing requests as well
+            if (0 == CurlHttpRequest::GetActiveRequestCount())
+                return true;
+
+            return false;
+            }
+        };
+
+    Predicate predicate;
+    s_suspendedCondition.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurlTaskRunner::AreRequestsRunning()
+    {
+    return 0 != CurlHttpRequest::GetActiveRequestCount();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurlTaskRunner::PrepareRequestIfNotSuspended(CurlHttpRequest& curlRequest)
+    {
+    BeMutexHolder lock(s_suspendedMutex);
+    if (s_doSuspendNewRequests)
+        return false;
+    curlRequest.PrepareRequest();
+    return true;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     04/2014
@@ -38,9 +151,25 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
 #ifdef LOG_WEB_TIMES
         uint64_t begin = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 #endif
+        /*
+        LOG.errorv("CurlTaskRunner::_RunAsyncTasksLoop() suspended: %s, running: %d, queue: %d",
+        s_doSuspendNewRequests ? "yes" : "no",
+        CurlHttpRequest::GetActiveRequestCount(),
+        GetTaskScheduler()->GetQueueTaskCount());
+        */
 
-        // TODO: limit running request count?
-        WaitAndPopNewRequests();
+        if (s_doSuspendNewRequests)
+            {
+            if (m_curlToRequestMap.empty())
+                {
+                s_suspendedCondition.notify_all();
+                WaitWhileSuspended();
+                }
+            }
+        else
+            {
+            WaitAndPopNewRequests();
+            }
 
 #ifdef LOG_WEB_TIMES
         uint64_t afterQueue = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -115,21 +244,18 @@ void CurlTaskRunner::WaitAndPopNewRequests()
     std::shared_ptr<AsyncTask> task;
 
     while ((task = GetTaskScheduler()->TryPop()) != nullptr)
-        {
         AddTaskToCurlMultiMap(task);
-        }
 
-    if (m_curlToRequestMap.empty())
-        {
-        task = GetTaskScheduler()->WaitAndPop();
+    if (!m_curlToRequestMap.empty())
+        return;
 
-        if (IsStopping())
-            {
-            return;
-            }
+    // No running requests, wait for more
+    task = GetTaskScheduler()->WaitAndPop();
 
-        AddTaskToCurlMultiMap(task);
-        }
+    if (IsStopping())
+        return;
+
+    AddTaskToCurlMultiMap(task);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -137,6 +263,13 @@ void CurlTaskRunner::WaitAndPopNewRequests()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlTaskRunner::AddTaskToCurlMultiMap(std::shared_ptr<AsyncTask> task)
     {
+    BeMutexHolder lock(s_suspendedMutex);
+    if (s_doSuspendNewRequests)
+        {
+        GetTaskScheduler()->Push(task);
+        return;
+        }
+
     HttpClient::BeginNetworkActivity();
 
     auto httpTask = std::static_pointer_cast<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>> (task);
@@ -164,17 +297,17 @@ void CurlTaskRunner::ResolveFinishedCurl(CURLMsg* curlMsg)
     BeAssert(CURLM_OK == status);
 
     auto finishedRequestTask = m_curlToRequestMap[finishedCurl];
-    ConnectionStatus finishedStatus = finishedRequestTask->GetData()->GetConnectionStatus(code);
+    finishedRequestTask->GetData()->FinalizeRequest(code);
 
     m_curlToRequestMap.erase(finishedCurl);
 
-    if (finishedRequestTask->GetData()->ShouldRetry(finishedStatus))
+    if (finishedRequestTask->GetData()->ShouldRetry())
         {
-        AddTaskToCurlMultiMap(finishedRequestTask);
+        GetTaskScheduler()->Push(finishedRequestTask);
         }
     else
         {
-        Response response = finishedRequestTask->GetData()->ResolveResponse(finishedStatus);
+        Response response = finishedRequestTask->GetData()->ResolveResponse();
         SetCurrentRunningTask(finishedRequestTask);
 
         finishedRequestTask->OnFinished(response);
@@ -211,9 +344,9 @@ void CurlTaskRunner::WaitForData(long topTimeoutMs)
     fd_set fdexcep;
     int maxfd = -1;
 
-    FD_ZERO (&fdread);
-    FD_ZERO (&fdwrite);
-    FD_ZERO (&fdexcep);
+    FD_ZERO(&fdread);
+    FD_ZERO(&fdwrite);
+    FD_ZERO(&fdexcep);
 
     long curl_timeo = -1;
 
@@ -232,7 +365,7 @@ void CurlTaskRunner::WaitForData(long topTimeoutMs)
 
     ::timeval timeout = MsToTimeval(curl_timeo);
 
-    // Get file keys from the transfers 
+    // Get file keys from the transfers
     status = curl_multi_fdset(m_multi, &fdread, &fdwrite, &fdexcep, &maxfd);
     BeAssert(CURLM_OK == status);
 
@@ -245,4 +378,3 @@ void CurlTaskRunner::WaitForData(long topTimeoutMs)
         BeAssert(false);
         }
     }
-

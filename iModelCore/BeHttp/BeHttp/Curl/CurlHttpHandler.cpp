@@ -2,35 +2,26 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #include "CurlHttpHandler.h"
-#include <Bentley/BeTimeUtilities.h>
-#include "../WebLogging.h"
-#include "../SimplePackagedAsyncTask.h"
-#include "CurlHttpRequest.h"
-#include "NotificationPipe.h"
+
 #include <BeHttp/HttpClient.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Tasks/AsyncTaskRunnerFactory.h>
+
+#include "../SimplePackagedAsyncTask.h"
+#include "../WebLogging.h"
+#include "CurlHttpRequest.h"
 #include "CurlTaskRunner.h"
+#include "NotificationPipe.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ApplicationEventsManager& ApplicationEventsManager::GetInstance()
-    {
-    // NOTE: This is not thread safe!
-    static ApplicationEventsManager* s_instance;
-
-    if (s_instance == nullptr)
-        s_instance = new ApplicationEventsManager();
-
-    return *s_instance;
-    }
+#define ENABLE_BACKGROUND_TRANSFER
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
@@ -42,15 +33,12 @@ CurlHttpHandler::CurlHttpHandler()
 
     m_webThreadPool = WorkerThreadPool::Create
         (
-        1, 
-        "Curl Web", 
-        std::shared_ptr<AsyncTaskRunnerFactory<CurlTaskRunner>> (new AsyncTaskRunnerFactory<CurlTaskRunner> ())
+        1,
+        "Curl Web",
+        std::shared_ptr<AsyncTaskRunnerFactory<CurlTaskRunner>>(new AsyncTaskRunnerFactory<CurlTaskRunner>())
         );
 
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        {
-        LOG.debugv("HttpBackend: %s", curl_version());
-        }
+    InitStartBackgroundTask(nullptr);
 
 #if defined (BENTLEYCONFIG_OS_APPLE_IOS)
     ApplicationEventsManager::GetInstance().AddApplicationEventsListener(*this);
@@ -75,50 +63,74 @@ CurlHttpHandler::~CurlHttpHandler()
     m_curlPool.Resize(0);
     curl_global_cleanup();
 #endif
-    
+
 #if defined (BENTLEYCONFIG_OS_APPLE_IOS)
     ApplicationEventsManager::GetInstance().RemoveApplicationEventsListener(*this);
 #endif
     }
-
-#if !defined (BENTLEYCONFIG_OS_APPLE_IOS)
-void ApplicationEventsManager::InitializeApplicationEventsListening(){}
-#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> CurlHttpHandler::_PerformRequest(RequestCR request)
     {
-    auto curlRequest = std::make_shared<CurlHttpRequest> (request, m_curlPool);
-    auto task = std::make_shared<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>> (curlRequest);
-        
+    auto curlRequest = std::make_shared<CurlHttpRequest>(request, m_curlPool);
+    auto task = std::make_shared<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>>(curlRequest);
+
     m_webThreadPool->Push(task);
 
     NotificationPipe::GetDefault().Notify();
+
     return task;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   06/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ApplicationEventsManager::AddApplicationEventsListener(IApplicationEventsListener& listener)
+void CurlHttpHandler::_OnApplicationSentToBackground()
     {
-    m_applicationEventsListeners.insert(&listener);
+#ifdef ENABLE_BACKGROUND_TRANSFER
+    CurlTaskRunner::Suspend();
+    if (!CurlTaskRunner::AreRequestsRunning())
+        return;
+
+    auto onBackground = []
+        {
+        CurlTaskRunner::WaitWhileSuspendedAndRunning();
+        BeThreadUtilities::BeSleep(1000); // Allow optimistic processing of http responses
+        };
+    auto onExpired = []
+        {
+        CurlHttpRequest::ResetAllActiveRequests();
+        };
+
+    m_startBackgroundTask("BeHttp.Suspending", onBackground, onExpired);
+#endif
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   06/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ApplicationEventsManager::RemoveApplicationEventsListener(IApplicationEventsListener& listener)
+void CurlHttpHandler::_OnApplicationSentToForeground()
     {
-    m_applicationEventsListeners.erase(&listener);
+#ifdef ENABLE_BACKGROUND_TRANSFER
+    CurlTaskRunner::Activate();
+#else
+    CurlHttpRequest::ResetAllActiveRequests();
+#endif
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Benediktas.Lipnickas    06/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurlHttpHandler::_OnApplicationResume()
+void CurlHttpHandler::InitStartBackgroundTask(StartBackgroundTask callback)
     {
-    CurlHttpRequest::ResetAllRequests();
-    }
+    if (callback)
+        {
+        m_startBackgroundTask = callback;
+        return;
+        }
+
+    using namespace std::placeholders;
+    m_startBackgroundTask = std::bind(&ApplicationEventsManager::StartBackgroundTask, _1, _2, _3);
+    };

@@ -2,13 +2,12 @@
 |
 |     $Source: Tests/UnitTests/Published/BaseMockHttpHandlerTest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-#include "TestsHelper.h"
 #include "WebTestsHelper.h"
 
 BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE

@@ -2,13 +2,14 @@
 |
 |     $Source: BeHttp/Curl/ThreadCurlHttpHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "ThreadCurlHttpHandler.h"
 
 #include "CurlHttpRequest.h"
+#include "CurlTaskRunner.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
@@ -30,35 +31,45 @@ ThreadCurlHttpHandler::ThreadCurlHttpHandler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> ThreadCurlHttpHandler::_PerformRequest(RequestCR request)
     {
-    if (request.GetMethod().EqualsI ("GET"))
+    if (request.GetMethod().EqualsI("GET"))
         {
         return CurlHttpHandler::_PerformRequest(request);
         }
 
+    return PerformThreadedRequest(request);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Travis.Cobbs    09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<Response> ThreadCurlHttpHandler::PerformThreadedRequest(RequestCR request)
+    {
     return m_threadQueue.Push([=]
         {
-        return m_threadPool->ExecuteAsync<Response> ([=]
+        return m_threadPool->ExecuteAsync<Response>([=]
             {
             CurlHttpRequest curlRequest(request, m_curlPool);
 
-            ConnectionStatus connectionStatus;
-            CURLcode curlStatus = CURLcode::CURL_LAST;
-            do
+            bool retry = true;
+            while (retry)
                 {
-                curlRequest.PrepareRequest();
-                CURL* curl = curlRequest.GetCurlHandle();
-                curlStatus = curl_easy_perform(curl);
-                connectionStatus = curlRequest.GetConnectionStatus(curlStatus);
-                }
-            while (curlRequest.ShouldRetry(connectionStatus));
+                CurlTaskRunner::WaitWhileSuspended();
+                if (!CurlTaskRunner::PrepareRequestIfNotSuspended(curlRequest))
+                    continue;
 
-            return curlRequest.ResolveResponse(connectionStatus);
+                CURL* curl = curlRequest.GetCurlHandle();
+                CURLcode status = curl_easy_perform(curl);
+                curlRequest.FinalizeRequest(status);
+                retry = curlRequest.ShouldRetry();
+                }
+
+            return curlRequest.ResolveResponse();
             });
         }, request.GetCancellationToken());
     }
 
 // Test for CURLM
-//AsyncTaskPtr<Response> CurlHttpHandler::PerformRequest (HttpRequestCR request)
+//AsyncTaskPtr<Response> CurlHttpHandler::PerformRequest (RequestCR request)
 //    {
 //    return m_threadQueue.Push ([=]
 //        {

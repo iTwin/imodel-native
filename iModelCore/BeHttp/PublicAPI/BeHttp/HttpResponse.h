@@ -26,16 +26,17 @@ typedef RefCountedPtr<HttpResponseContent> HttpResponseContentPtr;
 * @bsiclass                                             Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum class ConnectionStatus
-{
-    None,
+    {
+    None, // First
     OK,
     Canceled,
     CouldNotConnect,
+    CouldNotResolveProxy,
     ConnectionLost,
     Timeout,
     CertificateError,
-    UnknownError
-};
+    UnknownError // Last
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2013
@@ -83,7 +84,13 @@ public:
     ConnectionStatus GetConnectionStatus() const {return m_connectionStatus;}
     HttpStatus GetHttpStatus() const {return m_httpStatus;}
     
-    bool IsSuccess() const {if (m_connectionStatus != ConnectionStatus::OK) return false; return HttpStatusHelper::GetType(m_httpStatus) == HttpStatusType::Success;}
+    bool IsSuccess() const 
+        {
+        if (m_connectionStatus != ConnectionStatus::OK) return false;
+        return HttpStatusHelper::GetType(m_httpStatus) == HttpStatusType::Success;
+        }
+
+    BEHTTP_EXPORT static Utf8String ToStatusString(ConnectionStatus connectionStatus, HttpStatus httpStatus);
 };
 
 END_BENTLEY_HTTP_NAMESPACE
