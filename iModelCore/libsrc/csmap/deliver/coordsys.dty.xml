@@ -312,10 +312,7 @@
                     <KeyName>EPSG:2215</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Douala48.AEF-West</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3119</KeyName>
+                    <KeyName>Douala1948.AEF-West</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:22832</KeyName>
@@ -5521,10 +5518,7 @@
                 <Name>Dominica</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2002</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Dominica45.BWIgrid</KeyName>
+                    <KeyName>Dominica1945.BWIgrid</KeyName>
                   </Member>
                   <Member>
                     <KeyName>SainteAnne.UTM-20N</KeyName>
@@ -5955,10 +5949,7 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>Czech/JTSK.Krovak</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102067</KeyName>
+                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Pulkovo42/83b.GK3d-3/EN</KeyName>
@@ -6661,10 +6652,7 @@
                     <KeyName>DHDN/BeTA.Gauss3d-5</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.Berlin/Cassini</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3068</KeyName>
+                    <KeyName>DHDN/3.Berlin/Cassini</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3068-1</KeyName>
@@ -6710,12 +6698,6 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:3397-1</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3398-1</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3399-1</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4647</KeyName>
@@ -7616,16 +7598,10 @@
                 <Name>Romania</Name>
                 <Members>
                   <Member>
-                    <KeyName>DealulPiscului33.Stereo</KeyName>
+                    <KeyName>DealulPiscu1933.Stereo</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31600</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DealulPiscului70.Stereo</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31700</KeyName>
+                    <KeyName>Pulkovo42/58b.Stereo</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3844</KeyName>
@@ -8497,7 +8473,10 @@
                   </Member>
                   <Member>
                     <KeyName>LondonGrid</KeyName>
-                  </Member>				  
+                  </Member>			
+                  <Member>
+                    <KeyName>HeathrowAirportGrid2007</KeyName>
+                  </Member>			  
                 </Members>
               </Group>
 
@@ -9423,10 +9402,7 @@
             <Name>Indian Ocean</Name>
             <Members>
               <Member>
-                <KeyName>DiegoGarcia1969.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4724</KeyName>
+                <KeyName>DiegoGarcia69.LL</KeyName>
               </Member>
                <Member>
                  <KeyName>EPSG:3337</KeyName>
@@ -9522,31 +9498,19 @@
                     <KeyName>Rassadiran.NakhlTaqi</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-38N</KeyName>
+                    <KeyName>Europ50/1977.UTM-38N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-39N</KeyName>
+                    <KeyName>Europ50/1977.UTM-39N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-40N</KeyName>
+                    <KeyName>Europ50/1977.UTM-40N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-41N</KeyName>
+                    <KeyName>Europ50/1977.UTM-41N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:2057</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2058</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2059</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2060</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2061</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3307</KeyName>
@@ -13389,6 +13353,66 @@
                               </Member>
                               <Member>
                                 <KeyName>EPSG:3428</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-01-Goodland</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-02-Colby</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-03-Oberlin</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-04-Hays</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-05-GreatBend</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-06-Beloit</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-07-Salina</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-08-Manhattan</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-09-Emporia</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-10-Atchison</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-11-KansasCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-12-Ulysses</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-13-GardenCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-14-DodgeCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-15-Larned</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-16-Pratt</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-17-Wichita</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-18-ArkansasCity</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-19-Coffeyville</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>KRCS-20-Pittsburg</KeyName>
                               </Member>
                             </Members>
                           </Group>
@@ -21800,7 +21824,7 @@
                     <KeyName>CHATHAM.ChathamIss</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Chatam1979a.ChathamIss</KeyName>
+                    <KeyName>Chatham1979a.ChathamIss</KeyName>
                   </Member>
                 </Members>
                 <Groups>
@@ -28384,6 +28408,96 @@
               <Member>
                 <KeyName>EPSG:3462</KeyName>
               </Member>
+              <Member>
+                <KeyName>Dominica45.BWIgrid</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-38N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-39N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-40N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-41N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului33.Stereo</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-1</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-2</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-3</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-4</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-5</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Berlin/Cassini</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Douala48.AEF-West</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului70.Stereo</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2002</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2058</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2059</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2060</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2061</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31462</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31463</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31464</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31465</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31600</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31700</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3068</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3119</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:102067</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3398-1</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3399-1</KeyName>
+              </Member>	      
             </Members>
             <Groups>
               <Group>
@@ -28812,6 +28926,9 @@
                   <Member>
                     <KeyName>Krovak S-JTSK/95</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>Czech/JTSK.Krovak</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -28861,34 +28978,22 @@
                 <Name>Germany</Name>
                 <Members>
                   <Member>
-                    <KeyName>DHDN.Gauss3d-1</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-1</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:31461</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.Gauss3d-2</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-2</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31462</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-3</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.Gauss3d-3</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-4</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31463</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN.Gauss3d-4</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31464</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN.Gauss3d-5</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31465</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-5</KeyName>
                   </Member>
                   <Member>
                     <KeyName>DHDN/BeTA.Gauss3d-1</KeyName>
@@ -31036,10 +31141,7 @@
                     <KeyName>Manoca.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Douala48.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4192</KeyName>
+                    <KeyName>Douala1948.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4228</KeyName>
@@ -31367,7 +31469,7 @@
                 <KeyName>CampAreaAstro_1.LL</KeyName>
               </Member>
               <Member>
-                <KeyName>DeceptionIsland.LL</KeyName>
+                <KeyName>DeceptionIsland_1.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>EPSG:4736</KeyName>
@@ -31759,10 +31861,7 @@
                 <KeyName>EPSG:4601</KeyName>
               </Member>
               <Member>
-                <KeyName>Dominica45.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4602</KeyName>
+                <KeyName>Dominica1945.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>Grenada53.LL</KeyName>
@@ -32072,7 +32171,7 @@
                     <KeyName>EPSG:4156</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK.LL</KeyName>
+                    <KeyName>CzechJTSK/5b.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:5228</KeyName>
@@ -32218,10 +32317,7 @@
                     <KeyName>DHDN/BeTA.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4314</KeyName>
+                    <KeyName>DHDN/3.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4745</KeyName>
@@ -32479,16 +32575,10 @@
                 <Name>Romania</Name>
                 <Members>
                   <Member>
-                    <KeyName>DealulPiscului70.LL</KeyName>
+                    <KeyName>Pulkovo42/58b.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4317</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DealulPiscului33.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4316</KeyName>
+                    <KeyName>DealulPiscului1933.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -34005,180 +34095,6 @@
                 <KeyName>EPSG:104113</KeyName>
               </Member>
               <Member>
-                <KeyName>EPSG:37001</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37002</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37003</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37004</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37005</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37006</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37007</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37008</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37201</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37202</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37203</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37204</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37205</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37206</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37207</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37208</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37211</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37212</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37213</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37214</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37215</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37216</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37217</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37218</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37219</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37220</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37221</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37222</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37223</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37224</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37226</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37227</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37228</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37229</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37230</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37231</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37232</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37233</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37234</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37235</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37237</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37238</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37239</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37240</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37241</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37242</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37243</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37245</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37246</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37247</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37249</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37250</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37251</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37253</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37254</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37255</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37257</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:37259</KeyName>
-              </Member>
-              <Member>
                 <KeyName>EPSG:4764</KeyName>
               </Member>
             </Members>
@@ -34606,6 +34522,222 @@
               </Member>
               <Member>
                 <KeyName>EPSG:4155</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37001</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37002</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37003</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37004</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37005</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37006</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37007</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37008</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37201</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37202</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37203</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37204</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37205</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37206</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37207</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37208</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37211</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37212</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37213</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37214</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37215</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37216</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37217</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37218</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37219</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37220</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37221</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37222</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37223</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37224</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37226</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37227</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37228</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37229</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37230</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37231</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37232</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37233</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37234</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37235</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37237</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37238</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37239</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37240</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37241</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37242</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37243</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37245</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37246</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37247</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37249</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37250</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37251</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37253</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37254</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37255</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37257</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:37259</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului33.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Dominica45.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Czech/JTSK.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Douala48.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului70.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DiegoGarcia1969.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DeceptionIsland.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4314</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4316</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4602</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4192</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4317</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4724</KeyName>
               </Member>
             </Members>
           </Group>
