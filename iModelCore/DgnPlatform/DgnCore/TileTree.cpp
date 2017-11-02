@@ -826,7 +826,8 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
     for (;;)
         {
         m_rootTile->Draw(args, 0);
-        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.Count(), GetRootTile()->CountTiles(), args.m_missing.size());
+        BeAssert("Unusually large number of tile to draw" && (args.m_missing.size() + args.m_graphics.Count() < 10000));
 
         // Do we still have missing tiles?
         if (args.m_missing.empty())
