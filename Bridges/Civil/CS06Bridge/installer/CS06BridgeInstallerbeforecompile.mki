@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: CS06Bridge/installer/CS06BridgeInstallerbeforecompile.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include installFrameworkBeforeCompile.mki
+
+INSTALLER_COMPILER_OPT      + -dINSTALLER_LICENSE_FILE=$(SrcRoot)miscdev/eula/lang/English/eula.rtf
+# -dINSTALLER_ICON=$(SrcRoot)DgnIndexer/configeditor/Images/DgnIFilter.ico
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)CS06BridgeInstaller.wxs 
+#INSTALLER_COMPILER_OPT      + -dbbWixProductProvidesKey={94DC5D79-570A-454C-ABB0-4AEC6C1DCA5C} 

@@ -1,0 +1,16 @@
+#-----------------------------------------------------------------------+
+#                                                                       |
+#     $Source: CS06Bridge/installer/installer.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#                                                                       |
+#----------------------------------------------------------------------*/
+
+#----------------------------------------------------------------------*/
+# Symlink files needed for powerproduct build in BuildContext
+#----------------------------------------------------------------------*/
+
+always:
+    @CreateSymLinks.py -f"$(BuildContext)InstallerBuildFiles/CS06BridgeInstallerbeforecompile.mki=$(_MakeFilePath)CS06BridgeInstallerbeforecompile.mki"
+    @CreateSymLinks.py -f"$(BuildContext)InstallerBuildFiles/CS06BridgeInstaller.wxs=$(_MakeFilePath)CS06BridgeInstaller.wxs"
+
