@@ -364,7 +364,7 @@ BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfo
     EXPECT_TRUE (dbPath.DoesPathExist ());
 
     auto schemaUpgradeOptions = forceDomainUpgrade
-        ? SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::IncompatibleAlso)
+        ? SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly)
         : SchemaUpgradeOptions();
     DgnDbPtr db = DgnDb::OpenDgnDb (nullptr, dbPath, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions));
     EXPECT_TRUE(db.IsValid());

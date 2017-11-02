@@ -627,13 +627,13 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
     iModelConnectionPtr connection = connectionResult.GetValue();
 
     auto fileResult = ExecuteAsync(connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken));
-    if (!fileResult.IsSuccess())
+    if (!fileResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(fileResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(fileResult->GetError()));
         }
 
-    auto newFileInfo = fileResult.GetValue();
+    auto newFileInfo = fileResult->GetValue();
     BeFileName downloadPath = originalFilePath.GetDirectoryName();
     downloadPath = downloadPath.AppendToPath(BeFileName(newFileInfo->GetFileId().ToString()));
     downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
@@ -724,12 +724,12 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
     //get Briefcase FileInfo
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting FileInfo of Briefcase ID %d.", briefcaseID);
     auto fileInfoResult = ExecuteAsync(connection->GetBriefcaseFileInfo(briefcaseID, nullptr));
-    if (!fileInfoResult.IsSuccess())
+    if (!fileInfoResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileInfoResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(fileInfoResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileInfoResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(fileInfoResult->GetError()));
         }
-    FileInfoPtr fileInfo = fileInfoResult.GetValue();
+    FileInfoPtr fileInfo = fileInfoResult->GetValue();
 
     BeFileName filePath = fileNameCallback(baseDirectory, briefcaseID, connection->GetiModelInfo(), *fileInfo);
     if (filePath.DoesPathExist())
@@ -790,10 +790,10 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
 
     auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
-    if (!seedFileInfoResult.IsSuccess())
+    if (!seedFileInfoResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
-        return StatusResult::Error(seedFileInfoResult.GetError());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
+        return StatusResult::Error(seedFileInfoResult->GetError());
         }
 
     MultiProgressCallbackHandler handler(callback);
@@ -801,7 +801,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     handler.AddCallback(changeSetsCallback, 20.0f);
     handler.AddCallback(briefcaseCallback, 80.0f);
     
-    Utf8String mergedChangeSetId = seedFileInfoResult.GetValue()->GetMergedChangeSetId();
+    Utf8String mergedChangeSetId = seedFileInfoResult->GetValue()->GetMergedChangeSetId();
     ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
 
     StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), briefcaseCallback, cancellationToken);
@@ -812,7 +812,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         }
 
     BeSQLite::DbResult status;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)));
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         {
         StatusResult result = StatusResult::Error(Error(db, status));
@@ -942,14 +942,14 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterCreateBriefcaseInstance);
 #endif
-    if (!briefcaseResult.IsSuccess())
+    if (!briefcaseResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(briefcaseResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(briefcaseResult->GetError()));
         }
 
     Json::Value json;
-    briefcaseResult.GetValue().GetJson(json);
+    briefcaseResult->GetValue().GetJson(json);
     JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
     BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::ParseRapidJson(ToRapidJson(instance[ServerSchema::Properties]));
     FileInfoPtr fileInfo = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), instance[ServerSchema::InstanceId].asString());
@@ -1124,21 +1124,21 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfo
     iModelConnectionPtr connection = connectionResult.GetValue();
 
     auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
-    if (!seedFileInfoResult.IsSuccess())
+    if (!seedFileInfoResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult->GetError()));
         }
 
     auto versionManager = connection->GetVersionsManager();
-    ChangeSetsInfoResult result = ExecuteAsync(versionManager.GetVersionChangeSets(versionId, seedFileInfoResult.GetValue()->GetFileId(), cancellationToken));
-    if (!result.IsSuccess())
+    auto result = ExecuteAsync(versionManager.GetVersionChangeSets(versionId, seedFileInfoResult->GetValue()->GetFileId(), cancellationToken));
+    if (!result->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result->GetError()));
         }
 
-    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), result.GetValue(), fileNameCallBack, callback, cancellationToken);
+    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult->GetValue()), result->GetValue(), fileNameCallBack, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1167,20 +1167,20 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelIn
     iModelConnectionPtr connection = connectionResult.GetValue();
 
     auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
-    if (!seedFileInfoResult.IsSuccess())
+    if (!seedFileInfoResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult->GetError()));
         }
 
     auto result = ExecuteAsync(connection->GetChangeSetById(changeSetId, cancellationToken));
-    if (!result.IsSuccess())
+    if (!result->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-        ChangeSetsInfoResult::Error(result.GetError());
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result->GetError().GetMessage().c_str());
+        ChangeSetsInfoResult::Error(result->GetError());
         }
 
-    uint64_t changeSetIndex = result.GetValue()->GetIndex();
+    uint64_t changeSetIndex = result->GetValue()->GetIndex();
 
     Utf8String filter;
     filter.Sprintf("%s+le+%I64d", ServerSchema::Property::Index, changeSetIndex);
@@ -1190,7 +1190,7 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelIn
 
     auto changeSetsResult = ExecuteAsync(connection->ChangeSetsFromQueryInternal(query, false, cancellationToken));
 
-    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), changeSetsResult.GetValue(), fileNameCallback, callback, cancellationToken);
+    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult->GetValue()), changeSetsResult->GetValue(), fileNameCallback, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1219,20 +1219,20 @@ BeFileNameTaskPtr Client::DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, L
     iModelConnectionPtr connection = connectionResult.GetValue();
 
     auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
-    if (!seedFileInfoResult.IsSuccess())
+    if (!seedFileInfoResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult->GetError()));
         }
 
-    ChangeSetsInfoResult result = ExecuteAsync(connection->GetAllChangeSets());
-    if (!result.IsSuccess())
+    auto result = ExecuteAsync(connection->GetAllChangeSets());
+    if (!result->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result->GetError()));
         }
 
-    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), result.GetValue(), fileNameCallback, callback, cancellationToken);
+    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult->GetValue()), result->GetValue(), fileNameCallback, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
