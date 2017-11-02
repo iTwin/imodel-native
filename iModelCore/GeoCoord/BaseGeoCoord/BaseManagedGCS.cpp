@@ -534,6 +534,15 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   02/07
 +---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt InitFromEPSGCode(int epsgCode)
+    {
+        return m_baseGCSPeer->InitFromEPSGCode (nullptr, nullptr, epsgCode);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   02/07
++---------------+---------------+---------------+---------------+---------------+------*/
 property System::IntPtr Peer
     {
     System::IntPtr get() {return System::IntPtr ((void *)m_baseGCSPeer);}

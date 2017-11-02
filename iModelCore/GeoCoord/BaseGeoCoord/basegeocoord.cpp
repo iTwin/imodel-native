@@ -261,23 +261,27 @@ StatusInt Process (BaseGCSR baseGCS, WCharCP wktChar)
 
     // First thing we do is allocate the m_csParameter structure of the GCS (using a known definition)
     baseGCS.SetFromCSName (L"LL84");
+
+    // The only way the above can fail is if no valid csParameter were provided and no dictionary present.
+    if (NULL == baseGCS.GetCSParameters())
+        return ERROR;
+        
     baseGCS.SetName (L"");
     baseGCS.SetDescription (L"");
     baseGCS.SetSource(L"");
     // Wipe the group name for future definition complete
-    if (baseGCS.GetCSParameters() != NULL)
-        {
-        baseGCS.GetCSParameters()->csdef.group[0] = '\0';
-        // Wipe min / max so they can be computed
-        baseGCS.GetCSParameters()->csdef.ll_min[LNG] = 0.0;
-        baseGCS.GetCSParameters()->csdef.ll_min[LAT] = 0.0;
-        baseGCS.GetCSParameters()->csdef.ll_max[LNG] = 0.0;
-        baseGCS.GetCSParameters()->csdef.ll_max[LAT] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_min[XX] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_min[YY] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_max[XX] = 0.0;
-        baseGCS.GetCSParameters()->csdef.xy_max[YY] = 0.0;
-        }
+
+    baseGCS.GetCSParameters()->csdef.group[0] = '\0';
+    // Wipe min / max so they can be computed
+    baseGCS.GetCSParameters()->csdef.ll_min[LNG] = 0.0;
+    baseGCS.GetCSParameters()->csdef.ll_min[LAT] = 0.0;
+    baseGCS.GetCSParameters()->csdef.ll_max[LNG] = 0.0;
+    baseGCS.GetCSParameters()->csdef.ll_max[LAT] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_min[XX] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_min[YY] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_max[XX] = 0.0;
+    baseGCS.GetCSParameters()->csdef.xy_max[YY] = 0.0;
+
 
     if ((wkt.length() >= 6) && (wkt.substr (0, 6) == (L"PROJCS")))
         status = GetProjected (baseGCS, wkt);
@@ -4115,6 +4119,10 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
             // directly related to the definition of the ProjectCSType key (EPSG code)
             if (projectedCS && (allowUnitsOverride || !m_haveCS || m_userDefinedProjectedCS))
                 {
+                // if the units are the same we just bypass
+                if (strcmpi(pUnit->name, m_csDef.unit) == 0)
+                    return SUCCESS;
+
                 // convert the offsets to the new unit.
                 double oldToNewUnitConvFactor = m_csDef.unit_scl / pUnit->factor;
                 m_csDef.unit_scl = pUnit->factor;
@@ -4373,7 +4381,27 @@ StatusInt       ProcessProjectedCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 
         CSDefinition* csDef;
         if (NULL == (csDef = CSMap::CS_csdef (coordSysName)))
-            return cs_Error;
+            {
+            // we didn't find an EPSG Number the easy way, have to search for an entry that has epsgNbr field set to desired value.
+            int         index;
+            char        csKeyName[128];
+            for (index = 0; (0 < CSMap::CS_csEnum (index, csKeyName, sizeof(csKeyName))); index++)
+                {
+                if (NULL != (csDef = CSMap::CS_csdef (csKeyName)))
+                    {
+                    if (geoCode == csDef->epsgNbr)
+                        break; // We have it
+                    
+                    CSMap::CS_free (csDef);
+                    csDef = NULL;
+                    }
+                }
+
+            // If we did not find then return immediately
+            if (NULL == csDef)
+                return cs_Error;
+            }
+
         // copy and free
         m_csDef     = *csDef;
         m_haveCS    = true;
@@ -6006,6 +6034,9 @@ int                     quadrant
         return cs_Error;
         }
 
+    // Clear out the error that may have come from a previous init attempt
+    m_csError = 0;
+
     m_sourceLibrary = LibraryManager::Instance()->GetSystemLibrary();
 
     m_coordSysId = COORDSYS_AZMEA;
@@ -6177,7 +6208,6 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
             char    csErrorMsg[512];
             CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
             warningOrErrorMsg->AssignA (csErrorMsg);
-//            BeAssert (false);
             }
         // process warnings.
         if ((status & ~(StatusInt)(cs_EL2WKT_NMTRUNC | cs_DT2WKT_NMTRUNC | cs_CS2WKT_NMTRUNC | cs_DT2WKT_DTDEF | cs_DT2WKT_NODEF)) == 0)
@@ -6213,11 +6243,11 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
             m_csError = cs_Error;
             status = cs_Error;
             }
-        }
         else
-        {
+            {
             // The datum is valid and defined in the system library
             m_sourceLibrary = LibraryManager::Instance()->GetSystemLibrary();
+            }
         }
 
     // This section was added as an alternate WKT parser. For some reason the CSMAP parser
@@ -6248,6 +6278,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
         try {
 
             SRSWKTParser theWKTParser;
+            Int32 previousCsError = m_csError; // Save previous error as process clears out the error.
             StatusInt status2 = theWKTParser.Process (*this, wellKnownText);
             if ((SUCCESS == status2) && (IsValid()))
                 {
@@ -6262,6 +6293,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                 // This must be done in case of error since the parser allocates the structure but cannot destroy it
                 CSMAP_FREE_AND_CLEAR (m_csParameters);
 
+                // Restore error to value prior to WKT parsing attempt. is status is SUCCESS it should already be SUCCESS
+                m_csError = previousCsError;
                 if (SUCCESS == status)
                     {
                     // If we get here it is because the CSMAP succeeded parsing yet it was one of the variation we did not support
@@ -6292,6 +6325,9 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
 
     // this will cause the type 66 to be saved with coordSysId set the same as projType.
     m_coordSysId = 0;
+
+    // There should always be a source library set if successful. (And for WKT it is the system library)
+    assert(nullptr != m_sourceLibrary || SUCCESS != status);
 
     // Even if invalid it is indicated as unmodified.
     SetModified(false);
@@ -6368,6 +6404,26 @@ int                     epsgCode
             return SUCCESS;
             }
         }
+
+    // we didn't find an EPSG Number the easy way, have to search for an entry that has epsgNbr field set to desired value.
+    int         index;
+    char        csKeyName[128];
+    for (index = 0; (0 < CSMap::CS_csEnum (index, csKeyName, sizeof(csKeyName))); index++)
+        {
+        WString keyNameString (csKeyName);
+
+        if (NULL != (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, WString(csKeyName).c_str())))
+            {
+            if (epsgCode == m_csParameters->csdef.epsgNbr)
+                {
+                // found it ... 
+                m_coordSysId = COORDSYS_KEYNM;
+                return SUCCESS;
+                }
+            CSMAP_FREE_AND_CLEAR (m_csParameters);
+            }
+
+         }
     SetModified(false);
     return m_csError;
     }
@@ -12100,6 +12156,16 @@ CharCP    epsgName
     // if the name is of the form EPSG:xxxx, use the xxxx
     if (0 == strncmp (epsgName, "EPSG:", 5))
         {
+        // Note that some keynames have the form EPSG:XXXX-X or EPSG:XXXXA such as EPSG:3399-1 or EPSG:3399A
+        // Those must be refused as they are variant that must not be taken as pure EPSG values.
+        int position = 5;
+        // Advance after digits
+        while (isdigit(epsgName[position]) && epsgName[position] != '/0')
+            position++;
+        // If first position after digit is not end of keyname there is some postfix ... not EPSG
+        if (epsgName[position] != '/0')
+            return 0;
+
         int     epsgNum;
         if (1 == sscanf (&epsgName[5], "%d", &epsgNum))
             return epsgNum;
@@ -12630,10 +12696,11 @@ GeoPointR       outLatLong,         // <= latitude longitude
 DPoint3dCR      inCartesian         // => cartesian, in GCS's units.
 ) const
     {
-    if (NULL == m_csParameters)
-        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
-
     DPoint3d    internalCartesian;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     InternalCartesianFromCartesian (internalCartesian, inCartesian);
     return (ReprojectStatus) CSMap::CS_cs3ll (m_csParameters, &outLatLong, &internalCartesian);
     }
@@ -12647,10 +12714,11 @@ GeoPoint2dR     outLatLong,         // <= latitude longitude
 DPoint2dCR      inCartesian         // => cartesian, in GCS's units.
 ) const
     {
-    if (NULL == m_csParameters)
-        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
-
     DPoint2d    internalCartesian;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     InternalCartesianFromCartesian2D (internalCartesian, inCartesian);
 
     // unfortunately, CS_cs2ll takes 3d points.
@@ -12671,11 +12739,11 @@ DPoint3dR       outCartesian,       // <= cartesian, in GCS's units.
 GeoPointCR      inLatLong           // => latitude longitude
 ) const
     {
-    if (NULL == m_csParameters)
-        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
-
     ReprojectStatus     status;
     DPoint3d    internalCartesian;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
     status = (ReprojectStatus) CSMap::CS_ll3cs (m_csParameters, &internalCartesian, &inLatLong);
 
@@ -12697,10 +12765,10 @@ DPoint2dR       outCartesian,       // <= cartesian, in GCS's units.
 GeoPoint2dCR    inLatLong           // => latitude longitude
 ) const
     {
-    if (NULL == m_csParameters)
-        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
-
     StatusInt   status;
+
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
     GeoPoint    inLatLong3d;
     inLatLong3d.Init (inLatLong.longitude, inLatLong.latitude, 0.0);
@@ -12961,6 +13029,12 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
     if (&destinationGCS != m_destinationGCS)
         SetupDatumConverterFor(destinationGCS);
 
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
+	if (NULL == destinationGCS.m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     ReprojectStatus status = REPROJECT_Success;
     if (NULL != m_datumConverter)
         status = m_datumConverter->ConvertLatLong3D (outLatLong, inLatLong);
@@ -12984,6 +13058,11 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
 ) const
     {
 
+	if (NULL == m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
+	if (NULL == destinationGCS.m_csParameters)
+		return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
     // make sure datum converter is set up for the destination.
     if (&destinationGCS != m_destinationGCS)
