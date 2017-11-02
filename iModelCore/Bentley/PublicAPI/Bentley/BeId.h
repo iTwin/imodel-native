@@ -82,13 +82,13 @@ public:
     //! must ensure this to avoid unexpected behavior. 
     //!
     //! @param[in,out] stringBuffer The output buffer for the id string. Must be large enough
-    //! @param[in] useHex if UseHex::Yes, output will be in hex with leading "0X"
+    //! @param[in] useHex if UseHex::Yes, output will be in hex with leading "0X". Will pad leading zeros to length of 16 charaters.
     //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
     //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
     void ToString(Utf8P stringBuffer, UseHex useHex=UseHex::No) const 
         {
         if (useHex == UseHex::Yes)
-            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
+            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase | (int) HexFormatOptions::LeadingZeros), 16);
         else
             BeStringUtilities::FormatUInt64(stringBuffer, m_id);
         }
