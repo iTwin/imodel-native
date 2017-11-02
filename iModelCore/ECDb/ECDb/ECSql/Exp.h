@@ -186,6 +186,7 @@ struct Exp : NonCopyableClass
             Options,
             OrderBy,
             OrderBySpec,
+            MemberFunctionCall,
             Parameter,
             Predicate,
             PropertyName,

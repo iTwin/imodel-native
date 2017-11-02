@@ -15,6 +15,101 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ParameterExp;
 
 //=======================================================================================
+//! @bsiclass                                                Affan.Khan      10/2017
+//+===============+===============+===============+===============+===============+======
+struct FuntionSigature : NonCopyableClass
+    {
+    enum class ValueType
+        {
+        String = 1,
+        Integer = 2,
+        Float = 4,
+        Blob = 8,
+        Resultset = 16,
+        Numeric = Integer | Float,
+        Any = String | Integer | Float | Blob
+        };
+
+    enum class FuntionScope
+        {
+        Class,
+        Property,
+        Global
+        };
+
+    struct Arg : NonCopyableClass
+        {
+        private:
+            Utf8String m_name;
+            ValueType m_type;
+            bool m_optional;
+            int m_index;
+
+        public:
+            Arg(int index, Utf8CP name, ValueType type, bool optional)
+                :m_name(name), m_type(type), m_index(index), m_optional(optional)
+                {}
+            ~Arg() {}
+            Utf8StringCR Name() const { return m_name; }
+            ValueType Type() const { return m_type; }
+            bool Optional() const { return m_optional; }
+            bool Varying() const { return m_name == "..."; }
+        };
+
+    private:
+        std::vector<std::unique_ptr<Arg>> m_args;
+        ValueType m_returnType;
+        Utf8String m_name;
+        FuntionScope m_scope;
+        Utf8String m_description;
+
+        FuntionSigature() :m_returnType(ValueType::Any) {}
+        Arg const* FindArg(Utf8CP name) const;
+        BentleyStatus SetName(Utf8CP name);
+        void SetDescription(Utf8CP name);
+        BentleyStatus SetReturnType(ValueType type, bool member);
+        BentleyStatus Append(Utf8CP name, ValueType type, bool optional);
+        static  BentleyStatus Parse(std::unique_ptr<FuntionSigature>& funcSig, Utf8CP signature, Utf8CP description);
+        static bool ParseValueType(ValueType& type, Utf8CP str);
+        static Utf8CP ValueTypeToString(ValueType type);
+
+    public:
+        Utf8StringCR Name() const { return m_name; }
+        Utf8StringCR Description() const { return m_description; }
+        FuntionScope Scope() const { return m_scope; }
+        ValueType ReturnType() const { return m_returnType; }
+        int RequiredArgs() const;
+        int OptionalArgs() const;
+        bool VaryingArg() const;
+        std::vector<Arg const*> Args() const;
+        Utf8String ToString() const;
+        BentleyStatus Verify(Utf8StringR err, Exp::Collection const& argExps) const;
+        ~FuntionSigature() {}
+        // signarture = [::]<funtion-name>(<arg1>, arg2, ...)[:<return-type>]
+        // arg        = [optional] arg-name:<type > | ...
+        static std::unique_ptr<FuntionSigature> Parse(Utf8CP signature, Utf8CP description);
+
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      10/2017
+//+===============+===============+===============+===============+===============+======
+struct FuntionSigatureSet : NonCopyableClass
+    {
+    private:
+
+        std::map<Utf8CP, std::unique_ptr<FuntionSigature>, CompareIUtf8Ascii> m_funtionSigs;
+        void Declare(Utf8CP signature, Utf8CP description = nullptr);
+        void LoadDefinitions();
+        FuntionSigatureSet() {}
+
+    public:
+        ~FuntionSigatureSet() {}
+        FuntionSigature const* Find(Utf8CP name) const;
+        static FuntionSigatureSet& GetInstance();
+    };
+
+//=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
 struct ValueExp : ComputedExp
@@ -198,7 +293,27 @@ struct FunctionCallExp final : ValueExp
         BentleyStatus AddArgument(std::unique_ptr<ValueExp>);
     };
 
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan        10/2017
+//+===============+===============+===============+===============+===============+======
+struct MemberFunctionCallExp final : ValueExp
+    {
+    private:
+        Utf8String m_functionName;
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
+        void _ToECSql(ECSqlRenderContext&) const override;
+        Utf8String _ToString() const override;
+        BentleyStatus ValidateArgument(ValueExp const& arg, Utf8StringR msg);
+
+    public:
+        explicit MemberFunctionCallExp(Utf8StringCR functionName) : ValueExp(Type::MemberFunctionCall), m_functionName(functionName){}
+        virtual ~MemberFunctionCallExp() {}
+
+        Utf8StringCR GetFunctionName() const { return m_functionName; }
+        BentleyStatus AddArgument(std::unique_ptr<ValueExp>, Utf8StringR);
+    };
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======

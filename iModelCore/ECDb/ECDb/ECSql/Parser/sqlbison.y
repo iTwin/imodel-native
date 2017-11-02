@@ -188,7 +188,7 @@ using namespace connectivity;
 %type <pParseNode> like_predicate opt_escape test_for_null null_predicate_part_2 in_predicate in_predicate_part_2 character_like_predicate_part_2 other_like_predicate_part_2
 %type <pParseNode> all_or_any_predicate any_all_some existence_test subquery quantified_comparison_predicate_part_2
 %type <pParseNode> scalar_exp_commalist parameter_ref literal
-%type <pParseNode> column_ref column parameter range_variable
+%type <pParseNode> column_ref column parameter range_variable opt_member_func_call
 /* neue Regeln bei OJ */
 %type <pParseNode> derived_column as_clause table_name num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec fct_spec  scalar_subquery
@@ -2381,10 +2381,24 @@ schema_name:
 ;
 
 table_name:
-        SQL_TOKEN_NAME
+        SQL_TOKEN_NAME opt_member_func_call
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
+            $$->append($2);
+        }
+;
+
+opt_member_func_call:
+		{$$ = SQL_NEW_RULE;}
+     |  '.' function_name '(' function_args_commalist ')'
+        {
+            $$ = SQL_NEW_RULE;            
+            $$->append($1 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
 ;
 

@@ -203,6 +203,7 @@ namespace connectivity
                 table_exp,
                 table_name,
                 table_node,
+                opt_member_func_call,
                 table_primary_as_range_column,
                 table_ref_commalist,
                 table_ref,

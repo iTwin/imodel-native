@@ -67,6 +67,18 @@ bool ClassNameExp::_ContainsProperty(Utf8StringCR propertyName) const
     return propertyMap != nullptr;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassNameExp::ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8StringCP catalogName, std::shared_ptr<Info> info, bool isPolymorphic, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall)
+    : RangeClassRefExp(Type::ClassName, isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_info(info)
+    {
+    if (catalogName != nullptr)
+        m_catalogName = *catalogName;
+
+    if (memberFuntionCall)
+        AddChild(std::move(memberFuntionCall));
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

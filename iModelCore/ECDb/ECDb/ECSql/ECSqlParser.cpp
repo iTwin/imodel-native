@@ -1520,7 +1520,8 @@ BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OS
     Utf8StringCP catalogName = nullptr;
     Utf8StringCP schemaName = nullptr;
     Utf8StringCP className = nullptr;
-    if (SUCCESS != ParseFullyQualifiedClassName(catalogName, schemaName, className, *first))
+    std::unique_ptr<MemberFunctionCallExp> memberFunCall;
+    if (SUCCESS != ParseFullyQualifiedClassName(catalogName, schemaName, className, *first, memberFunCall))
         return ERROR;
 
     BeAssert(className != nullptr && schemaName != nullptr);
@@ -1528,14 +1529,49 @@ BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OS
     if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className, ecsqlType, isPolymorphic))
         return ERROR;
 
-    exp = std::make_unique<ClassNameExp>(*className, *schemaName, catalogName, classNameExpInfo, isPolymorphic);
+    exp = std::unique_ptr<ClassNameExp>(new ClassNameExp(*className, *schemaName, catalogName, classNameExpInfo, isPolymorphic, std::move(memberFunCall)));
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+-----------------+---------------+------
+BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>& memberFunCallExp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, opt_member_func_call))
+        {
+        BeAssert(false && "Wrong grammar. Expecting table_node");
+        return ERROR;
+        }
+
+    if (parseNode->isLeaf())
+        return SUCCESS;
+
+    Utf8StringCR funtionName = parseNode->getChild(1)->getTokenValue();
+    memberFunCallExp = std::unique_ptr<MemberFunctionCallExp>(new MemberFunctionCallExp(funtionName));
+    OSQLParseNode const* argumentsNode = parseNode->getChild(3);
+    for (size_t i = 0; i < argumentsNode->count(); i++)
+        {
+        std::unique_ptr<ValueExp> argument_expr = nullptr;
+        BentleyStatus stat = ParseFunctionArg(argument_expr, *argumentsNode->getChild(i));
+        if (SUCCESS != stat)
+            return stat;
+
+        Utf8String err;
+        if (memberFunCallExp->AddArgument(std::move(argument_expr), err) != SUCCESS)
+            {
+            GetIssueReporter().Report(err.c_str());
+            return ERROR;
+            }
+        }
+
     return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogName, Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const& parseNode) const
+BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogName, Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const& parseNode, std::unique_ptr<MemberFunctionCallExp>& memberFunCallExp) const
     {
     catalogName = nullptr;
     schemaName = nullptr;
@@ -1556,6 +1592,9 @@ BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogNam
 
             schemaName = &schemaNameNode->getChild(0)->getTokenValue();
             className = &schemaNameNode->getChild(2)->getChild(0)->getTokenValue();
+            if (schemaNameNode->getChild(2)->count() > 1)
+                return ParseMemberFunctionCall(memberFunCallExp, schemaNameNode->getChild(2)->getChild(1));
+
             return SUCCESS;
             }
 
@@ -1567,6 +1606,9 @@ BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogNam
             //          child 0: class name
             schemaName = &parseNode.getChild(0)->getTokenValue();
             className = &parseNode.getChild(2)->getChild(0)->getTokenValue();
+            if (parseNode.getChild(2)->count() > 1)
+                return ParseMemberFunctionCall(memberFunCallExp, parseNode.getChild(2)->getChild(1));
+
             return SUCCESS;
             }
             case OSQLParseNode::table_name:
