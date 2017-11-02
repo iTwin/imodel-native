@@ -28,8 +28,6 @@
     <!--<Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatformConnect\RealityPlatformConnect.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
         <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
         <Bindings>

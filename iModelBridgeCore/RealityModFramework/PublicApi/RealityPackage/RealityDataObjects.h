@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatform/RealityDataObjects.h $
+|     $Source: PublicApi/RealityPackage/RealityDataObjects.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,7 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPackage/RealityPlatformAPI.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include <Bentley/DateTime.h>

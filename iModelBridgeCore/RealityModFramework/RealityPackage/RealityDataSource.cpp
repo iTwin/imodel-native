@@ -9,7 +9,7 @@
 #include <Bentley/BeFileName.h>
 #include "RealitySerialization.h"
 
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
 //=======================================================================================

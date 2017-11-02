@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/RealityDataObjects.cpp $
+|     $Source: RealityPackage/RealityDataObjects.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,8 +8,8 @@
 
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/RealityDataObjects.h>
+#include <RealityPackage/RealityPlatformAPI.h>
+#include <RealityPackage/RealityDataObjects.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

@@ -629,7 +629,7 @@ CURL* GCSUser::SetupCurl(Utf8StringCR url, Utf8StringCP retString, FILE* fp, Utf
         m_start = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         }
     else
-        m_correspondance.response.curlCode = CURLcode::CURLE_FAILED_INIT;
+        m_correspondance.response.toolCode = CURLcode::CURLE_FAILED_INIT;
 
     return pCurl;
     }

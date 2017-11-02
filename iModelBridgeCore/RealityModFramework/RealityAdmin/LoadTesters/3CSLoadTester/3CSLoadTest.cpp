@@ -613,13 +613,13 @@ void ThreeCSUser::ValidatePrevious(int activeUsers)
             return ValidateCancelJob(activeUsers);
         default:
             {
-            if(m_correspondance.response.curlCode != CURLE_OK || m_correspondance.response.responseCode > 399)
+            if(m_correspondance.response.toolCode != CURLE_OK || m_correspondance.response.responseCode > 399)
                 {
                 m_stats->InsertStats(this, false, activeUsers);
                 return;
                 }
             else
-                m_stats->InsertStats(this, (m_correspondance.response.curlCode == CURLE_OK), activeUsers);
+                m_stats->InsertStats(this, (m_correspondance.response.toolCode == CURLE_OK), activeUsers);
             }
         }
     }
@@ -663,7 +663,7 @@ void ThreeCSUser::ValidateSubmitJob(int activeUsers)
     if(m_correspondance.response.body.ContainsI("InstanceId already used"))
         return;
 
-    if (m_correspondance.response.curlCode == CURLE_OK && m_correspondance.response.responseCode < 399)
+    if (m_correspondance.response.toolCode == CURLE_OK && m_correspondance.response.responseCode < 399)
         {
         success = true;
         m_submitted = true;
@@ -835,7 +835,7 @@ CURL* ThreeCSUser::PrepareRequest()
     CURL* curl = curl_easy_init();
     if (nullptr == curl)
         {
-        m_correspondance.response.curlCode = CURLcode::CURLE_FAILED_INIT;
+        m_correspondance.response.toolCode = CURLcode::CURLE_FAILED_INIT;
         return curl;
         }
 

@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
+/*#pragma once
 
 //__BENTLEY_INTERNAL_ONLY__
 
@@ -15,21 +15,21 @@
 #include <Geom/GeomApi.h>
 
 #if defined (__REALITYPACKAGE_BUILD__)
-#   define REALITYPACKAGE_EXPORT EXPORT_ATTRIBUTE
+#   define REALITYDATAPLATFORM_EXPORT EXPORT_ATTRIBUTE
 #else
-#   define REALITYPACKAGE_EXPORT IMPORT_ATTRIBUTE
+#   define REALITYDATAPLATFORM_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #define BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE              BEGIN_BENTLEY_NAMESPACE namespace RealityPackage {
-#define END_BENTLEY_REALITYPACKAGE_NAMESPACE                } END_BENTLEY_NAMESPACE
+#define END_BENTLEY_REALITYPLATFORM_NAMESPACE                } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_REALITYPACKAGE              using namespace BentleyApi::RealityPackage;
 
 
 #define REALITYPACKAGE_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_REALITYPACKAGE_NAMESPACE
+    BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 #define REALITYPACKAGE_REF_COUNTED_PTR(_sname_) \
-    BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_REALITYPACKAGE_NAMESPACE
+    BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 // Package
 REALITYPACKAGE_TYPEDEFS(RealityDataPackage)
@@ -78,7 +78,7 @@ REALITYPACKAGE_TYPEDEFS(RealityDataSerializerV2)
 REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializerV2)
 
 
-BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
 //! Status codes for RealityPackage operations
@@ -99,4 +99,4 @@ enum class RealityPackageStatus
     UnknownError                = ERROR,    // The operation failed with an unspecified error.
     };
 
-END_BENTLEY_REALITYPACKAGE_NAMESPACE
+END_BENTLEY_REALITYPLATFORM_NAMESPACE*/

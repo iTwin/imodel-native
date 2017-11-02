@@ -129,7 +129,7 @@ TEST_F(WSGServicesRequestFixture, RootNodes)
     {
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -181,7 +181,7 @@ TEST_F(WSGServicesRequestFixture, RootNodesBadServerResponse)
     {
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 418; // I'm a teapot
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -204,7 +204,7 @@ TEST_F(WSGServicesRequestFixture, RootNodesBadJson)
     {
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -232,7 +232,7 @@ TEST_F(WSGServicesRequestFixture, ChildNodes)
     {
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -286,7 +286,7 @@ TEST_F(WSGServicesRequestFixture, ChildNodesBadJson)
     {
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -318,7 +318,7 @@ TEST_F(WSGServicesRequestFixture, ChildNodesBadServerResponse)
     {
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 418; // I'm also a teapot
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -343,7 +343,7 @@ TEST_F(WSGServicesRequestFixture, WSGServerVersion)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -370,7 +370,7 @@ TEST_F(WSGServicesRequestFixture, WSGServerPluginsBadVersion)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 400;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -393,7 +393,7 @@ TEST_F(WSGServicesRequestFixture, WSGServerRepositoriesBadVersion)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 400;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -416,7 +416,7 @@ TEST_F(WSGServicesRequestFixture, WSGServerSchemaNameBadVersion)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 400;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -439,7 +439,7 @@ TEST_F(WSGServicesRequestFixture, WSGServerClassNamesBadVersion)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 400;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -462,7 +462,7 @@ TEST_F(WSGServicesRequestFixture, WSGServerJSONClassDefinitionBadVersion)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 400;
 		response.header = R"(
 				Bentley-WebAPI/99.99.99
@@ -496,7 +496,7 @@ class WSGServerFixture : public WSGServicesRequestFixture
 			s_WSGServer = new WSGServer("myserver.com");
 			ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 				{
-				response.curlCode = CURLE_OK;
+				response.toolCode = CURLE_OK;
 				response.responseCode = 200;
 				response.header = R"(
 						Bentley-WebAPI/99.99.99
@@ -526,7 +526,7 @@ TEST_F(WSGServerFixture, WSGServerPlugins)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -579,7 +579,7 @@ TEST_F(WSGServerFixture, WSGServerPluginsBadJson)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -605,7 +605,7 @@ TEST_F(WSGServerFixture, WSGServerRepositories)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -658,7 +658,7 @@ TEST_F(WSGServerFixture, WSGServerRepositoriesBadJson)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -684,7 +684,7 @@ TEST_F(WSGServerFixture, WSGServerSchemaNames)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -741,7 +741,7 @@ TEST_F(WSGServerFixture, WSGServerSchemaNamesBadJson)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -768,7 +768,7 @@ TEST_F(WSGServerFixture, WSGServerClassNames)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -833,7 +833,7 @@ TEST_F(WSGServerFixture, WSGServerClassNamesBadJson)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(
@@ -860,7 +860,7 @@ TEST_F(WSGServerFixture, WSGServerJsonClassDefinition)
 	{
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 
 		response.body = R"(

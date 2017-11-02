@@ -50,19 +50,13 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
-$(o)SpatialEntity$(oext) : $(baseDir)SpatialEntity.cpp $(PublicApiDir)SpatialEntity.h ${MultiCompileDepends}
-
 $(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 
 $(o)RealityDataDownload$(oext) : $(baseDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
 
-$(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(PublicApiDir)SpatioTemporalData.h ${MultiCompileDepends}
-
 $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(PublicApiDir)SpatioTemporalSelector.h ${MultiCompileDepends}
 
 $(o)WSGServices$(oext) : $(deskDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
-
-$(o)RealityDataObjects$(oext) : $(baseDir)RealityDataObjects.cpp $(PublicApiDir)RealityDataObjects.h ${MultiCompileDepends}
 
 $(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
 

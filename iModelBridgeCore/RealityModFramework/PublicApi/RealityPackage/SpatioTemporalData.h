@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatform/SpatioTemporalData.h $
+|     $Source: PublicApi/RealityPackage/SpatioTemporalData.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

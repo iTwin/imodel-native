@@ -9,14 +9,14 @@
     #pragma once
 #endif
 
-#include <RealityPackage/RealityPackage.h>
+#include <RealityPackage/RealityPlatformAPI.h>
 #include <RealityPackage/RealityDataPackage.h>
 #include <RealityPackage/RealityDataSource.h>
 #include <BeXml/BeXml.h>
 #include "RealitySerialization.h"
 
 
-BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 
 //-------------------------------------------------------------------------------------
@@ -489,4 +489,4 @@ RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, Real
     return RealityPackageStatus::Success;
     }
 
-END_BENTLEY_REALITYPACKAGE_NAMESPACE
+END_BENTLEY_REALITYPLATFORM_NAMESPACE

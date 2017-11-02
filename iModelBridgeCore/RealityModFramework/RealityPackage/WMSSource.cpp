@@ -27,7 +27,7 @@
 
 #define WMSSOURCE_ATTRIBUTE_CoordSysType        "type"
 
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015

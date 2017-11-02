@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/SpatialEntity.cpp $
+|     $Source: RealityPackage/SpatialEntity.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,8 +9,8 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
 
-#include <RealityPlatform/SpatialEntity.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPackage/SpatialEntity.h>
+//#include <RealityPackage/RealityDataDownload.h>
 
 
 #define THUMBNAIL_WIDTH     512

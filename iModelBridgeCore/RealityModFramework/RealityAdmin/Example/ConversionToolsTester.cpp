@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/Example/ConversionToolsTester.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,7 +21,7 @@
 #include <iostream>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be override by parameter at the execution.
 

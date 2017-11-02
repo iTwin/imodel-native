@@ -81,7 +81,7 @@ struct WSGRequest_response_state
     friend std::ostream& operator<<(std::ostream& os, const WSGRequest_response_state& obj)
     {
         return os
-            << "curlCode: " << obj.status
+            << "toolCode: " << obj.status
             << " body: " << obj.body
             << " keyword: " << obj.keyword
             << " result: " << obj.result;
@@ -284,7 +284,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestBad)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Package download failed with response"), _));
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_FILE_COULDNT_READ_FILE;
+        response.toolCode = CURLE_FILE_COULDNT_READ_FILE;
     }));
 
     WString directory(GetDirectory());
@@ -316,7 +316,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PreparedPackageRequestRequestGood)
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
     }));
 
     WString directory(GetDirectory());
@@ -347,7 +347,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PackagePreparationRequestGood)
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"({
             "changedInstance": {
@@ -376,7 +376,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, PackagePreparationRequestBad)
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::BADREQ;
         response.body = R"(
             {
@@ -409,7 +409,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestGood
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {
@@ -453,7 +453,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestNotL
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
         auto request = static_cast<const SpatialEntityWithDetailsSpatialRequest*>(&wsgRequest);
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
 
         if (request->GetStartIndex() == 0)
@@ -527,7 +527,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestBad)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Curl error"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::BADREQ;
     }));
 
@@ -548,7 +548,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityMetadataByIdRequestGoo
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
                 {
@@ -585,7 +585,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityMetadataByIdRequestBad
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
                 {
@@ -611,7 +611,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityServerByIdRequestGood)
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
                 {
@@ -648,7 +648,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityServerByIdRequestBad)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
                 {
@@ -674,7 +674,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityDataSourceByIdRequestG
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
                 {
@@ -712,7 +712,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityDataSourceByIdRequestB
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
                 {
@@ -737,7 +737,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequest
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {
@@ -774,7 +774,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsByIdRequest
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {
@@ -799,7 +799,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestBad)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error message in the JSON"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {
@@ -823,7 +823,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityByIdRequestRequestGood
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.status = RequestStatus::OK;
         response.body = R"(
             {

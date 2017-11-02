@@ -318,7 +318,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootId)
     	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
 		response.status = ::OK;
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.body = R"(
 			{
@@ -359,7 +359,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdFilter)
     	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 		{
 		response.status = ::OK;
-		response.curlCode = CURLE_OK;
+		response.toolCode = CURLE_OK;
 		response.responseCode = 200;
 		response.body = R"(
 			{
@@ -510,7 +510,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDeleteGoodRequest)
 	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
 	    {
 	    response.status = ::OK;
-	    response.curlCode = CURLE_OK;
+	    response.toolCode = CURLE_OK;
 	    response.responseCode = 200;
 	    response.body = R"(
 		    {
@@ -815,7 +815,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestLastPage)
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\MultipleRealityData.json");
 		}));
 
@@ -839,7 +839,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestNotLastPage)
         auto pagedRequest = static_cast<const RealityDataPagedRequest*>(&wsgRequest);
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         if(pagedRequest->GetStartIndex() == 0)
             {
             response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
@@ -886,7 +886,7 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/EnterpriseStat/2017-6-6~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\EnterpriseStat.json");
 		}));
 
@@ -911,7 +911,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         
         auto requestString = wsgRequest.GetHttpRequestString();
 
@@ -940,7 +940,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdGoodRequest)
         {
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         auto requestString = wsgRequest.GetHttpRequestString();
         if(requestString.Contains("marker=Page2"))
             {
@@ -981,7 +981,7 @@ TEST_F(RealityDataServiceFixture, RealityDataByIdRequestGoodRequest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
 		response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");  
 		}));
 
@@ -1004,7 +1004,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestGoodRequest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataDocument.json");  
 		}));
@@ -1028,7 +1028,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a8/$file");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
 		}));
 
 	RealityDataDocumentContentByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a8");
@@ -1051,7 +1051,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = R"(
 			{
 			"instances": 
@@ -1074,7 +1074,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestGoodReque
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://redirected.server.com/72adad30-c07c-465d-a1fe-2f2dfac950a9%2FRootDocument%2Es3mx?myToken&se=2013-03-01T16%3A20%3A00Z");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = R"(
 			{
 			"instances": 
@@ -1114,7 +1114,7 @@ TEST_F(RealityDataServiceFixture, RealityDataFolderByIdRequestGoodRequest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataFolder.json");  
 		}));
 
@@ -1137,7 +1137,7 @@ TEST_F(RealityDataServiceFixture, RealityDataListByUltimateIdPagedRequestGoodReq
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\MultipleRealityData.json");  
 		}));
 
@@ -1161,7 +1161,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdR
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a6'");
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataRelationship.json");  
 		}));
 
@@ -1184,7 +1184,7 @@ TEST_F(RealityDataServiceFixture, RealityDataProjectRelationshipByRealityDataIdP
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityDataRelationship.json");  
 		}));
 
@@ -1217,7 +1217,7 @@ TEST_F(RealityDataServiceFixture, RealityDataChangeRequestGoodRequest)
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = R"({"changedInstance": "blabla"})";  
 		}));
 
@@ -1238,7 +1238,7 @@ TEST_F(RealityDataServiceFixture, RealityDataCreateRequestGoodRequest)
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = R"({"changedInstance": "blabla"})";  
 		}));
 
@@ -1260,7 +1260,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipCreateRequestGoodReques
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = R"({"changedInstance": "blabla"})";  
 		}));
 
@@ -1282,7 +1282,7 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDeleteGoodRequest)
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.body = R"({"changedInstance": "blabla"})";  
 		}));
 
@@ -1303,7 +1303,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdBadAzureToken)
 		{
 		response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         
         auto requestString = wsgRequest.GetHttpRequestString();
 		response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\ListAllServerResponseSecondPage.xml");  

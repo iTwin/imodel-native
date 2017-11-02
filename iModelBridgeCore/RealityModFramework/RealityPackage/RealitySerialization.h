@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPackage/RealityPackage.h>
+#include <RealityPackage/RealityPlatformAPI.h>
 #include <BeXml/BeXml.h>
 #include <geom/GeomApi.h>
 
@@ -119,7 +119,7 @@
 #define LATLONG_PRINT_FORMAT               L"%.12g %.12g"    //  lat/long precision of 0.1 millimeter.
 #define LATLONG_PRINT_FORMAT_COMMA          "%.12g,%.12g"    //  lat/long precision of 0.1 millimeter.
 
-BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -341,4 +341,4 @@ struct RealityDataSerializerFactory : RefCountedBase
         static RealityPackageStatus ReadVersion(uint32_t& majorVersion, uint32_t& minorVersion, BeXmlDomR xmlDom);
     };
 
-END_BENTLEY_REALITYPACKAGE_NAMESPACE
+END_BENTLEY_REALITYPLATFORM_NAMESPACE

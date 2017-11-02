@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <curl/curl.h>
 #include <iostream>
 
 #include <Bentley/Bentley.h>
@@ -16,54 +15,10 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsifunction                                    Francis Boily                   09/2015
-//* writes the body of a curl reponse to a Utf8String
-//+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-    ((Utf8String*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-    }
-
-///*---------------------------------------------------------------------------------**//**
-//* @bsifunction                                    Spencer Mason                   03/2017
-//* writes the body of a curl reponse to a file
-//+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t WriteFileCallback(void *contents, size_t size, size_t nmemb, BeFile *stream)
-    {
-    uint32_t bytesWritten = 0;
-
-    if (stream->Write(&bytesWritten, contents, (uint32_t)(size*nmemb)) != BeFileStatus::Success)
-        bytesWritten = 0;
-
-    return bytesWritten;
-    }
-
-RequestStatus RawServerResponse::ValidateResponse()
-    {
-    if ((curlCode != CURLE_OK) || (responseCode > 399))
-        status = RequestStatus::BADREQ;
-    else
-        status = RequestStatus::OK;
-
-    return status;
-    }
-
-RequestStatus RawServerResponse::ValidateJSONResponse(Json::Value& instances, Utf8StringCR keyword)
-    {
-    if ((curlCode != CURLE_OK) || (responseCode > 399) || !Json::Reader::Parse(body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword))
-        status = RequestStatus::BADREQ;
-    else
-        status = RequestStatus::OK;
-
-    return status;
-    }
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason          	    02/2017
 //-------------------------------------------------------------------------------------
-CurlConstructor::CurlConstructor()
+RequestConstructor::RequestConstructor()
     {
     RefreshToken();
 
@@ -79,7 +34,7 @@ CurlConstructor::CurlConstructor()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-WSGRequest::WSGRequest() : CurlConstructor()
+WSGRequest::WSGRequest() : RequestConstructor()
     {
     s_instance = this;
     }
@@ -102,7 +57,7 @@ WSGRequest& WSGRequest::GetInstance()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-Utf8String CurlConstructor::GetToken() const
+Utf8String RequestConstructor::GetToken() const
     {
     return ConnectTokenManager::GetInstance().GetToken();
     }
@@ -110,7 +65,7 @@ Utf8String CurlConstructor::GetToken() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-void CurlConstructor::RefreshToken() const
+void RequestConstructor::RefreshToken() const
     {
     return ConnectTokenManager::GetInstance().RefreshToken();
     }
@@ -118,7 +73,7 @@ void CurlConstructor::RefreshToken() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-void CurlConstructor::SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) const
+void RequestConstructor::SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) const
     {
     ProxyManager::GetInstance().SetProxyUrlAndCredentials(proxyUrl, proxyCreds);
     }
@@ -126,7 +81,7 @@ void CurlConstructor::SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8Strin
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-void CurlConstructor::GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) const
+void RequestConstructor::GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) const
     {
     ProxyManager::GetInstance().GetCurrentProxyUrlAndCredentials(proxyUrl, proxyCreds);
     }
@@ -137,7 +92,7 @@ void CurlConstructor::GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf
 void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
     response.clear();
-    response.curlCode = ServerType::WSG;
+    response.toolCode = ServerType::WSG;
     return _PerformRequest(wsgRequest, response, verifyPeer, file, retry);
     }
 
@@ -147,117 +102,8 @@ void WSGRequest::PerformRequest(const WSGURL& wsgRequest, RawServerResponse& res
 void WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
     response.clear();
-    response.curlCode = ServerType::Azure;
+    response.toolCode = ServerType::Azure;
     return _PerformRequest(wsgRequest, response, verifyPeer, file, retry);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                02/2017
-//-------------------------------------------------------------------------------------
-CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const
-    {
-    CURL* curl = curl_easy_init();
-    if (nullptr == curl)
-        {
-        response.curlCode = CURLcode::CURLE_FAILED_INIT;
-        return curl;
-        }
-
-    //Adjusting headers for the POST method
-    struct curl_slist *headers = NULL;
-    if (wsgRequest.GetRequestType() == WSGURL::HttpRequestType::POST_Request)
-        {
-        curl_easy_setopt(curl, CURLOPT_POST, 1);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, wsgRequest.GetRequestPayload().c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, wsgRequest.GetRequestPayload().length());
-        }
-    else if (wsgRequest.GetRequestType() == WSGURL::HttpRequestType::DELETE_Request)
-        {
-        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, wsgRequest.GetRequestPayload().c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, wsgRequest.GetRequestPayload().length());
-        }
-
-    Utf8String proxyUrl, proxyCreds;
-    GetCurrentProxyUrlAndCredentials(proxyUrl, proxyCreds);
-
-    if (!proxyUrl.empty())
-        {
-        curl_easy_setopt(curl, CURLOPT_PROXY, proxyUrl.c_str());
-        curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-        if (!proxyCreds.empty())
-            {
-            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
-            }
-        }
-
-    bvector<Utf8String> wsgHeaders = wsgRequest.GetRequestHeader();
-    for (Utf8String header : wsgHeaders)
-        headers = curl_slist_append(headers, header.c_str());
-    if(response.curlCode != ServerType::Azure)
-        headers = curl_slist_append(headers, GetToken().c_str());
-
-    curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
-
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1: 0));
-
-    curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
-
-    return curl;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                02/2017
-//-------------------------------------------------------------------------------------
-CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseObject, bool verifyPeer, BeFile* file) const
-    {
-    CURL* curl = PrepareCurl(wsgRequest, responseObject, verifyPeer, file);
-
-    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &(responseObject.header));
-
-    if (file != nullptr && wsgRequest.GetRequestType() != WSGURL::HttpRequestType::PUT_Request)
-        {
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFileCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-        }
-    else
-        {
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(responseObject.body));
-        }
-
-    return curl;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                02/2017
-//-------------------------------------------------------------------------------------
-void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
-    {
-    auto curl = PrepareRequest(wsgRequest, response, verifyPeer, file);
-
-    if(response.curlCode == CURLcode::CURLE_FAILED_INIT)
-        return;
-
-    response.curlCode = (int)curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.responseCode));
-    curl_easy_cleanup(curl);
-
-    if (response.body.Contains("Token is not valid") && retry)
-        {
-        WSGRequest::GetInstance().RefreshToken();
-        response = RawServerResponse();
-        return _PerformRequest(wsgRequest, response, verifyPeer, file, false);
-        }
-
-    if (response.curlCode != CURLE_OK)
-        response.status = BADREQ; // Default error ... may be modified by caller based on curlCode
-    else
-        response.status = OK;
-
     }
 
 //-------------------------------------------------------------------------------------

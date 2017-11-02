@@ -19,7 +19,7 @@
 #include <conio.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be overriden by parameter at the execution.
 

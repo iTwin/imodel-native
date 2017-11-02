@@ -779,7 +779,7 @@ void RealityDataListByUltimateIdPagedRequest::_PrepareHttpRequestStringAndPayloa
 
     if (m_encodedId.length() == 0)
         {
-        Utf8String token = CurlConstructor().GetToken();
+        Utf8String token = RequestConstructor().GetToken();
         token.ReplaceAll("Authorization: Token ", "");
         Utf8String decodedToken = Base64Utilities::Decode(token);
 
@@ -1481,7 +1481,7 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                 else if(fileTrans != nullptr)
                     {
                     curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &(fileTrans->GetResponse().responseCode));
-                    fileTrans->GetResponse().curlCode = msg->data.result;
+                    fileTrans->GetResponse().toolCode = msg->data.result;
                     if(msg->data.result == CURLE_OK)
                         {
                         if(fileUp != nullptr && !fileUp->FinishedSending())
@@ -1576,7 +1576,7 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
 
     RawServerResponse& rawResponse = fileTransfer->GetResponse();
     rawResponse.clear();
-    rawResponse.curlCode = ServerType::Azure;
+    rawResponse.toolCode = ServerType::Azure;
 
     CURL *pCurl = PrepareCurl(*request, rawResponse, verifyPeer, nullptr);
     if (pCurl)
@@ -2239,7 +2239,7 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
     else
         WSGRequest::GetInstance().PerformRequest(request, rawResponse, RealityDataService::GetVerifyPeer(), file);
 
-    if(rawResponse.curlCode != CURLE_OK)
+    if(rawResponse.toolCode != CURLE_OK)
         {
         rawResponse.status = RequestStatus::BADREQ;
         s_errorCallback("RealityDataDocumentContentByIdRequest failed with response", rawResponse);

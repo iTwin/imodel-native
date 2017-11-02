@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/SpatioTemporalData.cpp $
+|     $Source: RealityPackage/SpatioTemporalData.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <RealityPlatform/SpatialEntity.h>
+#include <RealityPackage/SpatialEntity.h>
 
-#include <RealityPlatform/SpatioTemporalData.h>
+#include <RealityPackage/SpatioTemporalData.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatform/SpatialEntity.h $
+|     $Source: PublicApi/RealityPackage/SpatialEntity.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,8 +9,8 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/RealityDataObjects.h>
+#include <RealityPackage/RealityPlatformAPI.h>
+#include <RealityPackage/RealityDataObjects.h>
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>

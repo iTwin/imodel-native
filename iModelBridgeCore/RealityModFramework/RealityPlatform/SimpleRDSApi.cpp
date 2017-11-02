@@ -10,10 +10,10 @@ void ConnectedResponse::Clone(const RawServerResponse& raw)
     header = raw.header;
     body = raw.body;
     responseCode = raw.responseCode;
-    curlCode = raw.curlCode;
+    toolCode = raw.toolCode;
     status = raw.status;
 
-    simpleSuccess = (raw.curlCode == 0) && (raw.responseCode < 400);
+    simpleSuccess = (raw.toolCode == 0) && (raw.responseCode < 400);
     simpleMessage = raw.body;
     }
 

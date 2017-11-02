@@ -22,7 +22,7 @@
 // So to get get the precision we want 9 decimal AFTER the point we need 12 digits. xxx.123456789
 #define LATLONG_PRINT_FORMAT                    "%.12g,%.12g"    //  lat/long precision of 0.1 millimeter.
 
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015

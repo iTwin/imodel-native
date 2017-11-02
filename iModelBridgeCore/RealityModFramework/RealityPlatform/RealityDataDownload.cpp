@@ -472,7 +472,7 @@ SetupCurlStatus RealityDataDownload::Login(LoginInfo& loginInfo, AuthInfo& authI
     CURL* curl = curl_easy_init();
     if (nullptr == curl)
         {
-        response.curlCode = CURLcode::CURLE_FAILED_INIT;
+        response.toolCode = CURLcode::CURLE_FAILED_INIT;
         return SetupCurlStatus::Error;
         }
 
@@ -505,16 +505,16 @@ SetupCurlStatus RealityDataDownload::Login(LoginInfo& loginInfo, AuthInfo& authI
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(response.body));
 
-    if (response.curlCode == CURLcode::CURLE_FAILED_INIT)
+    if (response.toolCode == CURLcode::CURLE_FAILED_INIT)
         return SetupCurlStatus::Error;
 
-    response.curlCode = (int)curl_easy_perform(curl);
-    if(!response.curlCode)
+    response.toolCode = (int)curl_easy_perform(curl);
+    if(!response.toolCode)
         {
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(response.responseCode));
         struct curl_slist *cookies = NULL;
-        response.curlCode = curl_easy_getinfo(curl, CURLINFO_COOKIELIST, &cookies);
-        if(!response.curlCode && cookies)
+        response.toolCode = curl_easy_getinfo(curl, CURLINFO_COOKIELIST, &cookies);
+        if(!response.toolCode && cookies)
             {
             while(cookies)
                 {
@@ -526,7 +526,7 @@ SetupCurlStatus RealityDataDownload::Login(LoginInfo& loginInfo, AuthInfo& authI
         }
     curl_easy_cleanup(curl);
 
-    if (response.curlCode != CURLE_OK)
+    if (response.toolCode != CURLE_OK)
         return SetupCurlStatus::Error; 
     else
         return SetupCurlStatus::Success;

@@ -562,7 +562,7 @@ void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFi
     WSGRequest::GetInstance().PerformRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &file);
 
     rawResponse.status = RequestStatus::OK;
-    if (rawResponse.curlCode != CURLE_OK)
+    if (rawResponse.toolCode != CURLE_OK)
         {
         rawResponse.status = RequestStatus::BADREQ;
         s_errorCallback("Package download failed with response", rawResponse);
@@ -586,7 +586,7 @@ void GeoCoordinationService::Request(const DownloadReportUploadRequest& request,
 
     auto curl = WSGRequest::GetInstance().PrepareRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &fileStream);
 
-    if (rawResponse.curlCode == CURLcode::CURLE_FAILED_INIT)
+    if (rawResponse.toolCode == CURLcode::CURLE_FAILED_INIT)
         {
         s_errorCallback("Curl init failed for DownloadReportUploadRequest", rawResponse);
         return;
@@ -600,11 +600,11 @@ void GeoCoordinationService::Request(const DownloadReportUploadRequest& request,
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, request.GetMessageSize());
 
-    rawResponse.curlCode = (int) curl_easy_perform(curl);
+    rawResponse.toolCode = (int) curl_easy_perform(curl);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &(rawResponse.responseCode));
     curl_easy_cleanup(curl);
 
-    if (rawResponse.curlCode == CURLE_OK)
+    if (rawResponse.toolCode == CURLE_OK)
         rawResponse.status = RequestStatus::OK;
     else
         {

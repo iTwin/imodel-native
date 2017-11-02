@@ -8,14 +8,14 @@
 
 
 #include <Bentley/BeTest.h>
-#include <RealityPackage/RealityDataPackage.h>
+#include <RealityPackage/RealityPlatformAPI.h>
 #include <RealityPackage/WMSSource.h>
 #include <RealityPackage/OsmSource.h>
 #include <RealityPackage/RealityDataSource.h>
 #include <Bentley/BeTextFile.h>
 #include "../Common/RealityModFrameworkTestsCommon.h"
 
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 #define _STRINGIFY(s) #s
 #define STRINGIFY(s) _STRINGIFY(s)
