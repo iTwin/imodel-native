@@ -15,8 +15,7 @@ void TestFixture::SetupDb(WCharCP name)
     {
     ASSERT_TRUE(m_db.IsNull());
 
-    BeFileName filename;
-    BeTest::GetHost().GetOutputRoot(filename);
+    BeFileName filename = GetBaseDir();
     filename.AppendToPath(name);
     filename.append(L".bim");
     BeFileName::BeDeleteFile(filename);
@@ -132,6 +131,9 @@ PhysicalElementCPtr TestFixture::InsertPhysicalElement(PhysicalModelR model, Geo
     {
     auto elem = GenericPhysicalObject::Create(model, builder.GetGeometryParams().GetCategoryId());
     EXPECT_TRUE(elem.IsValid());
+
+    builder.Finish(*elem);
+
     Placement3d placement = elem->GetPlacement();
     placement.GetOriginR() = origin;
     elem->SetPlacement(placement);
@@ -147,10 +149,31 @@ PhysicalElementCPtr TestFixture::InsertPhysicalElement(PhysicalModelR model, Geo
 GeometryBuilderPtr TestFixture::CreateGeometryBuilder(DgnModelR model, DgnCategoryId categoryId, ColorDef color)
     {
     auto geom = CreateGeometryBuilder(model, categoryId);
-    GeometryParams params;
+    GeometryParams params(categoryId);
     params.SetFillColor(color);
     params.SetLineColor(color);
     geom->Append(params);
     return geom;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Cesium::TilesetPublisher::Status TestFixture::PublishTiles()
+    {
+    UpdateProjectExtents();
+    SaveDb();
+
+    auto filename = GetDb().GetFileName();
+    Cesium::PublisherParams params(filename, GetBaseDir(), filename.GetFileNameWithoutExtension(), /*copyScripts=*/ false);
+
+    DgnViewIdSet views;
+    DgnViewId defaultView = params.GetViewIds(views, GetDb());
+    EXPECT_TRUE(defaultView.IsValid());
+    EXPECT_FALSE(views.empty());
+
+    Cesium::TilesetPublisher publisher(GetDb(), params, views, defaultView, 5);
+    return publisher.Publish(params);
+    }
+
 

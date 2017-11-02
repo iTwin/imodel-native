@@ -21,6 +21,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_TILETREE_IO
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/17
@@ -100,7 +101,10 @@ public:
 
 // [ === Publishing tiles === ]
 
+    // Get the full path to the directory in which the .bim and the tile publisher output's subdirectories reside.
+    static BeFileName GetBaseDir() { BeFileName filename; BeTest::GetHost().GetOutputRoot(filename); return filename; }
 
-
+    // Publish tiles to base directory.
+    Cesium::TilesetPublisher::Status PublishTiles();
 };
 

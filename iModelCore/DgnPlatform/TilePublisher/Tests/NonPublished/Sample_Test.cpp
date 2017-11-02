@@ -59,6 +59,9 @@ void SampleTestFixture::TestRectangle()
     AxisAlignedBox3d extents = UpdateProjectExtents();
     SpatialViewDefinitionCPtr view = InsertSpatialView("MyView", *modelSel, *catSel, *style, &extents);
     ASSERT_TRUE(view.IsValid());
+
+    auto status = PublishTiles();
+    EXPECT_EQ(status, Cesium::TilesetPublisher::Status::Success);
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);
