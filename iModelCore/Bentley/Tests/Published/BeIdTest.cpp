@@ -54,11 +54,11 @@ TEST(BeIdTests, ToFromString)
     EXPECT_TRUE(!received.IsValid());
     
     Utf8String idStr1 = received.ToString(BeInt64Id::UseHex::Yes);
-    EXPECT_TRUE(idStr1 == "0");
+    EXPECT_TRUE(idStr1 == "0x0000000000000000");
 
     BeInt64Id hexId(0xabcd12345678);
     Utf8String idStr = hexId.ToString(BeInt64Id::UseHex::Yes);
-    EXPECT_TRUE(idStr == "0XABCD12345678");
+    EXPECT_TRUE(idStr == "0X000ABCD12345678");
 
     // Hexadecimal format
     received = BeInt64Id::FromString(idStr.c_str(), &stat);

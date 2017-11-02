@@ -87,8 +87,18 @@ public:
     //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
     void ToString(Utf8P stringBuffer, UseHex useHex=UseHex::No) const 
         {
+//        if (!IsValid())
+//            {
+//            stringBuffer[0] = '0';
+//            stringBuffer[1] = 0;
+//            return;
+//            }
+
         if (useHex == UseHex::Yes)
-            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase | (int) HexFormatOptions::LeadingZeros), 16);
+            {
+            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
+            // BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase | (int) HexFormatOptions::LeadingZeros), 16);
+            }
         else
             BeStringUtilities::FormatUInt64(stringBuffer, m_id);
         }
