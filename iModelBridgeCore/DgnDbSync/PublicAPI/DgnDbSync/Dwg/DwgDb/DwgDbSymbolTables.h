@@ -11,7 +11,7 @@
 #include    <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
-#include    <Teigha/Core/Include/Tables.h>
+#include    <Teigha/Drawing/Include/Tables.h>
 
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/dbsymtb.h>

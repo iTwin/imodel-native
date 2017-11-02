@@ -204,7 +204,7 @@ BentleyStatus   ListProperty::_ImportEntity (ElementImportResults& results, Elem
         }
 
     // Don't want to LIST standard ACAD entities:
-    DwgString   className = inputs.GetEntity().GetClassName ();
+    DwgString   className = inputs.GetEntity().GetDwgClassName ();
     if (className.StartsWithI(L"AcDb"))
         return  status;
 
