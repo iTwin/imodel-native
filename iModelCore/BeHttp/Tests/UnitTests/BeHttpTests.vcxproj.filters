@@ -15,7 +15,6 @@
     <ClCompile Include="Published\HttpHeadersTests.cpp" />
     <ClCompile Include="Published\MockHttpHandler.cpp" />
     <ClCompile Include="Published\ProxyHttpHandlerTests.cpp" />
-    <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\ValuePrinter.cpp" />
     <ClCompile Include="Published\WebTestsHelper.cpp" />
     <ClCompile Include="Published\HttpBody\HttpFileBodyTests.cpp" />
@@ -30,24 +29,14 @@
     <ClCompile Include="Published\HttpResponseTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\AuthenticationHandlerTests.h" />
     <ClInclude Include="Published\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\FSTest.h" />
-    <ClInclude Include="Published\HttpClientTests.h" />
-    <ClInclude Include="Published\HttpHeadersTests.h" />
     <ClInclude Include="Published\MockAuthenticationHandler.h" />
     <ClInclude Include="Published\MockHttpHandler.h" />
-    <ClInclude Include="Published\ProxyHttpHandlerTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\ValuePrinter.h" />
     <ClInclude Include="Published\WebTestsHelper.h" />
-    <ClInclude Include="Published\HttpBody\HttpFileBodyTests.h" />
-    <ClInclude Include="Published\HttpBody\HttpMultipartBodyTests.h" />
-    <ClInclude Include="Published\HttpBody\HttpRangeBodyTests.h" />
-    <ClInclude Include="Published\HttpBody\HttpStringBodyTests.h" />
-    <ClInclude Include="Published\HttpBody\HttpBinaryBodyTests.h" />
     <ClInclude Include="Published\TestIntegration\Http\HttpRequestTests.h" />
-    <ClInclude Include="Published\HttpBody\HttpCompressedBodyTests.h" />
     <ClInclude Include="Published\StubAuthenticationHandler.h" />
   </ItemGroup>
 </Project>

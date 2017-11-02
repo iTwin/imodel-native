@@ -5,12 +5,14 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#include <BeHttp/ProxyHttpHandler.h>
-#include "ProxyHttpHandlerTests.h"
 #include "WebTestsHelper.h"
 
+#include <BeHttp/ProxyHttpHandler.h>
+
+USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
+
+struct ProxyHttpHandlerTests : public ::testing::Test{};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Vincas.Razma                       05/16

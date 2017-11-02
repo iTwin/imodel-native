@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "HttpStringBodyTests.h"
+#include "../WebTestsHelper.h"
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
+
+struct HttpStringBodyTests : public ::testing::Test {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Vincas.Razma                       06/16

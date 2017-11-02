@@ -5,14 +5,18 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "AuthenticationHandlerTests.h"
+#include "WebTestsHelper.h"
+
+#include "MockAuthenticationHandler.h"
+#include <BeHttp/AuthenticationHandler.h>
+#include <Bentley/Base64Utilities.h>
 
 #ifdef USE_GTEST
 #include <gmock/gmock.h>
-#endif
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
-#ifdef USE_GTEST
+
+struct AuthenticationHandlerTests : public BaseMockHttpHandlerTest, public ::testing::Test {};
 
 bmap<Utf8String, Utf8String> GetHttpHeaders(Utf8String key, Utf8String value)
     {

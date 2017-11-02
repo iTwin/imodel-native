@@ -6,11 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "HttpClientTests.h"
+#include "WebTestsHelper.h"
 
 #include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
+
+struct HttpClientTests : public ::testing::Test{};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Vincas.Razma                       05/16

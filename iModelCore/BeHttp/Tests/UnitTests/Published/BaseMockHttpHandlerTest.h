@@ -12,7 +12,7 @@
 
 BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
 
-class BaseMockHttpHandlerTest
+struct BaseMockHttpHandlerTest
     {
 private:
     std::shared_ptr<MockHttpHandler>    m_handler;
