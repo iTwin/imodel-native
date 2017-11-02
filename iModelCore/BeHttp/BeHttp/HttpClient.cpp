@@ -20,25 +20,38 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
-static BeFileName s_assetsDirectoryPath;
 static BeAtomic<int> s_tasksInProgressCount;
+static HttpClient::Options s_options;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::Initialize(BeFileNameCR assetsDirectoryPath) 
+void HttpClient::Initialize(BeFileNameCR assetsDirectoryPath)
     {
-    s_assetsDirectoryPath = assetsDirectoryPath;
+    Initialize(HttpClient::Options(assetsDirectoryPath));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpClient::Initialize(HttpClient::Options const& options)
+{
+    s_options = options;
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameCR HttpClient::GetAssetsDirectoryPath() 
     {
-    BeAssert(!s_assetsDirectoryPath.empty() && "HttpClient::Initialize() not called!");
-    return s_assetsDirectoryPath;
+    BeAssert(!s_options.GetAssetsDirectoryPath().empty() && "HttpClient::Initialize() not called!");
+    return s_options.GetAssetsDirectoryPath();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpClient::Options const& HttpClient::GetOptions() { return s_options; }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
@@ -169,6 +182,7 @@ Request HttpClient::CreateGetJsonRequest(Utf8StringCR url, Utf8StringCR etag) co
     Request request = CreateRequest(url, "GET");
 
     request.GetHeaders().SetIfNoneMatch(etag);
+
     request.GetHeaders().SetAccept(REQUESTHEADER_ContentType_ApplicationJson);
 
     return request;
