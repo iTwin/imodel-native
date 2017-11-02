@@ -12158,10 +12158,10 @@ CharCP    epsgName
         // Those must be refused as they are variant that must not be taken as pure EPSG values.
         int position = 5;
         // Advance after digits
-        while (isdigit(epsgName[position]) && epsgName[position] != '/0')
+        while (isdigit(epsgName[position]) && epsgName[position] != '\0')
             position++;
         // If first position after digit is not end of keyname there is some postfix ... not EPSG
-        if (epsgName[position] != '/0')
+        if (epsgName[position] != '\0')
             return 0;
 
         int     epsgNum;
