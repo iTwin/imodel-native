@@ -38,14 +38,15 @@ private:
 
     //! Pre-downloads single changeSet by changeSetId
     StatusTaskPtr PredownloadChangeSet(iModelConnectionCP imodelConnectionP, Utf8StringCR changeSetId,
-                                        Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                       Http::Request::ProgressCallbackCR callback = nullptr, 
+                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     bvector<BeFileName> GetOrderedCacheFiles(BeFileName directoryName) const;
     uint64_t GetCacheSize(BeFileName directoryName) const;
     void CheckCacheSize(BeFileName changeSetFileName) const;
 
     bool TryGetChangeSetFile(BeFileName changeSetFileName, Utf8String changeSetId) const;
-    
+
 public:
     //! Enables change set background download.
     //! @return Asynchronous task that returns if background download enable succeeded.
@@ -56,11 +57,11 @@ public:
     IMODELHUBCLIENT_EXPORT StatusTaskPtr DisableBackgroundDownload() const;
 
     //! Gets maximum allowed background download cache size.
-    int GetMaxCacheSize() const { return m_preDownloadCacheSize; }
+    int GetMaxCacheSize() const {return m_preDownloadCacheSize;}
 
     //! Sets maximum allowed background cache size in bytes.
     //! @param[in] cacheSize
-    void SetMaxCacheSize(int cacheSize) const { if (cacheSize > 0) m_preDownloadCacheSize = cacheSize; }
+    void SetMaxCacheSize(int cacheSize) const {if (cacheSize > 0) m_preDownloadCacheSize = cacheSize;}
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

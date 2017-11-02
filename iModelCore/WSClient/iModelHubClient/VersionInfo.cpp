@@ -39,7 +39,8 @@ VersionInfoPtr VersionInfo::ParseRapidJson(RapidJsonValueCR properties)
     auto changeSetId = properties[ServerSchema::Property::ChangeSetId].GetString();
     auto description = properties.HasMember(ServerSchema::Property::Description) ? properties[ServerSchema::Property::Description].GetString() : "";
     auto userCreated = properties.HasMember(ServerSchema::Property::UserCreated) ? properties[ServerSchema::Property::UserCreated].GetString() : "";
-    auto createdDate = properties.HasMember(ServerSchema::Property::CreatedDate) ? BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::CreatedDate].GetString()) : DateTime();
+    auto createdDate = properties.HasMember(ServerSchema::Property::CreatedDate) ? 
+        BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::CreatedDate].GetString()) : DateTime();
 
     return new VersionInfo(id, name, description, changeSetId, userCreated, createdDate);
     }

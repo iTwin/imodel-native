@@ -34,7 +34,8 @@ unsigned __stdcall EventManagerThread(void* arg)
 #endif
     {
     const Utf8String methodName = "EventManagerThread";
-    try {
+    try
+        {
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting event manager thread.");
         EventManagerContextPtr* managerContextPtr = (EventManagerContextPtr*)arg;
         if (nullptr == managerContextPtr)
@@ -98,7 +99,7 @@ unsigned __stdcall EventManagerThread(void* arg)
                 LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Finished event callbacks.");
                 }
             }
-        
+
         return 0;
         }
     catch (std::exception const& e)
@@ -113,7 +114,7 @@ unsigned __stdcall EventManagerThread(void* arg)
         {
         LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", "Unknown exception");
         }
-    
+
     return 0;
     }
 
@@ -127,7 +128,7 @@ bool EventManager::Start()
 
     LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventManager::Start", "Start");
     m_eventManagerContext = new EventManagerContext(m_imodelConnectionP, this, SimpleCancellationToken::Create());
-    BentleyStatus status = BeThreadUtilities::StartNewThread(EventManagerThread, &m_eventManagerContext, 1024*1024);
+    BentleyStatus status = BeThreadUtilities::StartNewThread(EventManagerThread, &m_eventManagerContext, 1024 * 1024);
     BeConditionVariable& cv = m_eventManagerContext->GetConditionVariable();
     BeMutexHolder holder(cv.GetMutex());
     cv.RelativeWait(holder, 200);
@@ -176,7 +177,7 @@ void EventManager::GetAllSubscribedEvents(EventTypeSet& allEventTypes)
             return;
             }
 
-        for(auto eventType : eventCallback.second)
+        for (auto eventType : eventCallback.second)
             {
             if (!EventListContainsEvent(allEventTypes, eventType))
                 allEventTypes.insert(eventType);
@@ -226,7 +227,7 @@ StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr
 StatusTaskPtr EventManager::Unsubscribe(EventCallbackPtr callback, bool* dispose)
     {
     BeMutexHolder lock(m_eventCallbacksMutex);
-    
+
     *dispose = false;
     if (callback)
         {
@@ -244,9 +245,9 @@ StatusTaskPtr EventManager::Unsubscribe(EventCallbackPtr callback, bool* dispose
         *dispose = true;
         return Stop();
         }
-    
+
     // Subscribe only to remaining events
     EventTypeSet allEventTypes;
     GetAllSubscribedEvents(allEventTypes);
     return m_imodelConnectionP->SubscribeToEvents(&allEventTypes);
-}
+    }

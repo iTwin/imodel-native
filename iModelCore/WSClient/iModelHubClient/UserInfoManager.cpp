@@ -41,11 +41,11 @@ ICancellationTokenPtr cancellationToken
     ObjectId userInfoObject(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo, userId);
     WSQuery query(userInfoObject);
 
-    return ExecuteWithRetry<UserInfoPtr>([=] ()
+    return ExecuteWithRetry<UserInfoPtr>([=]()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UserInfoResult>
-            ([=] (const WSObjectsResult& result)
+            ([=](const WSObjectsResult& result)
             {
             if (result.IsSuccess())
                 {
@@ -68,7 +68,7 @@ ICancellationTokenPtr cancellationToken
                 lock.unlock();
 
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                 return UserInfoResult::Success(user);
                 }
 
@@ -90,12 +90,12 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
 
-    return ExecuteWithRetry<bvector<UserInfoPtr> >([=] ()
+    return ExecuteWithRetry<bvector<UserInfoPtr> >([=]()
         {
         //Execute query
         return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)
             ->Then<UsersInfoResult>
-            ([=] (const WSObjectsResult& result)
+            ([=](const WSObjectsResult& result)
             {
             if (result.IsSuccess())
                 {
@@ -110,7 +110,7 @@ ICancellationTokenPtr cancellationToken
                     }
                 s_userInfoCacheMutex.unlock();
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                 return UsersInfoResult::Success(usersList);
                 }
 
@@ -155,7 +155,7 @@ ICancellationTokenPtr cancellationToken
             {
             //Execute query
             return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UsersInfoResult>
-                ([=] (const WSObjectsResult& result)
+                ([=](const WSObjectsResult& result)
                 {
                 if (result.IsSuccess())
                     {
@@ -176,17 +176,17 @@ ICancellationTokenPtr cancellationToken
                 return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult->GetError()));
 
             for (auto userInfo : queryUsersResult->GetValue())
-                {
-                usersList.push_back(userInfo);
-                BeMutexHolder lock(s_userInfoCacheMutex);
-                if (s_userInfoCache.find(userInfo->GetId()) == s_userInfoCache.end())
-                    s_userInfoCache.Insert(userInfo->GetId(), userInfo);
-                lock.unlock();
-                }
+            {
+            usersList.push_back(userInfo);
+            BeMutexHolder lock(s_userInfoCacheMutex);
+            if (s_userInfoCache.find(userInfo->GetId()) == s_userInfoCache.end())
+                s_userInfoCache.Insert(userInfo->GetId(), userInfo);
+            lock.unlock();
+            }
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
 
     return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Success(usersList));
     }
