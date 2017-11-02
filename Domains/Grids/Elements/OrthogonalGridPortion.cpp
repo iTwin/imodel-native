@@ -63,15 +63,15 @@ StandardCreateParams const& params
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb().GetDictionaryModel ();
 
-    GridAxisPtr verticalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
     GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+    GridAxisPtr verticalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
 
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel ();
     
     if (subModel.IsValid ())
         {
-        GridElementVector horizontalElements = CreateGridElements (params, subModel.get(), true, verticalAxis);
-        GridElementVector verticalElements = CreateGridElements (params, subModel.get(), false, horizontalAxis);
+        GridElementVector horizontalElements = CreateGridElements (params, subModel.get(), true, horizontalAxis);
+        GridElementVector verticalElements = CreateGridElements (params, subModel.get(), false, verticalAxis);
 
         for (GridSurfacePtr gridSurface : horizontalElements)
             {
@@ -155,11 +155,11 @@ CreateParams const& params
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
 
+    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
     GridAxisPtr verticalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
-    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
-
-    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, verticalAxis, params) ||
-        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, horizontalAxis, params))
+    
+    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, horizontalAxis, params) ||
+        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, verticalAxis, params))
         BeAssert (!"error inserting gridSurfaces into orthogonal grid.. shouldn't get here..");
     return thisGrid;
     }
@@ -291,7 +291,7 @@ GridElementVector OrthogonalGridPortion::CreateGridElements (StandardCreateParam
 
     for (int i = 0; i < count; ++i)
         {
-        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, height);
+        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length + 2 * extendTranslation.Magnitude(), height);
         extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
         extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
 

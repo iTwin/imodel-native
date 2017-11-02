@@ -35,9 +35,29 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (DrivingSurface, GRIDELEMENTS_EXPORT)
 
+    //! Returns base curve of this surface
+    //! @return a ptr to a curve vector of this surface
     GRIDELEMENTS_EXPORT CurveVectorPtr    GetSurfaceVector () const;
 
+    //! Tries to return height of this surface which is essencially the magnitude of its extrusion vector
+    //! @param[out] height height of this surface
+    GRIDELEMENTS_EXPORT BentleyStatus   TryGetHeight(double& height) const;
+
+    //! Tries to return length of this surface which is essencially the length of its base curve
+    //! @param[out] length  length of this surface
+    //! @return     BentleyStatus::ERROR if error occured when trying to get surface length
+    GRIDELEMENTS_EXPORT BentleyStatus   TryGetLength(double& length) const;
+
+    //! Creates driving surface from a curve vector
+    //! @param[in] model            model to create surface in
+    //! @param[in] surfaceVector    a curve vector to create surface from
+    //! @return a ptr to created surface
     GRIDELEMENTS_EXPORT static DrivingSurfacePtr Create (Dgn::DgnModelCR model, CurveVectorPtr surfaceVector);
+    
+    //! Creates driving surface from a solid primitive (extrusion detail)
+    //! @param[in]  model           model to create surface in
+    //! @param[in]  surface         solid primitive to create surface from
+    //! @return a ptr to created surface
     GRIDELEMENTS_EXPORT static DrivingSurfacePtr Create (Dgn::DgnModelCR model, ISolidPrimitivePtr surface);
 };
 

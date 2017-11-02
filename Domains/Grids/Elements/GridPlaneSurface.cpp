@@ -137,7 +137,6 @@ DPlane3d                        GridPlaneSurface::GetPlane
     return DPlane3d::From3Points (baseShapePoints[0][0], baseShapePoints[0][1], point3);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

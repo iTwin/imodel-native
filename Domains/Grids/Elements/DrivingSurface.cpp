@@ -176,6 +176,42 @@ CurveVectorPtr DrivingSurface::GetSurfaceVector
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DrivingSurface::TryGetHeight(double& height) const
+    {
+    GeometryCollection geomData = *ToGeometrySource();
+    ISolidPrimitivePtr solidPrimitivePtr = (*(geomData.begin())).GetGeometryPtr()->GetAsISolidPrimitive();
+    if (!solidPrimitivePtr.IsValid())
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    DgnExtrusionDetail extrDetail;
+    if (!solidPrimitivePtr->TryGetDgnExtrusionDetail(extrDetail))
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    height = extrDetail.m_extrusionVector.Magnitude();
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DrivingSurface::TryGetLength(double& length) const
+    {
+    CurveVectorPtr base = GetSurfaceVector();
+    if (base.IsNull())
+        return BentleyStatus::ERROR;
+
+    length = base->Length();
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DrivingSurface::_CopyFrom(Dgn::DgnElementCR source)

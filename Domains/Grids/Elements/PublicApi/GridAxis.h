@@ -49,7 +49,7 @@ public:
 
     //! Sets gridAxis grid Id value
     //! @param gridId a value to set
-    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId); };
+    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridPortionHasAxes)); };
 
     //! @return element id of the grid
     Dgn::DgnElementId GetGridId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Grid ()); };

@@ -229,7 +229,7 @@ Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::ElementIterator GridPortion::MakeAxesIterator () const
     {
-    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridAxis), "WHERE Grid=?");
+    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridAxis), "WHERE Grid=?", "ORDER BY ECInstanceId ASC");
     ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridPortionHasAxes);
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
         {

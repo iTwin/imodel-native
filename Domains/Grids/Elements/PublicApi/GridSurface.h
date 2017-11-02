@@ -34,7 +34,7 @@ protected:
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) { return false; };
     //! Sets gridsurface axis Id
     //! @param[in] axisId to set
-    void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId); };
+    void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces)); };
 
     static GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId);
 public:
