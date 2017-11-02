@@ -785,12 +785,12 @@ TEST_F(BuildingDomainTestFixture, RadialTests)
     Dgn::SpatialLocationModelCPtr spatialModel =  BuildingDomain::BuildingDomainUtilities::CreateBuildingSpatialLocationModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(spatialModel.IsValid());
 
+#ifdef NOT_NOW
     Grids::RadialGridPortion::CreateParams params (&(*spatialModel), 2, 2, 10, 10, 20, 20, true);
 
     auto status = Grids::RadialGridPortion::CreateAndInsert(params);
     ASSERT_TRUE(BentleyStatus::SUCCESS == status.IsValid());
 
-#ifdef NOT_NOW
     Grids::OrthogonalGridPortion::CreateParams params1 ( (&(*spatialModel), 2, 2, 10, 15, 20, 20, DVec3d::From(0, 0, 10), DVec3d::From(10, 0, 0));
 
     Grids::GridAxisMap grid2;
