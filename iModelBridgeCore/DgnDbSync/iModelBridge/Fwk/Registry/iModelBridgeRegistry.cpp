@@ -83,11 +83,12 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
                                                                  Bridge BIGINT"));  // Bridge --foreign key--> fwk_InstalledBridges
 
         // WARNING: Do not change the name or layout of the DocumentProperties - Bentley Automation Services assumes the following definition:
-        MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase, \
+        MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase,\
                                                                 DocGuid TEXT UNIQUE COLLATE NoCase,\
-                                                                DesktopURN TEXT COLLATE NoCase,\
-                                                                WebURN TEXT COLLATE NoCase, \
-                                                                AttributesJSON TEXT, \
+                                                                DesktopURN TEXT,\
+                                                                WebURN TEXT,\
+                                                                AttributesJSON TEXT,\
+                                                                ChangeHistoryJSON TEXT,\
                                                                 SpatialRootTransformJSON TEXT"));
 
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
