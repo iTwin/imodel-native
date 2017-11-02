@@ -4120,7 +4120,7 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
             if (projectedCS && (allowUnitsOverride || !m_haveCS || m_userDefinedProjectedCS))
                 {
                 // if the units are the same we just bypass
-                if (strcmpi(pUnit->name, m_csDef.unit) == 0)
+                if (CS_stricmp(pUnit->name, m_csDef.unit) == 0)
                     return SUCCESS;
 
                 // convert the offsets to the new unit.
