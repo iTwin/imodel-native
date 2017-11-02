@@ -19,6 +19,7 @@
 #include "Sheet.h"
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
+#include <BeHttp/HttpClient.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
 struct FT_LibraryRec_;
@@ -515,6 +516,9 @@ public:
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
         virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
+
+        //! Supply the HttpClient::Options for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
+        virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
         Host()
             {
