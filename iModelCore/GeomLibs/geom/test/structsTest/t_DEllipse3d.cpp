@@ -2445,6 +2445,9 @@ double CCWAngleFromY (DVec3dCR vector)
     return radians;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,ScottDConstructionFromXML)
     {
     auto start = DPoint3d::From ( 1495977.055739300, 556616.979535724,105.109956645);

@@ -1708,6 +1708,10 @@ void flatten (CurveVectorPtr &cv)
         0,0,0,0);
     cv->TransformInPlace (transform);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,AreaUnionCroomLineStringChatter)
     {
     auto cvA = CurveVector0 ();
