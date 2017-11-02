@@ -732,13 +732,13 @@
   </Part>
 
   <!-- Preview of a new version of nodejs support that is coming ... -->
-  <Part Name="iModelJsNodeAddonLib-Windows-New" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_7_0" >
-    <SubPart PartName="node-gyp-standalone_8_7_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+  <Part Name="iModelJsNodeAddonLib-Windows-New" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0" >
+    <SubPart PartName="node-gyp-standalone_8_9_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_7">
-        Delivery/iModelJsNodeAddon/N_8_7_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_7_0/package.json
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
+        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_9_0/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -761,13 +761,13 @@
       </Files>
     </Bindings>  </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_7_10_0">
-    <SubPart PartName="node-gyp-standalone_7_10_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0">
+    <SubPart PartName="node-gyp-standalone_8_9_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
-        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_7_10_0/package.json
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
+        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_9_0/package.json
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
