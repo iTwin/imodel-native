@@ -153,4 +153,48 @@ BentleyStatus GridSurface::_SetGeometry(ISolidPrimitivePtr surface)
     return BentleyStatus::SUCCESS;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSurface::Validate
+(
+) const
+    {
+    if (!GetAxisId ().IsValid ()) //grid axis must be set
+        return DgnDbStatus::ValidationFailed;
+
+    return DgnDbStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSurface::_OnInsert
+(
+)
+    {
+    DgnDbStatus status = T_Super::_OnInsert ();
+    if (status == DgnDbStatus::Success)
+        {
+        return Validate ();
+        }
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSurface::_OnUpdate
+(
+    DgnElementCR original
+)
+    {
+    DgnDbStatus status = T_Super::_OnUpdate (original);
+    if (status == DgnDbStatus::Success)
+        {
+        return Validate ();
+        }
+    return status;
+    }
+
 END_GRIDS_NAMESPACE

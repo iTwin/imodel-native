@@ -29,6 +29,20 @@ protected:
     friend struct GridSurfaceHandler;
 
     BE_PROP_NAME(Axis)
+        
+    Dgn::DgnDbStatus Validate () const;
+
+    //! Called when an element is about to be inserted into the DgnDb.
+    //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert () override;
+
+    //! Called when this element is about to be replace its original element in the DgnDb.
+    //! @param [in] original the original state of this element.
+    //! Subclasses may override this method to control whether their instances are updated.
+    //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) { return false; };
@@ -37,6 +51,9 @@ protected:
     void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId); };
 
     static GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId);
+
+protected:
+
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSurface, GRIDELEMENTS_EXPORT)
 
