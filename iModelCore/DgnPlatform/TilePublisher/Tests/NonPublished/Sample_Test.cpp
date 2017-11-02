@@ -62,6 +62,8 @@ void SampleTestFixture::TestRectangle()
 
     auto status = PublishTiles();
     EXPECT_EQ(status, Cesium::TilesetPublisher::Status::Success);
+
+    AppData appData(GetAppDataFileName());
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);

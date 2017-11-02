@@ -23,6 +23,203 @@ USING_NAMESPACE_TILETREE
 USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 
+namespace JsonUtil
+{
+    inline DPoint3d ToPoint(Json::Value const& json)
+        {
+        return DPoint3d::From(json["x"].asDouble(), json["y"].asDouble(), json["z"].asDouble());
+        }
+    inline ColorDef ToColor(Json::Value const& json)
+        {
+        auto r = json["red"].asDouble(), g = json["green"].asDouble(), b = json["blue"].asDouble();
+        return ColorDef(Byte(r*255), Byte(g*255), Byte(b*255));
+        }
+    inline DRange3d ToRange(Json::Value const& json)
+        {
+        return DRange3d::From(ToPoint(json["low"]), ToPoint(json["high"]));
+        }
+    inline RotMatrix ToRotMatrix(Json::Value const& json)
+        {
+        return RotMatrix::FromRowValues(
+            json[0].asDouble(), json[3].asDouble(), json[6].asDouble(),
+            json[1].asDouble(), json[4].asDouble(), json[7].asDouble(),
+            json[2].asDouble(), json[5].asDouble(), json[8].asDouble());
+        }
+    inline Transform ToTransform(Json::Value const& json)
+        {
+        EXPECT_EQ(0.0, json[3].asDouble());
+        EXPECT_EQ(0.0, json[7].asDouble());
+        EXPECT_EQ(0.0, json[11].asDouble());
+        EXPECT_EQ(1.0, json[15].asDouble());
+
+        return Transform::FromRowValues(
+            json[0].asDouble(), json[4].asDouble(), json[8].asDouble(), json[12].asDouble(),
+            json[1].asDouble(), json[5].asDouble(), json[9].asDouble(), json[13].asDouble(),
+            json[2].asDouble(), json[6].asDouble(), json[10].asDouble(), json[14].asDouble());
+        }
+    template<typename T> inline void ToIdSet(T& ids, Json::Value const& json)
+        {
+        using V = std::remove_reference<decltype(*ids.begin())>::type; // no value_type on IdSet...
+        for (Json::ArrayIndex i = 0; i < json.size(); i++)
+            ids.insert(V(json[i].asUInt64()));
+        }
+    template<typename T> inline T ToIdSet(Json::Value const& json)
+        {
+        T idSet;
+        ToIdSet(idSet, json);
+        return idSet;
+        }
+    template<typename T> inline T ToId(Utf8StringCR str)
+        {
+        return T(BeStringUtilities::ParseHex(str.c_str()));
+        }
+    inline DgnElementId ToElementId(Utf8StringCR str) { return ToId<DgnElementId>(str); }
+}
+
+//=======================================================================================
+// In-memory representation of the 'app data' associated with a tileset.
+// Can be created from the appdata .json file produced by the tile publisher; and by
+// a test to describe the expected output from tile publisher.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct AppData
+{
+private:
+    void Read(BeFileNameCR filename);
+    void Read(Json::Value const& json);
+public:
+
+    struct DisplayStyle
+    {
+        ColorDef    m_backgroundColor;
+        bool        m_isGlobeVisible;
+        ViewFlags   m_viewFlags;
+
+        bool operator==(DisplayStyle const& rhs) const;
+        void ExpectEqual(DisplayStyle const& rhs) const
+            {
+            // ###TODO ViewFlags
+            EXPECT_EQ(m_backgroundColor, rhs.m_backgroundColor);
+            EXPECT_EQ(m_isGlobeVisible, rhs.m_isGlobeVisible);
+            }
+
+        explicit DisplayStyle(Json::Value const&);
+        DisplayStyle() = default;
+    };
+
+    struct Model
+    {
+        enum class Type { Reality, Spatial, Sheet, Drawing, Unknown };
+
+        DRange3d    m_extents;
+        Utf8String  m_name;
+        Utf8String  m_tilesetUrl;
+        Transform   m_transform;
+        Type        m_type = Type::Unknown;
+
+        void ExpectEqual(Model const& rhs) const
+            {
+            EXPECT_EQ(m_name, rhs.m_name);
+            EXPECT_EQ(m_tilesetUrl, rhs.m_tilesetUrl);
+            EXPECT_EQ(m_type, rhs.m_type);
+            EXPECT_TRUE(m_extents.IsEqual(rhs.m_extents));
+            EXPECT_TRUE(m_transform.IsEqual(rhs.m_transform));
+            }
+
+        explicit Model(Json::Value const&);
+        Model() = default;
+    };
+
+    struct View
+    {
+        enum class Type { Camera, Ortho, Sheet, Drawing, Unknown };
+
+        DgnElementId    m_categorySelector;
+        DgnElementId    m_displayStyle;
+        DPoint3d        m_extents;
+        DPoint3d        m_eyePoint;
+        double          m_focusDistance;
+        bool            m_isCameraOn;
+        double          m_lensAngle;
+        DgnElementId    m_modelSelector;
+        Utf8String      m_name;
+        DPoint3d        m_origin;
+        RotMatrix       m_rotation;
+        Type            m_type = Type::Unknown;
+
+        void ExpectEqual(View const& rhs) const
+            {
+            // ###TODO eyepoint, focusdistance, lensangle
+            EXPECT_EQ(m_categorySelector, rhs.m_categorySelector);
+            EXPECT_EQ(m_displayStyle, rhs.m_displayStyle);
+            EXPECT_EQ(m_modelSelector, rhs.m_modelSelector);
+            EXPECT_TRUE(m_extents.IsEqual(rhs.m_extents));
+            EXPECT_EQ(m_isCameraOn, rhs.m_isCameraOn);
+            EXPECT_EQ(m_name, rhs.m_name);
+            EXPECT_TRUE(m_origin.IsEqual(rhs.m_origin));
+            EXPECT_TRUE(m_rotation.IsEqual(rhs.m_rotation));
+            EXPECT_EQ(m_type, rhs.m_type);
+            }
+
+        explicit View(Json::Value const&);
+        View() = default;
+    };
+
+    typedef bmap<DgnCategoryId, Utf8String> Categories;
+    typedef bmap<DgnElementId, DgnCategoryIdSet> CategorySelectors;
+    typedef bmap<DgnElementId, DisplayStyle> DisplayStyles;
+    typedef bmap<DgnElementId, DgnModelIdSet> ModelSelectors;
+    typedef bmap<DgnModelId, Model> Models;
+    typedef bmap<DgnViewId, View> Views;
+
+    Categories          m_categories;
+    CategorySelectors   m_categorySelectors;
+    DgnViewId           m_defaultView;
+    DisplayStyles       m_displayStyles;
+    DPoint3d            m_groundPoint;
+    ModelSelectors      m_modelSelectors;
+    Models              m_models;
+    Utf8String          m_name;
+    DRange3d            m_projectExtents;
+    DPoint3d            m_projectOrigin;
+    Transform           m_projectTransform;
+    Views               m_views;
+
+    explicit AppData(BeFileNameCR filename) { Read(filename); }
+
+    void AddCategory(DgnCategoryCR cat) { m_categories.Insert(cat.GetCategoryId(), cat.GetCategoryName()); }
+    void AddCategory(DgnCategoryId id, DgnDbR db) { auto cat = db.Elements().Get<DgnCategory>(id); ASSERT_TRUE(cat.IsValid()); AddCategory(*cat); }
+
+//  [ === Comparisons === ]
+
+    // Compare to the other AppData, producing test failure if they differ
+    void ExpectEqual(AppData const& rhs) const;
+    static void ExpectEqual(Utf8StringCR lhs, Utf8StringCR rhs) { EXPECT_EQ(lhs, rhs); }
+    static void ExpectEqual(DgnCategoryIdSet const& lhs, DgnCategoryIdSet const& rhs) { ExpectEqualSets(lhs, rhs); }
+    static void ExpectEqual(DisplayStyle const& lhs, DisplayStyle const& rhs) { lhs.ExpectEqual(rhs); }
+    static void ExpectEqual(DgnModelIdSet const& lhs, DgnModelIdSet const& rhs) { ExpectEqualSets(lhs, rhs); }
+    static void ExpectEqual(Model const& lhs, Model const& rhs) { lhs.ExpectEqual(rhs); }
+    static void ExpectEqual(View const& lhs, View const& rhs) { lhs.ExpectEqual(rhs); }
+
+    template<typename T> static void ExpectEqual(T const& lhs, T const& rhs)
+        {
+        EXPECT_EQ(lhs.size(), rhs.size());
+        for (auto const& lkv : lhs)
+            {
+            auto rkv = rhs.find(lkv.first);
+            EXPECT_FALSE(rhs.end() == rkv);
+            if (rhs.end() != rkv)
+                ExpectEqual(lkv.second, rkv->second);
+            }
+        }
+    template<typename T> static void ExpectEqualSets(T const& lhs, T const& rhs)
+        {
+        EXPECT_EQ(lhs.size(), rhs.size());
+        for (auto const& lkv : lhs)
+            EXPECT_FALSE(rhs.end() == rhs.find(lkv));
+        }
+};
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/17
 //=======================================================================================
@@ -35,13 +232,13 @@ protected:
     void TearDown() override { SaveDb(); }
 public:
 
-// [ === Managing the DgnDb === ]
+//  [ === Managing the DgnDb === ]
 
     // Create a blank DgnDb to hold data to be published
     void SetupDb(WCharCP filenameWithoutExtension);
 
     // Get the DgnDb produced by SetupDb()
-    DgnDbR GetDb() { BeAssert(m_db.IsValid()); return *m_db; }
+    DgnDbR GetDb() const { BeAssert(m_db.IsValid()); return *m_db; }
 
     // Close the DgnDb.
     void CloseDb() { GetDb().CloseDb(); }
@@ -57,13 +254,13 @@ public:
             m_db->SaveChanges();
         }
 
-// [ === Executing Tests === ]
+//  [ === Executing Tests === ]
 
     // If a test obtains ref-counted pointers to DgnElements, and does not explicitly set all of them to null before the test terminates,
     // DgnDb will assert. Pass your test function/lambda to this function to ensure any DgnElementPtrs within it are released before termination.
     template<typename T> void ExecuteTest(T testFunc) { testFunc(); }
 
-// [ == Creating definition elements === ]
+//  [ == Creating definition elements === ]
 
     // Create a spatial (3d) model
     PhysicalModelPtr InsertSpatialModel(Utf8CP partitionName) { return DgnDbTestUtils::InsertPhysicalModel(GetDb(), partitionName); }
@@ -83,7 +280,7 @@ public:
 
     SpatialViewDefinitionCPtr InsertSpatialView(Utf8CP name, ModelSelectorCR models, CategorySelectorCR categories, DisplayStyle3dCR style, DRange3dCP viewedVolume, SpatialViewDefinition::Camera const* camera=nullptr);
 
-// [ === Defining element geometry === ]
+//  [ === Defining element geometry === ]
 
     // Points are specified in local coordinates relative to element origin.
 
@@ -95,16 +292,27 @@ public:
     GeometryBuilderPtr CreateGeometryBuilder(DgnModelR model, DgnCategoryId categoryId) { return GeometryBuilder::Create(model, categoryId, DPoint3d::FromZero()); }
     GeometryBuilderPtr CreateGeometryBuilder(DgnModelR model, DgnCategoryId categoryId, ColorDef color);
 
-// [ === Creating geometric elements === ]
+//  [ === Creating geometric elements === ]
 
     PhysicalElementCPtr InsertPhysicalElement(PhysicalModelR model, GeometryBuilderR builder, DPoint3dCR elementOrigin);
 
-// [ === Publishing tiles === ]
+//  [ === Publishing tiles === ]
 
     // Get the full path to the directory in which the .bim and the tile publisher output's subdirectories reside.
     static BeFileName GetBaseDir() { BeFileName filename; BeTest::GetHost().GetOutputRoot(filename); return filename; }
 
     // Publish tiles to base directory.
     Cesium::TilesetPublisher::Status PublishTiles();
+
+    // Get the root directory containing the published output.
+    // This should contain XXX_AppData.json and 1 subdirectory for each published model, named Model_XX where XX is the model ID in hexadecimal format.
+    BeFileName GetTilesetDir() const;
+
+    // Get the path to the published appdata json file.
+    BeFileName GetAppDataFileName() const;
+
+    // Get the name of the tileset (same as the name of the .bim)
+    WString GetTilesetNameW() const { return GetDb().GetFileName().GetFileNameWithoutExtension(); }
+    Utf8String GetTilesetName() const { return Utf8String(GetTilesetNameW()); }
 };
 
