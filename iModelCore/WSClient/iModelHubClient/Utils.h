@@ -220,16 +220,14 @@ static TaskPtr<T> ExecuteWithRetry(const std::function<TaskPtr<T>()> taskCallbac
     }
 
 template <typename T>
-static T& ExecuteAsync(AsyncTaskPtr<T> task, int wait = 60000)
+static std::shared_ptr<T> ExecuteAsync(AsyncTaskPtr<T> task, int wait = 60000)
     {
     task->WaitFor(wait);
 
     if (task->IsCompleted())
-        return task->GetResult();
+        return std::make_shared<T>(task->GetResult());
 
-    return Result<T>::Error(Error::Id::ExecutionTimeout).GetValue();
+    return std::make_shared<T>(Result<T>::Error(Error::Id::ExecutionTimeout).GetValue());
     }
-
-   
 
 END_BENTLEY_IMODELHUB_NAMESPACE

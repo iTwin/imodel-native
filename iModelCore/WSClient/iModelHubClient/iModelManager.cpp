@@ -128,18 +128,18 @@ IBriefcaseManager::Response iModelManager::_ProcessRequest (Request const& req, 
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
     Utf8String lastChangeSetId = db.Revisions ().GetParentRevisionId ();
 
-    StatusResult result;
+    StatusResultPtr result;
     if (queryOnly)
         result = ExecuteAsync(m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
         result = ExecuteAsync(m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
-    if (result.IsSuccess ())
+    if (result->IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
         }
     
-    return HandleError(req, result, purpose);
+    return HandleError(req, *result, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -155,13 +155,13 @@ RepositoryStatus iModelManager::_Demote (DgnLockSet const& locks, DgnCodeSet con
 
     // NEEDSWORK_LOCKS: Handle codes
     auto result = ExecuteAsync(m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken));
-    if (result.IsSuccess ())
+    if (result->IsSuccess ())
         {
         return RepositoryStatus::Success;
         }
     else
         {
-        return GetResponseStatus(result);
+        return GetResponseStatus(*result);
         }
     }
 
@@ -177,13 +177,13 @@ RepositoryStatus iModelManager::_Relinquish (Resources which, DgnDbR db)
         return RepositoryStatus::ServerUnavailable;
 
     auto result = ExecuteAsync(m_connection->RelinquishCodesLocksInternal(which, db.GetBriefcaseId(), ResponseOptions::None, m_cancellationToken));
-    if (result.IsSuccess ())
+    if (result->IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
         }
     else
         {
-        return GetResponseStatus(result);//NEEDSWORK: Use appropriate status
+        return GetResponseStatus(*result);//NEEDSWORK: Use appropriate status
         }
     }
 
@@ -201,13 +201,15 @@ RepositoryStatus iModelManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeS
     tasks.insert(availableTask);
     tasks.insert(unavailableTask);
 
-    AsyncTask::WhenAll(tasks)->Wait();
-    if (ExecuteAsync(availableTask).IsSuccess() && ExecuteAsync(unavailableTask).IsSuccess())
+    AsyncTask::WhenAll(tasks)->Wait(); 
+    auto availableResult = ExecuteAsync(availableTask);
+    auto unavailableResult = ExecuteAsync(unavailableTask);
+    if (availableResult->IsSuccess() && unavailableResult->IsSuccess())
         {
-        locks = ExecuteAsync(availableTask).GetValue ().GetLocks ();
-        codes = ExecuteAsync(availableTask).GetValue ().GetCodes ();
-        unavailableLocks = ExecuteAsync(unavailableTask).GetValue().GetLocks();
-        unavailableCodes = ExecuteAsync(unavailableTask).GetValue().GetCodes();
+        locks = availableResult->GetValue().GetLocks ();
+        codes = availableResult->GetValue().GetCodes ();
+        unavailableLocks = unavailableResult->GetValue().GetLocks();
+        unavailableCodes = unavailableResult->GetValue().GetCodes();
         return RepositoryStatus::Success;
         }
     else
@@ -229,10 +231,10 @@ RepositoryStatus iModelManager::_QueryStates (DgnLockInfoSet& lockStates, DgnCod
 
     auto result = ExecuteAsync(m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken));
 
-    if (result.IsSuccess ())
+    if (result->IsSuccess ())
         {
-        lockStates = result.GetValue ().GetLockStates ();
-        codeStates = result.GetValue ().GetCodeStates ();
+        lockStates = result->GetValue ().GetLockStates ();
+        codeStates = result->GetValue ().GetCodeStates ();
         return RepositoryStatus::Success;
         }
     else

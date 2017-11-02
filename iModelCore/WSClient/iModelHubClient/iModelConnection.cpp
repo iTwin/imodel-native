@@ -114,10 +114,10 @@ ICancellationTokenPtr             cancellationToken
     if (fileAccessKey.IsNull())
         {
         auto fileAccessKeyResult = ExecuteAsync(QueryFileAccessKey(fileId, cancellationToken));
-        if (!fileAccessKeyResult.IsSuccess())
-            return CreateCompletedAsyncTask(StatusResult::Error(fileAccessKeyResult.GetError()));
+        if (!fileAccessKeyResult->IsSuccess())
+            return CreateCompletedAsyncTask(StatusResult::Error(fileAccessKeyResult->GetError()));
 
-        fileAccessKey = fileAccessKeyResult.GetValue();
+        fileAccessKey = fileAccessKeyResult->GetValue();
         }
 
     return DownloadFileInternal(localFile, fileId, fileAccessKey, callback, cancellationToken);
@@ -970,8 +970,9 @@ ICancellationTokenPtr cancellationToken
         {
         for (auto task : tasks)
             {
-            if (!ExecuteAsync(task).IsSuccess())
-                return CodeLockSetResult::Error(ExecuteAsync(task).GetError());
+            auto taskResult = ExecuteAsync(task);
+            if (!taskResult->IsSuccess())
+                return CodeLockSetResult::Error(taskResult->GetError());
             }
         return CodeLockSetResult::Success(*finalValue);
         });
@@ -2284,14 +2285,14 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
     while (!IsInitializationFinished(initializationState) && retriesLeft > 0)
         {
         auto seedFilesResult = ExecuteAsync(GetSeedFileById(fileGuid));
-        if (!seedFilesResult.IsSuccess())
+        if (!seedFilesResult->IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFilesResult.GetError().GetMessage().c_str()); 
-            finalResult->SetError(seedFilesResult.GetError());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFilesResult->GetError().GetMessage().c_str()); 
+            finalResult->SetError(seedFilesResult->GetError());
             return;
             }
 
-        auto seedFile = seedFilesResult.GetValue();
+        auto seedFile = seedFilesResult->GetValue();
         initializationState = seedFile->GetInitialized();
         
         if (!IsInitializationFinished(initializationState))
@@ -3120,10 +3121,11 @@ ICancellationTokenPtr cancellationToken
         {
         for (auto& task : tasks)
             {
-            if (!ExecuteAsync(task).IsSuccess())
-                return BriefcasesInfoResult::Error(ExecuteAsync(task).GetError());
+            auto taskResultPtr = ExecuteAsync(task);
+            if (!taskResultPtr->IsSuccess())
+                return BriefcasesInfoResult::Error(taskResultPtr->GetError());
 
-            auto briefcaseInfo = ExecuteAsync(task).GetValue();
+            auto briefcaseInfo = taskResultPtr->GetValue();
             finalValue->insert(finalValue->end(), briefcaseInfo.begin(), briefcaseInfo.end());
             }
 
@@ -3224,10 +3226,11 @@ ICancellationTokenPtr cancellationToken
                 {
                 for (auto task : tasks)
                     {
-                    if (!ExecuteAsync(task).IsSuccess())
+                    auto taskResult = ExecuteAsync(task);
+                    if (!taskResult->IsSuccess())
                         {
-                        finalResult->SetError(ExecuteAsync(task).GetError());
-                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, ExecuteAsync(task).GetError().GetMessage().c_str());
+                        finalResult->SetError(taskResult->GetError());
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, taskResult->GetError().GetMessage().c_str());
                         return;
                         }
                     }
