@@ -37,6 +37,7 @@ struct SampleTestFixture : TestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SampleTestFixture::TestRectangle()
     {
+    // Set up the data to be published...
     PhysicalModelPtr model = InsertSpatialModel("MyModel");
     ModelSelectorCPtr modelSel = InsertModelSelector(model->GetModelId());
     ASSERT_TRUE(modelSel.IsValid());
@@ -60,13 +61,16 @@ void SampleTestFixture::TestRectangle()
     SpatialViewDefinitionCPtr view = InsertSpatialView("MyView", *modelSel, *catSel, *style, &extents);
     ASSERT_TRUE(view.IsValid());
 
+    // Publish the tileset
     auto status = PublishTiles();
     EXPECT_EQ(status, Cesium::TilesetPublisher::Status::Success);
 
+    // Compare TestRectangle_AppData.json (metadata about the dgndb)
     AppData appData(GetAppDataFileName());
     AppData expected(*view);
     appData.ExpectEqual(expected);
 
+    // Verify files in output directories
     PublishedTilesets tilesets(GetAppDataDir());
     tilesets.ExpectEqual(expected.m_models);
 
@@ -82,8 +86,44 @@ void SampleTestFixture::TestRectangle()
     EXPECT_FALSE(tileJson.isNull());
     EXPECT_TRUE(tileJson.isObject());
 
+    // Extract the geometry from the published tile
     auto tileGeom = tile.ReadGeometry(*model);
     EXPECT_FALSE(tileGeom.IsEmpty());
+
+    // Verify FeatureTable
+    Render::Primitives::MeshList const& meshes = tileGeom.Meshes();
+    // ###TODO Render::FeatureTableCR featureTable = meshes.FeatureTable();
+    // ###TODO EXPECT_EQ(1, featureTable.size());
+    
+    // ###TODO uint32_t featureId = 0;
+    // ###TODO Render::Feature expectedFeature(elem->GetElementId(), DgnCategory::GetDefaultSubCategoryId(catId), DgnGeometryClass::Primary);
+    // ###TODO EXPECT_TRUE(featureTable.FindIndex(featureId, expectedFeature));
+    // ###TODO EXPECT_EQ(0, featureId);
+
+    // Verify geometry
+    ASSERT_EQ(1, meshes.size());
+    Render::Primitives::MeshCR mesh = *meshes[0];
+    EXPECT_FALSE(mesh.IsEmpty());
+    // ###TODO EXPECT_TRUE(mesh.IsPlanar());
+    EXPECT_EQ(Render::Primitives::Mesh::PrimitiveType::Mesh, mesh.GetType());
+    EXPECT_FALSE(nullptr == mesh.GetFeatureTable());
+    EXPECT_EQ(mesh.Triangles().Count(), 2);
+    EXPECT_TRUE(mesh.Polylines().empty());
+    EXPECT_EQ(mesh.Points().size(), 4);
+    EXPECT_EQ(mesh.Normals().size(), 4);
+    EXPECT_TRUE(mesh.Params().empty());
+
+    // Verify colors
+    // ###TODO Render::Primitives::ColorTableCR colors = mesh.GetColorTable();
+    // ###TODO ASSERT_TRUE(colors.IsUniform());
+    // ###TODO EXPECT_EQ(ColorDef::Red().GetValue(), colors.begin()->first);
+    // ###TODO EXPECT_EQ(0, colors.begin()->second);
+
+    // Verify feature IDs
+    // ###TODO Render::FeatureIndex feats;
+    // ###TODO mesh.ToFeatureIndex(feats);
+    // ###TODO EXPECT_TRUE(feats.IsUniform());
+    // ###TODO EXPECT_EQ(featureId, feats.m_featureID);
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);
