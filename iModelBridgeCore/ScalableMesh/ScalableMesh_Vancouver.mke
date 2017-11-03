@@ -360,6 +360,8 @@ $(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMS
 
 $(o)SMStreamingDataStore$(oext) : $(stmDir)Stores/SMStreamingDataStore.cpp $(stmDir)Stores/SMStreamingDataStore.h $(stmDir)Stores/SMStreamingDataStore.hpp ${MultiCompileDepends}
 
+$(o)SMExternalProviderDataStore$(oext) : $(stmDir)Stores/SMExternalProviderDataStore.cpp $(stmDir)Stores/SMExternalProviderDataStore.h $(stmDir)Stores/SMExternalProviderDataStore.hpp ${MultiCompileDepends}
+
 $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------

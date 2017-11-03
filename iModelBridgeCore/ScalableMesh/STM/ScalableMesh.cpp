@@ -508,6 +508,11 @@ BentleyStatus IScalableMesh::DeleteCoverage(uint64_t id)
     return _DeleteCoverage(id);
     }
 
+void  IScalableMesh::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+    {
+	return _SetClipDefinitionsProvider(provider);
+    }
+
 void IScalableMesh::ImportTerrainSM(WString terrainPath)
     {
     return _ImportTerrainSM(terrainPath);
@@ -1265,7 +1270,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 SourceImportConfig sourceConfig(sourceIter->GetConfig());
 
                 Import::ScalableMeshData scalableMesh(sourceIter->GetConfig().GetReplacementSMData());                                
-                
                 if (scalableMesh.IsRepresenting3dData() == SMis3D::is3D)
                     {               
                     source3dRanges.insert(source3dRanges.begin(), scalableMesh.GetExtent().begin(), scalableMesh.GetExtent().end());
@@ -2732,6 +2736,12 @@ template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
+
+	if (m_scmIndexPtr == nullptr) return;
+	BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+
+	bool result = m_scmIndexPtr->GetDataStore()->SetProjectFilesPath(projectFilesPath);
+	assert(result == true);
     }
 
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
@@ -3189,6 +3199,13 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_DeleteCoverage(uint64
     SaveEditFiles();
     return SUCCESS;
     }
+
+template <class POINT> void ScalableMesh<POINT>::_SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+   {
+	if (nullptr == m_scmIndexPtr) return;
+	auto store = m_scmIndexPtr->GetDataStore();
+	store->SetClipDefinitionsProvider(provider);
+   }
 
 template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()
     {

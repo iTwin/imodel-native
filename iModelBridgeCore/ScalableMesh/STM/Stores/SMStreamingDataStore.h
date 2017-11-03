@@ -150,6 +150,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         SMNodeGroupPtr m_CesiumGroup;
 
+		IClipDefinitionDataProviderPtr m_clipProvider;
+
     protected : 
 
 
@@ -234,6 +236,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;
+
+		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
         
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
                 

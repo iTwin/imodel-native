@@ -189,8 +189,8 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
 bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     {
-    if (m_projectFilesPath.length() > 0)
-        return false;
+    /*if (m_projectFilesPath.length() > 0)
+        return false;*/
 
     m_projectFilesPath = projectFilesPath;    
     return true;

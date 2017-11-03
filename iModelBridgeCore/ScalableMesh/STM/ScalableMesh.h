@@ -356,6 +356,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
 
+		virtual void                               _SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
 
@@ -579,7 +581,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override {};
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override { return SUCCESS; };        
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override { assert(false); };
-        virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
+		virtual void                               _SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override { assert(false); };
+		virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual Utf8String                         _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
