@@ -13,6 +13,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
+        <ECStructArrayProperty propertyName="CustomCardinalPoints" typeName="CustomCardinalPointStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>                
         <!--<ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.ISurfaceGroup"/>
         <ECProperty propertyName="StandardizedProperties" typeName="string" description="JSON storage of section properties using BIS-standard names and BIS-standard units."/>
         <ECArrayProperty propertyName="AlternateShapeClassification" typeName="string" description="Alternative ways shape can be classified. See ShapeClassification for list of standard values." minOccurs="1" maxOccurs="1"/>
@@ -26,6 +27,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="BuiltUpProfileComponent">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
         <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order in which this component was added to its BuiltUpProfile."/>
         <ECProperty propertyName="PlacementPoint" typeName="int" description="The identifier of the location on the related Profile that is Offet away from 0,0 of BuiltUpProfile. This values are exactly the same as CIS/2 cardinal points."/>
         <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="The profile used by the component is actually a mirror image of Profile. The mirroring is done about the profile's y-axis and is done before rotation and before determining the PlacementPoint."/>

@@ -1,7 +1,8 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "Profile.h"
+#include <StructuralDomain/StructuralProfiles/Profile.h>
+#include <StructuralDomain/StructuralCommon/StructuralTypeDefinitionModel.h>
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 
@@ -19,8 +20,7 @@ protected:
 public:
     DECLARE_STRUCTURAL_PROFILES_QUERYCLASS_METHODS(ConstantProfile)
     DECLARE_STRUCTURAL_PROFILES_ELEMENT_BASE_GET_METHODS(ConstantProfile)
-
-    STRUCTURAL_DOMAIN_EXPORT static ConstantProfilePtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static ConstantProfilePtr Create(Structural::StructuralTypeDefinitionModelCPtr model);
     };
 
 //=======================================================================================

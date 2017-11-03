@@ -1,5 +1,4 @@
 #include <StructuralDomain/StructuralProfiles/PublishedProfile.h>
-#include <StructuralDomain/StructuralCommon/StructuralCommonDefinitions.h>
 
 HANDLER_DEFINE_MEMBERS(PublishedProfileHandler)
 

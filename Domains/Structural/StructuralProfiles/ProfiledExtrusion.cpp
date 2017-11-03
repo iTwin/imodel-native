@@ -13,3 +13,8 @@ Dgn::DgnDbStatus ProfiledExtrusion::_UpdateProperties(Dgn::DgnElementCR el, BeSQ
     {
     return Dgn::DgnDbStatus::WriteError;
     }
+
+ProfiledExtrusionPtr ProfiledExtrusion::Create() 
+    { 
+    return new ProfiledExtrusion(); 
+    };

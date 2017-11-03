@@ -1,15 +1,18 @@
 #include <StructuralDomain/StructuralProfiles/ConstantProfile.h>
 
+
 HANDLER_DEFINE_MEMBERS(ConstantProfileHandler)
 
-ConstantProfilePtr ConstantProfile::Create(Dgn::PhysicalModelR model)
+ConstantProfilePtr ConstantProfile::Create(Structural::StructuralTypeDefinitionModelCPtr model)
     {
-    if (!model.GetModelId().IsValid())
-        {
-        return nullptr;
-        }
+    Dgn::DgnModelId modelId = model.get()->GetModelId();
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    if (!model.get()->GetModelId().IsValid())
+    {
+        return nullptr;
+    }
+
+    CreateParams createParams(model.get()->GetDgnDb(), model.get()->GetModelId(), QueryClassId(model.get()->GetDgnDb()));
 
     return new ConstantProfile(createParams);
     }

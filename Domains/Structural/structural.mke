@@ -92,14 +92,15 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructProfilesPublicAPI)StructuralProfilesApi.h \
     $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
     $(StructProfilesPublicAPI)StructuralProfilesDomain.h \
-    $(StructProfilesPublicAPI)BuiltUpProfile.h \
-    $(StructProfilesPublicAPI)ConstantProfile.h \
-    $(StructProfilesPublicAPI)ParametricProfile.h \
     $(StructProfilesPublicAPI)Profile.h \
+    $(StructProfilesPublicAPI)ConstantProfile.h \
+    $(StructProfilesPublicAPI)BuiltUpProfile.h \
     $(StructProfilesPublicAPI)PublishedProfile.h \
-    $(StructProfilesPublicAPI)Profiledextrusion.h \
-    $(StructProfilesPublicAPI)CurvedExtrusion.h \
+    $(StructProfilesPublicAPI)BuiltUpProfileComponent.h \
+    $(StructProfilesPublicAPI)ParametricProfile.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
     $(StructProfilesPublicAPI)StraightExtrusion.h \
+    $(StructProfilesPublicAPI)CurvedExtrusion.h \
     $(StructMaterialPublicAPI)MaterialProperties.h \
     $(StructMaterialPublicAPI)ConcreteMaterialProperties.h \
     $(StructMaterialPublicAPI)SteelMaterialProperties.h
@@ -162,27 +163,6 @@ $(o)SurfaceMember$(oext) : $(StructPhys)SurfaceMember.cpp \
 
 $(o)Form$(oext) : $(StructCommon)Form.cpp \
     ${MultiCompileDepends} \
-    $(StructCommonPublicAPI)Form.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)ProfiledExtrusion$(oext) : $(StructProfiles)ProfiledExtrusion.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
-    $(StructCommonPublicAPI)Form.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)CurvedExtrusion$(oext) : $(StructProfiles)CurvedExtrusion.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)CurvedExtrusion.h \
-    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
-    $(StructCommonPublicAPI)Form.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)StraightExtrusion$(oext) : $(StructProfiles)StraightExtrusion.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)StraightExtrusion.h \
-    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
     $(StructCommonPublicAPI)Form.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
@@ -269,50 +249,59 @@ $(o)SpreadFooting$(oext) : $(StructPhys)SpreadFooting.cpp \
 $(o)StructuralProfilesDomain$(oext) : $(StructProfiles)StructuralProfilesDomain.cpp \
     ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)StructuralProfilesDomain.h \
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 $(o)Profile$(oext) : $(StructProfiles)Profile.cpp \
     ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)Profile.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h
 
 $(o)ConstantProfile$(oext) : $(StructProfiles)ConstantProfile.cpp \
     ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)ConstantProfile.h \
     $(StructProfilesPublicAPI)Profile.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h
 
 $(o)BuiltUpProfile$(oext) : $(StructProfiles)BuiltUpProfile.cpp \
     ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)BuiltUpProfile.h \
     $(StructProfilesPublicAPI)ConstantProfile.h \
-    $(StructProfilesPublicAPI)Profile.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)BuiltUpProfileComponent$(oext) : $(StructProfiles)BuiltUpProfileComponent.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)BuiltUpProfileComponent.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)ParametricProfile$(oext) : $(StructProfiles)ParametricProfile.cpp \
-    ${MultiCompileDepends} \
-    $(StructProfilesPublicAPI)ParametricProfile.h \
-    $(StructProfilesPublicAPI)ConstantProfile.h \
-    $(StructProfilesPublicAPI)Profile.h \
-    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h
 
 $(o)PublishedProfile$(oext) : $(StructProfiles)PublishedProfile.cpp \
     ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)PublishedProfile.h \
     $(StructProfilesPublicAPI)ConstantProfile.h \
-    $(StructProfilesPublicAPI)Profile.h \
+    $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h
+
+$(o)BuiltUpProfileComponent$(oext) : $(StructProfiles)BuiltUpProfileComponent.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)BuiltUpProfileComponent.h 
+
+$(o)ParametricProfile$(oext) : $(StructProfiles)ParametricProfile.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)ParametricProfile.h \
+    $(StructProfilesPublicAPI)ConstantProfile.h \
+    $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h
+
+$(o)ProfiledExtrusion$(oext) : $(StructProfiles)ProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
     $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h \
+    $(StructCommonPublicAPI)Form.h 
+
+$(o)CurvedExtrusion$(oext) : $(StructProfiles)CurvedExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
+    $(StructProfilesPublicAPI)CurvedExtrusion.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h 
+
+$(o)StraightExtrusion$(oext) : $(StructProfiles)StraightExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
+    $(StructProfilesPublicAPI)StraightExtrusion.h \
+    $(StructProfilesPublicAPI)ProfiledExtrusion.h 
 
 $(o)MaterialProperties$(oext) : $(StructMaterial)MaterialProperties.cpp \
     ${MultiCompileDepends} \
