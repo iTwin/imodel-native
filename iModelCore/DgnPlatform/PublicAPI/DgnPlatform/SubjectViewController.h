@@ -39,11 +39,16 @@ private:
     DgnDbP              m_db;
     ECSqlStatement*     m_elementToSubjectStmt;
 
+
 protected:
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
     SubjectCPtr GetParentJobSubject(DgnElementCP element);
 
 public:
+    //! Turns on/off all models and categories
+    //! @param[in] visible true if visible
+    DGNPLATFORM_EXPORT void     SetModelsAndCategoriesVisibility(bool visible);
+
     //! Toggles visibility of a specific subject
     //! @param[in] subjectId
     //! @param[in] isVisible

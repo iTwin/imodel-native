@@ -35,6 +35,20 @@ SubjectViewController::~SubjectViewController()
     }
 
 //-------------------------------------------------------------------------------------------
+// @bsimethod 												Diego.Pinate 	11/17
+//-------------------------------------------------------------------------------------------
+void    SubjectViewController::SetModelsAndCategoriesVisibility(bool visible)
+    {
+    CachedECSqlStatementPtr modelStmt = m_db->GetPreparedECSqlStatement("SELECT m.ECInstanceId FROM Bis.SpatialModel m");
+    while (modelStmt->Step() == BE_SQLITE_ROW)
+        ChangeModelDisplay(modelStmt->GetValueId<DgnModelId>(0), visible);
+
+    CachedECSqlStatementPtr categoryStmt = m_db->GetPreparedECSqlStatement("SELECT c.ECInstanceId FROM Bis.Category c");
+    while (categoryStmt->Step() == BE_SQLITE_ROW)
+        ChangeCategoryDisplay(categoryStmt->GetValueId<DgnCategoryId>(0), visible);
+    }
+
+//-------------------------------------------------------------------------------------------
 // @bsimethod 												Diego.Pinate 	10/17
 //-------------------------------------------------------------------------------------------
 SubjectCPtr GetParentJobSubjectRecursive(DgnDbP db, ECClassCP subjectClass, DgnElementCPtr element)
