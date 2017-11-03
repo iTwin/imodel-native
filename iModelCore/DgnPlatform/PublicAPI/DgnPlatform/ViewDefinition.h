@@ -266,7 +266,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct ViewElementHandler::ViewModels;
     friend struct SpatialViewDefinition;
-    friend struct ViewDefinition;
 
 protected:
     DgnModelIdSet m_models;
@@ -277,11 +276,15 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _OnDeleted() const override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
 
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
     DgnDbStatus WriteModels();
 
 public:
+    BE_JSON_NAME(models)
+
     //! Construct a new ModelSelector.
     //! @param[in] model The DefinitionModel that will contain this new ModelSelector (not the model or models that the ModelSelector will select)
     //! @param[in] name The name of the ModelSelector.
@@ -324,16 +327,20 @@ struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
 protected:
     mutable DgnCategoryIdSet m_categories;
 
-    DGNPLATFORM_EXPORT bool EqualState(CategorySelectorCR other) const;
+    bool EqualState(CategorySelectorCR other) const;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
 
     DgnDbStatus WriteCategories();
     explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
 
 public:
+    BE_JSON_NAME(categories)
+
     //! Construct a new CategorySelector
     CategorySelector(DefinitionModelR model, Utf8StringCR name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
