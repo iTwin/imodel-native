@@ -408,6 +408,8 @@ struct DrawGraphics
     Render::GraphicBranch m_hiResSubstitutes;
     Render::GraphicBranch m_loResSubstitutes;
 
+    size_t Count() const { return m_graphics.m_entries.size() + m_hiResSubstitutes.m_entries.size() + m_loResSubstitutes.m_entries.size(); }
+
     void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear();}
 };
 

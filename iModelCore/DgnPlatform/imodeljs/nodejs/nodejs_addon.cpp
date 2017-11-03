@@ -844,6 +844,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
         m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
+		m_presentationManager->GetConnections().NotifyConnectionOpened(*m_dgndb);
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
         }
 
