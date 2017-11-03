@@ -130,7 +130,7 @@ struct GltfReader
         // ###TODO: Create DisplayParams from GLTF Material...
         return Render::Primitives::DisplayParams::Create(Render::Primitives::DisplayParams::Type::Mesh, DgnCategoryId(), DgnSubCategoryId(),
                 nullptr, RenderMaterialId(), ColorDef::White(), ColorDef::White(), 0, Render::LinePixels::Solid, Render::FillFlags::ByView,
-                DgnGeometryClass::Primary, false, m_model.GetDgnDb(), m_renderSystem);
+                Render::DgnGeometryClass::Primary, false, m_model.GetDgnDb(), m_renderSystem);
         }
 
     virtual BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue);
@@ -149,16 +149,16 @@ struct GltfReader
     BentleyStatus ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue);
     BentleyStatus ReadVertices(Render::Primitives::QVertex3dListR vertexList, Json::Value const& primitiveValue);
 
-    BentleyStatus ReadNormalPairs(OctEncodedNormalPairListR pairs, Json::Value const& value, Utf8CP accessorName);
-    BentleyStatus ReadNormals(OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName);
+    BentleyStatus ReadNormalPairs(Render::OctEncodedNormalPairListR pairs, Json::Value const& value, Utf8CP accessorName);
+    BentleyStatus ReadNormals(Render::OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName);
 
     BentleyStatus ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Utf8CP accessorName);
 
     void ReadColors(bvector<uint16_t>& colors, Json::Value const& primitiveValue);
     BentleyStatus ReadColorTable(Render::Primitives::ColorTableR colorTable, Json::Value const& primitiveValue);
 
-    BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value, Utf8CP name, bool disjoint);
-    MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue);
+    BentleyStatus ReadPolylines(bvector<Render::MeshPolyline>& polylines, Json::Value value, Utf8CP name, bool disjoint);
+    Render::MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue);
 
     BentleyStatus ReadFeatures(Render::Primitives::MeshR mesh, Json::Value const& primitiveValue);
 
@@ -192,7 +192,7 @@ protected:
     Render::Primitives::DisplayParamsCPtr _CreateDisplayParams(Json::Value const&) override;
     BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue) override;
 
-    ReadStatus ReadFeatureTable(FeatureTableR);
+    ReadStatus ReadFeatureTable(Render::FeatureTableR);
 
 public:
     DgnTileReader(StreamBufferR buffer, DgnModelR model, Render::System& system) : GltfReader(buffer, model, system) { }
