@@ -1594,8 +1594,8 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
         tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = imageSource.GetFormat() == ImageSource::Format::Png ? "image/png" : "image/jpeg";
 
 
-        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
-        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.x;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.y;
 
         ByteStream const& imageData = imageSource.GetByteStream();
         tileData.m_json["bufferViews"][bvImageId]["byteOffset"] = tileData.BinaryDataSize();
