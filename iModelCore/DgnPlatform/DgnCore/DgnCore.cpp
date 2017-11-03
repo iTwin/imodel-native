@@ -309,8 +309,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     // initialize http services
     Http::HttpClient::Options* httpOptions = _SupplyHttpClientOptions();
-
-    Http::HttpClient::Initialize(nullptr != httpOptions ? *httpOptions : Http::HttpClient::Options(assetDir, 20/*maxConnectionPerHost*/));
+    Http::HttpClient::Initialize(nullptr != httpOptions ? *httpOptions : Http::HttpClient::Options(assetDir, 10/*maxConnectionPerHost*/));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -75,7 +75,7 @@ ASSEMBLY_STRONGNAME             = 1
 
 contextDepends                  = $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)Render.h $(DgnPlatformAPISrc)DgnViewport.h
 
-ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)RevisionComparisonViewController.h
+ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)RevisionComparisonViewController.h $(DgnPlatformAPISrc)SubjectViewController.h
 
 HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(contextDepends)
 
@@ -342,6 +342,8 @@ $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHo
 $(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)RevisionComparisonViewController$(oext): $(DgnCoreDir)RevisionComparisonViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)SubjectViewController$(oext) :           $(DgnCoreDir)SubjectViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)ModelSpatialClassifier$(oext) :                 $(DgnCoreDir)ModelSpatialClassifier.cpp $(DgnPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}
 
