@@ -87,4 +87,48 @@ Dgn::ElementIterator GridAxis::MakeIterator () const
     return iterator;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridAxis::Validate
+(
+) const
+    {
+    if (!GetGridId().IsValid()) //grid must be set
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    return Dgn::DgnDbStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridAxis::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnInsert ();
+    if (status == Dgn::DgnDbStatus::Success)
+        {
+        return Validate ();
+        }
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridAxis::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate (original);
+    if (status == Dgn::DgnDbStatus::Success)
+        {
+        return Validate ();
+        }
+    return status;
+    }
+
 END_GRIDS_NAMESPACE

@@ -27,7 +27,8 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridSplineSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
     friend struct GridSplineSurfaceHandler;
 
-    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) override;
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const override;
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate () const override;
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSplineSurface, GRIDELEMENTS_EXPORT)
 
