@@ -50,7 +50,7 @@ Utf8CP          name
     return new SketchGridPortion(GeometricElement3d::CreateParams(model.GetDgnDb(),
                                                                   model.GetModelId(),
                                                                   QueryClassId(model.GetDgnDb()),
-                                                                  SpatialCategory::QueryCategoryId(model.GetDgnDb().GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized),
+                                                                  DgnCategoryId(),
                                                                   Placement3d(),
                                                                   Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_SketchGridPortion),
                                                                                model.GetModeledElementId(),
