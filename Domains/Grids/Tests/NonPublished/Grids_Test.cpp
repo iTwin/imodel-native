@@ -162,6 +162,4 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert axis created via handler";
     }
     db.SaveChanges ();
-    //TODO: check geometry & positions of all gridplaneSurfaces
-    //TODO: check other methods - transform rotate etc
     }

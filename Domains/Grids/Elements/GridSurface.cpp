@@ -128,7 +128,7 @@ void GridSurface::Translate(DVec3d translation)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-BentleyStatus GridSurface::SetGrometry(ISolidPrimitivePtr surface)
+BentleyStatus GridSurface::SetGeometry(ISolidPrimitivePtr surface)
     {
     if (_ValidateGeometry(surface))
         return _SetGeometry(surface);
@@ -156,7 +156,7 @@ BentleyStatus GridSurface::_SetGeometry(ISolidPrimitivePtr surface)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DgnDbStatus      GridSurface::Validate
+DgnDbStatus      GridSurface::_Validate
 (
 ) const
     {
@@ -176,7 +176,7 @@ DgnDbStatus      GridSurface::_OnInsert
     DgnDbStatus status = T_Super::_OnInsert ();
     if (status == DgnDbStatus::Success)
         {
-        return Validate ();
+        return _Validate ();
         }
     return status;
     }
@@ -192,7 +192,7 @@ DgnDbStatus      GridSurface::_OnUpdate
     DgnDbStatus status = T_Super::_OnUpdate (original);
     if (status == DgnDbStatus::Success)
         {
-        return Validate ();
+        return _Validate ();
         }
     return status;
     }

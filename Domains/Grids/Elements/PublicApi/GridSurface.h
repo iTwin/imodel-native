@@ -30,7 +30,7 @@ protected:
 
     BE_PROP_NAME(Axis)
         
-    Dgn::DgnDbStatus Validate () const;
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate () const;
 
     //! Called when an element is about to be inserted into the DgnDb.
     //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
@@ -45,7 +45,7 @@ protected:
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
-    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) { return false; };
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const { return false; };
     //! Sets gridsurface axis Id
     //! @param[in] axisId to set
     void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId); };
@@ -82,7 +82,7 @@ public:
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
 
     //! Sets geometry for this grid surface
-    GRIDELEMENTS_EXPORT BentleyStatus SetGrometry(ISolidPrimitivePtr surface);
+    GRIDELEMENTS_EXPORT BentleyStatus SetGeometry(ISolidPrimitivePtr surface);
 };
 
 END_GRIDS_NAMESPACE

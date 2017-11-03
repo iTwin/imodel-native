@@ -48,7 +48,7 @@ ISolidPrimitivePtr surface
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-bool GridPlaneSurface::_ValidateGeometry(ISolidPrimitivePtr surface)
+bool GridPlaneSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
     {
     DgnExtrusionDetail extrDetail;
     if (!surface->TryGetDgnExtrusionDetail(extrDetail))
@@ -207,6 +207,37 @@ DgnExtrusionDetail extDetail
 )
     {
     return GridPlaneSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridPlaneSurface::_Validate
+(
+) const
+    {
+    DgnDbStatus status = T_Super::_Validate ();
+    if (status == DgnDbStatus::Success)
+        {
+        GeometryCollection geomData = *ToGeometrySource ();
+
+        if (geomData.begin () == geomData.end ())
+            return DgnDbStatus::ValidationFailed;
+
+        ISolidPrimitivePtr solidPrimitive = (*geomData.begin ()).GetGeometryPtr ()->GetAsISolidPrimitive ();
+        if (solidPrimitive.IsValid ())
+            return _ValidateGeometry (solidPrimitive) ? DgnDbStatus::Success : DgnDbStatus::ValidationFailed;
+        
+        CurveVectorPtr curveVector = (*geomData.begin ()).GetGeometryPtr ()->GetAsCurveVector ();
+        if (!curveVector.IsValid ())
+            return DgnDbStatus::ValidationFailed;
+
+        Transform localToWorld, worldToLocal;
+        DRange3d range;
+        if (!curveVector->IsPlanar (localToWorld, worldToLocal, range))
+            return DgnDbStatus::ValidationFailed;
+        }
+    return status;
     }
 
 END_GRIDS_NAMESPACE

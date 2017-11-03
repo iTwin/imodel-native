@@ -37,7 +37,7 @@ ISolidPrimitivePtr  surface
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-bool GridSplineSurface::_ValidateGeometry(ISolidPrimitivePtr surface)
+bool GridSplineSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
     {
     DgnExtrusionDetail extrDetail;
     if (!surface->TryGetDgnExtrusionDetail(extrDetail))
@@ -77,4 +77,29 @@ DgnExtrusionDetail extDetail
     {
     return GridSplineSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSplineSurface::_Validate
+(
+) const
+    {
+    DgnDbStatus status = T_Super::_Validate ();
+    if (status == DgnDbStatus::Success)
+        {
+        GeometryCollection geomData = *ToGeometrySource ();
+
+        if (geomData.begin () == geomData.end ())
+            return DgnDbStatus::ValidationFailed;
+
+        ISolidPrimitivePtr solidPrimitive = (*geomData.begin ()).GetGeometryPtr ()->GetAsISolidPrimitive ();
+        if (solidPrimitive.IsValid () && _ValidateGeometry (solidPrimitive))
+            return DgnDbStatus::Success;
+
+        return DgnDbStatus::ValidationFailed;
+        }
+    return status;
+    }
+
 END_GRIDS_NAMESPACE
