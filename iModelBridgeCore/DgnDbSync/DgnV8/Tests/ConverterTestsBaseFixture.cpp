@@ -336,6 +336,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
         creator.MakeSchemaChanges();
+        ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
         creator.Process();
         DgnDbR db = creator.GetDgnDb();
@@ -353,6 +354,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
         creator.MakeSchemaChanges();
+        ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TiledFileConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
         creator.ConvertRootModel();
         for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)

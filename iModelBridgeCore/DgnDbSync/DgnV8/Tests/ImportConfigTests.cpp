@@ -48,6 +48,7 @@ void ImportConfigTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::B
     creator.AttachSyncInfo();
     ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
     creator.MakeSchemaChanges();
+    ASSERT_FALSE(creator.WasAborted());
     ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
     creator.Process();
     ASSERT_FALSE(creator.WasAborted());

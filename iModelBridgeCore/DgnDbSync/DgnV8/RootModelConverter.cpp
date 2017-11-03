@@ -342,7 +342,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     auto rootModelId = _GetRootModelId();
 
     //  Load the root model
-    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId);
+    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
     if (NULL == m_rootModelRef)
         return openStatus;
 
@@ -355,6 +355,15 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
         ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Unsupported(), Converter::Issue::RootModelMustBePhysical(), Converter::IssueReporter::FmtModel(*GetRootModelP()).c_str());
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
+
+    if (WasAborted())
+        return DgnV8Api::DGNFILE_STATUS_UnknownError;
+    
+    // Load and fill V8 models. These will be fed into the ECSchema conversion logic. Also, the model conversion code needs to assume
+    // that all models are filled. These functions will ALSO enroll the v8files that they find in syncinfo.
+    CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetV8FileSyncInfoId
+    FindSpatialV8Models(*GetRootModelP());
+    FindV8DrawingsAndSheets();
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
@@ -424,7 +433,7 @@ BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
         ReportError(IssueCategory::CorruptData(), Issue::Error(), "V8ModelMapping has bad DgnModelId");
         return BSIERROR;
         }
-    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping);
+    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
     _AddResolvedModelMapping(m_rootModelMapping);
     return BSISUCCESS;
     }
@@ -724,6 +733,175 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool haveFoundSpatialRoot)
+    {
+    DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
+
+    DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
+
+    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+
+    if (isThisMyFile)
+        haveFoundSpatialRoot = true;
+
+    bool firstTimeSeen = isThisMyFile?  m_spatialModels.insert(&thisV8Model).second:
+                                        m_spatialModelsOtherBridges.insert(&thisV8Model).second;
+    if (!firstTimeSeen)
+        return;
+
+    GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
+
+    ClassifyNormal2dModels (thisV8File); // Tells me which 2d design models should be treated as spatial models
+
+    if (nullptr == thisModelRef.GetDgnAttachmentsP())
+        return; 
+
+    // All attachments to a spatial model are spatial, unless they are specifically DgnModelType::Drawing or DgnModelType::Sheet, which BIM doesn't support.
+    ForceAttachmentsToSpatial (*thisModelRef.GetDgnAttachmentsP());
+
+    for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
+        {                  
+        if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
+            continue; // missing reference 
+
+        if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
+            continue; // this leads to models in another bridge's territory. Stay out.
+
+        if (ShouldConvertToPhysicalModel(*attachment->GetDgnModelP()))
+            {
+            FindSpatialV8Models(*attachment, haveFoundSpatialRoot);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::FindNonSpatialModelAndRefs(DgnV8ModelRefR v8ModelRef)
+    {
+    if (nullptr == v8ModelRef.GetDgnModelP())
+        return;
+
+    DgnV8FileR thisV8File = *v8ModelRef.GetDgnFileP();
+
+    if (!IsFileAssignedToBridge(thisV8File))
+        return;
+
+    DgnV8ModelR thisV8Model = *v8ModelRef.GetDgnModelP();
+
+    if (ShouldConvertToPhysicalModel(thisV8Model))          // Not going to convert this to a sheet or drawing?
+        return;
+
+    if (!m_nonSpatialModelsSeen.insert(&thisV8Model).second)   // Already seen this model?
+        return;
+
+    // Build up a list of non-spatial models in the order in which they were found. This is 
+    // so that we will (later) import those models in that same order. That is necessary so that
+    // the converter will produce the same results -- the same rows in the same order -- as the older converter did.
+    // And that is necessary so that we can verify the new converter by matching its results with the results of the old converter.
+    m_nonSpatialModelsInModelIndexOrder.push_back(&thisV8Model);
+    
+    _OnDrawingModelFound(thisV8Model);  // keep this model alive
+
+    if (!GetV8FileSyncInfoIdFromAppData(thisV8File).IsValid())  // Register this FILE in syncinfo.
+        {
+        GetV8FileSyncInfoId(thisV8File); // populates m_v8files
+        _KeepFileAlive(thisV8File);     // keep the file alive
+        }
+
+    // If this is a sheet model, then follow its reference attachments. If a drawing is referenced to a sheet, we must
+    //  find it via that attachment. See "DgnModel objects and Sheet attachments".
+    // If this is a drawing model, then do not follow its reference attachments. They must be found either directly
+    //  from the model index or as attachments to some sheet.
+    if (!v8ModelRef.IsSheet())
+        return;
+
+    GetAttachments(thisV8Model);
+
+    if (nullptr == v8ModelRef.GetDgnAttachmentsP())
+        return;
+
+    for (DgnV8Api::DgnAttachment* attachment : *v8ModelRef.GetDgnAttachmentsP())
+        {                  
+        if (nullptr == attachment->GetDgnModelP())
+            continue; // missing reference 
+
+        FindNonSpatialModelAndRefs(*attachment);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnV8FileP findOpenV8FileByName(bvector<DgnV8FileP> const& files, BeFileNameCR fn)
+    {
+    for (auto v8File : files)
+        {
+        if (fn.EqualsI(v8File->GetFileName().c_str()))
+            return v8File;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::FindV8DrawingsAndSheets()
+    {
+    //  Build a list of dgn files to search for sheets and drawings 
+    bvector<DgnFilePtr> tempKeepAlive;
+    bvector<DgnV8FileP> filesToSearch;
+
+    for (auto v8 : m_v8Files) // start with the files that we already found when we searched for spatial models
+        {
+        if (IsFileAssignedToBridge(*v8))
+            filesToSearch.push_back(v8);
+        }
+
+    for (auto const& fn : m_params.GetDrawingAndSheetFiles()) // include the list of other files to search for drawings and sheets
+        {
+        if (nullptr != findOpenV8FileByName(filesToSearch, fn))
+            continue;
+
+        DgnV8Api::DgnFileStatus openStatus;
+        Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn);
+        if (v8File.IsValid() && IsFileAssignedToBridge(*v8File))
+            {
+            tempKeepAlive.push_back(v8File);
+            filesToSearch.push_back(v8File.get());
+            }
+        }
+
+    for (auto fileToSearch : filesToSearch)
+        ClassifyNormal2dModels (*fileToSearch); // This tells us whether a given 2d design model should become a drawing or a spatial model
+
+    // *** EXTREMELY TRICKY: See "DgnModel objects and Sheet attachments" for why we need TWO PASSES
+    Bentley::DgnModelPtr v8model;
+
+    // 1. Sheets
+    for (auto v8File : filesToSearch)
+        {
+        for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
+            {
+            if ((DgnV8Api::DgnModelType::Sheet == item.GetModelType()) && ((v8model = v8File->LoadModelById(item.GetModelId())).IsValid()))
+                FindNonSpatialModelAndRefs(*v8model);
+            }
+        }
+
+    // 2. Drawings
+    for (auto v8File : filesToSearch)
+        {
+        for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
+            {
+            if (IsV8DrawingModel(*v8File, item) && ((v8model = v8File->LoadModelById(item.GetModelId())).IsValid()))
+                FindNonSpatialModelAndRefs(*v8model);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * The purpose of this function is to *discover* spatial models, not to convert their contents.
 * The outcome of this function is to a) create an (empty) BIM spatial model for each discovered V8 spatial model,
 * and b) to discover and record the spatial transform that should be applied when (later) converting
@@ -743,8 +921,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     if (isThisMyFile)
         haveFoundSpatialRoot = true;
 
-    // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
-    ClassifyNormal2dModels (thisV8File);
+    // FindSpatialV8Models has already called ClassifyNormal2dModels (thisV8File);
 
     SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoId(thisV8File);
 
@@ -754,31 +931,10 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     // Map this v8 model into the project
     ResolvedModelMapping v8mm = GetModelForDgnV8Model(thisModelRef, trans);
 
-    if (true)
-        {
-        auto fillMsg = ProgressMessage::GetString(ProgressMessage::TASK_FILLING_V8_MODELS());
-        DgnV8Api::IDgnProgressMeter::TaskMark loading(Bentley::WString(fillMsg.c_str(),true).c_str());
-        DgnV8Api::DgnAttachmentLoadOptions loadOptions;
-        loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
-        loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::Model);
-        // If we know that we won't be processing graphics in this model but only attachments
-        // then we can save a lot of time by filling only the control section. We do that in two
-        // cases: 1) this bridge should not convert this file (but may have to convert references attached to it),
-        // or 2) this is an update and this file has not changed and so no elements in it will be converted.
-        if (!isThisMyFile || GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm)) 
-            loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
-
-        if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
-            loadOptions.m_loadRasterRefs = true;
-
-        thisModelRef.ReadAndLoadDgnAttachments(loadOptions);
-        }
-
     if (nullptr == thisModelRef.GetDgnAttachmentsP())
         return; 
 
-    // All attachments to a spatial model are spatial, unless they are specifically DgnModelType::Drawing or DgnModelType::Sheet, which BIM doesn't support.
-    ForceAttachmentsToSpatial (*thisModelRef.GetDgnAttachmentsP());
+	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
     SubjectCR parentRefsSubject = _GetSpatialParentSubject();
 
@@ -790,11 +946,6 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
         if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
             continue; // this leads to models in another bridge's territory. Stay out.
-
-        // Keep the mapping between models and the attachment that references the model
-        DgnV8Api::Fd_opts fdOpts = attachment->GetFDOptsCR();
-        Bentley::DgnModelP dgnModelP = attachment->GetDgnModelP();
-        m_modelAttachmentMapping[dgnModelP] = attachment;
 
         if (!hasPushedReferencesSubject)
             {

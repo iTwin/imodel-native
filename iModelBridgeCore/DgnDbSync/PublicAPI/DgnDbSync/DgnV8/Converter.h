@@ -237,7 +237,7 @@ PartRangeKey(DRange3dCR range) : m_range(range) {}
 //! A V8->DgnDb model mapping that has been "resolved", that is, with pointers to the loaded source and target models (if found).
 //! This is stored in a multimap, with the ***V8MODEL*** as the key.
 //! Note that an instance of this class refers to a DgnModel and a DgnV8Model that are 
-//! owned by somebody eles. Instances of this class do not add references to their target models.
+//! owned by somebody else. Instances of this class do not add references to their target models.
 //! @bsiclass                                                    Sam.Wilson      11/16
 //=======================================================================================
 struct ResolvedModelMapping
@@ -246,20 +246,22 @@ struct ResolvedModelMapping
     DgnV8ModelP m_v8model;
     DgnModelP m_model;
     SyncInfo::V8ModelMapping m_mapping;
+    DgnV8Api::DgnAttachment const* m_v8attachment;        // If this model was found via a reference attachment, this is the first such attachment to it.
 
     public:
     //! Construct a ResolvedModelMapping in an invalid state
     ResolvedModelMapping() : m_model(nullptr), m_v8model(nullptr) {}
     //! Construct a ResolvedModelMapping in an invalid state
-    explicit ResolvedModelMapping(DgnV8ModelR v8Model) : m_model(nullptr), m_v8model(&v8Model) {}
+    explicit ResolvedModelMapping(DgnV8ModelR v8Model) : m_model(nullptr), m_v8model(&v8Model), m_v8attachment(nullptr) {}
     //! Construct a ResolvedModelMapping in an valid state
-    ResolvedModelMapping(DgnModelR model, DgnV8ModelR v8Model, SyncInfo::V8ModelMapping const& mapping) : m_model(&model), m_v8model(&v8Model), m_mapping(mapping) {}
+    ResolvedModelMapping(DgnModelR model, DgnV8ModelR v8Model, SyncInfo::V8ModelMapping const& mapping, DgnV8Api::DgnAttachment const* a) : m_model(&model), m_v8model(&v8Model), m_mapping(mapping), m_v8attachment(a) {}
     bool IsValid() const {return m_v8model != nullptr && m_mapping.IsValid();}
     bool operator< (ResolvedModelMapping const &o) const {return m_v8model < o.m_v8model;}
 
     TransformCR GetTransform() const {return m_mapping.GetTransform();}
     void SetTransform(TransformCR t) {m_mapping.SetTransform(t);}
     DgnV8ModelR GetV8Model() const {BeAssert(IsValid()); return *m_v8model;}
+    DgnV8Api::DgnAttachment const* GetV8Attachment() const {return m_v8attachment;}
     DgnModelR GetDgnModel() const {BeAssert(IsValid()); return *m_model;}
     SyncInfo::V8ModelId GetV8ModelId() const {BeAssert(IsValid()); return m_mapping.GetV8ModelId();}
     SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const {BeAssert(IsValid()); return m_mapping.GetV8ModelSyncInfoId();}
@@ -453,8 +455,7 @@ struct IChangeDetector
 
     //! Called when a V8 model is first mapped into the BIM.
     //! @param rmm The V8 model and the DgnModel to which it is mapped
-    //! @param attachment If the V8 model is a root model, this will be nullptr. Otherwise, this will be the attachment that was used to reach the V8 model.
-    virtual void _OnModelInserted(Converter&, ResolvedModelMapping const& rmm, DgnV8Api::DgnAttachment const* attachment) = 0;
+    virtual void _OnModelInserted(Converter&, ResolvedModelMapping const& rmm) = 0;
 
     //! @}
 
@@ -665,8 +666,7 @@ struct Converter
     {
         //! Called when a V8 model is first mapped into the BIM.
         //! @param rmm The V8 model and the DgnModel to which it is mapped
-        //! @param attachment If the V8 model is a root model, this will be nullptr. Otherwise, this will be the attachment that was used to reach the V8 model.
-        virtual void _OnModelInserted(ResolvedModelMapping const&, DgnV8Api::DgnAttachment const*) {}
+        virtual void _OnModelInserted(ResolvedModelMapping const&) {}
 
         //! Called when a DgnModel is deleted
         virtual void _OnModelDelete(DgnModelR, SyncInfo::V8ModelMapping const&) {}
@@ -1312,11 +1312,11 @@ public:
     //! from the scales of its attachments.
     double SheetsComputeScale(DgnV8ModelCR v8SheetModel);
     
-    //! Map the sheet models in the V8 file to BIM SheetModels.
-    //! @param v8File the V8 file to scan for sheets
+    //! Map a V8 sheet model to a BIM SheetModel.
+    //! @param v8model the V8 sheet model
     //! @param isRootModelSpatial pass true if the root model for the output BIM is a spatial model.
-    //! @note ImportSheetModelsInFile will terminate with a fatal error if isRootModelSpatial is @a false and if it encounters a reference from a sheet to a 3D model.
-    void ImportSheetModelsInFile(DgnV8FileR v8File, bool isRootModelSpatial);
+    //! @note This function will terminate with a fatal error if isRootModelSpatial is @a false and it encounters a reference from a sheet to a 3D model.
+    void ImportSheetModel(DgnV8ModelR v8model, bool isRootModelSpatial);
 
     //! Convert an element in a sheet model. @see DoConvertDrawingElement
     void _ConvertSheetElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
@@ -1422,8 +1422,7 @@ public:
     SectionDrawingPtr CreateSectionDrawing(Utf8CP label);
     SectionDrawingCPtr CreateSectionDrawingAndInsert(Utf8CP label) {auto d = CreateSectionDrawing(label); return d.IsValid()? GetDgnDb().Elements().Insert<SectionDrawing>(*d): nullptr;}
 
-    //! Map the drawing and other non-sheet 2D models in the V8 file to BIM DrawingModels. However, the "Consider2dModelsSpatial" option causes Normal models to be treated as Spatial models rather than Drawing models.
-    void ImportDrawingModelsInFile(DgnV8FileR, ResolvedModelMapping& rootModelMapping);
+    void ImportDrawingModel(ResolvedModelMapping& rootModelMapping, DgnV8ModelR v8model);
 
     //! Map the specified 2d model to a BIM model 
     bpair<ResolvedModelMapping,bool> Import2dModel(DgnV8ModelR v8model);
@@ -1472,6 +1471,8 @@ public:
 
     //! @private return true if the item in the v8File's modelInfo represents a model that should be treated as a DrawingModel.
     bool IsV8DrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+
+    bool IsV8DrawingModel (DgnV8ModelR v8Model);
 
     //! Query the class of the DgnModel that would be created if the specified V8 model were converted.
     //! @see _ConsiderNormal2dModelsSpatial
@@ -1981,7 +1982,7 @@ struct CreatorChangeDetector : IChangeDetector
     bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR) override {return false;}
     void _OnElementSeen(Converter&, DgnElementId) override {}
     void _OnModelSeen(Converter&, ResolvedModelMapping const&) override {}
-    void _OnModelInserted(Converter&, ResolvedModelMapping const&, DgnV8Api::DgnAttachment const*) override {}
+    void _OnModelInserted(Converter&, ResolvedModelMapping const&) override {}
     void _DetectDeletedElements(Converter&, SyncInfo::ElementIterator&) override {}
     void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedElementsEnd(Converter&) override {}
@@ -2019,7 +2020,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT bool _ShouldSkipFileByName(Converter&, BeFileNameCR) override;
     bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR) override {return false;}
     DGNDBSYNC_EXPORT void _OnModelSeen(Converter&, ResolvedModelMapping const&);
-    DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&, DgnV8Api::DgnAttachment const*);
+    DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&);
     DGNDBSYNC_EXPORT bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) ;
     DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override;
 
@@ -2122,7 +2123,6 @@ protected:
     ResolvedModelMapping m_rootModelMapping;
     ResolvedImportJob m_importJob;
     SubjectCPtr m_spatialParentSubject;
-    bmap<Bentley::DgnModelP, DgnV8Api::DgnAttachment*> m_modelAttachmentMapping;
     DgnGCSPtr m_outputDgnGcs; // This is the GCS to which we are converting input DgnV8 models.
 
     enum class ModelSubjectType {Hierarchy, References};
@@ -2351,6 +2351,10 @@ protected:
     bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     DgnV8Api::ViewGroupPtr m_viewGroup;
     bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
+    bset<DgnV8ModelP> m_spatialModels;
+    bset<DgnV8ModelP> m_spatialModelsOtherBridges;
+    bset<DgnV8ModelP> m_nonSpatialModelsSeen;
+    bvector<DgnV8ModelP> m_nonSpatialModelsInModelIndexOrder;
     std::unique_ptr<IChangeDetector> m_changeDetector;
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
 
@@ -2438,8 +2442,9 @@ protected:
     //! @private
     void UpdateCalculatedProperties();
 
-    void FindSchemaDefinitionsSpatial(bset<DgnV8ModelP>& uniqueModels, DgnV8ModelRefR thisModelRef);
-    void FindSchemaDefinitionsDrawings(bset<DgnV8ModelP>& uniqueModels);
+    void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
+    void FindV8DrawingsAndSheets();
+    void FindNonSpatialModelAndRefs(DgnV8ModelRefR v8ModelRef);
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}

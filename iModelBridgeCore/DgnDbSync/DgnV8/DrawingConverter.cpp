@@ -88,57 +88,21 @@ ModelsToBeMerged::Key ModelsToBeMerged::s_key;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnV8FileP findOpenV8FileByName(bvector<DgnV8FileP> const& files, BeFileNameCR fn)
-    {
-    for (auto v8File : files)
-        {
-        if (fn.EqualsI(v8File->GetFileName().c_str()))
-            return v8File;
-        }
-    return nullptr;
-    }
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& rootModelMapping)
     {
-    //  Build a list of dgn files to search for sheets and drawings 
-    bvector<DgnFilePtr> tempKeepAlive;
-    bvector<DgnV8FileP> filesToSearch;
-    for (auto v8 : m_v8Files) // start with the files that we already know about
-        {
-        if (IsFileAssignedToBridge(*v8))
-            filesToSearch.push_back(v8);
-        }
-
-    for (auto const& fn : m_params.GetDrawingAndSheetFiles())
-        {
-        if (nullptr != findOpenV8FileByName(filesToSearch, fn))
-            continue;
-
-        DgnV8Api::DgnFileStatus openStatus;
-        Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn);     // Just open it. Don't register it in syncinfo. We'll do that in Import2dModel if we actually find something in there.
-        if (v8File.IsValid() && IsFileAssignedToBridge(*v8File))
-            {
-            tempKeepAlive.push_back(v8File);
-            filesToSearch.push_back(v8File.get());
-            }
-        }
-
-    // Decide whether Normal models that are 2D are spatial or drawing models. If they are drawing models, put that in the ModelInfo.
-    for (auto fileToSearch : filesToSearch)
-        ClassifyNormal2dModels (*fileToSearch);
-
     // Pass 1: sheets and attached drawings. IMPORTANT! See "DgnModel objects and Sheet attachments" for why this MUST BE DONE FIRST.
-    for (auto fileToSearch : filesToSearch)
-        ImportSheetModelsInFile(*fileToSearch, m_isRootModelSpatial);
+    for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
+        {
+        if (v8Model->IsSheet())
+            ImportSheetModel(*v8Model, m_isRootModelSpatial);
+        }
 
     // Pass 2: drawings that are not referenced by sheets
-    for (auto fileToSearch : filesToSearch)
-        ImportDrawingModelsInFile(*fileToSearch, rootModelMapping);
+    for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
+        {
+        if (!v8Model->IsSheet())
+            ImportDrawingModel(rootModelMapping, *v8Model);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -223,37 +187,32 @@ bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ImportDrawingModelsInFile(DgnV8FileR v8File, ResolvedModelMapping& rootModelMapping)
+void Converter::ImportDrawingModel(ResolvedModelMapping& rootModelMapping, DgnV8ModelR v8model)
     {
-    for (DgnV8Api::ModelIndexItem const& item : v8File.GetModelIndex())
+    BeAssert(IsV8DrawingModel(v8model));
+
+    GetAttachments(v8model); // make sure attachment hierarchy is created
+
+    if (!ScaledCopyMarker::IsFoundOn(v8model))
+        MakeAttachmentsMatchRootAnnotationScale(v8model);
+
+    auto importres = Import2dModel(v8model);
+    
+    if (&v8model != &rootModelMapping.GetV8Model()) // (if this is the root model itself, then expected it to be imported already. We still have to merge its refs.)
         {
-        if (!IsV8DrawingModel (v8File, item))
-            continue;
-
-        Bentley::DgnModelPtr v8model = v8File.LoadModelById(item.GetModelId());
-
-        if (!v8model.IsValid())
-            continue;
-
-        GetAttachments(*v8model); // make sure attachment hierarchy is created
-
-        if (!ScaledCopyMarker::IsFoundOn(*v8model))
-            MakeAttachmentsMatchRootAnnotationScale(*v8model);
-
-        auto importres = Import2dModel(*v8model);
-        if (importres.second || (v8model.get() == &rootModelMapping.GetV8Model()))
-            {
-            ResolvedModelMapping const& resolvedMapping = importres.first;
-            if (!resolvedMapping.IsValid())
-                continue;
-
-            // If we got here, it means that this drawing is not attached to a sheet.
-            // Note that we only merge attachments into orphan drawings, never drawings that are shown on sheets.
-            OrphanDrawingMarker::AddTo(*v8model);
-            SheetUnnestAttachments(*v8model);
-            DrawingRegisterAttachmentsToBeMerged(*v8model, importres.first);
-            }
+        if (!importres.second) // if we have already imported this model
+            return;            // there's nothing to do 
         }
+
+    ResolvedModelMapping const& resolvedMapping = importres.first;
+    if (!resolvedMapping.IsValid()) // if the import failed,
+        return;                     // there nothing more we can do
+
+    // If we got here, it means that this drawing is not attached to a sheet.
+    // Note that we only merge attachments into orphan drawings, never drawings that are shown on sheets.
+    OrphanDrawingMarker::AddTo(v8model);
+    SheetUnnestAttachments(v8model);
+    DrawingRegisterAttachmentsToBeMerged(v8model, importres.first);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -531,54 +490,44 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ImportSheetModelsInFile(DgnV8FileR v8File, bool isRootModelSpatial)
+void Converter::ImportSheetModel(DgnV8ModelR v8model, bool isRootModelSpatial)
     {
-    for (DgnV8Api::ModelIndexItem const& item : v8File.GetModelIndex())
+    BeAssert(v8model.IsSheet());
+
+    GetAttachments(v8model); // make sure attachment hierarchy is created
+
+    if (!ScaledCopyMarker::IsFoundOn(v8model))
+        MakeAttachmentsMatchRootAnnotationScale(v8model);
+
+    Import2dModel(v8model);
+
+    //  Import direct attachments. See "DgnModel objects and Sheet attachments" comment below.
+    auto attachments = GetAttachments(v8model);
+    if (nullptr == attachments)
+        return;
+
+    //  Unnest all 2d attachement and convert any attachments that are sheets into drawings
+    SheetUnnestAttachments(v8model);
+
+    //  Import direct attachments. See "DgnModel objects and Sheet attachments" comment below.
+    for (auto attachment : *attachments)
         {
-
-        if (DgnV8Api::DgnModelType::Sheet != item.GetModelType())
+        if (nullptr == attachment->GetDgnModelP())
             continue;
 
-        Bentley::DgnModelPtr v8model = v8File.LoadModelById(item.GetModelId());
-
-        if (!v8model.IsValid())
-            continue;
-
-        GetAttachments(*v8model); // make sure attachment hierarchy is created
-
-        if (!ScaledCopyMarker::IsFoundOn(*v8model))
-            MakeAttachmentsMatchRootAnnotationScale(*v8model);
-
-        Import2dModel(*v8model);
-
-        //  Import direct attachments. See "DgnModel objects and Sheet attachments" comment below.
-        auto attachments = GetAttachments(*v8model);
-        if (nullptr == attachments)
-            continue;
-
-        //  Unnest all 2d attachement and convert any attachments that are sheets into drawings
-        SheetUnnestAttachments(*v8model);
-
-        //  Import direct attachments. See "DgnModel objects and Sheet attachments" comment below.
-        for (auto attachment : *attachments)
+        if (!attachment->Is3d())
             {
-            if (nullptr == attachment->GetDgnModelP())
-                continue;
-
-            if (!attachment->Is3d())
+            // This is where we discover and import the drawings and other 2d models that are referenced into sheets.
+            // (We just unnested all 2d attachments above, so there are no nested attachments to follow.)
+            Import2dModel(*attachment->GetDgnModelP());
+            }
+        else
+            {
+            if (!isRootModelSpatial)
                 {
-                // This is where we discover and import the drawings and other 2d models that are referenced into sheets.
-                // (We just unnested all 2d attachments above, so there are no nested attachments to follow.)
-                Import2dModel(*attachment->GetDgnModelP());
-                }
-            else
-                {
-                if (!isRootModelSpatial)
-                    {
-                    OnFatalError(IssueCategory::Compatibility(), Issue::Detected3dViaAttachment(), Converter::IssueReporter::FmtAttachment(*attachment).c_str());
-                    BeAssert(false);
-                    return;
-                    }
+                OnFatalError(IssueCategory::Compatibility(), Issue::Detected3dViaAttachment(), Converter::IssueReporter::FmtAttachment(*attachment).c_str());
+                BeAssert(false);
+                return;
                 }
             }
         }
@@ -658,7 +607,7 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
     SyncInfo::V8ModelMapping refSyncInfoMapping;
     GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans);
 
-    ResolvedModelMapping mergedModelMapping(targetBimModel, *attachedV8model, refSyncInfoMapping);
+    ResolvedModelMapping mergedModelMapping(targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
 
     tbm.push_back(mergedModelMapping);
 
@@ -823,7 +772,7 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 //
 // **** Make sure our m_v8ModelMappings points to the the same set of DgnModels that V8 knows about! ****
 // We use 2 passes so that the drawings that are referenced by sheets are found in the first pass, by ImportSheetModelsInFile, 
-// and not in the second pass by ImportDrawingModelsInFile. That is the way to avoid creaging duplicate V8 DgnModel objects in memory. 
+// and not in the second pass by ImportDrawingModelsInFile. That is the way to avoid creating duplicate V8 DgnModel objects in memory. 
 // Specifically, when we tell V8 to load the reference attachments for a given sheet model, it will create V8 DgnModel objects in memory 
 // for the drawings attached to the sheet, and those are the V8 DgnModel objects that we will see later on when we process the sheet's attachments 
 // in order to create ViewAttachments. We want to make sure that those are the V8 DgnModel objects that are mapped to BIM models. 

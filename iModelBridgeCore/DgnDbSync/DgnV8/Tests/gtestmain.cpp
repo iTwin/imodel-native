@@ -58,9 +58,11 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         wchar_t tempPathW[MAX_PATH];
         ::GetTempPathW(_countof(tempPathW), tempPathW);
         path.SetName(tempPathW);
+        path.AppendToPath(WPrintfString(L"%llu", (uint64_t)GetCurrentProcessId()).c_str());
         path.AppendSeparator();
 #else
         path.SetName(WString(getenv("tmp")).c_str());
+        path.AppendToPath(WPrintfString(L"%llu", (uint64_t)getpid()).c_str());
         path.AppendSeparator();
 #endif
         path.AppendToPath(m_programName.c_str());

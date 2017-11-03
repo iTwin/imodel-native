@@ -173,7 +173,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeDetector::_OnModelInserted(Converter& converter, ResolvedModelMapping const& v8mm, DgnV8Api::DgnAttachment const*)
+void ChangeDetector::_OnModelInserted(Converter& converter, ResolvedModelMapping const& v8mm)
     {
     m_newlyDiscoveredModels.insert(v8mm.GetV8ModelSyncInfoId());
     }

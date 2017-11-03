@@ -805,6 +805,15 @@ bool Converter::IsV8DrawingModel (DgnV8FileR v8File, DgnV8Api::ModelIndexItem co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsV8DrawingModel (DgnV8ModelR v8Model)
+    {
+    // whether we should treat it as a DrawingModel is determined by whether it's a 2D, whether it came from a DgnAttachment to the root model, etc.
+    return DgnV8Api::DgnModelType::Drawing == ModelTypeAppData::GetEffectiveModelType (v8Model);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Converter::_IsModelPrivate(DgnV8ModelCR v8Model)
@@ -2824,7 +2833,7 @@ ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, Tr
             auto model = m_dgndb->Models().GetModel(entry.GetModelId());
             if (!model.IsValid())
                 continue;
-            return ResolvedModelMapping(*model, *v8Model.GetDgnModelP(), entry.GetMapping());
+            return ResolvedModelMapping(*model, *v8Model.GetDgnModelP(), entry.GetMapping(), v8Model.AsDgnAttachmentCP());
             }
         }
 
@@ -3052,13 +3061,13 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
 
-    ResolvedModelMapping v8mm(*model, v8Model, mapping);
+    ResolvedModelMapping v8mm(*model, v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
 
     _AddResolvedModelMapping(v8mm);
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, v8ModelRef.AsDgnAttachmentCP());
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
-    m_monitor->_OnModelInserted(v8mm, v8ModelRef.AsDgnAttachmentCP());
+    m_monitor->_OnModelInserted(v8mm);
 
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
         LOG_MODEL.tracev("+ %s %d -> %s %d", mapping.GetV8Name().c_str(), mapping.GetV8ModelId().GetValue(), model->GetName().c_str(), model->GetModelId().GetValue());
@@ -3120,11 +3129,11 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
     if (!model.IsValid())
         return unresolved;
 
-    ResolvedModelMapping v8mm(*model, v8Model, mapping);
+    ResolvedModelMapping v8mm(*model, v8Model, mapping, nullptr);
 
     _AddResolvedModelMapping(v8mm);
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, nullptr);
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
 
     return v8mm;
@@ -3413,11 +3422,11 @@ ResolvedModelMapping ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Mo
     auto rc = m_syncInfo.InsertModel(mapping, targetBimModel.GetModelId(), sourceV8Model, *transform);
     BeAssert(SUCCESS == rc);
 
-    v8mm = ResolvedModelMapping(targetBimModel, sourceV8Model, mapping);
+    v8mm = ResolvedModelMapping(targetBimModel, sourceV8Model, mapping, nullptr);
 
     m_v8ModelMappings.insert(v8mm);
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, nullptr);
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
 
     BeAssert(FindModelForDgnV8Model(sourceV8Model, *transform).IsValid());

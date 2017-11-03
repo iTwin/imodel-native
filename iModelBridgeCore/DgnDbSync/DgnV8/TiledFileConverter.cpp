@@ -64,7 +64,7 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
     DgnV8Api::ModelId id = GetDefaultModelId(*m_rootFile);
 
     //  Load the root model
-    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, id);
+    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, id, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
     if (NULL == m_rootModelRef)
         return openStatus;
 
@@ -79,6 +79,9 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
         }
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
+
+    CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetV8FileSyncInfoId
+    GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
@@ -135,11 +138,11 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
 
-    auto v8mm = ResolvedModelMapping(*model, v8Model, mapping);
+    auto v8mm = ResolvedModelMapping(*model, v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, v8ModelRef.AsDgnAttachmentCP());
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
-    m_monitor->_OnModelInserted(v8mm, v8ModelRef.AsDgnAttachmentCP());
+    m_monitor->_OnModelInserted(v8mm);
 
     return v8mm;
     }
@@ -175,9 +178,9 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
     if (!model.IsValid())
         return unresolved;
 
-    ResolvedModelMapping v8mm(*model, v8Model, mapping);
+    ResolvedModelMapping v8mm(*model, v8Model, mapping, nullptr);
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, nullptr);
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
 
     return v8mm;

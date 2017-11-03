@@ -39,7 +39,7 @@ struct ConverterApp : iModelBridge
     struct Monitor : Converter::Monitor
         {
         bvector<DgnModelId> m_modelsInserted, m_modelsDeleted;
-        void _OnModelInserted(ResolvedModelMapping const& m, DgnV8Api::DgnAttachment const*) {m_modelsInserted.push_back(m.GetDgnModel().GetModelId());}
+        void _OnModelInserted(ResolvedModelMapping const& m) {m_modelsInserted.push_back(m.GetDgnModel().GetModelId());}
         void _OnModelDelete(DgnModelR, SyncInfo::V8ModelMapping const& m) {m_modelsDeleted.push_back(m.GetModelId());}
         };
 

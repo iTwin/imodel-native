@@ -1831,66 +1831,6 @@ void DynamicSchemaGenerator::GenerateSchemas(bset<DgnV8ModelP> const& uniqueMode
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindSchemaDefinitionsSpatial(bset<DgnV8ModelP>& uniqueModels, DgnV8ModelRefR thisModelRef)
-    {
-    DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
-
-    if (!uniqueModels.insert(&thisV8Model).second)   // Already seen this model?
-        return;
-
-    DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
-
-    GetV8FileSyncInfoId(thisV8File); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
-
-    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
-
-    // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
-    ClassifyNormal2dModels (thisV8File);
-
-    if (true)
-        {
-        auto fillMsg = ProgressMessage::GetString(ProgressMessage::TASK_FILLING_V8_MODELS());
-        DgnV8Api::IDgnProgressMeter::TaskMark loading(Bentley::WString(fillMsg.c_str(),true).c_str());
-        DgnV8Api::DgnAttachmentLoadOptions loadOptions;
-        loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
-        loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
-        if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
-            loadOptions.m_loadRasterRefs = true;
-        thisModelRef.ReadAndLoadDgnAttachments(loadOptions);
-        }
-
-    if (nullptr == thisModelRef.GetDgnAttachmentsP())
-        return; 
-
-    // All attachments to a spatial model are spatial, unless they are specifically DgnModelType::Drawing or DgnModelType::Sheet, which BIM doesn't support.
-    ForceAttachmentsToSpatial (*thisModelRef.GetDgnAttachmentsP());
-
-    for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
-        {                  
-        if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
-            continue; // missing reference 
-
-        if (!IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
-            continue; // this leads to models in another bridge's territory. Stay out.
-
-        if (ShouldConvertToPhysicalModel(*attachment->GetDgnModelP()))
-            {
-            FindSchemaDefinitionsSpatial(uniqueModels, *attachment);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindSchemaDefinitionsDrawings(bset<DgnV8ModelP>& uniqueModels)
-    {
-    // *** TBD: 
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::CreateProvenanceTables()
@@ -1911,13 +1851,16 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
 
-    // Create some fixed tables
-    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
+    // *** TRICKY: We need to know if this is an update or not. The framework has not yet set the 'is-updating' flag.
+    //              So, we must figure out if this is an update or not right here and now by checking to see if the job subject already exists.
+    _GetParamsR().SetIsUpdating(FindImportJobForModel(*GetRootModelP()).IsValid());
+
+#ifndef NDEBUG
+    if (_WantProvenanceInBim())
         {
-        DgnV8FileProvenance::CreateTable(*m_dgndb);
-        DgnV8ModelProvenance::CreateTable(*m_dgndb);
-        DgnV8ElementProvenance::CreateTable(*m_dgndb);
+        BeAssert(m_dgndb->TableExists(DGN_TABLE_ProvenanceFile));
         }
+#endif
 
     // Bis-ify the V8 schemas
     if (m_config.GetOptionValueBool("SkipECContent", false))
@@ -1968,12 +1911,8 @@ void RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    CreateProvenanceTables();   // TRICKY: do this before anyone calls GetV8FileSyncInfoId
-
-    bset<DgnV8ModelP> uniqueModels;
-    BeAssert(nullptr != GetRootModelRefP());
-    FindSchemaDefinitionsSpatial(uniqueModels, *GetRootModelRefP());
-    FindSchemaDefinitionsDrawings(uniqueModels);
+    bset<DgnV8ModelP> uniqueModels(m_spatialModels);
+    uniqueModels.insert(m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end());
 
     T_Super::MakeSchemaChanges(uniqueModels);
 
@@ -1987,10 +1926,9 @@ void TiledFileConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    CreateProvenanceTables();   // TRICKY: do this before anyone calls GetV8FileSyncInfoId
-
     bset<DgnV8ModelP> uniqueModels;
     uniqueModels.insert(GetRootModelP());
+
     GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     T_Super::MakeSchemaChanges(uniqueModels);
