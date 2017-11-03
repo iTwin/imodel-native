@@ -177,6 +177,9 @@ struct GltfReader
 +===============+===============+===============+===============+===============+======*/
 struct B3dmReader : GltfReader
 {
+private:
+    static ReadStatus ReadFeatureTable(Render::FeatureTableR, Json::Value const& batchTableJson, uint32_t batchTableLength);
+public:
     B3dmReader(StreamBufferR buffer, DgnModelR model, Render::System& renderSystem) : GltfReader(buffer, model, renderSystem) { }
 
     ReadStatus ReadTile(Render::Primitives::GeometryCollectionR);

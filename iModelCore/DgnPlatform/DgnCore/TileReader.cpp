@@ -702,22 +702,61 @@ ReadStatus B3dmReader::ReadTile(Render::Primitives::GeometryCollectionR geometry
     if (!header.Read(m_buffer))
         return ReadStatus::InvalidHeader;
 
-#if defined(READ_BATCHTABLE) // code below is forgetting to read the feature table too. Nobody appears to do anything with m_batchData.
-    bvector<char>       batchTableData(header.batchTableStrLen);
-    Json::Value         batchTableValue;
-    Json::Reader        reader;                                                                                                                        
-    
-    if(!m_buffer.ReadBytes(batchTableData.data(), header.batchTableStrLen))
-        return ReadStatus::ReadError;
-    
-    if(! reader.parse(batchTableData.data(), batchTableData.data() + header.batchTableStrLen, m_batchData))
-        return ReadStatus::BatchTableParseError;
-#else
-    if (!m_buffer.Advance(header.featureTableStrLen + header.featureTableBinaryLen + header.batchTableStrLen + header.batchTableBinaryLen))
-        return ReadStatus::ReadError;
-#endif
+    uint32_t gltfStartPos = m_buffer.GetPos() + header.featureTableStrLen + header.featureTableBinaryLen + header.batchTableStrLen + header.batchTableBinaryLen;
 
+    // feature table tells us how many entries are in the batch table
+    if (0 != header.featureTableStrLen)
+        {
+        Json::Value featureTableJson;
+        Json::Reader reader;
+        Utf8CP featureTableStart = (Utf8CP)m_buffer.GetCurrent();
+        if (!reader.parse(featureTableStart, featureTableStart + header.featureTableStrLen, featureTableJson))
+            return ReadStatus::BatchTableParseError;
+
+        uint32_t batchTableLen = featureTableJson["BATCH_LENGTH"].asUInt();
+        if (0 != batchTableLen)
+            {
+            m_buffer.Advance(header.featureTableStrLen + header.featureTableBinaryLen);
+            Json::Value batchTableJson;
+            Utf8CP batchTableStart = (Utf8CP)m_buffer.GetCurrent();
+            if (!reader.parse(batchTableStart, batchTableStart + header.batchTableStrLen, batchTableJson))
+                return ReadStatus::BatchTableParseError;
+
+            auto status = ReadFeatureTable(geometry.Meshes().FeatureTable(), batchTableJson, batchTableLen);
+            if (ReadStatus::Success != status)
+                return status;
+            }
+        }
+
+    m_buffer.SetPos(gltfStartPos);
     return ReadGltf (geometry);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ReadStatus B3dmReader::ReadFeatureTable(Render::FeatureTableR features, Json::Value const& batch, uint32_t batchLen)
+    {
+    if (0 == batchLen)
+        return ReadStatus::Success;
+
+    Json::Value elems = batch["element"],
+                subcats = batch["subCategory"],
+                classes = batch["geomClass"];
+
+    if (!elems.isArray() || !subcats.isArray() || !classes.isArray())
+        return ReadStatus::BatchTableParseError;
+    else if (elems.size() != batchLen || subcats.size() != batchLen || classes.size() != batchLen)
+        return ReadStatus::BatchTableParseError;
+
+    // NB: Index zero is an 'invalid' feature that's always present in batch table but never in batch IDs. Skip it.
+    for (uint32_t i = 1; i < batchLen; i++)
+        {
+        Feature feature(DgnElementId(elems[i].asUInt64()), DgnSubCategoryId(subcats[i].asUInt64()), static_cast<DgnGeometryClass>(classes[i].asUInt()));
+        features.Insert(feature, i);
+        }
+
+    return ReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

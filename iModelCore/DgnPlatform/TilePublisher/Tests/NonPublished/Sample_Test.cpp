@@ -92,13 +92,13 @@ void SampleTestFixture::TestRectangle()
 
     // Verify FeatureTable
     Render::Primitives::MeshList const& meshes = tileGeom.Meshes();
-    // ###TODO Render::FeatureTableCR featureTable = meshes.FeatureTable();
-    // ###TODO EXPECT_EQ(1, featureTable.size());
+    Render::FeatureTableCR featureTable = meshes.FeatureTable();
+    EXPECT_EQ(1, featureTable.size());
     
-    // ###TODO uint32_t featureId = 0;
-    // ###TODO Render::Feature expectedFeature(elem->GetElementId(), DgnCategory::GetDefaultSubCategoryId(catId), DgnGeometryClass::Primary);
-    // ###TODO EXPECT_TRUE(featureTable.FindIndex(featureId, expectedFeature));
-    // ###TODO EXPECT_EQ(0, featureId);
+    uint32_t featureId = 0;
+    Render::Feature expectedFeature(elem->GetElementId(), DgnCategory::GetDefaultSubCategoryId(catId), DgnGeometryClass::Primary);
+    EXPECT_TRUE(featureTable.FindIndex(featureId, expectedFeature));
+    EXPECT_EQ(1, featureId); // The published tile's batch table has an unused 'invalid' feature at index 0, which the tile reader omits from the FeatureTable.
 
     // Verify geometry
     ASSERT_EQ(1, meshes.size());
@@ -120,10 +120,12 @@ void SampleTestFixture::TestRectangle()
     // ###TODO EXPECT_EQ(0, colors.begin()->second);
 
     // Verify feature IDs
-    // ###TODO Render::FeatureIndex feats;
-    // ###TODO mesh.ToFeatureIndex(feats);
-    // ###TODO EXPECT_TRUE(feats.IsUniform());
-    // ###TODO EXPECT_EQ(featureId, feats.m_featureID);
+    Render::FeatureIndex feats;
+    mesh.ToFeatureIndex(feats);
+
+    // NB: We might expect a uniform feature table, but the indices are set directly from the batch table json.
+    // The tile reader doesn't both to check if all the indices are identical (they are).
+    EXPECT_FALSE(feats.IsUniform());
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);
