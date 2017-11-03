@@ -10,6 +10,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
     <ClCompile Include="NonPublished\BeStringUtilitiesTests.cpp" />
@@ -126,9 +131,9 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
-    <OutDir>$(OutRoot)Winx64\Build\BentleyTest\</OutDir>
-    <IntDir>$(OutRoot)Winx64\Build\BentleyTest\</IntDir>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\BentleyTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\BentleyTest\</BaseIntermediateOutputPath>
     <NMakeOutput>$(OutRoot)Winx64\Product\Bentley-Gtest\BentleyTest.exe</NMakeOutput>
@@ -136,6 +141,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -N0 -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re Bentley-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

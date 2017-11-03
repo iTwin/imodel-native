@@ -18,7 +18,13 @@
       <Platform>ARM</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="BeJpeg\PublicAPI\BeJpeg\BeJpeg.h" />
     <ClInclude Include="Bentley\BentleyInternal.h" />
     <ClInclude Include="Bentley\DateTimeConverter.h" />
     <ClInclude Include="Bentley\nonport\strfunc.h" />
@@ -26,6 +32,7 @@
     <ClInclude Include="Bentley\nonport\utf8\checked.h" />
     <ClInclude Include="Bentley\nonport\utf8\core.h" />
     <ClInclude Include="Bentley\nonport\utf8\unchecked.h" />
+    <ClInclude Include="BeXml\PublicApi\BeXml\BeXml.h" />
     <ClInclude Include="LoggingSDK\src\native\interface\bsilogprivate.h" />
     <ClInclude Include="PublicAPI\BentleyManagedUtil\ScopedDisposable.h" />
     <ClInclude Include="PublicAPI\BentleyManagedUtil\StringInterop.h" />
@@ -34,10 +41,12 @@
     <ClInclude Include="PublicAPI\Bentley\BeAtomic.h" />
     <ClInclude Include="PublicAPI\Bentley\BeConsole.h" />
     <ClInclude Include="PublicAPI\Bentley\BeDebugLog.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeDebugUtilities.h" />
     <ClInclude Include="PublicAPI\Bentley\BeDirectoryIterator.h" />
     <ClInclude Include="PublicAPI\Bentley\BeFile.h" />
     <ClInclude Include="PublicAPI\Bentley\BeFileListIterator.h" />
     <ClInclude Include="PublicAPI\Bentley\BeFileName.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeGetProcAddress.h" />
     <ClInclude Include="PublicAPI\Bentley\BeIconUtilities.h" />
     <ClInclude Include="PublicAPI\Bentley\BeId.h" />
     <ClInclude Include="PublicAPI\Bentley\BeJStringUtilities.h" />
@@ -70,6 +79,7 @@
     <ClInclude Include="PublicAPI\Bentley\CatchNonPortable.h" />
     <ClInclude Include="PublicAPI\Bentley\CodePages.h" />
     <ClInclude Include="PublicAPI\Bentley\DateTime.h" />
+    <ClInclude Include="PublicAPI\Bentley\Desktop\FileSystem.h" />
     <ClInclude Include="PublicAPI\Bentley\DirectoryObserver.h" />
     <ClInclude Include="PublicAPI\Bentley\GlobalHandleContainer.h" />
     <ClInclude Include="PublicAPI\Bentley\HeapZone.h" />
@@ -128,6 +138,7 @@
     <ClInclude Include="Tasks\ThreadingLogging.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BeJpeg\BeJpeg.cpp" />
     <ClCompile Include="Bentley\BeId.cpp" />
     <ClCompile Include="Bentley\DateTime.cpp" />
     <ClCompile Include="Bentley\DateTimeConverter.cpp" />
@@ -136,10 +147,12 @@
     <ClCompile Include="Bentley\md5.cpp" />
     <ClCompile Include="Bentley\nonport\Base64Utilities.cpp" />
     <ClCompile Include="Bentley\nonport\BeDebugLog.cpp" />
+    <ClCompile Include="Bentley\nonport\BeDebugUtilities.cpp" />
     <ClCompile Include="Bentley\nonport\BeDirectoryIterator.cpp" />
     <ClCompile Include="Bentley\nonport\BeFile.cpp" />
     <ClCompile Include="Bentley\nonport\BeFileListIterator.cpp" />
     <ClCompile Include="Bentley\nonport\BeFileName.cpp" />
+    <ClCompile Include="Bentley\nonport\BeGetProcAddress.cpp" />
     <ClCompile Include="Bentley\nonport\BeIconUtilities.cpp" />
     <ClCompile Include="Bentley\nonport\BeJStringUtilities.cpp" />
     <ClCompile Include="Bentley\nonport\BeStringUtilities.cpp" />
@@ -155,6 +168,7 @@
     <ClCompile Include="Bentley\RefCounted.cpp" />
     <ClCompile Include="Bentley\sha1.cpp" />
     <ClCompile Include="Bentley\WString.cpp" />
+    <ClCompile Include="BeXml\BeXml.cpp" />
     <ClCompile Include="LoggingSDK\src\native\interface\bsilog.cpp" />
     <ClCompile Include="LoggingSDK\src\native\interface\consoleprovider.cpp" />
     <ClCompile Include="LoggingSDK\src\native\interface\fileprovider.cpp" />
@@ -174,18 +188,23 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".hgignore" />
+    <None Include="BeJpeg\BeJpeg.mke" />
     <None Include="Bentley.mke" />
     <None Include="BentleyLibTestDll.mke" />
+    <None Include="BeXml\bexml.mke" />
     <None Include="Docs\Overview\BeFileName.doxpage" />
     <None Include="Docs\Overview\Collections.doxpage" />
     <None Include="Docs\Overview\Utf8String.doxpage" />
     <None Include="LoggingSDK\src\native\interface\interface.mki" />
     <None Include="prewire.mke" />
+    <None Include="PublicAPI\PublicApi.mke" />
     <None Include="PublicMki\BentleyApi.mki" />
     <None Include="Tasks\Tasks.mki" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Bentley.PartFile.xml" />
+    <Xml Include="Bentley.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <Text Include="bentley-notice.txt" />
@@ -232,8 +251,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NMakeBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll build</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
     <IncludePath>$(ProjectDir);$(ProjectDir)PublicAPI\;$(ProjectDir)Bentley\;$(ProjectDir)Bentley\nonport\;$(IncludePath);</IncludePath>
   </PropertyGroup>
@@ -253,7 +272,14 @@
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
