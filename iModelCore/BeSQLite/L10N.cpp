@@ -2,7 +2,7 @@
 |
 |     $Source: L10N.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/L10N.h>
@@ -58,8 +58,10 @@ DbResult L10NLookup::SQLangDb::Open()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Bern.McCarty     02/2013
 //---------------------------------------------------------------------------------------
-L10NLookup::L10NLookup(L10N::SqlangFiles const & files) : m_lastResortDb(files.m_default), 
-                m_cultureNeutralDb(files.m_cultureNeutral), m_cultureSpecificDb(files.m_cultureSpecific)
+L10NLookup::L10NLookup(L10N::SqlangFiles const & files) :
+m_lastResortDb(files.m_default), 
+m_cultureNeutralDb(files.m_cultureNeutral),
+m_cultureSpecificDb(files.m_cultureSpecific)
     {
     m_initialized = false;
     }
@@ -100,10 +102,26 @@ void L10NLookup::Initialize()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void L10NLookup::ResuspendIfNeeded()
+    {
+    // Addition to original fix with Suspend()/Resume(): http://graphite5-5r6.hgbranches.bentley.com/dgndb/mobiledgn/rev/0efb55a16beb
+    // iOS app crashes after getting localized strings while app is in background mode. String retrieval re-initializes "suspended" L10N API.
+    // Database connections lock app-bundle files, and this causes "Message from debugger: Terminated due to signal 9" crash after app 
+    // finishes its background execution with endBackgroundTask.
+    if (!m_initialized || !m_suspended)
+        return;
+    Suspend();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2014
 //---------------------------------------------------------------------------------------
 void L10NLookup::Suspend()
     {
+    BeMutexHolder lock(m_mutex);
+    
     // On iOS 8.0 on older iPads (pre Air), suspending the app crashes with the message "was suspended with locked system files" listing our app's own .sqlang.db3 files.
     // We do not understand why our personal sqlang files are considered "system" files (e.g. the address book database), but closing the files on suspend seems to be the best workaround.
 
@@ -112,6 +130,7 @@ void L10NLookup::Suspend()
     m_lastResortDb.CloseDb();
 
     m_initialized = false;
+    m_suspended = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -119,7 +138,9 @@ void L10NLookup::Suspend()
 //---------------------------------------------------------------------------------------
 void L10NLookup::Resume()
     {
-    // Let the next call to initialize take care of starting up again.
+    BeMutexHolder lock(m_mutex);
+    m_suspended = false;
+    // Let the next call to Initialize() take care of starting up again.
     }
 
 //---------------------------------------------------------------------------------------
@@ -127,6 +148,7 @@ void L10NLookup::Resume()
 //---------------------------------------------------------------------------------------
 Utf8String L10NLookup::GetString(L10N::NameSpace scope, L10N::StringId name, bool* outHasString)
     {
+    BeMutexHolder lock(m_mutex);
     Initialize();
 
     bool ALLOW_NULL_OUTPUT (hasString, outHasString);
@@ -146,19 +168,33 @@ Utf8String L10NLookup::GetString(L10N::NameSpace scope, L10N::StringId name, boo
 #endif
         }
 
+    ResuspendIfNeeded();
     return message;
     }
 
+BeMutex s_lookupMutex;
 static L10NLookup* s_lookup = NULL;
-void L10N::Shutdown() {DELETE_AND_CLEAR(s_lookup);}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void L10N::Shutdown()
+    {
+    BeMutexHolder lock(s_lookupMutex);
+    DELETE_AND_CLEAR(s_lookup);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2014
 //---------------------------------------------------------------------------------------
 void L10N::Suspend()
     {
+    BeMutexHolder lock(s_lookupMutex);
     if (NULL == s_lookup)
+        {
+        BeAssert(false && "Call L10N::Initialize() first");
         return;
+        }
 
     s_lookup->Suspend();
     }
@@ -168,8 +204,12 @@ void L10N::Suspend()
 //---------------------------------------------------------------------------------------
 void L10N::Resume()
     {
+    BeMutexHolder lock(s_lookupMutex);
     if (NULL == s_lookup)
+        {
+        BeAssert(false && "Call L10N::Initialize() first");
         return;
+        }
 
     s_lookup->Resume();
     }
@@ -191,6 +231,7 @@ static void checkFileExists(BeFileNameCR filename)
 //---------------------------------------------------------------------------------------
 BentleyStatus L10N::Initialize(SqlangFiles const& files)
     {
+    BeMutexHolder lock(s_lookupMutex);
     if (NULL != s_lookup)  // First caller wins 
         return BSISUCCESS;
 
@@ -207,10 +248,11 @@ BentleyStatus L10N::Initialize(SqlangFiles const& files)
 //---------------------------------------------------------------------------------------
 Utf8String L10N::GetString(NameSpace scope, StringId name, bool* hasString) 
     {
+    BeMutexHolder lock(s_lookupMutex);
     if (NULL != s_lookup)
         return s_lookup->GetString(scope, name, hasString);
 
-    BeAssert(false); // Call L10N::Initialize first
+    BeAssert(false && "Call L10N::Initialize() first");
     if (hasString)
         *hasString = false;
 
