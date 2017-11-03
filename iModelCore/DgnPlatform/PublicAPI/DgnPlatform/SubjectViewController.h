@@ -15,9 +15,12 @@
 #include <DgnPlatform/ViewDefinition.h>
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
+#include <ECDb/ECSqlStatement.h>
 
 DGNPLATFORM_TYPEDEFS(SubjectViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SubjectViewController)
+
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
@@ -34,6 +37,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SubjectViewController : SpatialViewController
 private:
     SubjectColorMap     m_subjectColors;
     DgnDbP              m_db;
+    ECSqlStatement*     m_elementToSubjectStmt;
 
 protected:
     void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
@@ -52,6 +56,7 @@ public:
 
     //! Constructor
     DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view, DgnDbP db, SubjectColorMap const& subjectColors);
+    DGNPLATFORM_EXPORT ~SubjectViewController();
 };
 
 END_BENTLEY_DGN_NAMESPACE
