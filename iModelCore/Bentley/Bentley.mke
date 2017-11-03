@@ -44,6 +44,9 @@ dirToSearch = $(BuildContext)VendorAPI/icu4c/
     %include cdefapnd.mki
 %endif
 
+#Ignore unknown pragmas (i.e. pragma mark)
+LLVMCommonCompOpts  + -Wno-unknown-pragmas
+
 o = $(OutputRootDir)build/$(appName)/
 
 always:
@@ -161,6 +164,8 @@ LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(
 
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
     LINKER_LIBRARIES           + $(CLibs)
+%else
+    LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)bentleylog4cxx$(libext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki

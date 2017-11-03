@@ -2,11 +2,15 @@
 |
 |     $Source: LoggingSDK/src/native/interface/loggingconfig.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bsilogprivate.h"
 #include <Bentley/BeFileName.h>
+
+#if defined (__APPLE__) || defined (ANDROID)
+#include <bentleylog4cxx/log4cxx.h>
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -129,8 +133,21 @@ LoggingProviderType type
             pProvider = createConsoleLogger();
             break;
             }
-#else
+#elif defined (__APPLE__) || defined (ANDROID)
+        case (LOG4CXX_LOGGING_PROVIDER) :
+            {
+            pProvider = new Provider::Log4cxxProvider();
+            break;
+            }
         // use console logging if a Windows-specific provider is requested on a non-Windows platform
+        case ( MANAGED_LOGGING_PROVIDER ):
+        case ( CONSOLE_LOGGING_PROVIDER ):
+            {
+            pProvider = new Provider::ConsoleProvider();
+            break;
+            }
+#else
+        // use console logging for not supported platforms
         case ( LOG4CXX_LOGGING_PROVIDER ):
         case ( MANAGED_LOGGING_PROVIDER ):
         case ( CONSOLE_LOGGING_PROVIDER ):

@@ -37,6 +37,7 @@
     <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="B02" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="Icu" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="LoggingNative" />
         <Bindings>
             <Libs>Delivery/$(libprefix)Bentley$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
@@ -184,6 +185,10 @@
         <Bindings>
             <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/BentleyUwpTest"/>
         </Bindings>
+    </Part>
+
+    <Part Name="LoggingNative" OnlyPlatforms="Android*, iOS*">
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="LoggingSDK"/>
     </Part>
 
     <Product Name="Bentley-UwpTest">
