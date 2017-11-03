@@ -2589,7 +2589,7 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     T_GeometryBuilderList const& geometryBuilders = partIndices.empty() ? factory.GetGeometryBuilderList() : this->GetSharedPartList();
     if (geometryBuilders.empty() && this->_SkipEmptyElement(entity))
         {
-        this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls, ID=%llx", entity->GetClassName().c_str(), entityId).c_str());
+        this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls, ID=%llx", entity->GetDwgClassName().c_str(), entityId).c_str());
         return  BSIERROR;
         }
 
@@ -2650,7 +2650,7 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
     T_GeometryBuilderList const& geometryBuilders = partIndices.empty() ? factory.GetGeometryBuilderList() : this->GetSharedPartList();
     if (geometryBuilders.empty())
         {
-        this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls", entity->GetClassName().c_str()).c_str());
+        this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls", entity->GetDwgClassName().c_str()).c_str());
         return  BSIERROR;
         }
 
@@ -2668,7 +2668,7 @@ Utf8String      DwgImporter::_GetElementLabel (DwgDbEntityCR entity)
     // default element label to entity name:
     Utf8String  label(entity.GetDxfName().c_str());
     if (label.empty())
-        label.Assign (entity.GetClassName().c_str());
+        label.Assign (entity.GetDwgClassName().c_str());
     
     // for a block reference, use block name:
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(&entity);
@@ -3066,7 +3066,7 @@ void DwgImporter::OpenAndImportEntity (ElementImportInputs& inputs)
 
     if (inputs.m_entity.OpenStatus() != DwgDbStatus::Success)
         {
-        Utf8PrintfString  msg("Entity: %ls, ID= %llx", inputs.m_entityId.GetClassName().c_str(), inputs.m_entityId.ToUInt64());
+        Utf8PrintfString  msg("Entity: %ls, ID= %llx", inputs.m_entityId.GetDwgClassName().c_str(), inputs.m_entityId.ToUInt64());
         this->ReportError (IssueCategory::UnexpectedData(), Issue::CantOpenObject(), msg.c_str());
         return;
         }

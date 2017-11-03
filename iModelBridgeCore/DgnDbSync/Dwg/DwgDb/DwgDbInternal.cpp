@@ -12,7 +12,7 @@
 ---------------------------------------------------------------------------------------*/
 #if defined (DWGTOOLKIT_OpenDwg)
     #if (defined (WINNT) || defined(WIN32))
-        #include <Teigha/Core/Extensions/win/Crypt/WinNTCrypt.cpp>
+        #include <Teigha/Kernel/Extensions/win/Crypt/WinNTCrypt.cpp>
     #endif
     
     static OdRxModule*          s_gripPointsModule;

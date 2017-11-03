@@ -19,10 +19,8 @@ DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
 DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
 DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
 DwgPublicAPI        = $(DgnDbSyncPubAPI)Dwg/
-DwgDbLibName        = $(DWGTOOLKIT)DbExchange
-ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
-o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)Importer/Apps/
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/Apps/
 always:
     ~mkdir $(o)
 

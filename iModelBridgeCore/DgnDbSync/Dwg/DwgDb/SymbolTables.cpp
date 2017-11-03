@@ -68,6 +68,15 @@ DWGDB_DEFINE_SYMBOLTABLERECORD_GETNAME(ViewportTableRecord)
 DWGDB_DEFINE_SYMBOLTABLERECORD_GETNAME(TextStyleTableRecord)
 
 
+// unresolved toolkit's symbols
+#if defined(DWGTOOLKIT_RealDwg)
+#if VendorVersion >= 2018
+AcDbSymbolTable::AcDbSymbolTable () { BeAssert(false && "No vtable class instantiated!"); }
+AcDbSymbolTableRecord::AcDbSymbolTableRecord () { BeAssert(false && "No vtable class instantiated!"); }
+Acad::ErrorStatus AcDbBlockTableRecord::assumeOwnershipOf (const AcDbObjectIdArray& entitiesToMove) { BeAssert(false && "Symbol AcDbBlockTableRecord::assumeOwnershipOf unresolved in RealDWG!"); return Acad::eNotApplicable; }
+#endif
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
