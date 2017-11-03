@@ -64,6 +64,8 @@ void SampleTestFixture::TestRectangle()
     EXPECT_EQ(status, Cesium::TilesetPublisher::Status::Success);
 
     AppData appData(GetAppDataFileName());
+    AppData expected(*view);
+    appData.ExpectEqual(expected);
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);
