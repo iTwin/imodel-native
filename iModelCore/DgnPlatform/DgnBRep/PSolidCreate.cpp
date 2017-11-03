@@ -2764,7 +2764,7 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
 
     memset (profileBodies, 0, nProfiles * sizeof (PK_BODY_t));
 
-    StatusInt       status = ERROR;
+    BentleyStatus   status = ERROR;
         
     for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
         {
@@ -2801,7 +2801,7 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
 
     PK_ENTITY_delete ((int) nProfiles, profileBodies);
 
-    return SUCCESS;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
