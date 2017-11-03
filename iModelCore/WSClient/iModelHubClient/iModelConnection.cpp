@@ -40,7 +40,6 @@ IHttpHandlerPtr            customHandler
     options.EnableRequestCompression(true, 1024);
     wsRepositoryClient->Config().SetCompressionOptions(options);
     wsRepositoryClient->SetCredentials(credentials);
-    wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     SetRepositoryClient(wsRepositoryClient);
     }
