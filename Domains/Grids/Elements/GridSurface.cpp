@@ -128,7 +128,7 @@ void GridSurface::Translate(DVec3d translation)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-BentleyStatus GridSurface::SetGrometry(ISolidPrimitivePtr surface)
+BentleyStatus GridSurface::SetGeometry(ISolidPrimitivePtr surface)
     {
     if (_ValidateGeometry(surface))
         return _SetGeometry(surface);
@@ -151,6 +151,50 @@ BentleyStatus GridSurface::_SetGeometry(ISolidPrimitivePtr surface)
         }
 
     return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSurface::_Validate
+(
+) const
+    {
+    if (!GetAxisId ().IsValid ()) //grid axis must be set
+        return DgnDbStatus::ValidationFailed;
+
+    return DgnDbStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSurface::_OnInsert
+(
+)
+    {
+    DgnDbStatus status = T_Super::_OnInsert ();
+    if (status == DgnDbStatus::Success)
+        {
+        return _Validate ();
+        }
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  10/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      GridSurface::_OnUpdate
+(
+    DgnElementCR original
+)
+    {
+    DgnDbStatus status = T_Super::_OnUpdate (original);
+    if (status == DgnDbStatus::Success)
+        {
+        return _Validate ();
+        }
+    return status;
     }
 
 END_GRIDS_NAMESPACE

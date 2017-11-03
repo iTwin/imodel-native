@@ -1624,4 +1624,118 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
+    
+//---------------------------------------------------------------------------------------
+// @betest                                      Jonas.Valiunas                  10/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
+    {
+    DgnDbR db = *DgnClientApp::App ().Project ();
+
+
+    {
+    // create new definition model
+    GridSurfaceHandler& handler = GridSurfaceHandler::GetHandler ();
+    DgnClassId classId = db.Domains ().GetClassId (handler);
+    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
+
+    GeometricElement3dPtr element = dynamic_cast<GeometricElement3d*>(handler.Create (params).get());
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), GRIDS_CATEGORY_CODE_Uncategorized);
+
+    element->SetCategoryId (categoryId);
+    element->Insert ();
+
+    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert surface created via handler";
+    }
+
+    {
+    // create new definition model
+    GridPortionHandler& handler = GridPortionHandler::GetHandler ();
+    DgnClassId classId = db.Domains ().GetClassId (handler);
+    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
+
+    GeometricElement3dPtr element = dynamic_cast<GeometricElement3d*>(handler.Create (params).get ());
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId (db.GetDictionaryModel (), GRIDS_CATEGORY_CODE_Uncategorized);
+
+    element->SetCategoryId (categoryId);
+    element->Insert ();
+
+    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert portion created via handler";
+    }
+
+    {
+    // create new definition model
+    GridAxisHandler& handler = GridAxisHandler::GetHandler ();
+    DgnClassId classId = db.Domains ().GetClassId (handler);
+    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
+
+    DgnElementPtr element = handler.Create (params);
+    element->Insert ();
+
+    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert axis created via handler";
+    }
+    db.SaveChanges ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Jonas.Valiunas                  10/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
+    {
+    DgnDbR db = *DgnClientApp::App ().Project ();
+
+    DVec3d normal = DVec3d::From (1.0, 0.0, 0.0);
+
+    SketchGridPortionPtr grid = SketchGridPortion::Create (*m_model, normal, "SketchGrid-1");
+    grid->Insert ();
+    GridAxisPtr axis1 = GridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
+
+    DPoint3d nonPlanarPoints[] = { { 100,100,0 },{ 200,100,0 },{ 200,200,0 },{ 100,200,100 },{ 100,100,0 } };
+    CurveVectorPtr invalidVector;
+    invalidVector = CurveVector::Create (CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+    ICurvePrimitivePtr prim = ICurvePrimitive::CreateLineString (nonPlanarPoints, 4);
+    invalidVector->push_back (prim);
+    GridPlaneSurfacePtr invalidPlaneSurface = GridPlaneSurface::Create (*grid->GetSurfacesModel (), axis1, invalidVector->Clone());
+
+    invalidPlaneSurface->Insert ();
+    ASSERT_TRUE (!invalidPlaneSurface->GetElementId ().IsValid ()) << "should fail to insert non-planar GridPlaneSurface";
+
+
+    bvector<DPoint3d> planarPoints = { { 100,100,0 },{ 200,100,0 },{ 200,220,0 },{ 100,200,0 } };
+    CurveVectorPtr validVector = CurveVector::CreateLinear (planarPoints, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+
+    GridPlaneSurfacePtr validPlaneSurface = GridPlaneSurface::Create (*grid->GetSurfacesModel (), axis1, validVector->Clone ());
+
+    validPlaneSurface->Insert ();
+    ASSERT_TRUE (validPlaneSurface->GetElementId ().IsValid ()) << "failed to insert a valid-planar gridplanesurface";
+
+    GridPlaneSurfacePtr planeSurfaceToUpdate = db.Elements ().GetForEdit<GridPlaneSurface> (validPlaneSurface->GetElementId ());
+
+    Dgn::GeometrySourceP geomElem = planeSurfaceToUpdate->ToGeometrySourceP ();
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+    builder->Append (*invalidVector->Clone (), Dgn::GeometryBuilder::CoordSystem::World);
+    builder->Finish (*geomElem);
+    DgnDbStatus status;
+    planeSurfaceToUpdate->Update (&status);
+    ASSERT_TRUE (status != DgnDbStatus::Success) << "should fail to update non-planar GridPlaneSurface";
+
+    DPoint3d center = DPoint3d::From (0.0, 0.0, 0.0);
+    DPoint3d start = DPoint3d::From (0.0, -100.0, 0.0);
+    DPoint3d end = DPoint3d::From (0.0, 0.0, 100.0);
+    ICurvePrimitivePtr arcPrimitive = ICurvePrimitive::CreateArc (DEllipse3d::FromArcCenterStartEnd(center, start, end));
+    CurveVectorPtr arcCurve = CurveVector::Create (arcPrimitive);
+
+    DVec3d extrusionUp = DVec3d::From (100.0, 0.0, 0.0);
+
+    DgnExtrusionDetail extDetail = DgnExtrusionDetail (arcCurve, extrusionUp, false);
+
+    GridArcSurfacePtr validArcSurface = GridArcSurface::Create (*grid->GetSurfacesModel (), axis1, extDetail);
+
+    validArcSurface->Insert ();
+    ASSERT_TRUE (validArcSurface->GetElementId ().IsValid ()) << "failed to insert a valid gridarcsurface";
+
+    db.SaveChanges ();
+    }
+
 

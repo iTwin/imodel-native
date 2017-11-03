@@ -37,11 +37,12 @@
       <ECProperty propertyName="IsBaseSurface" typeName="boolean" description="whether the surface is the base on which others are imprinted"/>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GridPortionHasAxes" strength="referencing" strengthDirection="backward">
-      <Source cardinality="(1,1)" polymorphic="true">
+    <ECRelationshipClass typeName="GridPortionHasAxes" strength="embedding" modifier="None">
+      <!-- Relationship that indicates a decomposition of child AllocatedVolume -->
+      <Source multiplicity="(0..1)" roleLabel="Has Axis" polymorphic="true">
         <Class class="GridPortion"/>
       </Source>
-      <Target cardinality="(1,N)" polymorphic="true">
+      <Target multiplicity="(0..*)" roleLabel="is axis of" polymorphic="true">
         <Class class="GridAxis"/>
       </Target>
     </ECRelationshipClass>

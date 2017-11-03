@@ -32,7 +32,9 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridPlaneSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr  surface);
     friend struct GridPlaneSurfaceHandler;
 
-    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) override;
+    virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const override;
+
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate () const override;
 public:
     //IConstrainable TODO: remove IConstrainable
     GRIDELEMENTS_EXPORT virtual bool GetGeomIdPlane (int geomId, DPlane3dR planeOut) const override;
