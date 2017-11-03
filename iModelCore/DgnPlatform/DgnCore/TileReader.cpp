@@ -1460,4 +1460,26 @@ ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builders, StreamBuffe
     return DgnCacheTileRebuilder(buffer, model, system, builders).ReadTile(flags, skipElems);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Format TileHeader::FormatFromFileExtension(Utf8CP ext)
+    {
+    struct Pair { Utf8CP ext; Format fmt; };
+    static constexpr Pair s_lookup[] =
+        {
+            { "b3dm", Format::B3dm },
+            { "i3dm", Format::I3dm },
+            { "vctr", Format::Vector },
+            { "pnts", Format::PointCloud },
+            { "cmpt", Format::Composite },
+        };
+
+    for (auto const& pair : s_lookup)
+        if (0 == BeStringUtilities::Stricmp(ext, pair.ext))
+            return pair.fmt;
+
+    return Format::Unknown;
+    }
+
 END_TILETREE_IO_NAMESPACE

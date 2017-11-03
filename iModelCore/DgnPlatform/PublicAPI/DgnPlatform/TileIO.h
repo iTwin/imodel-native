@@ -107,6 +107,10 @@ struct TileHeader
                 return false;
             }
         }
+
+    DGNPLATFORM_EXPORT static Format FormatFromFileExtension(Utf8CP ext);
+    static Format FormatFromFileName(BeFileNameCR filename) { return FormatFromFileExtension(filename.GetExtension().c_str()); }
+    static Format FormatFromFileExtension(WCharCP ext) { return FormatFromFileExtension(Utf8String(ext).c_str()); }
 };
 
 //=======================================================================================

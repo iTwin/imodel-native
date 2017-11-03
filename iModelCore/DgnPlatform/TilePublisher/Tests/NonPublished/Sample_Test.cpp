@@ -66,6 +66,9 @@ void SampleTestFixture::TestRectangle()
     AppData appData(GetAppDataFileName());
     AppData expected(*view);
     appData.ExpectEqual(expected);
+
+    PublishedTilesets tilesets(GetAppDataDir());
+    tilesets.ExpectEqual(expected.m_models);
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);

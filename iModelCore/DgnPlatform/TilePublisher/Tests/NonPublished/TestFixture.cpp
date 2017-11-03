@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "TestFixture.h"
+#include <Bentley/BeDirectoryIterator.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
@@ -179,7 +180,7 @@ Cesium::TilesetPublisher::Status TestFixture::PublishTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName TestFixture::GetTilesetDir() const
+BeFileName TestFixture::GetAppDataDir() const
     {
     auto filename = GetBaseDir();
     filename.AppendToPath(L"TileSets");
@@ -209,7 +210,7 @@ Utf8String TestFixture::GetRelativeTilesetUrl(DgnModelId id, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName TestFixture::GetAppDataFileName() const
     {
-    BeFileName filename = GetTilesetDir();
+    BeFileName filename = GetAppDataDir();
     filename.AppendToPath(GetTilesetNameW().c_str());
     filename.append(L"_AppData.json");
     return filename;
@@ -456,5 +457,80 @@ AppData::View::View(SpatialViewDefinitionCR view)
     m_name = view.GetName();
     m_origin = view.GetOrigin();
     m_rotation = view.GetRotation();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishedTilesets::PublishedTilesets(BeFileNameCR appDataDir)
+    {
+    BeFileName filename;
+    bool isDir;
+    for (BeDirectoryIterator iter(appDataDir); SUCCESS == iter.GetCurrentEntry(filename, isDir); iter.ToNext())
+        {
+        if (isDir)
+            ProcessTilesetDir(filename);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId PublishedTilesets::ParseModelId(BeFileNameCR filename)
+    {
+    DgnModelId modelId;
+    auto underPos = filename.rfind(L'_'),
+         dotPos   = filename.rfind(L'.');
+
+    if (WString::npos == underPos || WString::npos == dotPos || underPos >= dotPos)
+        return modelId;
+
+    underPos += 1; // skip the underscore
+    WString hexW = filename.substr(underPos, dotPos-underPos);
+    Utf8String hex(hexW);
+    modelId = DgnModelId(BeStringUtilities::ParseHex(hex.c_str()));
+
+    return modelId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublishedTilesets::ProcessTilesetDir(BeFileNameCR dir)
+    {
+    BeFileName filename;
+    bool isDir;
+    for (BeDirectoryIterator iter(dir); SUCCESS == iter.GetCurrentEntry(filename, isDir); iter.ToNext())
+        {
+        EXPECT_FALSE(isDir);
+        DgnModelId modelId = ParseModelId(filename);
+        EXPECT_TRUE(modelId.IsValid());
+        if (isDir || !modelId.IsValid() || filename.GetExtension().EqualsI(L"json"))
+            continue;
+
+        auto entries = (*this)[modelId];
+        entries.insert(PublishedTile(filename));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublishedTilesets::ExpectEqual(AppData::Models const& models) const
+    {
+    EXPECT_EQ(models.size(), size());
+    for (auto const& kvp : *this)
+        EXPECT_FALSE(models.end() == models.find(kvp.first));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishedTile::PublishedTile(BeFileNameCR filename) : m_filenameWithoutExtension(filename), m_format(TileIO::TileHeader::FormatFromFileName(filename))
+    {
+    EXPECT_FALSE(TileIO::Format::Unknown == m_format);
+    auto pos = filename.rfind(L'.');
+    EXPECT_FALSE(WString::npos == pos);
+    m_filenameWithoutExtension.erase(pos);
     }
 

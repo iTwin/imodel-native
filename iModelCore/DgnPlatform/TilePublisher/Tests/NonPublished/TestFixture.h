@@ -20,8 +20,9 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_TILETREE
-USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+
+namespace TileIO = BentleyApi::Dgn::TileTree::IO;
 
 namespace JsonUtil
 {
@@ -241,6 +242,46 @@ public:
 };
 
 //=======================================================================================
+// Represents a single published tile.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct PublishedTile
+{
+    BeFileName      m_filenameWithoutExtension;
+    TileIO::Format  m_format;
+
+    PublishedTile() = default;
+    PublishedTile(BeFileNameCR gltfFileNameWithExtension);
+
+    bool operator<(PublishedTile const& rhs) const { return m_filenameWithoutExtension.CompareToI(rhs.m_filenameWithoutExtension) < 0; }
+};
+
+//=======================================================================================
+// Represents the full contents of a tileset's directory associated with a single model.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+typedef bset<PublishedTile> PublishedTileset;
+
+//=======================================================================================
+// Represents the set of tilesets produced by the publisher.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct PublishedTilesets : bmap<DgnModelId, PublishedTileset>
+{
+private:
+    void ProcessTilesetDir(BeFileNameCR dir);
+    static DgnModelId ParseModelId(BeFileNameCR);
+public:
+    PublishedTilesets() = default;
+
+    // Iterates the output directory to find all tileset directories and tiles within them.
+    explicit PublishedTilesets(BeFileNameCR appDataDir);
+
+    // Validate that there is one subdirectory corresponding to each model.
+    void ExpectEqual(AppData::Models const& models) const;
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/17
 //=======================================================================================
 struct TestFixture : public ::testing::Test
@@ -326,7 +367,7 @@ public:
 
     // Get the root directory containing the published output.
     // This should contain XXX_AppData.json and 1 subdirectory for each published model, named Model_XX where XX is the model ID in hexadecimal format.
-    BeFileName GetTilesetDir() const;
+    BeFileName GetAppDataDir() const;
 
     // Get the path to the published appdata json file.
     BeFileName GetAppDataFileName() const;
