@@ -38,7 +38,6 @@ IWSRepositoryClientPtr Client::CreateProjectConnection(Utf8StringCR projectId) c
     project.Sprintf("%s--%s", ServerSchema::Plugin::Project, projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
-    client->GetWSClient()->EnableWsgServerHeader(true);
     return client;
     }
 
@@ -142,9 +141,9 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
 
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
 
-    //Always select Owner Info relationship
+    //Always select CreatorInfo relationship
     Utf8String select = "*";
-    iModelInfo::AddOwnerInfoSelect(select);
+    iModelInfo::AddCreatorInfoSelect(select);
     query.SetSelect(select);
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
@@ -210,7 +209,7 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
 
     //Always select Owner Info relationship
     Utf8String select = "*";
-    iModelInfo::AddOwnerInfoSelect(select);
+    iModelInfo::AddCreatorInfoSelect(select);
     query.SetSelect(select);
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
@@ -275,7 +274,7 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
 
     //Always select Owner Info relationship
     Utf8String select = "*";
-    iModelInfo::AddOwnerInfoSelect(select);
+    iModelInfo::AddCreatorInfoSelect(select);
     query.SetSelect(select);
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
@@ -1016,7 +1015,6 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
-    client->GetWSClient()->EnableWsgServerHeader(true);
 
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%u", briefcaseId);
