@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vugrid.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -199,14 +199,14 @@ struct StrideData
     };
 
 
-typedef struct
+struct GridContext
     {
     VuSetP pGraph;
     GridCell *pCellBuffer;
     StrideData strideData[2];
     VuMask interiorMask;
     VuMask exteriorMask;
-    } GridContext;
+    };
 
 
 /*---------------------------------------------------------------------------------**//**
