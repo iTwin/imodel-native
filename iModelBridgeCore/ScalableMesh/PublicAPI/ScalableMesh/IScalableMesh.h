@@ -18,7 +18,7 @@
 #include <ScalableMesh/IScalableMeshEdit.h>
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
-#include <ScalableMesh/IClipDefinitionDataProvider.h>
+#include <ScalableMesh/IScalableMeshClippingOptions.h>
 
 #undef static_assert
 
@@ -287,7 +287,7 @@ struct IScalableMesh abstract:  IRefCounted
         
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
 
-		virtual void                               _SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) = 0;
+		virtual IScalableMeshClippingOptions&      _EditClippingOptions() = 0;
 
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
 
@@ -477,8 +477,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 
-		//Set an application-implemented clip provider to obtain the clip polygons asynchronously when needed. 
-		BENTLEY_SM_EXPORT void                   SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider);
+		BENTLEY_SM_EXPORT IScalableMeshClippingOptions&      EditClippingOptions();
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
 

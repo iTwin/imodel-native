@@ -29,7 +29,7 @@ class SMSQLiteSisterFile
         std::mutex m_featureOpen;
         std::mutex m_clipOpen;
 
-        bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType);
+        bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType) const;
 
         SMSQLiteSisterFile() = default;
 
@@ -38,7 +38,9 @@ class SMSQLiteSisterFile
 
         ~SMSQLiteSisterFile();
 
-        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing);        
+        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing); 
+
+		bool DoesSisterSQLiteFileExist(SMStoreDataType dataType) const;
 
         bool SetProjectFilesPath(BeFileName& projectFilesPath);
 
@@ -46,6 +48,6 @@ class SMSQLiteSisterFile
 
 		void Compact();
 
-        bool IsProjectFilesPathSet();
+        bool IsProjectFilesPathSet() const;
 
     };

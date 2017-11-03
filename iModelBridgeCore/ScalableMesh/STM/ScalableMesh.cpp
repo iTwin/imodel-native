@@ -508,9 +508,9 @@ BentleyStatus IScalableMesh::DeleteCoverage(uint64_t id)
     return _DeleteCoverage(id);
     }
 
-void  IScalableMesh::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+IScalableMeshClippingOptions&  IScalableMesh::EditClippingOptions()
     {
-	return _SetClipDefinitionsProvider(provider);
+	return _EditClippingOptions();
     }
 
 void IScalableMesh::ImportTerrainSM(WString terrainPath)
@@ -873,7 +873,40 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
     m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT),
     m_reprojectionTransform(Transform::FromIdentity()),
     m_isInvertingClips(false)
-    { 
+    {
+
+	m_clippingOptions = new ScalableMeshClippingOptions([this](const ScalableMeshClippingOptions* changed)
+	{
+		if (nullptr == m_scmIndexPtr) return;
+		auto store = m_scmIndexPtr->GetDataStore();
+		store->SetClipDefinitionsProvider(changed->GetClipDefinitionsProvider());
+
+		if (changed->ShouldRegenerateStaleClipFiles() && !store->DoesClipFileExist())
+		{
+			SetIsInsertingClips(true);
+
+			bvector<uint64_t> existingClipIds;
+			GetAllClipIds(existingClipIds);
+
+			for (auto& id : existingClipIds)
+			{
+				bvector<DPoint3d> clipData;
+				m_scmIndexPtr->GetClipRegistry()->GetClip(id, clipData);
+				DRange3d extent = DRange3d::NullRange();
+				if (!clipData.empty())
+					extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+
+				Transform t = Transform::FromIdentity();
+				if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+				m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, extent, true, t);
+
+			}
+
+			SetIsInsertingClips(false);
+			SaveEditFiles();
+		}
+	});
     }
 
 
@@ -3200,11 +3233,10 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_DeleteCoverage(uint64
     return SUCCESS;
     }
 
-template <class POINT> void ScalableMesh<POINT>::_SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+template <class POINT> IScalableMeshClippingOptions& ScalableMesh<POINT>::_EditClippingOptions()
    {
-	if (nullptr == m_scmIndexPtr) return;
-	auto store = m_scmIndexPtr->GetDataStore();
-	store->SetClipDefinitionsProvider(provider);
+
+	return *m_clippingOptions;
    }
 
 template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()

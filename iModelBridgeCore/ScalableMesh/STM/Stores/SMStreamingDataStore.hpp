@@ -1126,6 +1126,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::IsTextureAvailable()
     return true;
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::DoesClipFileExist() const
+{
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+}
+
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
    {
 	m_clipProvider = provider;

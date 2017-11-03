@@ -269,6 +269,8 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         -----------------------------------------------------------------------------*/
         virtual void Unregister(const uint64_t& smID) {};
 
+		virtual bool DoesClipFileExist() const = 0;
+
 		/**----------------------------------------------------------------------------
 		Accept a way for the application to register its own callback for the clip polygons, instead of using file storage.
 		-----------------------------------------------------------------------------*/

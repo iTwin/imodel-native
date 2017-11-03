@@ -324,6 +324,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
     return true;
     }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::DoesClipFileExist() const
+   {
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+   }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
 {

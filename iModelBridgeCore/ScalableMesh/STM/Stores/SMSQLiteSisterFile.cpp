@@ -9,7 +9,7 @@
 #include <ScalableMeshPCH.h>
 #include "SMSQLiteSisterFile.h"
 
-bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType)
+bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType) const
     {
     switch (dataType)
         {
@@ -187,6 +187,19 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
     return sqlFilePtr;
     }
 
+bool SMSQLiteSisterFile::DoesSisterSQLiteFileExist(SMStoreDataType dataType) const
+	{
+	WString sqlFileName;
+	if (!GetSisterSQLiteFileName(sqlFileName, dataType))
+		return false;
+
+#ifdef VANCOUVER_API
+	return BeFileName::DoesPathExist(sqlFileName.c_str());
+#else
+	return BeFileName(sqlFileName).DoesPathExist();
+#endif
+	}
+
 bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     {
     /*if (m_projectFilesPath.length() > 0)
@@ -233,7 +246,7 @@ void SMSQLiteSisterFile::Compact()
 	}
     }
 
-bool SMSQLiteSisterFile::IsProjectFilesPathSet()
+bool SMSQLiteSisterFile::IsProjectFilesPathSet() const
     {
     return !m_projectFilesPath.empty();
     }
