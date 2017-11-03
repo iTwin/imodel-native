@@ -11,13 +11,13 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
+        <ECStructArrayProperty propertyName="CustomCardinalPoints" typeName="CustomCardinalPointStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>                    
     </ECEntityClass>
     <ECEntityClass typeName="ConstantProfile" description="A Profile that does not varying along its length (unlike Varying Profile).">
         <BaseClass>Profile</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <ECStructArrayProperty propertyName="CustomCardinalPoints" typeName="CustomCardinalPointStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>                
         <!--<ECProperty propertyName="Shape" typeName="Bentley.Geometry.Common.ISurfaceGroup"/>
         <ECProperty propertyName="StandardizedProperties" typeName="string" description="JSON storage of section properties using BIS-standard names and BIS-standard units."/>
         <ECArrayProperty propertyName="AlternateShapeClassification" typeName="string" description="Alternative ways shape can be classified. See ShapeClassification for list of standard values." minOccurs="1" maxOccurs="1"/>
