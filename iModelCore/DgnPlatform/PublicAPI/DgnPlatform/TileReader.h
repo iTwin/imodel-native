@@ -127,9 +127,13 @@ struct GltfReader
 
     virtual Render::Primitives::DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
         {
-        BeAssert (false && "WIP - Create DisplayParams from GLTF Material");
-        return nullptr;
+        // ###TODO: Create DisplayParams from GLTF Material...
+        return Render::Primitives::DisplayParams::Create(Render::Primitives::DisplayParams::Type::Mesh, DgnCategoryId(), DgnSubCategoryId(),
+                nullptr, RenderMaterialId(), ColorDef::White(), ColorDef::White(), 0, Render::LinePixels::Solid, Render::FillFlags::ByView,
+                DgnGeometryClass::Primary, false, m_model.GetDgnDb(), m_renderSystem);
         }
+
+    virtual BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue);
 
     BentleyStatus GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bufferView, Json::Value const& rootValue, const char* accessorName);
     BentleyStatus GetBufferView (void const*& pData, size_t& count, size_t& byteLength, Gltf::DataType& type, Json::Value& accessor, Json::Value const& primitiveValue, Utf8CP accessorName);
@@ -156,7 +160,6 @@ struct GltfReader
     BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value, Utf8CP name, bool disjoint);
     MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue);
 
-    BentleyStatus ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue);
     BentleyStatus ReadFeatures(Render::Primitives::MeshR mesh, Json::Value const& primitiveValue);
 
     Render::Primitives::MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, Render::FeatureTableP featureTable);
@@ -174,6 +177,8 @@ struct GltfReader
 +===============+===============+===============+===============+===============+======*/
 struct B3dmReader : GltfReader
 {
+    B3dmReader(StreamBufferR buffer, DgnModelR model, Render::System& renderSystem) : GltfReader(buffer, model, renderSystem) { }
+
     ReadStatus ReadTile(Render::Primitives::GeometryCollectionR);
 };
 
@@ -185,8 +190,10 @@ struct DgnTileReader : GltfReader
 {
 protected:
     Render::Primitives::DisplayParamsCPtr _CreateDisplayParams(Json::Value const&) override;
+    BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue) override;
 
     ReadStatus ReadFeatureTable(FeatureTableR);
+
 public:
     DgnTileReader(StreamBufferR buffer, DgnModelR model, Render::System& system) : GltfReader(buffer, model, system) { }
 

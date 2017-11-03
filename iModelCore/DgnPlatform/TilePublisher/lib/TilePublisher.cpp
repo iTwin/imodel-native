@@ -78,7 +78,7 @@ Utf8String PublishTileData::GetJsonString() const
 struct BatchTableBuilder
 {
 private:
-    Json::Value                             m_json; // "HIERARCHY": object
+    Json::Value                             m_json;
     DgnDbR                                  m_db;
     bool                                    m_is3d;
     DgnCategoryId                           m_uncategorized;

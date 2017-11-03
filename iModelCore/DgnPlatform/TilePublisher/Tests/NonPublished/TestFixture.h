@@ -77,6 +77,8 @@ namespace JsonUtil
         return T(BeStringUtilities::ParseUInt64(str.c_str()));
         }
     inline DgnElementId ToElementId(Utf8StringCR str) { return ToId<DgnElementId>(str); }
+
+    Json::Value Read(BeFileNameCR);
 }
 
 //=======================================================================================
@@ -254,6 +256,9 @@ struct PublishedTile
     PublishedTile(BeFileNameCR gltfFileNameWithExtension);
 
     bool operator<(PublishedTile const& rhs) const { return m_filenameWithoutExtension.CompareToI(rhs.m_filenameWithoutExtension) < 0; }
+
+    Json::Value ReadJson() const;
+    Render::Primitives::GeometryCollection ReadGeometry(GeometricModelR model) const;
 };
 
 //=======================================================================================

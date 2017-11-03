@@ -108,6 +108,7 @@ struct TileHeader
             }
         }
 
+    DGNPLATFORM_EXPORT static Utf8CP FileExtensionFromFormat(Format fmt);
     DGNPLATFORM_EXPORT static Format FormatFromFileExtension(Utf8CP ext);
     static Format FormatFromFileName(BeFileNameCR filename) { return FormatFromFileExtension(filename.GetExtension().c_str()); }
     static Format FormatFromFileExtension(WCharCP ext) { return FormatFromFileExtension(Utf8String(ext).c_str()); }
@@ -227,14 +228,17 @@ struct B3dm
     struct Header : TileHeader
     {
         uint32_t    b3dmLength;
+        uint32_t    featureTableStrLen;
+        uint32_t    featureTableBinaryLen;
         uint32_t    batchTableStrLen;
         uint32_t    batchTableBinaryLen;
-        uint32_t    b3dmNumBatches;
 
         bool Read(StreamBufferR buffer)
             {
             if (TileHeader::Read(buffer) && Format::B3dm == format && Version == version
-                && buffer.Read(b3dmLength) && buffer.Read(batchTableStrLen) && buffer.Read(batchTableBinaryLen) && buffer.Read(b3dmNumBatches))
+                && buffer.Read(b3dmLength)
+                && buffer.Read(featureTableStrLen) && buffer.Read(featureTableBinaryLen)
+                && buffer.Read(batchTableStrLen) && buffer.Read(batchTableBinaryLen))
                 return true;
 
             Invalidate();
@@ -332,5 +336,8 @@ DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Ren
 
 // Read meshes from cache data into a MeshBuilderMap, optionally excluding specific elements.
 DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builderMap, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, DgnTile::Flags& flags, DgnElementIdSet const& skipElems=DgnElementIdSet());
+
+// Read geometry from one of the web-standard tile formats (i3dm, b3dm, cmpt, pnts, vctr)
+DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem);
 
 END_TILETREE_IO_NAMESPACE

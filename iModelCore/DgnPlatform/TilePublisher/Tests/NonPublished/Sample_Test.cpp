@@ -69,6 +69,21 @@ void SampleTestFixture::TestRectangle()
 
     PublishedTilesets tilesets(GetAppDataDir());
     tilesets.ExpectEqual(expected.m_models);
+
+    ASSERT_EQ(tilesets.size(), 1);
+    EXPECT_EQ(model->GetModelId(), tilesets.begin()->first);
+
+    auto tileset = tilesets.begin()->second;
+    ASSERT_EQ(tileset.size(), 1);
+    PublishedTile tile = *tileset.begin();
+
+    EXPECT_EQ(TileIO::Format::B3dm, tile.m_format);
+    Json::Value tileJson = tile.ReadJson();
+    EXPECT_FALSE(tileJson.isNull());
+    EXPECT_TRUE(tileJson.isObject());
+
+    auto tileGeom = tile.ReadGeometry(*model);
+    EXPECT_FALSE(tileGeom.IsEmpty());
     }
 
 DEFINE_SAMPLE_TEST(TestRectangle);

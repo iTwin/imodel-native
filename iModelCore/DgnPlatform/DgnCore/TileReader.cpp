@@ -66,51 +66,29 @@ BufferView GltfReader::GetBufferView(Json::Value const& json, Utf8CP accessorNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   GltfReader::ReadIndices(bvector<uint32_t>& indices, Json::Value const& primitiveValue, Utf8CP accessorName)
     {
-    void const*     pData;
-    size_t          indicesCount, indicesByteLength;
-    Gltf::DataType  type;
-    Json::Value     accessor;
-
-    if (SUCCESS != GetBufferView (pData, indicesCount, indicesByteLength, type, accessor, primitiveValue, accessorName))
+    uint32_t count;
+    auto data = ReadBufferData32(primitiveValue, accessorName, &count);
+    if (!data.IsValid())
         return ERROR;
 
-    switch(type)
+    switch (data.m_storageType)
         {
-        case  Gltf::DataType::UnsignedShort:
-            {
-            if(indicesCount * sizeof(uint16_t) != indicesByteLength)
-                {
-                BeAssert(false && "index count mismatch");
-                return ERROR;
-                }
+        case Gltf::DataType::UInt32:
+            indices.resize(count);
+            memcpy(indices.data(), data.m_data, count);
+            return SUCCESS;
+        case Gltf::DataType::UnsignedShort:
+        case Gltf::DataType::UnsignedByte:
+            indices.reserve(count);
+            for (uint32_t i = 0; i < count; i++)
+                indices.push_back(data[i]);
 
-            uint16_t const *pIndex = reinterpret_cast <uint16_t const*>(pData);
-        
-            for(auto const& pEnd = pIndex + indicesCount; pIndex < pEnd; )
-                indices.push_back(*pIndex++);
-
-            break;
-            }
-
-        case  Gltf::DataType::UInt32:
-            {
-            if(indicesCount * sizeof(uint32_t) != indicesByteLength)
-                {
-                BeAssert(false && "index count mismatch");
-                return ERROR;
-                }
-
-            indices.resize(indicesCount);
-
-            memcpy(indices.data(), pData, indicesByteLength);
-            break;
-            }
+            return SUCCESS;
         default:
             BeAssert(false && "unrecognized index type");
             return ERROR;
 
         }
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,7 +482,22 @@ MeshEdgesPtr GltfReader::ReadMeshEdges(Json::Value const& primitiveValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GltfReader::ReadFeatures(bvector<uint32_t>& indices, Json::Value const& primitiveValue)
+BentleyStatus GltfReader::_ReadFeatures(bvector<uint32_t>& indices, Json::Value const& primitiveValue)
+    {
+    if (SUCCESS != ReadIndices(indices, primitiveValue["attributes"], "_BATCHID"))
+        {
+        // ###TODO: This can occur and is fine...e.g. reality models...but want to catch it for testing purposes.
+        BeAssert(false && "Missing batch IDs");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnTileReader::_ReadFeatures(bvector<uint32_t>& indices, Json::Value const& primitiveValue)
     {
     if (primitiveValue.isMember("featureID"))
         {
@@ -527,7 +520,7 @@ BentleyStatus GltfReader::ReadFeatures(bvector<uint32_t>& indices, Json::Value c
 BentleyStatus     GltfReader::ReadFeatures(MeshR mesh, Json::Value const& primitiveValue)
     {
     bvector <uint32_t>  indices;
-    if (SUCCESS != ReadFeatures(indices, primitiveValue) || (indices.size() > 1 && indices.size() != mesh.Points().size()))
+    if (SUCCESS != _ReadFeatures(indices, primitiveValue) || (indices.size() > 1 && indices.size() != mesh.Points().size()))
         {
         BeAssert(false && "Missing feature IDs");
         return ERROR;
@@ -709,6 +702,7 @@ ReadStatus B3dmReader::ReadTile(Render::Primitives::GeometryCollectionR geometry
     if (!header.Read(m_buffer))
         return ReadStatus::InvalidHeader;
 
+#if defined(READ_BATCHTABLE) // code below is forgetting to read the feature table too. Nobody appears to do anything with m_batchData.
     bvector<char>       batchTableData(header.batchTableStrLen);
     Json::Value         batchTableValue;
     Json::Reader        reader;                                                                                                                        
@@ -718,6 +712,10 @@ ReadStatus B3dmReader::ReadTile(Render::Primitives::GeometryCollectionR geometry
     
     if(! reader.parse(batchTableData.data(), batchTableData.data() + header.batchTableStrLen, m_batchData))
         return ReadStatus::BatchTableParseError;
+#else
+    if (!m_buffer.Advance(header.featureTableStrLen + header.featureTableBinaryLen + header.batchTableStrLen + header.batchTableBinaryLen))
+        return ReadStatus::ReadError;
+#endif
 
     return ReadGltf (geometry);
     }
@@ -946,6 +944,7 @@ private:
         {
         return displayParamsFromJson(materialValue, m_model.GetDgnDb(), m_renderSystem);
         }
+    BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue) override { BeAssert(false); return ERROR; } // unused...
 
     QPoint3d const* ReadVertices(uint32_t& numVertices, Json::Value const& json);
     BufferData16 ReadColorIndices(Json::Value const& json) { return ReadBufferData16(json["attributes"], "_COLORINDEX"); }
@@ -1463,23 +1462,55 @@ ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builders, StreamBuffe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+ReadStatus ReadWebTile(Render::Primitives::GeometryCollectionR geom, StreamBufferR buffer, GeometricModelR model, Render::System& system)
+    {
+    TileHeader header;
+    if (!header.Read(buffer))
+        return ReadStatus::InvalidHeader;
+
+    buffer.ResetPos();
+    switch (header.format)
+        {
+        case Format::B3dm:
+            return B3dmReader(buffer, model, system).ReadTile(geom);
+        default:
+            BeAssert(false && "Unsupported tile format");
+            return ReadStatus::ReadError;
+        }
+    }
+
+struct ExtFmtPair { Utf8CP ext; Format fmt; };
+static constexpr ExtFmtPair s_extFmtPairs[] =
+    {
+        { "b3dm", Format::B3dm },
+        { "i3dm", Format::I3dm },
+        { "vctr", Format::Vector },
+        { "pnts", Format::PointCloud },
+        { "cmpt", Format::Composite },
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 Format TileHeader::FormatFromFileExtension(Utf8CP ext)
     {
-    struct Pair { Utf8CP ext; Format fmt; };
-    static constexpr Pair s_lookup[] =
-        {
-            { "b3dm", Format::B3dm },
-            { "i3dm", Format::I3dm },
-            { "vctr", Format::Vector },
-            { "pnts", Format::PointCloud },
-            { "cmpt", Format::Composite },
-        };
-
-    for (auto const& pair : s_lookup)
+    for (auto const& pair : s_extFmtPairs)
         if (0 == BeStringUtilities::Stricmp(ext, pair.ext))
             return pair.fmt;
 
     return Format::Unknown;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP TileHeader::FileExtensionFromFormat(Format fmt)
+    {
+    for (auto const& pair : s_extFmtPairs)
+        if (pair.fmt == fmt)
+            return pair.ext;
+
+    return nullptr;
     }
 
 END_TILETREE_IO_NAMESPACE

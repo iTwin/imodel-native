@@ -235,19 +235,7 @@ AppData::AppData(SpatialViewDefinitionCR defaultView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AppData::Read(BeFileNameCR filename)
     {
-    BeFile file;
-    ASSERT_EQ(BeFileStatus::Success, file.Open(filename.c_str(), BeFileAccess::Read));
-    bvector<Byte> bytes;
-    ASSERT_EQ(BeFileStatus::Success, file.ReadEntireFile(bytes));
-    ASSERT_FALSE(bytes.empty());
-
-    auto begin = reinterpret_cast<Utf8CP>(bytes.data());
-    auto end = begin + bytes.size();
-
-    Json::Value json;
-    Json::Reader reader(Json::Features::strictMode());
-    ASSERT_TRUE(reader.parse(begin, end, json));
-
+    Json::Value json = JsonUtil::Read(filename);
     Read(json);
     }
 
@@ -508,7 +496,7 @@ void PublishedTilesets::ProcessTilesetDir(BeFileNameCR dir)
         if (isDir || !modelId.IsValid() || filename.GetExtension().EqualsI(L"json"))
             continue;
 
-        auto entries = (*this)[modelId];
+        auto& entries = (*this)[modelId];
         entries.insert(PublishedTile(filename));
         }
     }
@@ -532,5 +520,104 @@ PublishedTile::PublishedTile(BeFileNameCR filename) : m_filenameWithoutExtension
     auto pos = filename.rfind(L'.');
     EXPECT_FALSE(WString::npos == pos);
     m_filenameWithoutExtension.erase(pos);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublishedTile::ReadJson() const
+    {
+    BeFileName filename = m_filenameWithoutExtension;
+    filename.AppendExtension(L"json");
+    return JsonUtil::Read(filename);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value JsonUtil::Read(BeFileNameCR filename)
+    {
+    BeFile file;
+    EXPECT_EQ(BeFileStatus::Success, file.Open(filename.c_str(), BeFileAccess::Read));
+    bvector<Byte> bytes;
+    EXPECT_EQ(BeFileStatus::Success, file.ReadEntireFile(bytes));
+    EXPECT_FALSE(bytes.empty());
+
+    auto begin = reinterpret_cast<Utf8CP>(bytes.data());
+    auto end = begin + bytes.size();
+
+    Json::Value json;
+    Json::Reader reader(Json::Features::strictMode());
+    EXPECT_TRUE(reader.parse(begin, end, json));
+
+    return json;
+    }
+
+BEGIN_BENTLEY_RENDER_NAMESPACE
+
+//=======================================================================================
+// ###TODO: Move FakeRenderSystem.h from dgnplatform unit tests to backdoor or some
+// other shared location.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct FakeSystem : System
+{
+protected:
+    int _Initialize(void*, bool) override { return SUCCESS; }
+
+    TargetPtr _CreateTarget(Device& dev, double tileSizeMod) override { BeAssert(false); return nullptr; }
+    TargetPtr _CreateOffscreenTarget(Device& dev, double tileSizeMod) { return _CreateTarget(dev, tileSizeMod); }
+
+    MaterialPtr _GetMaterial(RenderMaterialId id, DgnDbR db) const override { return nullptr; }
+    MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; }
+    TexturePtr _GetTexture(DgnTextureId, DgnDbR) const override { return nullptr; }
+    TexturePtr _GetTexture(GradientSymbCR, DgnDbR) const override { return nullptr; }
+    TexturePtr _CreateTexture(ImageCR, Texture::CreateParams const&) const override { return nullptr; }
+    TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, Texture::CreateParams const&) const override { return nullptr; }
+    TexturePtr _CreateGeometryTexture(GraphicCR, DRange2dCR, bool, bool) const override { return nullptr; }
+    LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override { return nullptr; }
+
+    GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return nullptr; }
+
+    GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const { return nullptr; }
+    GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const { BeAssert(false); return nullptr; }
+    GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const { return nullptr; }
+    GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const { return nullptr; }
+    GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb) const { return nullptr; }
+    GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb) const { return nullptr; }
+    GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const { return nullptr; }
+    GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const { return nullptr; }
+    GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const { return nullptr; }
+    GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const { return nullptr; }
+
+    uint32_t _GetMaxFeaturesPerBatch() const override { return 0x7fffffff; }
+};
+
+END_BENTLEY_RENDER_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::Primitives::GeometryCollection PublishedTile::ReadGeometry(GeometricModelR model) const
+    {
+    Render::Primitives::GeometryCollection geom;
+
+    Utf8CP ext = TileIO::TileHeader::FileExtensionFromFormat(m_format);
+    EXPECT_FALSE(nullptr == ext);
+    if (nullptr == ext)
+        return geom;
+
+    BeFile file;
+    StreamBuffer bytes;
+    BeFileName filename = m_filenameWithoutExtension;
+    filename.AppendExtension(WString(ext, true).c_str());
+    EXPECT_EQ(BeFileStatus::Success, file.Open(filename.c_str(), BeFileAccess::Read));
+    EXPECT_EQ(BeFileStatus::Success, file.ReadEntireFile(bytes));
+    EXPECT_FALSE(bytes.empty());
+
+    FakeSystem system;
+    EXPECT_EQ(TileIO::ReadStatus::Success, TileIO::ReadWebTile(geom, bytes, model, system));
+
+    return geom;
     }
 
