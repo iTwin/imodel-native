@@ -32,7 +32,6 @@ enum class HexFormatOptions
     Uppercase         = 1 << 2,       // Use uppercase hexadecimal digits; also affects case of prefix. Analogous to "%X" printf specifier.
     LeadingZeros      = 1 << 3,       // Pad with leading zeros to meet minimum precision and/or width. Analogous to '0' printf option.
     UsePrecision      = 1 << 4,       // Without this option, default precision of 1 is used and leading zeros are applied to fulfill minimum width based on HexFormatOptions::LeadingZeros option.
-                                      // With this option, leading zeros are not used to satisfy minimum width regardless of HexFormatOptions::LeadingZeros, but are used to satisfy minimum precision, in keeping with Snwprintf()
     };
 
 /**

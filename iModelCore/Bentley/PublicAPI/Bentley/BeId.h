@@ -82,29 +82,26 @@ public:
     //! must ensure this to avoid unexpected behavior. 
     //!
     //! @param[in,out] stringBuffer The output buffer for the id string. Must be large enough
-    //! @param[in] useHex if UseHex::Yes, output will be in hex with leading "0X". Will pad leading zeros to length of 16 charaters.
     //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
     //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
+    //! @param[in] useHex if UseHex::Yes, output will be in hex with leading "0x".
     void ToString(Utf8P stringBuffer, UseHex useHex=UseHex::No) const 
         {
-//        if (!IsValid())
-//            {
-//            stringBuffer[0] = '0';
-//            stringBuffer[1] = 0;
-//            return;
-//            }
+        if (!IsValid())
+            {
+            stringBuffer[0] = '0';
+            stringBuffer[1] = 0;
+            return;
+            }
 
         if (useHex == UseHex::Yes)
-            {
-            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
-            // BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase | (int) HexFormatOptions::LeadingZeros), 16);
-            }
+            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix));
         else
             BeStringUtilities::FormatUInt64(stringBuffer, m_id);
         }
 
     //! Converts this BeInt64Id to a string representation.
-    //! @param[in] useHex set to Yes to create a hexidecimal string with leading "0X"
+    //! @param[in] useHex set to Yes to create a hexadecimal string with leading "0x"
     //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want to avoid allocating Utf8Strings.
     Utf8String ToString(UseHex useHex=UseHex::No) const
         {
@@ -116,7 +113,7 @@ public:
     Utf8String ToHexStr() const {return ToString(UseHex::Yes);}
 
     //! Parse a string into a BeInt64Id
-    //! @remarks To parse correctly, the id string must contain an unsigned number in decimal or hexidecimal format.
+    //! @remarks To parse correctly, the id string must contain an unsigned number in decimal or hexadecimal format.
     //! @param[in] idString String to parse
     //! @param[in] status optional status to distinguish between illegal input and invalid value
     static BeInt64Id FromString(Utf8CP idString, BentleyStatus* status=nullptr) {return BeInt64Id(BeStringUtilities::ParseUInt64(idString, status));}
