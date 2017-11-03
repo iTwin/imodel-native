@@ -37,12 +37,14 @@ public:
 	virtual Dgn::SubjectCPtr _FindJob() override;
 	virtual void _OnDocumentDeleted(Utf8StringCR docId, Dgn::iModelBridgeSyncInfoFile::ROWID docSyncInfoid) override;
 
+	static WCharCP GetRegistrySubKey() { return L"OpenRoads ConceptStation Bridge"; }
+
 	CS06Bridge() {}
 };
 
 extern "C"
 {
-	CS06BRIDGE_EXPORT Dgn::iModelBridge* iModelBridge_getInstance();
+	CS06BRIDGE_EXPORT Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName);
 	CS06BRIDGE_EXPORT void iModelBridge_getAffinity(Dgn::iModelBridge::BridgeAffinity& bridgeAffinity,
 		BeFileName const& affinityLibraryPath, BeFileName const& sourceFileName);
 };

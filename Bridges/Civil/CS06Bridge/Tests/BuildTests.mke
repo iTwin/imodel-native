@@ -1,0 +1,31 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: CS06Bridge/Tests/BuildTests.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)CS06Bridge
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE= $(baseDir)cs06bridge_ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/CS06Bridge/UnitTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+%ifdef UsePublishedApi
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/CS06Bridge/
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

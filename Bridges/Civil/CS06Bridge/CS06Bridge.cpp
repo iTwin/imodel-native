@@ -180,8 +180,9 @@ BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-extern "C" Dgn::iModelBridge* iModelBridge_getInstance()
+extern "C" Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
     {
+	BeAssert(0 == BeStringUtilities::Wcsicmp(bridgeName, CS06Bridge::GetRegistrySubKey()));
     return new CS06Bridge();
     }
 

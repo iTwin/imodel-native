@@ -245,14 +245,15 @@
   <!-- ORDBridgeTestApp    This is a test application. It links with and runs the bridge in a standalone mode.                                 -->
   <!-- ........................................................................................................................................ -->
 
-  <!-- <Product Name="CS06BridgeTestApp">
+  <Product Name="CS06BridgeTestApp">
     <SubPart PartName="CS06BridgeTestAppExe" />
     <Directories DirectoryListName="CS06BridgeTestAppDirectoryList" />
-  </Product> -->
+  </Product>
 
-  <!-- <ProductDirectoryList ListName="CS06BridgeTestAppDirectoryList">
+  <ProductDirectoryList ListName="CS06BridgeTestAppDirectoryList">
     <ProductDirectory Name="ApplicationRoot"                Path=""/>
     <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"  LibType="static"/>
     <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
     <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
@@ -263,76 +264,76 @@
     <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
     <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
     <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
-  </ProductDirectoryList> -->
+    <ProductDirectory Name="CSDgnDb06Dlls" RelativeTo="ApplicationRoot" Path="CSDgnDb06"/>
+  </ProductDirectoryList>
 
-  <!-- <Part Name="CS06BridgeTestAppExe" BentleyBuildMakeFile="CS06Bridge/TestApp/CS06BridgeTestApp.mke" >
+  <Part Name="CS06BridgeTestAppExe" BentleyBuildMakeFile="CS06Bridge/TestApp/CS06BridgeTestApp.mke" >
     <SubPart PartName="CS06BridgeLibrary"/>
     <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
     <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
     <Bindings>
       <Files ProductDirectoryName="ApplicationRoot">Delivery/CS06BridgeTestApp$(exeext)</Files>
     </Bindings>
-  </Part> -->
+  </Part>
 
-  <!-- <Part Name="PrewireForCS06BridgeUnitTests" BentleyBuildMakeFile="CS06Bridge/Tests/prewire.mke">
+  <Part Name="PrewireForCS06BridgeUnitTests" BentleyBuildMakeFile="CS06Bridge/Tests/prewire.mke">
     <SubPart PartName="CS06-TestFiles" PartFile="CivilTestFiles" Repository="Civil-TestFiles"/>
     <Bindings>
       <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="CiviliModelBridgesCS06Bridge" SubPartDirectory="UnitTests/CivilCS06Bridge"> Delivery/UnitTests/cs06bridge_ignore_list.txt</Files>
     </Bindings>
-  </Part> -->
+  </Part>
 
-  <!-- <Part Name="BackdoorForCS06BridgeUnitTests" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorCS06Bridge">
+  <Part Name="BackdoorForCS06BridgeUnitTests" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorCS06Bridge">
     <SubProduct ProductName="CS06BridgeTestApp"/>
     <SubPart PartName="PrewireForCS06BridgeUnitTests" />
-    <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesCS06Bridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorCS06Bridge"/>
     </Bindings>
-  </Part> -->
+  </Part>
 
-  <!-- <Part Name="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedCS06Bridge">
+  <Part Name="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedCS06Bridge">
     <SubPart PartName="BackdoorForCS06BridgeUnitTests" />
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesCS06Bridge/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublishedCS06Bridge"/>
     </Bindings>
-  </Part> -->
+  </Part>
 
-  <!-- <Part Name="CiviliModelBridgesCS06Bridge-UnitTests-Published" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PublishedCS06Bridge">
+  <Part Name="CiviliModelBridgesCS06Bridge-UnitTests-Published" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PublishedCS06Bridge">
     <SubPart PartName="BackdoorForCS06BridgeUnitTests" />
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesCS06Bridge/Published" SourceName="Delivery/UnitTests/Objects/PublishedCS06Bridge"/>
     </Bindings>
-  </Part> -->
+  </Part>
 
   <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
   <!-- Lay out the test product according to the standard BeGTest layout. -->
-  <!-- <Part Name="CS06BridgeTests"> -->
+  <Part Name="CS06BridgeTests">
     <!-- We probabaly need a PublishedAPI part for this product.  If we do, then uncomment the following line -->
     <!-- <SubPart PartName="UnitTests-Published" /> -->
-   <!-- <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-Published" />
-    <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" /> -->
+    <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-Published" />
+    <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" />
     
     <!-- We can also have Scenario and Performance tests, they'll get their own Parts -->
 
     <!-- Conceptstation calls the sqlang parts here too -->
-  <!-- </Part> -->
+  </Part>
 
-  <!-- <Product Name="CS06-CiviliModelBridges-Tests"> -->
+  <Product Name="CS06-CiviliModelBridges-Tests">
     <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
 
-    <!-- <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-    <SubPart PartName="CS06BridgeTests"/> -->
+    <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+    <SubPart PartName="CS06BridgeTests"/>
     <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-    <!-- <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
-  </Product> -->
+    <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
+  </Product>
 
   <!-- Build a gtest exe to run the tests -->
-  <!-- <Product Name="Gtest-CS06-CiviliModelBridges-Tests">
+  <Product Name="Gtest-CS06-CiviliModelBridges-Tests">
     <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
     <SubPart PartName="Gtest-CS06" />
-  </Product> -->
+  </Product>
 
-  <!-- <Part Name="Gtest-CS06" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+  <Part Name="Gtest-CS06" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CS06CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CS06-CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -342,15 +343,15 @@
       <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CS06CiviliModelBridgesTests/Assemblies/*</Files>
       <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CS06CiviliModelBridgesTests/Assets" />
     </Bindings>
-  </Part> -->
+  </Part>
 
-  <!-- <Part Name="RunGtest-CS06" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CS06-CiviliModelBridges-Tests -dGTEST_NAME=CS06CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+  <Part Name="RunGtest-CS06" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CS06-CiviliModelBridges-Tests -dGTEST_NAME=CS06CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="Gtest-CS06-CiviliModelBridges-Tests" />
     <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
-  </Part> -->
+  </Part>
 
-  <!-- <Part Name=s"CS06CiviliModelBridgesTested">
+  <Part Name="CS06CiviliModelBridgesTested">
     <SubPart PartName="RunGtest-CS06" />
-  </Part> -->
+  </Part>
 
 </BuildContext>
