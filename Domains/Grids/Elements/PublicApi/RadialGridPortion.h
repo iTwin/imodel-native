@@ -15,6 +15,8 @@
 
 BEGIN_GRIDS_NAMESPACE
 
+#define CIRCULAR_GRID_EXTEND_LENGTH 5
+
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
@@ -39,12 +41,12 @@ public:
 
         //! Creates create parameters for radial grid
         //! @param[in] model                model to create the grid in
-        //! @param[in] planeCount           angle between first and last grid planes
+        //! @param[in] planeCount           grid planes count
         //! @param[in] circularCount        grid arcs count
-        //! @param[in] planeIterationAngle  angle between each grid plane
+        //! @param[in] planeIterationAngle  angle between each grid plane in radians
         //! @param[in] circularInterval     distance between grid arcs
-        //! @param[in] length               length of grid lines
-        //! @param[in] height               height of grid lines
+        //! @param[in] length               length of grid planes
+        //! @param[in] height               height of grid surfaces
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
                                double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 1)) :

@@ -19,8 +19,6 @@ USING_NAMESPACE_BUILDING
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (RadialGridPortion)
 
-#define CIRCULAR_GRID_EXTEND_LENGTH 5
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -81,7 +79,7 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params, Grid
         radialGrid.push_back (baseGridPlane);
 
     // Create plane grids
-    for (int i = 1; i <= params.m_planeCount; ++i)
+    for (int i = 1; i < params.m_planeCount; ++i)
         {
         GridPlaneSurfacePtr planeSurface = dynamic_cast<GridPlaneSurface *>(baseGridPlane->Clone().get());
         if (!planeSurface.IsValid())

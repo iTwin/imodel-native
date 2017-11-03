@@ -97,16 +97,16 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Extension = true
         OrthogonalGridPortion::StandardCreateParams GetCreateParamsForOrthogonalGridConstrainedExtended();
 
-        ////! Utility for testing
-        ////! returns create params for radial grid with values:
-        ////! Plane count = 7
-        ////! Circular count = 5
-        ////! Plane iteration angle = 7
-        ////! Circular interval = 13
-        ////! Length = 70
-        ////! Height = 50
-        ////! Extension = false;
-        //RadialGridPortion::CreateParams GetCreateParamsForRadialGrid();
+        //! Utility for testing
+        //! returns create params for radial grid with values:
+        //! Plane count = 7
+        //! Circular count = 5
+        //! Plane iteration angle = 7 (DEG)
+        //! Circular interval = 13
+        //! Length = 70
+        //! Height = 50
+        //! Extension = false;
+        RadialGridPortion::CreateParams GetCreateParamsForRadialGrid();
     };
 
 //---------------------------------------------------------------------------------------
@@ -231,13 +231,25 @@ OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetCreateParamsFor
                                                        "Constrained Grid");
     }
 
-////---------------------------------------------------------------------------------------
-//// @bemethod                                      Haroldas.Vitunskas              11/2017
-////--------------+---------------+---------------+---------------+---------------+-------- 
-//RadialGridPortion::CreateParams GetCreateParamsForRadialGrid()
-//    {
-//
-//    }
+//---------------------------------------------------------------------------------------
+// @bemethod                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+RadialGridPortion::CreateParams GridsTestFixture::GetCreateParamsForRadialGrid()
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    DVec3d normal = DVec3d::From(0.0, 0.0, 1.0);
+    return RadialGridPortion::CreateParams(m_model.get(),
+                                           db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                           7, /*plane count*/
+                                           5, /*circular count*/
+                                           7 * msGeomConst_pi / 180, /*plane iteration angle*/
+                                           13, /*circular interval*/
+                                           70, /*length*/
+                                           50, /*height*/
+                                           "Radial grid",
+                                           false, /*extend heihgt*/
+                                           normal);
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Jonas.Valiunas                  10/2017
@@ -1625,3 +1637,386 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, RadialGrid_Created)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    RadialGridPortion::CreateParams createParams = GetCreateParamsForRadialGrid();
+
+    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is valid and has correct number of elements
+    /////////////////////////////////////////////////////////////
+    ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
+
+    ASSERT_TRUE(radialGrid->GetSurfacesModel().IsValid()) << "Failed to get radialGrid grid surfaces model";
+
+    int numSurfaces = radialGrid->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_TRUE(numSurfaces == 12) << "incorrect number of gridSurfaces in radialGrid";
+
+
+    /////////////////////////////////////////////////////////////
+    // Check if axes are valid and have correct number of elements
+    /////////////////////////////////////////////////////////////
+    ElementIterator axesIterator = radialGrid->MakeAxesIterator();
+    bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
+    int numAxes = axesIds.size();
+    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in radialGrid";
+
+    GridAxisCPtr planeAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    ASSERT_TRUE(planeAxis.IsValid()) << "plane axis is not present";
+
+    GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+    ASSERT_TRUE(arcAxis.IsValid()) << "arc axis is not present";
+
+    int numPlanes = planeAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_EQ(7, numPlanes) << "incorrect number of elements in plane axis";
+
+    int numArcs = arcAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_EQ(5, numArcs) << "incorrect number of elements in arc axis";
+
+    /////////////////////////////////////////////////////////////
+    // Check if axes elements are valid
+    /////////////////////////////////////////////////////////////
+    bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridPlaneSurfaceCPtr> planeElements;
+    for (DgnElementId planeElementId : planeElementIds)
+        {
+        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        ASSERT_TRUE(plane.IsValid()) << "plane element invalid";
+        planeElements.push_back(plane);
+        }
+
+    bvector<DgnElementId> arcElementIds = arcAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridArcSurfaceCPtr> arcElements;
+    for (DgnElementId arcElementId : arcElementIds)
+        {
+        GridArcSurfaceCPtr arc = db.Elements().Get<GridArcSurface>(arcElementId);
+        ASSERT_TRUE(arc.IsValid()) << "arc element invalid";
+        arcElements.push_back(arc);
+        }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid elements have correct placement
+    /////////////////////////////////////////////////////////////
+    bvector<GridSurfaceCPtr> allElements;
+    allElements.insert(allElements.end(), planeElements.begin(), planeElements.end());
+    allElements.insert(allElements.end(), arcElements.begin(), arcElements.end());
+    
+    // all elements placement origins should be: (0, 0, 0).
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(DPoint3d::From(0, 0, 0).AlmostEqual(surface->GetPlacement().GetOrigin(), 0.1)) << "Grid surface origin is incorrect";
+        }
+
+    // all plane elements rotation angle should be i * iteration_angle = i * 7 * msGeomConst_pi / 180
+    for (size_t i = 0; i < planeElements.size(); ++i)
+        {
+        GridPlaneSurfaceCPtr plane = planeElements[i];
+
+        ASSERT_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        }
+
+    // all arc elements rotation angle should be 0
+    for (GridArcSurfaceCPtr arc : arcElements)
+        {
+        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid elements have correct length and height
+    /////////////////////////////////////////////////////////////
+    // grid planes length should be 70.
+    for (GridPlaneSurfaceCPtr plane : planeElements)
+        {
+        double length = 0;
+        ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid plane length should be accessible";
+        ASSERT_EQ(70, length) << "Grid plane length is incorrect";
+        }
+
+    // i-th grid arcs length should be 2 * PI * r * ((theta) / 360)
+
+    for (size_t i = 0; i < arcElements.size(); ++i)
+        {
+        GridArcSurfaceCPtr arc = arcElements[i];
+
+        double r = (i + 1) * 13;
+        double extendLength = (2 * UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH)) / r;
+        double theta = (7 * 7) * msGeomConst_pi / 180 + extendLength;
+        double expectedLength = r * theta;
+
+        double length = 0;
+        ASSERT_EQ(BentleyStatus::SUCCESS, arc->TryGetLength(length)) << "Grid arc length should be accessible";
+        ASSERT_TRUE(std::fabs(expectedLength - length) < 0.1) << "Grid arc length is incorrect";
+        }
+
+    // grid surfaces height should be 50
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        double height = 0;
+        ASSERT_EQ(BentleyStatus::SUCCESS, surface->TryGetHeight(height)) << "Grid surface height should be accessible";
+        ASSERT_EQ(50, height) << "Grid surface height is incorrect";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    RadialGridPortion::CreateParams createParams = GetCreateParamsForRadialGrid();
+
+    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+
+    db.SaveChanges();
+
+    if (radialGrid.IsNull())
+        {
+        ASSERT_TRUE(false) << "radial grid portion is invalid. See GridsTestFixture:RadialGrid_Created";
+        return;
+        }
+
+    DPoint3d newBaseOrigin = DPoint3d::From(43, 57, 0);
+    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->TranslateToPoint(newBaseOrigin)) << "radial grid translation was not successful";
+    db.SaveChanges();
+
+    bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
+    if (2 != axesIds.size())
+        {
+        ASSERT_TRUE(false) << "Grid axes number is incorrect. See GridsTestFixture:RadialGrid_Created";
+        return;
+        }
+
+    GridAxisCPtr planeAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+
+    bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridPlaneSurfaceCPtr> planeElements;
+    for (DgnElementId planeElementId : planeElementIds)
+        {
+        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        if (surface.IsNull())
+            {
+            ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
+            return;
+            }
+
+        planeElements.push_back(surface);
+        }
+
+    bvector<DgnElementId> arcElementIds = arcAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridArcSurfaceCPtr> arcElements;
+    for (DgnElementId arcElementId : arcElementIds)
+        {
+        GridArcSurfaceCPtr surface = db.Elements().Get<GridArcSurface>(arcElementId);
+        if (surface.IsNull())
+            {
+            ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
+            return;
+            }
+
+        arcElements.push_back(surface);
+        }
+
+    bvector<GridSurfaceCPtr> allElements;
+    allElements.insert(allElements.end(), planeElements.begin(), planeElements.end());
+    allElements.insert(allElements.end(), arcElements.begin(), arcElements.end());
+
+    // all elements placement origins should be: (43, 57, 0).
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(DPoint3d::From(43, 57, 0).AlmostEqual(surface->GetPlacement().GetOrigin(), 0.1)) << "Grid surface origin is incorrect";
+        }
+
+    // all plane elements rotation angle should be i * iteration_angle = i * 7 * msGeomConst_pi / 180
+    for (size_t i = 0; i < planeElements.size(); ++i)
+        {
+        GridPlaneSurfaceCPtr plane = planeElements[i];
+
+        ASSERT_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        }
+
+    // all arc elements rotation angle should be 0
+    for (GridArcSurfaceCPtr arc : arcElements)
+        {
+        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    RadialGridPortion::CreateParams createParams = GetCreateParamsForRadialGrid();
+
+    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+
+    db.SaveChanges();
+
+    if (radialGrid.IsNull())
+        {
+        ASSERT_TRUE(false) << "radial grid portion is invalid. See GridsTestFixture:RadialGrid_Created";
+        return;
+        }
+
+    double newAngle = msGeomConst_pi / 4; // 45 DEG
+    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->RotateToAngleXY(newAngle)) << "radial grid rotation was not successful";
+    db.SaveChanges();
+
+    bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
+    if (2 != axesIds.size())
+        {
+        ASSERT_TRUE(false) << "Grid axes number is incorrect. See GridsTestFixture:RadialGrid_Created";
+        return;
+        }
+
+    GridAxisCPtr planeAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+
+    bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridPlaneSurfaceCPtr> planeElements;
+    for (DgnElementId planeElementId : planeElementIds)
+        {
+        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        if (surface.IsNull())
+            {
+            ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
+            return;
+            }
+
+        planeElements.push_back(surface);
+        }
+
+    bvector<DgnElementId> arcElementIds = arcAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridArcSurfaceCPtr> arcElements;
+    for (DgnElementId arcElementId : arcElementIds)
+        {
+        GridArcSurfaceCPtr surface = db.Elements().Get<GridArcSurface>(arcElementId);
+        if (surface.IsNull())
+            {
+            ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
+            return;
+            }
+
+        arcElements.push_back(surface);
+        }
+
+    bvector<GridSurfaceCPtr> allElements;
+    allElements.insert(allElements.end(), planeElements.begin(), planeElements.end());
+    allElements.insert(allElements.end(), arcElements.begin(), arcElements.end());
+
+    // all elements placement origins should be: (0, 0, 0).
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(DPoint3d::From(0, 0, 0).AlmostEqual(surface->GetPlacement().GetOrigin(), 0.1)) << "Grid surface origin is incorrect";
+        }
+
+    // all plane elements rotation angle should be newAngle + i * iteration_angle = msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180
+    for (size_t i = 0; i < planeElements.size(); ++i)
+        {
+        GridPlaneSurfaceCPtr plane = planeElements[i];
+
+        ASSERT_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        }
+
+    // all arc elements rotation angle should be msGeomConst_pi / 4
+    for (GridArcSurfaceCPtr arc : arcElements)
+        {
+        ASSERT_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    RadialGridPortion::CreateParams createParams = GetCreateParamsForRadialGrid();
+
+    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+
+    db.SaveChanges();
+
+    if (radialGrid.IsNull())
+        {
+        ASSERT_TRUE(false) << "radial grid portion is invalid. See GridsTestFixture:RadialGrid_Created";
+        return;
+        }
+
+    DPoint3d newBaseOrigin = DPoint3d::From(43, 57, 0);
+    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->TranslateToPoint(newBaseOrigin)) << "radial grid translation was not successful";
+
+    double newAngle = msGeomConst_pi / 4; // 45 DEG
+    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->RotateToAngleXY(newAngle)) << "radial grid rotation was not successful";
+    db.SaveChanges();
+
+    bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
+    if (2 != axesIds.size())
+        {
+        ASSERT_TRUE(false) << "Grid axes number is incorrect. See GridsTestFixture:RadialGrid_Created";
+        return;
+        }
+
+    GridAxisCPtr planeAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+
+    bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridPlaneSurfaceCPtr> planeElements;
+    for (DgnElementId planeElementId : planeElementIds)
+        {
+        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        if (surface.IsNull())
+            {
+            ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
+            return;
+            }
+
+        planeElements.push_back(surface);
+        }
+
+    bvector<DgnElementId> arcElementIds = arcAxis->MakeIterator().BuildIdList<DgnElementId>();
+    bvector<GridArcSurfaceCPtr> arcElements;
+    for (DgnElementId arcElementId : arcElementIds)
+        {
+        GridArcSurfaceCPtr surface = db.Elements().Get<GridArcSurface>(arcElementId);
+        if (surface.IsNull())
+            {
+            ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
+            return;
+            }
+
+        arcElements.push_back(surface);
+        }
+
+    bvector<GridSurfaceCPtr> allElements;
+    allElements.insert(allElements.end(), planeElements.begin(), planeElements.end());
+    allElements.insert(allElements.end(), arcElements.begin(), arcElements.end());
+
+    // all elements placement origins should be: (43, 57, 0).
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(DPoint3d::From(43, 57, 0).AlmostEqual(surface->GetPlacement().GetOrigin(), 0.1)) << "Grid surface origin is incorrect";
+        }
+
+    // all plane elements rotation angle should be newAngle + i * iteration_angle = msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180
+    for (size_t i = 0; i < planeElements.size(); ++i)
+        {
+        GridPlaneSurfaceCPtr plane = planeElements[i];
+
+        ASSERT_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        }
+
+    // all arc elements rotation angle should be msGeomConst_pi / 4
+    for (GridArcSurfaceCPtr arc : arcElements)
+        {
+        ASSERT_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        }
+    }
