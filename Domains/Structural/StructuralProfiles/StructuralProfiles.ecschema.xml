@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StructuralProfiles" alias="StrProf" version="01.00.00" description="Structural Profile Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECSchemaReference name="StructuralCommon" version="01.00.00" alias="sc" />        
+    <ECSchemaReference name="StructuralCommon" version="01.00.00" alias="sc" />
+    <ECStructClass typeName="CustomCardinalPointStruct" description ="Custom Cardinal point structure">
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="Coordinates" typeName="point2d"/>
+    </ECStructClass>
     <ECEntityClass typeName="Profile" description="A structural cross section profile (2D shape)." modifier="Abstract">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
