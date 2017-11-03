@@ -1,20 +1,19 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: logging/native/log4cxx/log4cxx.cpp $
+|     $Source: src/native/log4cxx/log4cxx.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma warning ( disable : 4786 )
 
 
-#include "log4cxx.h"
+#include "PublicAPI/log4cxx.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <bentley/bentley.h>
 
 #include <map>
 
@@ -27,6 +26,7 @@
 #include <log4cxx/fileappender.h>
 #include <log4cxx/ndc.h>
 #include <log4cxx/mdc.h>
+#include "utf8/checked.h"
 
 using namespace log4cxx;
 using namespace log4cxx::helpers;
@@ -67,7 +67,7 @@ class LoggerMap
             return reinterpret_cast<ILogProviderContext *>(pLogger);
             };
 
-        Logger* getLogger ( LPCWSTR nameSpace )
+        Logger* getLogger ( const wchar_t* nameSpace )
             {
             Logger* pLogger = Logger::getLogger ( nameSpace );
 
@@ -149,7 +149,7 @@ SEVERITY    sev
 +---------------+---------------+---------------+---------------+---------------+------*/
 Log4cxxProvider::Log4cxxProvider
 (
-LPCWSTR name
+const wchar_t* name
 ) : m_pMap ( NULL ), m_configRefresh(0)
     {
     m_pMap = new LoggerMap;
@@ -213,15 +213,17 @@ int Log4cxxProvider::BasicConfiguration ( void )
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Log4cxxProvider::LoadConfiguration
 (
-LPCWSTR configFile
+const wchar_t* configFile
 )
     {
-    if ( NULL == configFile || NULL == configFile[0] )
+    if ( NULL == configFile || L'\0' == configFile[0] )
         {
         throw std::invalid_argument ( "configFile" );
         }
 
+#ifdef BENTLEY_WIN32
     assert ( !IsBadStringPtr ( configFile, 256 ) );
+#endif
 
     try
         {
@@ -240,16 +242,18 @@ LPCWSTR configFile
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Log4cxxProvider::LoadAndWatchConfiguration
 (
-LPCWSTR configFile,
+wchar_t const* configFile,
 long    delay
 )
     {
-    if ( NULL == configFile || NULL == configFile[0] )
+    if ( NULL == configFile || L'\0' == configFile[0] )
         {
         throw std::invalid_argument ( "configFile" );
         }
 
+#ifdef BENTLEY_WIN32
     assert ( !IsBadStringPtr ( configFile, 256 ) );
+#endif
     assert ( DEFAULT_DELAY == helpers::FileWatchdog::DEFAULT_DELAY );
     try
         {
@@ -273,7 +277,7 @@ std::vector<std::wstring>&  fileNames
 )
     {
     LoggerPtr logger = Logger::getRootLogger();
-    if (LoggerPtr(NULL) == logger)
+    if (LoggerPtr(0) == logger)
         return -1;
 
     AppenderList appenders = logger->getAllAppenders();
@@ -298,7 +302,7 @@ std::vector<std::wstring>&  fileNames
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Log4cxxProvider::PushThreadContext
 (
-LPCWSTR context
+const wchar_t* context
 )
     {
     NDC::push(context);
@@ -325,8 +329,8 @@ void Log4cxxProvider::ClearThreadContext ( void )
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Log4cxxProvider::AddContext
 (
-LPCWSTR key,
-LPCWSTR context
+const wchar_t* key,
+const wchar_t* context
 )
     {
     MDC::put(key,context);
@@ -337,7 +341,7 @@ LPCWSTR context
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Log4cxxProvider::RemoveContext
 (
-LPCWSTR key
+const wchar_t* key
 )
     {
     MDC::remove(key);
@@ -357,7 +361,7 @@ void Log4cxxProvider::ClearContext ( void )
 +---------------+---------------+---------------+---------------+---------------+------*/
 int __stdcall Log4cxxProvider::CreateLogger
 (
-LPCWSTR nameSpace,
+const wchar_t* nameSpace,
 ILogProviderContext** ppContext
 )
     {
@@ -398,7 +402,7 @@ void __stdcall Log4cxxProvider::LogMessage
 (
 ILogProviderContext *  context,
 SEVERITY            sev,
-LPCWSTR             msg
+const wchar_t*             msg
 )
     {
     assert ( NULL != context );
@@ -411,6 +415,35 @@ LPCWSTR             msg
     assert ( logger != NULL );
 
     logger->log ( translateSeverity(sev), msg );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void __stdcall Log4cxxProvider::LogMessage
+(
+ILogProviderContext * context,
+SEVERITY sev,
+Utf8CP msg
+)
+    {
+    const wchar_t* converted = nullptr;
+    int lenght = (int)strlen (msg); 
+    
+#if defined (BENTLEY_WIN32)
+    int outStrCount = ::MultiByteToWideChar (CP_UTF8, 0, msg, lenght, NULL, 0);
+    std::wstring outStr; outStr.resize (outStrCount); // (allocates space for outStrCount + 1 wchar_t's)
+    ::MultiByteToWideChar (CP_UTF8, 0, msg, lenght, &outStr[0], outStrCount);
+    outStr[outStrCount] = '\0';
+    converted = outStr.c_str();
+#else
+    std::vector<char32_t> outBuff;
+    utf8::utf8to32(msg, (msg + lenght), std::back_inserter(outBuff));
+    std::wstring ws(outBuff.begin(), outBuff.end());
+    converted = ws.c_str();
+#endif
+
+    LogMessage(context, sev, converted);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,7 +471,7 @@ SEVERITY            sev
 +---------------+---------------+---------------+---------------+---------------+------*/
 int __stdcall Log4cxxProvider::SetSeverity
 (
-LPCWSTR     nameSpace,
+const wchar_t*     nameSpace,
 SEVERITY    sev
 )
     {
@@ -458,8 +491,8 @@ SEVERITY    sev
 +---------------+---------------+---------------+---------------+---------------+------*/
 int __stdcall Log4cxxProvider::SetOption
 (
-LPCWSTR attribName,
-LPCWSTR attribValue
+const wchar_t* attribName,
+const wchar_t* attribValue
 )
     {
     assert ( NULL != attribName );
@@ -476,7 +509,7 @@ LPCWSTR attribValue
         }
     else if ( 0 == wcscmp ( attribName, CONFIG_OPTION_CONFIG_REFRESH ) )
         {
-        m_configRefresh = _wtol ( attribValue );
+        m_configRefresh = wcstol ( attribValue, NULL, 10 );
         }
     else
         {
@@ -491,8 +524,8 @@ LPCWSTR attribValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 int __stdcall Log4cxxProvider::GetOption
 (
-LPCWSTR attribName,
-LPWSTR  attribValue,
+const wchar_t* attribName,
+wchar_t*  attribValue,
 unsigned int  valueSize
 )
     {
@@ -505,7 +538,7 @@ unsigned int  valueSize
         }
     else if ( 0 == wcscmp ( attribName, CONFIG_OPTION_CONFIG_REFRESH ) )
         {
-        _ltow ( m_configRefresh, attribValue, 10 );
+        wprintf( attribValue, "%d", m_configRefresh );
         }
     else if ( 0 == wcscmp ( attribName, CONFIG_OPTION_OUTPUT_FILE ) )
         {

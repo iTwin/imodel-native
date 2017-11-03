@@ -12,19 +12,22 @@
     <Part Name="LoggingNativeLog4cxxAtp" BMakeFile="src\native\log4cxx\atp\log4cxxtest.mke">
     </Part>
 
-    <Part Name="LoggingNativeLog4cxx" BMakeFile="src\native\log4cxx\log4cxx.mke" ApiNumber="B02">
+    <Part Name="LoggingNativeLog4cxx" BentleyBuildMakeFile="src/native/log4cxx/log4cxx.mke" ApiNumber="B02">
         <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
         <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
         <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
         <Bindings>
-            <Libs>Delivery\bentleylog4cxx$(libext)</Libs>
+            <PublicAPI Domain="BentleyLog4cxx"/>
+            <Libs>Delivery/$(stlibprefix)bentleylog4cxx$(libext)</Libs>
+            <Assemblies>Delivery/$(stlibprefix)bentleylog4cxx$(ApiNumber)$(shlibext)</Assemblies>
             <Assemblies>Delivery\bentleylog4cxx$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="LoggingNative" OnlyPlatforms="x86,x64" ExcludeLibType="Static">
-        <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
+    <Part Name="LoggingNative" OnlyPlatforms="x86,x64,Android*,iOS*" >
+        <!--This part provides Bentley PublicAPI-->
+        <SubPart PartName="Base"              PartFile="Bentley"    Repository="Bentley" />
         <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
         <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
         <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>

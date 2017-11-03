@@ -24,6 +24,8 @@ always:
 #-----------------------------------------------------------------------
 #       Include compile options and pw macros
 #-----------------------------------------------------------------------
+$(BuildContext)PublicAPI/BentleyLog4cxx : $(_MakeFilePath)PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
 nameToDefine = BSILOG_LOG4CXX_EXPORTS
 %include cdefapnd.mki
@@ -37,15 +39,15 @@ nameToDefine = LOG4CXX_STATIC
 dirToSearch = $(nativeIntDir)
 %include cincapnd.mki
 
-#dirToSearch = $(LIBSRC)log4cxx/log4cxx-0.10.0/src/main/include/
-#%include cincapnd.mki
+#Ignore unknown pragmas (i.e. pragma mark)
+LLVMCommonCompOpts  + -Wno-unknown-pragmas
 
 CCompPDBName = $(appName)
 
 #-----------------------------------------------------------------------
 #       Include Files
 #-----------------------------------------------------------------------
-Includes    =   $(baseDir)log4cxx.h $(BuildContext)PublicApi/Logging/bentleylogging.h
+Includes    =   $(baseDir)PublicAPI/log4cxx.h $(BuildContext)PublicApi/Logging/bentleylogging.h
 
 #-----------------------------------------------------------------------
 #       Compile Source
@@ -53,11 +55,13 @@ Includes    =   $(baseDir)log4cxx.h $(BuildContext)PublicApi/Logging/bentleylogg
 MultiCompileDepends=$(_MakeFileSpec) $(Includes)
 %include MultiCppCompileRule.mki
 
-$(o)log4cxx.obj     :   $(baseDir)log4cxx.cpp       ${MultiCompileDepends}
+$(o)log4cxx$(oext)     : $(baseDir)log4cxx.cpp       ${MultiCompileDepends}
 
-$(o)cinterface.obj  :   $(baseDir)cinterface.cpp    ${MultiCompileDepends}
+%if $(TARGET_PLATFORM)=="Windows"
+$(o)cinterface$(oext)  : $(baseDir)cinterface.cpp    ${MultiCompileDepends}
 
-$(o)dllmain.obj     :   $(baseDir)dllmain.cpp       ${MultiCompileDepends}
+$(o)dllmain$(oext)     : $(baseDir)dllmain.cpp       ${MultiCompileDepends}
+%endif
 
 %include MultiCppCompileGo.mki
 Objects =% $(MultiCompileObjectList)
@@ -65,11 +69,13 @@ Objects =% $(MultiCompileObjectList)
 #-----------------------------------------------------------------------
 #   Create the Windows NT DLL from Objects
 #-----------------------------------------------------------------------
-LINKER_LIBRARIES   =    $(ContextSubpartsLibs)Bentley.lib \
-                        $(BuildContextSubParts)StaticLibs/liblog4cxx010.lib \
-                        $(BuildContextSubParts)StaticLibs/libapr010502.lib \
-                        $(BuildContextSubParts)StaticLibs/libaprutil010504.lib \
-                        ws2_32.lib odbc32.lib advapi32.lib mswsock.lib Rpcrt4.lib
+LINKER_LIBRARIES   =   $(BuildContextSubParts)libs/$(stlibprefix)liblog4cxx010$(stlibext) \
+                        $(BuildContextSubParts)Libs/$(stlibprefix)libapr010502$(stlibext) \
+                        $(BuildContextSubParts)Libs/$(stlibprefix)libaprutil010504$(stlibext)
+
+%if $(TARGET_PLATFORM)=="Windows"
+LINKER_LIBRARIES   +   ws2_32.lib odbc32.lib advapi32.lib mswsock.lib Rpcrt4.lib
+%endif
 
 # Cannot use libsmtp in DgnDb due to licensing concerns.
 #                        $(BuildContextSubParts)libs/libsmtp08.lib \

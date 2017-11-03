@@ -1,25 +1,33 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/native/log4cxx/log4cxx.h $
+|     $Source: src/native/log4cxx/PublicAPI/log4cxx.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
+#ifdef BENTLEY_WIN32
 #include <windows.h>
-#include <xstring>
+#endif
+#include <string>
 #include <vector>
 #include <Logging/bentleylogging.h>
 
 #pragma warning(push)
 #pragma warning (disable:4251)  
 
+#ifdef BENTLEY_WIN32
 #ifdef BSILOG_LOG4CXX_EXPORTS
 #define BSILOG_LOG4CXX_API __declspec(dllexport)
 #else
 #define BSILOG_LOG4CXX_API __declspec(dllimport)
+#endif
+#else
+#define BSILOG_LOG4CXX_API __attribute__((visibility("default")))
+#define __stdcall
+#define EXTERN_C
 #endif
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE
@@ -66,8 +74,8 @@ class BSILOG_LOG4CXX_API Log4cxxProvider : public ILogProvider
 
         int __stdcall DestroyLogger ( ILogProviderContext * pContext );
 
-        void __stdcall LogMessage ( ILogProviderContext * context, SEVERITY sev, wchar_t const* msg );
-        void __stdcall LogMessage ( ILogProviderContext * context, SEVERITY sev, Utf8CP msg ) {LogMessage(context,sev,WString(msg, true).c_str());}
+        void __stdcall LogMessage ( ILogProviderContext * context, SEVERITY sev, wchar_t const* msg);
+        void __stdcall LogMessage(ILogProviderContext * context, SEVERITY sev, Utf8CP msg);
 
         bool __stdcall IsSeverityEnabled ( ILogProviderContext * context, SEVERITY sev );
 
@@ -95,13 +103,13 @@ class BSILOG_LOG4CXX_API Log4cxxProvider : public ILogProvider
     };
 
 EXTERN_C BSILOG_LOG4CXX_API ILogProvider* InstanceLoggingProvider( void );
-
+#ifdef BENTLEY_WIN32
 EXTERN_C BSILOG_LOG4CXX_API DWORD log4cxx_createLog4cxxProvider(HANDLE* pProvider);
 
 EXTERN_C BSILOG_LOG4CXX_API void log4cxx_destroyLog4cxxProvider(HANDLE* pProvider);
 
 EXTERN_C BSILOG_LOG4CXX_API DWORD log4cxx_initializeLog4cxxProvider(HANDLE pProvider, wchar_t const* const configFile, int watchInterval);
-
+#endif
 }
 #pragma warning(pop)
 

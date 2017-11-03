@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: logging/native/log4cxx/cinterface.cpp $
+|     $Source: src/native/log4cxx/cinterface.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma warning ( disable : 4786 )
 
-#include "log4cxx.h"
+#include "PublicAPI/log4cxx.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +19,6 @@
 BEGIN_BENTLEY_LOGGING_NAMESPACE;
 
 namespace Provider {
-
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                      VijaiKalyan   02/06
  +---------------+---------------+---------------+---------------+---------------+------*/
