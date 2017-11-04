@@ -2695,8 +2695,8 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                             newPoints.push_back(toLoadPoints[pointInd]);
                             FloatXY uv = toLoadUv[uvInd];
 #ifndef WIP_MESH_IMPORT
-                            assert(uv.x <= 1.f && uv.x >= 0.f);
-                            assert(uv.y <= 1.f && uv.y >= 0.f);
+                            assert(uv.x <= 1.f && uv.x >= 0.0);
+                            assert(uv.y <= 1.f && uv.y >= 0.0);
 #endif
                             newUVs.push_back({ uv.x, uv.y <= 1.f ? 1.f - uv.y : uv.y }); // Different convention in QV (or ScalableMesh bug?)
                             }

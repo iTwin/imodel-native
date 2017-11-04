@@ -21,6 +21,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     : SMSQLiteSisterFile(database)
     {
     m_smSQLiteFile = database;   
+	m_clipProvider = nullptr;
 
     SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
     m_smSQLiteFile->LoadSources(*sourcesData);
@@ -323,6 +324,19 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
     return true;
     }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::DoesClipFileExist() const
+   {
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+   }
+
+template <class EXTENT> void SMSQLiteStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+{
+	m_clipProvider = provider;
+}
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
     SMSQLiteFilePtr sqlFilePtr;
@@ -432,6 +446,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3D
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     { 
+
+	if (m_clipProvider.IsValid())
+	{
+		dataStore = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		return true;
+	}
+
     SMSQLiteFilePtr sqlFilePtr;
     
     sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
@@ -447,6 +468,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCo
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
     {
     assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+
+	if (m_clipProvider.IsValid() && (dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon))
+	{
+		dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_clipProvider.get());
+		return true;
+	}
 
     SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
 

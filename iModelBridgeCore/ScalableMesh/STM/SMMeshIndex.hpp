@@ -453,7 +453,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     if (!IsLoaded())
         Load();
 
-    if (progress != nullptr && this->m_nodeHeader.m_level == 0)
+    if (this->m_nodeHeader.m_level == 0)
         {
         startTime = clock();
         loadDataTime = 0;

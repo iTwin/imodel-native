@@ -405,7 +405,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                 return ERROR;
                 }
 
-            bool mustGenerateIDs = !tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id");
+            bool mustGenerateIDs = !(tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id"));
             if (SUCCESS != this->SaveTilesetToCache(tileset, priorityNodeID, mustGenerateIDs))
                 {
                 m_isLoading = false;

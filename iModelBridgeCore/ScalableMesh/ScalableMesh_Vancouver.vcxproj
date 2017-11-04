@@ -342,6 +342,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Reprojection.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IClipDefinitionDataProvider.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h" />
@@ -561,6 +562,8 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="STM\SMTextureTileStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
+    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.h" />
+    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.hpp" />
     <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
@@ -724,6 +727,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
+    <ClCompile Include="STM\Stores\SMExternalProviderDataStore.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />

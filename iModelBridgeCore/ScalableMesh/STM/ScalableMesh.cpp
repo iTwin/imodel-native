@@ -508,6 +508,11 @@ BentleyStatus IScalableMesh::DeleteCoverage(uint64_t id)
     return _DeleteCoverage(id);
     }
 
+IScalableMeshClippingOptions&  IScalableMesh::EditClippingOptions()
+    {
+	return _EditClippingOptions();
+    }
+
 void IScalableMesh::ImportTerrainSM(WString terrainPath)
     {
     return _ImportTerrainSM(terrainPath);
@@ -868,7 +873,40 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
     m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT),
     m_reprojectionTransform(Transform::FromIdentity()),
     m_isInvertingClips(false)
-    { 
+    {
+
+	m_clippingOptions = new ScalableMeshClippingOptions([this](const ScalableMeshClippingOptions* changed)
+	{
+		if (nullptr == m_scmIndexPtr) return;
+		auto store = m_scmIndexPtr->GetDataStore();
+		store->SetClipDefinitionsProvider(changed->GetClipDefinitionsProvider());
+
+		if (changed->ShouldRegenerateStaleClipFiles() && !store->DoesClipFileExist())
+		{
+			SetIsInsertingClips(true);
+
+			bvector<uint64_t> existingClipIds;
+			GetAllClipIds(existingClipIds);
+
+			for (auto& id : existingClipIds)
+			{
+				bvector<DPoint3d> clipData;
+				m_scmIndexPtr->GetClipRegistry()->GetClip(id, clipData);
+				DRange3d extent = DRange3d::NullRange();
+				if (!clipData.empty())
+					extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+
+				Transform t = Transform::FromIdentity();
+				if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+				m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, extent, true, t);
+
+			}
+
+			SetIsInsertingClips(false);
+			SaveEditFiles();
+		}
+	});
     }
 
 
@@ -1265,7 +1303,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 SourceImportConfig sourceConfig(sourceIter->GetConfig());
 
                 Import::ScalableMeshData scalableMesh(sourceIter->GetConfig().GetReplacementSMData());                                
-                
                 if (scalableMesh.IsRepresenting3dData() == SMis3D::is3D)
                     {               
                     source3dRanges.insert(source3dRanges.begin(), scalableMesh.GetExtent().begin(), scalableMesh.GetExtent().end());
@@ -2732,6 +2769,12 @@ template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
+
+	if (m_scmIndexPtr == nullptr) return;
+	BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+
+	bool result = m_scmIndexPtr->GetDataStore()->SetProjectFilesPath(projectFilesPath);
+	assert(result == true);
     }
 
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
@@ -3189,6 +3232,12 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_DeleteCoverage(uint64
     SaveEditFiles();
     return SUCCESS;
     }
+
+template <class POINT> IScalableMeshClippingOptions& ScalableMesh<POINT>::_EditClippingOptions()
+   {
+
+	return *m_clippingOptions;
+   }
 
 template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()
     {
