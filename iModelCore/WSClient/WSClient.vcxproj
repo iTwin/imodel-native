@@ -170,6 +170,7 @@
     <ClCompile Include="iModelHubClient\BriefcaseInfo.cpp" />
     <ClCompile Include="iModelHubClient\Briefcase.cpp" />
     <ClCompile Include="iModelHubClient\Client.cpp" />
+    <ClCompile Include="iModelHubClient\ClientHelper.cpp" />
     <ClCompile Include="iModelHubClient\CodeAdmin.cpp" />
     <ClCompile Include="iModelHubClient\iModelAdmin.cpp" />
     <ClCompile Include="iModelHubClient\iModelManager.cpp" />
@@ -280,8 +281,11 @@
     <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
+    <ClInclude Include="iModelHubClient\Error.xliff.h" />
     <ClInclude Include="iModelHubClient\MultiProgressCallbackHandler.h" />
+    <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfoManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h" />
@@ -496,13 +500,23 @@
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCLibOptions.mki" />
     <None Include="CWSClientCPrewire.mke" />
+    <None Include="iModelHubClient.NuGetPackage.mke" />
+    <None Include="iModelHubClient.nuspec" />
     <None Include="iModelHubClientLib.mke" />
     <None Include="iModelHubClientPrewire.mke" />
+    <None Include="iModelHubClient\Client.mki" />
     <None Include="iModelHubClient\DgnDbServerClient.mki" />
+    <None Include="iModelHubClient\xliffs.mke" />
     <None Include="Ims\Ims.mki" />
     <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
     <None Include="UnZip.py" />
+    <None Include="WebServicesCache.NuGetPackage.mke" />
+    <None Include="WebServicesCache.nuspec" />
+    <None Include="WebServicesClient.NuGetPackage.mke" />
+    <None Include="WebServicesClient.nuspec" />
+    <None Include="WSClientCompatibilityTestTool.NuGetPackage.mke" />
+    <None Include="WSClientCompatibilityTestTool.nuspec" />
     <None Include="xliffs.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
