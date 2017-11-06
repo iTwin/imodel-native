@@ -402,19 +402,46 @@ BentleyStatus GltfReader::_ReadColorTable(ColorTableR colorTable, Json::Value co
         return ERROR;
 
     Json::Value colorJson = matValues["color"];
-    if (!colorJson.isArray() || 4 != colorJson.size())
+    if (colorJson.isArray() && !colorJson.isNull()) // because apparently null things are considered arrays...
+        {
+        if (4 != colorJson.size())
+            return ERROR;
+
+        ColorDef color(static_cast<uint8_t>(colorJson[0].asDouble()*255),
+                       static_cast<uint8_t>(colorJson[1].asDouble()*255),
+                       static_cast<uint8_t>(colorJson[2].asDouble()*255),
+                       255 - static_cast<uint8_t>(colorJson[3].asDouble()*255));
+
+        colorTable.GetIndex(color.GetValue());
+
+        BeAssert(colorTable.IsUniform());
+        BeAssert(0 == colorTable.GetIndex(color.GetValue()));
+
+        return SUCCESS;
+        }
+
+    // ###TODO: Ignoring existing of textured materials for now...
+    Json::Value tex = matValues["tex"];
+    if (!tex.isString())
         return ERROR;
 
-    ColorDef color(static_cast<uint8_t>(colorJson[0].asDouble()*255),
-                   static_cast<uint8_t>(colorJson[1].asDouble()*255),
-                   static_cast<uint8_t>(colorJson[2].asDouble()*255),
-                   255 - static_cast<uint8_t>(colorJson[3].asDouble()*255));
+    Image img = GetTextureImage(tex.asCString());
+    if (!img.IsValid() || img.GetWidth() < 2)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
-    colorTable.GetIndex(color.GetValue());
+    ByteStream const& bytes = img.GetByteStream();
+    for (size_t i = 0; i < bytes.size(); i += 4)
+        {
+        ColorDef color(bytes[i], bytes[i+1], bytes[i+2], 255 - bytes[i+3]);
+        colorTable.GetIndex(color.GetValue());
+        }
 
-    BeAssert(colorTable.IsUniform());
-    BeAssert(0 == colorTable.GetIndex(color.GetValue()));
-
+    // NB: If color table is two-dimensional, there are probably unused entries in last row of texture...
+    BeAssert(img.GetWidth() * img.GetHeight() == colorTable.size());
+    
     return SUCCESS;
     }
 
@@ -425,13 +452,68 @@ BentleyStatus DgnTileReader::_ReadColorTable(ColorTableR colorTable, Json::Value
     {
     Json::Value colorTableJson = primitiveValue["colorTable"];
 
-    if (!colorTableJson.isArray())
+    if (!colorTableJson.isArray() || colorTableJson.isNull())
         return ERROR;
 
     for (uint32_t i=0; i<colorTableJson.size(); i++)
         colorTable.GetIndex(colorTableJson[i].asUInt());                                            
         
     return colorTable.size() > 0 ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSource GltfReader::GetImageSource(Utf8CP name)
+    {
+    Json::Value extJson, gltfJson;
+    Json::Value imgJson = m_images[name];
+    if (!imgJson.isObject() || !(extJson = imgJson["extensions"]).isObject() || !(gltfJson = extJson["KHR_binary_glTF"]).isObject())
+        return ImageSource();
+
+    Json::Value bvJson;
+    Json::Value bvName = gltfJson["bufferView"];
+    if (!bvName.isString() || (bvJson = m_bufferViews[bvName.asCString()]).isNull())
+        return ImageSource();
+
+    size_t byteLength = bvJson["byteLength"].asUInt();
+    void const* pData = m_binaryData + bvJson["byteOffset"].asUInt();
+
+    auto width = gltfJson["width"].asUInt(),
+         height = gltfJson["height"].asUInt();
+
+    auto mimeType = gltfJson["mimeType"].asString();
+    auto format = mimeType.EndsWith("png") ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
+    return ImageSource(format, ByteStream(static_cast<uint8_t const*>(pData), static_cast<uint32_t>(byteLength)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Image GltfReader::GetImage(Utf8CP name)
+    {
+    return Image(GetImageSource(name));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSource GltfReader::GetTextureImageSource(Utf8CP name)
+    {
+    Json::Value sourceJson;
+    Json::Value textureJson = m_textures[name];
+    if (!textureJson.isObject() || !(sourceJson = textureJson["source"]).isString())
+        return ImageSource();
+
+    return GetImageSource(sourceJson.asCString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Image GltfReader::GetTextureImage(Utf8CP name)
+    {
+    return Image(GetTextureImageSource(name));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -664,14 +746,13 @@ ReadStatus  GltfReader::ReadGltf(Render::Primitives::GeometryCollectionR geometr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
     {
-    ByteCP          startPosition = m_buffer.GetCurrent();
     Json::Reader    reader;          
     Gltf::Header    header;
 
     if (!header.Read(m_buffer))
         return ReadStatus::ReadError;
 
-    m_binaryData = startPosition + header.gltfLength;
+    m_binaryData = m_buffer.GetCurrent() + header.sceneStrLength;
 
     bvector<char>       sceneStrData(header.sceneStrLength);
     Json::Value         sceneValue;
@@ -687,6 +768,8 @@ ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
     m_materialValues = sceneValue["materials"];
     m_accessors      = sceneValue["accessors"];
     m_bufferViews    = sceneValue["bufferViews"];
+    m_textures       = sceneValue["textures"];
+    m_images         = sceneValue["images"];
 
     if(!meshValues.isObject() || 
         !m_materialValues.isObject() ||

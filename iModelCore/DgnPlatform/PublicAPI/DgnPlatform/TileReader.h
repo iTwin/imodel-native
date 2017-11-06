@@ -113,6 +113,8 @@ struct GltfReader
     Json::Value         m_materialValues;
     Json::Value         m_accessors;     
     Json::Value         m_bufferViews;
+    Json::Value         m_textures;
+    Json::Value         m_images;
     uint8_t const*      m_binaryData;
     Render::System&     m_renderSystem;
 
@@ -154,6 +156,11 @@ struct GltfReader
     BentleyStatus ReadNormals(Render::OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName);
 
     BentleyStatus ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Utf8CP accessorName);
+
+    Render::ImageSource GetImageSource(Utf8CP imageName);
+    Render::ImageSource GetTextureImageSource(Utf8CP textureName);
+    Render::Image GetImage(Utf8CP imageName);
+    Render::Image GetTextureImage(Utf8CP textureName);
 
     void ReadColors(bvector<uint16_t>& colors, Json::Value const& primitiveValue);
     BentleyStatus ReadColorTable(Render::Primitives::ColorTableR colorTable, Json::Value const& primitiveValue);

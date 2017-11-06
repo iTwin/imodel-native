@@ -383,5 +383,22 @@ public:
     Utf8String GetTilesetName() const { return Utf8String(GetTilesetNameW()); }
 
     static Utf8String GetRelativeTilesetUrl(DgnModelId modelId, DgnDbR db);
+
+//  [ === Evaluating output === ]
+    
+    // Verify feature exists in feature table. If expectedId != -1, verify it has the expected ID within the table.
+    static void ExpectFeatureId(uint32_t expectedId, Render::FeatureCR feature, Render::FeatureTableCR table)
+        {
+        uint32_t actualId = 0;
+        EXPECT_TRUE(table.FindIndex(actualId, feature));
+        if (-1 != expectedId)
+            EXPECT_EQ(expectedId, actualId);
+        }
+
+    static void ExpectFeatureId(uint32_t expectedId, Render::FeatureTableCR table, DgnElementCR elem, DgnCategoryId catId, DgnGeometryClass geomClass = DgnGeometryClass::Primary)
+        {
+        Render::Feature feature(elem.GetElementId(), DgnCategory::GetDefaultSubCategoryId(catId), geomClass);
+        ExpectFeatureId(expectedId, feature, table);
+        }
 };
 

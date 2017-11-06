@@ -84,7 +84,7 @@ BentleyStatus Writer::WriteGltf(DPoint3dCR centroid)
         m_buffer.Append((const uint8_t*) m_binaryData.data(), BinaryDataSize());
 
     WriteLength(startPosition, lengthDataPosition);
-    m_buffer.Append(m_binaryData.data(), m_binaryData.size());
+
     return SUCCESS;
     }
 
