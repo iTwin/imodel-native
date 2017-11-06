@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/L10N.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -120,7 +120,6 @@ struct L10N
 /** @endcond */
 };
 
-//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! L10NLookup maintains one to three sqlang db3 connections that are used for looking up localized strings.
 // @bsiclass
@@ -152,5 +151,4 @@ public:
     bool HasString(L10N::NameSpace scope, L10N::StringId name) {bool hasString; GetString(scope, name, &hasString); return hasString;}
 };
 
-//__PUBLISH_SECTION_START__
 END_BENTLEY_SQLITE_NAMESPACE
