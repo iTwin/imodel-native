@@ -45,7 +45,7 @@ TEST(BeSQLiteDb, BeBriefcaseBasedIdTest)
     EXPECT_TRUE(0x108d7de7e == id1.GetLocalId());
 
     Utf8String val=id1.ToHexStr();
-    EXPECT_TRUE(val == "0X1030108D7DE7E");
+    EXPECT_TRUE(val == "0x1030108d7de7e");
 
     BeBriefcaseBasedId id2 = BeBriefcaseBasedId::CreateFromJson(Json::Value(val));
     EXPECT_TRUE(id2 == id1);
