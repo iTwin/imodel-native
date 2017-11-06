@@ -634,6 +634,8 @@ struct TileArgs
 };
 
 //=======================================================================================
+    size_t Count() const { return m_graphics.m_entries.size() + m_hiResSubstitutes.m_entries.size() + m_loResSubstitutes.m_entries.size(); }
+
 //! Arguments for drawing a tile. As tiles are drawn, their Render::Graphics go into the GraphicBranch member of this object. After all
 //! in-view tiles are drawn, the accumulated list of Render::Graphics are placed in a GraphicBranch with the location
 //! transform for the scene (that is, the tile graphics are always in the local coordinate system of the TileTree.)

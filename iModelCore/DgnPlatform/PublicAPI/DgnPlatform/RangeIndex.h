@@ -19,7 +19,7 @@ static const double ROUND_AWAY =    (1.0 + 1.0/8388608.0);  // Round away from z
 //=======================================================================================
 //! A single-precision 3d axis-aligned range for a RangeIndex. As double-precision DRange3d values are
 //! converted to a Box, the low values are rounded down and the high values are rounded up. In this
-//! manner a Box will always contain all of the space enclosed by the double-precsision range, but
+//! manner a Box will always contain all of the space enclosed by the double-precision range, but
 //! will not necessarily be as tight. This is merely to save memory.
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================

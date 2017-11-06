@@ -75,7 +75,7 @@ ASSEMBLY_STRONGNAME             = 1
 
 contextDepends                  = $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)Render.h $(DgnPlatformAPISrc)DgnViewport.h
 
-ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)RevisionComparisonViewController.h
+ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)RevisionComparisonViewController.h $(DgnPlatformAPISrc)SubjectViewController.h
 
 HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(contextDepends)
 
@@ -247,8 +247,6 @@ $(CoreObjs)ClipPrimitive$(oext) :                   $(DgnCoreDir)ClipPrimitive.c
 
 $(CoreObjs)ClipVector$(oext) :                      $(DgnCoreDir)ClipVector.cpp $(DgnPlatformAPISrc)ClipPrimitive.h $(DgnPlatformAPISrc)ClipVector.h ${MultiCompileDepends}
 
-$(CoreObjs)SectionClip$(oext) :                     $(DgnCoreDir)SectionClip.cpp $(DgnPlatformAPISrc)SectionClip.h ${MultiCompileDepends}
-
 $(CoreObjs)TransformClipStack$(oext) :              $(DgnCoreDir)TransformClipStack.cpp $(DgnPlatformAPISrc)TransformClipStack.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnCorePolyfaceClip$(oext) :             $(DgnCoreDir)DgnCorePolyfaceClip.cpp $(DgnPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
@@ -358,6 +356,8 @@ $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHo
 $(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)RevisionComparisonViewController$(oext): $(DgnCoreDir)RevisionComparisonViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)SubjectViewController$(oext) :           $(DgnCoreDir)SubjectViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)ModelSpatialClassifier$(oext) :                 $(DgnCoreDir)ModelSpatialClassifier.cpp $(DgnPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}
 
@@ -617,9 +617,9 @@ DLM_NOINITFUNC          = 1
 DLM_NOENTRY             = 1
 LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeZlib$(stlibext) \
-                            $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
-                            $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \

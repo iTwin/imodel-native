@@ -43,7 +43,7 @@
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_29_1_241"/>
     </Part>
     <Part Name="PsolidShimIos" OnlyPlatforms="iOSARM64,iOSx64" WipPartEnable="ParasolidIos">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_alpha2"/>
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_30_0_270"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
@@ -55,17 +55,17 @@
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-        <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
+        <SubPart PartName="Freetype2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="pnglib"                 PartFile="png"          Repository="Libsrc-png"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
+        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
@@ -542,7 +542,7 @@
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
-      <SubProduct ProductName="iModelJsNodeAddon" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="DgnPlatform" />
       <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
       <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         -->
@@ -622,7 +622,6 @@
        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
     </ProductDirectoryList>
-
     <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <SubPart PartName="DgnPlatformDLL" />
@@ -655,6 +654,7 @@
     <ProductDirectoryList ListName="DgnPlatformDirList" >
         <ProductDirectory Name="ApplicationRoot"            Path=""/>
         <ProductDirectory Name="Assemblies"                                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static"                RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="Libs"                       Path="libs"/>
@@ -662,126 +662,5 @@
         <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot" LibType="Static"/>
         <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
     </ProductDirectoryList>
-
-  <!-- //////////////////////////////////////////////////////////////////////////// -->
-  <!-- // iModelJsNode_node_module - the node-specific wrapper around imodeljs   // -->
-  <!-- //////////////////////////////////////////////////////////////////////////// -->
-
-  <Part Name="MakeImodelJsAddonPackages" BentleyBuildMakeFile="imodeljs/nodejs/makeImodelJsAddonPackages.mke" >
-    <SubProduct ProductName="iModelJsNodeAddon"/>
-  </Part>
-
-  <Product Name="iModelJsNodeAddon">
-    <SubProduct ProductName="iModelJsNodeAddon-Windows" />
-    <SubProduct ProductName="iModelJsNodeAddon-Windows-New" />
-    <SubProduct ProductName="iModelJsNodeAddon-Linux" />
-  </Product>
-
-  <Product Name="iModelJsNodeAddon-Windows">
-    <SubPart PartName="iModelJsNodeAddonLib-Windows" LibType="Dynamic" />
-    <SubPart PartName="iModelJsNodeAddonLibElectron-Windows" LibType="Dynamic" />
-    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-  </Product>
-
-  <!-- Preview of a new version of nodejs support that is coming ... -->
-  <Product Name="iModelJsNodeAddon-Windows-New">
-    <SubPart PartName="iModelJsNodeAddonLib-Windows-New" LibType="Dynamic" />
-    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-  </Product>
-
-  <Product Name="iModelJsNodeAddon-Linux">
-    <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
-    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-  </Product>
-
-  <ProductDirectoryList ListName="iModelJsNodeAddonDeliveryList">
-    <ProductDirectory Name="AddonRoot" Path="Addon" />
-    <ProductDirectory Name="iModelJsNode_node_module" RelativeTo="AddonRoot"/>
-    <ProductDirectory Name="iModelJsNode_node_module" RelativeTo="AddonRoot" LibType="Static" />
-    <ProductDirectory Name="SupportingFilesRoot" Path="Support" />
-    <ProductDirectory Name="Assemblies" Path="" RelativeTo="SupportingFilesRoot"/>
-    <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
-    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="SupportingFilesRoot"/>
-    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="SupportingFilesRoot" LibType="Static"/>
-
-    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot"/>
-    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot" LibType="Static"/>
-
-    <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices"/>
-    <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
-  </ProductDirectoryList>
-
-  <!-- Note - In the addon-creation parts below, the ProductSubDirectory name determines the name of the imodeljs-dgnplatform/addon subdirectory that the npm installer creates. 
-      See copyNodeAddon.js. The runtime loadNodeAddon function then tries to match this subdirectory name against the version of node that is actually running. 
-      So, you can use any naming schemes you want for the ingredients of the build, but you must use a name for the ProductSubDirectory that matches the expectations of copyNodeAddon.js.
-      -->
-
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_2_1" >
-    <SubPart PartName="node-gyp-standalone_8_2_1" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
-        Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_2_1/package.json
-      </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
-    </Bindings>
-  </Part>
-
-  <!-- Preview of a new version of nodejs support that is coming ... -->
-  <Part Name="iModelJsNodeAddonLib-Windows-New" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_7_0" >
-    <SubPart PartName="node-gyp-standalone_8_7_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_7">
-        Delivery/iModelJsNodeAddon/N_8_7_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_7_0/package.json
-      </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
-    </Bindings>
-  </Part>
-
-  <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
-  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=E_1_6_11" >
-    <SubPart PartName="node-gyp-electron_1_6_11" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <Bindings>
-      <!-- The ProductSubDirectory name determines the name of the imodeljs-dgnplatform/addon subdirectory, and that must match the version of electron node that is running. -->
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
-        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node,
-        Delivery/iModelJsNodeAddon/E_1_6_11/package.json
-      </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
-    </Bindings>  </Part>
-
-  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_7_10_0">
-    <SubPart PartName="node-gyp-standalone_7_10_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
-        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_7_10_0/package.json
-      </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>	  
-    </Bindings>
-  </Part>
-
-
-  <!-- This part builds our node native code addon -->
-  <Part Name="iModelJsNodeAddonLibCommon">
-    <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-    <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-    <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
-    <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
-    <SubPart PartName="rapidjsonapi"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
-  </Part>
 
 </BuildContext>

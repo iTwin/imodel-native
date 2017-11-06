@@ -11,7 +11,6 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/IAuxCoordSys.h>
 #include <DgnPlatform/ViewContext.h>
-#include <DgnPlatform/SectionClip.h>
 #include <DgnPlatform/UpdatePlan.h>
 #include <DgnPlatform/ViewDefinition.h>
 #include <Bentley/BeThread.h>

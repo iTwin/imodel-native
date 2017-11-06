@@ -3,10 +3,6 @@
                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
 
     <!-- Label overrides -->
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Volume", "ProStructures")' Label='this.NAME' OnlyIfNotHandled='true' />
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Equipment", "AutoPlantPDWPersistenceStrategySchema")' Label='this.TAG' OnlyIfNotHandled='true' />
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Pipeline", "AutoPlantPDWPersistenceStrategySchema")' Label='this.NAME' OnlyIfNotHandled='true' />
-    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Component", "AutoPlantPDWPersistenceStrategySchema")' Label='this.COMPONENT_ID' OnlyIfNotHandled='true' />
     <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' Label='this.CodeValue' OnlyIfNotHandled='true' />
     <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' Label='this.CodeValue' OnlyIfNotHandled='true' />
 

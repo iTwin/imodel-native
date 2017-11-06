@@ -61,7 +61,7 @@ BentleyStatus DgnGeoLocation::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR in
     return m_geoServices->LatLongFromUors(outLatLong, inUors, *m_gcs);
     }
 
-static Utf8CP DGNPROPERTYJSON_GlobalOrigin = "globalOrigin";
+BE_JSON_NAME(globalOrigin);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
@@ -78,7 +78,7 @@ DgnDbStatus DgnGeoLocation::Load()
         return DgnDbStatus::UnitsMissing;
         }
 
-    JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[DGNPROPERTYJSON_GlobalOrigin]);
+    JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[json_globalOrigin()]);
     LoadProjectExtents();
     return DgnDbStatus::Success;
     }
@@ -89,7 +89,7 @@ DgnDbStatus DgnGeoLocation::Load()
 void DgnGeoLocation::Save()
     {
     Json::Value jsonObj;
-    JsonUtils::DPoint3dToJson(jsonObj[DGNPROPERTYJSON_GlobalOrigin], m_globalOrigin);
+    JsonUtils::DPoint3dToJson(jsonObj[json_globalOrigin()], m_globalOrigin);
     m_dgndb.SavePropertyString(DgnProjectProperty::Units(), jsonObj.ToString());
     }
 
@@ -145,7 +145,7 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
             extent.Extend(model->QueryModelRange());
         }
 
-    if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a resonable default
+    if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a reasonable default
         extent = GetDefaultProjectExtents();
 
     return extent;

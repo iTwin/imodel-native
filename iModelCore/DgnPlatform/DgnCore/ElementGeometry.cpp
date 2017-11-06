@@ -943,7 +943,7 @@ void GeometryStreamIO::Writer::Append(DRange3dCR range)
     {
     FlatBufferBuilder fbb;
 
-    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d*) &range.low, 6);
+    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d*) &range.low, 2);
 
     FB::PointPrimitiveBuilder builder(fbb);
 
@@ -1811,7 +1811,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DRange3dR range) const
 
     auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(egOp.m_data);
 
-    if (6 != ppfb->coords()->Length())
+    if (ppfb->coords()->Length() < 2) // NOTE: 6 points were erroneously stored originally, so use < not = check...
         return false;
 
     memcpy(&range, (DPoint3dCP) ppfb->coords()->Data(), sizeof(range));

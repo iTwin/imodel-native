@@ -62,7 +62,7 @@ private:
     uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
     uint32_t m_monochrome:1;       //!< draw all graphics in a single color 
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
-    uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden linse
+    uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
 public:

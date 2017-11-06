@@ -593,6 +593,33 @@ DgnDbStatus CategorySelector::_InsertInDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    Json::Value categories(Json::arrayValue);
+    for (auto const& category: m_categories)
+        categories.append(category.ToHexStr());
+
+    out[json_categories()] = categories;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::_FromJson(JsonValueR val) 
+    {
+    T_Super::_FromJson(val);
+    m_categories.clear();
+
+    auto const& categories = val[json_categories()];
+    int size = categories.size();
+    for (int i=0; i<size; ++i)
+        m_categories.insert(DgnCategoryId(categories[i].asUInt64()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::EqualState(CategorySelectorCR other) const
@@ -762,6 +789,33 @@ DgnDbStatus ModelSelector::_LoadFromDb()
         }
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    Json::Value models(Json::arrayValue);
+    for (auto const& model : m_models)
+        models.append(model.ToHexStr());
+
+    out[json_models()] = models;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_FromJson(JsonValueR val) 
+    {
+    T_Super::_FromJson(val);
+
+    m_models.clear();
+    auto const& models = val[json_models()];
+    int size = models.size();
+    for (int i=0; i<size; ++i)
+        m_models.insert(DgnModelId(models[i].asUInt64()));
     }
 
 /*---------------------------------------------------------------------------------**//**

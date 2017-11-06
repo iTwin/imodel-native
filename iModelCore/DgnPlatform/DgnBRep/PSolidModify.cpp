@@ -81,7 +81,7 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
 
     if (SUCCESS == failureCode)
         {
-        if (PK_boolean_result_success_c == results.result)
+        if (PK_boolean_result_failed_c != results.result)
             {
             if (1 == results.n_bodies)
                 {

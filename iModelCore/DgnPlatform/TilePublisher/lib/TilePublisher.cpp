@@ -1592,11 +1592,11 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
         {
         tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
         tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
-        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = imageSource.GetFormat() == ImageSource::Format::Png ? "image/png" : "image/jpeg";
 
 
-        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.x;
-        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.y;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = targetImageSize.x;
+        tileData.m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = targetImageSize.y;
 
         ByteStream const& imageData = imageSource.GetByteStream();
         tileData.m_json["bufferViews"][bvImageId]["byteOffset"] = tileData.BinaryDataSize();
@@ -2052,7 +2052,6 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const
-
     {
     BeAssert (IsTextured());
     if (IsTextured())
@@ -2062,6 +2061,7 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;
         data.m_json["samplers"]["sampler_0"]["minFilter"] = Gltf::Linear;
+        data.m_json["samplers"]["sampler_0"]["magFilter"] = GLTF_LINEAR;
         if (!m_texture->GetRepeat())
             {
             data.m_json["samplers"]["sampler_0"]["wrapS"] = Gltf::ClampToEdge;

@@ -1057,7 +1057,7 @@ static inline double tenthOfPixel(double inValue) {return ((int) ((inValue * 10.
 
 #define COMPARE_RELATIVE(a,b) {if (a<b) return -1; if (a>b) return 1;}
 
-static const double s_tooCloseTolerance = 1.0e-5;
+static const double s_tooCloseTolerance = 1.0e-10;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/04
@@ -1091,11 +1091,11 @@ static int doZCompareOfSurfaceAndEdge(HitDetailCR oHitSurf, HitDetailCR oHitEdge
 
 #if defined (NOT_NOT_DUMP)
     if (fabs(a1) < tol)
-        printf("Draw\n\n");
+        printf("Draw: %lf %lf (%lf)\n\n", a0, a1, tol);
     else if (a0 * a1 > 0)
-        printf("Edge wins\n\n");
+        printf("Edge wins: %lf %lf (%lf)\n\n", a0, a1, tol);
     else
-        printf("Surface wins\n\n");
+        printf("Surface wins: %lf %lf (%lf)\n\n", a0, a1, tol);
 #endif
 
     if (fabs(a1) < tol)

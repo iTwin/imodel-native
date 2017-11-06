@@ -81,8 +81,7 @@ struct IModelJs
     DGNPLATFORM_EXPORT static DgnDbStatus UpdateElement(DgnDbR db, Json::Value& props);
     DGNPLATFORM_EXPORT static DgnDbStatus DeleteElement(DgnDbR db, Json::Value& elementId);
     DGNPLATFORM_EXPORT static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
-    DGNPLATFORM_EXPORT static BentleyStatus GetElementPropertiesForDisplay(DgnDbStatus&, JsonValueR results, DgnDbR db, Utf8CP id);
-    
+ 
     DGNPLATFORM_EXPORT static JsECDbPtr CreateECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname);
     DGNPLATFORM_EXPORT static JsECDbPtr OpenECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);

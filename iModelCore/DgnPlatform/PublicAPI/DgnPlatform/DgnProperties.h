@@ -11,17 +11,8 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-#define PROPERTY_APPNAME_DgnFile     "dgn_File"
-#define PROPERTY_APPNAME_DgnFont     "dgn_Font"
-#define PROPERTY_APPNAME_DgnLevel    "dgn_Level"
 #define PROPERTY_APPNAME_LineStyle   "dgn_LStyle"
-#define PROPERTY_APPNAME_DgnMaterial "dgn_Material"
-#define PROPERTY_APPNAME_DgnModel    "dgn_Model"
-#define PROPERTY_APPNAME_DgnSession  "dgn_Sessn"
 #define PROPERTY_APPNAME_DgnView     "dgn_View"
-#define PROPERTY_APPNAME_Provenance  "dgn_Prov"
-#define PROPERTY_APPNAME_DgnMarkupProject "dgnMarkup_Proj"
-#define PROPERTY_APPNAME_RedlineModel "dgnMarkup_RedlineModel"
 
 #define PROPERTY_APPNAME_DgnDb          "dgn_Db"        // replaces PROPERTY_APPNAME_DgnProject="dgn_Proj" from releases older than 2.0
 #define PROPERTY_APPNAME_DgnEmbeddedDb  "pkge_dgnDb"    // replaces PROPERTY_APPNAME_DgnEmbeddedProject="pkge_dgnProj" from releases older than 2.0

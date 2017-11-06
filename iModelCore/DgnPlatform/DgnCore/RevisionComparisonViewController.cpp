@@ -169,13 +169,13 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
             ovrs.OverrideElement(entry.m_elementId, m_symbology.GetCurrentRevisionOverrides(entry.m_opcode));
         }
 
-    DbOpcode persistentOpcode = m_persistentOpcodeCache[elementId];
-    DbOpcode transientOpcode = m_transientOpcodeCache[elementId];
+    bmap<DgnElementId,DbOpcode>::const_iterator persistent = m_persistentOpcodeCache.find(elementId);
+    bmap<DgnElementId,DbOpcode>::const_iterator transient = m_transientOpcodeCache.find(elementId);
     if (WantShowTarget())
-    if (WantShowCurrent() && !m_visitingTransientElements && persistentOpcode != (DbOpcode)0)
+    if (WantShowCurrent() && !m_visitingTransientElements && persistent != m_persistentOpcodeCache.end())
         {
         for (auto const& entry : m_comparisonData->GetTransientStates())
-        m_symbology.GetCurrentRevisionOverrides(elementIdData.m_opcode, symbologyOverrides);
+        m_symbology.GetCurrentRevisionOverrides(persistentOpcode, symbologyOverrides);
         }
 
     ovrs.SetDefaultOverrides(m_symbology.GetUntouchedOverrides());
@@ -193,12 +193,12 @@ BentleyStatus Controller::_CreateScene(SceneContextR context)
 #if defined(TODO_VERSION_COMPARE_MESS)
     if (WantShowTarget())
         {
-        if (elementData.IsValid() && m_visitingTransientElements)
+        if (transient != m_transientOpcodeCache.end() && m_visitingTransientElements)
             {
-            m_symbology.GetTargetRevisionOverrides(elementData.m_opcode, symbologyOverrides);
+            m_symbology.GetTargetRevisionOverrides(transient->second, symbologyOverrides);
             // Joe doesn't want to show the transient/updated state of a modified element
             // if we are showing them in a single view
-        if (!WantShowBoth() && elementIdData.IsValid())
+        if (!WantShowBoth() && persistent != m_persistentOpcodeCache.end())
                 continue;
 
             auto geom = entry.m_element->ToGeometrySource();

@@ -3713,8 +3713,10 @@ public:
 struct ElementAssemblyUtil
 {
     //! Get the parent DgnElementId of the assembly for which the input DgnElement is a member.
+    //! @param[in] el  The element selected
+    //! @param[in] topMost Return top most assembly parent.
     //! @return DgnElementId of parent. Will be invalid if there is no parent.
-    DGNPLATFORM_EXPORT static DgnElementId GetAssemblyParentId(DgnElementCR el);
+    DGNPLATFORM_EXPORT static DgnElementId GetAssemblyParentId(DgnElementCR el, bool topMost=false);
 
     //! Query the DgnDb for members of the assembly for which the input DgnElement is a member.
     //! @return DgnElementIdSet containing the DgnElementIds of assembly elements. Will be empty if not an assembly.

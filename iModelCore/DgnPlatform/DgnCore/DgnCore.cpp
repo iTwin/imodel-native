@@ -201,6 +201,30 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
     return T_HOST.GetNotificationAdmin()._OpenMessageBox(mbType, message, icon);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt NotificationManager::SetupActivityMessage(ActivityMessageDetails* details)
+    {
+    return T_HOST.GetNotificationAdmin()._SetupActivityMessage(details);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt NotificationManager::OutputActivityMessage(Utf8CP messageText, int32_t percentComplete)
+    {
+    return T_HOST.GetNotificationAdmin()._OutputActivityMessage(messageText, percentComplete);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt NotificationManager::EndActivityMessage(ActivityMessageEndReason reason) 
+    {
+    return T_HOST.GetNotificationAdmin()._EndActivityMessage(reason);
+    }
+
 static DgnPlatformLib::Host* s_host = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,6 +305,10 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
     ECN::ECSchemaReadContext::Initialize(assetDir);
+
+    // initialize http services
+    Http::HttpClient::Options* httpOptions = _SupplyHttpClientOptions();
+    Http::HttpClient::Initialize(nullptr != httpOptions ? *httpOptions : Http::HttpClient::Options(assetDir, 10/*maxConnectionPerHost*/));
     }
 
 /*---------------------------------------------------------------------------------**//**

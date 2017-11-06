@@ -19,6 +19,7 @@
 #include "Sheet.h"
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
+#include <BeHttp/HttpClient.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
 struct FT_LibraryRec_;
@@ -401,6 +402,15 @@ public:
             //! Return true if you want SQLite to log errors. Should be used only for limited debugging purposes.
             virtual bool _GetLogSQLiteErrors() {return false;}
 
+            //! Set up for activity messages.
+            virtual StatusInt _SetupActivityMessage(ActivityMessageDetails* details) {return SUCCESS;}
+
+            //! Output an activity message to the user.
+            virtual StatusInt _OutputActivityMessage(Utf8CP messageText, int32_t percentComplete) {return SUCCESS;}
+
+            //! End an activity message.
+            virtual StatusInt _EndActivityMessage(ActivityMessageEndReason reason) {return SUCCESS;}
+
             //! MicroStation internal only.
             DGNPLATFORM_EXPORT static void ChangeAdmin(NotificationAdmin&);
             };
@@ -512,6 +522,9 @@ public:
         DGNPLATFORM_EXPORT virtual DevelopmentPhase  _SupplyDevelopmentPhase();
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
+
+        //! Supply the HttpClient::Options for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
+        virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
         virtual void _OnHilitedSetChanged(DgnDbR) {}

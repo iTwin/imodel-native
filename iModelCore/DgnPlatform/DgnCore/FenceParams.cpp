@@ -13,35 +13,6 @@
 #define     MINIMUM_CLIPSIZE            1.0E-3
 #define     NPC_CAMERA_LIMIT            100.0
 
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void _SetDrawViewFlags (ViewFlags flags) override
-    {
-    T_Super::_SetDrawViewFlags(flags);
-
-    m_viewFlags.styles = false; // NOTE: Ignore linestyles for fence accept...
-
-    switch (m_fp->GetLocateInteriors())
-        {
-        case LocateSurfacesPref::Never:
-            {
-            m_viewFlags.SetRenderMode(RenderMode::Wireframe);
-            m_viewFlags.fill = false;
-            break;
-            }
-
-        case LocateSurfacesPref::Always:
-            {
-            if (RenderMode::Wireframe == m_viewFlags.GetRenderMode())
-                m_viewFlags.SetRenderMode(RenderMode::SmoothShade);
-            break;
-            }
-        }
-    }
-#endif
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * Context to determine if element should be accepted for fence processing..
@@ -1667,7 +1638,7 @@ static void shiftEllipseSplineParameters(double *paramP, size_t nParams, MSBspli
             angle = ellipse.PointToAngle(point);
 
             /* the start/end point of a closed arc
-                is somewhat ambiguous, so handle it seperately */
+                is somewhat ambiguous, so handle it separately */
             if (Angle::IsFullCircle(fabs(sweep)) && Angle::NearlyEqualAllowPeriodShift(angle, start))
                 {
                 *paramP = *paramP < .5 ? 0.0 : 1.0;
