@@ -2061,7 +2061,7 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
 
         data.m_json["samplers"]["sampler_0"] = Json::objectValue;
         data.m_json["samplers"]["sampler_0"]["minFilter"] = Gltf::Linear;
-        data.m_json["samplers"]["sampler_0"]["magFilter"] = GLTF_LINEAR;
+        data.m_json["samplers"]["sampler_0"]["magFilter"] = Gltf::Linear;
         if (!m_texture->GetRepeat())
             {
             data.m_json["samplers"]["sampler_0"]["wrapS"] = Gltf::ClampToEdge;

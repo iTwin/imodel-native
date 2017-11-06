@@ -66,8 +66,10 @@ SubjectCPtr SubjectViewController::GetParentJobSubject(DgnElementCP element)
 //-------------------------------------------------------------------------------------------
 // @bsimethod 												Diego.Pinate 	10/17
 //-------------------------------------------------------------------------------------------
-void    SubjectViewController::_OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR ovr, Dgn::GeometrySourceCP source)
+void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
+#if defined(TODO_SUBJECT_OVERRIDES)
+    // This basically boils down to resymbolizing every element based on its subject model...don't want to populate a huge map of element IDs for that.
     if (source == nullptr)
         return;
     
@@ -102,6 +104,7 @@ void    SubjectViewController::_OverrideGraphicParams(Dgn::Render::OvrGraphicPar
         }
 
     ovr = m_subjectColors[jobSubject->GetElementId()];
+#endif
     }
 
 //-------------------------------------------------------------------------------------------
