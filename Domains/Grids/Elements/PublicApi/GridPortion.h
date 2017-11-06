@@ -28,9 +28,9 @@ typedef bmap<Utf8String, GridAxisMap> GridNameMap;
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridPortion : SurfaceSet
+struct EXPORT_VTABLE_ATTRIBUTE GridPortion : Dgn::SpatialLocationPortion
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, SurfaceSet);
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, Dgn::SpatialLocationPortion);
 private:
     BE_PROP_NAME (Normal);
 

@@ -13,14 +13,9 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct SurfaceSetHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct GridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SurfaceSet, SurfaceSet, SurfaceSetHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
-    };
-
-struct GridPortionHandler : SurfaceSetHandler
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, GridPortion, GridPortionHandler, SurfaceSetHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, GridPortion, GridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
 
     GRIDHANDLERS_EXPORT static  BentleyStatus   IntersectGridSurface (GridPortionCPtr thisPortion, GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel);
     };

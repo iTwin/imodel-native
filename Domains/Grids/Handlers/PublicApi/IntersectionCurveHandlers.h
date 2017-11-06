@@ -13,14 +13,9 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct IntersectionCurveHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct GridCurveHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_IntersectionCurve, IntersectionCurve, IntersectionCurveHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
-    };
-
-struct GridCurveHandler : IntersectionCurveHandler
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridCurve, GridCurve, GridCurveHandler, IntersectionCurveHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridCurve, GridCurve, GridCurveHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 struct GridLineHandler : GridCurveHandler

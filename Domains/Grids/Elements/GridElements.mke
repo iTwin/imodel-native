@@ -37,8 +37,6 @@ nameToDefine = __GRIDELEMENTS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)SurfaceSet$(oext) : $(_MakeFilePath)SurfaceSet.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SurfaceSet.h
-
 $(o)GridPortion$(oext) : $(_MakeFilePath)GridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPortion.h
 
 $(o)OrthogonalGridPortion$(oext) : $(_MakeFilePath)OrthogonalGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/OrthogonalGridPortion.h
@@ -47,8 +45,6 @@ $(o)RadialGridPortion$(oext) : $(_MakeFilePath)RadialGridPortion.cpp ${MultiComp
 
 $(o)SketchGridPortion$(oext) : $(_MakeFilePath)SketchGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SketchGridPortion.h
 
-$(o)DrivingSurface$(oext) : $(_MakeFilePath)DrivingSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DrivingSurface.h
-
 $(o)GridSurface$(oext) : $(_MakeFilePath)GridSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurface.h
 
 $(o)GridPlaneSurface$(oext) : $(_MakeFilePath)GridPlaneSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPlaneSurface.h
@@ -56,8 +52,6 @@ $(o)GridPlaneSurface$(oext) : $(_MakeFilePath)GridPlaneSurface.cpp ${MultiCompil
 $(o)GridArcSurface$(oext) : $(_MakeFilePath)GridArcSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArcSurface.h
 
 $(o)GridSplineSurface$(oext) : $(_MakeFilePath)GridSplineSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSplineSurface.h
-
-$(o)IntersectionCurve$(oext) : $(_MakeFilePath)IntersectionCurve.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/IntersectionCurve.h
 
 $(o)GridCurve$(oext) : $(_MakeFilePath)GridCurve.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurve.h
 

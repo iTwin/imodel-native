@@ -64,15 +64,8 @@
       <ECNavigationProperty propertyName="Grid" relationshipName="GridPortionHasAxes" direction="Backward" description="Grid this axis belong to" />
     </ECEntityClass>
   
-    <ECEntityClass typeName="IntersectionCurve">
-      <BaseClass>bis:SpatialLocationElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
-    </ECEntityClass>
-  
     <ECEntityClass typeName="GridCurve">
-      <BaseClass>IntersectionCurve</BaseClass>
+      <BaseClass>bis:SpatialLocationElement</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
@@ -100,15 +93,8 @@
       </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECEntityClass typeName="DrivingSurface">
-      <BaseClass>bis:SpatialLocationElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
-    </ECEntityClass>
-
     <ECEntityClass typeName="GridSurface">
-      <BaseClass>DrivingSurface</BaseClass>
+      <BaseClass>bis:SpatialLocationElement</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
@@ -137,16 +123,8 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SurfaceSet">
-      <BaseClass>bis:SpatialLocationPortion</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
-    </ECEntityClass>
-
-
     <ECEntityClass typeName="GridPortion">
-      <BaseClass>SurfaceSet</BaseClass>
+      <BaseClass>bis:SpatialLocationPortion</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>

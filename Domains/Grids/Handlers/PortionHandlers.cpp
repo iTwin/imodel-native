@@ -10,7 +10,6 @@
 
 USING_NAMESPACE_GRIDS
 
-HANDLER_DEFINE_MEMBERS(SurfaceSetHandler)
 HANDLER_DEFINE_MEMBERS (GridPortionHandler)
 HANDLER_DEFINE_MEMBERS (RadialGridPortionHandler)
 HANDLER_DEFINE_MEMBERS (OrthogonalGridPortionHandler)
