@@ -406,9 +406,8 @@ DbValue SqlChange::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-InstancesTable::InstancesTable(ChangeSummaryCR changeSummary, int nameSuffix) : m_changeSummary(changeSummary), m_ecdb(changeSummary.GetDb()), m_nameSuffix(nameSuffix)
+InstancesTable::InstancesTable(ChangeSummaryCR changeSummary) : m_changeSummary(changeSummary), m_ecdb(changeSummary.GetDb())
     {
-    m_instancesTableNameNoPrefix = Utf8PrintfString(CHANGED_INSTANCES_TABLE_BASE_NAME "_%d", m_nameSuffix);
     }
 
 //---------------------------------------------------------------------------------------
@@ -416,62 +415,7 @@ InstancesTable::InstancesTable(ChangeSummaryCR changeSummary, int nameSuffix) : 
 //---------------------------------------------------------------------------------------
 void InstancesTable::Initialize()
     {
-    CreateTable();
     PrepareStatements();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-void InstancesTable::Free()
-    {
-    FinalizeStatements();
-    ClearTable();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-Utf8String InstancesTable::GetName() const
-    {
-    Utf8PrintfString tableName(CHANGED_TABLES_TEMP_PREFIX "%s", GetNameNoPrefix().c_str());
-    return tableName;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void InstancesTable::CreateTable()
-    {
-    Utf8String tableName = GetName();
-    if (m_ecdb.TableExists(tableName.c_str()))
-        return;
-
-    DbResult result = m_ecdb.CreateTable(tableName.c_str(),
-                                         "ClassId INTEGER NOT NULL, InstanceId INTEGER NOT NULL, DbOpcode INTEGER NOT NULL, Indirect INTEGER NOT NULL, TableName TEXT NOT NULL, PRIMARY KEY (ClassId, InstanceId)");
-    BeAssert(result == BE_SQLITE_OK);
-
-    Utf8PrintfString sqlIdx("CREATE INDEX " CHANGED_TABLES_TEMP_PREFIX "ix_%s_op ON [%s](DbOpcode)", m_instancesTableNameNoPrefix.c_str(), m_instancesTableNameNoPrefix.c_str());
-    result = m_ecdb.ExecuteSql(sqlIdx.c_str());
-    BeAssert(result == BE_SQLITE_OK);
-
-    Utf8PrintfString sqlIdx2("CREATE INDEX " CHANGED_TABLES_TEMP_PREFIX "ix_%s_table ON [%s](TableName,InstanceId)", m_instancesTableNameNoPrefix.c_str(), m_instancesTableNameNoPrefix.c_str());
-    result = m_ecdb.ExecuteSql(sqlIdx2.c_str());
-    BeAssert(result == BE_SQLITE_OK);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void InstancesTable::ClearTable()
-    {
-    Utf8String tableName = GetName();
-    BeAssert(m_ecdb.TableExists(tableName.c_str()));
-
-    Utf8String sql("DELETE FROM ");
-    sql.append(tableName);
-    DbResult result = m_ecdb.ExecuteSql(sql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
     }
 
 //---------------------------------------------------------------------------------------
@@ -479,41 +423,32 @@ void InstancesTable::ClearTable()
 //---------------------------------------------------------------------------------------
 void InstancesTable::PrepareStatements()
     {
-    Utf8String instancesTableName = GetName();
-    BeAssert(m_ecdb.TableExists(instancesTableName.c_str()));
-
-    DbResult result;
+    ECSqlStatus result;
 
     BeAssert(!m_instancesTableInsert.IsPrepared());
-    Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,Indirect,TableName) VALUES(?1,?2,?3,?4,?5)", instancesTableName.c_str());
-    result = m_instancesTableInsert.Prepare(m_ecdb, insertSql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
+    //Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,Indirect,TableName) VALUES(?1,?2,?3,?4,?5)", instancesTableName.c_str());
+
+    result = m_instancesTableInsert.Prepare(m_ecdb, "INSERT INTO cs.Instance (ChangedClassId, ChangedInstanceId, Operation, Indirect, TableName, Changeset) VALUES(?1,?2,?3,?4,?5,?6);");
+    BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableUpdate.IsPrepared());
-    Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,Indirect=?4 WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableUpdate.Prepare(m_ecdb, updateSql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
+    //Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,Indirect=?4 WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
+    result = m_instancesTableUpdate.Prepare(m_ecdb, "UPDATE cs.Instance SET Operation=?4, Indirect=?5 WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableSelect.IsPrepared());
-    Utf8PrintfString selectSql("SELECT DbOpcode, Indirect,TableName FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableSelect.Prepare(m_ecdb, selectSql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
+    //Utf8PrintfString selectSql("SELECT DbOpcode, Indirect,TableName FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
+    result = m_instancesTableSelect.Prepare(m_ecdb, "SELECT Operation, Indirect, TableName FROM cs.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableDelete.IsPrepared());
-    Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableDelete.Prepare(m_ecdb, deleteSql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
-    }
+    //Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
+    result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM cs.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    BeAssert(result == ECSqlStatus::Success);
+    
+    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId,FROM cs.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    BeAssert(result == ECSqlStatus::Success);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void InstancesTable::FinalizeStatements()
-    {
-    m_instancesTableInsert.Finalize();
-    m_instancesTableUpdate.Finalize();
-    m_instancesTableSelect.Finalize();
-    m_instancesTableDelete.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -526,7 +461,8 @@ void InstancesTable::Insert(ECClassId classId, ECInstanceId instanceId, DbOpcode
     m_instancesTableInsert.BindId(2, instanceId);
     m_instancesTableInsert.BindInt(3, (int) dbOpcode);
     m_instancesTableInsert.BindInt(4, indirect);
-    m_instancesTableInsert.BindText(5, tableName, Statement::MakeCopy::No);
+    m_instancesTableInsert.BindText(5, tableName.c_str(),IECSqlBinder::MakeCopy::No);
+    m_instancesTableInsert.BindNavigationValue(1, m_changeSummary.GetId());
 
     DbResult result = m_instancesTableInsert.Step();
     BeAssert(result == BE_SQLITE_DONE);
@@ -540,6 +476,7 @@ void InstancesTable::Update(ECClassId classId, ECInstanceId instanceId, DbOpcode
     m_instancesTableUpdate.Reset();
     m_instancesTableUpdate.BindId(1, classId);
     m_instancesTableUpdate.BindId(2, instanceId);
+    m_instancesTableInsert.BindId(3, m_changeSummary.GetId());
     m_instancesTableUpdate.BindInt(3, (int) dbOpcode);
     m_instancesTableUpdate.BindInt(4, indirect);
 
@@ -569,7 +506,7 @@ void InstancesTable::InsertOrUpdate(ChangeSummary::InstanceCR instance)
     DbOpcode dbOpcode = instance.GetDbOpcode();
     int indirect = instance.GetIndirect();
 
-    ChangeSummary::Instance foundInstance = QueryInstance(classId, instanceId);
+    ChangeSummary::Instance foundInstance = QueryChangedInstance(classId, instanceId);
     if (!foundInstance.IsValid())
         {
         Insert(classId, instanceId, dbOpcode, indirect, instance.GetTableName());
@@ -600,11 +537,11 @@ void InstancesTable::Delete(ECClassId classId, ECInstanceId instanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ChangeSummary::Instance InstancesTable::QueryInstance(ECClassId classId, ECInstanceId instanceId) const
+ChangeSummary::Instance InstancesTable::QueryChangedInstance(ECClassId classId, ECInstanceId instanceId) const
     {
     m_instancesTableSelect.BindId(1, classId);
     m_instancesTableSelect.BindId(2, instanceId);
-
+    m_instancesTableSelect.BindId(3, m_changeSummary.GetId());
     const DbResult result = m_instancesTableSelect.Step();
     ChangeSummary::Instance instance;
     if (result == BE_SQLITE_ROW)
@@ -627,6 +564,7 @@ bool InstancesTable::ContainsInstance(ECClassId classId, ECInstanceId instanceId
     {
     m_instancesTableSelect.BindId(1, classId);
     m_instancesTableSelect.BindId(2, instanceId);
+    m_instancesTableSelect.BindId(3, m_changeSummary.GetId());
 
     DbResult result = m_instancesTableSelect.Step();
     BeAssert(result == BE_SQLITE_ROW || BE_SQLITE_DONE);
@@ -637,24 +575,38 @@ bool InstancesTable::ContainsInstance(ECClassId classId, ECInstanceId instanceId
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan           10/2017
+//---------------------------------------------------------------------------------------
+ECInstanceId InstancesTable::FindInstanceId(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const
+    {
+    m_findInstance.Reset();
+    m_findInstance.ClearBindings();
+    m_findInstance.BindId(1, changedClassId);
+    m_findInstance.BindId(2, changedInstanceId);
+    m_findInstance.BindId(3, m_changeSummary.GetId());
+
+    if (m_findInstance.Step() == BE_SQLITE_ROW)
+        return m_findInstance.GetValueId<ECInstanceId>(0);
+
+    return ECInstanceId();
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECClassId InstancesTable::QueryClassId(Utf8StringCR tableName, ECInstanceId instanceId) const
+ECClassId InstancesTable::QueryChangedClassId(Utf8StringCR tableName, ECInstanceId instanceId) const
     {
-    Utf8String instancesTableName = GetName();
+    //TODO use cache statement
+    ECSqlStatement stmt;
+    stmt.Prepare(m_ecdb, "SELECT ChangedClassId FROM cs.Instance WHERE TableName=?1 AND ChangedInstanceId=?2 AND Changset.Id=?3");
+    stmt.BindText(1, tableName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(2, instanceId);
+    stmt.BindId(3, m_changeSummary.GetId());
 
-    Utf8PrintfString sql("SELECT ClassId FROM %s WHERE TableName=?1 AND InstanceId=?2", instancesTableName.c_str());
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
-    BeAssert(stmt.IsValid());
-
-    stmt->BindText(1, tableName, Statement::MakeCopy::No);
-    stmt->BindId(2, instanceId);
-
-    DbResult result = stmt->Step();
+    DbResult result = stmt.Step();
     if (result != BE_SQLITE_ROW)
         return ECClassId();
 
-    return stmt->GetValueId<ECClassId>(0);
+    return stmt.GetValueId<ECClassId>(0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -662,7 +614,7 @@ ECClassId InstancesTable::QueryClassId(Utf8StringCR tableName, ECInstanceId inst
 //---------------------------------------------------------------------------------------
 ValuesTable::ValuesTable(InstancesTable const& instancesTable) : m_instancesTable(instancesTable), m_changeSummary(instancesTable.GetChangeSummary()), m_ecdb(instancesTable.GetDb())
     {
-    m_valuesTableNameNoPrefix = Utf8PrintfString(CHANGED_VALUES_TABLE_BASE_NAME "_%d", instancesTable.GetNameSuffix());
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -670,59 +622,7 @@ ValuesTable::ValuesTable(InstancesTable const& instancesTable) : m_instancesTabl
 //---------------------------------------------------------------------------------------
 void ValuesTable::Initialize()
     {
-    CreateTable();
     PrepareStatements();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-void ValuesTable::Free()
-    {
-    FinalizeStatements();
-    ClearTable();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-Utf8String ValuesTable::GetName() const
-    {
-    Utf8PrintfString tableName(CHANGED_TABLES_TEMP_PREFIX "%s", GetNameNoPrefix().c_str());
-    return tableName;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void ValuesTable::CreateTable()
-    {
-    Utf8String valuesTableName = GetName();
-    if (m_ecdb.TableExists(valuesTableName.c_str()))
-        return;
-
-    Utf8PrintfString sql("Id INTEGER PRIMARY KEY, ClassId INTEGER NOT NULL, InstanceId INTEGER NOT NULL, AccessString TEXT NOT NULL, OldValue BLOB, NewValue BLOB, "
-                         "FOREIGN KEY(ClassId,InstanceId) REFERENCES %s ON DELETE CASCADE ON UPDATE NO ACTION", m_instancesTable.GetNameNoPrefix().c_str());
-
-    DbResult result = m_ecdb.CreateTable(valuesTableName.c_str(), sql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
-
-    Utf8PrintfString sqlIdx("CREATE UNIQUE INDEX " CHANGED_TABLES_TEMP_PREFIX "uix_%s_AccessStrUnique ON [%s] (ClassId,InstanceId,AccessString)", m_valuesTableNameNoPrefix.c_str(), m_valuesTableNameNoPrefix.c_str());
-    result = m_ecdb.ExecuteSql(sqlIdx.c_str());
-    BeAssert(result == BE_SQLITE_OK);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void ValuesTable::ClearTable()
-    {
-    Utf8String tableName = GetName();
-    BeAssert(m_ecdb.TableExists(tableName.c_str()));
-
-    Utf8PrintfString sqlDeleteAll("DELETE FROM %s", tableName.c_str());
-    DbResult result = m_ecdb.ExecuteSql(sqlDeleteAll.c_str());
-    BeAssert(result == BE_SQLITE_OK);
     }
 
 //---------------------------------------------------------------------------------------
@@ -730,42 +630,53 @@ void ValuesTable::ClearTable()
 //---------------------------------------------------------------------------------------
 void ValuesTable::PrepareStatements()
     {
-    Utf8String valuesTableName = GetName();
-    BeAssert(m_ecdb.TableExists(valuesTableName.c_str()));
-
     BeAssert(!m_valuesTableInsert.IsPrepared());
-    Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,AccessString,OldValue,NewValue) VALUES(?1,?2,?3,?4,?5)", valuesTableName.c_str());
-    DbResult result = m_valuesTableInsert.Prepare(m_ecdb, insertSql.c_str());
-    BeAssert(result == BE_SQLITE_OK);
+    //Utf8PrintfString insertSql("INSERT INTO cs.PropertyVs (ClassId,InstanceId,AccessString,OldValue,NewValue) VALUES(?1,?2,?3,?4,?5)", valuesTableName.c_str());
+    ECSqlStatus result = m_valuesTableInsert.Prepare(m_ecdb, "INSERT INTO cs.PropertyValue(Instance, AccessString, RawOldValue, RawNewValue) VALUES (?1, ?2, ?3, ?4)");
+    BeAssert(result == ECSqlStatus::Success);
+
+
+    //"SELECT ECInstanceId FROM cs.Instance WHERE ChangedInstanceId=?1 AND ChangedClassId=?2 AND Changeset.Id=?3"
+  
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan          10/2017
+//---------------------------------------------------------------------------------------
+//static
+ECSqlStatus ValuesTable::BindDbValue(ECSqlStatement& stmt, int idx, DbValue const& value)
+    {
+    if (!value.IsValid() || value.GetValueType() == DbValueType::NullVal)
+        return stmt.BindNull(idx);
+
+    if (value.GetValueType() == DbValueType::BlobVal)
+        return stmt.BindBlob(idx, value.GetValueBlob(), value.GetValueBytes(), IECSqlBinder::MakeCopy::No);
+
+    if (value.GetValueType() == DbValueType::TextVal)
+        return stmt.BindText(idx, value.GetValueText(), IECSqlBinder::MakeCopy::No);
+
+    if (value.GetValueType() == DbValueType::FloatVal)
+        return stmt.BindDouble(idx, value.GetValueDouble());
+
+    if (value.GetValueType() == DbValueType::IntegerVal)
+        return stmt.BindInt64(idx, value.GetValueInt64());
+
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ValuesTable::FinalizeStatements()
+void ValuesTable::Insert(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue)
     {
-    m_valuesTableInsert.Finalize();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue)
-    {
-    Statement& statement = m_valuesTableInsert;
-    statement.BindId(1, classId);
-    statement.BindId(2, instanceId);
-    statement.BindText(3, accessString, Statement::MakeCopy::No);
-
-    if (oldValue.IsValid())
-        statement.BindDbValue(4, oldValue);
-    else
-        statement.BindNull(4);
-
-    if (newValue.IsValid())
-        statement.BindDbValue(5, newValue);
-    else
-        statement.BindNull(5);
+    ECSqlStatement& statement = m_valuesTableInsert;
+    ECInstanceId instanceId = m_instancesTable.FindInstanceId(changedClassId, changedInstanceId);
+    statement.BindNavigationValue(1, instanceId);
+    statement.BindId(2, changedClassId);
+    statement.BindId(3, changedInstanceId);
+    statement.BindText(4, accessString, IECSqlBinder::MakeCopy::No);
+    BindDbValue(statement, 5, oldValue);
+    BindDbValue(statement, 6, newValue);
 
     DbResult result = statement.Step();
     statement.Reset();
@@ -776,23 +687,24 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECClassId oldValue, ECClassId newValue)
+void ValuesTable::Insert(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId, Utf8CP accessString, ECClassId oldValue, ECClassId newValue)
     {
-    Statement& statement = m_valuesTableInsert;
-
-    statement.BindId(1, classId);
-    statement.BindId(2, instanceId);
-    statement.BindText(3, accessString, Statement::MakeCopy::No);
+    ECSqlStatement& statement = m_valuesTableInsert;
+    ECInstanceId instanceId = m_instancesTable.FindInstanceId(changedClassId, changedInstanceId);
+    statement.BindNavigationValue(1, instanceId);
+    statement.BindId(2, changedClassId);
+    statement.BindId(3, changedInstanceId);
+    statement.BindText(4, accessString, IECSqlBinder::MakeCopy::No);
 
     if (oldValue.IsValid())
-        statement.BindId(4, oldValue);
-    else
-        statement.BindNull(4);
-
-    if (newValue.IsValid())
-        statement.BindId(5, newValue);
+        statement.BindId(5, oldValue);
     else
         statement.BindNull(5);
+
+    if (newValue.IsValid())
+        statement.BindId(6, newValue);
+    else
+        statement.BindNull(6);
 
     DbResult result = statement.Step();
     statement.Reset();
@@ -803,23 +715,24 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECInstanceId oldValue, ECInstanceId newValue)
+void ValuesTable::Insert(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId, Utf8CP accessString, ECInstanceId oldValue, ECInstanceId newValue)
     {
-    Statement& statement = m_valuesTableInsert;
-
-    statement.BindId(1, classId);
-    statement.BindId(2, instanceId);
-    statement.BindText(3, accessString, Statement::MakeCopy::No);
+    ECSqlStatement& statement = m_valuesTableInsert;
+    ECInstanceId instanceId = m_instancesTable.FindInstanceId(changedClassId, changedInstanceId);
+    statement.BindNavigationValue(1, instanceId);
+    statement.BindId(2, changedClassId);
+    statement.BindId(3, changedInstanceId);
+    statement.BindText(4, accessString, IECSqlBinder::MakeCopy::No);
 
     if (oldValue.IsValid())
-        statement.BindId(4, oldValue);
-    else
-        statement.BindNull(4);
-
-    if (newValue.IsValid())
-        statement.BindId(5, newValue);
+        statement.BindId(5, oldValue);
     else
         statement.BindNull(5);
+
+    if (newValue.IsValid())
+        statement.BindId(6, newValue);
+    else
+        statement.BindNull(7);
 
     DbResult result = statement.Step();
     statement.Reset();
@@ -963,7 +876,7 @@ void ChangeExtractor::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry con
 ECN::ECClassId ChangeExtractor::GetClassIdFromColumn(TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const
     {
     // Search in all changes
-    ECClassId classId = m_instancesTable.QueryClassId(tableMap.GetTableName(), instanceId);
+    ECClassId classId = m_instancesTable.QueryChangedClassId(tableMap.GetTableName(), instanceId);
     if (classId.IsValid())
         return classId;
 
@@ -1238,7 +1151,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
         Utf8StringCR endTableName = classIdColumn->GetTable().GetName();
 
         // Search in all changes
-        ECClassId classId = m_instancesTable.QueryClassId(endTableName, relEndInstanceId);
+        ECClassId classId = m_instancesTable.QueryChangedClassId(endTableName, relEndInstanceId);
         if (classId.IsValid())
             return classId;
 
@@ -1313,7 +1226,7 @@ void ChangeSummary::Initialize()
     if (IsValid())
         return;
 
-    m_instancesTable = new InstancesTable(*this, s_count);
+    m_instancesTable = new InstancesTable(*this);
     m_instancesTable->Initialize();
 
     m_valuesTable = new ValuesTable(*m_instancesTable);
@@ -1367,17 +1280,12 @@ BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet, ChangeSummary:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-Utf8String ChangeSummary::GetInstancesTableName() const { return m_instancesTable->GetName(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
 bool ChangeSummary::ContainsInstance(ECClassId classId, ECInstanceId instanceId) const { return m_instancesTable->ContainsInstance(classId, instanceId); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ChangeSummary::Instance ChangeSummary::GetInstance(ECClassId classId, ECInstanceId instanceId) const { return m_instancesTable->QueryInstance(classId, instanceId);  }
+ChangeSummary::Instance ChangeSummary::GetInstance(ECClassId classId, ECInstanceId instanceId) const { return m_instancesTable->QueryChangedInstance(classId, instanceId);  }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
@@ -1477,11 +1385,6 @@ void ChangeSummary::Dump() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-Utf8String ChangeSummary::GetValuesTableName() const { return m_valuesTable->GetName(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
 // static
 BentleyStatus ChangeSummary::GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb)
     {
@@ -1517,20 +1420,16 @@ ChangeSummary::Instance& ChangeSummary::Instance::operator=(InstanceCR other)
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessString) const
-    {
-    if (!m_valuesTableSelect.IsValid())
+    {//TODO ToECSql
+    if (!m_valuesTableSelect.IsPrepared())
         {
-        Utf8String tableName = m_changeSummary->GetValuesTableName();
-        Utf8PrintfString sql("SELECT OldValue, NewValue FROM %s WHERE ClassId=? AND InstanceId=? AND AccessString=?", tableName.c_str());
-        m_valuesTableSelect = m_changeSummary->GetDb().GetImpl().GetCachedSqliteStatement(sql.c_str());
-        BeAssert(m_valuesTableSelect.IsValid());
-
-        m_valuesTableSelect->BindId(1, m_classId);
-        m_valuesTableSelect->BindId(2, m_instanceId);
+        m_valuesTableSelect.Prepare(m_changeSummary->GetDb(), "SELECT RawOldValue, RawNewValue FROM cs.PropertyValue WHERE ClassId=? AND InstanceId=? AND AccessString=?");
+        m_valuesTableSelect.BindId(1, m_classId);
+        m_valuesTableSelect.BindId(2, m_instanceId);
         }
 
-    m_valuesTableSelect->Reset();
-    m_valuesTableSelect->BindText(3, accessString, Statement::MakeCopy::No);
+    m_valuesTableSelect.Reset();
+    m_valuesTableSelect.BindText(3, accessString, IECSqlBinder::MakeCopy::No);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1539,15 +1438,15 @@ void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessStrin
 DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
     {
     BeAssert(IsValid());
-
-    if (IsValid())
-       {
-       SetupValuesTableSelectStatement(accessString);
-       DbResult result = m_valuesTableSelect->Step();
-       if (result == BE_SQLITE_ROW)
-           return m_valuesTableSelect->GetDbValue(0);
-       BeAssert(result == BE_SQLITE_DONE);
-       }
+    //TODO ToECSql
+    //if (IsValid())
+    //   {
+    //   SetupValuesTableSelectStatement(accessString);
+    //   DbResult result = m_valuesTableSelect.Step();
+    //   if (result == BE_SQLITE_ROW)
+    //       return m_valuesTableSelect.GetDbValue(0);
+    //   BeAssert(result == BE_SQLITE_DONE);
+    //   }
     
     DbDupValue invalidValue(nullptr);
     return invalidValue;
@@ -1559,15 +1458,15 @@ DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
 DbDupValue ChangeSummary::Instance::GetNewValue(Utf8CP accessString) const
     {
     BeAssert(IsValid());
-
-    if (IsValid())
-        {
-        SetupValuesTableSelectStatement(accessString);
-        DbResult result = m_valuesTableSelect->Step();
-        if (result == BE_SQLITE_ROW)
-            return m_valuesTableSelect->GetDbValue(1);
-        BeAssert(result == BE_SQLITE_DONE);
-        }
+    //TODO ToECSql
+    //if (IsValid())
+    //    {
+    //    SetupValuesTableSelectStatement(accessString);
+    //    DbResult result = m_valuesTableSelect.Step();
+    //    if (result == BE_SQLITE_ROW)
+    //        return m_valuesTableSelect.GetDbValue(1);
+    //    BeAssert(result == BE_SQLITE_DONE);
+    //    }
 
     DbDupValue invalidValue(nullptr);
     return invalidValue;
@@ -1586,7 +1485,7 @@ bool ChangeSummary::Instance::ContainsValue(Utf8CP accessString) const
 
     SetupValuesTableSelectStatement(accessString);
 
-    DbResult result = m_valuesTableSelect->Step();
+    DbResult result = m_valuesTableSelect.Step();
     BeAssert(result == BE_SQLITE_DONE || result == BE_SQLITE_ROW);
 
     return (result == BE_SQLITE_ROW);
@@ -1624,23 +1523,13 @@ Utf8String ChangeSummary::InstanceIterator::Options::ToSelectStatement(Utf8CP co
         {
         Utf8String sql("SELECT ");
         sql.append(columns);
-        sql.append(" FROM ");
-        sql.append(summary.GetInstancesTableName());
-
+        sql.append(" FROM cs.Instance WHERE Changeset.Id=");
+        sql.append(summary.GetId().ToHexStr());
         return sql;
         }
 
-    Utf8String sql(
-            " WITH RECURSIVE"
-            "    DerivedClasses(ClassId) AS ("
-            "        VALUES(:baseClassId)"
-            "        UNION "
-            "        SELECT ec_ClassHasBaseClasses.ClassId FROM ec_ClassHasBaseClasses, DerivedClasses WHERE ec_ClassHasBaseClasses.BaseClassId=DerivedClasses.ClassId"
-            "        )"
-            " SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName"
-            " FROM ");
-    sql.append(summary.GetInstancesTableName());
-    sql.append(" WHERE ClassId IN DerivedClasses");
+    Utf8String sql;
+    sql.Sprintf("SELECT I.ChangedClassId, I.ChangedInstanceId, I.Operation, I.Indirect, I.TableName FROM cs.Instance I INNER JOIN meta.ClassHasAllBaseClasses C ON C,SourceECInstanceId = I.ChangedClassId WHERE C.TargetECInstanceId=:baseClassId AND I.Changeset.Id = %s", summary.GetId().ToHexStr().c_str());
     if (QueryDbOpcode::All != m_opcodes)
         {
         sql.append(" AND ");
@@ -1666,7 +1555,7 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = MakeSqlString(MakeSelectStatement("ClassId,InstanceId,DbOpcode,Indirect,TableName").c_str());
+        Utf8String sqlString = MakeSqlString(MakeSelectStatement("ChangedClassId,ChangedInstanceId,Operation,Indirect,TableName").c_str());
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         m_options.Bind(*m_stmt);
@@ -1708,21 +1597,22 @@ int ChangeSummary::InstanceIterator::QueryCount() const
 //---------------------------------------------------------------------------------------
 ChangeSummary::ValueIterator::const_iterator ChangeSummary::ValueIterator::begin() const
     {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String tableName = m_changeSummary.GetValuesTableName();
-        Utf8PrintfString sql("SELECT AccessString,OldValue,NewValue FROM %s WHERE ClassId=? AND InstanceId=?", tableName.c_str());
-        Utf8String sqlString = MakeSqlString(sql.c_str(), true);
-        DbResult result = m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-        BeAssert(BE_SQLITE_OK == result);
+    //TODO ToECSql
+    //if (!m_stmt.IsValid())
+    //    {
+    //    Utf8String tableName = m_changeSummary.GetValuesTableName();
+    //    Utf8PrintfString sql("SELECT AccessString,OldValue,NewValue FROM %s WHERE ClassId=? AND InstanceId=?", tableName.c_str());
+    //    Utf8String sqlString = MakeSqlString(sql.c_str(), true);
+    //    DbResult result = m_db->GetCachedStatement(m_stmt, sqlString.c_str());
+    //    BeAssert(BE_SQLITE_OK == result);
 
-        m_stmt->BindId(1, m_classId);
-        m_stmt->BindId(2, m_instanceId);
-        }
-    else
-        {
-        m_stmt->Reset();
-        }
+    //    m_stmt->BindId(1, m_classId);
+    //    m_stmt->BindId(2, m_instanceId);
+    //    }
+    //else
+    //    {
+    //    m_stmt->Reset();
+    //    }
 
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
@@ -1732,9 +1622,7 @@ ChangeSummary::ValueIterator::const_iterator ChangeSummary::ValueIterator::begin
 //---------------------------------------------------------------------------------------
 int ChangeSummary::ValueIterator::QueryCount() const
     {
-    Utf8String tableName = m_changeSummary.GetValuesTableName();
-    Utf8PrintfString sql("SELECT COUNT(*) FROM %s WHERE ClassId=? AND InstanceId=?", tableName.c_str());
-    Utf8String sqlString = MakeSqlString(sql.c_str());
+    Utf8String sqlString = MakeSqlString("SELECT COUNT(*) FROM cs.PropertyValue WHERE ClassId=? AND InstanceId=?");
 
     CachedStatementPtr stmt;
     m_db->GetCachedStatement(stmt, sqlString.c_str());
@@ -1775,7 +1663,7 @@ Utf8String ChangeSummary::ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) c
 
     BeAssert(!whereInStr.empty());
 
-    return Utf8PrintfString("DbOpcode IN (%s)", whereInStr.c_str());
+    return Utf8PrintfString("Operation IN (%s)", whereInStr.c_str());
     }
 
 //---------------------------------------------------------------------------------------

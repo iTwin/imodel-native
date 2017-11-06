@@ -207,6 +207,18 @@ struct SqlChange final: NonCopyableClass
     };
 
 //=======================================================================================
+// @bsiclass                                              Ramanujam.Raman      10/2017
+//=======================================================================================
+struct ChangesetTable final : NonCopyableClass
+    {
+    private:
+        ChangeSummaryCR m_changeSummary;
+        ECDbCR m_ecdb;
+
+    public:
+        mutable ECSqlStatement m_instancesTableDelete;
+    };
+//=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
 struct InstancesTable final : NonCopyableClass
@@ -214,41 +226,32 @@ struct InstancesTable final : NonCopyableClass
     private:
         ChangeSummaryCR m_changeSummary;
         ECDbCR m_ecdb;
-        Utf8String m_instancesTableNameNoPrefix;
-        mutable Statement m_instancesTableDelete;
-        mutable Statement m_instancesTableInsert;
-        mutable Statement m_instancesTableUpdate;
-        mutable Statement m_instancesTableSelect;
+        mutable ECSqlStatement m_instancesTableDelete;
+        mutable ECSqlStatement m_instancesTableInsert;
+        mutable ECSqlStatement m_instancesTableUpdate;
+        mutable ECSqlStatement m_instancesTableSelect;
+        mutable ECSqlStatement m_findInstance;
 
-        const int m_nameSuffix;
-
-        void CreateTable();
         void PrepareStatements();
-        void FinalizeStatements();
-        void ClearTable();
 
         void Insert(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName);
         void Update(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
         
     public:
-        InstancesTable(ChangeSummaryCR changeSummary, int nameSuffix);
-        ~InstancesTable() { Free(); }
+        InstancesTable(ChangeSummaryCR changeSummary);
+        ~InstancesTable() {}
 
         void Initialize();
-        void Free();
 
         ECDbCR GetDb() const { return m_ecdb; }
         ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; }
-
-        Utf8String GetName() const;
-        Utf8StringCR GetNameNoPrefix() const { return m_instancesTableNameNoPrefix; }
-        int GetNameSuffix() const { return m_nameSuffix; }
-
+        ECInstanceId GetChangesetId() const { return m_changeSummary.GetId(); }
         void InsertOrUpdate(ChangeSummary::InstanceCR changeInstance);
-        void Delete(ECN::ECClassId classId, ECInstanceId instanceId);
-        ChangeSummary::Instance QueryInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
-        ECN::ECClassId QueryClassId(Utf8StringCR tableName, ECInstanceId instanceId) const;
-        bool ContainsInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
+        void Delete(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId);
+        ChangeSummary::Instance QueryChangedInstance(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const;
+        ECInstanceId FindInstanceId (ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const;
+        ECN::ECClassId QueryChangedClassId(Utf8StringCR tableName, ECInstanceId changedInstanceId) const;
+        bool ContainsInstance(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const;
     };
 
 //=======================================================================================
@@ -261,23 +264,15 @@ struct ValuesTable final: NonCopyableClass
         ECDbCR m_ecdb;
         InstancesTable const& m_instancesTable;
         Utf8String m_valuesTableNameNoPrefix;
-        mutable Statement m_valuesTableInsert;
-
-        void CreateTable();
-        void ClearTable();
+        mutable ECSqlStatement m_valuesTableInsert;
 
         void PrepareStatements();
-        void FinalizeStatements();
-
+        static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
     public:
         explicit ValuesTable(InstancesTable const&);
-        ~ValuesTable() { Free(); }
+        ~ValuesTable() {}
 
         void Initialize();
-        void Free();
-
-        Utf8String GetName() const;
-        Utf8StringCR GetNameNoPrefix() const { return m_valuesTableNameNoPrefix; }
 
         void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue);
         void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId);
