@@ -139,7 +139,7 @@ Dgn::DgnModelCR targetModel
 
     if (bodyThis.IsValid ())
         {
-        GridCurvePtr curve = GridCurve::Create (targetModel, bodyThis);
+        GridCurvePtr curve = GridLine::Create (targetModel, bodyThis);
         curve->Insert ();
         BeSQLite::DbResult result = db.InsertLinkTableRelationship (relKey, *relClass, BeSQLite::EC::ECInstanceId (thisSurface->GetElementId ()), BeSQLite::EC::ECInstanceId (curve->GetElementId ()), relInstIntersecting.get ());
         result = db.InsertLinkTableRelationship (relKey, *relClass, BeSQLite::EC::ECInstanceId (otherSurface->GetElementId ()), BeSQLite::EC::ECInstanceId (curve->GetElementId ()), relInstBase.get ());
