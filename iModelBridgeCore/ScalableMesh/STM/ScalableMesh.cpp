@@ -880,6 +880,7 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 		if (nullptr == m_scmIndexPtr) return;
 		auto store = m_scmIndexPtr->GetDataStore();
 		store->SetClipDefinitionsProvider(changed->GetClipDefinitionsProvider());
+		m_scmIndexPtr->m_canUseBcLibClips = !changed->HasOverlappingClips();
 
 		if (changed->ShouldRegenerateStaleClipFiles() && !store->DoesClipFileExist())
 		{
@@ -1487,6 +1488,7 @@ void ScalableMeshDTM::SetStorageToUors(DMatrix4d& storageToUors)
     m_draping->SetTransform(m_transformToUors);
     ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
     }
+
 
 /*-------------------Methods inherited from IDTM-----------------------------*/
 int64_t ScalableMeshDTM::_GetPointCount()
@@ -2765,6 +2767,7 @@ template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
     m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTexture();
     m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTextureVideo();
     }
+
 
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
