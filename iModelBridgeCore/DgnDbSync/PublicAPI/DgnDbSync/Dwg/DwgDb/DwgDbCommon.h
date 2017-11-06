@@ -23,6 +23,8 @@
 #define USING_NAMESPACE_DWGDB   using namespace BentleyApi::DwgDb;
 
 
+#define     UNICODE
+
 #ifdef DWGTOOLKIT_OpenDwg
 
 // OdPlatform.h expects WIN64 defined or GiContextualColors.h would fail!
@@ -30,17 +32,16 @@
     #define WIN64
 #endif
 
-#include    <Teigha/Core/Include/OdaCommon.h>
-#include    <Teigha/Core/Include/DbClass.h>
-#include    <Teigha/Core/Include/DbObjectId.h>
-#include    <Teigha/Core/Include/DbDatabase.h>
-#include    <Teigha/Core/Include/OdString.h>
-#include    <Teigha/Core/Extensions/ExServices/ExHostAppServices.h>
-#include    <Teigha/Core/Extensions/ExServices/ExSystemServices.h>
+#include    <Teigha/Kernel/Include/OdaCommon.h>
+#include    <Teigha/Drawing/Include/DbClass.h>
+#include    <Teigha/Drawing/Include/DbObjectId.h>
+#include    <Teigha/Drawing/Include/DbDatabase.h>
+#include    <Teigha/Kernel/Include/OdString.h>
+#include    <Teigha/Drawing/Extensions/ExServices/ExHostAppServices.h>
+#include    <Teigha/Kernel/Extensions/ExServices/ExSystemServices.h>
 
 #elif DWGTOOLKIT_RealDwg
 
-#define     UNICODE
 #define     _AFXDLL
 #include    <afxole.h>                  // UNREFERENCED_PARAMETER
 #include    <Wingdi.h>                  // BITMAPINFO
@@ -228,7 +229,7 @@
     DWGDB_EXPORT DwgDbStatus        DowngradeOpen ();                                   \
     DWGDB_EXPORT DwgDbStatus        Close ();                                           \
     DWGDB_EXPORT DwgString          GetDxfName () const;                                \
-    DWGDB_EXPORT DwgString          GetClassName () const;                              \
+    DWGDB_EXPORT DwgString          GetDwgClassName () const;                           \
     DWGDB_EXPORT DwgResBufIterator  GetXData (DwgStringCR name=DwgString()) const;      \
     DWGDB_EXPORT DwgDbStatus        DxfOutFields (IDxfFilerR filer) const;              \
     DWGDB_EXPORT DwgDbStatus        DxfOut (IDxfFilerR filer) const;                    \

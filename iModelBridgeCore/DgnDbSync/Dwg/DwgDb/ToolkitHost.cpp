@@ -486,6 +486,10 @@ void            IDwgDbHost::TerminateToolkit ()
 
 #if DWGTOOLKIT_OpenDwg
 
+#ifdef _MSC_VER
+    ::odrxUninitWinNTCrypt ();
+#endif
+
     try
         {
         odUninitialize ();
@@ -493,7 +497,8 @@ void            IDwgDbHost::TerminateToolkit ()
     catch (OdError& error)
         {
         std::wcout << L"OpenDWG exception: " << reinterpret_cast<wchar_t const*>(error.description().c_str()) << std::endl;
-        BeAssert (false && L"OpenDWG exception thrown from uninitialization!");
+        if (OdResult::eExtendedError != error.code())
+            BeAssert (false && L"OpenDWG exception thrown from uninitialization!");
         }
 
 #elif DWGTOOLKIT_RealDwg

@@ -26,10 +26,11 @@ struct iModelBridgeDocumentProperties
     Utf8String m_docGuid; //!< The GUID assigned to the document
     Utf8String m_webURN; //!< The URN to use when referring to this document over the Internet
     Utf8String m_desktopURN; //!< The URN to use when referring to this document from a desktop program
-    Utf8String m_otherPropertiesJSON; //!< Other properties of the document, in JSON format
+    Utf8String m_attributesJSON; //!< Document attributes, in JSON format
+    Utf8String m_spatialRootTransformJSON; //!< Spatial data transform for root document, in JSON format
 
     iModelBridgeDocumentProperties() {}
-    iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_otherPropertiesJSON(o) {}
+    iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP a, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_attributesJSON(o), m_spatialRootTransformJSON(o) {}
     };
 
 struct IModelBridgeRegistry : IRefCounted
@@ -65,7 +66,9 @@ END_BENTLEY_DGN_NAMESPACE
  */
 extern "C"
     {
-    typedef void T_iModelBridge_getAffinity (BentleyApi::Dgn::iModelBridgeWithAffinity& bridgeAffinity,
-                                             BentleyApi::BeFileName const& affinityLibraryPath,
-                                             BentleyApi::BeFileName const& sourceFileName);
+    typedef void T_iModelBridge_getAffinity (BentleyApi::WCharP buffer,
+                                             const size_t bufferSize,
+                                             BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                             BentleyApi::WCharCP affinityLibraryPath,
+                                             BentleyApi::WCharCP sourceFileName);
     };

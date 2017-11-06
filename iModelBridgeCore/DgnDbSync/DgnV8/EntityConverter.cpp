@@ -6,6 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
@@ -857,6 +861,9 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
     {
     //order is important, so use a vector for capturing the aspect only classes
     bvector<BECN::ECClassP> aspectOnlyClasses;
+
+    // Need to create a PresentationRuleSet for all aspect classes.
+    bmap<Utf8String, bvector<Utf8String>> aspectClassNames;
     for (std::pair<BECN::ECClassCP, SchemaConversionContext::ElementAspectDefinition> const& kvPair : context.GetAspectMappings())
         {
         BECN::ECClassCP inputClass = kvPair.first;
@@ -868,6 +875,16 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
             BeAssert(std::find(aspectOnlyClasses.begin(), aspectOnlyClasses.end(), aspectClass) == aspectOnlyClasses.end());
             aspectOnlyClasses.push_back(aspectClass);
             }
+
+        auto perSchema = aspectClassNames.find(aspectClass->GetSchema().GetName());
+        if (perSchema == aspectClassNames.end())
+            {
+            bvector<Utf8String> names;
+            names.push_back(aspectClass->GetName());
+            aspectClassNames[aspectClass->GetSchema().GetName()] = names;
+            }
+        else
+            perSchema->second.push_back(aspectClass->GetName());
 
         //first add domain base classes
         for (BECN::ECClassCP inputBaseClass : inputClass->GetBaseClasses())
@@ -915,6 +932,23 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
                     }
                 }
             }
+        }
+
+    Utf8String fileName(context.GetDgnDb().GetFileName().GetFileNameWithoutExtension().c_str());
+    for (auto perSchema = aspectClassNames.begin(); perSchema != aspectClassNames.end(); perSchema++)
+        {
+        Utf8PrintfString aspectSchemaName("%s specific", perSchema->first.c_str());
+        Utf8PrintfString relation("BisCore,%s", perSchema->first.c_str());
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(fileName, 1, 0, true, aspectSchemaName, relation, "", false);
+        ContentModifierP modifier = new ContentModifier("BisCore", "Element");
+        ruleset->AddPresentationRule(*modifier);
+        for (auto aspectClass : perSchema->second)
+            {
+            Utf8PrintfString fullName("%s:%s", perSchema->first.c_str(), aspectClass.c_str());
+            modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "BisCore:ElementOwnsMultiAspects", fullName, "", RelationshipMeaning::SameInstance));
+            }
+        RuleSetEmbedder embedder(context.GetDgnDb());
+        embedder.Embed(*ruleset);
         }
 
     return BSISUCCESS;

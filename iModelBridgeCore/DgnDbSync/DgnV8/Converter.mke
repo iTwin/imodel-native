@@ -184,7 +184,7 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ImagePP.lib
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) 
+LINKER_LIBRARIES        + $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib 
@@ -194,6 +194,7 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
 
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib

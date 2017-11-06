@@ -10,15 +10,15 @@
 #include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
-#include    <Teigha/Core/Include/DbObjectId.h>
-#include    <Teigha/Core/Include/DbDatabase.h>
-#include    <Teigha/Core/Include/DbDictionary.h>
-#include    <Teigha/Core/Include/DbMaterial.h>
-#include    <Teigha/Core/Include/DbVisualStyle.h>
-#include    <Teigha/Core/Include/DbSpatialFilter.h>
-#include    <Teigha/Core/Include/DbSpatialIndex.h>
-#include    <Teigha/Core/Include/DbSortentsTable.h>
-#include    <Teigha/Core/Include/DbObjectIterator.h>
+#include    <Teigha/Drawing/Include/DbObjectId.h>
+#include    <Teigha/Drawing/Include/DbDatabase.h>
+#include    <Teigha/Drawing/Include/DbDictionary.h>
+#include    <Teigha/Drawing/Include/DbMaterial.h>
+#include    <Teigha/Drawing/Include/DbVisualStyle.h>
+#include    <Teigha/Drawing/Include/DbSpatialFilter.h>
+#include    <Teigha/Drawing/Include/DbSpatialIndex.h>
+#include    <Teigha/Drawing/Include/DbSortentsTable.h>
+#include    <Teigha/Drawing/Include/DbObjectIterator.h>
 
 #elif DWGTOOLKIT_RealDwg
 
@@ -118,7 +118,7 @@ public:
     DWGDB_EXPORT bool               IsValid () const;
     DWGDB_EXPORT DwgDbDatabaseP     GetDatabase () const;
     DWGDB_EXPORT DwgDbHandle        GetHandle () const;
-    DWGDB_EXPORT DwgString          GetClassName () const;
+    DWGDB_EXPORT DwgString          GetDwgClassName () const;
     DWGDB_EXPORT bool               IsObjectDerivedFrom (DWG_TypeCP(RxClass) rxClass) const;
     DWGDB_EXPORT uint64_t           ToUInt64 () const;
     DWGDB_EXPORT DwgString          ToAscii () const;

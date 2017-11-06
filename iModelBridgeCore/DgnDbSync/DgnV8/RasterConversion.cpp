@@ -779,7 +779,15 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
     TransformCR dgnToBim = v8mm.GetTransform();
     
     if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
+        {
+        Utf8String filename;
+        DgnV8Api::IRasterAttachmentQuery* pRasterQuery = dynamic_cast<DgnV8Api::IRasterAttachmentQuery*>(&v8eh.GetHandler());
+        if (nullptr != pRasterQuery)
+            filename.Assign(pRasterQuery->GetFilename(v8eh).c_str());
+            
+        ReportIssueV(IssueSeverity::Info, IssueCategory::Filtering(), Issue::RasterFile(), nullptr, filename.c_str());
         return SUCCESS; // Raster import is disabled in the configuration file
+        }
 
     // Retrieve the options for the attachment (if any) that references this model
     Bentley::DgnModelP dgnModelP = v8eh.GetModelRef()->GetDgnModelP();

@@ -11,13 +11,13 @@
 #include    <DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
-#include    <Teigha/Core/Include/Gi/GiDrawable.h>
-#include    <Teigha/Core/Include/Gi/GiWorldDraw.h>
-#include    <Teigha/Core/Include/Gi/GiViewportDraw.h>
-#include    <Teigha/Core/Include/Gi/GiTextStyle.h>
-#include    <Teigha/Core/Include/Gi/GiImage.h>
-#include    <Teigha/Core/Include/Gi/GiClipBoundary.h>
-#include    <Teigha/Core/Include/Gi/GiMaterial.h>
+#include    <Teigha/Kernel/Include/Gi/GiDrawable.h>
+#include    <Teigha/Kernel/Include/Gi/GiWorldDraw.h>
+#include    <Teigha/Kernel/Include/Gi/GiViewportDraw.h>
+#include    <Teigha/Kernel/Include/Gi/GiTextStyle.h>
+#include    <Teigha/Kernel/Include/Gi/GiImage.h>
+#include    <Teigha/Kernel/Include/Gi/GiClipBoundary.h>
+#include    <Teigha/Kernel/Include/Gi/GiMaterial.h>
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/acgi.h>
 #else

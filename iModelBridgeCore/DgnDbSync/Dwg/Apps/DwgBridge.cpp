@@ -25,7 +25,6 @@ void            DwgBridge::_PrintUsage ()
     {
     fwprintf (stderr,
 L"\
---description=          (optional; publishing only) A string saved as the 'description' property in the DgnDb.\n\
 --unstableIds           (optional; publishing only) A flag in syncinfo that indicates that subsequent updates should assume that ElementIds are not a reliable way to cross-check elements in two versions of a file. The same piece of graphics could have been assigned a new ElementId in the new version of the file.\n\
 --configuration=        (optional; publishing only) Path to the publisher configuration file (defaults to \"ConvertConfig.xml\" next to the EXE)\n\
 --password=             Password needed for the importer to open protected input files.\n\
@@ -40,12 +39,6 @@ iModelBridge::CmdLineArgStatus DwgBridge::_ParseCommandLineArg (int iArg, int ar
     if (0 == wcscmp(argv[iArg], L"--unstableIds"))
         {
         GetImportOptions().SetStableIdPolicy(StableIdPolicy::ByHash);
-        return CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--description="))
-        {
-        GetImportOptions().SetDescription(GetArgValue(argv[iArg]).c_str());
         return CmdLineArgStatus::Success;
         }
 

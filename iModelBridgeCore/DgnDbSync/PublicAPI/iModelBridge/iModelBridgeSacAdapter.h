@@ -77,7 +77,7 @@ struct iModelBridgeSacAdapter
         BeFileName m_loggingConfigFile;         
         BeFileName m_dupInputFileName;         
         Utf8String m_description;
-        Utf8String m_otherDocPropsJson;
+        Utf8String m_attributesJSON;
         BeSQLite::BeGuid m_docGuid;
         DateTime m_expirationDate;
 
@@ -104,8 +104,8 @@ struct iModelBridgeSacAdapter
         bool GetCreateStandalone() const {return m_createStandalone;}
         void SetDescription(BentleyApi::Utf8CP descr) {m_description=descr;}
         Utf8String GetDescription() const {return m_description;}
-        void SetOtherDocPropsJson(BentleyApi::Utf8CP descr) {m_otherDocPropsJson=descr;}
-        Utf8String GetOtherDocPropsJson() const {return m_otherDocPropsJson;}
+        void SetDocAttributesJson(BentleyApi::Utf8CP descr) {m_attributesJSON=descr;}
+        Utf8String GetDocAttributesJson() const {return m_attributesJSON;}
         void SetExpirationDate(DateTime const& d) {m_expirationDate=d;}
         DateTime GetExpirationDate() const {return m_expirationDate;}
         bool ShouldCompress() const {return m_shouldCompress;}

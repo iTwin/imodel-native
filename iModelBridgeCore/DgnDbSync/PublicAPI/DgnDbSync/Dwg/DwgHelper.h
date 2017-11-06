@@ -42,7 +42,8 @@ enum class DwgFileVersion
     R2007   = 10,
     R2010   = 11,
     R2013   = 12,
-    MAX     = R2013
+    R2018   = 13,
+    MAX     = R2018
     };  // DwgFileVersion
 
 struct DwgHelper : NonCopyableClass

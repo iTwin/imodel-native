@@ -12,8 +12,8 @@
 #include    <Bentley/RefCounted.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
-#include    <Teigha/Core/Include/DbDatabase.h>
-#include    <Teigha/Core/Include/summinfo.h>
+#include    <Teigha/Drawing/Include/DbDatabase.h>
+#include    <Teigha/Drawing/Include/summinfo.h>
 
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/dbmain.h>
