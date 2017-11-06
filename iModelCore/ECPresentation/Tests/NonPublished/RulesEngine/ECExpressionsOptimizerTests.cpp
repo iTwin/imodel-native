@@ -218,3 +218,68 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalExpressionWithSeveralOperator
     expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("Schema", "Class"), true);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, OptimizeInstanceIdExpression)
+    {
+    Utf8CP expression = "ThisNode.InstanceId = \"16\"";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsValid());
+
+    OptimizedExpressionPtr expected = InstanceIdOptimizedExpression::Create(BeInt64Id(16));
+    EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, OptimizeThisNodeIsInstanceNodeExpression)
+    {
+    Utf8CP expression = "ThisNode.IsInstanceNode";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsValid());
+
+    OptimizedExpressionPtr expected = IsInstanceNodeOptimizedExpression::Create();
+    EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, OptimizeThisIsOfClassExpression)
+    {
+    Utf8CP expression = "this.IsOfClass(\"DefinitionPartition\", \"BisCore\")";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsValid());
+
+    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("BisCore", "DefinitionPartition");
+    EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, OptimizeParentIsOfClassExpression)
+    {
+    Utf8CP expression = "ParentNode.ECInstance.IsOfClass(\"Subject\", \"BisCore\")";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsValid());
+
+    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("BisCore", "Subject");
+    EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, OptimizeParentIsInstanceNodeExpression)
+    {
+    Utf8CP expression = "ParentNode.IsInstanceNode";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsValid());
+
+    OptimizedExpressionPtr expected = IsInstanceNodeOptimizedExpression::Create();
+    EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
+    }

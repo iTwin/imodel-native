@@ -281,7 +281,7 @@ protected:
         return GetDataSource(HierarchyLevelInfo(context.GetDb().GetDbGuid(), context.GetRuleset().GetRuleSetId(), nodeHierarchy.GetNode().GetParentNodeId()));
         }
     
-    void _Cache(DataSourceInfo& info, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) override
+    void _Cache(DataSourceInfo& info, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool) override
         {
         }
     void _Cache(JsonNavNodeR node, bool isVirtual) override
@@ -310,7 +310,7 @@ protected:
         if (m_hierarchy.end() != iter)
             iter->second.SetNode(tempNode);
         }
-    void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECN::ECClassId> const*, bvector<Utf8String> const*) override
+    void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*) override
         {
         }
 

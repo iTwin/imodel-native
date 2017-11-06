@@ -25,7 +25,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
     {
-    bvector<Utf8String> usedClasses = ECExpressionsHelper(ecexpressionsCache).GetUsedClasses(ecexpression);
+    bvector<Utf8String> const& usedClasses = ECExpressionsHelper(ecexpressionsCache).GetUsedClasses(ecexpression);
     for (Utf8StringCR usedClassName : usedClasses)
         {
         Utf8String schemaName, className;

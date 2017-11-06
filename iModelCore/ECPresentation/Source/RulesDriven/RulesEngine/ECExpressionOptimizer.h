@@ -35,6 +35,7 @@ struct IsInstanceNodeOptimizedExpression;
 struct IsPropertyGroupingOptimizedExpression;
 struct IsECClassGroupingOptimizedExpression;
 struct ClassNameOptimizedExpression;
+struct InstanceIdOptimizedExpression;
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                08/2017
 +===============+===============+===============+===============+===============+======*/
@@ -50,6 +51,7 @@ protected:
     virtual IsPropertyGroupingOptimizedExpression const* _AsIsPropertyGroupingOptimizedExpression() const {return nullptr;}
     virtual IsECClassGroupingOptimizedExpression const* _AsIsECClassGroupingOptimizedExpression() const {return nullptr;}
     virtual ClassNameOptimizedExpression const* _AsClassNameOptimizedExpression() const {return nullptr;}
+    virtual InstanceIdOptimizedExpression const* _AsInstanceIdOptimizedExpression() const {return nullptr;}
 public:
     LogicalOptimizedExpression const* AsLogicalOptimizedExpression() const {return _AsLogicalOptimizedExpression();}
     DisplayTypeOptimizedExpression const* AsDisplayTypeOptimizedExpression() const {return _AsDisplayTypeOptimizedExpression();}
@@ -58,6 +60,7 @@ public:
     IsPropertyGroupingOptimizedExpression const* AsIsPropertyGroupingOptimizedExpression() const {return _AsIsPropertyGroupingOptimizedExpression();}
     IsECClassGroupingOptimizedExpression const* AsIsECClassGroupingOptimizedExpression() const {return _AsIsECClassGroupingOptimizedExpression();}
     ClassNameOptimizedExpression const* AsClassNameOptimizedExpression() const {return _AsClassNameOptimizedExpression();}
+    InstanceIdOptimizedExpression const* AsInstanceIdOptimizedExpression() const {return _AsInstanceIdOptimizedExpression();}
     bool IsEqual(OptimizedExpression const& other) const {return _IsEqual(other);}
     bool Value(OptimizedExpressionsParameters const& params) {return _Value(params);}
 };
@@ -116,7 +119,7 @@ struct IsOfClassOptimizedExpression : OptimizedExpression, IECDbClosedListener
         bmap<ECN::ECClassId, bool> m_results;
         ECN::ECClassCP m_expectedClass;
         Cache() : m_expectedClass(nullptr) {}
-        Cache(ECN::ECClassCR expectedClass) : m_expectedClass(&expectedClass) {}
+        Cache(ECN::ECClassCP expectedClass) : m_expectedClass(expectedClass) {}
         };
 
 private:
@@ -154,6 +157,23 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                10/2017
++===============+===============+===============+===============+===============+======*/
+struct InstanceIdOptimizedExpression : OptimizedExpression
+{
+private:
+    BeInt64Id m_instanceId;
+private:
+    InstanceIdOptimizedExpression(BeInt64Id instanceId) : m_instanceId(instanceId) {}
+protected:
+    ECPRESENTATION_EXPORT bool _Value(OptimizedExpressionsParameters const& params) override;
+    ECPRESENTATION_EXPORT bool _IsEqual(OptimizedExpression const& other) const override;
+    InstanceIdOptimizedExpression const* _AsInstanceIdOptimizedExpression() const override {return this;}
+public:
+    static RefCountedPtr<InstanceIdOptimizedExpression> Create(BeInt64Id instanceId) {return new InstanceIdOptimizedExpression(instanceId);}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                08/2017
 +===============+===============+===============+===============+===============+======*/
 struct IsInstanceNodeOptimizedExpression : OptimizedExpression
@@ -161,7 +181,7 @@ struct IsInstanceNodeOptimizedExpression : OptimizedExpression
 private:
     IsInstanceNodeOptimizedExpression() {}
 protected:
-    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey()->AsECInstanceNodeKey();}
+    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey() && nullptr != params.GetSelectedNodeKey()->AsECInstanceNodeKey();}
     bool _IsEqual(OptimizedExpression const& other) const override {return nullptr != other.AsIsInstanceNodeOptimizedExpression();}
     IsInstanceNodeOptimizedExpression const* _AsIsInstanceNodeOptimizedExpression() const override {return this;}
 public:
@@ -176,7 +196,7 @@ struct IsPropertyGroupingOptimizedExpression : OptimizedExpression
 private:
     IsPropertyGroupingOptimizedExpression() {}
 protected:
-    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey()->AsECPropertyGroupingNodeKey();}
+    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey() && nullptr != params.GetSelectedNodeKey()->AsECPropertyGroupingNodeKey();}
     bool _IsEqual(OptimizedExpression const& other) const override {return nullptr != other.AsIsPropertyGroupingOptimizedExpression();}
     IsPropertyGroupingOptimizedExpression const* _AsIsPropertyGroupingOptimizedExpression() const override {return this;}
 public:
@@ -191,7 +211,7 @@ struct IsECClassGroupingOptimizedExpression : OptimizedExpression
 private:
     IsECClassGroupingOptimizedExpression() {}
 protected:
-    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey()->AsECClassGroupingNodeKey();}
+    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey() && nullptr != params.GetSelectedNodeKey()->AsECClassGroupingNodeKey();}
     bool _IsEqual(OptimizedExpression const& other) const override {return nullptr != other.AsIsECClassGroupingOptimizedExpression();}
     IsECClassGroupingOptimizedExpression const* _AsIsECClassGroupingOptimizedExpression() const override {return this;}
 public:

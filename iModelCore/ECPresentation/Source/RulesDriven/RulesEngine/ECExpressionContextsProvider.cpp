@@ -296,7 +296,7 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("IsSearchNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsClassGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))));
             context.AddSymbol(*ValueSymbol::Create("IsPropertyGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode) || node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))));
-            context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetGroupedInstanceKeys().size())));
+            context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetGroupedInstanceKeysCount())));
 
             if (node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode))
                 {
@@ -1318,20 +1318,27 @@ Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
+bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
     {
+    static bvector<Utf8String> empty;
     if (expression.empty())
-        return bvector<Utf8String>();
+        return empty;
+
+    bvector<Utf8String> const* cachedClasses = m_cache.GetUsedClasses(expression.c_str());
+    if (nullptr != cachedClasses)
+        return *cachedClasses;
 
     NodePtr node = GetNodeFromExpression(expression.c_str());
     if (node.IsNull())
         {
         BeAssert(false);
-        return bvector<Utf8String>();
+        return empty;
         }
 
     ECExpressionToECSqlConverter converter;
-    return converter.GetUsedClasses(*node);
+    bvector<Utf8String> classes = converter.GetUsedClasses(*node);
+    m_cache.Add(expression.c_str(), classes);
+    return *m_cache.GetUsedClasses(expression.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1383,6 +1390,17 @@ OptimizedExpressionPtr ECExpressionsCache::GetOptimized(Utf8CP expression) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> const* ECExpressionsCache::GetUsedClasses(Utf8CP expression) const
+    {
+    auto iter = m_usedClasses.find(expression);
+    if (m_usedClasses.end() == iter)
+        return nullptr;
+    return &iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const {return m_optimizedCache.end() != m_optimizedCache.find(expression);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1393,7 +1411,12 @@ void ECExpressionsCache::Add(Utf8CP expression, Node& node) {m_cache.Insert(expr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) { m_optimizedCache.Insert(expression, &node); }
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) {m_optimizedCache.Insert(expression, &node);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> const& ECExpressionsCache::Add(Utf8CP expression, bvector<Utf8String>& classes) {return m_usedClasses.Insert(expression, classes).first->second;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
