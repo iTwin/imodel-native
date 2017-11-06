@@ -1,10 +1,8 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "StructuralProfilesDefinitions.h"
 #include <DgnPlatform/DgnCoreAPI.h>
-
-#include <StructuralDomain/StructuralCommon/StructuralCommonDefinitions.h>
+#include <StructuralDomain/StructuralProfiles/StructuralProfilesDefinitions.h>
 #include <StructuralDomain/StructuralCommon/Form.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
@@ -17,7 +15,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ProfiledExtrusion : Form
     protected:
         ProfiledExtrusion() {};
     public:
-        STRUCTURAL_DOMAIN_EXPORT static ProfiledExtrusionPtr Create() { return new ProfiledExtrusion(); };
+        STRUCTURAL_DOMAIN_EXPORT static ProfiledExtrusionPtr Create();
     protected:
         EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR) override;
         EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;

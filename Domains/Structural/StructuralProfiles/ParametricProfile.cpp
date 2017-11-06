@@ -2,14 +2,16 @@
 
 HANDLER_DEFINE_MEMBERS(ParametricProfileHandler)
 
-ParametricProfilePtr ParametricProfile::Create(Dgn::PhysicalModelR model)
+ParametricProfilePtr ParametricProfile::Create(Structural::StructuralTypeDefinitionModelCPtr model)
     {
-    if (!model.GetModelId().IsValid())
+    Dgn::DgnModelId modelId = model.get()->GetModelId();
+
+    if (!model.get()->GetModelId().IsValid())
         {
         return nullptr;
         }
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    CreateParams createParams(model.get()->GetDgnDb(), model.get()->GetModelId(), QueryClassId(model.get()->GetDgnDb()));
 
     return new ParametricProfile(createParams);
     }

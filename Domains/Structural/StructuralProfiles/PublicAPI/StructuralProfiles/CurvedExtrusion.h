@@ -1,9 +1,9 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "StructuralProfilesDefinitions.h"
+#include <StructuralDomain/StructuralProfiles/StructuralProfilesDefinitions.h>
 #include <DgnPlatform/DgnCoreAPI.h>
-#include "ProfiledExtrusion.h"
+#include <StructuralDomain/StructuralProfiles/ProfiledExtrusion.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 

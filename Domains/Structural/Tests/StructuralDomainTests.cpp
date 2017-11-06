@@ -188,15 +188,14 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
 
 
     //newtest
-    /*ECN::ECClassCP structuralClass = db->GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, Wall::MyHandlerECClassName());
-    ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(*db, structuralClass->GetId());
-    DgnElementPtr   elem = elementHandler->Create(DgnElement::CreateParams(*db, physicalModel->GetModelId(), structuralClass->GetId(), code));
-    GeometrySourceP geomElem = elem.IsValid() ? elem->ToGeometrySourceP() : nullptr;
+    //*ECN::ECClassCP structuralClass = db->GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, Wall::MyHandlerECClassName());
+    //ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(*db, structuralClass->GetId());
+    //DgnElementPtr   elem = elementHandler->Create(DgnElement::CreateParams(*db, physicalModel->GetModelId(), structuralClass->GetId(), code));
+    //GeometrySourceP geomElem = elem.IsValid() ? elem->ToGeometrySourceP() : nullptr;
 
-    Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(*db, structuralClass->GetDisplayLabel().c_str());
-    geomElem->SetCategoryId(categoryId);
+    //Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(*db, structuralClass->GetDisplayLabel().c_str());
+    //geomElem->SetCategoryId(categoryId);
 
-    */
 
 
     WallPtr pw = Wall::Create(physicalModel);
@@ -251,11 +250,11 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
     jsonObj2["Wall Thickness"] = 0.1457824578;
     pw->SetJsonProperties("TEST2", jsonObj2);
 
-    /*pw->SetThickness(5.5);
+    //pw->SetThickness(5.5);
 
-    double thickness = pw->GetThickness();
+    //double thickness = pw->GetThickness();
 
-    ASSERT_TRUE(5.5 == thickness);*/
+    //ASSERT_TRUE(5.5 == thickness);
 
     pw->Update(&status);
 
@@ -292,9 +291,9 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
     Dgn::DgnViewId viewId = view.GetViewId();
     db->SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
 
-    /*double queriedThickness = queriedElement->GetPropertyValueDouble("Thickness");
+    //double queriedThickness = queriedElement->GetPropertyValueDouble("Thickness");
 
-    ASSERT_EQ(queriedThickness, thickness);*/
+    //ASSERT_EQ(queriedThickness, thickness);
     }
 
 #define BRACE_CODE_VALUE       "BRACE-001"
@@ -630,50 +629,6 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-#define VARYINGPROFILE_CODE_VALUE       "VARYINGPROFILE-001"
-
-TEST_F(StructuralDomainTestFixture, VaryingProfileClassTests)
-    {
-    DgnDbPtr db = OpenDgnDb();
-    ASSERT_TRUE(db.IsValid());
-
-    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
-    ASSERT_TRUE(definitionModel.IsValid());
-
-    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfile, *definitionModel);
-    ASSERT_TRUE(definitionElement.IsValid());
-
-    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILE_CODE_VALUE);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
-
-    //abstract class
-    }
-
-#define VARYINGPROFILEBYZONE_CODE_VALUE       "VARYINGPROFILEBYZONE-001"
-
-TEST_F(StructuralDomainTestFixture, VaryingProfileByZoneClassTests)
-    {
-    DgnDbPtr db = OpenDgnDb();
-    ASSERT_TRUE(db.IsValid());
-
-    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
-    ASSERT_TRUE(definitionModel.IsValid());
-
-    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfileByZone, *definitionModel);
-    ASSERT_TRUE(definitionElement.IsValid());
-
-    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILEBYZONE_CODE_VALUE);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
-
-    Dgn::DgnDbStatus status;
-    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
-
-    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILEBYZONE_CODE_VALUE);
-    ASSERT_TRUE(queriedElement.IsValid());
-    }
-
-
 #define CONSTANTPROFILE_CODE_VALUE2       "CONSTANTPROFILE-002"
 TEST_F(StructuralDomainTestFixture, BuiltUpProfileComponentUsesConstantProfileTest)
     {
@@ -703,18 +658,6 @@ TEST_F(StructuralDomainTestFixture, BuiltUpProfileComponentUsesConstantProfileTe
     ASSERT_TRUE(queriedElement->Update().IsValid());
     }
 
-TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
-    {
-    DgnDbPtr db = OpenDgnDb();
-    ASSERT_TRUE(db.IsValid());
-
-    ECN::ECClassCP  aspectClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfileZone);
-    ECN::StandaloneECEnablerPtr aspectEnabler = aspectClass->GetDefaultStandaloneEnabler();
-
-    ASSERT_TRUE(aspectEnabler.IsValid());
-
-    ECN::StandaloneECInstancePtr p = aspectEnabler->CreateInstance();
-    }
 
 #define STRUCTURALSUBTRACTION_CODE_VALUE       "STRUCTURALSUBTRACTION-001"
 TEST_F(StructuralDomainTestFixture, StructuralSubtractionClassTests)
@@ -861,10 +804,93 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
 
     Dgn::DgnCode memberCode1 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StructuralAdditionTests - code for structural member 1");
     WallPtr pstructMember1 = Wall::Create(physicalModel);
-    pstructMember1->SetCode(memberCode1);//not sure it is correct...
+    pstructMember1->SetCode(memberCode1);
     pstructMember1->Insert(&status);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     status = padd1->SetParentId(pstructMember1->GetElementId(), pstructMember1->GetElementClassId());
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    }
+
+
+#define PUBLISHEDPROFILE_CODE_VALUE3       "PUBLISHEDPROFILE-003"
+
+
+TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
+    {   
+/*    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_PublishedProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE3);
+    ASSERT_TRUE(code.IsValid());
+  
+    Dgn::DgnDbStatus status;
+    PublishedProfilePtr publishedProfile = PublishedProfile::Create(definitionModel);
+
+    publishedProfile->SetCode(code);
+
+
+    ECN::StandaloneECInstancePtr instance = publishedProfile->GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECN::ECObjectsStatus objectStatus = instance->AddArrayElements("CustomCardinalPoints", 5);
+    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    ECN::ECClassCP structClass = publishedProfile->GetElementClass()->GetSchema().GetClassCP("CustomCardinalPointStruct");
+    //ECN::StandaloneECEnablerPtr structEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember(structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str());
+
+    ECN::StandaloneECInstancePtr structarrayInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    //ECN::StandaloneECInstancePtr structarrayInstance = structEnabler->CreateInstance();
+
+    objectStatus = structarrayInstance->SetValue("Name", ECN::ECValue("Petras"));
+    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    DPoint2d test1 = { 0.0 };
+    objectStatus = structarrayInstance->SetValue("Coordinates", ECN::ECValue(test1));
+    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    ECN::ECValue arrayItemValue;
+    arrayItemValue.SetStruct(structarrayInstance.get());
+    objectStatus = instance->SetValue("CustomCardinalPoints", arrayItemValue, 0);
+    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    ECN::ECValue v1;
+    objectStatus = instance->GetValue(v1, "CustomCardinalPoints", 0);
+
+    status = publishedProfile->SetPropertyValue("CustomCardinalPoints", v1, 0);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    //objectStatus = structarrayInstance->SetValue("Idd", ECN::ECValue("Stepas"));
+    //ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    //DPoint2d test2 = { 0.0 };
+    //objectStatus = structarrayInstance->SetValue("Coordinates", ECN::ECValue(test2));
+    //ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+
+    //ECN::ECValue structarrayValue;
+    //structarrayValue.SetStruct(structarrayInstance.get());
+    
+    //status = publishedProfile->SetPropertyValue("CustomCardinalPoints", structarrayValue, 0);
+    
+    //objectStatus = structarrayInstance->SetValue("CustomCardinalPoints", structarrayValue);
+    //ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    publishedProfile->Insert(&status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE3);
+    ASSERT_TRUE(queriedElement.IsValid());
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    ECN::ECValue testValue;
+    status = queriedElement->GetPropertyValue(testValue, "CustomCardinalPoints");
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    ECN::ArrayInfo arrayInfo = testValue.GetArrayInfo();
+    arrayInfo.GetCount();
+    */
     }
