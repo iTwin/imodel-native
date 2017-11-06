@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/DwgDbExchange.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include  mdl.mki
@@ -13,20 +13,31 @@
     %error RealDWG only supports Windows platform!
 %endif
 
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+DeliveryNamespace   = OpenDwgImporter
+OutBuildNamespace   = OpenDwgDb
+
 #----------------------------------------------------------------------
 #   Build OpenDWG's grip points module from Examples
 #----------------------------------------------------------------------
-%if $(DWGTOOLKIT) == "OpenDwg"
-    always:
-        !$(_bmake) $(_MakeFilePath)OdGripPointsModule.mke
-%endif
+always:
+    !$(_bmake) $(_MakeFilePath)OdGripPointsModule.mke
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+DeliveryNamespace   = RealDwg$(VendorVersion)Importer
+OutBuildNamespace   = RealDwg$(VendorVersion)Db
+
+%endif      # Open/RealDwg
+
 
 appName             = $(DWGTOOLKIT)DbExchange
 baseDir             = $(_MakeFilePath)
 pubApiDir           = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/Dwg/DwgDb/
-ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
+ContextDeliveryDir  = $(BuildContext)Delivery/$(DeliveryNamespace)/
 
-o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)Db/
+o                   = $(OutputRootDir)Build/$(OutBuildNamespace)/
 always:
     ~mkdir $(o)
 
@@ -54,15 +65,15 @@ DwgDbDepends        = $(pubApiDir)DwgDbCommon.h                 \
 %include MultiCppCompileRule.mki
 
 # source files from \Core\Extensions\ExServices\...
-$(o)OdFileBuf$(oext)                    : $(ToolkitHostServices)OdFileBuf.cpp ${MultiCompileDepends}
+$(o)OdFileBuf$(oext)                    : $(ToolkitCoreServices)OdFileBuf.cpp ${MultiCompileDepends}
 
 $(o)ExUndoController$(oext)             : $(ToolkitHostServices)ExUndoController.cpp ${MultiCompileDepends}
 
 $(o)ExHostAppServices$(oext)            : $(ToolkitHostServices)ExHostAppServices.cpp ${MultiCompileDepends}
 
-$(o)ExSystemServices$(oext)             : $(ToolkitHostServices)ExSystemServices.cpp ${MultiCompileDepends}
+$(o)ExSystemServices$(oext)             : $(ToolkitCoreServices)ExSystemServices.cpp ${MultiCompileDepends}
 
-$(o)ExGiRasterImage$(oext)              : $(ToolkitHostServices)ExGiRasterImage.cpp ${MultiCompileDepends}
+$(o)ExGiRasterImage$(oext)              : $(ToolkitCoreServices)ExGiRasterImage.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -148,6 +159,8 @@ LINKER_LIBRARIES    + $(ToolkitLibs)TD_Key$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Ge$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gi$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gs$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_ExamplesCommon$(libext)
+LINKER_LIBRARIES    + crypt32.lib
 
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_SpatialIndex$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_AcisBuilder$(libext)
@@ -156,13 +169,15 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 %elif $(DWGTOOLKIT) == "RealDwg"
 
 %if !defined ($(VendorVersion))
-    VendorVersion   = 2017
+    VendorVersion   = 2018
 %endif
 
 %if $(VendorVersion) == 2016
     RealDwgSuffix   = 20
 %elif $(VendorVersion) == 2017
     RealDwgSuffix   = 21
+%elif $(VendorVersion) == 2018
+    RealDwgSuffix   = 22
 %endif
 
 LINKER_LIBRARIES    = $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
@@ -182,4 +197,3 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 %endif  // OpenDwg or RealDwg
 
 %include $(sharedMki)linkLibrary.mki
-

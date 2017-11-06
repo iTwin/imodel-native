@@ -18,7 +18,7 @@ BEGTEST_INPUT=$(baseDir)
     %error RealDWG only supports Windows platform!
 %endif
 
-ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
+DwgImporterLib  = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgImporter.lib
 
 %include $(baseDir)../DwgCompileOptions.mki
 
@@ -67,7 +67,7 @@ $(o)ImportConfigEditor.obj          : $(BEGTEST_INPUT)ImportConfigEditor.cpp    
 GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
-GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib $(ContextDeliveryDir)/DwgImporter.lib
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib $(DwgImporterLib)
 GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
@@ -78,7 +78,7 @@ LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 
 
-LINKER_LIBRARIES    + $(ContextDeliveryDir)DwgImporter.lib
+LINKER_LIBRARIES    + $(DwgImporterLib)
 
 %include $(SharedMki)gunittest.mki
 
@@ -86,9 +86,6 @@ always:
     ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
 
 $(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)Delivery/ImporterTestsConfig.xsd : $(baseDir)../Config/ConvertConfig.xsd
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/ImporterTestsConfig.xml : $(baseDir)../Config/ConvertConfig.xml

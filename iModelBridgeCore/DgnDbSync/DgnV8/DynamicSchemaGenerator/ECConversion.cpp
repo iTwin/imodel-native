@@ -1869,6 +1869,10 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
         }
     else
         {
+        // *******
+        // WARNING: GenerateSchemas calls Db::AbandonChanges if import fails! Make sure you commit your work before calling GenerateSchemas!
+        // *******
+
         DynamicSchemaGenerator gen(*this);
         gen.GenerateSchemas(uniqueModels);
 
@@ -1878,11 +1882,15 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
     if (WasAborted())
         return;
 
+    GetDgnDb().SaveChanges();
+
     // V8TagSets -> generate schemas
     // *** TBD
 
     // Let handler extensions import schemas
     importHandlerExtensionsSchema(*this);
+
+    GetDgnDb().SaveChanges();
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
@@ -1895,6 +1903,8 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
     if (WasAborted())
         return;
 
+    GetDgnDb().SaveChanges();
+
     // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
     if (GetConfig().GetOptionValueBool("CreateECClassViews", true))
         {
@@ -1902,6 +1912,7 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
         GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
         }
 
+    GetDgnDb().SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**

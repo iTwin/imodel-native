@@ -950,7 +950,6 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
             }
         RuleSetEmbedder embedder(context.GetDgnDb());
         embedder.Embed(*ruleset);
-        Utf8String xml = ruleset->WriteToXmlString();
         }
 
     return BSISUCCESS;

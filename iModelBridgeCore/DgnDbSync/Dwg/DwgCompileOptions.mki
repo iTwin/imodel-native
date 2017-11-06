@@ -14,21 +14,36 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
 
 %if $(DWGTOOLKIT) == "OpenDwg"
 
+    ## Toolkit dirs
     ToolkitRoot     = $(BuildContext)VendorAPI/Teigha/
-    ToolkitCoreInc  = $(ToolkitRoot)Core/Include/
+    ToolkitCoreInc  = $(ToolkitRoot)Kernel/Include/
+    ToolkitDrawInc  = $(ToolkitRoot)Drawing/Include/
     ToolkitSub1Inc  = $(ToolkitRoot)Architecture/
-    ToolkitSub2Inc  = $(ToolkitRoot)Core/Extensions/ExServices/
+    ToolkitSub2Inc  = $(ToolkitRoot)Kernel/Extensions/ExServices/
     ToolkitLibs     = $(BuildContext)SubParts/teigha/Libs/
 
+    ## Output dir & DwgDb .lib
+    ContextDeliveryDir  = $(BuildContext)Delivery/OpenDwgImporter/
+    DwgDbLib            = $(ContextSubpartsLibs)OpenDwgDbExchange$(libext)
+
     %if $(TARGET_PLATFORM)=="Windows"
-    ToolkitSub3Inc  = $(ToolkitRoot)Core/Extensions/win/Crypt/
+    ToolkitSub3Inc  = $(ToolkitRoot)Drawing/Extensions/win/Crypt/
     CCompOpts       + -D_TOOLKIT_IN_DLL_
     %endif
 
 %elif $(DWGTOOLKIT) == "RealDwg"
 
-    ToolkitRoot     = $(BuildContext)VendorAPI/Realdwg/
-    ToolkitLibs     = $(BuildContext)SubParts/RealDwg/Libs/
+    ## versioned RealDwg namespace
+    RealDwgVersion = RealDwg$(VendorVersion)
+
+    ## Toolkit dirs
+    ToolkitRoot     = $(BuildContext)VendorAPI/$(RealDwgVersion)/
+    ToolkitCoreInc  = $(ToolkitRoot)
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/$(RealDwgVersion)/
+
+    ## Output dir & DwgDb .lib
+    ContextDeliveryDir  = $(BuildContext)Delivery/$(RealDwgVersion)Importer/
+    DwgDbLib            = $(ContextSubpartsLibs)$(RealDwgVersion)/RealDwgDbExchange$(libext)
 
     ### a hack to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h!  Remove it when RealDWG2018 has it fixed!
     CCompOpts       + -D_ADESK_STATIC_LINKING_
@@ -49,6 +64,12 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
 ###  Need to build source from \Core\Extensions\ExServices\
 %if defined(ToolkitCoreInc)
     cIncs + -I$(ToolkitCoreInc)
+%endif
+%if defined(ToolkitDrawInc)
+    cIncs + -I$(ToolkitDrawInc)
+%endif
+%if defined(ToolkitSub2Inc)
+    cIncs + -I$(ToolkitSub2Inc)
 %endif
 
 #----------------------------------------------------------------------

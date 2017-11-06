@@ -951,8 +951,8 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
         return  BSIERROR;
 
     // a sheet has been created - cache the results:
-    DwgDbObjectId       paperspaceId = layout.GetBlockTableRecordId ();
-    m_paperspaceViews.insert (T_PaperspaceView(sheetViewId, paperspaceId));
+    DwgDbObjectId       viewportId = viewport->GetObjectId ();
+    m_paperspaceViews.insert (T_PaperspaceView(sheetViewId, viewportId));
 
     if (!m_defaultViewId.IsValid())
         m_defaultViewId = sheetViewId;

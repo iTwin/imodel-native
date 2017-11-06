@@ -154,7 +154,7 @@ Utf8String      DwgImporter::IssueReporter::FmtElement (DgnElementCR el)
 Utf8String      DwgImporter::IssueReporter::FmtEntity (DwgDbEntityCR entity)
     {
     DwgDbObjectId   id = entity.GetObjectId ();
-    return Utf8PrintfString("entity %ls [%lld]", id.GetClassName().c_str(), id.GetHandle().AsUInt64());
+    return Utf8PrintfString("entity %ls [%lld]", id.GetDwgClassName().c_str(), id.GetHandle().AsUInt64());
     }
 
 //---------------------------------------------------------------------------------------

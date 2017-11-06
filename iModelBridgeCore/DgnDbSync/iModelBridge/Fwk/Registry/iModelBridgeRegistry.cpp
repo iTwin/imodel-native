@@ -83,11 +83,12 @@ BeSQLite::DbResult iModelBridgeRegistry::OpenOrCreateStateDb()
                                                                  Bridge BIGINT"));  // Bridge --foreign key--> fwk_InstalledBridges
 
         // WARNING: Do not change the name or layout of the DocumentProperties - Bentley Automation Services assumes the following definition:
-        MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase, \
+        MUSTBEOK(m_stateDb.CreateTable("DocumentProperties", "LocalFilePath TEXT NOT NULL UNIQUE COLLATE NoCase,\
                                                                 DocGuid TEXT UNIQUE COLLATE NoCase,\
-                                                                DesktopURN TEXT COLLATE NoCase,\
-                                                                WebURN TEXT COLLATE NoCase, \
-                                                                AttributesJSON TEXT, \
+                                                                DesktopURN TEXT,\
+                                                                WebURN TEXT,\
+                                                                AttributesJSON TEXT,\
+                                                                ChangeHistoryJSON TEXT,\
                                                                 SpatialRootTransformJSON TEXT"));
 
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
@@ -615,10 +616,11 @@ int iModelBridgeRegistry::ComputeAffinityMain(int argc, WCharCP argv[])
         {
         BeFileName filePath(filePathUtf8, true);
         filePath.RemoveQuotes();
-        iModelBridgeWithAffinity bridge;
-        bridge.m_bridgeRegSubKey = L"dummy";    // *** TRICKY: See comment below "Don't pass empty string to bridge"
-        getAffinity(bridge, affinityLibraryPath, filePath);
-        fprintf(stdout, "%d\n%s\n", (int)bridge.m_affinity, Utf8String(bridge.m_bridgeRegSubKey).c_str());
+        
+        WChar registryName[MAX_PATH] = {0};
+        iModelBridgeAffinityLevel affinity;
+        getAffinity(registryName, MAX_PATH, affinity, affinityLibraryPath.c_str(), filePath.c_str());
+        fprintf(stdout, "%d\n%s\n", (int) affinity, Utf8String(registryName).c_str());
         fflush(stdout);
         }
 

@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/OdGripPointsModule.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
@@ -12,12 +12,21 @@
     %error This module is only valid for OpenDWG!
 %endif
 
+%if $(VendorVersion) == "4.1.1"
+    Kernel = Core
+    Drawing = Core
+%else
+    Kernel = Kernel
+    Drawing = Drawing
+%endif
+
 %include  mdl.mki
 
 appName             = OdGripPoints
-OpenDwgCore         = $(BuildContext)VendorAPI/Teigha/Core/
+OpenDwgCore         = $(BuildContext)VendorAPI/Teigha/$(Kernel)/
+OpenDwgDrawing      = $(BuildContext)VendorAPI/Teigha/$(Drawing)/
 OpenDwgLibsDir      = $(BuildContext)SubParts/Teigha/Libs/
-OdGripPointsDir     = $(OpenDwgCore)Examples/GripPoints/
+OdGripPointsDir     = $(OpenDwgDrawing)Examples/GripPoints/
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
 o   = $(OutputRootDir)Build/$(DWGTOOLKIT)Db/
@@ -26,11 +35,15 @@ always:
 
 cIncs + -I$(OpenDwgCore)Include/
 
+%if $(OpenDwgCore)!=$(OpenDwgDrawing)
+    cIncs +  -I$(OpenDwgDrawing)Include/
+%endif
+
 #----------------------------------------------------------------------
 #    OdGripPointsModule compile options
 #----------------------------------------------------------------------
 CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS
-CCompOpts + -wd4389 -wd4189
+CCompOpts + -wd4389 -wd4189 -wd4505
 # CCompOpts + -DODA_LINT <= debugging stuff??
 
 always:
@@ -55,7 +68,11 @@ $(o)DbCameraGripPoints$(oext)               : $(OdGripPointsDir)DbCameraGripPoin
 
 $(o)DbCircleGripPoints$(oext)               : $(OdGripPointsDir)DbCircleGripPoints.cpp ${MultiCompileDepends}
 
+$(o)DbDgnUnderlayGripPoints$(oext)          : $(OdGripPointsDir)DbDgnUnderlayGripPoints.cpp ${MultiCompileDepends}
+
 $(o)DbDimGripPoints$(oext)                  : $(OdGripPointsDir)DbDimGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbEllipseGripPoints$(oext)              : $(OdGripPointsDir)DbEllipseGripPoints.cpp ${MultiCompileDepends}
 
 $(o)DbEntityGripPoints$(oext)               : $(OdGripPointsDir)DbEntityGripPoints.cpp ${MultiCompileDepends}
 
@@ -66,6 +83,8 @@ $(o)DbLineGripPoints$(oext)                 : $(OdGripPointsDir)DbLineGripPoints
 $(o)DbMleaderGripPoints$(oext)              : $(OdGripPointsDir)DbMleaderGripPoints.cpp ${MultiCompileDepends}
 
 $(o)DbMlineGripPoints$(oext)                : $(OdGripPointsDir)DbMlineGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbOleGripPoints$(oext)                  : $(OdGripPointsDir)DbOleGripPoints.cpp ${MultiCompileDepends}
 
 $(o)DbPdfUnderlayGripPoints$(oext)          : $(OdGripPointsDir)DbPdfUnderlayGripPoints.cpp ${MultiCompileDepends}
 
@@ -80,6 +99,8 @@ $(o)DbTextGripPoints$(oext)                 : $(OdGripPointsDir)DbTextGripPoints
 $(o)DbTraceGripPoints$(oext)                : $(OdGripPointsDir)DbTraceGripPoints.cpp ${MultiCompileDepends}
 
 $(o)DbViewportGripPoints$(oext)             : $(OdGripPointsDir)DbViewportGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbWipeoutGripPoints$(oext)              : $(OdGripPointsDir)DbWipeoutGripPoints.cpp ${MultiCompileDepends}
 
 $(o)OdGripPointsModule$(oext)               : $(OdGripPointsDir)OdGripPointsModule.cpp ${MultiCompileDepends}
 

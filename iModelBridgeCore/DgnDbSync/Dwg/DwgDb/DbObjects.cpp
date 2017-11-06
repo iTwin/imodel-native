@@ -57,7 +57,7 @@ DwgDbObjectIdR      DwgDbObjectId::operator = (DWGDB_TypeCR(ObjectId) id) { DWGD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgString       DwgDbObjectId::GetClassName () const
+DwgString       DwgDbObjectId::GetDwgClassName () const
     {
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectPtr   obj = T_Super::safeOpenObject ();

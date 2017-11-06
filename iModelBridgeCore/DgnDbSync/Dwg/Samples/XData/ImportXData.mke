@@ -13,10 +13,10 @@ DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
 DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
 DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
 DwgPublicAPI        = $(DgnDbSyncPubAPI)Dwg/
-DwgDbLibName        = $(DWGTOOLKIT)DbExchange
-DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
+DwgVendorAPI        = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/
+DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
 
-o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(appName)/
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)$(appName)/
 always:
     ~mkdir $(o)
 
@@ -26,9 +26,14 @@ ImportXDataDepends  = $(baseDir)ImportXData.h                   \
                       $(DgnDbSyncPubAPI)DgnDbSync.h
 
 ### Pass $(DWGTOOLKIT) to compiler
-CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
 
-%if $(DWGTOOLKIT) == "RealDwg"
+%if $(DWGTOOLKIT) == "OpenDwg"
+    DwgDbLibName    = OpenDwgDbExchange$(libext)
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+    DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
+
     ### Suppress RealDWG import/export directives so we don't have to link with its libs.
     CCompOpts + -D_ADESK_STATIC_LINKING_
 %endif
@@ -52,7 +57,7 @@ EXE_NO_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
 LINKER_LIBRARIES    + $(DwgImporterDir)DwgBridge$(libext)
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)

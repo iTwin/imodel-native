@@ -11,8 +11,8 @@
 #include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
-#include    <Teigha/Core/Include/SmartPtr.h>
-#include    <Teigha/Core/Include/OdString.h>
+#include    <Teigha/Kernel/Include/SmartPtr.h>
+#include    <Teigha/Kernel/Include/OdString.h>
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/dbobjptr2.h>
 #include    <RealDwg/Base/AcString.h>

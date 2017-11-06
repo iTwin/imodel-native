@@ -1330,6 +1330,7 @@ DgnGeometryPartId       m_partId;
 Render::GeometryParams  m_geomParams;
 Transform               m_geomToLocal;
 DRange3d                m_localRange;
+bool                    m_isLevelByCell;
 
 };
 
@@ -2302,6 +2303,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             partRef.m_geomParams = pathEntry.m_geomParams;
             partRef.m_geomToLocal = geomToLocal;
             partRef.m_localRange = localRange;
+            partRef.m_isLevelByCell = DgnV8Api::LEVEL_BYCELL == pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.level;
 
             geomParts.push_back(partRef);
 
@@ -2734,10 +2736,11 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
     if (!geomParts.empty())
         {
-        // NOTE: Level from shared cell instance that does not have a level override is meaningless.
+        // NOTE: Level from shared cell instance that does not have a level override is 
+        //       meaningless except for components that use DgnV8Api::LEVEL_BYCELL. 
         //       Getting a valid level to pass to ProcessElement would be expensive, so detect
-        //       this situation and choose the category from the first part instead. This avoids
-        //       creating un-necessary assemblies/parent element w/o Geometry...
+        //       this situation and choose the category from the first part as necessary. 
+        //       This avoids creating un-necessary assemblies/parent element w/o Geometry...
         //       Purposely doesn't check if target is "GetUncategorizedCategory" as instance level
         //       doesn't have to be 0 (ex. relative level nonsense, etc.)
         bool targetCategoryValid = false;
@@ -2757,7 +2760,8 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
             ApplySharedCellInstanceOverrides(v8eh, geomParams); // Apply SCOverride now for a shared cell that was deemed ok for a GeometryPart...
 
-            lastCategoryId = geomParams.GetCategoryId();
+            if (!partRef.m_isLevelByCell)
+                lastCategoryId = geomParams.GetCategoryId();
 
             if (!targetCategoryValid && targetCategoryId == lastCategoryId)
                 targetCategoryValid = true;    
