@@ -105,7 +105,7 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
-                                $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
+                                $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 
 
 %include $(sharedMki)LinkLibrary.mki
