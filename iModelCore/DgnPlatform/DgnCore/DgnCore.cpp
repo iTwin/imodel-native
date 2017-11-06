@@ -306,6 +306,10 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
     ECN::ECSchemaReadContext::Initialize(assetDir);
+
+    // initialize http services
+    Http::HttpClient::Options* httpOptions = _SupplyHttpClientOptions();
+    Http::HttpClient::Initialize(nullptr != httpOptions ? *httpOptions : Http::HttpClient::Options(assetDir, 10/*maxConnectionPerHost*/));
     }
 
 /*---------------------------------------------------------------------------------**//**
