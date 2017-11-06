@@ -346,7 +346,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
 
-    //  Load the root model
+    //  Load the root model and all of its reference attachments. Let V8 do this, so that we know that it's done correctly and in the same way that MicroStation would do it.
     m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
     if (NULL == m_rootModelRef)
         return openStatus;
@@ -364,14 +364,14 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (WasAborted())
         return DgnV8Api::DGNFILE_STATUS_UnknownError;
     
-    // Load and fill V8 models. These will be fed into the ECSchema conversion logic. Also, the model conversion code needs to assume
-    // that all models are filled. These functions will ALSO enroll the v8files that they find in syncinfo.
+    // Detect all V8 models. This process also classifies 2d design models and loads and fills drawings and sheets.
+    // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
     CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetV8FileSyncInfoId
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
 
 #ifndef NDEBUG
-    BeAssert((m_v8Files.size() >= 1) && "FindSpatialV8Models should have populates m_v8Files");
+    BeAssert((m_v8Files.size() >= 1) && "FindSpatialV8Models should have populated m_v8Files");
     for (auto f : m_v8Files)
         {
         auto cachedSfid = GetV8FileSyncInfoIdFromAppData(*f);

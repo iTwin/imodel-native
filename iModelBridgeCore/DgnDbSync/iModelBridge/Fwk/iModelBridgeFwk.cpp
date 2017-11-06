@@ -1324,6 +1324,9 @@ int iModelBridgeFwk::UpdateExistingBim()
             return BentleyStatus::ERROR;
             }
 
+        m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+
         //  Let the bridge generate schema changes
         if (BSISUCCESS != m_bridge->_MakeSchemaChanges())
             {

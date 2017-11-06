@@ -134,6 +134,9 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         return nullptr;
         }
 
+    db->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                       // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+
     // Tell the bridge to generate schemas
     _MakeSchemaChanges();
 
