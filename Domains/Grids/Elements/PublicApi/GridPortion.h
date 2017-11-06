@@ -102,6 +102,12 @@ public:
     //! @return BentleyStatus::ERROR if grid has no elements
     GRIDELEMENTS_EXPORT BentleyStatus GetGridRotationAngleXY(double& angle) const;
 
+    //! intersects this grid with the given surface, creates gridcurves
+    //! @param[in] surface      surface to intersect
+    //! @param[in] targetModel  model to create gridcurves in
+    //! @return BentleyStatus for the operation result
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface (GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel);
+
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 
@@ -110,6 +116,7 @@ public:
     
     //! Returns a grid portion with given parent element and name
     GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
+
     };
 
 END_GRIDS_NAMESPACE

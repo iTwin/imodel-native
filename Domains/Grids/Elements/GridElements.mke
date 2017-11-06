@@ -63,6 +63,8 @@ $(o)GridArc$(oext) : $(_MakeFilePath)GridArc.cpp ${MultiCompileDepends} $(_MakeF
 
 $(o)GridAxis$(oext) : $(_MakeFilePath)GridAxis.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridAxis.h
 
+$(o)GridSurfaceCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridSurfaceCreatesGridCurveHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceCreatesGridCurveHandler.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
@@ -80,6 +82,7 @@ DLM_OBJECT_FILES = $(objs)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ConstraintModel$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(stlibext)

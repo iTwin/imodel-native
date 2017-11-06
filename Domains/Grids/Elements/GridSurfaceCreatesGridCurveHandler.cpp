@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Handlers/GridSurfaceCreatesGridCurveHandler.cpp $
+|     $Source: Grids/Elements/GridSurfaceCreatesGridCurveHandler.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

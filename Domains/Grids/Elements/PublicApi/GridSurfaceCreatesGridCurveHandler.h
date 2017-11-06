@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Handlers/PublicApi/GridSurfaceCreatesGridCurveHandler.h $
+|     $Source: Grids/Elements/PublicApi/GridSurfaceCreatesGridCurveHandler.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,7 @@ BEGIN_GRIDS_NAMESPACE
 struct GridSurfaceCreatesGridCurveHandler : Dgn::DgnElementDependencyHandler
 {
 private: 
-    DOMAINHANDLER_DECLARE_MEMBERS (GRIDS_REL_GridSurfaceCreatesGridCurve, GridSurfaceCreatesGridCurveHandler, Dgn::DgnDomain::Handler, GRIDHANDLERS_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS (GRIDS_REL_GridSurfaceCreatesGridCurve, GridSurfaceCreatesGridCurveHandler, Dgn::DgnDomain::Handler, GRIDELEMENTS_EXPORT)
 
 protected:
     void _OnRootChanged (Dgn::DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
@@ -26,8 +26,8 @@ protected:
     ICurvePrimitivePtr  static ComputeIntersection (GridSurfaceCPtr thisSurface, GridSurfaceCPtr otherSurface);
 
 public:
-    GRIDHANDLERS_EXPORT static ECN::ECClassCR GetECClass (Dgn::DgnDbR db) { return *db.Schemas ().GetClass (GRIDS_SCHEMA_NAME, GRIDS_REL_GridSurfaceCreatesGridCurve); }
-    GRIDHANDLERS_EXPORT static BeSQLite::EC::ECInstanceKey Insert (Dgn::DgnDbR db, GridSurfaceCPtr thisSurface, GridSurfaceCPtr otherSurface, Dgn::DgnModelCR targetModel);
+    GRIDELEMENTS_EXPORT static ECN::ECClassCR GetECClass (Dgn::DgnDbR db) { return *db.Schemas ().GetClass (GRIDS_SCHEMA_NAME, GRIDS_REL_GridSurfaceCreatesGridCurve); }
+    GRIDELEMENTS_EXPORT static BeSQLite::EC::ECInstanceKey Insert (Dgn::DgnDbR db, GridSurfaceCPtr thisSurface, GridSurfaceCPtr otherSurface, Dgn::DgnModelCR targetModel);
 };
 
 END_GRIDS_NAMESPACE
