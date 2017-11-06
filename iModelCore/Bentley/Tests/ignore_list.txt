@@ -100,3 +100,13 @@ LimitingTaskQueueTests.Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEven
     #            ntdll.dll!TppWorkerThread()  
     #            kernel32.dll!BaseThreadInitThunk()  
     #            ntdll.dll!RtlUserThreadStart()  
+
+BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
+    # bim2-0r1, x64, DEBUG
+    # [ RUN      ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
+    # 1095361199000    1095364799000
+    # F:\Bim2-0R1\src\Bentley\Tests\Published\BeTimeUtilities_test.cpp(184): error:       Expected: expectedMillis
+    #       Which is: 1095361199000
+    # To be equal to: actualMillis
+    #       Which is: 1095364799000
+    # [  FAILED  ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime (0 ms)
