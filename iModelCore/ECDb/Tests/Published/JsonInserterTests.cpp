@@ -470,7 +470,7 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
                                     "PStructProp" : { "i" : 123 }})json", pKeyStr.c_str()), ECJsonInt64Format::AsDecimalString},
 
                                     {psaClass, Utf8PrintfString(R"json({ "I" : 123,
-                                    "L" : "0X123",
+                                    "L" : "0x123",
                                     "P2D" : {"x" : 1.0, "y" : 2.0 },
                                     "P3D" : {"x" : 1.0, "y" : 2.0, "z" : 3.0 },
                                     "Dt" : "2017-09-19T16:59:00.000",

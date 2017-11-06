@@ -592,6 +592,67 @@ void LikeRhsValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(")");
     }
 
+//*************************** EnumValueExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+EnumValueExp::EnumValueExp(ECEnumeratorCR value, Utf8StringCR accesString) : ValueExp(Type::EnumValue, true), m_enumerator(value), m_accessString(accesString)
+    {    
+    SetTypeInfo(ECSqlTypeInfo(value.IsInteger() ? ECN::PrimitiveType::PRIMITIVETYPE_Integer : ECN::PrimitiveType::PRIMITIVETYPE_String));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String EnumValueExp::GetSqlValue() const
+    { 
+    Utf8String strValue;
+    if (GetEnumerator().IsInteger())
+        {
+        strValue.Sprintf("%" PRId32, GetEnumerator().GetInteger());
+        }
+    else if (GetEnumerator().IsString())
+        {
+        strValue.append("'").append(GetEnumerator().GetString()).append("'");
+        }
+    else
+        {
+        BeAssert(false);
+        }
+
+    return strValue;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void EnumValueExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    if (HasParentheses())
+        ctx.AppendToECSql("(");
+
+    
+    ctx.AppendToECSql(m_accessString);
+
+    if (HasParentheses())
+        ctx.AppendToECSql(")");
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String EnumValueExp::_ToString() const
+    {
+    Utf8String str("EnumValue [Value: ");
+    str.append(m_accessString.c_str()).append(" (").append(GetSqlValue().c_str()).append(")");
+
+    if (GetTypeInfo().IsPrimitive())
+        str.append(", Type: ").append(ExpHelper::ToString(GetTypeInfo().GetPrimitiveType()));
+
+    str.append("]");
+    return str;
+    }
+
 //*************************** LiteralValueExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

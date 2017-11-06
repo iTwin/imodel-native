@@ -13,6 +13,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************************** PropertyNameExp *****************************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<EnumValueExp> PropertyNameExp::ParseAsEnumValueExp(ECDbCR& ecdb) const
+    {
+    if (m_propertyPath.Size() != 3)
+        return nullptr;
+   
+    Utf8StringCR schemaNameOrAlias = m_propertyPath[0].GetName();
+    Utf8StringCR enumerationName = m_propertyPath[1].GetName();
+    Utf8StringCR enumeratorName = m_propertyPath[2].GetName();
+    const ECN::ECEnumerationCP enumeration = ecdb.Schemas().GetEnumeration(schemaNameOrAlias, enumerationName, SchemaLookupMode::AutoDetect);
+    if (enumeration == nullptr)
+        return nullptr;
+
+    const ECN::ECEnumeratorCP enumerator = enumeration->FindEnumerator(enumeratorName.c_str());
+    if (enumerator == nullptr)
+        return nullptr;
+
+    return std::unique_ptr<EnumValueExp>(new EnumValueExp(*enumerator, m_propertyPath.ToString()));
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())

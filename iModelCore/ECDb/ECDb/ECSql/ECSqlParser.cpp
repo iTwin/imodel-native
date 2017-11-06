@@ -97,6 +97,8 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
         return nullptr;
         }
 
+    //Replace propertyname exp with enumexp if possiable
+    ResolveEnumerators(*exp, ecdb);
     //resolve types and references now that first pass parsing is done and all nodes are available
     if (SUCCESS != m_context->FinalizeParsing(*exp))
         return nullptr;
@@ -104,6 +106,34 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
     return exp;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+void ECSqlParser::ResolveEnumerators(Exp& exp, ECDbCR ecdb)
+    {
+    std::vector<Exp*> children(exp.GetChildrenR().begin(), exp.GetChildrenR().end());
+    for (Exp* child : children)
+        {
+        if (child->GetType() == Exp::Type::PropertyName)
+            {
+            std::unique_ptr<EnumValueExp> enumExp = child->GetAs<PropertyNameExp>().ParseAsEnumValueExp(ecdb);
+            if (enumExp != nullptr)
+                {
+                std::vector<std::unique_ptr<Exp>> replaceWith;
+                replaceWith.push_back(std::move(enumExp));
+                if (!exp.GetChildrenR().Replace(*child, replaceWith))
+                    {
+                    BeAssert(false);
+                    }
+                }
+            }
+        else
+            {
+            ResolveEnumerators(*child, ecdb);
+            }
+        }
+    }
 //****************** Parsing SELECT statement ***********************************
 
 //-----------------------------------------------------------------------------------------

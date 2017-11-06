@@ -169,6 +169,7 @@ struct Exp : NonCopyableClass
             Delete,
             DerivedProperty,
             ECRelationshipJoin,
+            EnumValue,
             FromClause,
             FunctionCall,
             GroupBy,

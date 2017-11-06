@@ -14,7 +14,68 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct SchemaManagerTests : ECDbTestFixture
     {};
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  10/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, EnumeratorLiterals)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("enumerator.ecdb"));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
+        "    <ECEnumeration typeName='Colors' displayLabel='Color' backingTypeName='string' isStrict='True'>"
+        "        <ECEnumerator value='Red'/>"
+        "        <ECEnumerator value='Blue'/>"
+        "        <ECEnumerator value='Green'/>"
+        "        <ECEnumerator value='Yellow'/>"
+        "        <ECEnumerator value='Black'/>"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='Domains' displayLabel='Domain' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value='1' DisplayLabel='com'/>"
+        "        <ECEnumerator value='2' DisplayLabel='org'/>"
+        "        <ECEnumerator value='3' DisplayLabel='edu'/>"
+        "        <ECEnumerator value='4' DisplayLabel='net'/>"
+        "        <ECEnumerator value='5' DisplayLabel='int'/>"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <ECProperty propertyName='Color' typeName='Colors'/>"
+        "        <ECProperty propertyName='Domain' typeName='Domains' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+    m_ecdb.SaveChanges();
+    ECSqlStatement stmt;
 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Red, 1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Blue, 2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Green, 3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Yellow, 4)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(Color,Domain) VALUES (ts.Colors.Black, 5)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.TestClass WHERE Color = ts.Colors.Red"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.TestClass WHERE Color IN (ts.Colors.Red, ts.Colors.Blue)" ));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.TestClass SET Color = ts.Colors.Red WHERE Color = ts.Colors.Yellow"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.TestClass WHERE Color = ts.Colors.Yellow"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------

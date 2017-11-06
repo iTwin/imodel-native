@@ -618,6 +618,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareComputedExp(NativeSqlBuilder::List& nativeS
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, EnumValueExp const& exp)
+    {
+    NativeSqlBuilder nativeSqlBuilder;
+
+    if (exp.HasParentheses())
+        nativeSqlBuilder.AppendParenLeft();
+
+    nativeSqlBuilder.Append(exp.GetSqlValue());
+    if (exp.HasParentheses())
+        nativeSqlBuilder.AppendParenRight();
+
+    nativeSqlSnippets.push_back(nativeSqlBuilder);
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -1466,6 +1485,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 return PrepareSubqueryValueExp(nativeSqlSnippets, ctx, exp.GetAs<SubqueryValueExp>());
             case Exp::Type::UnaryValue:
                 return PrepareUnaryValueExp(nativeSqlSnippets, ctx, exp.GetAs<UnaryValueExp>());
+            case Exp::Type::EnumValue:
+                return PrepareEnumValueExp(nativeSqlSnippets, ctx, exp.GetAs<EnumValueExp>());
             default:
                 break;
         }
