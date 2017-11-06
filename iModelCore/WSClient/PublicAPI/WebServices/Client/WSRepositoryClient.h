@@ -51,7 +51,13 @@ struct IWSRepositoryClient
     typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
 
     public:
-        // WIP: SkipTokens disabled due to issues.
+        enum AuthenticationType
+            {
+            Basic = 0,
+            Windows
+            };
+
+    public:
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
     public:
@@ -67,6 +73,7 @@ struct IWSRepositoryClient
                 WSCLIENT_EXPORT static const uint32_t GetObjects;
                 WSCLIENT_EXPORT static const uint32_t FileDownload;
                 WSCLIENT_EXPORT static const uint32_t Upload;
+                WSCLIENT_EXPORT static const uint32_t UploadProcessing;
                 WSCLIENT_EXPORT static const uint32_t Default;
                 WSCLIENT_EXPORT static const uint32_t LongUpload;
                 };
@@ -77,7 +84,7 @@ struct IWSRepositoryClient
         virtual IWSClientPtr GetWSClient() const = 0;
         virtual Utf8StringCR GetRepositoryId() const = 0;
 
-        virtual void SetCredentials(Credentials credentials) = 0;
+        virtual void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) = 0;
 
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] ct
@@ -199,6 +206,22 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! Create an object with a relation. With optional file attachment
+        //! @param relatedObjectId - relation target object (e. g. document for checkin)
+        //! @param objectCreationJson - Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param filePath - file path to upload
+        //! @param uploadProgressCallback - file upload progress
+        //! @param ct
+        //! @return JSON representing created object and new file ETag if available
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
         //! Update specified object and optionally a file with one operation
         //! @param objectId object identifier
         //! @param propertiesJson object properties that need to be updated
@@ -282,6 +305,9 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
+        
+        // Taken from WebServices team .NET implementation
+        static Utf8String UrlDecode(Utf8String url);
 
     public:
         //! @param[in] serverUrl - address to supported server/site
@@ -299,6 +325,12 @@ struct WSRepositoryClient : public IWSRepositoryClient
             IHttpHandlerPtr customHandler = nullptr
             );
 
+        //! Parses repository URL to WSRepository. Includes server URL, repository ID, location and plugin ID.
+        //! @param[in] url - URL to repository
+        //! @param[out] remainingPathOut - remaining URL path and/or query after repository identifier
+        //! @return parsed WSRepository or invalid if there was an error
+        WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
+
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.
         WSCLIENT_EXPORT void SetFileDownloadLimit(size_t limit);
@@ -306,7 +338,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT IWSClientPtr GetWSClient() const override;
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
-        WSCLIENT_EXPORT void SetCredentials(Credentials credentials) override;
+        WSCLIENT_EXPORT void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) override;
         WSCLIENT_EXPORT Configuration& Config();
 
         //! Check if user can access repository
@@ -379,6 +411,15 @@ struct WSRepositoryClient : public IWSRepositoryClient
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName (),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 

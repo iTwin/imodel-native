@@ -171,7 +171,7 @@ Utf8String WebApiV1::GetMaxWebApi() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut)
+BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut, Utf8StringCR serverUrl)
     {
     Utf8String dataSourceId = dataSourceJson["id"].asString();
     Utf8String dataSourceType = dataSourceJson["type"].asString();
@@ -200,6 +200,7 @@ BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository
     repositoryOut.SetId(std::move(dataSourceId));
     repositoryOut.SetLabel(dataSourceJson["label"].asString());
     repositoryOut.SetDescription(dataSourceJson["description"].asString());
+    repositoryOut.SetServerUrl(serverUrl);
 
     return SUCCESS;
     }
@@ -207,7 +208,7 @@ BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(Http::Response& response)
+WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(Http::Response& response, Utf8StringCR serverUrl)
     {
     if (!response.IsSuccess() || !IsJsonResponse(response))
         {
@@ -223,7 +224,7 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(Http::Response& re
     for (JsonValueCR dataSourceJson : responseJson)
         {
         WSRepository repository;
-        if (SUCCESS != ParseRepository(dataSourceJson, repository))
+        if (SUCCESS != ParseRepository(dataSourceJson, repository, serverUrl))
             {
             return WSRepositoriesResult::Error(WSError::CreateServerNotSupportedError());
             }
@@ -417,9 +418,10 @@ ICancellationTokenPtr ct
     {
     Http::Request request = CreateGetRepositoriesRequest(types, providerIds);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([] (Http::Response& httpResponse)
+    auto serverUrl = m_configuration->GetServerUrl();
+    return request.PerformAsync()->Then<WSRepositoriesResult>([serverUrl] (Http::Response& httpResponse)
         {
-        return ResolveGetRepositoriesResponse(httpResponse);
+        return ResolveGetRepositoriesResponse(httpResponse, serverUrl);
         });
     }
 
@@ -677,10 +679,11 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid() || filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     if (SchemaInfo::IsDummySchemaId(objectId))
-        {
         return GetSchema(filePath, eTag, downloadProgressCallback, ct);
-        }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
@@ -937,6 +940,20 @@ IWSRepositoryClient::RequestOptionsPtr options
 ) const
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
+(
+ObjectIdCR relatedObjectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
     }
 
 /*--------------------------------------------------------------------------------------+

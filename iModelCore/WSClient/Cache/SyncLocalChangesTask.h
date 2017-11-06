@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -35,13 +35,15 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         std::shared_ptr<bset<ECInstanceKey>> m_objectsToSyncPtr;
 
-        const CachingDataSource::SyncProgressCallback m_onProgressCallback;
+        const CachingDataSource::ProgressCallback m_onProgressCallback;
 
         bvector<CacheChangeGroupPtr> m_changeGroups;
         size_t m_changeGroupIndexToSyncNext;
+        ChangeGroupPtr m_currentChangeGroup;
 
-        std::atomic<uint64_t> m_totalBytesToUpload;
-        std::atomic<uint64_t> m_totalBytesUploaded;
+        bset<ECInstanceKey> m_instancesStillInSync;
+
+        CachingDataSource::Progress::State m_uploadBytesProgress;
 
         bvector<ObjectId> m_objectsToRefreshAfterSync;
 
@@ -51,14 +53,18 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void OnSyncDone();
 
         BentleyStatus PrepareChangeGroups(IDataSourceCache& cache);
-        void SyncNext();
+        AsyncTaskPtr<void> SyncNext();
 
         bool CanSyncChangeset(CacheChangeGroupCR changeGroup) const;
         AsyncTaskPtr<bool> ShouldSyncObjectAndFileCreationSeperately(CacheChangeGroupPtr changeGroup);
 
         AsyncTaskPtr<void> SyncNextChangeset();
 
+        void SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active);
+        void SetUploadActiveForSingleInstance(CacheTransactionCR txn, ECInstanceKeyCR key, bool active);
+
         AsyncTaskPtr<void> SyncChangeGroup(CacheChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncNextChangeGroup();
         AsyncTaskPtr<void> SyncCreation(CacheChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncObjectWithFileCreation(CacheChangeGroupPtr changeGroup, bool includeFile);
         AsyncTaskPtr<void> SyncObjectModification(CacheChangeGroupPtr changeGroup);
@@ -67,15 +73,15 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         void HandleSyncError(WSErrorCR error, CacheChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
-        void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
+        void ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label, double currentFileTotalBytes = 0.0) const;
         void ReportFinalProgress() const;
-        ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
+        ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress, double currentFileTotalBytes = 0.0) const;
 
         WSChangesetPtr BuildChangeset
             (
             IDataSourceCache& cache,
             RevisionMap& revisionsOut,
-            bvector<CacheChangeGroup*>& changesetChangeGroupsOut
+            bset<CacheChangeGroupPtr*>& changesetChangeGroupsOut
             );
         WSChangesetPtr BuildSingleInstanceChangeset
             (
@@ -97,8 +103,10 @@ struct SyncLocalChangesTask : public CachingTaskBase
         Utf8String GetChangeStateStr(IChangeManager::ChangeStatus changeStatus) const;
         WSChangeset::ChangeState ToWSChangesetChangeState(IChangeManager::ChangeStatus status) const;
 
-        void RegisterFailedSync(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
+        void RegisterFailedSync(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel = nullptr);
         void SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
+
+        ICancellationTokenPtr GetFileCancellationToken() const;
 
     public:
         SyncLocalChangesTask
@@ -106,7 +114,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             CachingDataSourcePtr cachingDataSource,
             std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
             SyncOptions options,
-            CachingDataSource::SyncProgressCallback&& onProgress,
+            CachingDataSource::ProgressCallback&& onProgress,
             ICancellationTokenPtr ct
             );
     };

@@ -8,6 +8,10 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! DEPRECATED CODE - Use ConnectSignInManager
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <BeSecurity/SecureStore.h>
 #include <mutex>

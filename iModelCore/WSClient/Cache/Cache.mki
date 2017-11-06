@@ -2,7 +2,7 @@
 #
 #     $Source: Cache/Cache.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@ CacheMkiSourceDir = $(CacheSourceDirectory)Cache/
 ClientMkiHeaders =                                                          \
     $(CacheMkiPublicApiDir)CachingDataSource.h                              \
     $(CacheMkiPublicApiDir)ICachingDataSource.h                             \
+    $(CacheMkiPublicApiDir)SyncNotifier.h                                   \
     $(CacheMkiPublicApiDir)IQueryProvider.h                                 \
     $(CacheMkiPublicApiDir)NavigationCachingOptions.h                       \
     $(CacheMkiPublicApiDir)Persistence/CachedObjectInfo.h                   \
@@ -119,6 +120,8 @@ $(o)DownloadFilesTask$(oext)                    : $(CacheMkiSourceDir)DownloadFi
 $(o)FileDownloadManager$(oext)                  : $(CacheMkiSourceDir)FileDownloadManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ICachingDataSource$(oext)                   : $(CacheMkiSourceDir)ICachingDataSource.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SyncNotifier$(oext)                         : $(CacheMkiSourceDir)SyncNotifier.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)IQueryProvider$(oext)                       : $(CacheMkiSourceDir)IQueryProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

@@ -167,6 +167,11 @@
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
     <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
     <ClInclude Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectionClientInterface.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -344,6 +349,8 @@
     <ClCompile Include="Published\Utils\SeedFile.cpp" />
     <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
     <ClCompile Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

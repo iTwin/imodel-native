@@ -14,7 +14,6 @@ ConnectMkiSourceDir = $(ClientSourceDirectory)Connect/
 #--------------------------------------------------------------------------------------
 ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h             \
                     $(ConnectMkiPublicApiDir)ConnectAuthenticationPersistence.h         \
-                    $(ConnectMkiPublicApiDir)ConnectSessionAuthenticationPersistence.h  \
                     $(ConnectMkiPublicApiDir)ConnectMessaging.h                         \
                     $(ConnectMkiPublicApiDir)ConnectSignInManager.h                     \
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                     \
@@ -27,8 +26,14 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h     
                     $(ConnectMkiPublicApiDir)ImsClient.h                                \
                     $(ConnectMkiPublicApiDir)Passport.h                                 \
                     $(ConnectMkiPublicApiDir)SamlToken.h                                \
+                    $(ConnectMkiPublicApiDir)IConnectionClientInterface.h               \
+                    $(ConnectMkiSourceDir)ConnectSessionAuthenticationPersistence.h     \
+                    $(ConnectMkiSourceDir)DelegationTokenProvider.h                     \
                     $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.h           \
-                    $(ConnectMkiSourceDir)IdentityTokenProvider.h
+                    $(ConnectMkiSourceDir)IdentityTokenProvider.h                       \
+                    %if $(TARGET_PLATFORM)=="Windows"
+                    $(ConnectMkiSourceDir)ConnectionClientInterface.h   
+                    %endif        
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
@@ -55,5 +60,8 @@ $(o)ImsClient$(oext)                                : $(ConnectMkiSourceDir)ImsC
 
 $(o)Passport$(oext)                                 : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
-$(o)SamlToken$(oext)                                : $(ConnectMkiSourceDir)SamlToken.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+%if $(TARGET_PLATFORM)=="Windows"
+$(o)ConnectionClientInterface$(oext)                : $(ConnectMkiSourceDir)ConnectionClientInterface.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+%endif
 
+$(o)SamlToken$(oext)                                : $(ConnectMkiSourceDir)SamlToken.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}

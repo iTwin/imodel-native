@@ -60,6 +60,7 @@
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
     <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
     <ClCompile Include="Azure\EventServiceClient.cpp" />
+    <ClCompile Include="Cache\BackgroundSyncNotifier.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />

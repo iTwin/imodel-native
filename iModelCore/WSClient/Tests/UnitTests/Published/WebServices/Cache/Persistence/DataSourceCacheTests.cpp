@@ -576,6 +576,9 @@ TEST_F(DataSourceCacheTests, GetInstance_NewInstance_ReturnsPlaceholderInstanceW
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
     {
     auto cache = GetTestCache();
@@ -584,7 +587,23 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndIn
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     BeTest::SetFailOnAssert(false);
-    EXPECT_EQ(ERROR, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCacheAndResponseNotModified_ReturnsErrorAndInstanceNotCached)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, StubWSObjectsResponseNotModified()));
     BeTest::SetFailOnAssert(true);
 
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
@@ -600,7 +619,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "TestValue"}});
-    EXPECT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::OK, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
 
     Json::Value updatedInstance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, updatedInstance));
@@ -1082,6 +1101,47 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWitStro
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingChildInstanceClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.NotExistingClass", "B"});
+
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingRelationshipClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.NotExistingClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingInstanceClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.NotExistingClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFromCache)
     {
     auto cache = GetTestCache();
@@ -1349,7 +1409,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_TRUE(path.DoesPathExist());
@@ -1367,7 +1427,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1387,7 +1447,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1408,7 +1468,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1437,7 +1497,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
 
     DateTime maxAccessDateTime;
     EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1463,7 +1523,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
 
     DateTime maxAccessDateTime;
     EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
 
     EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_TRUE(path.DoesPathExist());
@@ -1482,7 +1542,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExist
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
     }
@@ -3621,6 +3681,30 @@ TEST_F(DataSourceCacheTests, CacheResponse_ParentIsRemoved_NewResponseIsNotCache
     ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance({"TestSchema.TestClass", "A"}));
     ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponseNotCached_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponsePageNotCached_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified(), nullptr, nullptr, 42));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/

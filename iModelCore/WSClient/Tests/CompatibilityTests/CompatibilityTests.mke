@@ -26,6 +26,13 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 # $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
 
 #---------------------------------------------------------------------------------------+
+#   Deliver Assemblies
+#---------------------------------------------------------------------------------------+
+
+$(o)CCApi.dll : $(BuildContext)SubParts/Assemblies/CCApi.dll
+    $(LinkFirstDepToFirstTarget)
+    
+#---------------------------------------------------------------------------------------+
 #   Compile test utilities
 #---------------------------------------------------------------------------------------+
 
@@ -72,6 +79,7 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesCache$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesClient$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeIcu4c$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)bentleylog4cxx$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)CCApi$(libext)
 GUNITTEST_LIBS + $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gmock$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gtest$(libext)

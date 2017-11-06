@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/DownloadFilesTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -24,23 +24,25 @@ struct DownloadFilesTask : public CachingTaskBase
         struct DownloadFileProperties
             {
             ObjectId objectId;
-            Utf8String name;
+            std::shared_ptr<Utf8String> name;
             uint64_t size;
             uint64_t bytesDownloaded;
+            DownloadFileProperties() : name(std::make_shared<Utf8String>()) {}
             };
 
     private:
-        const CachingDataSource::LabeledProgressCallback m_onProgressCallback;
+        CachingDataSource::ProgressCallback m_onProgressCallback;
+        size_t m_maxParalelDownloads;
 
         FileCache                       m_fileCacheLocation;
         bset<ObjectId>                  m_filesToDownloadIds;
         bvector<DownloadFileProperties> m_filesToDownload;
         size_t                          m_nextFileToDownloadIndex;
 
-        int                             m_downloadTasksRunning;
-
-        std::atomic<uint64_t>           m_totalBytesToDownload;
-        std::atomic<uint64_t>           m_totalBytesDownloaded;
+        BeCriticalSection               m_progressInfoCS;
+        bset<DownloadFileProperties*>   m_filesBeingDownloaded;
+        double                          m_totalBytesToDownload = 0;
+        double                          m_processedFileSizes = 0;
 
         std::shared_ptr<FileDownloadManager> m_fileDownloadManager;
 
@@ -57,7 +59,9 @@ struct DownloadFilesTask : public CachingTaskBase
             std::shared_ptr<FileDownloadManager> fileDownloadManager,
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
-            CachingDataSource::LabeledProgressCallback onProgress,
+            size_t maxParalelDownloads,
+            uint64_t minTimeBetweenProgressCallsMs,
+            CachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
     };

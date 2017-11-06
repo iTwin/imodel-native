@@ -138,10 +138,25 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersi
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWithTokenAuth_RetrievesnewTokenAndRetries)
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAttemptedOnceWithTokenAuth_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    bool legacyMode = false;
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), legacyMode);
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
+    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedOnceWithTokenAuth_RetrievesNewTokenAndRetries)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr()); // default parameter legacyMode = true
 
     SamlTokenPtr newToken = StubSamlToken(100);
 
@@ -158,10 +173,10 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWi
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceWithTokenAuth_ReturnsError)
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedTwiceWithTokenAuth_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr()); // default parameter legacyMode = true
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 2);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();

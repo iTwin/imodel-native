@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileStorage.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -315,7 +315,7 @@ BentleyStatus FileStorage::StoreFile(FileInfoR info, BeFileNameCR filePathIn, Fi
     // Remove old file
     if (!oldAbsolutePath.empty() && !oldAbsolutePath.Equals(newAbsolutePath))
         {
-        if (SUCCESS != RemoveStoredFile(oldAbsolutePath, oldLocation, oldRelativePath, &newAbsolutePath))
+        if (CacheStatus::OK != RemoveStoredFile(oldAbsolutePath, oldLocation, oldRelativePath, &newAbsolutePath))
             return ERROR;
         }
 
@@ -388,7 +388,7 @@ BentleyStatus FileStorage::DeleteFileCacheDirectories(CacheEnvironmentCR fullEnv
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::RemoveStoredFile(FileInfoCR info)
+CacheStatus FileStorage::RemoveStoredFile(FileInfoCR info)
     {
     return RemoveStoredFile(info.GetFilePath(), info.GetLocation(), info.GetRelativePath());
     }
@@ -396,26 +396,30 @@ BentleyStatus FileStorage::RemoveStoredFile(FileInfoCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath) const
+CacheStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath) const
     {
     if (filePath.empty())
-        return SUCCESS;
+        return CacheStatus::OK;
 
     if (filePath.DoesPathExist() && BeFileNameStatus::Success != BeFileName::BeDeleteFile(filePath))
         {
+        BeFile file;
+        if (BeFileStatus::AccessViolationError == file.Open(filePath, BeFileAccess::ReadWrite))
+            return CacheStatus::FileLocked;
+
         BeAssert(false);
-        return ERROR;
+        return CacheStatus::Error;
         }
 
     // Check if new file is in same folder
     if (nullptr != newFilePath && newFilePath->GetDirectoryName() == filePath.GetDirectoryName())
-        return SUCCESS;
+        return CacheStatus::OK;
 
     // Do folder cleanup
     if (FileCache::External == location)
         {
         CleanupDirsNotContainingFiles(m_environment.externalFileCacheDir, relativePath.GetDirectoryName());
-        return SUCCESS;
+        return CacheStatus::OK;
         }
 
     BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(filePath.GetDirectoryName());
@@ -423,10 +427,10 @@ BentleyStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache loc
         status != BeFileNameStatus::FileNotFound)
         {
         BeAssert(false);
-        return ERROR;
+        return CacheStatus::Error;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+

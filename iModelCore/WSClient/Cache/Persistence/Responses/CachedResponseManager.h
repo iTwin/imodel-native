@@ -115,7 +115,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
         //! Save query info
         BentleyStatus SaveInfo(CachedResponseInfoR info);
         //! Insert query info and update page cache date
-        BentleyStatus UpdatePageCachedDate(ResponseKeyCR responseKey, uint64_t page);
+        CacheStatus UpdatePageCachedDate(ResponseKeyCR responseKey, uint64_t page);
         //! Insert query info and update page cache date and relate response instances
         BentleyStatus SavePage(ResponseKeyCR responseKey, uint64_t page, Utf8StringCR cacheTag, const InstanceCacheHelper::CachedInstances& instances);
         
