@@ -8,7 +8,7 @@
 %include mdl.mki
 
 ProductDir = $(OutputRootDir)Product/
-o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/publish/
+o = $(OutputRootDir)packages/
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     Platform=Windows
