@@ -1,4 +1,4 @@
-#line 2 "E:\\BSW\\Master\\Bim0200Dev\\src\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
+#line 2 "E:\\BSW\\Bim0200Dev\\src\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 // 
 // Licensed to the Apache Software Foundation (ASF) under one

@@ -55,10 +55,11 @@ struct DerivedPropertyExp final : Exp
     private:
         Utf8String m_columnAlias;
         Utf8String m_nestedAlias;
+        std::vector<Utf8String> m_resultSetColumns;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { Utf8String str("DerivedProperty [Column alias: "); str.append(m_columnAlias).append("]"); return str; }
-
+        
     public:
         DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
 
@@ -67,6 +68,8 @@ struct DerivedPropertyExp final : Exp
         Utf8StringCR GetColumnAlias() const;
         Utf8StringCR GetNestedAlias() const { return m_nestedAlias; }
         void SetNestedAlias(Utf8CP nestedAlias) { m_nestedAlias = nestedAlias; }
+        std::vector<Utf8String>& SqlResultSetR() { return m_resultSetColumns; }
+        std::vector<Utf8String> const& SqlResultSet() { return m_resultSetColumns; }
     };
 
 //=======================================================================================
@@ -277,7 +280,6 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
-
         FromExp const* GetFrom() const 
             { 
             if (m_fromClauseIndex < 0)
@@ -334,6 +336,7 @@ struct SingleSelectStatementExp final : QueryExp
             return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
             }
         
+
         bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
 
@@ -393,6 +396,7 @@ struct SelectStatementExp final : QueryExp
         SelectStatementExp const* GetRhsStatement() const;
         bool IsAll()const { return m_isAll; }
         CompoundOperator GetOperator() const { return m_operator; }
+        
     };
 
 

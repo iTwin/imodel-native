@@ -190,7 +190,7 @@ using namespace connectivity;
 %type <pParseNode> scalar_exp_commalist parameter_ref literal
 %type <pParseNode> column_ref column parameter range_variable opt_member_func_call
 /* neue Regeln bei OJ */
-%type <pParseNode> derived_column as_clause table_name num_primary term num_value_exp
+%type <pParseNode> derived_column as_clause num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec fct_spec  scalar_subquery
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
 %type <pParseNode> general_set_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
@@ -208,7 +208,7 @@ using namespace connectivity;
 %type <pParseNode> all sql_not for_length upper_lower comparison cross_union
 %type <pParseNode> select_statement
 %type <pParseNode> function_args_commalist function_arg
-%type <pParseNode> catalog_name schema_name table_node function_name table_primary_as_range_column opt_as
+%type <pParseNode> table_node table_node_mf function_name table_primary_as_range_column opt_as
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_collate_clause
@@ -619,7 +619,7 @@ opt_only:
 
 
 table_ref:
-        opt_only table_node table_primary_as_range_column
+        opt_only table_node_mf table_primary_as_range_column
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1801,7 +1801,7 @@ qualified_join:
 
 /*ECSQL extension*/
 ecrelationship_join:
-        table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node op_relationship_direction
+        table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node_mf op_relationship_direction
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -2328,66 +2328,27 @@ derived_column:
             $$->append($2);
         }
     ;
-/* Tabellenname */
-table_node:
-        table_name
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
-    |    schema_name
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
-    |    catalog_name
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
-;
-catalog_name:
-        SQL_TOKEN_NAME '.' schema_name
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-        }
-    |    SQL_TOKEN_NAME ':' schema_name
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-        }
-;
-schema_name:
-        SQL_TOKEN_NAME '.' table_name 
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-        }
-    |
-        SQL_TOKEN_NAME ':' table_name 
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-        }
-;
 
-table_name:
-        SQL_TOKEN_NAME opt_member_func_call
+
+table_node:
+        SQL_TOKEN_NAME '.' SQL_TOKEN_NAME 
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2);
-        }
-;
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        };
+
+table_node_mf:
+        SQL_TOKEN_NAME '.' SQL_TOKEN_NAME opt_member_func_call
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+        };
+
 
 opt_member_func_call:
 		{$$ = SQL_NEW_RULE;}

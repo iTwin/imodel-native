@@ -124,6 +124,7 @@ struct ValueExp : ComputedExp
     public:
         virtual ~ValueExp() {}
         bool IsConstant() const { return m_isConstant; }
+        
     };
 
 //=======================================================================================

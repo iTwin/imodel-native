@@ -260,9 +260,6 @@ namespace connectivity
                     break;
 
                     // table name - might be a query name
-                case table_name:
-                    bHandled = impl_parseTableNameNodeToString_throw(rString, rParam);
-                    break;
 
                 case as:
                     if (rParam.aMetaData.generateASBeforeCorrelationName())

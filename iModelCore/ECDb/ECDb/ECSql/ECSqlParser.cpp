@@ -1180,7 +1180,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
     OSQLParseNode const* second = parseNode->getChild(1);
 
     const bool isPolymorphic = !(opt_only->getTokenID() == SQL_TOKEN_ONLY);
-    if (SQL_ISRULE(second, table_node))
+    if (SQL_ISRULE(second, table_node_mf))
         {
         std::unique_ptr<ClassNameExp> classNameExp = nullptr;
         if (SUCCESS != ParseTableNode(classNameExp, second, ecsqlType, isPolymorphic))
@@ -1509,27 +1509,36 @@ BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OS
     {
     exp = nullptr;
 
-    if (!SQL_ISRULE(parseNode, table_node))
+    if (!(SQL_ISRULE(parseNode, table_node) || SQL_ISRULE(parseNode, table_node_mf)))
         {
-        BeAssert(false && "Wrong grammar. Expecting table_node");
+        BeAssert(false && "Wrong grammar. Expecting table_node/table_node_mf");
         return ERROR;
         }
 
-    OSQLParseNode const* first = parseNode->getChild(0);
-    BeAssert(first != nullptr);
-    Utf8StringCP catalogName = nullptr;
     Utf8StringCP schemaName = nullptr;
     Utf8StringCP className = nullptr;
     std::unique_ptr<MemberFunctionCallExp> memberFunCall;
-    if (SUCCESS != ParseFullyQualifiedClassName(catalogName, schemaName, className, *first, memberFunCall))
+
+    if (parseNode->count() <= 4)
+        {
+        schemaName = &parseNode->getChild(0)->getTokenValue();
+        className = &parseNode->getChild(2)->getTokenValue();
+        if (parseNode->count() == 4 && ParseMemberFunctionCall(memberFunCall, parseNode->getChild(3)) != SUCCESS)
+            return ERROR;
+        }
+
+    else
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     BeAssert(className != nullptr && schemaName != nullptr);
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
     if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className, ecsqlType, isPolymorphic))
         return ERROR;
 
-    exp = std::unique_ptr<ClassNameExp>(new ClassNameExp(*className, *schemaName, catalogName, classNameExpInfo, isPolymorphic, std::move(memberFunCall)));
+    exp = std::unique_ptr<ClassNameExp>(new ClassNameExp(*className, *schemaName, nullptr, classNameExpInfo, isPolymorphic, std::move(memberFunCall)));
     return SUCCESS;
     }
 
@@ -1568,63 +1577,6 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
     return SUCCESS;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    09/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogName, Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const& parseNode, std::unique_ptr<MemberFunctionCallExp>& memberFunCallExp) const
-    {
-    catalogName = nullptr;
-    schemaName = nullptr;
-    className = nullptr;
-
-    switch (parseNode.getKnownRuleID())
-        {
-            case OSQLParseNode::catalog_name:
-            {
-            //parseNode
-            //   child 0: catalog name
-            //   child 2: 
-            //        child 0: schema name
-            //        child 2:
-            //             child 0: class name
-            catalogName = &parseNode.getChild(0)->getTokenValue();
-            OSQLParseNode const* schemaNameNode = parseNode.getChild(2);
-
-            schemaName = &schemaNameNode->getChild(0)->getTokenValue();
-            className = &schemaNameNode->getChild(2)->getChild(0)->getTokenValue();
-            if (schemaNameNode->getChild(2)->count() > 1)
-                return ParseMemberFunctionCall(memberFunCallExp, schemaNameNode->getChild(2)->getChild(1));
-
-            return SUCCESS;
-            }
-
-            case OSQLParseNode::schema_name:
-            {
-            //parseNode
-            //     child 0: schema name
-            //     child 2:
-            //          child 0: class name
-            schemaName = &parseNode.getChild(0)->getTokenValue();
-            className = &parseNode.getChild(2)->getChild(0)->getTokenValue();
-            if (parseNode.getChild(2)->count() > 1)
-                return ParseMemberFunctionCall(memberFunCallExp, parseNode.getChild(2)->getChild(1));
-
-            return SUCCESS;
-            }
-            case OSQLParseNode::table_name:
-            {
-            //parseNode
-            //     child 0: class name
-            GetIssueReporter().Report("Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
-                                      parseNode.getChild(0)->getTokenValue().c_str());
-            return ERROR;
-            }
-            default:
-                BeAssert(false && "Wrong Grammar. Expecting schema_name or catalog_name");
-                return ERROR;
-
-        };
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
