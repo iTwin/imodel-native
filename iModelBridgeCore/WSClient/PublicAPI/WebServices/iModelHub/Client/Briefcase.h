@@ -84,6 +84,7 @@ public:
 
     //! Merge changeSets.
     //! @param[in] changeSets ChangeSets to merge.
+    //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr Merge(ChangeSets const& changeSets, ICancellationTokenPtr cancellationToken = nullptr) const;
 
