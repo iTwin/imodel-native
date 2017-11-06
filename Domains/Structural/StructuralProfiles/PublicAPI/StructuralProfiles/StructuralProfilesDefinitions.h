@@ -32,6 +32,8 @@
 #define STRUCTURAL_COMMON_CLASS_CurvedExtrusion                      "CurvedExtrusion"
 #define STRUCTURAL_COMMON_CLASS_StraightExtrusion                    "StraightExtrusion"
 
+#define BE_ECCLASS_NAME(__val__)   static constexpr Utf8CP ecclass_name_##__val__() {return #__val__;}
+
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------

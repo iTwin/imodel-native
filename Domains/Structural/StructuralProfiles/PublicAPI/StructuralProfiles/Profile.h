@@ -17,16 +17,19 @@ struct EXPORT_VTABLE_ATTRIBUTE Profile : Dgn::DefinitionElement
     friend struct ProfileHandler;
 
 protected:
-    explicit Profile(CreateParams const& params) : T_Super(params) {}
+    explicit Profile(CreateParams const& params) : T_Super(params), m_iCustomCardinalPointsIndex(0)
+        {}
 
 public:
     DECLARE_STRUCTURAL_PROFILES_QUERYCLASS_METHODS(Profile)
     DECLARE_STRUCTURAL_PROFILES_ELEMENT_BASE_GET_METHODS(Profile)
-    // STRUCTURAL_DOMAIN_EXPORT static ProfilePtr Create(Structural::StructuralTypeDefinitionModelCPtr model);
 
+    STRUCTURAL_DOMAIN_EXPORT void AddCustomCardinalPoint(Utf8CP name, DPoint2dCR coordinates);
 
 private:
     BE_PROP_NAME(CustomCardinalPoints)
+    BE_ECCLASS_NAME(CustomCardinalPointStruct)
+    uint32_t m_iCustomCardinalPointsIndex;
     };
 
 //=======================================================================================

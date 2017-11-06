@@ -818,7 +818,7 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
 
 TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     {   
-/*    DgnDbPtr db = OpenDgnDb();
+    DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
     Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
@@ -831,56 +831,52 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     ASSERT_TRUE(code.IsValid());
   
     Dgn::DgnDbStatus status;
+    ECN::ECObjectsStatus objectStatus;
+    BentleyStatus bentleyStatus;
+
     PublishedProfilePtr publishedProfile = PublishedProfile::Create(definitionModel);
+    ASSERT_TRUE(publishedProfile.IsValid());
 
-    publishedProfile->SetCode(code);
-
-
-    ECN::StandaloneECInstancePtr instance = publishedProfile->GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECN::ECObjectsStatus objectStatus = instance->AddArrayElements("CustomCardinalPoints", 5);
-    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
-
-    ECN::ECClassCP structClass = publishedProfile->GetElementClass()->GetSchema().GetClassCP("CustomCardinalPointStruct");
-    //ECN::StandaloneECEnablerPtr structEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember(structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str());
-
-    ECN::StandaloneECInstancePtr structarrayInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    //ECN::StandaloneECInstancePtr structarrayInstance = structEnabler->CreateInstance();
-
-    objectStatus = structarrayInstance->SetValue("Name", ECN::ECValue("Petras"));
-    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
-
-    DPoint2d test1 = { 0.0 };
-    objectStatus = structarrayInstance->SetValue("Coordinates", ECN::ECValue(test1));
-    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
-
-    ECN::ECValue arrayItemValue;
-    arrayItemValue.SetStruct(structarrayInstance.get());
-    objectStatus = instance->SetValue("CustomCardinalPoints", arrayItemValue, 0);
-    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
-
-    ECN::ECValue v1;
-    objectStatus = instance->GetValue(v1, "CustomCardinalPoints", 0);
-
-    status = publishedProfile->SetPropertyValue("CustomCardinalPoints", v1, 0);
+    status = publishedProfile->SetCode(code);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    //objectStatus = structarrayInstance->SetValue("Idd", ECN::ECValue("Stepas"));
-    //ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+    uint32_t iArrayOfStruct (0);
+    DPoint2d test1 = { 0.0 };
 
-    //DPoint2d test2 = { 0.0 };
-    //objectStatus = structarrayInstance->SetValue("Coordinates", ECN::ECValue(test2));
-    //ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+    publishedProfile->AddCustomCardinalPoint("aa", test1);
 
+    status = publishedProfile->GetPropertyIndex(iArrayOfStruct, "CustomCardinalPoints");
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    //ECN::ECValue structarrayValue;
-    //structarrayValue.SetStruct(structarrayInstance.get());
-    
-    //status = publishedProfile->SetPropertyValue("CustomCardinalPoints", structarrayValue, 0);
-    
-    //objectStatus = structarrayInstance->SetValue("CustomCardinalPoints", structarrayValue);
-    //ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+    status = publishedProfile->AddPropertyArrayItems(iArrayOfStruct, 1);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    publishedProfile->Insert(&status);
+    ECN::ECClassCP structClass = publishedProfile->GetElementClass()->GetSchema().GetClassCP("CustomCardinalPointStruct");
+    ASSERT_TRUE(nullptr != structClass);
+
+    ECN::StandaloneECEnablerPtr cardinalPointsEnabler = structClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(cardinalPointsEnabler.IsValid());
+
+    ECN::IECInstancePtr cardPointsInstance = cardinalPointsEnabler->CreateInstance().get();
+    ASSERT_TRUE(cardPointsInstance.IsValid());
+
+    objectStatus = cardPointsInstance->SetValue("Name", ECN::ECValue("Malholland Drive"));
+    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    test1.x = 0.15;
+    test1.y = 0.36;
+    objectStatus = cardPointsInstance->SetValue("Coordinates", ECN::ECValue(test1));
+    ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+    ECN::ECValue structValue;
+    bentleyStatus = structValue.SetStruct(cardPointsInstance.get());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == bentleyStatus);
+
+    status = publishedProfile->SetPropertyValue("CustomCardinalPoints", structValue, PropertyArrayIndex(0));
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DgnElementCPtr persistentElement = publishedProfile->Insert(&status);
+    ASSERT_TRUE(persistentElement.IsValid());
 
     Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE3);
     ASSERT_TRUE(queriedElement.IsValid());
@@ -891,6 +887,30 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     ECN::ArrayInfo arrayInfo = testValue.GetArrayInfo();
-    arrayInfo.GetCount();
-    */
+
+    for (uint32_t i = 0; i < arrayInfo.GetCount(); ++i)
+        {
+        ECN::IECInstancePtr checkInstance;
+        ECN::ECValue checkValue;
+        status = queriedElement->GetPropertyValue(checkValue, "CustomCardinalPoints", PropertyArrayIndex(i));
+        ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+        if (!checkValue.IsNull())
+            {
+            ECN::ECValue value;
+            checkInstance = checkValue.GetStruct();
+            ASSERT_TRUE(checkInstance.IsValid());
+
+            objectStatus = checkInstance->GetValue(value, "Name");
+            ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+            Utf8CP name = value.GetUtf8CP();
+            
+            value.Clear();
+            objectStatus = checkInstance->GetValue(value, "Coordinates");
+            ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+            DPoint2d point = value.GetPoint2d();
+            }
+        }
     }
