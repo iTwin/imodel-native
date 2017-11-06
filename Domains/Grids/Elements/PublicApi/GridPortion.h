@@ -30,7 +30,7 @@ typedef bmap<Utf8String, GridAxisMap> GridNameMap;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridPortion : Dgn::SpatialLocationPortion
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, Dgn::SpatialLocationPortion);
+    DEFINE_T_SUPER (Dgn::SpatialLocationPortion);
 private:
     BE_PROP_NAME (Normal);
 
@@ -43,7 +43,6 @@ protected:
     //! @param[in]          normal  perpendicularity plane of this Grid
     explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params) : T_Super (params) {};
     explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
-    friend struct GridPortionHandler;
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
@@ -106,7 +105,7 @@ public:
     //! @param[in] surface      surface to intersect
     //! @param[in] targetModel  model to create gridcurves in
     //! @return BentleyStatus for the operation result
-    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface (GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel);
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface (GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
 
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;

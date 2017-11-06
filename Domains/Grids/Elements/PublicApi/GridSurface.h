@@ -20,13 +20,11 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridSurface : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridSurface, Dgn::SpatialLocationElement);
-
+    DEFINE_T_SUPER (Dgn::SpatialLocationElement);
 protected:
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params);
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
-    friend struct GridSurfaceHandler;
 
     BE_PROP_NAME(Axis)
         

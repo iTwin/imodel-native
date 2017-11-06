@@ -27,18 +27,15 @@ DOMAIN_DEFINE_MEMBERS(GridsDomain)
 //---------------------------------------------------------------------------------------
 GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     {
-    RegisterHandler (GridSurfaceHandler::GetHandler ());
     RegisterHandler (GridArcSurfaceHandler::GetHandler ());
     RegisterHandler (GridPlaneSurfaceHandler::GetHandler ());
     RegisterHandler (GridSplineSurfaceHandler::GetHandler ());
 
-    RegisterHandler (GridPortionHandler::GetHandler ());
     RegisterHandler (OrthogonalGridPortionHandler::GetHandler ());
     RegisterHandler (RadialGridPortionHandler::GetHandler ());
     RegisterHandler (SketchGridPortionHandler::GetHandler ());
     RegisterHandler (GridAxisHandler::GetHandler ());
 
-    RegisterHandler (GridCurveHandler::GetHandler ());
     RegisterHandler (GridLineHandler::GetHandler ());
     RegisterHandler (GridArcHandler::GetHandler ());
     RegisterHandler (GridSplineHandler::GetHandler ());

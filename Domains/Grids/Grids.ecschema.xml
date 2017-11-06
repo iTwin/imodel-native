@@ -66,9 +66,6 @@
   
     <ECEntityClass typeName="GridCurve">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
     </ECEntityClass>
   
   
@@ -95,9 +92,6 @@
   
     <ECEntityClass typeName="GridSurface">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
       <ECNavigationProperty propertyName="Axis" relationshipName="GridAxisContainsGridSurfaces" direction="Backward" description="Axis this gridSurface belong to" />
     </ECEntityClass>
 
@@ -125,9 +119,6 @@
 
     <ECEntityClass typeName="GridPortion">
       <BaseClass>bis:SpatialLocationPortion</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
       <ECProperty propertyName="Normal" typeName="point3d" readOnly="True" description="normal vector of the grid"/>
     </ECEntityClass>
 

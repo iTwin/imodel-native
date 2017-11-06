@@ -40,8 +40,6 @@ $(o)PortionHandlers$(oext) : $(_MakeFilePath)PortionHandlers.cpp ${MultiCompileD
 
 $(o)IntersectionCurveHandlers$(oext) : $(_MakeFilePath)IntersectionCurveHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/IntersectionCurveHandlers.h
 
-$(o)GridSurfaceHandler$(oext) : $(_MakeFilePath)GridSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceHandler.h $(GridElementsPublicApi)GridSurface.h
-
 $(o)GridArcSurfaceHandler$(oext) : $(_MakeFilePath)GridArcSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArcSurfaceHandler.h $(GridElementsPublicApi)GridArcSurface.h
 
 $(o)GridPlaneSurfaceHandler$(oext) : $(_MakeFilePath)GridPlaneSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPlaneSurfaceHandler.h $(GridElementsPublicApi)GridPlaneSurface.h

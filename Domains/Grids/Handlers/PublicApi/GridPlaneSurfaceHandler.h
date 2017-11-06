@@ -13,9 +13,9 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridPlaneSurfaceHandler : GridSurfaceHandler
+struct GridPlaneSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridPlaneSurface, GridPlaneSurface, GridPlaneSurfaceHandler, GridSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridPlaneSurface, GridPlaneSurface, GridPlaneSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
 };
 
 END_GRIDS_NAMESPACE

@@ -13,26 +13,19 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct OrthogonalGridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, GridPortion, GridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
-
-    GRIDHANDLERS_EXPORT static  BentleyStatus   IntersectGridSurface (GridPortionCPtr thisPortion, GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel);
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_OrthogonalGridPortion, OrthogonalGridPortion, OrthogonalGridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct OrthogonalGridPortionHandler : GridPortionHandler
+struct RadialGridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_OrthogonalGridPortion, OrthogonalGridPortion, OrthogonalGridPortionHandler, GridPortionHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_RadialGridPortion, RadialGridPortion, RadialGridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct RadialGridPortionHandler : GridPortionHandler
+struct SketchGridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_RadialGridPortion, RadialGridPortion, RadialGridPortionHandler, GridPortionHandler, GRIDHANDLERS_EXPORT)
-    };
-
-struct SketchGridPortionHandler : GridPortionHandler
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchGridPortion, SketchGridPortion, SketchGridPortionHandler, GridPortionHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchGridPortion, SketchGridPortion, SketchGridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 END_GRIDS_NAMESPACE

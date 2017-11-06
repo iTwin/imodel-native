@@ -20,14 +20,12 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridCurve : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridCurve, Dgn::SpatialLocationElement);
     DEFINE_T_SUPER(Dgn::SpatialLocationElement);
     
 protected:
     explicit GRIDELEMENTS_EXPORT GridCurve (CreateParams const& params);
     explicit GRIDELEMENTS_EXPORT GridCurve (CreateParams const& params, ICurvePrimitivePtr curve);
     explicit GRIDELEMENTS_EXPORT GridCurve (CreateParams const& params, CurveVectorPtr curve);
-    friend struct GridCurveHandler;
 
     GRIDELEMENTS_EXPORT void                InitGeometry (ICurvePrimitivePtr curve);
     GRIDELEMENTS_EXPORT void                InitGeometry (CurveVectorPtr curve);

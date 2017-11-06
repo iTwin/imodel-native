@@ -24,7 +24,6 @@
 #include "Elements/SketchGridPortion.h"
 #include "Elements/GridPlaneSurface.h"
 #include "Elements/GridSurfaceCreatesGridCurveHandler.h"
-#include "Handlers/GridSurfaceHandler.h"
 #include "Handlers/GridArcSurfaceHandler.h"
 #include "Handlers/GridPlaneSurfaceHandler.h"
 #include "Handlers/IntersectionCurveHandlers.h"

@@ -297,7 +297,11 @@ Dgn::DgnDbStatus      GridPortion::_OnUpdate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   GridPortion::IntersectGridSurface (GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel)
+BentleyStatus   GridPortion::IntersectGridSurface 
+(
+GridSurfaceCPtr surface, 
+Dgn::DgnModelCR targetModel
+) const
     {
     Dgn::DgnModelPtr model = GetSubModel ();
     if (!model.IsValid ())
