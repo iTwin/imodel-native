@@ -110,12 +110,14 @@ struct V8FileSyncInfoIdAppData : DgnV8Api::DgnFileAppData
     StableIdPolicy m_idPolicy;
     DgnElementId m_repositoryLinkId;
 
-    V8FileSyncInfoIdAppData(SyncInfo::V8FileSyncInfoId id, StableIdPolicy policy, DgnElementId rlid) 
-        : m_v8Id(id),m_idPolicy(policy),m_repositoryLinkId(rlid)
+    V8FileSyncInfoIdAppData(SyncInfo::V8FileSyncInfoId id, StableIdPolicy policy) 
+        : m_v8Id(id),m_idPolicy(policy)
         {}
 
     static DgnV8Api::DgnFileAppData::Key const& GetKey() {static DgnFileAppData::Key s_key; return s_key;}
     virtual void _OnCleanup(DgnFileR host) override {delete this;}
+
+    void SetRepositoryLink(DgnElementId rlinkId) {m_repositoryLinkId = rlinkId;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,6 +181,7 @@ DgnElementId Converter::WriteRepositoryLink(DgnV8FileR file)
         if (hashNew.GetHashString().Equals(hashOld.GetHashString()))
             {
             // If the link hasn't changed, then don't request locks or write to the BIM.
+            SetRepositoryLinkInAppData(file, rlink->GetElementId());
             return rlink->GetElementId();
             }
         }
@@ -200,6 +203,8 @@ DgnElementId Converter::WriteRepositoryLink(DgnV8FileR file)
         return DgnElementId();
         }
 
+    SetRepositoryLinkInAppData(file, rlinkPost->GetElementId());
+
     return rlinkPost->GetElementId();
     }
 
@@ -215,12 +220,28 @@ DgnElementId Converter::GetRepositoryLinkFromAppData(DgnV8FileCR file)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkId)
+    {
+    auto appdata = (V8FileSyncInfoIdAppData*)((DgnV8FileR)file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
+    if (nullptr == appdata)
+        {
+        BeAssert(false);
+        return;
+        }
+    appdata->m_repositoryLinkId = rlinkId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, StableIdPolicy policy)
     {
     //  Make sure the file is registered in syncinfo
     SyncInfo::V8FileProvenance provenance(file, m_syncInfo, policy);
     if (!provenance.FindByName(true))
         {
+        BeAssert(m_newFilesOk);
+
         provenance.Insert();
 
         if (_WantProvenanceInBim())
@@ -231,11 +252,8 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
 
         }
 
-    //  Make sure the file has a corresponding RepositoryLink in the BIM
-    DgnElementId rlinkId = WriteRepositoryLink(file);
-
-    //  Cache the file's syncinfo id and its RepositoryLink id in memory for quick access during this conversion/update
-    file.AddAppData(V8FileSyncInfoIdAppData::GetKey(), new V8FileSyncInfoIdAppData(provenance.m_syncId, provenance.m_idPolicy, rlinkId));
+    //  Cache the file's syncinfo id in memory for quick access during this conversion/update
+    file.AddAppData(V8FileSyncInfoIdAppData::GetKey(), new V8FileSyncInfoIdAppData(provenance.m_syncId, provenance.m_idPolicy));
 
     BeAssert(GetV8FileSyncInfoIdFromAppData(file).IsValid());
     return provenance;
@@ -2400,7 +2418,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
                                               // want the output to reflect the outcome. Since, we have a non-const
                                               // pointer, we have to make a copy.
     if (result.IsValid() && LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
-        LOG.tracev("Insert %s", m_issueReporter.FmtElement(*result).c_str());
+        LOG.tracev("Insert %s into %s", IssueReporter::FmtElement(*result).c_str(), IssueReporter::FmtModel(*results.m_element->GetModel()).c_str());
 
     for (ElementConversionResults& child : results.m_childElements)
         {
@@ -3070,7 +3088,7 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
     m_monitor->_OnModelInserted(v8mm);
 
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
-        LOG_MODEL.tracev("+ %s %d -> %s %d", mapping.GetV8Name().c_str(), mapping.GetV8ModelId().GetValue(), model->GetName().c_str(), model->GetModelId().GetValue());
+        LOG_MODEL.tracev("+ %s -> %s", IssueReporter::FmtModel(v8Model).c_str(), IssueReporter::FmtModel(*model).c_str());
 
     return v8mm;
     }
@@ -3501,6 +3519,22 @@ BentleyStatus ConverterLibrary::ConvertAllDrawingsAndSheets()
         return BSIERROR;
     _ConvertSheets();
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ResolvedModelMapping::operator< (ResolvedModelMapping const &o) const
+    {
+    if (!IsValid())
+        return false;
+    auto fid1 = m_mapping.GetV8FileSyncInfoId();
+    auto fid2 = o.m_mapping.GetV8FileSyncInfoId();
+    if (fid1 < fid2)
+        return true;
+    if (fid1 > fid2)
+        return false;
+    return m_mapping.GetV8ModelId().GetValue() < o.m_mapping.GetV8ModelId().GetValue();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

@@ -320,6 +320,11 @@ void RootModelConverter::_ConvertSpatialViews()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     {
+    // *** NB: Do not create elements (or models) in here. This is running as part of the initialization phase.
+    //          Only schema changes are allowed in this phase.
+
+    m_newFilesOk = true;
+
     // don't bother to convert a DWG master file - let DwgImporter do the job.
     BeFileNameCR rootFileName = GetRootFileName ();
     if (Converter::IsDwgOrDxfFile(rootFileName))
@@ -365,6 +370,21 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
 
+#ifndef NDEBUG
+    BeAssert((m_v8Files.size() >= 1) && "FindSpatialV8Models should have populates m_v8Files");
+    for (auto f : m_v8Files)
+        {
+        auto cachedSfid = GetV8FileSyncInfoIdFromAppData(*f);
+        BeAssert(cachedSfid.IsValid() && "We should have cached the V8FileSyncInfoId for each V8 file that we found");
+
+        SyncInfo::FileById syncInfoFiles(GetDgnDb(), cachedSfid);
+        SyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
+        BeAssert((syncInfoFile != syncInfoFiles.end()) && "We should be able to look up V8 files in syncinfo by their V8FileSyncInfoId's");
+        }
+#endif
+
+    m_newFilesOk = false;
+
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
 
@@ -380,6 +400,9 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
         }
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
+
+    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
+    WriteRepositoryLink(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
     m_importJob = FindImportJobForModel(*GetRootModelP());
 
@@ -586,6 +609,9 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         return ImportJobCreateStatus::FailedExistingRoot;
         }
 
+    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
+    WriteRepositoryLink(*GetRootV8File());  // Write the RepositoryLink element for the root file now. This is the order in which the older converter did it.
+
     Utf8String jobName = _GetParams().GetBridgeJobName();
     if (jobName.empty())
         {
@@ -615,15 +641,12 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     if (BSISUCCESS == GetSyncInfo().FindModel(&mapping, *GetRootModelP(), &m_rootTrans, GetCurrentIdPolicy()))
         return ImportJobCreateStatus::FailedExistingNonRootModel;
 
-    // 1. Map in the root file.
-    auto fileId = GetV8FileSyncInfoId(*m_rootFile); // NB! file might already be in syncinfo! The logic that tries to detect an existing Job puts it there!
+    // 1. Look up the root file's syncinfoid.
+    auto fileId = GetV8FileSyncInfoId(*m_rootFile);
+#ifndef NDEBUG
     SyncInfo::FileById syncInfoFiles(GetDgnDb(), fileId);
-    SyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
-    if (syncInfoFile == syncInfoFiles.end())
-        {
-        BeAssert(false);
-        return ImportJobCreateStatus::FailedExistingNonRootModel;
-        }
+    BeAssert(syncInfoFiles.begin() != syncInfoFiles.end());
+#endif
 
     _SetChangeDetector(false);
 
@@ -924,6 +947,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     // FindSpatialV8Models has already called ClassifyNormal2dModels (thisV8File);
 
     SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoId(thisV8File);
+    WriteRepositoryLink(thisV8File);    // write the RepositoryLink element for this v8 file now. This the order in which the older converter did it.
 
     // NB: We must not try to skip entire files if we need to follow reference attachments. Instead, we can skip 
     //      the elements in a model if the model (i.e., the file) is unchanged.

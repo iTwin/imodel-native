@@ -791,11 +791,11 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
 
     // Retrieve the options for the attachment (if any) that references this model
     DgnV8Api::Fd_opts fdOpts;
-    auto result = v8mm.GetV8Attachment();
-    if (result != nullptr)
+    auto attachment = v8mm.GetV8Attachment();
+    if (attachment != nullptr)
         {
         // If the "displayRasterRefs" option is off, don't import this raster, since it was not visible in the source file
-        fdOpts = result->second->GetFDOptsCR();
+        fdOpts = attachment->GetFDOptsCR();
         if (fdOpts.displayRasterRefs != true)
             return SUCCESS;
         }

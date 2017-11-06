@@ -235,7 +235,9 @@ PartRangeKey(DRange3dCR range) : m_range(range) {}
 
 //=======================================================================================
 //! A V8->DgnDb model mapping that has been "resolved", that is, with pointers to the loaded source and target models (if found).
-//! This is stored in a multimap, with the ***V8MODEL*** as the key.
+//! This is stored in a multimap, with the V8 model's id as the key. (That is, the key is: V8File SyncInfoId + V8 ModelId.)
+//! Note that the key is NOT the V8 model syncinfoid. We deliberately group all spatial transforms of a given model in a single
+//! multimap node.
 //! Note that an instance of this class refers to a DgnModel and a DgnV8Model that are 
 //! owned by somebody else. Instances of this class do not add references to their target models.
 //! @bsiclass                                                    Sam.Wilson      11/16
@@ -256,7 +258,7 @@ struct ResolvedModelMapping
     //! Construct a ResolvedModelMapping in an valid state
     ResolvedModelMapping(DgnModelR model, DgnV8ModelR v8Model, SyncInfo::V8ModelMapping const& mapping, DgnV8Api::DgnAttachment const* a) : m_model(&model), m_v8model(&v8Model), m_mapping(mapping), m_v8attachment(a) {}
     bool IsValid() const {return m_v8model != nullptr && m_mapping.IsValid();}
-    bool operator< (ResolvedModelMapping const &o) const {return m_v8model < o.m_v8model;}
+    DGNDBSYNC_EXPORT bool operator< (ResolvedModelMapping const &o) const;
 
     TransformCR GetTransform() const {return m_mapping.GetTransform();}
     void SetTransform(TransformCR t) {m_mapping.SetTransform(t);}
@@ -909,6 +911,7 @@ protected:
     bool                 m_addDebugDgnCodes = false;
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
+    bool                 m_newFilesOk = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
@@ -1034,6 +1037,8 @@ public:
 
     //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
     DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
+
+    void SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkId);
 
     //! Get the SyncInfoId for a V8 file that was previously registered by a call to _GetV8FileIntoSyncInfo. This is a very fast
     //! query on the file's appdata. This will return an invalid ID if the file has not yet been queried by _GetV8FileIntoSyncInfo during this session.
