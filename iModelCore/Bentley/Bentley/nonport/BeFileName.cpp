@@ -1096,12 +1096,16 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
         dst += wcslen(WINDOWS_EXTENDED_PATH_PREFIX);
         }
 
-    for (; *src; ++src, ++dst)
+    bool hasBeginQuotes = *src && *src == '\"';
+    
+    for (int charCount = 0; *src; ++src, ++dst, ++charCount)
         {
+        if (*src)
         *dst = ('/' == *src) ? '\\' : *src;
-
+        
+        bool skipStripSlashCheck = (0 == charCount) || (hasBeginQuotes && charCount <3);
         // don't copy embedded multiple backskashes (keep leading double backslash for UNC's)
-        if ('\\' == dst[0]  &&  ('\\' == src[1] || '/'== src[1]) && dst != tmp1)
+        if ('\\' == dst[0]  &&  ('\\' == src[1] || '/'== src[1]) && !skipStripSlashCheck)
             dst--;
         }
         
