@@ -2337,7 +2337,15 @@ table_node:
             $$->append($1);
             $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             $$->append($3);
+        }
+     |  SQL_TOKEN_NAME ':' SQL_TOKEN_NAME 
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
+            $$->append($3);
         };
+        
 
 table_node_mf:
         SQL_TOKEN_NAME '.' SQL_TOKEN_NAME opt_member_func_call
@@ -2345,6 +2353,14 @@ table_node_mf:
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+        }
+     | SQL_TOKEN_NAME ':' SQL_TOKEN_NAME opt_member_func_call
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             $$->append($3);
             $$->append($4);
         };
