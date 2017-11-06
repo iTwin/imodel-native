@@ -4204,6 +4204,9 @@ TEST(Polyface,PunchOverlapB)
     Check::ClearGeometry ("Polyface.PunchOverlapB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz    11/17
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST(Polyface,PunchOverlapC)
     {
     PolyfaceHeaderPtr target = PolyfaceHeader::CreateVariableSizeIndexed();
