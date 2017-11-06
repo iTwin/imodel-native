@@ -26,8 +26,3 @@ always:
     -$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)
 
-%iffile $(ProductDir)iModelJsNodeAddon-$(Platform)-New
-always:
-    | $(ProductDir)iModelJsNodeAddon-$(Platform)-New ...
-    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform)-New $(o)new $(PlatformAndArch)
-%endif
