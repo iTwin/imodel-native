@@ -8,19 +8,12 @@
 
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon-Windows" />
-    <SubProduct ProductName="iModelJsNodeAddon-Windows-New" />
     <SubProduct ProductName="iModelJsNodeAddon-Linux" />
   </Product>
 
   <Product Name="iModelJsNodeAddon-Windows">
     <SubPart PartName="iModelJsNodeAddonLib-Windows" LibType="Dynamic" />
     <SubPart PartName="iModelJsNodeAddonLibElectron-Windows" LibType="Dynamic" />
-    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
-  </Product>
-
-  <!-- Preview of a new version of nodejs support that is coming ... -->
-  <Product Name="iModelJsNodeAddon-Windows-New">
-    <SubPart PartName="iModelJsNodeAddonLib-Windows-New" LibType="Dynamic" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
@@ -51,22 +44,7 @@
       So, you can use any naming schemes you want for the ingredients of the build, but you must use a name for the ProductSubDirectory that matches the expectations of copyNodeAddon.js.
       -->
 
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_2_1" >
-    <SubPart PartName="node-gyp-standalone_8_2_1" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
-    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
-    <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_2">
-        Delivery/iModelJsNodeAddon/N_8_2_1/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_2_1/package.json
-      </Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
-    </Bindings>
-  </Part>
-
-  <!-- Preview of a new version of nodejs support that is coming ... -->
-  <Part Name="iModelJsNodeAddonLib-Windows-New" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0" >
+  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0" >
     <SubPart PartName="node-gyp-standalone_8_9_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
@@ -108,7 +86,6 @@
       </Files>	  
     </Bindings>
   </Part>
-
 
   <!-- This part builds our node native code addon -->
   <Part Name="iModelJsNodeAddonLibCommon">
