@@ -533,7 +533,8 @@ const InstanceCacheHelper::CachedInstances& instances
 
     if (SUCCESS != RelateResultInstancesToPage(info.GetParent(), pageKey, instances) ||
         SUCCESS != RelateResultRelationshipInstancesToPage(pageKey, instances) ||
-        SUCCESS != m_hierarchyManager->ReleaseOldChildren(pageKey, instances.GetCachedInstances(), m_responsePageToResultClass))
+        SUCCESS != m_hierarchyManager->ReleaseOldChildren(pageKey, instances.GetCachedInstances(), m_responsePageToResultClass) ||
+        SUCCESS != m_hierarchyManager->ReleaseOldChildren(pageKey, instances.GetCachedInstances(), m_responsePageToResultWeakClass))
         {
         return ERROR;
         }
