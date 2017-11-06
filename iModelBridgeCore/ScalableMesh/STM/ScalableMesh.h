@@ -138,6 +138,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     IDTMVolume* m_dtmVolume;
     TerrainModel::BcDTMPtr m_dtm; //Maximum 5M points bcDtm representation of a ScalableMesh
     bool                   m_tryCreateDtm; 
+	bool m_useBcLibDrape;
 
 
     protected:
@@ -178,6 +179,8 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
             }
 
         void SetStorageToUors(DMatrix4d& storageToUors);
+
+		void SetUseBcLibForDraping(bool useBcLib);
     };
 /*----------------------------------------------------------------------------+
 |Class ScalableMesh

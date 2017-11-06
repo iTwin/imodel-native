@@ -26,6 +26,10 @@ void IScalableMeshClippingOptions::SetClipDefinitionsProvider(const IClipDefinit
 	return _SetClipDefinitionsProvider(provider);
 }
 
+void IScalableMeshClippingOptions::SetHasOverlappingClips(bool overlaps)
+{
+	return _SetHasOverlappingClips(overlaps);
+}
 
 void ScalableMeshClippingOptions::_SetShouldRegenerateStaleClipFiles(bool regenerateClipFiles)
 {
@@ -39,8 +43,15 @@ void ScalableMeshClippingOptions::_SetClipDefinitionsProvider(const IClipDefinit
 	m_fieldChangedCallback(this);
 }
 
+void ScalableMeshClippingOptions::_SetHasOverlappingClips(bool overlaps)
+{
+	m_allowOverlappingClips = overlaps;
+	m_fieldChangedCallback(this);
+}
+
 ScalableMeshClippingOptions::ScalableMeshClippingOptions(std::function<void(const ScalableMeshClippingOptions*)> onDataChanged, bool shouldRegenerateClipFiles)
 {
+	m_allowOverlappingClips = false;
 	m_shouldRegenerateClipFiles = shouldRegenerateClipFiles;
 	m_fieldChangedCallback = onDataChanged;
 }
@@ -53,6 +64,11 @@ bool ScalableMeshClippingOptions::ShouldRegenerateStaleClipFiles() const
 IClipDefinitionDataProviderPtr ScalableMeshClippingOptions::GetClipDefinitionsProvider() const
 {
 	return m_clipProvider;
+}
+
+bool ScalableMeshClippingOptions::HasOverlappingClips() const
+{
+	return m_allowOverlappingClips;
 }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

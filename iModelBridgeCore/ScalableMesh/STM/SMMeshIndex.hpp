@@ -4225,7 +4225,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             );
 
         bool hasClip = false;
-        if (!m_nodeHeader.m_arePoints3d && !polyInclusion && !m_SMIndex->IsFromCesium())
+        if (!m_nodeHeader.m_arePoints3d && !polyInclusion && !m_SMIndex->IsFromCesium() && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_canUseBcLibClips)
             {            
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)
@@ -4920,6 +4920,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
                                                                              m_smDataStore(smDataStore),
                                                                              m_smMemoryPool(smMemoryPool)
     {
+	m_canUseBcLibClips = true;
     m_loadNeighbors = needsNeighbors;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;    
