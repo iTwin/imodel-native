@@ -15,6 +15,7 @@ BEGIN_CS06BRIDGE_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus CS06Bridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
+    // TODO: This isn't correct.  Fix it.
     WString arg(argv[iArg]);
     if (arg.StartsWith(L"--DGN"))
         return iModelBridge::CmdLineArgStatus::Success;
@@ -25,8 +26,19 @@ iModelBridge::CmdLineArgStatus CS06Bridge::_ParseCommandLineArg(int iArg, int ar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+WString CS06Bridge::_SupplySqlangRelPath()
+    {
+    // TODO: This is wrong.  Fix it.
+    return L"sqlang/DgnV8Converter_en-US.sqlang.db3";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CS06Bridge::_Initialize(int argc, WCharCP argv[])
     {
+    // TODO: Implement this!
+
     /*AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // The call to iModelBridge::_Initialize is the time to register domains.
@@ -54,6 +66,8 @@ BentleyStatus CS06Bridge::_Initialize(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CS06Bridge::_OpenSource()
     {
+    // TODO: Implement this!
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -62,6 +76,8 @@ BentleyStatus CS06Bridge::_OpenSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::SubjectCPtr CS06Bridge::CreateAndInsertJobSubject(DgnDbR db, Utf8CP jobName)
     {
+    // TODO: Is this correct?
+
     //db.Schemas().CreateClassViewsInDb();
 
     auto subjectObj = Subject::Create(*db.Elements().GetRootSubject(), jobName);
@@ -80,6 +96,8 @@ Dgn::SubjectCPtr CS06Bridge::CreateAndInsertJobSubject(DgnDbR db, Utf8CP jobName
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::SubjectCPtr CS06Bridge::QueryJobSubject(DgnDbR db, Utf8CP jobName)
     {
+    // TODO: Is this correct?
+
     DgnCode jobCode = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName);
     auto jobId = db.Elements().QueryElementIdByCode(jobCode);
     return db.Elements().Get<Subject>(jobId);
@@ -90,6 +108,8 @@ Dgn::SubjectCPtr CS06Bridge::QueryJobSubject(DgnDbR db, Utf8CP jobName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String CS06Bridge::ComputeJobSubjectName()
     {
+    // TODO: Is this correct?
+
     return Utf8String (_GetParams().GetInputFileName());
     }
 
@@ -98,6 +118,8 @@ Utf8String CS06Bridge::ComputeJobSubjectName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr CS06Bridge::_FindJob()
     {
+    // TODO: Is this correct?
+
     Utf8String jobName(ComputeJobSubjectName());
     return QueryJobSubject(GetDgnDbR(), jobName.c_str());
     }
@@ -107,6 +129,8 @@ SubjectCPtr CS06Bridge::_FindJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr CS06Bridge::_InitializeJob()
     {
+    // TODO: Is this correct?
+
     Utf8String jobName(ComputeJobSubjectName());
 
     SubjectCPtr jobSubject = CreateAndInsertJobSubject(GetDgnDbR(), jobName.c_str());
@@ -124,6 +148,8 @@ SubjectCPtr CS06Bridge::_InitializeJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CS06Bridge::UpdateProjectExtents(SpatialModelR spatialModel)
     {
+    // TODO: Is this correct?
+
     DgnDbR db = spatialModel.GetDgnDb();
 
     AxisAlignedBox3d modelExtents = spatialModel.QueryModelRange();
@@ -147,6 +173,9 @@ void CS06Bridge::UpdateProjectExtents(SpatialModelR spatialModel)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void CS06Bridge::_OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docSyncInfoid)
 	{
 	// TODO: Implement this.
@@ -155,8 +184,20 @@ void CS06Bridge::_OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP CS06Bridge::GetRegistrySubKey()
+    {
+    // TODO: Do I need to register this key with someone?
+
+    return L"OpenRoads ConceptStation Bridge";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
     {
+    // TODO: Implement this.
+
     //auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
     /*ORDConverter converter;
@@ -182,6 +223,8 @@ BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 extern "C" Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
     {
+    // TODO: Is this correct?
+
 	BeAssert(0 == BeStringUtilities::Wcsicmp(bridgeName, CS06Bridge::GetRegistrySubKey()));
     return new CS06Bridge();
     }

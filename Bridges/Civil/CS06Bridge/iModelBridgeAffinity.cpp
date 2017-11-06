@@ -1,45 +1,32 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: CS06Bridge/iModelBridgeAffinity.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
 #include <CS06BridgeInternal.h>
 
 /*=================================================================================**//**
 * @bsiclass                                                     Abeesh.Basheer     03/09
 +===============+===============+===============+===============+===============+======*/
-/*struct NotificationAdmin : DgnV8Api::DgnPlatformLib::Host::NotificationAdmin
-    {
-    protected:  virtual StatusInt   _OutputMessage  (DgnV8Api::NotifyMessageDetails const&) override {return SUCCESS;}
-    }; // DummyNotificationManager */
-
-/*=================================================================================**//**
-* @bsiclass                                                     Abeesh.Basheer     03/09
-+===============+===============+===============+===============+===============+======*/
-/*struct AffinityHost : DgnV8Api::DgnPlatformLib::Host
+/*struct AffinityHost : iModelBridgeBimHost
     {
     private:
-    template <typename AdminType> AdminType& GetAdmin ();
-
-    virtual NotificationAdmin&      _SupplyNotificationAdmin() override
-        {
-        return GetAdmin <NotificationAdmin>();
-        }
+        BentleyApi::Dgn::DgnPlatformLib::Host::RepositoryAdmin* m_repositoryAdmin;
+        iModelBridgeKnownLocationsAdmin* m_knownLocationsAdmin;
 
     public:
+        AffinityHost();
+    };
 
-    void    Initialize ();
-    };*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*template <typename AdminType>
-AdminType& AffinityHost::GetAdmin ()
+AffinityHost::AffinityHost() : m_repositoryAdmin(new BentleyApi::Dgn::DgnPlatformLib::Host::RepositoryAdmin()), 
+    m_knownLocationsAdmin(new iModelBridgeKnownLocationsAdmin()), 
+    iModelBridgeBimHost(m_repositoryAdmin, "", "", "")
     {
-    static bool s_initialized = false;
-    AdminType* s_adminhost = NULL;
-    if (s_initialized)
-        return *s_adminhost;
-
-    s_adminhost = new AdminType();
-    s_initialized = true;
-    return *s_adminhost;
+    
+    //iModelBridgeBimHost();
     }*/
 
 BEGIN_CS06BRIDGE_NAMESPACE
@@ -54,9 +41,9 @@ extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAff
     /*try
         {
         static AffinityHost host;
-        DgnV8Api::DgnPlatformLib::Host* threadHost = DgnV8Api::DgnPlatformLib::QueryHost();
-        if (NULL == threadHost)
-            DgnV8Api::DgnPlatformLib::Initialize(host, false);
+        Dgn::DgnViewLib::Host& threadHost = Dgn::DgnViewLib::GetHost();
+        if (!threadHost.IsInitialized())
+            Dgn::DgnViewLib::Initialize(host, false);
 
         DgnFileStatus status;
         DgnDocumentPtr doc = DgnDocument::CreateForLocalFile(sourceFileName.c_str());

@@ -14,6 +14,7 @@
 #define NO_USING_NAMESPACE_BENTLEY 1
 
 #include <CS06Bridge/CS06BridgeApi.h>
+#include <iModelBridge\iModelBridgeBimHost.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
