@@ -141,6 +141,12 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
     {
     m_multi = curl_multi_init();
 
+    if(0 != HttpClient::GetOptions().GetMaxConnectionsPerHost())
+        curl_multi_setopt(m_multi, CURLMOPT_MAX_HOST_CONNECTIONS, HttpClient::GetOptions().GetMaxConnectionsPerHost());
+
+    if (0 != HttpClient::GetOptions().GetMaxTotalConnections())
+        curl_multi_setopt(m_multi, CURLMOPT_MAX_TOTAL_CONNECTIONS, HttpClient::GetOptions().GetMaxTotalConnections());
+
     int runningRequests = 0;
     CURLMcode status;
 
