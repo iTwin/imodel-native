@@ -723,6 +723,9 @@ template<typename T> void TileBuilder::AddPolyface(PolyfaceQueryCR geom, bool fi
             if (addFaceData)
                 polyface->BuildPerFaceFaceData();
 
+            if (!geom.HasConvexFacets() && facetOptions->GetConvexFacetsRequired())
+                polyface->Triangulate(3);
+
             if (addEdgeChains)
                 polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
             }
@@ -1139,7 +1142,7 @@ BentleyStatus Loader::_LoadTile()
     else
         {
         if (!m_tileBytes.empty() &&
-            TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache))
+            TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache))
             {
             BeAssert(false);
             return ERROR;
@@ -1236,7 +1239,7 @@ BentleyStatus Loader::DoGetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor());
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-        if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
+        if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
             return ERROR;
         }
     

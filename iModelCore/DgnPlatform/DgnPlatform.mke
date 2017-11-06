@@ -337,7 +337,7 @@ $(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter
 
 $(CoreObjs)CesiumTileWriter$(oext) :                $(DgnCoreDir)CesiumTileWriter.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileIO.h $(DgnPlatformAPISrc)TileWriter.h ${MultiCompileDepends}
 
-$(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
+$(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)TileTree.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
 $(CoreObjs)TileTreePublish$(oext) :                 $(DgnCoreDir)TileTreePublish.cpp $(DgnPlatformAPISrc)MeshTile.h $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 

@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                             '
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/TileWriter.h $
 |
@@ -14,13 +14,7 @@
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/TileIO.h>
 
-#define BEGIN_TILEWRITER_NAMESPACE    BEGIN_TILETREE_NAMESPACE namespace TileWriter {
-#define END_TILEWRITER_NAMESPACE      } END_TILETREE_NAMESPACE
-#define USING_NAMESPACE_TILEWRITER    using namespace BentleyApi::Dgn::TileTree::TileWriter;
-
-
-BEGIN_TILEWRITER_NAMESPACE
-
+BEGIN_TILETREE_IO_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ICesiumPublisher)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PublishedTile)
@@ -29,7 +23,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(TileTexture)
 
 DEFINE_REF_COUNTED_PTR(TileTexture)
 DEFINE_REF_COUNTED_PTR(PublishedTile)
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
@@ -73,7 +66,7 @@ protected:
     void                AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes16, size_t nAttributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
     void                AddBatchIds(Json::Value& primitive, Render::FeatureIndex const& featureIndex, size_t nVertices, Utf8StringCR idStr);
     void                AddColors(Json::Value& primitive, Render::ColorIndex const& colorIndex, size_t nVertices, Utf8StringCR idStr);
-    void                AddAccessor(uint32_t componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type);
+    void                AddAccessor(Gltf::DataType componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type);
     Utf8String          AddQuantizedPointsAttribute(Render::QPoint3dCP qPoints, size_t nPoints, Render::QPoint3d::Params params, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddQuantizedParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id); 
@@ -148,15 +141,15 @@ struct ICesiumPublisher
     //! Returns directory for tileset.
     virtual BeFileName  _GetOutputDirectory(GeometricModelCR model) const = 0;
     //! Invoked before a model is processed.
-    virtual TileIO::WriteStatus _BeginProcessModel(GeometricModelCR model) { return TileIO::WriteStatus::Success; }
+    virtual TileTree::IO::WriteStatus _BeginProcessModel(GeometricModelCR model) { return TileTree::IO::WriteStatus::Success; }
     //! Invoked after a model is processed, with the result of processing.
-    virtual TileIO::WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, TileIO::WriteStatus status) = 0;
+    virtual TileTree::IO::WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, TileTree::IO::WriteStatus status) = 0;
     //! Write cesium tileset for a GeometricModel
-    DGNPLATFORM_EXPORT static TileIO::WriteStatus WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
+    DGNPLATFORM_EXPORT static TileTree::IO::WriteStatus WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
 
 
 };  // ICesiumPublisher
 
 
 
-END_TILEWRITER_NAMESPACE
+END_TILETREE_IO_NAMESPACE

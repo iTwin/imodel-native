@@ -206,6 +206,9 @@ PublisherContext::Status TilesetPublisher::WriteHtmlFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::WriteScripts()
     {
+    if (!m_copyScripts)
+        return Status::Success;
+
     // Symlink the scripts, if not already present
     BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     scriptsSrcDir.AppendToPath(L"scripts");

@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_TILETREE
-USING_NAMESPACE_TILEWRITER
+USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUMDIRECT
 
@@ -949,14 +949,14 @@ void DirectPublisher::CleanDirectories(BeFileNameCR dataDir)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectPublisher::Status DirectPublisher::ConvertStatus(TileIO::WriteStatus status)
+DirectPublisher::Status DirectPublisher::ConvertStatus(WriteStatus status)
     {
     switch (status)
         {
-        case TileIO::WriteStatus::Success:           return Status::Success;
-        case TileIO::WriteStatus::NoGeometry:        return Status::NoGeometry;
-        case TileIO::WriteStatus::UnableToOpenFile:  return Status::CantOpenOutputFile;
-        case TileIO::WriteStatus::Aborted:           return Status::Aborted;
+        case WriteStatus::Success:           return Status::Success;
+        case WriteStatus::NoGeometry:        return Status::NoGeometry;
+        case WriteStatus::UnableToOpenFile:  return Status::CantOpenOutputFile;
+        case WriteStatus::Aborted:           return Status::Aborted;
 
         default:   
             BeAssert(false);
@@ -1034,20 +1034,20 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus _BeginProcessModel(GeometricModelCR model)
+WriteStatus _BeginProcessModel(GeometricModelCR model)
     {
     if (DirectPublisher::Status::Success != m_publisher.InitializeDirectories(m_publisher.GetDataDirForModel(model)))
-        return TileIO::WriteStatus::UnableToOpenFile;
+        return WriteStatus::UnableToOpenFile;
 
-    return TileIO::WriteStatus::Success;
+    return WriteStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, TileIO::WriteStatus status)
+WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, WriteStatus status)
     {
-    if (TileIO::WriteStatus::Success == status)
+    if (WriteStatus::Success == status)
         {
         m_publisher.WriteModelTileset(model, rootTile);
         m_publisher.AddModelRange(model.GetModelId(), rootTile.GetTileRange());

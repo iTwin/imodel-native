@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="TilePublisherPublicAPI" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="TilePublisher" />
+        </Bindings>
+    </Part>
+
+    <Part Name="CesiumJs" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
+        </Bindings>
+    </Part>
+
+    <!-- Presentation rules for tile publisher -->
+    <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
+        <Bindings>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules" SourceName="Delivery/Assets/PresentationRules"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+        <SubPart PartName="CesiumJs" />
+        <SubPart PartName="TilePublisherPublicAPI" />
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
+        <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
+        <SubPart PartName="DgnPlatformDll"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
+        <SubPart PartName="CrunchLib"           PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Planning"            PartFile="Planning"             Repository="DgnDomains-Planning"/>
+        <SubPart PartName="PlanningView"        PartFile="Planning"             Repository="DgnDomains-Planning"/>
+        <SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>
+        <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
+        <SubPart PartName="TilePublisherAssets" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="TilePublisherExe" />
+    </Part>
+    <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+        <SubPart PartName="TilePublisherExe" />
+    </Part>
+    <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
+        <SubPart PartName="TilePublisherLib" />
+        <SubPart PartName="DgnPlatformSqlang"   PartFile="DgnPlatform"          Repository="DgnPlatform"/>
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
+        <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+        <Bindings>
+            <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Product Name="TilePublisher">
+        <SubPart PartName="TilePublisherExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="TilePublisherExe-Unix" LibType="Static"/>
+        <SubPart PartName="RunGtest"/>
+        <Directories DirectoryListName="TilePublisherDirs" />
+    </Product>
+
+    <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="TilePublisher" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="TilePublisherDirs" >
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
+    </ProductDirectoryList>
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="TilePublisher/Tests/prewire.mke">
+        <SubPart PartName="TilePublisherLib" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="TilePublisher" SubPartDirectory="UnitTests/TilePublisher">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="TilePublisher/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="DgnPlatformUnitTestHelpers"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnDbTestUtils"              PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="TilePublisher/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+    <Product Name="TilePublisher-Test">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=TilePublisherTest -dTEST_COLLECTION_PRODUCT=TilePublisher-Test -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
+        <SubProduct ProductName="TilePublisher-Test"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/TilePublisherTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/TilePublisherTest/Assets"/>
+        </Bindings>
+    </Part>
+    <Product Name="TilePublisher-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=TilePublisher-Gtest -dGTEST_NAME=TilePublisherTest" OnlyPlatforms="x64">
+        <SubProduct ProductName="TilePublisher-Gtest" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/TilePublisherTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

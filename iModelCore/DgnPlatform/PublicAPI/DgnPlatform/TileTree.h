@@ -120,6 +120,7 @@ struct StreamBuffer : ByteStream
     ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
     ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
     void SetPos(uint32_t pos) {m_currPos=pos;}
+    void ResetPos() {SetPos(0);}
     uint32_t GetPos() const {return m_currPos;}
     DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
     template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
