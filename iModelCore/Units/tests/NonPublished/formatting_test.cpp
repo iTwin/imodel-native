@@ -132,19 +132,11 @@ TEST(FormattingTest, Preliminary)
 
 TEST(FormattingTest, SchemaValidation)
     {
-    LOG.infov("================  Formatting Log ===========================");
-    //FormattingDividers fdiv = FormattingDividers("()[]{}");
-    //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
+    LOG.infov("================  Schema Validation ===========================");
+    FormattingTestFixture::ValidateSchemaUnitNames("C:\\Test\\TestSchema.txt", "UnitName", "C:\\Test\\TestSchemaUnits.txt");
 
-    //BeFileName bfn = BeFileName("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt", false);
-    //Utf8String fnam = Utf8String("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt");
-    //FormattingTestData::FileHexDump(fnam);
-
-    if (FormattingTestFixture::OpenTestData())
-        {
-        LOG.infov("================  Reading Data File ===========================");
-        //int len = 256;
-        }
+    LOG.infov("================ Schema Validation (end) ===========================");
+ 
     }
 
 /*---------------------------------------------------------------------------------**//**

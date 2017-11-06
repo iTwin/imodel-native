@@ -58,6 +58,8 @@ struct FormattingTestFixture
         static void CloseTestData();
         static bool IsDataAvailalbe();
         static bool GetNextLine(Utf8P buf, int bufLen);
+        static Utf8String ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim);
+        static bool ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath=nullptr);
         static bool GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen);
         static size_t CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP src);
         static size_t ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div);

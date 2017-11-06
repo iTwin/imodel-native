@@ -363,6 +363,159 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
         --n;
         }
     }
+
+Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
+    {
+#define ETV_BUFLEN 256
+    wchar_t* tokPtr = wcsstr(line, token);
+    Utf8String tokVal8 = "";
+    if (nullptr == tokPtr)
+        return tokVal8;
+    size_t tokLen = wcslen(token);
+    wchar_t* endPtr = wcsstr (tokPtr + tokLen, delim);
+    if (nullptr == endPtr)
+        return tokVal8;
+
+    size_t wordLen = endPtr - tokPtr - tokLen;
+    wchar_t tokVal[ETV_BUFLEN + 2];
+    memset(tokVal, 0, sizeof(tokVal));
+    memcpy(tokVal, tokPtr + tokLen, wordLen * sizeof(wchar_t));
+    BeStringUtilities::WCharToUtf8(tokVal8, tokVal, -1);
+
+    return tokVal8;
+    }
+
+bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath)
+{
+#define VSN_BUFLEN 1024
+    if (Utils::IsNameNullOrEmpty(schemaPath))
+        return false;
+    wchar_t fnw[256];
+    wchar_t tokW[256];
+    BeStringUtilities::Utf8ToWChar(fnw, schemaPath, 254);
+    FILE* in = _wfopen(fnw, L"rtS, ccs=UTF-8"); // fopen(schemaPath, "r");
+    if (nullptr == in)
+        return false;
+    FILE* out = nullptr;
+    char fullTok[VSN_BUFLEN + 2];
+    sprintf(fullTok, "<%s>", token);
+    BeStringUtilities::Utf8ToWChar(tokW, fullTok, 254);
+
+    wchar_t locW[VSN_BUFLEN + 2];// , unitName[VSN_BUFLEN + 2], className[VSN_BUFLEN + 2];
+    memset(locW, 0, sizeof(locW));
+    wchar_t* tokSymb = L"<";
+    Utf8String tokVal8;
+    BEU::UnitCP unitP, oldP;
+    int count = 0;
+    int old = 0;
+    int miss = 0;
+    int tot = 0;
+    int cls = 0;
+    int prop = 0;
+    int active = 0;
+    bvector<Utf8String> clasV, propV;
+    while (!feof(in))
+        {
+        fgetws(locW, VSN_BUFLEN, in);
+        count++;
+        tokVal8 = ExtractTokenValue(locW, tokW, tokSymb);
+        if (!tokVal8.empty())
+            {
+            unitP = BEU::UnitRegistry::Instance().LookupUnitCI(tokVal8.c_str());
+            oldP = nullptr;
+            if (nullptr == unitP)
+                oldP = BEU::UnitRegistry::Instance().LookupUnitUsingOldName(tokVal8.c_str());
+            if (nullptr != reportPath)
+                {
+                if (nullptr == out)
+                    out = fopen(reportPath, "w");
+                if (nullptr != out)
+                    {
+                    if (nullptr == unitP)
+                        {
+                        if (nullptr == oldP)
+                            {
+                            fprintf (out, "     ***%s\n", tokVal8.c_str());
+                            miss++;
+                            }
+                        else
+                            {
+                            fprintf (out, "     ###%s\n", tokVal8.c_str());
+                            old++;
+                            }
+                        }
+                    else
+                        {
+                        fprintf (out, "     %s\n", tokVal8.c_str());
+                        active++;
+                        }
+                    tot++;
+                    }
+                }
+            }// !tokVal8.empty()
+        else
+            {
+            tokVal8 = ExtractTokenValue(locW, L"<ECClass typeName=\"", L"\"");
+            if (!tokVal8.empty())
+                {
+                if (nullptr != reportPath)
+                    {
+                    if (nullptr == out)
+                        out = fopen(reportPath, "w");
+                    if (nullptr != out)
+                        {
+                        fprintf (out, "== Class: %s\n", tokVal8.c_str());
+                        cls++;
+                        clasV.push_back(tokVal8);
+                        }
+                    }
+                }
+            else
+                {
+                tokVal8 = ExtractTokenValue(locW, L"<ECProperty propertyName=\"", L"\"");
+                if (!tokVal8.empty())
+                    {
+                    if (nullptr != reportPath)
+                        {
+                        if (nullptr == out)
+                            out = fopen(reportPath, "w");
+                        if (nullptr != out)
+                            {
+                            fprintf (out, "    === Property: %s\n", tokVal8.c_str());
+                            propV.push_back(tokVal8);
+                            prop++;
+                            }
+                        }
+                    }
+                }
+            }
+        } //<ECProperty propertyName="
+   
+    if (nullptr != out)
+        {
+        fprintf (out, "Total %d obsolete %d missing %d active %d classes %d props %d\n ", tot, old, miss, active, cls, prop);
+        if(clasV.size() > 0)
+        {
+            fprintf (out, "=====list of %d classes\n", (int)clasV.size());
+            for (int i = 0; i < clasV.size(); i++)
+                {
+                fprintf (out, "%s\n", clasV[i].c_str());
+                }
+        }
+        
+        if (propV.size() > 0)
+            {
+            fprintf (out, "=====list of %d props\n", (int)propV.size());
+            for (int i = 0; i < propV.size(); i++)
+                {
+                fprintf (out, "%s\n", propV[i].c_str());
+                }
+            }        fclose(out);
+        }
+    count++;
+    return true;
+}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
