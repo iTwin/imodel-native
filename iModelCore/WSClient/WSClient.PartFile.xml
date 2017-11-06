@@ -790,6 +790,7 @@
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="Assets" Path="Assets"/>
         <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
@@ -912,8 +913,6 @@
         <RequiredRepository>Bsitools-LinuxX64</RequiredRepository>
         <RequiredRepository>Bsitools-Doclava</RequiredRepository>
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
-        <RequiredRepository>Libsrc-duktapejs</RequiredRepository>
-        <RequiredRepository>Libsrc-OpenSSL-UWP</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
         <RequiredRepository>BeGTest</RequiredRepository>
         <RequiredRepository>BeTestAndroid</RequiredRepository>
@@ -924,7 +923,7 @@
         <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
         <SubPart PartName="BeSecurity"                  PartFile="BeSecurity"       Repository="BeSecurity" />
-        <SubPart PartName="libxml2"                     PartFile="BeLibxml2"        Repository="libsrc-libxml2" />
+        <SubPart PartName="LibXml2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
         <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
         <SubPart PartName="csmapStatic"                 PartFile="csmap"            Repository="libsrc-csmap" />
@@ -933,7 +932,7 @@
         <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
         <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
         <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="BeCurl"                      PartFile="BeCurl"           Repository="Libsrc-Curl"/>
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJavaScript"                PartFile="BePortableUi"     Repository="BePortableUi"/>
         <SubPart PartName="LoggingManagedInteropShim"/>
     </Part>
