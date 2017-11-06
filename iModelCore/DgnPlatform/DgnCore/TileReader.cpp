@@ -383,11 +383,45 @@ void GltfReader::ReadColors(bvector<uint16_t>& colors, Json::Value const& primit
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GltfReader::ReadColorTable(ColorTableR colorTable, Json::Value const& primitiveValue)
+    {
+    return _ReadColorTable(colorTable, primitiveValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GltfReader::_ReadColorTable(ColorTableR colorTable, Json::Value const& prim)
+    {
+    Json::Value matJson, matValues;
+    Json::Value matName = prim["material"];
+    if (!matName.isString() || !(matJson = m_materialValues[matName.asString()]).isObject() || !(matValues = matJson["values"]).isObject())
+        return ERROR;
+
+    Json::Value colorJson = matValues["color"];
+    if (!colorJson.isArray() || 4 != colorJson.size())
+        return ERROR;
+
+    ColorDef color(static_cast<uint8_t>(colorJson[0].asDouble()*255),
+                   static_cast<uint8_t>(colorJson[1].asDouble()*255),
+                   static_cast<uint8_t>(colorJson[2].asDouble()*255),
+                   255 - static_cast<uint8_t>(colorJson[3].asDouble()*255));
+
+    colorTable.GetIndex(color.GetValue());
+
+    BeAssert(colorTable.IsUniform());
+    BeAssert(0 == colorTable.GetIndex(color.GetValue()));
+
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GltfReader::ReadColorTable(ColorTableR colorTable, Json::Value const& primitiveValue)
+BentleyStatus DgnTileReader::_ReadColorTable(ColorTableR colorTable, Json::Value const& primitiveValue)
     {
     Json::Value colorTableJson = primitiveValue["colorTable"];
 

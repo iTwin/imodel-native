@@ -134,6 +134,7 @@ struct GltfReader
         }
 
     virtual BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue);
+    virtual BentleyStatus _ReadColorTable(Render::Primitives::ColorTableR colorTable, Json::Value const& primitiveValue);
 
     BentleyStatus GetAccessorAndBufferView(Json::Value& accessor, Json::Value& bufferView, Json::Value const& rootValue, const char* accessorName);
     BentleyStatus GetBufferView (void const*& pData, size_t& count, size_t& byteLength, Gltf::DataType& type, Json::Value& accessor, Json::Value const& primitiveValue, Utf8CP accessorName);
@@ -194,6 +195,7 @@ struct DgnTileReader : GltfReader
 protected:
     Render::Primitives::DisplayParamsCPtr _CreateDisplayParams(Json::Value const&) override;
     BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue) override;
+    BentleyStatus _ReadColorTable(Render::Primitives::ColorTableR, Json::Value const&) override;
 
     ReadStatus ReadFeatureTable(Render::FeatureTableR);
 

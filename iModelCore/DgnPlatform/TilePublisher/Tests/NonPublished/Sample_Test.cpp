@@ -104,7 +104,6 @@ void SampleTestFixture::TestRectangle()
     ASSERT_EQ(1, meshes.size());
     Render::Primitives::MeshCR mesh = *meshes[0];
     EXPECT_FALSE(mesh.IsEmpty());
-    // ###TODO EXPECT_TRUE(mesh.IsPlanar());
     EXPECT_EQ(Render::Primitives::Mesh::PrimitiveType::Mesh, mesh.GetType());
     EXPECT_FALSE(nullptr == mesh.GetFeatureTable());
     EXPECT_EQ(mesh.Triangles().Count(), 2);
@@ -114,10 +113,10 @@ void SampleTestFixture::TestRectangle()
     EXPECT_TRUE(mesh.Params().empty());
 
     // Verify colors
-    // ###TODO Render::Primitives::ColorTableCR colors = mesh.GetColorTable();
-    // ###TODO ASSERT_TRUE(colors.IsUniform());
-    // ###TODO EXPECT_EQ(ColorDef::Red().GetValue(), colors.begin()->first);
-    // ###TODO EXPECT_EQ(0, colors.begin()->second);
+    Render::Primitives::ColorTableCR colors = mesh.GetColorTable();
+    ASSERT_TRUE(colors.IsUniform());
+    EXPECT_EQ(ColorDef::Red().GetValue(), colors.begin()->first);
+    EXPECT_EQ(0, colors.begin()->second);
 
     // Verify feature IDs
     Render::FeatureIndex feats;
