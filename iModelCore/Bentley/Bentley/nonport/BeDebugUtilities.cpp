@@ -73,7 +73,12 @@ size_t BeDebugUtilities::GetMemoryUsed()
 #define NOMINMAX
 #define NOMSG
 #include <Windows.h>
+
+// 'typedef enum' with no variable declared
+#pragma warning( push )
+#pragma warning( disable : 4091)
 #include <Dbghelp.h>
+#pragma warning( pop )
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2017
