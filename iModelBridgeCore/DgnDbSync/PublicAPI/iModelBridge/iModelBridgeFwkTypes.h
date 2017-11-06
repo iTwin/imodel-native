@@ -66,9 +66,9 @@ END_BENTLEY_DGN_NAMESPACE
  */
 extern "C"
     {
-    typedef void T_iModelBridge_getAffinity (WCharP buffer,
+    typedef void T_iModelBridge_getAffinity (BentleyApi::WCharP buffer,
                                              const size_t bufferSize,
                                              BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
-                                             WCharCP affinityLibraryPath,
-                                             WCharCP sourceFileName);
+                                             BentleyApi::WCharCP affinityLibraryPath,
+                                             BentleyApi::WCharCP sourceFileName);
     };

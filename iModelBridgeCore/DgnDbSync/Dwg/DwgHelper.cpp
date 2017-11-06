@@ -1207,6 +1207,7 @@ static bmap<Utf8String, DwgFileVersion> CreateStringToVersionMap ()
     mappedVersion["AC1021"] = DwgFileVersion::R2007;
     mappedVersion["AC1024"] = DwgFileVersion::R2010;
     mappedVersion["AC1027"] = DwgFileVersion::R2013;
+    mappedVersion["AC1032"] = DwgFileVersion::R2018;
     return  mappedVersion;
     };
 static bmap<Utf8String, DwgFileVersion> const s_stringToVersionMap = CreateStringToVersionMap ();
@@ -1233,6 +1234,7 @@ static bmap<DwgFileVersion, Utf8String> CreateDisplayVersionMap ()
     mappedString[DwgFileVersion::R2007]   = "R2007";
     mappedString[DwgFileVersion::R2010]   = "R2010";
     mappedString[DwgFileVersion::R2013]   = "R2013";
+    mappedString[DwgFileVersion::R2018]   = "R2018";
     return  mappedString;
     };
 static bmap<DwgFileVersion, Utf8String> const s_displayVersions = CreateDisplayVersionMap ();

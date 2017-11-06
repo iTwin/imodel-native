@@ -11,8 +11,8 @@
 #include    <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
-#include    <Teigha/Core/Include/Entities.h>
-#include    <Teigha/Core/Include/DbPointCloudObj/DbPointCloudEx.h>
+#include    <Teigha/Drawing/Include/Entities.h>
+#include    <Teigha/Drawing/Include/DbPointCloudObj/DbPointCloudEx.h>
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/dbents.h>
 #include    <RealDwg/Base/dbelipse.h>

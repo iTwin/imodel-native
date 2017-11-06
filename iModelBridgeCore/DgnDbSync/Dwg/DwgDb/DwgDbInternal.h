@@ -20,30 +20,30 @@
 
 #ifdef DWGTOOLKIT_OpenDwg
 
-#include    <Teigha/Core/Include/DbAnnotationScale.h>
-#include    <Teigha/Core/Include/OdFileDepMgr.h>
+#include    <Teigha/Drawing/Include/DbAnnotationScale.h>
+#include    <Teigha/Drawing/Include/OdFileDepMgr.h>
 
-#include    <Teigha/Core/Include/Ge/GeCircArc2d.h>
-#include    <Teigha/Core/Include/Ge/GeCircArc3d.h>
-#include    <Teigha/Core/Include/Ge/GeEllipArc2d.h>
-#include    <Teigha/Core/Include/Ge/GeEllipArc3d.h>
-#include    <Teigha/Core/Include/Ge/GeNurbCurve2d.h>
-#include    <Teigha/Core/Include/Ge/GeNurbCurve3d.h>
-#include    <Teigha/Core/Include/Ge/GeCompositeCurve2d.h>
-#include    <Teigha/Core/Include/Ge/GeCompositeCurve3d.h>
-#include    <Teigha/Core/Include/Ge/GeOffsetCurve2d.h>
-#include    <Teigha/Core/Include/Ge/GeOffsetCurve3d.h>
-#include    <Teigha/Core/Include/Ge/GeExternalCurve2d.h>
-#include    <Teigha/Core/Include/Ge/GeExternalCurve3d.h>
-#include    <Teigha/Core/Include/Ge/GeLine2d.h>
-#include    <Teigha/Core/Include/Ge/GeLine3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeCircArc2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeCircArc3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeEllipArc2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeEllipArc3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeNurbCurve2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeNurbCurve3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeCompositeCurve2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeCompositeCurve3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeOffsetCurve2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeOffsetCurve3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeExternalCurve2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeExternalCurve3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeLine2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeLine3d.h>
 
-#include    <Teigha/Core/Include/GiContextForDbDatabase.h>
-#include    <Teigha/Core/Include/Gi/GiBaseVectorizer.h>
-#include    <Teigha/Core/Include/Gi/GiPolyline.h>
+#include    <Teigha/Drawing/Include/GiContextForDbDatabase.h>
+#include    <Teigha/Kernel/Include/Gi/GiBaseVectorizer.h>
+#include    <Teigha/Kernel/Include/Gi/GiPolyline.h>
 
 #ifdef _MSC_VER
-#include    <Teigha/Core/Extensions/win/Crypt/WinNTCrypt.h>     // needed for DWG password
+#include    <Teigha/Kernel/Extensions/win/Crypt/WinNTCrypt.h>     // needed for DWG password
 #endif
 
 #elif DWGTOOLKIT_RealDwg
@@ -480,7 +480,7 @@ END_DWGDB_NAMESPACE
     DwgDbStatus        DwgDb##_classSuffix_##::DowngradeOpen () { DWGDB_CALLSDKMETHOD(downgradeOpen(); return DwgDbStatus::Success;, return ToDwgDbStatus(downgradeOpen());) }  \
     DwgDbStatus        DwgDb##_classSuffix_##::Close () { DWGDB_CALLSDKMETHOD(T_Super::release(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::close());) }      \
     DwgString          DwgDb##_classSuffix_##::GetDxfName () const { return isA()->dxfName(); }                                                                                 \
-    DwgString          DwgDb##_classSuffix_##::GetClassName () const { return isA()->name(); }                                                                                  \
+    DwgString          DwgDb##_classSuffix_##::GetDwgClassName () const { return isA()->name(); }                                                                                  \
     DwgDb##_classSuffix_##P DwgDb##_classSuffix_##::StaticCreateObject () { return new DwgDb##_classSuffix_##(); }                                                              \
     DWGDB_DEFINE_DXFOUTFIELDS_MEMBER(##_classSuffix_##)                                                                                                                         \
     DWGDB_DEFINE_DXFOUT_MEMBER(##_classSuffix_##)                                                                                                                               \

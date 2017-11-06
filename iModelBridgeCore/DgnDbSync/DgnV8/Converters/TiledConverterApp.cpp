@@ -205,7 +205,7 @@ void iModelBridge_getAffinity(WCharP buffer,
                               const size_t bufferSize,
                               iModelBridgeAffinityLevel& affinityLevel,
                               WCharCP affinityLibraryPath,
-                              WCharCP sourceFileNam)
+                              WCharCP sourceFileName)
     {
     // I cannot tell if a given V8 file is part of a tiled file set or not. So, I cannot report any affinity to V8 files.
     // The bridge fwk must some other means, perhaps direct user input, to determine when to use a tiled file bridge instead of a root model bridge.

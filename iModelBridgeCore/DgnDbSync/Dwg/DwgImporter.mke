@@ -19,10 +19,8 @@ DgnDbSyncRoot       = $(SrcRoot)DgnDbSync/
 DgnDbSyncPubApi     = $(DgnDbSyncRoot)PublicAPI/DgnDbSync/
 DwgPubApi           = $(DgnDbSyncPubApi)Dwg/
 DwgDbPubApi         = $(DwgPubApi)PublicAPI/
-DwgDbLibName        = $(DWGTOOLKIT)DbExchange
-ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
-o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)Importer/
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/
 always:
     ~mkdir $(o)
 
@@ -116,7 +114,7 @@ DLM_OBJECT_FILES        = $(cppObjects)
 DLM_NOINITFUNC          = 1
 DLM_NOENTRY             = 1
 
-LINKER_LIBRARIES        = $(ContextSubpartsLibs)$(DwgDbLibName)$(libext)
+LINKER_LIBRARIES        = $(DwgDbLib)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLite$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLiteEC$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeom$(libext)
@@ -143,6 +141,8 @@ LINKER_LIBRARIES        + $(ToolkitLibs)TD_Alloc$(libext)
         RealDwgSuffix = 20
     %elif $(VendorVersion) == 2017
         RealDwgSuffix = 21
+    %elif $(VendorVersion) == 2018
+        RealDwgSuffix = 22
     %endif
 
 LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)

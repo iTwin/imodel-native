@@ -15,6 +15,7 @@ USING_NAMESPACE_DWGDB
 #define RETURNTRUE                      return;
 #define RETURNFALSE                     return;
 #define DWGGI_TransparencyMode          OdGiRasterImage::TransparencyMode
+#define StubToObjectId(_stub_)          reinterpret_cast<OdDbObjectId*>(nullptr==_stub_ ? nullptr : *_stub_)
 
 #elif DWGTOOLKIT_RealDwg
 
@@ -54,16 +55,16 @@ ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiWoodTexture, AcGiWoodTexture)
 uint8_t const*          DwgGiEdgeData::GetVisibility () const { return T_Super::visibility(); }
 int16_t const*          DwgGiEdgeData::GetColors () const { return reinterpret_cast<int16_t const*>(T_Super::colors()); }
 DwgCmEntityColorCP      DwgGiEdgeData::GetTrueColors () const { return static_cast<DwgCmEntityColorCP>(T_Super::trueColors()); }
-DwgDbObjectIdCP         DwgGiEdgeData::GetLayers () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(reinterpret_cast<OdDbObjectId*>(*T_Super::layerIds()),T_Super::layerIds())); }
-DwgDbObjectIdCP         DwgGiEdgeData::GetLinetypes () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(reinterpret_cast<OdDbObjectId*>(*T_Super::linetypeIds()),T_Super::linetypeIds())); }
+DwgDbObjectIdCP         DwgGiEdgeData::GetLayers () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(StubToObjectId(T_Super::layerIds()),T_Super::layerIds())); }
+DwgDbObjectIdCP         DwgGiEdgeData::GetLinetypes () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(StubToObjectId(T_Super::linetypeIds()),T_Super::linetypeIds())); }
 DwgDbLongPtr const*     DwgGiEdgeData::GetSelectionMarkers () const { return static_cast<DwgDbLongPtr const*>(T_Super::selectionMarkers()); }
 
 
 int16_t const*          DwgGiFaceData::GetColors () const { return reinterpret_cast<int16_t const*>(T_Super::colors()); }
 DwgCmEntityColorCP      DwgGiFaceData::GetTrueColors () const { return static_cast<DwgCmEntityColorCP>(T_Super::trueColors()); }
 DwgTransparencyCP       DwgGiFaceData::GetTransparencies () const { return static_cast<DwgTransparencyCP>(T_Super::transparency()); }
-DwgDbObjectIdCP         DwgGiFaceData::GetLayers () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(reinterpret_cast<OdDbObjectId*>(*T_Super::layerIds()),T_Super::layerIds())); }
-DwgDbObjectIdCP         DwgGiFaceData::GetMaterials () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(reinterpret_cast<OdDbObjectId*>(*T_Super::materials()),T_Super::materials())); }
+DwgDbObjectIdCP         DwgGiFaceData::GetLayers () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(StubToObjectId(T_Super::layerIds()),T_Super::layerIds())); }
+DwgDbObjectIdCP         DwgGiFaceData::GetMaterials () const { return static_cast<DwgDbObjectIdCP>(DWGDB_CALLSDKMETHOD(StubToObjectId(T_Super::materials()),T_Super::materials())); }
 DwgGiMapper const*      DwgGiFaceData::GetMappers () const { return static_cast<DwgGiMapper const*>(T_Super::mappers()); }
 DVec3dCP                DwgGiFaceData::GetNormals () const { return reinterpret_cast<DVec3dCP>(T_Super::normals()); }
 
@@ -696,6 +697,23 @@ void            pline (const OdGiPolyline& lwBuf, OdUInt32 fromIndex, OdUInt32 n
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void            edge (const OdGiEdge2dArray& edges) override
+    {
+    if (nullptr != m_drawGeometry)
+        {
+        OdArray<OdGeCurve2d*>   curves;
+        for (auto e : edges)
+            curves.append (e);
+
+        CurveVectorPtr  curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        if (curveVector.IsValid() && DwgDbStatus::Success == Util::GetCurveVector(*curveVector.get(), curves))
+            m_drawGeometry->_Edge (*curveVector.get());
+        }
+    }
+
 void            setExtents (const OdGePoint3d* extents) override { /* do nothing */ }
 
 #elif DWGTOOLKIT_RealDwg
@@ -1004,6 +1022,7 @@ OdGeMatrix3d    getWorldToModelTransform () const override { return m_worldGeome
 void            nurbs (const OdGeNurbCurve3d& nurbsCurve) override { m_worldGeometry.nurbs(nurbsCurve); }
 void            ellipArc (const OdGeEllipArc3d& e, const OdGePoint3d* o, OdGiArcType t) override { m_worldGeometry.ellipArc(e, o, t); }
 void            pline (const OdGiPolyline& lwBuf, OdUInt32 fromIndex, OdUInt32 numSegs) override { m_worldGeometry.pline(lwBuf, fromIndex, numSegs); }
+void            edge (const OdGiEdge2dArray& edges) override { m_worldGeometry.edge(edges); }
 
 #elif DWGTOOLKIT_RealDwg
 

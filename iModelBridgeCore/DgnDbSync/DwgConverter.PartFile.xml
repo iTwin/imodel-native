@@ -4,10 +4,11 @@
 <!-- pull the contents of a BuildContext from one location. Thus it cannot work to have DWG come from the sync build while DGN -->
 <!-- comes from the SDK build. -->
 
-<!-- API Versioning convention: VendorVersion + DwgImporterVersion -->
+<!-- API Versioning suffix convention: VendorVersion + DwgImporterVersion -->
 <!-- DwgImporterVersion b1 = DgnDb61-16Q2 -->
 <!-- DwgImporterVersion b2 = DgnDb61-16Q4 -->
 <!-- DwgImporterVersion b3 = Bim002 -->
+<!-- DwgImporterVersion b4 = Bim002, RealDWG2018, RealDWG2017 for AutoPlant, & Teigha4.3.1 -->
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
@@ -16,6 +17,8 @@
         <SubProduct ProductName="OpenDwgImporter" />
         <!-- DWG importer using RealDwg -->
         <SubProduct ProductName="RealDwgImporter" />
+        <!-- AutoPlant team needs RealDwg2017 for time being - remove this when no longer needed -->
+        <SubProduct ProductName="RealDwg2017Importer" />
         <!-- Build unit tests -->
         <SubProduct ProductName="DwgImporterTests" />
         <!-- Internal sample parts -->
@@ -57,7 +60,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg" ApiNumber="411b3" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg" ApiNumber="431b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
@@ -67,7 +70,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=4.1.1" ApiNumber="411b3" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=4.3.1" ApiNumber="431b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" />
         <SubPart PartName="BentleyDll"          PartFile="Bentley"              Repository="Bentley"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
@@ -76,12 +79,11 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="OpenDwgDb" />
         <Bindings>
-            <Libs ProductDirectoryName="DwgDbLibs" Required="false">Delivery/OpenDwgImporter/$(libprefix)OpenDwgDbExchange$(libext)</Libs>
             <Files ProductDirectoryName="ApplicationRoot">Delivery/OpenDwgImporter/DwgImporter$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=4.1.1 +dBUILD_DWGDB" ApiNumber="411b3" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=4.3.1 +dBUILD_DWGDB" ApiNumber="431b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"  />
         <SubPart PartName="GeomDlls"        PartFile="GeomLibs"                                     Repository="GeomLibs" />
@@ -100,7 +102,7 @@
     </ProductDirectoryList>
 
 
-    <!-- Build DwgImporter using RealDWG Toolkit -->
+    <!-- Build the default DwgImporter using RealDWG Toolkit -->
     <Product Name="RealDwgImporter">
         <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" /> <!-- This is here only for bb1 so it will trigger linking the partfile into the buildcontext which is needed for the DirectoryList -->
         <SubPart PartName="RealDwgImportExe" />
@@ -108,27 +110,27 @@
         <Directories DirectoryListName="DwgAppCommonDirList" />
     </Product>
 
-    <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="DwgResources" />
         <SubPart PartName="RealDwgBridge" />
         <SubPart PartName="RealDwgImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwgImporter/DwgImporter.exe</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2018Importer/DwgImporter.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg" ApiNumber="2017b3" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" ApiNumber="2018b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
         <SubPart PartName="RealDwgImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwgImporter/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2018Importer/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017" ApiNumber="2017b3" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgImportDLL" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" ApiNumber="2018b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" />
         <SubPart PartName="BentleyDll"          PartFile="Bentley"              Repository="Bentley"/>
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
@@ -137,19 +139,19 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="RealDwgDb" />
         <Bindings>
-            <Libs ProductDirectoryName="DwgDbLibs" Required="false">Delivery/RealDwgImporter/$(libprefix)RealDwgDbExchange$(libext)</Libs>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwgImporter/DwgImporter$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2018Importer/DwgImporter$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017 +dBUILD_DWGDB" ApiNumber="2017b3" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RealDwgDb" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018 +dBUILD_DWGDB" ApiNumber="2018b4" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg"         PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg" />
         <SubPart PartName="GeomDlls"        PartFile="Geomlibs"                                     Repository="GeomLibs" />
         <SubPart PartName="PublicAPI"       PartFile="DgnDbSync" />
         <Bindings>
-            <Libs ProductDirectoryName="DwgDbLibs" Required="false">Delivery/RealDwgImporter/$(libprefix)RealDwgDbExchange$(libext)</Libs>
-            <Assemblies ProductDirectoryName="DwgDbAssemblies">Delivery/RealDwgImporter/$(shlibprefix)RealDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
+            <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
+            <Files ProductDirectoryName="DwgDbLibs" SubPartDirectory="Libs\RealDwg2018" Required="false">Delivery/RealDwg2018Importer/$(libprefix)RealDwgDbExchange$(libext)</Files>
+            <Assemblies ProductDirectoryName="DwgDbAssemblies">Delivery/RealDwg2018Importer/$(shlibprefix)RealDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -175,17 +177,81 @@
     </ProductDirectoryList>
 
 
+    <!-- ****************************  Start temporary parts for AutoPlant Bridge 2017 ****************************** -->
+    <!-- Build another DwgImporter with a different version of RealDwg Toolkit -->
+    <Product Name="RealDwg2017Importer">
+        <SubPart PartName="RealDwg2017ImportExe" />
+        <Directories DirectoryListName="RealDwg2017ConverterDirList" />
+        <Directories DirectoryListName="DwgAppCommonDirList" />
+    </Product>
+
+    <Part Name="RealDwg2017ImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
+        <SubPart PartName="DwgResources" />
+        <SubPart PartName="RealDwg2017Bridge" />
+        <SubPart PartName="RealDwg2017ImportDLL" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2017Importer/DwgImporter.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealDwg2017Bridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017" ApiNumber="2017b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
+        <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
+        <SubPart PartName="RealDwg2017ImportDll" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2017Importer/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealDwg2017ImportDll" BentleyBuildMakeFile="Dwg/DwgImporter.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017" ApiNumber="2017b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" />
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"              Repository="Bentley"/>
+        <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
+        <SubPart PartName="ImagePP"             PartFile="ImagePP"              Repository="ImagePP"/>
+        <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
+        <SubPart PartName="RealDwg2017Db" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2017Importer/DwgImporter$(ApiNumber)$(shlibext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealDwg2017Db" BentleyBuildMakeFile="Dwg/DwgDb/DwgDbExchange.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017 +dBUILD_DWGDB" ApiNumber="2017b4" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
+        <SubPart PartName="RealDwg2017"     PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg2017" />
+        <SubPart PartName="GeomDlls"        PartFile="Geomlibs"                                     Repository="GeomLibs" />
+        <SubPart PartName="PublicAPI"       PartFile="DgnDbSync" />
+        <Bindings>
+            <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
+            <Files ProductDirectoryName="DwgDbLibs2017" SubPartDirectory="Libs\RealDwg2017" Required="false">Delivery/RealDwg2017Importer/$(libprefix)RealDwgDbExchange$(libext)</Files>
+            <Assemblies ProductDirectoryName="DwgDbAssemblies2017" SubPartDirectory="RealDwg2017">Delivery/RealDwg2017Importer/$(shlibprefix)RealDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="RealDwg2017ConverterDirList">
+        <ProductDirectory Name="ApplicationRoot"            Path="" />
+        <ProductDirectory Name="RealDwg2017Assemblies"      Deliver="true"                  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="RealDwg2017AssembliesEnUS"  Deliver="true"  Path="en-US"    RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ShxFonts2017"               Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="MergeModules"               Deliver="false"                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="DwgDbAssemblies2017"        Deliver="true"                  RelativeTo="ApplicationRoot"/>
+    </ProductDirectoryList>
+    <!-- ****************************  End temporary parts for AutoPlant Bridge 2017 ****************************** -->
+
+
     <Part Name="Samples" OnlyPlatforms="x64">
         <SubPart PartName="ImportXData" />
         <SubPart PartName="ListProperty" />
     </Part>
 
-    <Part Name="ImportXData" BentleyBuildMakeFile="Dwg/Samples/XData/ImportXData.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg" OnlyPlatforms="x64">
+    <Part Name="ImportXData" BentleyBuildMakeFile="Dwg/Samples/XData/ImportXData.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64">
         <SubPart PartName="RealDwgImportDLL" />
         <SubPart PartName="RealDwgBridge" />
     </Part>
 
-    <Part Name="ListProperty" BentleyBuildMakeFile="Dwg/Samples/ListProp/ListProperty.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg" OnlyPlatforms="x64">
+    <Part Name="ListProperty" BentleyBuildMakeFile="Dwg/Samples/ListProp/ListProperty.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64">
         <SubPart PartName="RealDwgImportDLL" />
         <SubPart PartName="RealDwgBridge" />
     </Part>
@@ -198,17 +264,17 @@
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
     </Part>
     
-    <Part Name="DwgImporterTestsExe" BentleyBuildMakeFile="Dwg/Tests/Tests.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg" OnlyPlatforms="x64">
+    <Part Name="DwgImporterTestsExe" BentleyBuildMakeFile="Dwg/Tests/Tests.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64">
         <SubPart PartName="GTestDependencies"/>
         <SubPart PartName="RealDwgImportExe"/>
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <Bindings>
             <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgImporterTests.exe</Files>
-            <Files ProductDirectoryName="Assets">Delivery/ImporterTestsConfig.xml</Files>
-            <Files ProductDirectoryName="Assets">Delivery/DwgImporterTests.logging.config.xml</Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DwgImporterTests_en-US.sqlang.db3</Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore">Delivery/ignore_list.txt</Files>
-            <Directory SourceName="Delivery/DgnDbSyncTestData"  SubPartDirectory="TestData"  ProductDirectoryName="DgnDbSync_TestData" />
+            <Files ProductDirectoryName="Assets" Required="false">Delivery/ImporterTestsConfig.xml</Files>
+            <Files ProductDirectoryName="Assets" Required="false">Delivery/DwgImporterTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="false">Delivery/DwgImporterTests_en-US.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore" Required="false">Delivery/ignore_list.txt</Files>
+            <Directory SourceName="Delivery/DgnDbSyncTestData"  SubPartDirectory="TestData"  ProductDirectoryName="DgnDbSync_TestData" Required="false"/>
         </Bindings>
     </Part>
     
