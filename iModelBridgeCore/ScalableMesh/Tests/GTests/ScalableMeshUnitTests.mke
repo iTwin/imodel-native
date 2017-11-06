@@ -16,6 +16,8 @@ always:
     !~@mkdir $(o)
 
 cDefs + -DUSE_GTEST
+#cDefs + -DOVERRIDE_TEST_DATA_DIR
+#cDefs + -DSM_DATA_PATH=\"E:\/WorkData\/ScalableMesh\/defects\/MathieuRaster1\/\"
 
 %include MultiCppCompileRule.mki
 
