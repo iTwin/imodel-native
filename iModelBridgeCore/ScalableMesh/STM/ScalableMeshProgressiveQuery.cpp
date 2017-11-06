@@ -407,7 +407,11 @@ void ScalableMeshProgressiveQueryEngine::CancelPreload(ScalableMesh<DPoint3d>* s
     }
 
 static bool s_doPreload = true;
-std::mutex s_preloadLock;
+
+#ifdef VANCOUVER_API
+//Imagepp on Topaz is different then Imagepp (the redesigned Imagepp) on DgnDb06/Bim02 platform, and thus less thread safe.
+extern std::mutex s_imageppCopyFromLock;
+#endif
 
 void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload)
     {
@@ -425,14 +429,18 @@ void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP
     
     ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());    
 
-    //s_preloadLock.lock();
+#ifdef VANCOUVER_API
+    s_imageppCopyFromLock.lock();    
+#endif
 
     if (cancelLastPreload)        
         dataStore->CancelPreloadData();
 
     dataStore->PreloadData(tileRanges);
 
-    //s_preloadLock.unlock();
+#ifdef VANCOUVER_API
+    s_imageppCopyFromLock.unlock();    
+#endif
     }
 
 //static bool s_doPreLoad = true;
