@@ -26,6 +26,7 @@ struct WebApiV2 : public WebApi
         IAzureBlobStorageClientPtr m_azureClient;
 
     private:
+        BeVersion GetMaxWebApiVersion() const;
         Utf8String GetWebApiUrl(BeVersion webApiVersion = BeVersion()) const;
         Utf8String GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion = BeVersion()) const;
         Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = BeVersion()) const;
@@ -46,7 +47,7 @@ struct WebApiV2 : public WebApi
         WSCreateObjectResult ResolveCreateObjectResponse(Http::Response& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
         WSUploadResponse ResolveUploadResponse(Http::Response& response) const;
-        WSObjectsResult ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId = nullptr) const;
+        WSObjectsResult ResolveObjectsResponse(Http::Response& response, bool requestHadSkipToken = false, const ObjectId* objectId = nullptr) const;
 
         Http::Request CreateFileDownloadRequest
             (
@@ -131,6 +132,15 @@ struct WebApiV2 : public WebApi
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 

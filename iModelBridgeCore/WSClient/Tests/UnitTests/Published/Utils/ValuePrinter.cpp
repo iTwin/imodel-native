@@ -48,6 +48,22 @@ std::ostream& operator << (std::ostream &o, ICachingDataSource::DataOrigin origi
     return o;
     }
 
+std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress::State value)
+    {
+    o << Utf8PrintfString("Current:%.0f Total:%.0f", value.current, value.total);
+    return o;
+    }
+
+std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress progress)
+    {
+    o << Utf8PrintfString("Bytes: %.0f/%.0f, Instances: %.0f/%.0f, Synced: %f, Label: %s", 
+                          progress.GetBytes().current, progress.GetBytes().total, 
+                          progress.GetInstances().current, progress.GetInstances().total, 
+                          progress.GetSynced(), 
+                          progress.GetLabel().c_str());
+    return o;
+    }
+
 std::ostream& operator << (std::ostream &o, CacheStatus status)
     {
     static std::map<CacheStatus, Utf8String> names
@@ -442,7 +458,6 @@ std::ostream& operator << (std::ostream &o, BeVersionCR version)
     o << version.ToString().c_str();
     return o;
     }
-
 
 BEGIN_BENTLEY_NAMESPACE
 namespace Json

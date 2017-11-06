@@ -219,8 +219,8 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
     BeDebugLog(curl_version_info(CURLversion::CURLVERSION_FIRST)->version);
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
-    Utf8String repositoryId = "Bentley.eB--viltest2-7.bentley.com~2CeB_Mobile_15.4";
+    Utf8String serverUrl = "https://mobilevm3.bentley.com/ws22";
+    Utf8String repositoryId = "Bentley.eB--MobileVM2.bentley.com~2CeB_Mobile_15.4";
     Credentials credentials("admin", "admin");
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -244,7 +244,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
                     "direction" : "backward",
                     "relatedInstance" : 
                         {
-                        "instanceId" : "314",
+                        "instanceId" : "42",
                         "className" : "Document",
                         "schemaName" : "eB"
                         }

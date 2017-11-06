@@ -23,7 +23,8 @@ USING_NAMESPACE_BENTLEY_TASKS
 //--------------------------------------------------------------------------------------+
 typedef std::shared_ptr<struct IAzureBlobStorageClient> IAzureBlobStorageClientPtr;
 typedef std::shared_ptr<struct AzureBlobStorageClient> AzureBlobStorageClientPtr;
-typedef AsyncResult<struct AzureFileResponse, HttpError> AzureResult;
+// Return success values or error HttpResponse. Convert HttpResponse to HttpError if simple information is needed.
+typedef AsyncResult<struct AzureFileResponse, Http::Response> AzureResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass

@@ -43,7 +43,9 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf
     }
 
 // Add this macro to start of a method to print out cache state before and after method is done
-#define LogCacheDataForMethod() auto _ecdb_debug_info_holder_ = CreateLoggerHolder (*m_state, __FUNCTION__)
+//#define LogCacheDataForMethod() auto _ecdb_debug_info_holder_ = CreateLoggerHolder (*m_state, __FUNCTION__)
+// DEPRECATED: not very useful, disable for now
+#define LogCacheDataForMethod()
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
@@ -724,7 +726,7 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response)
+CacheStatus DataSourceCache::UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response)
     {
     LogCacheDataForMethod();
 
@@ -735,25 +737,23 @@ BentleyStatus DataSourceCache::UpdateInstance(ObjectIdCR objectId, WSObjectsResp
         InstanceCacheHelper::CachedInstances cachedInstances;
         InstanceCacheHelper::UpdateCachingState updateCachingState;
         if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, &updateCachingState))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
+
         if (1 != cachedInstances.GetCachedInstances().size() || !updateCachingState.GetNotFoundObjectIds().empty())
-            {
-            return ERROR;
-            }
+            return CacheStatus::DataNotCached;
         }
     else
         {
         ObjectInfo info = m_state->GetObjectInfoManager().ReadInfo(objectId);
+        if (!info.IsInCache())
+            return CacheStatus::DataNotCached;
+
         info.SetObjectCacheDate(DateTime::GetCurrentTimeUtc());
         if (SUCCESS != m_state->GetObjectInfoManager().UpdateInfo(info))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -975,7 +975,7 @@ BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
     if (!info.IsInCache())
         return SUCCESS;
 
-    if (SUCCESS != m_state->GetFileStorage().RemoveStoredFile(info))
+    if (CacheStatus::OK != m_state->GetFileStorage().RemoveStoredFile(info))
         return ERROR;
 
     return SUCCESS;
@@ -1426,15 +1426,15 @@ BeFileName DataSourceCache::ReadFilePath(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate)
+CacheStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate, AsyncError* errorOut)
     {
     LogCacheDataForMethod();
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
     if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate))
+        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate, errorOut))
         {
-        return ERROR;
+        return CacheStatus::Error;
         }
 
     return SUCCESS;
@@ -1497,16 +1497,13 @@ ICancellationTokenPtr ct
 
     ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
     if (!responseKey.IsValid())
-        {
         return CacheStatus::DataNotCached;
-        }
 
     if (!response.IsModified())
         {
-        if (SUCCESS != m_state->GetCachedResponseManager().UpdatePageCachedDate(responseKey, page))
-            {
-            return CacheStatus::Error;
-            }
+        auto status = m_state->GetCachedResponseManager().UpdatePageCachedDate(responseKey, page);
+        if (CacheStatus::OK != status)
+            return status;
         }
     else
         {
@@ -1516,17 +1513,12 @@ ICancellationTokenPtr ct
         if (nullptr != query)
             {
             if (nullptr == rejectedOut)
-                {
-                BeAssert(false);
                 return CacheStatus::Error;
-                }
 
             ECInstanceKeyMultiMap fullyPersistedNodes;
             if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
                 SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(fullyPersistedNodes, fullyPersistedInstances))
-                {
                 return CacheStatus::Error;
-                }
 
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
@@ -1553,25 +1545,16 @@ ICancellationTokenPtr ct
             }
         }
 
-    if (response.IsFinal())
-        {
-        if (SUCCESS != m_state->GetCachedResponseManager().TrimPages(responseKey, page))
-            {
-            return CacheStatus::Error;
-            }
-        }
+    if (response.IsFinal() && SUCCESS != m_state->GetCachedResponseManager().TrimPages(responseKey, page))
+        return CacheStatus::Error;
 
     bool wasCompleted = m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
     bool nowCompleted = wasCompleted;
 
     if (response.IsFinal())
-        {
         nowCompleted = true;
-        }
     else if (response.IsModified())
-        {
         nowCompleted = false;
-        }
 
     if (wasCompleted != nowCompleted)
         {

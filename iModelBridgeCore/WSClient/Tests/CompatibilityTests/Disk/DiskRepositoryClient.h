@@ -97,7 +97,7 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             return m_id;
             }
 
-        virtual void SetCredentials(Credentials credentials) override
+        virtual void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) override
             {
             BeAssert(false);
             };
@@ -230,5 +230,17 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             ) const override
             {
             FBC_NOT_IMPLEMENTED(WSUpdateFileResult);
+            }
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
             }
     };

@@ -20,7 +20,7 @@
 
 #define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 4);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -48,27 +48,32 @@ bool WebApiV2::IsSupported(WSInfoCR info)
         info.GetType() == WSInfo::Type::BentleyWSG;
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BeVersion WebApiV2::GetMaxWebApiVersion() const
+    {
+    BeVersion webApiVersion = m_info.GetWebApiVersion();
+    if (webApiVersion > s_maxTestedWebApi)
+        webApiVersion = s_maxTestedWebApi; // Limit queries to tested WebApi version
+    return webApiVersion;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
     {
-    BeVersion webApiVersionToUse = m_info.GetWebApiVersion();
-    if (!webApiVersion.IsEmpty())
-        {
-        webApiVersionToUse = webApiVersion;
-        }
-    else if (webApiVersionToUse > s_maxTestedWebApi)
-        {
-        webApiVersionToUse = s_maxTestedWebApi; // Limit queries to tested WebApi version
-        }
+    if (webApiVersion.IsEmpty())
+        webApiVersion = GetMaxWebApiVersion();
 
     Utf8PrintfString url
         (
         "%s/v%d.%d/",
         m_configuration->GetServerUrl().c_str(),
-        webApiVersionToUse.GetMajor(),
-        webApiVersionToUse.GetMinor()
+        webApiVersion.GetMajor(),
+        webApiVersion.GetMinor()
         );
 
     return url;
@@ -238,6 +243,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
         repository.SetPluginId(GetNullableString(instance.GetProperties()["ECPluginID"]));
         repository.SetLabel(GetNullableString(instance.GetProperties()["DisplayLabel"]));
         repository.SetDescription(GetNullableString(instance.GetProperties()["Description"]));
+        repository.SetServerUrl(m_configuration->GetServerUrl().c_str());
 
         repositories.push_back(repository);
         }
@@ -278,7 +284,7 @@ WSUploadResponse WebApiV2::ResolveUploadResponse(Http::Response& response) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId) const
+WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool requestHadSkipToken, const ObjectId* objectId) const
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
@@ -288,7 +294,10 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, const
 
         auto body = response.GetContent()->GetBody();
         auto eTag = response.GetHeaders().GetETag();
-        auto skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
+
+        Utf8String skipToken;
+        if (requestHadSkipToken)
+             skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
 
         return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
@@ -336,7 +345,7 @@ ICancellationTokenPtr ct
 
     return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (Http::Response& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse, &objectId);
+        return ResolveObjectsResponse(httpResponse, false, &objectId);
         });
     }
 
@@ -374,12 +383,12 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    BeVersion webApiVersion;
-    bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
-    if (isExternalFileAccessSupported)
-        webApiVersion = BeVersion(2, 4);
+    if (!objectId.IsValid() || filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
 
-    Utf8String url = GetUrl(CreateFileSubPath(objectId), "", webApiVersion);
+    bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
+
+    Utf8String url = GetUrl(CreateFileSubPath(objectId));
     Http::Request request = CreateFileDownloadRequest(url, filePath, eTag, downloadProgressCallback, ct);
 
     if (isExternalFileAccessSupported)
@@ -499,16 +508,22 @@ ICancellationTokenPtr ct
             BeAssert(true && WARNING_UrlLengthLimitations);
             }
         }
-
+        
+    bool requestHasSkipToken = false;
+    if (GetMaxWebApiVersion() >= BeVersion(2, 5) && !skipToken.empty())
+        {
+        request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
+        requestHasSkipToken = true;
+        }
+        
     request.GetHeaders().SetIfNoneMatch(eTag);
-    request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, requestHasSkipToken] (Http::Response& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse);
+        return ResolveObjectsResponse(httpResponse, requestHasSkipToken);
         });
     }
 
@@ -523,7 +538,7 @@ ICancellationTokenPtr ct,
 IWSRepositoryClient::RequestOptionsPtr options
 ) const
     {
-    if (m_info.GetWebApiVersion() < BeVersion(2, 1))
+    if (GetMaxWebApiVersion() < BeVersion(2, 1))
         {
         return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
         }
@@ -565,12 +580,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    ObjectId objectId;
-    objectId.schemaName = objectCreationJson["instance"]["schemaName"].asString();
-    objectId.className = objectCreationJson["instance"]["className"].asString();
-    objectId.remoteId = objectCreationJson["instance"]["instanceId"].asString();
-
-    return SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
+    return SendCreateObjectRequest(ObjectId(), objectCreationJson, filePath, uploadProgressCallback, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -578,32 +588,55 @@ ICancellationTokenPtr ct
 +--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
 (
-ObjectIdCR objectId,
+ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
-Http::Request::ProgressCallbackCR uploadProgressCallback,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    if (objectId.schemaName.empty() || objectId.className.empty())
+    Utf8String url;
+    Utf8String instanceId;
+    if (relatedObjectId.IsValid())
         {
-        BeAssert(false && "Either schemaName or className passed into WebApiV2::SendCreateObjectRequest is empty. Both are required to be valid.");
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError()));
+        Utf8String schemaName = relatedObjectId.schemaName;
+        Utf8String className = relatedObjectId.className;
+        instanceId = relatedObjectId.remoteId;
+
+        url = GetUrl(CreateClassSubPath(schemaName, className));
+        if (!instanceId.empty())
+            url += "/" + instanceId;
+
+        auto createdClassName = objectCreationJson["instance"]["className"];
+
+        auto createdClassSchema = objectCreationJson["instance"]["schemaName"];
+
+        if (createdClassName.empty() || createdClassSchema.empty())
+            {
+            BeAssert(false && "Invalid object creation JSON: no class name or schema name defined");
+            return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+            }
+
+        url += "/";
+
+        if (schemaName.compare(createdClassSchema.asCString()) != 0 )
+            url += createdClassSchema.asString() + ".";
+
+        url += createdClassName.asString();
         }
-
-    BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString()));
-    BeAssert(objectId.className.Equals(objectCreationJson["instance"]["className"].asString()));
-
-    Utf8String url = GetUrl(CreateClassSubPath(objectId.schemaName, objectId.className));
-
-    if (!objectId.remoteId.empty())
+    else
         {
-        url += "/" + objectId.remoteId;
-        }
+        Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
+        Utf8String className = objectCreationJson["instance"]["className"].asString();
+        instanceId = objectCreationJson["instance"]["instanceId"].asString();
 
+        url = GetUrl(CreateClassSubPath(schemaName, className));
+        if (!instanceId.empty())
+            url += "/" + instanceId;
+        }
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), REQUESTHEADER_ContentType_ApplicationJson);
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -611,9 +644,12 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSCreateObjectResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSCreateObjectResult>([this, instanceId] (Http::Response& httpResponse)
         {
-        return ResolveCreateObjectResponse(httpResponse);
+        if (instanceId.empty())
+            return ResolveCreateObjectResponse(httpResponse);
+        else
+            return ResolveUpdateObjectResponse(httpResponse);
         });
     }
 
@@ -630,7 +666,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    if (!filePath.empty() && m_info.GetWebApiVersion() < BeVersion(2, 4))
+    if (!filePath.empty() && GetMaxWebApiVersion() < BeVersion(2, 4))
         {
         BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
@@ -702,15 +738,12 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    BeVersion webApiVersion;
-    bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
-    if (isExternalFileAccessSupported)
-        webApiVersion = BeVersion(2, 4);
+    bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
     BeFile beFile;
     beFile.Open(filePath, BeFileAccess::Read);
 
-    Utf8String url = GetUrl(CreateFileSubPath(objectId), "", webApiVersion);
+    Utf8String url = GetUrl(CreateFileSubPath(objectId));
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
 
     request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));

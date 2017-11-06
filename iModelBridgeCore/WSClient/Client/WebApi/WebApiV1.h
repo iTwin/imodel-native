@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -59,8 +59,8 @@ struct WebApiV1 : public WebApi
 
         Http::Request CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
 
-        static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut);
-        static WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response);
+        static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut, Utf8StringCR serverUrl);
+        static WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response, Utf8StringCR serverUrl);
         static WSCreateObjectResult ResolveCreateObjectResponse(Http::Response& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId);
         static WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response);
         static WSObjectsResult ResolveObjectsResponse(Http::Response& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
@@ -187,6 +187,15 @@ struct WebApiV1 : public WebApi
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+        
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 

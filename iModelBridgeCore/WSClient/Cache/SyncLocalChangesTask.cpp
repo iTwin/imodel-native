@@ -26,15 +26,13 @@ SyncLocalChangesTask::SyncLocalChangesTask
 CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
 SyncOptions options,
-CachingDataSource::SyncProgressCallback&& onProgress,
+CachingDataSource::ProgressCallback&& onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(cachingDataSource, ct),
 m_objectsToSyncPtr(objectsToSync),
 m_options(options),
 m_onProgressCallback(onProgress),
-m_totalBytesToUpload(0),
-m_totalBytesUploaded(0),
 m_changeGroupIndexToSyncNext(0)
     {}
 
@@ -53,9 +51,23 @@ void SyncLocalChangesTask::_OnExecute()
         }
 
     m_serverInfo = m_ds->GetServerInfo(txn);
+
+    m_instancesStillInSync.clear();
+
+    for (auto changeGroup : m_changeGroups)
+        SetUploadActiveForChangeGroup(txn, *changeGroup, true);
+
     txn.Commit();
 
-    SyncNext();
+    SyncNext()->Then(m_ds->GetCacheAccessThread(), [=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        for (auto instance : m_instancesStillInSync)
+            txn.GetCache().GetChangeManager().SetUploadActive(instance, false);
+        m_instancesStillInSync.clear();
+
+        txn.Commit();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -96,7 +108,7 @@ BentleyStatus SyncLocalChangesTask::PrepareChangeGroups(IDataSourceCache& cache)
         if (IChangeManager::ChangeStatus::NoChange != changeGroup->GetFileChange().GetChangeStatus())
             {
             BeFileName filePath = cache.ReadFilePath(changeGroup->GetFileChange().GetInstanceKey());
-            m_totalBytesToUpload += FileUtil::GetFileSize(filePath);
+            m_uploadBytesProgress.total += FileUtil::GetFileSize(filePath);
             }
         }
 
@@ -132,31 +144,37 @@ void SyncLocalChangesTask::OnSyncDone()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::SyncNext()
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNext()
     {
-    if (IsTaskCanceled()) return;
+    if (IsTaskCanceled()) return CreateCompletedAsyncTask();
+
+    if (m_currentChangeGroup && m_currentChangeGroup->GetFileChange().IsValid())
+        {
+        if (nullptr != m_options.GetFileUploadFinishCallback())
+            {
+            (m_options.GetFileUploadFinishCallback())(m_currentChangeGroup->GetFileChange().GetInstanceKey());
+            }
+        }
 
     if (m_changeGroupIndexToSyncNext >= m_changeGroups.size())
         {
         ReportFinalProgress();
         OnSyncDone();
-        return;
+        return CreateCompletedAsyncTask();
         }
 
-    CacheChangeGroupPtr changeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
-
+    m_currentChangeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
     AsyncTaskPtr<void> task;
-    if (CanSyncChangeset(*changeGroup))
+    if (CanSyncChangeset(*m_currentChangeGroup))
         {
         task = SyncNextChangeset();
         }
     else
         {
-        m_changeGroupIndexToSyncNext++;
-        task = SyncChangeGroup(changeGroup);
+        task = SyncNextChangeGroup();
         }
 
-    task->Then(m_ds->GetCacheAccessThread(), [=]
+    return task->Then(m_ds->GetCacheAccessThread(), [=]
         {
         SyncNext();
         });
@@ -173,7 +191,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
         auto txn = m_ds->StartCacheTransaction();
 
         auto revisions = std::make_shared<RevisionMap>();
-        auto changesetChangeGroups = std::make_shared<bvector<CacheChangeGroup*>>();
+        auto changesetChangeGroups = std::make_shared<bset<CacheChangeGroup*>>();
         auto changeset = BuildChangeset(txn.GetCache(), *revisions, *changesetChangeGroups);
         if (nullptr == changeset || changeset->IsEmpty())
             {
@@ -181,12 +199,17 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
             return;
             }
 
-        auto changesetBody = HttpStringBody::Create(std::make_shared<Utf8String>(changeset->ToRequestString()));
+        auto body = HttpStringBody::Create(std::make_shared<Utf8String>(changeset->ToRequestString()));
         ResponseGuardPtr guard = CreateResponseGuard(nullptr, false); // TODO: label
+        txn.Commit();
 
-        m_ds->GetClient()->SendChangesetRequest(changesetBody, guard->GetProgressCallback(), guard)
+        m_ds->GetClient()->SendChangesetRequest(body, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSChangesetResult result)
             {
+            auto txn = m_ds->StartCacheTransaction();
+            for (auto changeGroup : *changesetChangeGroups)
+                SetUploadActiveForChangeGroup(txn, *changeGroup, false);
+
             if (!result.IsSuccess())
                 {
                 SetError(result.GetError());
@@ -196,19 +219,35 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
             rapidjson::Document changesetResponse;
             changesetResponse.Parse<0>(result.GetValue()->AsString().c_str());
 
-            auto handler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
+            auto successHandler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
                 {
                 revisions->find(oldId)->second->SetRemoteId(newId.remoteId);
                 return SUCCESS;
                 };
 
-            if (SUCCESS != changeset->ExtractNewIdsFromResponse(changesetResponse, handler))
+            auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+                {
+                AddFailedObject(txn.GetCache(), oldId, error);
+
+                ECInstanceKey failedKey = revisions->find(oldId)->second->GetInstanceKey();;
+                revisions->erase(oldId);
+
+                auto it = std::find_if(changesetChangeGroups->begin(), changesetChangeGroups->end(), [&] (ChangeGroup* group)
+                    {
+                    return group->DoesContain(failedKey);
+                    });
+                if (it != changesetChangeGroups->end())
+                    changesetChangeGroups->erase(it);
+
+                return SUCCESS;
+                };
+
+            if (SUCCESS != changeset->ExtractNewIdsFromResponse(changesetResponse, successHandler, errorHandler))
                 {
                 SetError();
                 return;
                 };
 
-            auto txn = m_ds->StartCacheTransaction();
             for (auto& pair : *revisions)
                 {
                 if (SUCCESS != txn.GetCache().GetChangeManager().CommitInstanceRevision(*pair.second))
@@ -234,8 +273,24 @@ bool SyncLocalChangesTask::CanSyncChangeset(CacheChangeGroupCR changeGroup) cons
     {
     return
         m_options.GetUseChangesets() &&
-        m_serverInfo.GetWebApiVersion() >= BeVersion(2, 1) &&
+        m_serverInfo.GetWebApiVersion() >= BeVersion(2, 3) &&
         changeGroup.GetFileChange().GetChangeStatus() == IChangeManager::ChangeStatus::NoChange;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ICancellationTokenPtr SyncLocalChangesTask::GetFileCancellationToken() const
+    {
+    ICancellationTokenPtr cancellationToken;
+
+    if (m_currentChangeGroup && m_currentChangeGroup->GetFileChange().IsValid())
+        cancellationToken = m_options.GetFileCancellationToken(m_currentChangeGroup->GetFileChange().GetInstanceKey());
+
+    if (cancellationToken)
+        return MergeCancellationToken::Create(cancellationToken, GetCancellationToken());
+
+    return GetCancellationToken();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -268,7 +323,7 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
     query.SetSelect("$id");
     query.SetFilter("Name+eq+'SupportsFileAccessUrl'+and+Supported+eq+true");
 
-    return m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
+    return m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetFileCancellationToken())
         ->Then<bool>(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
         {
         if (!result.IsSuccess())
@@ -281,6 +336,49 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
         m_ds->m_sessionInfo->repositorySupportsFileAccessUrl.reset(new bool(supportsFileAccessUrl));
         return supportsFileAccessUrl;
         });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
+    {
+    m_changeGroupIndexToSyncNext++;
+    return SyncChangeGroup(m_currentChangeGroup)->Then(m_ds->GetCacheAccessThread(), [=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        SetUploadActiveForChangeGroup(txn, *m_currentChangeGroup, false);
+        txn.Commit();
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncLocalChangesTask::SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
+    {
+    auto objectKey = changeGroup.GetObjectChange().GetInstanceKey();
+    auto relationshipKey = changeGroup.GetRelationshipChange().GetInstanceKey();
+    auto fileKey = changeGroup.GetFileChange().GetInstanceKey();
+
+    SetUploadActiveForSingleInstance(txn, objectKey, active);
+    SetUploadActiveForSingleInstance(txn, relationshipKey, active);
+    SetUploadActiveForSingleInstance(txn, fileKey, active);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncLocalChangesTask::SetUploadActiveForSingleInstance(CacheTransactionCR txn, ECInstanceKeyCR key, bool active)
+    {
+    if (key.IsValid())
+        {
+        if (active)
+            m_instancesStillInSync.insert(key);
+        else
+            m_instancesStillInSync.erase(key);
+        txn.GetCache().GetChangeManager().SetUploadActive(key, active);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -302,7 +400,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncChangeGroup(CacheChangeGroupPtr cha
         return SyncFileModification(changeGroup);
         }
     else if (changeGroup->GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Deleted ||
-             changeGroup->GetRelationshipChange().GetChangeStatus() == IChangeManager::ChangeStatus::Deleted)
+        changeGroup->GetRelationshipChange().GetChangeStatus() == IChangeManager::ChangeStatus::Deleted)
         {
         return SyncObjectDeletion(changeGroup);
         }
@@ -345,7 +443,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 
                 auto txn = m_ds->StartCacheTransaction();
                 auto fileId = txn.GetCache().FindInstance(changeGroup->GetFileChange().GetInstanceKey());
-                m_ds->CacheObject(fileId, GetCancellationToken())
+                m_ds->CacheObject(fileId, GetFileCancellationToken())
                     ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
                     {
                     if (!result.IsSuccess())
@@ -397,31 +495,38 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeG
         Json::Value creationJson;
         changeset->ToRequestJson(creationJson);
 
-        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize);
+        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize, (double)currentFileSize);
 
         m_ds->GetClient()->SendCreateObjectRequest(creationJson, filePath, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& creationResult)
             {
             if (!creationResult.IsSuccess())
                 {
-                m_totalBytesToUpload -= currentFileSize;
+                m_uploadBytesProgress.total -= currentFileSize;
                 HandleSyncError(creationResult.GetError(), changeGroup, objectLabel);
                 return;
                 }
 
-            m_totalBytesUploaded += currentFileSize;
+            m_uploadBytesProgress.current += currentFileSize;
 
             auto txn = m_ds->StartCacheTransaction();
 
-            auto handler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
+            auto successHandler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
                 {
                 revisions->find(oldId)->second->SetRemoteId(newId.remoteId);
                 return SUCCESS;
                 };
 
+            auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+                {
+                // Changeset errors are not supported here
+                BeAssert(false);
+                return ERROR;
+                };
+
             rapidjson::Document jsonBody;
             creationResult.GetValue().GetJson(jsonBody);
-            if (SUCCESS != changeset->ExtractNewIdsFromResponse(jsonBody, handler))
+            if (SUCCESS != changeset->ExtractNewIdsFromResponse(jsonBody, successHandler, errorHandler))
                 {
                 SetError();
                 return;
@@ -458,7 +563,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeG
                     }
                 if (m_serverInfo.GetVersion() < BeVersion(2, 0))
                     {
-                    m_ds->CacheObject(newObjectId, GetCancellationToken())
+                    m_ds->CacheObject(newObjectId, GetFileCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
                         {
                         if (!result.IsSuccess())
@@ -475,7 +580,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeG
                     WSQuery query(*newInstanceClass, true);
                     query.SetFilter("$id+eq+'" + newObjectId.remoteId + "'");
 
-                    m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
+                    m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetFileCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
                         {
                         if (!result.IsSuccess())
@@ -517,6 +622,12 @@ void SyncLocalChangesTask::HandleSyncError(WSErrorCR error, CacheChangeGroupPtr 
         {
         auto txn = m_ds->StartCacheTransaction();
         RegisterFailedSync(txn.GetCache(), *changeGroup, error, objectLabel);
+        }
+    else if (WSError::Status::Canceled == error.GetStatus() && !IsTaskCanceled())
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        RegisterFailedSync(txn.GetCache(), *changeGroup, CachingDataSource::Error(ICachingDataSource::Status::FileCancelled), objectLabel);
+        return;
         }
     else
         {
@@ -580,20 +691,20 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(CacheChangeGroupPt
         BeFileName filePath = revision->GetFilePath();
         uint64_t currentFileSize = FileUtil::GetFileSize(filePath);
 
-        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, true);
+        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, true, (double) currentFileSize);
 
         m_ds->GetClient()->SendUpdateFileRequest(objectId, filePath, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateFileResult& result)
             {
             if (!result.IsSuccess())
                 {
-                m_totalBytesToUpload -= currentFileSize;
+                m_uploadBytesProgress.total -= currentFileSize;
                 SetError(result.GetError());
                 return;
                 }
 
             auto txn = m_ds->StartCacheTransaction();
-            m_totalBytesUploaded += currentFileSize;
+            m_uploadBytesProgress.current += currentFileSize;
             revision->SetFileCacheTag(result.GetValue().GetFileETag());
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*revision))
                 {
@@ -663,26 +774,33 @@ WSChangesetPtr SyncLocalChangesTask::BuildChangeset
 (
 IDataSourceCache& cache,
 RevisionMap& revisionsOut,
-bvector<CacheChangeGroup*>& changesetChangeGroupsOut
+bset<CacheChangeGroup*>& changesetChangeGroupsOut
 )
     {
     auto changeset = std::make_shared<WSChangeset>();
 
+    RequestOptions options;
+    options.SetFailureStrategy(m_options.GetFailureStrategy());
+    changeset->SetRequestOptions(options);
+
     bool changesetClipped = false;
-    for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
+    size_t i = m_changeGroupIndexToSyncNext;
+    for (; i < m_changeGroups.size(); ++i)
         {
         CacheChangeGroup& changeGroup = *m_changeGroups[i];
         if (!CanSyncChangeset(changeGroup))
-            {
             break;
+
+        if (!changeGroup.AreAllUnsyncedDependenciesInSet(changesetChangeGroupsOut))
+            {
+            RegisterFailedSync(cache, changeGroup, CachingDataSource::Status::DependencyNotSynced);
+            continue;
             }
 
         RevisionMap revisions;
         WSChangeset::Instance* newInstance = AddChangeToChangeset(cache, *changeset, changeGroup, revisions, false);
         if (nullptr == newInstance)
-            {
             return nullptr;
-            }
 
         if (m_options.GetMaxChangesetSize() != 0 &&
             m_options.GetMaxChangesetSize() < changeset->CalculateSize() ||
@@ -695,9 +813,9 @@ bvector<CacheChangeGroup*>& changesetChangeGroupsOut
             }
 
         revisionsOut.insert(revisions.begin(), revisions.end());
-        changesetChangeGroupsOut.push_back(&changeGroup);
-        m_changeGroupIndexToSyncNext += 1;
+        changesetChangeGroupsOut.insert(&changeGroup);
         }
+    m_changeGroupIndexToSyncNext = i;
 
     if (changeset->IsEmpty() && changesetClipped)
         {
@@ -794,19 +912,19 @@ bool ensureChangedInstanceInRoot
             {
             source = &changeset.AddInstance(sourceId, sourceState, sourceProperties);
             target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
-                                                 targetId, targetState, targetProperties);
+                targetId, targetState, targetProperties);
             return source;
             }
         else if (nullptr == source)
             {
             source = &target->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Backward,
-                                                 sourceId, sourceState, sourceProperties);
+                sourceId, sourceState, sourceProperties);
             return source;
             }
         else if (nullptr == target)
             {
             target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
-                                                 targetId, targetState, targetProperties);
+                targetId, targetState, targetProperties);
             return target;
             }
         else
@@ -833,9 +951,7 @@ RevisionMap& revisionsOut
     auto changeset = std::make_shared<WSChangeset>(WSChangeset::SingeInstance);
 
     if (nullptr == AddChangeToChangeset(cache, *changeset, changeGroup, revisionsOut, true))
-        {
         return nullptr;
-        }
 
     return changeset;
     }
@@ -866,17 +982,22 @@ WSChangeset::ChangeState SyncLocalChangesTask::ToWSChangesetChangeState(IChangeM
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const
+void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label, double currentFileTotalBytes) const
     {
     if (!m_onProgressCallback)
-        {
         return;
-        }
 
     double synced = (double) (m_changeGroupIndexToSyncNext - 1) / m_changeGroups.size();
     synced = trunc(synced * 100) / 100;
 
-    m_onProgressCallback(synced, label, (double) m_totalBytesUploaded + currentFileBytesUploaded, (double) m_totalBytesToUpload);
+    ECInstanceKey currentFileKey;
+    if (nullptr != m_currentChangeGroup)
+        currentFileKey = m_currentChangeGroup->GetFileChange().GetInstanceKey();
+
+    m_onProgressCallback({
+        {m_uploadBytesProgress.current + currentFileBytesUploaded, m_uploadBytesProgress.total},
+        label,
+        synced, currentFileKey, {currentFileBytesUploaded, currentFileTotalBytes}});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -885,28 +1006,25 @@ void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8S
 void SyncLocalChangesTask::ReportFinalProgress() const
     {
     if (!m_onProgressCallback)
-        {
         return;
-        }
 
-    m_onProgressCallback(1, "", (double) m_totalBytesUploaded, (double) m_totalBytesToUpload);
+    m_onProgressCallback({m_uploadBytesProgress, nullptr, 1});
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR objectLabel, bool isFileBeingUploaded) const
+ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR label, bool isFileBeingUploaded, double currentFileTotalBytes) const
     {
-    ReportProgress(0, objectLabel);
+    auto labelPtr = std::make_shared<const Utf8String>(label);
+    ReportProgress(0, labelPtr, 0);
 
     Http::Request::ProgressCallback onProgress;
 
     if (isFileBeingUploaded)
-        {
-        onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, objectLabel);
-        }
+        onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, labelPtr, currentFileTotalBytes);
 
-    return ResponseGuard::Create(GetCancellationToken(), onProgress);
+    return ResponseGuard::Create(GetFileCancellationToken(), onProgress);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -914,16 +1032,16 @@ ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR objectLa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncLocalChangesTask::RegisterFailedSync(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel)
     {
+    if (changeGroup.GetRelationshipChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
+        {
+        ObjectId objectId = cache.FindRelationship(changeGroup.GetRelationshipChange().GetInstanceKey());
+        AddFailedObject(cache, objectId, error, objectLabel);
+        }
     if (changeGroup.GetObjectChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange ||
         changeGroup.GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
         {
         ObjectId objectId = cache.FindInstance(changeGroup.GetObjectChange().GetInstanceKey());
-        GetFailedObjects().push_back(CachingDataSource::FailedObject(objectId, objectLabel, error));
-        }
-    if (changeGroup.GetRelationshipChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
-        {
-        ObjectId objectId = cache.FindRelationship(changeGroup.GetRelationshipChange().GetInstanceKey());
-        GetFailedObjects().push_back(CachingDataSource::FailedObject(objectId, objectLabel, error));
+        AddFailedObject(cache, objectId, error, objectLabel);
         }
     }
 

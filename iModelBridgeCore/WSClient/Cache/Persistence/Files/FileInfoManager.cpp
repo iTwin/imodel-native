@@ -13,6 +13,7 @@
 #include "../Core/CacheSchema.h"
 #include "../Core/ECDbFileInfoSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
+#include "../DataSourceCache.xliff.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -152,8 +153,9 @@ BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, Dat
         BeAssert(false);
         return ERROR;
         }
+    int64_t accessTimeMs = static_cast<int64_t>(accessTime) * 1000;
     DateTime lastAccessDate;
-    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTime * 1000))
+    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTimeMs))
         {
         BeAssert(false);
         return ERROR;
@@ -168,7 +170,12 @@ BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, Dat
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes, DateTimeCP maxLastAccessDate)
+CacheStatus FileInfoManager::DeleteFilesNotHeldByNodes
+(
+const ECInstanceKeyMultiMap& holdingNodes,
+DateTimeCP maxLastAccessDate,
+AsyncError* errorOut
+)
     {
     auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
         {
@@ -179,27 +186,21 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
         });
 
     JsonECSqlSelectAdapter adapter(*statement);
-    BentleyStatus returnValue = SUCCESS;
+    CacheStatus returnValue = CacheStatus::OK;
 
     while (BE_SQLITE_ROW == statement->Step())
         {
         auto changeStatus = static_cast<IChangeManager::ChangeStatus>(statement->GetValueInt(0));
         if (IChangeManager::ChangeStatus::NoChange != changeStatus)
-            {
             continue;
-            }
 
         ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(), statement->GetValueId<ECInstanceId>(1));
         if (ECDbHelper::IsInstanceInMultiMap(externalFileInfoKey, holdingNodes))
-            {
             continue;
-            }
 
         Json::Value externalFileInfoJson;
         if (SUCCESS != adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
 
         FileInfo fileInfo(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
         auto filePath = fileInfo.GetFilePath();
@@ -209,17 +210,22 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             {
             // Return error from the function when we eventually finish, but continue processing
             // files anyway.
-            returnValue = ERROR;
+            returnValue = CacheStatus::Error;
             }
 
         if (shouldSkip)
-            {
             continue;
-            }
 
-        if (SUCCESS != m_fileStorage.RemoveStoredFile(fileInfo))
+        auto status = m_fileStorage->RemoveStoredFile(fileInfo);
+        if (CacheStatus::OK != status)
             {
-            return ERROR;
+            if (errorOut != nullptr && CacheStatus::FileLocked == status)
+                {
+            	*errorOut = AsyncError(Utf8PrintfString(
+                    DataSourceCacheLocalizedString(ERROR_FileIsLocked).c_str(),
+                    Utf8String(fileInfo.GetFileName()).c_str()));
+                }
+            return status;
             }
         }
     return returnValue;

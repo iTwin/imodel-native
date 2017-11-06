@@ -72,13 +72,19 @@ TEST_F(WSErrorTests, Ctor_CanceledHttpResponse_SetsStatusCanceled)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusConnectionError)
+TEST_F(WSErrorTests, Ctor_HttpResponseWithNotHandledConnectionStatuses_SetsStatusConnectionError)
     {
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::None)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetStatus());
-    EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetStatus());
+    for (int i = (int) ConnectionStatus::None; i <= (int) ConnectionStatus::UnknownError; i++)
+        {
+        auto status = (ConnectionStatus) i;
+        if (status == ConnectionStatus::OK)
+            continue;
+        if (status == ConnectionStatus::Canceled)
+            continue;
+        if (status == ConnectionStatus::CertificateError)
+            continue;
+        EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(status)).GetStatus());
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -92,9 +98,9 @@ TEST_F(WSErrorTests, Ctor_HttpResponseWithCertificateError_SetsStatusCertificate
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingField_SetsStatusServerNotSupported)
+TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingRequiredFieldErrorMessage_SetsStatusServerNotSupported)
     {
-    auto body = R"({"errorId":null, "errorMessage":null})";
+    auto body = R"({"errorId":null, "errorDescription":null})";
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
 
     EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
@@ -109,6 +115,42 @@ TEST_F(WSErrorTests, Ctor_JsonErrorFormatCorrectButContentTypeXml_SetsStatusServ
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}}));
 
     EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_XmlErrorFormatMissingRequiredFieldErrorMessage_SetsStatusServerNotSupported)
+    {
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
+                      xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
+                        <errorId>ClassNotFound</errorId>
+                        <errorDescription>TestDescription</errorDescription>
+                    </ModelError>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_XmlErrorFormatMissingOptionalFields_ParsesXmlAndSetsError)
+    {
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
+                      xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
+                        <errorMessage>TestMessage</errorMessage>
+                    </ModelError>)";
+
+    WSError error(StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("TestMessage", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -151,6 +193,44 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectWithNullDescription_ParsesXmlAndS
     EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
     EXPECT_NE("", error.GetDisplayMessage());
     EXPECT_EQ("Foo", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_XmlAzureBlobNotFoundError_ParsesXmlAndSetsError)
+    {
+    auto body = R"(<?xml version="1.0" encoding="utf-8"?>
+        <Error>
+            <Code>BlobNotFound</Code>
+            <Message>TestMessage</Message>
+        </Error>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::FileNotFound, error.GetId());
+    EXPECT_NE("", error.GetDisplayMessage());
+    EXPECT_EQ("TestMessage", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_XmlAzureOtherError_ParsesXmlAndSetsError)
+    {
+    auto body = R"(<?xml version="1.0" encoding="utf-8"?>
+        <Error>
+            <Code>Foo</Code>
+            <Message>TestMessage</Message>
+        </Error>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_NE("", error.GetDisplayMessage());
+    EXPECT_EQ("TestMessage", error.GetDisplayDescription());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -249,13 +329,193 @@ TEST_F(WSErrorTests, Ctor_ConflictError_SetsRecievedMessageAndDescriptionForUser
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMessage)
+TEST_F(WSErrorTests, Ctor_MissingRequiredFieldErrorMessage_SetsStatusServerNotSupported)
+    {
+    auto body = R"({"errorId":null, "errorDescription":"DESCRIPTION", "httpStatusCode" : 409})";
+    auto httpResponse = StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+    WSError error(httpResponse);
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_RequiredFieldsOnly_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto body = R"({"errorMessage":"MESSAGE", "httpStatusCode" : 409})";
+    auto httpResponse = StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+    WSError error(httpResponse);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_JsonValueWithNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_JsonValueWithClassNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
+    EXPECT_NE(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_JsonValueWithoutHttpStatusCodeField_SetsStatusServerNotSupported)
+    {
+    auto json = ToJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_JsonValueConflictError_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 409})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_JsonValueWithRequiredFieldsOnly_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToJson(R"({"errorMessage":"MESSAGE", "httpStatusCode" : 409})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToRapidJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithClassNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToRapidJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
+    EXPECT_NE(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithoutHttpStatusCodeField_SetsStatusServerNotSupported)
+    {
+    auto json = ToRapidJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_RapidJsonValueConflictError_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToRapidJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 409})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithRequiredFieldsOnly_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToRapidJson(R"({"errorMessage":"MESSAGE", "httpStatusCode" : 409})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdAndLocalizedMessage)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
 
     EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
     EXPECT_EQ(WSError::Id::LoginFailed, error.GetId());
-    EXPECT_EQ(HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized), error.GetDisplayMessage());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::Unauthorized).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_ProxyAuthenticationRequiredResponse_SetsIdAndLocalizedMessage)
+    {
+    WSError error(StubHttpResponse(HttpStatus::ProxyAuthenticationRequired));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::ProxyAuthenticationRequired, error.GetId());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::ProxyAuthenticationRequired).GetDisplayMessage(), error.GetDisplayMessage());
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 

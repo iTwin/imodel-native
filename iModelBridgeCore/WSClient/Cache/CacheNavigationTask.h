@@ -23,7 +23,7 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
         const bvector<ObjectId> m_navigationTreesToCacheFully;
         const bvector<ObjectId> m_navigationTreesToUpdateOnly;
 
-        const CachingDataSource::LabeledProgressCallback m_onProgressCallback;
+        const CachingDataSource::ProgressCallback m_onProgressCallback;
 
         int                     m_recursiveTasksRunning;
         bset<ObjectId>          m_cachedObjects;
@@ -57,7 +57,7 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
         void MarkNotModifiedChildrenAsPartial();
         void CacheFiles();
         void ReportProgress(ObjectIdCR objectId);
-        void ReportProgress(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel);
+        void ReportProgress(CachingDataSource::ProgressCR progress);
         bool IsObjectFileBacked(CacheTransactionCR txn, ECInstanceKeyCR instance);
 
     public:
@@ -67,7 +67,7 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
             bvector<ObjectId>&& navigationTreesToCacheFully,
             bvector<ObjectId>&& navigationTreesToUpdateOnly,
             std::shared_ptr<const ISelectProvider> updateSelectProvider,
-            CachingDataSource::LabeledProgressCallback&& onProgress,
+            CachingDataSource::ProgressCallback&& onProgress,
             ICancellationTokenPtr ct
             );
 

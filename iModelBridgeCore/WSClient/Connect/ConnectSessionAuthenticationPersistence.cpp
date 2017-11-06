@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
+#include "ConnectSessionAuthenticationPersistence.h"
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

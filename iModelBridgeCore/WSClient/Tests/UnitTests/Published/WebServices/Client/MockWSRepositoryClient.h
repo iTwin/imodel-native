@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSRepositoryClient.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,7 +56,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             return *m_client;
             }
 
-        MOCK_METHOD1(SetCredentials, void(Credentials credentials));
+        MOCK_METHOD2(SetCredentials, void(Credentials, IWSRepositoryClient::AuthenticationType));
 
         MOCK_METHOD1(SetCompressionOptions, void(CompressionOptions));
 
@@ -158,6 +158,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR uploadProgressCallback,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD5(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));
     };

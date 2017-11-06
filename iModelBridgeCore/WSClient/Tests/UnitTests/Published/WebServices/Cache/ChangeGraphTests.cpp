@@ -16,7 +16,98 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ChangeGraphTests, BuildCacheChangeGroups_EmptyChanges_ReturnsEmpty)
+TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_DefaultGroup_True)
+    {
+    ChangeGroup group;
+    bset<ChangeGroup*> groups;
+    EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_SyncedDependencyNotInSet_True)
+    {
+    ChangeGroup group;
+    ChangeGroupPtr dependency = std::make_shared<ChangeGroup>();
+
+    group.AddDependency(dependency);
+    dependency->SetSynced(true);
+
+    bset<ChangeGroup*> groups;
+    EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_SyncedDependencyInSet_True)
+    {
+    ChangeGroup group;
+    ChangeGroupPtr dependency = std::make_shared<ChangeGroup>();
+
+    group.AddDependency(dependency);
+    dependency->SetSynced(true);
+
+    bset<ChangeGroup*> groups;
+    groups.insert(dependency.get());
+    EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_UnsyncedDependencyNotInSet_False)
+    {
+    ChangeGroup group;
+    ChangeGroupPtr dependency = std::make_shared<ChangeGroup>();
+
+    group.AddDependency(dependency);
+    dependency->SetSynced(false);
+
+    bset<ChangeGroup*> groups;
+    EXPECT_FALSE(group.AreAllUnsyncedDependenciesInSet(groups));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_UnsyncedDependencyNotInSet_True)
+    {
+    ChangeGroup group;
+    ChangeGroupPtr dependency = std::make_shared<ChangeGroup>();
+
+    group.AddDependency(dependency);
+    dependency->SetSynced(false);
+
+    bset<ChangeGroup*> groups;
+    groups.insert(dependency.get());
+    EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_TwoUnsyncedDependencyAndOneNotInSet_False)
+    {
+    ChangeGroup group;
+    ChangeGroupPtr dependency1 = std::make_shared<ChangeGroup>();
+    ChangeGroupPtr dependency2 = std::make_shared<ChangeGroup>();
+
+    group.AddDependency(dependency1);
+    group.AddDependency(dependency2);
+    dependency1->SetSynced(false);
+    dependency2->SetSynced(false);
+
+    bset<ChangeGroup*> groups;
+    groups.insert(dependency1.get());
+    EXPECT_FALSE(group.AreAllUnsyncedDependenciesInSet(groups));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeGraphTests, BuildChangeGroups_EmptyChanges_ReturnsEmpty)
     {
     ChangeManager::Changes changes;
     EXPECT_TRUE(ChangesGraph(changes).BuildCacheChangeGroups().empty());

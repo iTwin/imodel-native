@@ -35,8 +35,11 @@
     <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
     <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
     <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Cache\ChangeGraphTests.h" />
@@ -90,6 +93,8 @@
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationPersistence.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectionClientInterface.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectTokenProvider.h" />
     <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
@@ -193,6 +198,7 @@
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
@@ -217,6 +223,7 @@
     <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ProgressFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
