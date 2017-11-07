@@ -105,6 +105,19 @@ Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, BEF::FormatUn
     }
 
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/17
+//----------------------------------------------------------------------------------------
+//Utf8String ECQuantityFormatting::FormatQuantityMagnitude(double dval, Utf8StringCR UnitName, Formatting::FormatUnitSetCR, ECQuantityFormattingStatus* status)
+//    {
+//    BEU::Quantity q = BEU::Quantity(dval, persistenceUnitName);
+//    return FormatQuantity(q, fug, indx, status, defFormat);
+//    }
+
+
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
