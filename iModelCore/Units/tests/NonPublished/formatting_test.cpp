@@ -130,14 +130,14 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("in");
     }
 
-TEST(FormattingTest, SchemaValidation)
-    {
-    LOG.infov("================  Schema Validation ===========================");
-    FormattingTestFixture::ValidateSchemaUnitNames("C:\\Test\\TestSchema.txt", "UnitName", "C:\\Test\\TestSchemaUnits.txt");
-
-    LOG.infov("================ Schema Validation (end) ===========================");
- 
-    }
+//TEST(FormattingTest, SchemaValidation)
+//    {
+//    LOG.infov("================  Schema Validation ===========================");
+//    FormattingTestFixture::ValidateSchemaUnitNames("C:\\Test\\TestSchema.txt", "UnitName", "C:\\Test\\TestSchemaUnits.txt");
+//
+//    LOG.infov("================ Schema Validation (end) ===========================");
+// 
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
