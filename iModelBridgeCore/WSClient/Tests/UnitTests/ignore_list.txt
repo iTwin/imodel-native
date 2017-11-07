@@ -3,7 +3,7 @@
 #----------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------
-#   Tests that need attention
+#   Tests that fail randomly on PRG, can be removed to re-run locally - will not fail
 #----------------------------------------------------------------------------------------
 *Create_PassedMandatoryValues_SetsValues* # TODO: enable when Device::GetDeviceId() is implemented for Windows
 BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # Hangs regularly on firebug; have notified Vincas.
@@ -26,7 +26,9 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 #Fails on iOS; Vincas said to ignore
 ECDbAdapterTests.*
 
-# New tests that shows issue that needs fixing
+#----------------------------------------------------------------------------------------
+# These tests always fail, needs fixing
+#----------------------------------------------------------------------------------------
 DataSourceCacheTests.CacheResponse_ResponseContainsItsHolderInstanceAndHolderRootIsRemoved_QueryResultsAndHolderDeleted
 DataSourceCacheTests.CacheResponse_ResultContainsInstanceThatWasLocallyDeletedAndRelatedInstance_IgnoresDeletedInstanceAndUpdatesRelatedOne
 DataSourceCacheTests.CacheResponse_ResultContainsRelatedInstanceThatWasLocallyDeleted_IgnoresDeletedInstance
