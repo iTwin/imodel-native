@@ -50,6 +50,8 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
        if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
             {
             pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+            HRFVirtualEarthFile& rasterFile = static_cast<HRFVirtualEarthFile&>(*pRasterFile);
+            rasterFile.ActivateDgnDb06Mode();            
             }    
         else
             {
@@ -183,7 +185,6 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
     HGF2DExtent imageExtent;
 
-	#ifndef VANCOUVER_API
     // If the model doesn't preserve linearity try to simplify it. 
     if (!pReprojectionModel->PreservesLinearity())
         {
@@ -221,6 +222,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
             }
 
         HFCPtr<HGF2DTransfoModel> pAdaptedModel = HCPGCoordUtility::CreateAdaptedModel(*pReprojectionModel, imageLiteExtent, step, ExpectedMeanError, ExpectedMaxError, nullptr, nullptr, nullptr, nullptr);
+
         if (pAdaptedModel != nullptr)
             {
             pReprojectionModel = pAdaptedModel->CreateSimplifiedModel();
@@ -233,7 +235,6 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
         pRasterLogicalCS = new HGF2DCoordSys(*pRasterWorldToDgnWorldCS, pReprojCS);
         }
     else
-#endif
         {
         HVEShape rasterShape(0.0, 0.0, (double)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(), (double)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight(), pRasterPhysCS);
         rasterShape.ChangeCoordSys(pReprojCS);
@@ -265,6 +266,10 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 static bool s_outputTile = false; 
 #endif
 
+#ifdef VANCOUVER_API
+//Imagepp on Topaz is different then Imagepp (the redesigned Imagepp) on DgnDb06/Bim02 platform, and thus less thread safe.
+std::mutex s_imageppCopyFromLock; 
+#endif
 
 StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
     {
@@ -354,8 +359,10 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     copyFromOptions.SetAlphaBlend(true);
 
 #ifdef VANCOUVER_API
+    s_imageppCopyFromLock.lock();
     copyFromOptions.SetGridShapeMode(true);
     pTextureBitmap->CopyFrom(&raster, copyFromOptions);
+    s_imageppCopyFromLock.unlock();
 #else
     pTextureBitmap->CopyFrom(raster, copyFromOptions);
 #endif
