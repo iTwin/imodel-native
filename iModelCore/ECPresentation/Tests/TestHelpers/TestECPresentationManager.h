@@ -80,6 +80,8 @@ private:
     std::function<void(ECDbR, uint64_t)> m_onNodeUncheckedHandler;
     std::function<void(ECDbR, uint64_t)> m_onNodeExpandedHandler;
     std::function<void(ECDbR, uint64_t)> m_onNodeCollapsedHandler;
+    std::function<void(ECDbR, JsonValueCR)> m_onAllNodesCollapseHandler;
+    std::function<bvector<NavNodeCPtr>(ECDbR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHanlder;
 
 private:
     DataContainer<NavNodeCPtr> GetNodes(NavNodeCP parent)
@@ -100,6 +102,12 @@ protected:
     DataContainer<NavNodeCPtr> _GetRootNodes(ECDbR, PageOptionsCR, JsonValueCR) override {return GetNodes(nullptr);}
     size_t _GetRootNodesCount(ECDbR, JsonValueCR) override {return GetNodesCount(nullptr);}
     DataContainer<NavNodeCPtr> _GetChildren(ECDbR, NavNodeCR parent, PageOptionsCR, JsonValueCR) override {return GetNodes(&parent);}
+    bvector<NavNodeCPtr> _GetFilteredNodes(BeSQLite::EC::ECDbR connection, Utf8CP filterText, JsonValueCR options) override 
+        {
+        if (nullptr != m_getFilteredNodesPathsHanlder)
+            return m_getFilteredNodesPathsHanlder(connection, filterText, options);
+        return bvector<NavNodeCPtr>();
+        }
     size_t _GetChildrenCount(ECDbR, NavNodeCR parent, JsonValueCR) override {return GetNodesCount(&parent);}
     NavNodeCPtr _GetParent(ECDbR, NavNodeCR node, JsonValueCR) override
         {
@@ -111,7 +119,7 @@ protected:
         for (auto pair : m_hierarchy)
             {
             NavNodeCP node = pair.first.get();
-            if (node->GetNodeId() == id)
+            if (nullptr != node && node->GetNodeId() == id)
                 return node;
             }
         return nullptr;
@@ -130,6 +138,7 @@ protected:
     void _OnNodeUnchecked(ECDbR db, uint64_t nodeId) override {if (nullptr != m_onNodeUncheckedHandler) m_onNodeUncheckedHandler(db, nodeId);}
     void _OnNodeExpanded(ECDbR db, uint64_t nodeId) override {if (nullptr != m_onNodeExpandedHandler) m_onNodeExpandedHandler(db, nodeId);}
     void _OnNodeCollapsed(ECDbR db, uint64_t nodeId) override {if (nullptr != m_onNodeCollapsedHandler) m_onNodeCollapsedHandler(db, nodeId);}
+    void _OnAllNodesCollapsed(ECDbR db, JsonValueCR options) override {if (nullptr != m_onAllNodesCollapseHandler) m_onAllNodesCollapseHandler(db, options);}
 
     // Content
     bvector<SelectClassInfo> _GetContentClasses(ECDbR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR options) override
@@ -183,6 +192,8 @@ public:
     void SetOnNodeUncheckedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeUncheckedHandler = handler;}
     void SetOnNodeExpandedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeExpandedHandler = handler;}
     void SetOnNodeCollapsedHandler(std::function<void(ECDbR, uint64_t)> handler) {m_onNodeCollapsedHandler = handler;}
+    void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(ECDbR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHanlder = handler;}
+    void SetOnCollapseAllNodesHandler(std::function<void(ECDbR, JsonValueCR)> handler) {m_onAllNodesCollapseHandler = handler;}
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

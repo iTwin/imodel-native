@@ -414,6 +414,17 @@ static NavNodesProviderContextPtr CreateContextForNestedProvider(NavNodesProvide
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaikšsnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+EmptyNavNodesProvider::EmptyNavNodesProvider(NavNodesProviderContextCR context)
+    : NavNodesProvider(context)
+    {
+    SetDataSourceInfo(CreateDataSourceInfo(context));
+    context.GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), 
+        context.GetRelatedSettingIds(), context.IsUpdatesDisabled());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodesProvider::GetNode(JsonNavNodePtr& node, size_t index) const {return _GetNode(node, index);}
@@ -476,7 +487,7 @@ HasChildrenFlag NavNodesProvider::AnyChildSpecificationReturnsNodes(JsonNavNode 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProvider::DetermineChildren(JsonNavNode& node) const
+void NavNodesProvider::DetermineChildren(JsonNavNodeR node) const
     {
     if (node.DeterminedChildren())
         return;
@@ -726,7 +737,7 @@ NavNodesProviderPtr QueryBasedNodesProvider::CreateProvider(JsonNavNodeR node) c
     
     NavNodesProviderContextPtr nestedContext = CreateContextForNestedProvider(*this, node);
     if (GetContext().IsChildNodeContext() && HasSimilarNodeInHierarchy(node, node.GetParentNodeId()))
-        return EmptyNavNodesProvider::Create(*nestedContext, &node);
+        return EmptyNavNodesProvider::Create(*nestedContext);
 
     // there's some additional work if we don't know if the node has children
     NavNodeExtendedData extendedData(node);
@@ -737,7 +748,7 @@ NavNodesProviderPtr QueryBasedNodesProvider::CreateProvider(JsonNavNodeR node) c
     else if (extendedData.HideIfNoChildren() && (HASCHILDREN_False == hasChildren || HASCHILDREN_False == (hasChildren = AnyChildSpecificationReturnsNodes(node, false))))
         {
         // if the node has "hide if no children" flag and none of the child specs return nodes, skip this node
-        return EmptyNavNodesProvider::Create(*nestedContext, &node);
+        return EmptyNavNodesProvider::Create(*nestedContext);
         }
 
     // we may already know whether the node has any children
@@ -1541,5 +1552,60 @@ CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetCountStatement() const
     stmt->BindGuid(bindingIndex++, GetContext().GetDb().GetDbGuid());
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
 
+    return stmt;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+NodesWithUndeterminedChildrenProvider::NodesWithUndeterminedChildrenProvider(NavNodesProviderContextCR context, Db& cache, StatementCache& statements)
+    : SQLiteCacheNodesProvider(context, cache, statements)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() const
+    {
+    Utf8String query = "   SELECT COUNT(1) "
+                       "     FROM [" NODESCACHE_TABLENAME_DataSources "] dsn "
+                       "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id]"
+                       "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[VirtualParentNodeId] = [n].[Id]"       
+                       "    WHERE [ds].[VirtualParentNodeId] IS NULL AND [dsn].[ConnectionId] = ? AND [dsn].[RulesetId] = ?"; 
+
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    stmt->BindGuid(1, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    return stmt;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() const
+    {
+    Utf8String query = "   SELECT [n].[Data], [dsn].[VirtualParentNodeId], [n].[Id], [ex].[NodeId] "
+                       "     FROM [" NODESCACHE_TABLENAME_DataSources "] dsn "
+                       "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id]"
+                       "LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
+                       "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[VirtualParentNodeId] = [n].[Id]"       
+                       "    WHERE [ds].[VirtualParentNodeId] IS NULL AND [dsn].[ConnectionId] = ? AND [dsn].[RulesetId] = ?"; 
+
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != GetStatements().GetPreparedStatement(stmt, *GetCache().GetDbFile(), query.c_str()))
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    stmt->BindGuid(1, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     return stmt;
     }

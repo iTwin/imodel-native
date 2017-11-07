@@ -2022,6 +2022,69 @@ void NodesCache::Persist() {m_db.SaveChanges();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NavNodeCPtr> NodesCache::GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const
+    {
+    Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId]"
+                       "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
+                       "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id] "
+                       "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
+                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
+                       " WHERE [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [k].[label] LIKE ? "
+                       " ORDER BY [n].[Id]";
+
+    bvector<NavNodeCPtr> nodeList;
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
+        {
+        BeAssert(false);
+        return nodeList;
+        }
+
+    Utf8String filter("%");
+    filter.append(filtertext);
+    filter.append("%");
+    stmt->BindGuid(1, connection.GetDbGuid());
+    stmt->BindText(2, rulesetId, Statement::MakeCopy::No);
+    stmt->BindText(3, filter.c_str(), Statement::MakeCopy::No);
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        nodeList.push_back(CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections));
+
+    return nodeList;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCache::ResetExpandedNodes(BeGuid connectionId, Utf8CP rulesetId)
+    { 
+    Utf8String query = "  WITH DataSet AS "
+                                 "(SELECT [n].[Id] "
+                                 "   FROM [" NODESCACHE_TABLENAME_Nodes "] n "
+                                 "   JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "    
+                                 " WHERE [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? )"
+                       "DELETE FROM [" NODESCACHE_TABLENAME_ExpandedNodes "]"  
+                       " WHERE [NodeId] IN [DataSet] ";
+
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    stmt->BindGuid(1, connectionId);
+    stmt->BindText(2, rulesetId, Statement::MakeCopy::No);
+    stmt->Step();
+
+#ifdef NAVNODES_CACHE_PERSIST_ON_CHANGE
+    Persist();
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::SetIsExpanded(uint64_t nodeId, bool isExpanded) const
     {
     Utf8CP query;
@@ -2039,4 +2102,13 @@ void NodesCache::SetIsExpanded(uint64_t nodeId, bool isExpanded) const
 
     stmt->BindUInt64(1, nodeId);
     stmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(ECDbR connection, Utf8CP rulesetId, bool isUpdatesDisabled) const
+    {    
+    NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, nullptr, isUpdatesDisabled);
+    return context.IsValid() ? NodesWithUndeterminedChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
     }

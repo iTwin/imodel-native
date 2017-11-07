@@ -155,8 +155,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest build</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -N0 -r ECPresentation -f ECPresentation -p ECPresentation-Gtest rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 -r ECPresentation -f ECPresentation -p ECPresentation-Gtest clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;_WIN32;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include</NMakeIncludeSearchPath>

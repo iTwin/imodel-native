@@ -287,6 +287,27 @@ TEST_F(HierarchyPerformanceTests, CreateFullHierarchyWithoutPaging)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HierarchyPerformanceTests, FilterNodesFromNotExpandedHierarchy)
+    {
+    Timer t_hierarchy;
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
+    m_manager->GetFilteredNodesPaths(m_project, "ist", options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
+    {
+    IncrementallyGetNodes("Items", nullptr, false);
+    Timer t_hierarchy;
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
+    m_manager->GetFilteredNodesPaths(m_project, "ist", options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HierarchyPerformanceTests, UpdateGeometricElementInHierarchy)

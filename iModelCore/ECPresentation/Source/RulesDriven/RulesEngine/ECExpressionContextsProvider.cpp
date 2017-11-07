@@ -689,7 +689,7 @@ private:
     bool m_ignoreArguments;
     bool m_inStructProperty;
     ExpressionToken m_previousToken;
-    Utf8String m_previousNode;
+    bvector<Utf8String> m_nodesStack;
 
 private:
     /*-----------------------------------------------------------------------------**//**
@@ -737,13 +737,14 @@ private:
         if (!m_ecsql.empty() && NeedsSpaceAfter(m_ecsql) && NeedsSpaceBefore(value))
             {
             m_ecsql.append(" ");
-            m_previousNode.append(" ");
+            m_nodesStack.back().append(" ");
             }
 
         if (m_inStructProperty)
-            m_previousNode.append(value);
+            m_nodesStack.back().append(value);
         else
-            m_previousNode = value;
+            m_nodesStack.push_back(value);
+
         m_ecsql.append(value);
         }
     
@@ -755,13 +756,14 @@ private:
         if (!m_ecsql.empty() && prependSpace)
             {
             m_ecsql.append(" ");
-            m_previousNode.append(" ");
+            m_nodesStack.back().append(" ");
             }
-
+        
         if (m_inStructProperty)
-            m_previousNode.append(value);
+            m_nodesStack.back().append(value);
         else
-            m_previousNode = value;
+            m_nodesStack.push_back(value);
+
         m_ecsql.append(value);
         }
     
@@ -770,9 +772,10 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleLikeToken(NodeCR node)
         {
-        Utf8String::size_type previousNode= m_ecsql.rfind(m_previousNode);
+        Utf8String::size_type previousNode = m_ecsql.rfind(m_nodesStack.back());
         if (previousNode == Utf8String::npos)
             return;
+
         m_ecsql.insert(previousNode, "CAST(");
         Append("AS TEXT)");
         Append("LIKE");
@@ -1160,6 +1163,29 @@ public:
             }
         m_ignoreArguments = false;
         m_inArguments = false;
+
+        // create an aggregated arguments' string and append it to the 
+        // call node so it represents the whole call node
+        Utf8String argsString;
+        int pos = (int)m_nodesStack.size() - 1;
+        bool collectedArgs = false;
+        while (pos >= 0)
+            {
+            if (!collectedArgs)
+                {
+                argsString.insert(0, m_nodesStack[pos]);
+                if (m_nodesStack[pos] == "(")
+                    collectedArgs = true;
+                }
+            else
+                {
+                m_nodesStack[pos].append(argsString);
+                m_nodesStack.erase(m_nodesStack.begin() + pos + 1, m_nodesStack.end());
+                break;
+                }
+            --pos;
+            }
+
         return true;
         }
     bool Comma() override {ARGUMENTS_PRECONDITION(); Append(","); return true;}

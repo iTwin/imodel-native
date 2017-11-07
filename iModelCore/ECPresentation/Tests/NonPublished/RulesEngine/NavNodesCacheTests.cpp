@@ -109,6 +109,10 @@ struct NodesCacheTests : ::testing::Test
     void Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical();
     void Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual();
     void Test_Updates_IsExpandedFlag();
+    void Test_GetFilteredNodes();
+    void Test_ResetIsExpandedFlag();
+    void Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren();
+    void Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren();
     };
 ECDbTestProject* NodesCacheTests::s_project = nullptr;
 
@@ -655,6 +659,36 @@ void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCacheTests::Test_GetFilteredNodes()
+    {
+    // create the root node
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData1(*node1);
+    extendedData1.SetConnectionId(GetDb().GetDbGuid());
+    extendedData1.SetRulesetId("ruleset_id");
+
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
+    NavNodeExtendedData extendedData2(*node2);
+    extendedData2.SetConnectionId(GetDb().GetDbGuid());
+    extendedData2.SetRulesetId("ruleset_id");
+
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache nodes
+    m_cache->Cache(*node1, false);
+    m_cache->Cache(*node2, false);
+    
+    bvector<NavNodeCPtr> filteredNodes = m_cache->GetFilteredNodes(GetDb(), info.GetRulesetId().c_str(), "test");
+    // verify filtered node
+    ASSERT_EQ(1, filteredNodes.size());
+    EXPECT_TRUE(node1->Equals(*filteredNodes[0]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCacheTests::Test_Updates_IsExpandedFlag()
@@ -681,6 +715,99 @@ void NodesCacheTests::Test_Updates_IsExpandedFlag()
     cachedNode = m_cache->GetNode(node->GetNodeId());
     ASSERT_TRUE(cachedNode.IsValid());
     EXPECT_FALSE(cachedNode->IsExpanded());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCacheTests::Test_ResetIsExpandedFlag()
+    {
+    // create the root node
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData1(*node1);
+    extendedData1.SetConnectionId(GetDb().GetDbGuid());
+    extendedData1.SetRulesetId("ruleset_id");
+    node1->SetIsExpanded(true);
+
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
+    NavNodeExtendedData extendedData2(*node2);
+    extendedData2.SetConnectionId(GetDb().GetDbGuid());
+    extendedData2.SetRulesetId("ruleset_id");
+    node2->SetIsExpanded(true);
+
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache nodes
+    m_cache->Cache(*node1, false);
+    m_cache->Cache(*node2, false);
+
+    m_cache->ResetExpandedNodes(GetDb().GetDbGuid(), "ruleset_id");
+
+    EXPECT_FALSE(m_cache->GetNode(node1->GetNodeId())->IsExpanded());
+    EXPECT_FALSE(m_cache->GetNode(node2->GetNodeId())->IsExpanded());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCacheTests::Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren()
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // create node
+    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetRulesetId("ruleset_id");
+    EXPECT_FALSE(node->DeterminedChildren());
+
+    // cache node
+    m_cache->Cache(*node, true);
+
+    // expect provider with nodes that are not parents for other nodes (yet)
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(GetDb(), info.GetRulesetId().c_str(), false);
+    ASSERT_TRUE(provider.IsValid());
+    EXPECT_EQ(1, provider->GetNodesCount());
+
+    // expect node that is not parent for other nodes
+    JsonNavNodePtr expectedNode;
+    provider->GetNode(expectedNode, 0);
+    EXPECT_EQ(expectedNode->GetNodeId(), node->GetNodeId());
+    EXPECT_TRUE(expectedNode->DeterminedChildren());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCacheTests::Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren()
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // create node
+    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetRulesetId("ruleset_id");
+    EXPECT_FALSE(node->DeterminedChildren());
+
+    // cache node
+    m_cache->Cache(*node, true);
+
+    // cache child data source
+    uint64_t nodeId = node->GetNodeId();
+    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), info.GetRulesetId(), &nodeId, &nodeId);
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // expect provider to be empty, because all nodes are data sources
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(GetDb(), info.GetRulesetId().c_str(), false);
+    ASSERT_TRUE(provider.IsValid());
+    EXPECT_EQ(0, provider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1948,6 +2075,38 @@ TEST_F(MemoryNodesCacheTests, Updates_IsExpandedFlag)
     Test_Updates_IsExpandedFlag();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryNodesCacheTests, GetFilteredNodes)
+    {
+    Test_GetFilteredNodes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryNodesCacheTests, ResetIsExpandedFlag)
+    {
+    Test_ResetIsExpandedFlag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryNodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren)
+    {
+    Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryNodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren)
+    {
+    Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren();
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                09/2017
 +===============+===============+===============+===============+===============+======*/
@@ -2096,6 +2255,38 @@ TEST_F(DiskNodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
 TEST_F(DiskNodesCacheTests, Updates_IsExpandedFlag)
     {
     Test_Updates_IsExpandedFlag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, GetFilteredNodes)
+    {
+    Test_GetFilteredNodes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ResetIsExpandedFlag)
+    {
+    Test_ResetIsExpandedFlag();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren)
+    {
+    Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren)
+    {
+    Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren();
     }
 
 /*---------------------------------------------------------------------------------**//**
