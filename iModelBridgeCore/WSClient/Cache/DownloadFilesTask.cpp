@@ -52,7 +52,7 @@ m_nextFileToDownloadIndex(0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DownloadFilesTask::ProgressCalback(double bytesDownloaded, double bytesTotal, DownloadFileProperties& file)
     {
-    BeCriticalSectionHolder lock(m_progressInfoCS);
+    BeMutexHolder lock(m_progressInfoCS);
 
     file.bytesDownloaded = (uint64_t) bytesDownloaded;
 
@@ -106,7 +106,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
     {
     LOG.tracev("DownloadFilesTask: running download tasks: %d", m_filesBeingDownloaded.size());
 
-    BeCriticalSectionHolder lock(m_progressInfoCS);
+    BeMutexHolder lock(m_progressInfoCS);
     while ((size_t)m_filesBeingDownloaded.size() < m_maxParalelDownloads && m_nextFileToDownloadIndex < m_filesToDownload.size())
         {
         if (IsTaskCanceled()) break;
@@ -124,7 +124,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
 
             if (true)
                 {
-                BeCriticalSectionHolder lock(m_progressInfoCS);
+                BeMutexHolder lock(m_progressInfoCS);
                 m_filesBeingDownloaded.erase(file);
                 m_processedFileSizes += file->size;
                 }

@@ -78,7 +78,7 @@ struct CacheChangeGroup
         WSCACHE_EXPORT bool DoesDependOn(CacheChangeGroupPtr other) const;
         WSCACHE_EXPORT void AddDependency(CacheChangeGroupPtr other);
         WSCACHE_EXPORT bool AreAllDependenciesSynced() const;
-        WSCACHE_EXPORT bool AreAllUnsyncedDependenciesInSet(const bset<ChangeGroup*>& set);
+        WSCACHE_EXPORT bool AreAllUnsyncedDependenciesInSet(const bset<CacheChangeGroup*>& set);
 
         WSCACHE_EXPORT void SetSynced(bool isSynced);
         WSCACHE_EXPORT bool IsSynced() const;

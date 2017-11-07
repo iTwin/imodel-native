@@ -89,7 +89,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
             };
 
     private:
-        mutable BeMutex m_cs;
+        mutable BeMutex m_mutex;
 
         IImsClientPtr m_client;
         IJsonLocalState& m_localState;

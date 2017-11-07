@@ -26,6 +26,8 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
         Utf8String m_urlBaseToAuth;
         std::shared_ptr<IConnectTokenProvider> m_tokenProvider;
         std::shared_ptr<WorkerThread> m_thread;
+        bool m_shouldUseSAMLAuthorization;
+        bool m_legacyMode;
 
     private:
         bool ShouldStopSendingToken(AttemptCR previousAttempt) const;
@@ -37,6 +39,8 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
             Utf8String urlBaseToAuth,
             std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
             IHttpHandlerPtr customHttpHandler = nullptr,
+            bool shouldUseSAMLAuthorization = true,
+            bool legacyMode = true
             );
 
         WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler();

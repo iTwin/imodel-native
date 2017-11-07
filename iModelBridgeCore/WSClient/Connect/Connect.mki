@@ -17,7 +17,6 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h     
                     $(ConnectMkiPublicApiDir)ConnectMessaging.h                         \
                     $(ConnectMkiPublicApiDir)ConnectSignInManager.h                     \
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                     \
-                    $(ConnectMkiPublicApiDir)DelegationTokenProvider.h                  \
                     $(ConnectMkiPublicApiDir)EulaClient.h                               \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h        \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
@@ -33,7 +32,7 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h     
                     $(ConnectMkiSourceDir)IdentityTokenProvider.h                       \
                     %if $(TARGET_PLATFORM)=="Windows"
                     $(ConnectMkiSourceDir)ConnectionClientInterface.h   
-                    %endif        
+                    %endif
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 

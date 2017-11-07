@@ -249,12 +249,12 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
         // Disabling retry because server might already be processing file and retry would just return error.
         // Increasing timeout for last chunk allows for move time for that to finish without timeout
         // TFS#636152
-        request.SetRetryOptions(HttpRequest::RetryOption::DontRetry);
+        request.SetRetryOptions(Http::Request::RetryOption::DontRetry);
         request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::UploadProcessing);
         }
     else
         {
-        request.SetRetryOptions(HttpRequest::RetryOption::ResetTransfer, 0);
+        request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 0);
         request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
         }
 

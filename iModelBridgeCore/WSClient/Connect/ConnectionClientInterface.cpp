@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 const int GUID_BUFFER_SIZE = 1024;
 
 bset<event_callback>  ConnectionClientInterface::s_listeners;
-BeCriticalSection ConnectionClientInterface::s_lock;
+BeMutex ConnectionClientInterface::s_mutex;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Mark.Uvari    09/2017
@@ -155,7 +155,7 @@ void ConnectionClientInterface::AddClientEventListener(event_callback callback)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectionClientInterface::EventListener(int eventId, WCharCP data)
     {
-    BeCriticalSectionHolder lock(s_lock);
+    BeMutexHolder lock(s_mutex);
     for (auto listener : s_listeners)
         (*listener)(eventId, data);
     }

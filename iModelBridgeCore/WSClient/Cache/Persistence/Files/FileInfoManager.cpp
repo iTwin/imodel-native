@@ -216,7 +216,7 @@ AsyncError* errorOut
         if (shouldSkip)
             continue;
 
-        auto status = m_fileStorage->RemoveStoredFile(fileInfo);
+        auto status = m_fileStorage.RemoveStoredFile(fileInfo);
         if (CacheStatus::OK != status)
             {
             if (errorOut != nullptr && CacheStatus::FileLocked == status)
@@ -251,15 +251,14 @@ BeFileName FileInfoManager::ReadFilePath(CachedInstanceKeyCR cachedKey)
 BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut)
     {
     if (ecClass.GetId() != m_externalFileInfoClass->GetId())
-        {
         return SUCCESS;
-        }
 
     Json::Value externalFileInfoJson;
     m_dbAdapter.GetJsonInstance(externalFileInfoJson, {ecClass.GetId(), ecInstanceId});
 
     FileInfo info(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
-    return m_fileStorage.RemoveStoredFile(info);
+    if (CacheStatus::OK != m_fileStorage.RemoveStoredFile(info))
+        return ERROR;
 
     return SUCCESS;
     }

@@ -39,7 +39,7 @@ struct DownloadFilesTask : public CachingTaskBase
         bvector<DownloadFileProperties> m_filesToDownload;
         size_t                          m_nextFileToDownloadIndex;
 
-        BeCriticalSection               m_progressInfoCS;
+        BeMutex               m_progressInfoCS;
         bset<DownloadFileProperties*>   m_filesBeingDownloaded;
         double                          m_totalBytesToDownload = 0;
         double                          m_processedFileSizes = 0;

@@ -23,7 +23,7 @@ struct ConnectionClientInterface : public IConnectionClientInterface
     private:
         CCAPIHANDLE m_ccApi;
         static bset<event_callback> s_listeners;
-        static BeCriticalSection s_lock;
+        static BeMutex s_mutex;
 
         CCDATABUFHANDLE GetUserInformation();
         static void EventListener(int eventId, WCharCP data);

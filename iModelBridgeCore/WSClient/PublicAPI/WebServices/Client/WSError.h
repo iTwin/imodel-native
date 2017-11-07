@@ -8,13 +8,14 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <iostream>
-#include <Bentley/bmap.h>
-#include <Bentley/Tasks/AsyncError.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <WebServices/Client/WebServicesClient.h>
 #include <BeHttp/HttpError.h>
 #include <BeHttp/HttpResponse.h>
-#include <WebServices/Client/WebServicesClient.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <Bentley/bmap.h>
+#include <Bentley/Tasks/AsyncError.h>
+#include <iostream>
+#include <rapidjson/BeRapidJson.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -93,7 +94,7 @@ struct WSError : public AsyncError
         BentleyStatus ParseJsonError(JsonValueCR jsonError, HttpStatus status);
         BentleyStatus ParseJsonError(RapidJsonValueCR jsonError, HttpStatus status);
         BentleyStatus ParseXmlError(Http::ResponseCR httpResponse);
-        BentleyStatus ParseXmlAzureError(HttpResponseCR httpResponse, struct BeXmlDom& xmlDom);
+        BentleyStatus ParseXmlAzureError(Http::ResponseCR httpResponse, struct BeXmlDom& xmlDom);
 
         void SetStatusServerNotSupported();
         void SetStatusReceivedError

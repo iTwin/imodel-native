@@ -10,7 +10,7 @@
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_TASKS
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
@@ -20,7 +20,7 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_Return
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForFirstRequest([=] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::BadRequest, "TestError");
         });
@@ -63,7 +63,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_Ret
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::BadRequest, "TestError");
         });

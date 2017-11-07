@@ -344,7 +344,7 @@ BentleyStatus WSError::ParseXmlError(Http::ResponseCR httpResponse)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseXmlAzureError(HttpResponseCR httpResponse, BeXmlDom& xmlDom)
+BentleyStatus WSError::ParseXmlAzureError(Http::ResponseCR httpResponse, BeXmlDom& xmlDom)
     {
     BeXmlNodeP rootNode = xmlDom.GetRootElement();
     if (nullptr == rootNode)

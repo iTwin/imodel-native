@@ -372,9 +372,9 @@ bool CacheChangeGroup::AreAllDependenciesSynced() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CacheChangeGroup::AreAllUnsyncedDependenciesInSet(const bset<ChangeGroup*>& set)
+bool CacheChangeGroup::AreAllUnsyncedDependenciesInSet(const bset<CacheChangeGroup*>& set)
     {
-    for (ChangeGroupPtr& dependency : m_dependsOn)
+    for (CacheChangeGroupPtr& dependency : m_dependsOn)
         {
         if (dependency->IsSynced())
             continue;

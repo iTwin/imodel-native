@@ -164,7 +164,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthe
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     EXPECT_EQ(0, GetHandler().GetRequestsPerformed());
-    HttpResponse response = HttpRequest("https://foo.com/a", "GET", authHandler).PerformAsync()->GetResult();
+    Http::Response response = Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->GetResult();
     EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
 
     EXPECT_EQ(HttpStatus::Forbidden, response.GetHttpStatus());

@@ -2,24 +2,24 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    
+
     <Part Name="WebServiceClientComponents" Sequential="true">
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="ConnectWebServicesClientC" />
     </Part>
-            
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    
+
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PC"/>
-        
+
         <!-- N.B. Do NOT add LibType="Static" here. See comments on WebServicesClient-Android-Shim as to why. -->
         <SubPart PartName="WebServicesClient-iOS"/>
         <SubPart PartName="WebServicesClient-Android-Shim"/>
     </Part>
-    
+
     <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesClient-Library"/>
@@ -101,8 +101,8 @@
             <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient.*.nupkg</Files>
         </Bindings>
     </Part>
-    
-    
+
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesCache lib                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -163,7 +163,7 @@
                 ProductSubDirectory="ECSchemas/WSClient/Cache" />
         </Bindings>
     </Part>
-    
+
     <Part Name="NuGetPackage-WebServicesCache" BentleyBuildMakeFile="WebServicesCache.NuGetPackage.mke" OnlyPlatforms="x64" >
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="WSClientLibrarySubParts" />
@@ -173,7 +173,7 @@
             <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache.*.nupkg</Files>
         </Bindings>
     </Part>
-    
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // iModelHubClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -301,7 +301,7 @@
             </Files>
         </Bindings>
     </Part>
-	
+
     <ProductDirectoryList ListName="iModelHubNativeTests">
         <ProductDirectory Name="Gtest-NativeAssemblies"    Path=""/>
         <ProductDirectory Name="Assemblies"                Path=""/>
@@ -326,15 +326,15 @@
         <SubPart PartName="ConnectWebServicesClientC-iOS" LibType="Static"/>
         <SubPart PartName="ConnectWebServicesClientC-Android" LibType="Static"/>
     </Part>
-    
+
     <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*, Android*">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
         <SubPart PartName="ConnectWebServicesClientC-Library" />
     </Part>
-    
+
     <Part Name="ConnectWebServicesClientC-iOS" OnlyPlatforms="iOS*">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
-        <SubPart PartName="ConnectWebServicesClientC-Library" />        
+        <SubPart PartName="ConnectWebServicesClientC-Library" />
     </Part>
 
     <Part Name="ConnectWebServicesClientC-Android" OnlyPlatforms="Android*">
@@ -546,7 +546,7 @@
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
-             </Files>
+            </Files>
             <Directory ProductDirectoryName="WSClientTestAssets" SourceName="WSClientTestAssets"/>
         </Bindings>
     </Part>
@@ -563,16 +563,16 @@
             <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/WSClient_en.sqlang.db3</Files>
         </Bindings>
     </Part>
-    
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" 
-        BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke"
         BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="iModelHubClient-Library" />
         <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
-        
+
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
@@ -593,7 +593,7 @@
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
-        
+
         <!-- WIP to silence build warnings. -->
         <Directories DirectoryListName="WSClient-Tests-Dirs"/>
     </Product>
@@ -604,9 +604,9 @@
         <ProductDirectory Name="sqlang" LibType="static" Deliver="false"/>
     </ProductDirectoryList>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" 
-        BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" 
-        BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests" 
+    <Part Name="Gtest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
         OnlyPlatforms="x86,x64,Linux*,MacOS*"
         >
         <SubProduct ProductName="WSClient-Tests"/>
@@ -622,18 +622,18 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" 
-        BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" 
-        BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" 
+    <Part Name="RunGtest" DeferType="RunUnitTests"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke"
+        BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest"
         OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
         </Bindings>
     </Part>
-    
+
     <!-- Memory leak testing of WSClient tests. Only called on demand -->
     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
@@ -666,7 +666,7 @@
     <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=WSClient-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="WSClient-AndroidJUnit"/>
         <Bindings>
-          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/WSClient-AndroidJUnit.log</Files>
+            <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/WSClient-AndroidJUnit.log</Files>
         </Bindings>
     </Part>
 
@@ -736,7 +736,7 @@
         <SubPart PartName="WSClientIntegrationTests"/>
         <Directories DirectoryListName="IntegrationGTestDirectories"/>
     </Product>
-  
+
     <ProductDirectoryList ListName="IntegrationGTestDirectories">
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Assemblies" Path=""/>
@@ -748,21 +748,21 @@
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
     </ProductDirectoryList>
-  
+
     <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="WSClient_en_L10N"/>
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="WebServicesCache" />   
-        <SubPart PartName="ConnectWebServicesClientC" />      
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
-          <Files ProductDirectoryName="Gtest-NativeAssemblies">
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">
                 Delivery/WSClientIntegrationTests.exe
-             </Files>
+            </Files>
         </Bindings>
     </Part>
 
@@ -774,13 +774,13 @@
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubProduct ProductName="WSClientCompatibilityTestTool" />
     </Part>
-    
+
     <Product Name="WSClientCompatibilityTestTool" SaveProduct="true">
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WSClientCompatibilityTests" />
         <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
     </Product>
-    
+
     <Part Name="NuGetPackage-WSClientCompatibilityTestTool" DeferType="BuildUnitTests" BentleyBuildMakeFile="WSClientCompatibilityTestTool.NuGetPackage.mke" OnlyPlatforms="x64" >
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="WSClientLibrarySubParts" />
@@ -790,7 +790,7 @@
             <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool.*.nupkg</Files>
         </Bindings>
     </Part>
-    
+
     <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
@@ -801,7 +801,7 @@
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
-        
+
         <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
         <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
         <ProductDirectory Name="ecschemas"                          Path=""/>
@@ -824,7 +824,7 @@
         <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
         <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
-        
+
         <!-- WIP to silence build warnings. -->
         <ProductDirectory Name="WSClientTestAssets" Deliver="false"/>
         <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
@@ -876,14 +876,14 @@
         <ProductDirectory Name="MergeModules"                       Deliver="false"/>
         <ProductDirectory Name="Assets"                             Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>        
+        <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>
         <ProductDirectory Name="MavenDependencies"                  Deliver="false"/>
-        <ProductDirectory Name="MavenDependencies"                  Deliver="false" LibType="static"/>    
+        <ProductDirectory Name="MavenDependencies"                  Deliver="false" LibType="static"/>
         <ProductDirectory Name="AndroidSO"                          Deliver="false"/>
         <ProductDirectory Name="AndroidSO"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="sqlang"                             Deliver="false" />
         <ProductDirectory Name="sqlang"                             Deliver="false" LibType="static" />
-        <ProductDirectory Name="APK"                                Path=""/>    
+        <ProductDirectory Name="APK"                                Path=""/>
         <ProductDirectory Name="APK"                                Path=""  LibType="static"/>
     </ProductDirectoryList>
 
@@ -892,11 +892,11 @@
     </Part>
 
 
-<Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
-    <Bindings>
-        <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
-    </Bindings>
-</Part>
+    <Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
+        <Bindings>
+            <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
+        </Bindings>
+    </Part>
 
 
     <Part Name="CWSCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">

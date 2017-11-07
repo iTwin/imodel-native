@@ -517,7 +517,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithImsU
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState);
-    proxy = std::shared_ptr<HttpConfigurationHandler>(new HttpConfigurationHandler([] (HttpRequest& request)
+    proxy = std::shared_ptr<HttpConfigurationHandler>(new HttpConfigurationHandler([] (Http::Request& request)
         {
         request.SetValidateCertificate(false);
         }, proxy));

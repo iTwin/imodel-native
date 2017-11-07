@@ -39,7 +39,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         bvector<CacheChangeGroupPtr> m_changeGroups;
         size_t m_changeGroupIndexToSyncNext;
-        ChangeGroupPtr m_currentChangeGroup;
+        CacheChangeGroupPtr m_currentChangeGroup;
 
         bset<ECInstanceKey> m_instancesStillInSync;
 
@@ -60,7 +60,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         AsyncTaskPtr<void> SyncNextChangeset();
 
-        void SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active);
+        void SetUploadActiveForChangeGroup(CacheTransactionCR txn, CacheChangeGroupCR changeGroup, bool active);
         void SetUploadActiveForSingleInstance(CacheTransactionCR txn, ECInstanceKeyCR key, bool active);
 
         AsyncTaskPtr<void> SyncChangeGroup(CacheChangeGroupPtr changeGroup);
@@ -81,7 +81,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             (
             IDataSourceCache& cache,
             RevisionMap& revisionsOut,
-            bset<CacheChangeGroupPtr*>& changesetChangeGroupsOut
+            bset<CacheChangeGroup*>& changesetChangeGroupsOut
             );
         WSChangesetPtr BuildSingleInstanceChangeset
             (

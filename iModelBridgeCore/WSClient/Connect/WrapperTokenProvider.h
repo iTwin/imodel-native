@@ -17,23 +17,23 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct WrapperTokenProvider : IConnectTokenProvider
     {
     private:
-        BeCriticalSection& m_cs;
+        BeMutex& m_cs;
         IConnectTokenProviderPtr& m_tokenProvider;
 
     public:
-        WrapperTokenProvider(BeCriticalSection& cs, IConnectTokenProviderPtr& tokenProvider) :
+        WrapperTokenProvider(BeMutex& cs, IConnectTokenProviderPtr& tokenProvider) :
             m_cs(cs), m_tokenProvider(tokenProvider)
             {}
 
         AsyncTaskPtr<SamlTokenPtr> UpdateToken() override
             {
-            BeCriticalSectionHolder lock(m_cs);
+            BeMutexHolder lock(m_cs);
             return m_tokenProvider->UpdateToken();
             }
 
         SamlTokenPtr GetToken() override
             {
-            BeCriticalSectionHolder lock(m_cs);
+            BeMutexHolder lock(m_cs);
             return m_tokenProvider->GetToken();
             }
     };

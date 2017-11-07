@@ -588,20 +588,20 @@ ICancellationTokenPtr ct
 +--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
 (
-ObjectIdCR relatedObjectId,
+ObjectIdCR objectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
     Utf8String url;
     Utf8String instanceId;
-    if (relatedObjectId.IsValid())
+    if (objectId.IsValid())
         {
-        Utf8String schemaName = relatedObjectId.schemaName;
-        Utf8String className = relatedObjectId.className;
-        instanceId = relatedObjectId.remoteId;
+        Utf8String schemaName = objectId.schemaName;
+        Utf8String className = objectId.className;
+        instanceId = objectId.remoteId;
 
         url = GetUrl(CreateClassSubPath(schemaName, className));
         if (!instanceId.empty())

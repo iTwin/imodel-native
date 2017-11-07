@@ -233,10 +233,10 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoByPokingWSG (int apiSu
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::PokeWSG (Utf8StringCR versionUrlSuffix, ICancellationTokenPtr ct) const
     {
-    HttpRequest request = m_configuration->GetHttpClient ().CreateGetRequest (m_configuration->GetServerUrl () + versionUrlSuffix);
+    Http::Request request = m_configuration->GetHttpClient ().CreateGetRequest (m_configuration->GetServerUrl () + versionUrlSuffix);
     request.SetCancellationToken (ct);
 
-    return request.PerformAsync ()->Then<WSInfoHttpResult> ([=] (HttpResponse& response)
+    return request.PerformAsync ()->Then<WSInfoHttpResult> ([=] (Http::Response& response)
         {
         if (response.IsSuccess ())
             {

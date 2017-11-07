@@ -213,7 +213,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChunks_UploadsEverythingSuccessfully)
     {
-    // NOTE: This is testing HttpRequest::PerformAsync() implementation issue where reusing same CURLM handle
+    // NOTE: This is testing Http::Request::PerformAsync() implementation issue where reusing same CURLM handle
     // seems to cause transfer issues in TCP level and server side hangs.
 
     BeDebugLog(curl_version_info(CURLversion::CURLVERSION_FIRST)->version);
