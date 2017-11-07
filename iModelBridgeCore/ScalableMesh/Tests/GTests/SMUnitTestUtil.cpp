@@ -8,7 +8,9 @@
 
 #include "SMUnitTestUtil.h"
 #include <Bentley/BeDirectoryIterator.h>
+#ifndef VANCOUVER_API
 #include <Bentley/Desktop/FileSystem.h>
+#endif
 
 using namespace ScalableMeshGTestUtil;
 
@@ -115,7 +117,11 @@ BeFileName ScalableMeshGTestUtil::GetModuleFileDirectory()
 BeFileName ScalableMeshGTestUtil::GetUserSMTempDir()
     {
     BeFileName tempPath;
+#ifdef VANCOUVER_API
+    BeFileName::BeGetTempPath(tempPath);
+#else
     Desktop::FileSystem::BeGetTempPath(tempPath);
+#endif
     tempPath.AppendToPath(L"SMGTestOutput");
 
     return tempPath;
@@ -138,32 +144,34 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
     };
 
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Richard.Bois                   10/2017
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//VIEWMANAGER& ScalableMeshModule::_SupplyViewManager()
-//    {
-//    struct ExeViewManager : VIEWMANAGER
-//        {
-//        protected:
-//#ifndef VANCOUVER_API   
-//            virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
-//#else
-//            virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override { return nullptr; }
-//            virtual int                                                _GetCurrentViewNumber() override { return 0; }
-//            virtual HUDManager*                                        _GetHUDManager() { return nullptr; }
-//#endif
-//
-//            virtual bool                _DoesHostHaveFocus()        override { return true; }
-//            //virtual IndexedViewSetR     _GetActiveViewSet()         override { return *(IndexedViewSetP)nullptr; }
-//            //virtual int                 _GetDynamicsStopInterval()  override { return 200; }
-//
-//        public:
-//            ExeViewManager() {}
-//            ~ExeViewManager() {}
-//        };
-//    return *new ExeViewManager();
-//    }
+#ifdef VANCOUVER_API
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                   10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+VIEWMANAGER& ScalableMeshModule::_SupplyViewManager()
+    {
+    struct ExeViewManager : VIEWMANAGER
+        {
+        protected:
+#ifndef VANCOUVER_API   
+            virtual DgnDisplay::QvSystemContextP _GetQvSystemContext() override { return nullptr; }
+#else
+            virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override { return nullptr; }
+            virtual int                                                _GetCurrentViewNumber() override { return 0; }
+            virtual HUDManager*                                        _GetHUDManager() { return nullptr; }
+#endif
+
+            virtual bool                _DoesHostHaveFocus()        override { return true; }
+            virtual IndexedViewSetR     _GetActiveViewSet()         override { return *(IndexedViewSetP)nullptr; }
+            virtual int                 _GetDynamicsStopInterval()  override { return 200; }
+
+        public:
+            ExeViewManager() {}
+            ~ExeViewManager() {}
+        };
+    return *new ExeViewManager();
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
@@ -202,7 +210,6 @@ BentleyStatus ScalableMeshModule::Initialize()
     DgnPlatformLib::Initialize(*this, true);
 #endif	
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
-
 
                                          // Initialize RasterLib
                                          //DgnDomains::RegisterDomain(RasterSchema::RasterDomain::GetDomain());

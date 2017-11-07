@@ -8,10 +8,9 @@
 #pragma once
 
 #include <Windows.h>
+#include <DgnView/DgnViewLib.h>
 #include <DgnPlatform/DgnPlatform.h>
 
-#ifdef VANCOUVER_API
-#endif
 #include <Bentley/BeFileName.h>
 
 #ifndef SM_DATA_PATH
@@ -20,7 +19,6 @@
 
 //#define VANCOUVER_API
 #ifndef VANCOUVER_API   
-#include <DgnView/DgnViewLib.h>
 #include <DgnView/ViewManager.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
@@ -58,7 +56,11 @@ namespace ScalableMeshGTestUtil
 
     bool FilterEntry(BeFileName& entry, bool isDir);
 
+#ifdef VANCOUVER_API
+    struct ScalableMeshModule : DgnViewLib::Host
+#else
     struct ScalableMeshModule : DgnPlatformLib::Host
+#endif
         {
         protected:
 

@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: Tests/GTests/ScalableMeshUnitTests.mke $
+#     $Source: Tests/GTests/BuildTests_vancouver.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -16,6 +16,9 @@ always:
     !~@mkdir $(o)
 
 cDefs + -DUSE_GTEST
+cDefs + -DVANCOUVER_API
+#cDefs + -DOVERRIDE_TEST_DATA_DIR
+#cDefs + -DSM_DATA_PATH=\"E:\/WorkData\/ScalableMesh\/defects\/MathieuRaster1\/\"
 
 %include MultiCppCompileRule.mki
 
@@ -44,7 +47,7 @@ GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
 GUNITTEST_OBJS      = $(PCHHeaderObject) $(MultiCompileObjectList)
 GUNITTEST_PATH      = $(o) 
 GUNITTEST_SYMB      = $(o)
-GTEST_MAIN_IS_SUPPLIED = 1
+#GTEST_MAIN_IS_SUPPLIED = 1
 GUnitTestDir = $(BuildContext)SubParts/google_gtest/
 GUNIT_TEST_VERSION = 1.3
 GUNITTEST_NOEXEC = 1

@@ -33,8 +33,11 @@ class ScalableMeshEnvironment : public ::testing::Environment
     virtual void TearDown() 
         {
         BeFileName test;
+#ifdef VANCOUVER_API
+        BeFileName::BeGetTempPath(test);
+#else
         Desktop::FileSystem::BeGetTempPath(test);
-        //BeFileName::BeGetTempPath(test);
+#endif
         BeFileName tempPath = ScalableMeshGTestUtil::GetUserSMTempDir();
         if (test != tempPath && BeFileName::DoesPathExist(tempPath.c_str()))
             {
