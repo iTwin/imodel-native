@@ -49,11 +49,7 @@ uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifndef VANCOUVER_API
-void BatchIdMap::ToJson(Json::Value& value, DgnDbP db) const
-#else
 void BatchIdMap::ToJson(Json::Value& value) const
-#endif
     {
     switch (m_source)
         {
@@ -398,12 +394,12 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     uint32_t featureTableBinaryByteLength = 0;
 
     Json::Value batchTableJson(Json::objectValue);
-    #ifndef VANCOUVER_API
-        //m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
-	assert(!"Not on DgnDb, missing argument in ToJson");
-    #else
+    //#ifndef VANCOUVER_API
+    //    //m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+	//assert(!"Not on DgnDb, missing argument in ToJson");
+    //#else
         m_batchIds.ToJson(batchTableJson);
-    #endif
+    //#endif
     Utf8String batchTableStr = batchTableJson.empty() ? Utf8String() : Json::FastWriter().write(batchTableJson);
     uint32_t batchTableJSONByteLength = static_cast<uint32_t>(batchTableStr.size());
     uint32_t batchTableBinaryByteLength = 0;

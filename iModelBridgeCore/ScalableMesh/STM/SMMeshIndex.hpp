@@ -5285,7 +5285,6 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-#ifdef VANCOUVER_API
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount());
     SMGroupCache::Ptr groupCache = nullptr;
     m_rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -5316,9 +5315,6 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     saveGroupsThread.join();
 
     strategy->Clear();
-#else
-	assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
-#endif
 
 
     if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;
