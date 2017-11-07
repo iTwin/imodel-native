@@ -166,6 +166,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapterDeleteListener.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
     <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
+    <ClInclude Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -342,6 +343,7 @@
     <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="Published\Utils\SeedFile.cpp" />
     <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

@@ -513,6 +513,9 @@
     <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iModelHubClient\ClientHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1163,6 +1166,15 @@
     <ClInclude Include="iModelHubClient\MultiProgressCallbackHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iModelHubClient\Error.xliff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iModelHubClient\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -1223,5 +1235,15 @@
     <None Include="CWSClientCLibOptions.mki" />
     <None Include="iModelHubClientLib.mke" />
     <None Include="iModelHubClientPrewire.mke" />
+    <None Include="iModelHubClient.NuGetPackage.mke" />
+    <None Include="iModelHubClient.nuspec" />
+    <None Include="WebServicesCache.NuGetPackage.mke" />
+    <None Include="WebServicesCache.nuspec" />
+    <None Include="WebServicesClient.NuGetPackage.mke" />
+    <None Include="WebServicesClient.nuspec" />
+    <None Include="WSClientCompatibilityTestTool.nuspec" />
+    <None Include="WSClientCompatibilityTestTool.NuGetPackage.mke" />
+    <None Include="iModelHubClient\Client.mki" />
+    <None Include="iModelHubClient\xliffs.mke" />
   </ItemGroup>
 </Project>
