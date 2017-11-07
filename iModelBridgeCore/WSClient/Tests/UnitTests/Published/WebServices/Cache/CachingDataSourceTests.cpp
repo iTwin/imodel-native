@@ -3744,7 +3744,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedRelationship_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
@@ -3773,7 +3773,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedRelationship_SetsSyncActi
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_IsActiveSyncResets)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
@@ -4006,7 +4006,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndNoChan
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledCreatedModifiedDeletedObjects_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4044,7 +4044,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledCreatedMo
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedRelationship_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     StubCreatedRelationshipInCache(txn.GetCache(),
@@ -4076,7 +4076,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndDeletedRelationship_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClassA", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClassB", "B"});
@@ -4111,7 +4111,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndDelete
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedRelatedTargetObject_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClassB = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClassB");
@@ -4148,7 +4148,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedRelatedSourceObject_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClassA = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClassA");
@@ -4185,7 +4185,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedObjectsWithForwardRelationship_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClassA = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClassA");
@@ -4222,7 +4222,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedObjectsWithBackwardRelationship_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClassA = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClassA");
@@ -4259,7 +4259,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedObjectsWithManyRelatedObjects_SendsChangeset)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4324,7 +4324,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedRelatedObjectsAndSuccessfulResponse_CommitsRemoteIdsToInstances)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClassA = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClassA");
@@ -4368,7 +4368,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreatedRelatedObjectToExistingAndSuccessfulResponse_CommitsRemoteIdsToInstances)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClassB = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClassB");
@@ -4412,7 +4412,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledModifiedObjectAndSuccessfulResponse_CommitsChanges)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
@@ -4444,7 +4444,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledModifiedO
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedObjectAndSuccessfulResponse_CommitsChanges)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
@@ -4476,7 +4476,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedOb
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedRelationshipAndSuccessfulResponse_CommitsChanges)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClassA", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClassB", "B"});
@@ -4517,7 +4517,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
     int maximumRequestSize = 800;
 
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4588,7 +4588,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChangesetSizeLimitIsSmallerThanInstance_ReturnsError)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4613,7 +4613,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChangesetInstanceCountLimited_SendsTwoChangesetsSoTheyWouldFitIntoLimit)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4683,7 +4683,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObjectWithFile_InterruptsChangesetsWithCreateObjectRequestForFile)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4763,7 +4763,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelatedObjectWithFile_SendsCreateObjectRequestForFile)
     {
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4849,7 +4849,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V20WithChangesetEnabledAndCreate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndFailureStrategySet_SetsFailureStrategyInBody)
     {
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4897,7 +4897,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndFailur
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndErrorsReceivedForInstance_FullErrorReturnedForFailedInstance)
     {
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4951,7 +4951,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndErrors
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndErrorsReceivedForMultipleInstances_ErrorReturnedAndFailedInstancesNotSynced)
     {
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -5026,7 +5026,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndFirstR
     int maximumRequestSize = 400;
 
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -5112,7 +5112,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndFirstR
     int maximumRequestSize = 600;
 
     // Arrange
-    auto ds = GetTestDataSource({2, 1});
+    auto ds = GetTestDataSource({2, 3});
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -5272,6 +5272,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -5298,6 +5299,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestDerivedClass",
                         "instanceId" : "NewB"
@@ -5384,6 +5386,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -5410,6 +5413,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "NewB"
@@ -5523,6 +5527,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -5535,6 +5540,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
         R"( {
             "instance" :
                 {
+                "changeState" : "existing",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
                 "instanceId" : "B",
@@ -5546,6 +5552,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                     "direction" : "forward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "NewC"

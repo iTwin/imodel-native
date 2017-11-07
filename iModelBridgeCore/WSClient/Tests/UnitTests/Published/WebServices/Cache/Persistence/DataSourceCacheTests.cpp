@@ -1594,7 +1594,7 @@ TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
     EXPECT_FALSE(newCachedPath.empty());
     EXPECT_FALSE(oldCachedPath.DoesPathExist());
     EXPECT_EQ(Utf8String(BeFileName::GetDirectoryName(oldCachedPath)),
-              Utf8String(BeFileName::GetDirectoryName(newCachedPath)));
+        Utf8String(BeFileName::GetDirectoryName(newCachedPath)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4731,48 +4731,110 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_NonExistingQuery_ReturnsDataNotCachedAndEmptyArray)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDataNotCachedAndEmptyArray)
     {
     auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
 
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponse({root, "NonExisting"}, results));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponseInstanceKeys({root, "NonExisting"}, results));
     EXPECT_TRUE(results.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_NonExistingParent_ReturnsDataNotCachedAndEmptyArray)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingParent_ReturnsDataNotCachedAndEmptyArray)
     {
     auto cache = GetTestCache();
     ECInstanceKey parent = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponse({parent, nullptr}, results));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponseInstanceKeys({parent, nullptr}, results));
     EXPECT_TRUE(results.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_ZeroResultsCached_ReturnsOkAndEmptyArray)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ZeroResultsCached_ReturnsOkAndEmptyArray)
     {
     auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
 
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
 
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, results));
     EXPECT_TRUE(results.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsWithTwoInstance_ReturnsBothInstances)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, results));
+
+    EXPECT_EQ(2, results.size());
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
+    {
+    auto cache = GetTestCache();
+
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, results));
+
+    EXPECT_EQ(2, results.size());
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_EmptyResultsOverrideParentAndInstanceResult_ReturnsEmpty)
+    {
+    auto cache = GetTestCache();
+
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse({parent, "TestQuery"}, instances.ToWSObjectsResponse()));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys({parent, "TestQuery"}, results));
+    EXPECT_EQ(2, results.size());
+
+    results.clear();
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse({parent, "TestQuery"}, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys({parent, "TestQuery"}, results));
+    EXPECT_EQ(0, results.size());
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
     {
     // Arrange
     auto cache = GetTestCache();
@@ -4791,55 +4853,18 @@ TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_St
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse()));
 
     // Act
-    Json::Value queryResults;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, queryResults));
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+    Json::Value results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
 
     // Assert
-    EXPECT_EQ(1, queryResults.size());
-    EXPECT_EQ("FullyCached", queryResults[0][DataSourceCache_PROPERTY_RemoteId].asString());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithTwoInstance_ReturnsBothInstances)
-    {
-    auto cache = GetTestCache();
-    auto responseKey = StubCachedResponseKey(*cache);
-
-    StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "A"});
-    instances.Add({"TestSchema.TestClass", "B"});
-    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
-
-    EXPECT_EQ(2, results.size());
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), cache->ObjectIdFromJsonInstance(results[0]));
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "B"), cache->ObjectIdFromJsonInstance(results[1]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
-    {
-    auto cache = GetTestCache();
-
-    auto responseKey = StubCachedResponseKey(*cache);
-
-    StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-
-    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
-
-    EXPECT_EQ(2, results.size());
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), cache->ObjectIdFromJsonInstance(results[0]));
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "B"), cache->ObjectIdFromJsonInstance(results[1]));
+    EXPECT_EQ(1, results.size());
+    EXPECT_EQ("FullyCached", results[0][DataSourceCache_PROPERTY_RemoteId].asString());
     }
 
 /*---------------------------------------------------------------------------------**//**
