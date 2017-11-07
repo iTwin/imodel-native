@@ -912,7 +912,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
 
     Json::Value expectedDefaultJson, expectedJavaScriptJson;
     ASSERT_TRUE(Json::Reader::Parse(R"json({
-      "id" : "0X1",
+      "id" : "0x1",
       "className" : "TestSchema.Foo",
       "StructProp" : { "Alpha" : 100, "Beta" : 1.5 },
       "DoubleArray" : [ 1.5, 2.5],
@@ -920,7 +920,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
       })json", expectedDefaultJson));
 
     ASSERT_TRUE(Json::Reader::Parse(R"json({
-      "id" : "0X1",
+      "id" : "0x1",
       "className" : "TestSchema.Foo",
       "structProp" : { "alpha" : 100, "beta" : 1.5 },
       "doubleArray" : [ 1.5, 2.5],
