@@ -37,8 +37,6 @@ nameToDefine = __GRIDELEMENTS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)SurfaceSet$(oext) : $(_MakeFilePath)SurfaceSet.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SurfaceSet.h
-
 $(o)GridPortion$(oext) : $(_MakeFilePath)GridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPortion.h
 
 $(o)OrthogonalGridPortion$(oext) : $(_MakeFilePath)OrthogonalGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/OrthogonalGridPortion.h
@@ -47,8 +45,6 @@ $(o)RadialGridPortion$(oext) : $(_MakeFilePath)RadialGridPortion.cpp ${MultiComp
 
 $(o)SketchGridPortion$(oext) : $(_MakeFilePath)SketchGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SketchGridPortion.h
 
-$(o)DrivingSurface$(oext) : $(_MakeFilePath)DrivingSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DrivingSurface.h
-
 $(o)GridSurface$(oext) : $(_MakeFilePath)GridSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurface.h
 
 $(o)GridPlaneSurface$(oext) : $(_MakeFilePath)GridPlaneSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPlaneSurface.h
@@ -56,8 +52,6 @@ $(o)GridPlaneSurface$(oext) : $(_MakeFilePath)GridPlaneSurface.cpp ${MultiCompil
 $(o)GridArcSurface$(oext) : $(_MakeFilePath)GridArcSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArcSurface.h
 
 $(o)GridSplineSurface$(oext) : $(_MakeFilePath)GridSplineSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSplineSurface.h
-
-$(o)IntersectionCurve$(oext) : $(_MakeFilePath)IntersectionCurve.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/IntersectionCurve.h
 
 $(o)GridCurve$(oext) : $(_MakeFilePath)GridCurve.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurve.h
 
@@ -68,6 +62,8 @@ $(o)GridSpline$(oext) : $(_MakeFilePath)GridSpline.cpp ${MultiCompileDepends} $(
 $(o)GridArc$(oext) : $(_MakeFilePath)GridArc.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArc.h
 
 $(o)GridAxis$(oext) : $(_MakeFilePath)GridAxis.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridAxis.h
+
+$(o)GridSurfaceCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridSurfaceCreatesGridCurveHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceCreatesGridCurveHandler.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
@@ -86,6 +82,7 @@ DLM_OBJECT_FILES = $(objs)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ConstraintModel$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(stlibext)

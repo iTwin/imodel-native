@@ -294,6 +294,34 @@ Dgn::DgnDbStatus      GridPortion::_OnUpdate
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   GridPortion::IntersectGridSurface 
+(
+GridSurfaceCPtr surface, 
+Dgn::DgnModelCR targetModel
+) const
+    {
+    Dgn::DgnModelPtr model = GetSubModel ();
+    if (!model.IsValid ())
+        {
+        return ERROR;
+        }
+
+    Dgn::DgnDbR db = model->GetDgnDb ();
+
+    for (Dgn::ElementIteratorEntry elementEntry : model->MakeIterator ())
+        {
+        GridSurfaceCPtr innerSurface = db.Elements ().Get<GridSurface> (elementEntry.GetElementId ());
+        if (innerSurface.IsValid())
+            {
+            GridSurfaceCreatesGridCurveHandler::Insert (db, innerSurface, surface, targetModel);
+            }
+        }
+
+    return SUCCESS;
+    }
 
 END_GRIDS_NAMESPACE
 

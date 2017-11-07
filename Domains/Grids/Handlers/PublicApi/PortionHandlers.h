@@ -13,31 +13,19 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct SurfaceSetHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct OrthogonalGridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SurfaceSet, SurfaceSet, SurfaceSetHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_OrthogonalGridPortion, OrthogonalGridPortion, OrthogonalGridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct GridPortionHandler : SurfaceSetHandler
+struct RadialGridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, GridPortion, GridPortionHandler, SurfaceSetHandler, GRIDHANDLERS_EXPORT)
-
-    GRIDHANDLERS_EXPORT static  BentleyStatus   IntersectGridSurface (GridPortionCPtr thisPortion, GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel);
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_RadialGridPortion, RadialGridPortion, RadialGridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct OrthogonalGridPortionHandler : GridPortionHandler
+struct SketchGridPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_OrthogonalGridPortion, OrthogonalGridPortion, OrthogonalGridPortionHandler, GridPortionHandler, GRIDHANDLERS_EXPORT)
-    };
-
-struct RadialGridPortionHandler : GridPortionHandler
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_RadialGridPortion, RadialGridPortion, RadialGridPortionHandler, GridPortionHandler, GRIDHANDLERS_EXPORT)
-    };
-
-struct SketchGridPortionHandler : GridPortionHandler
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchGridPortion, SketchGridPortion, SketchGridPortionHandler, GridPortionHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchGridPortion, SketchGridPortion, SketchGridPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 END_GRIDS_NAMESPACE

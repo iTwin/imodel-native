@@ -18,15 +18,13 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridSurface : DrivingSurface
+struct EXPORT_VTABLE_ATTRIBUTE GridSurface : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridSurface, DrivingSurface);
-
+    DEFINE_T_SUPER (Dgn::SpatialLocationElement);
 protected:
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params);
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
-    friend struct GridSurfaceHandler;
 
     BE_PROP_NAME(Axis)
         
@@ -79,10 +77,26 @@ public:
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
 
     //! @return axis id of the surface
+    GRIDELEMENTS_EXPORT Dgn::DgnElementId GetGridId () const;
+
+    //! @return axis id of the surface
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
 
     //! Sets geometry for this grid surface
     GRIDELEMENTS_EXPORT BentleyStatus SetGeometry(ISolidPrimitivePtr surface);
+
+    //! Returns base curve of this surface
+    //! @return a ptr to a curve vector of this surface
+    GRIDELEMENTS_EXPORT CurveVectorPtr    GetSurfaceVector () const;
+
+    //! Tries to return height of this surface which is essencially the magnitude of its extrusion vector
+    //! @param[out] height height of this surface
+    GRIDELEMENTS_EXPORT BentleyStatus   TryGetHeight (double& height) const;
+
+    //! Tries to return length of this surface which is essencially the length of its base curve
+    //! @param[out] length  length of this surface
+    //! @return     BentleyStatus::ERROR if error occured when trying to get surface length
+    GRIDELEMENTS_EXPORT BentleyStatus   TryGetLength (double& length) const;
 };
 
 END_GRIDS_NAMESPACE

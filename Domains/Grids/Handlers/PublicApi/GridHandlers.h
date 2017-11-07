@@ -18,9 +18,9 @@ struct GridAxisHandler : Dgn::dgn_ElementHandler::Definition
     ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridAxis, GridAxis, GridAxisHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
     };
 
-struct GridSplineSurfaceHandler : GridSurfaceHandler
+struct GridSplineSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridSplineSurface, GridSplineSurface, GridSplineSurfaceHandler, GridSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridSplineSurface, GridSplineSurface, GridSplineSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 

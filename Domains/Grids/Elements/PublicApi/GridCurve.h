@@ -18,22 +18,35 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridCurve : IntersectionCurve
+struct EXPORT_VTABLE_ATTRIBUTE GridCurve : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridCurve, IntersectionCurve);
-    DEFINE_T_SUPER(IntersectionCurve);
+    DEFINE_T_SUPER(Dgn::SpatialLocationElement);
     
 protected:
     explicit GRIDELEMENTS_EXPORT GridCurve (CreateParams const& params);
     explicit GRIDELEMENTS_EXPORT GridCurve (CreateParams const& params, ICurvePrimitivePtr curve);
     explicit GRIDELEMENTS_EXPORT GridCurve (CreateParams const& params, CurveVectorPtr curve);
-    friend struct GridCurveHandler;
+
+    GRIDELEMENTS_EXPORT void                InitGeometry (ICurvePrimitivePtr curve);
+    GRIDELEMENTS_EXPORT void                InitGeometry (CurveVectorPtr curve);
 
     virtual GRIDELEMENTS_EXPORT void                _CopyFrom (Dgn::DgnElementCR source) override;
     static  GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridCurve, GRIDELEMENTS_EXPORT)
+
+    //! gets curve geometry of the gridcurve
+    //! @return             GridCurve geometry
+    GRIDELEMENTS_EXPORT ICurvePrimitivePtr      GetCurve () const;
+
+    //! sets curve geometry of the gridcurve
+    //! @param[in]  curve   model for the gridcurve
+    GRIDELEMENTS_EXPORT void    SetCurve (CurveVectorPtr curve);
+
+    //! sets curve geometry of the gridcurve
+    //! @param[in]  curve   model for the gridcurve
+    GRIDELEMENTS_EXPORT void    SetCurve (ICurvePrimitivePtr curve);
 
     //! gets the intersecting GridSurface which creates this GridCurve (not the baseSurface)
     //! @return             gridsurface, if exists

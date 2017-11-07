@@ -28,9 +28,9 @@ typedef bmap<Utf8String, GridAxisMap> GridNameMap;
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridPortion : SurfaceSet
+struct EXPORT_VTABLE_ATTRIBUTE GridPortion : Dgn::SpatialLocationPortion
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPortion, SurfaceSet);
+    DEFINE_T_SUPER (Dgn::SpatialLocationPortion);
 private:
     BE_PROP_NAME (Normal);
 
@@ -43,7 +43,6 @@ protected:
     //! @param[in]          normal  perpendicularity plane of this Grid
     explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params) : T_Super (params) {};
     explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
-    friend struct GridPortionHandler;
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
@@ -102,6 +101,12 @@ public:
     //! @return BentleyStatus::ERROR if grid has no elements
     GRIDELEMENTS_EXPORT BentleyStatus GetGridRotationAngleXY(double& angle) const;
 
+    //! intersects this grid with the given surface, creates gridcurves
+    //! @param[in] surface      surface to intersect
+    //! @param[in] targetModel  model to create gridcurves in
+    //! @return BentleyStatus for the operation result
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface (GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
+
     //! Make an iterator over gridSurfaces that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 
@@ -110,6 +115,7 @@ public:
     
     //! Returns a grid portion with given parent element and name
     GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
+
     };
 
 END_GRIDS_NAMESPACE

@@ -21,6 +21,7 @@ BEGIN_GRIDS_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE GridSplineSurface : GridSurface
 {
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridSplineSurface, GridSurface);
+    DEFINE_T_SUPER (GridSurface);
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridSplineSurface (CreateParams const& params);

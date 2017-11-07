@@ -2282,7 +2282,7 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 
     {
     // create new definition model
-    GridSurfaceHandler& handler = GridSurfaceHandler::GetHandler ();
+    GridPlaneSurfaceHandler& handler = GridPlaneSurfaceHandler::GetHandler ();
     DgnClassId classId = db.Domains ().GetClassId (handler);
     DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
 
@@ -2297,7 +2297,7 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 
     {
     // create new definition model
-    GridPortionHandler& handler = GridPortionHandler::GetHandler ();
+    OrthogonalGridPortionHandler& handler = OrthogonalGridPortionHandler::GetHandler ();
     DgnClassId classId = db.Domains ().GetClassId (handler);
     DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
 

@@ -28,8 +28,9 @@ GridCurve::GridCurve
 (
 CreateParams const& params,
 ICurvePrimitivePtr  curve
-) : T_Super(params, curve) 
+) : T_Super(params) 
     {
+    InitGeometry (curve);
     }
 
 
@@ -40,8 +41,9 @@ GridCurve::GridCurve
 (
 CreateParams const& params,
 CurveVectorPtr  curve
-) : T_Super(params, curve) 
+) : T_Super(params) 
     {
+    InitGeometry (curve);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,6 +111,103 @@ GridSurfacePtr GridCurve::GetIntersectingSurface () const
         }
 
     return GetDgnDb ().Elements ().GetForEdit <GridSurface> (statement.GetValueId<Dgn::DgnElementId> (0));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void            GridCurve::InitGeometry
+(
+CurveVectorPtr  curve
+)
+    {
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
+
+    DPoint3d originPoint;
+    (*curve)[0]->GetStartPoint (originPoint);
+
+    Placement3d newPlacement (originPoint, GetPlacement ().GetAngles ());
+    SetPlacement (newPlacement);
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+    if (builder->Append (*curve, Dgn::GeometryBuilder::CoordSystem::World))
+        {
+        if (SUCCESS != builder->Finish (*geomElem))
+            BeAssert (!"Failed to create IntersectionCurve Geometry");
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void            GridCurve::InitGeometry
+(
+ICurvePrimitivePtr  curve
+)
+    {
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
+
+    DPoint3d originPoint;
+    curve->GetStartPoint (originPoint);
+
+    Placement3d newPlacement (originPoint, GetPlacement ().GetAngles ());
+    SetPlacement (newPlacement);
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+    if (builder->Append (*curve, Dgn::GeometryBuilder::CoordSystem::World))
+        {
+        if (SUCCESS != builder->Finish (*geomElem))
+            BeAssert (!"Failed to create IntersectionCurve Geometry");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void            GridCurve::SetCurve
+(
+ICurvePrimitivePtr  curve
+)
+    {
+    //clean the existing geometry
+    GetGeometryStreamR ().Clear ();
+    InitGeometry (curve);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void            GridCurve::SetCurve
+(
+CurveVectorPtr  curve
+)
+    {
+    //clean the existing geometry
+    GetGeometryStreamR ().Clear ();
+    InitGeometry (curve);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr                  GridCurve::GetCurve
+(
+) const
+    {
+    GeometryCollection geomData = *ToGeometrySource ();
+    ICurvePrimitivePtr curve = nullptr;
+    GeometricPrimitivePtr geometricPrimitivePtr = (*(geomData.begin ())).GetGeometryPtr ();
+    if (geometricPrimitivePtr.IsValid())
+        {
+        curve = geometricPrimitivePtr->GetAsICurvePrimitive ();
+        curve->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
+        }
+
+    return curve;
     }
 
 END_GRIDS_NAMESPACE
