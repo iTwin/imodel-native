@@ -157,6 +157,9 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorAndEmptyAsyncError_Stat
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError, nullptr);

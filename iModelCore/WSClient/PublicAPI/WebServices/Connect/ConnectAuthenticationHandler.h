@@ -39,7 +39,7 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
             Utf8String urlBaseToAuth,
             std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
             IHttpHandlerPtr customHttpHandler = nullptr,
-            bool shouldUseSAMLAuthorization = true,
+            bool shouldUseSAMLAuthorization = false,
             bool legacyMode = true
             );
 
