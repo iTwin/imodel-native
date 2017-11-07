@@ -314,17 +314,11 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::Delete()
     return response;
     }
 
-/*ConnectedResponse ConnectedRealityDataDocument::RetrieveAllForRealityData(bvector<ConnectedRealityDataDocumentPtr>& docVector)
+ConnectedResponse ConnectedRealityDataDocument::RetrieveAllForRealityData(bvector<bpair<Utf8String, uint64_t>>& docVector, Utf8String realityDataGUID)
     {
     ConnectedResponse response = ConnectedResponse();
-    if (m_realityDataId.empty())
-        {
-        response.simpleSuccess = false;
-        response.simpleMessage = "must set realityData id, first";
-        return response;
-        }
 
-    AzureHandshake* handshake = new AzureHandshake(m_realityDataId, false);
+    AzureHandshake* handshake = new AzureHandshake(realityDataGUID, false);
     RawServerResponse handshakeResponse = RealityDataService::BasicRequest((RealityDataUrl*)handshake);
     Utf8String azureServer;
     Utf8String azureToken;
@@ -340,35 +334,19 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::Delete()
         return response;
         }
 
-    //AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_realityDataId);
+    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(realityDataGUID);
 
-    return response;*/
-    //todo
-    /*RawServerResponse sasResponse = RawServerResponse();
+    RawServerResponse sasResponse = RawServerResponse();
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, sasResponse);
 
-    std::string str;
-    size_t placeholder = 0;
-    size_t step;
-    size_t size = filesInRepo.size();
-    while (m_lastCommand != Command::Cancel && m_lastCommand != Command::Quit && placeholder < size)
+    for(int i = 0; i < filesInRepo.size(); i++)
         {
-        std::getline(*s_inputSource, str);
-        if (Utf8String(str.c_str()).Trim().EqualsI("Cancel"))
-            m_lastCommand = Command::Cancel;
-        else if (Utf8String(str.c_str()).Trim().EqualsI("Quit"))
-            m_lastCommand = Command::Quit;
-        else
-            {
-            step = (size < (placeholder + 20)) ? size : placeholder + 20;
-            DisplayInfo("Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page\n", DisplayOption::Tip);
-            for (; placeholder < step; ++placeholder)
-                {
-                DisplayInfo(Utf8String(WPrintfString(L"%s %lu bytes \n", filesInRepo[placeholder].first.c_str(), filesInRepo[placeholder].second)));
-                }
-            }
-        }*/
-    //}
+        docVector.push_back(make_bpair(Utf8PrintfString("%s/%s", realityDataGUID, filesInRepo[i].first.c_str()), filesInRepo[i].second));
+        }
+
+    response.Clone(sasResponse);
+    return response;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
@@ -747,7 +725,17 @@ ConnectedResponse ConnectedRealityData::RetrieveAllForUltimateId(bvector<Connect
         return response;
         }
 
-    RealityDataListByUltimateIdPagedRequest ultimateReq = RealityDataListByUltimateIdPagedRequest(m_ultimateId, 0, 2500);
+    return RetrieveAllForUltimateId(dataVector, m_ultimateId);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityData::RetrieveAllForUltimateId(bvector<ConnectedRealityDataPtr>& dataVector, Utf8String ultimateId)
+    {
+    ConnectedResponse response = ConnectedResponse();
+
+    RealityDataListByUltimateIdPagedRequest ultimateReq = RealityDataListByUltimateIdPagedRequest(ultimateId, 0, 2500);
 
     RawServerResponse ultimateResponse = RawServerResponse();
     ultimateResponse.status = RequestStatus::OK;
@@ -758,7 +746,7 @@ ConnectedResponse ConnectedRealityData::RetrieveAllForUltimateId(bvector<Connect
         partialVec = RealityDataService::Request(ultimateReq, ultimateResponse);
         dataVector.insert(dataVector.end(), dataVector.begin(), dataVector.end());
         }
-    
+
     response.Clone(ultimateResponse);
 
     return response;
@@ -791,7 +779,7 @@ ConnectedResponse ConnectedRealityData::GetInfo()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8String serverPath)
+ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR serverPath)
     {
     ConnectedResponse response = ConnectedResponse();
 
@@ -858,6 +846,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8String s
     RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, serverPath, propertyString);
     if (upload.IsValidTransfer())
         {
+        serverPath = upload.GetRealityDataId();
         upload.OnlyReportErrors(true);
         const TransferReport& ur = upload.Perform();
         if (ur.results.empty())
