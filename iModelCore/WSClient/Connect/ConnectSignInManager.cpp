@@ -41,8 +41,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient) :
 m_client(client),
 m_localState(*localState),
-m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState)),
-m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_cs, m_auth.tokenProvider)),
+m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(m_localState)),
+m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_mutex, m_auth.tokenProvider)),
 m_connectionClient(connectionClient)
     {
     m_auth = CreateAuthentication(ReadAuthenticationType());
@@ -98,7 +98,7 @@ IConnectionClientInterfacePtr connectionClient)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::CheckAndUpdateToken()
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     CheckAndUpdateTokenNoLock();
     }
 
@@ -118,7 +118,7 @@ void ConnectSignInManager::CheckAndUpdateTokenNoLock()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::Configure(Configuration config)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     m_config = config;
 
     for (auto provider : m_publicDelegationTokenProviders)
@@ -133,7 +133,7 @@ void ConnectSignInManager::Configure(Configuration config)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr token, Utf8StringCR rpUri)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
 
     if (nullptr == token || !token->IsSupported())
         return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
@@ -147,7 +147,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         if (!result.IsSuccess())
             return SignInResult::Error(result.GetError());
 
-        BeMutexHolder lock(m_cs);
+        BeMutexHolder lock(m_mutex);
 
         ClearSignInData();
 
@@ -169,7 +169,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     
     auto self(shared_from_this());
     return m_client->RequestToken(credentials, nullptr, m_config.identityTokenLifetime)
@@ -178,7 +178,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         if (!result.IsSuccess())
             return SignInResult::Error(result.GetError());
 
-        BeMutexHolder lock(m_cs);
+        BeMutexHolder lock(m_mutex);
 
         ClearSignInData();
 
@@ -201,7 +201,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::FinalizeSignIn()
     {
-    m_cs.Enter();
+    m_mutex.Enter();
     auto currentPersistence = m_auth.persistence;
 
     m_auth = CreateAuthentication(m_auth.type);
@@ -209,7 +209,7 @@ void ConnectSignInManager::FinalizeSignIn()
     m_auth.persistence->SetCredentials(currentPersistence->GetCredentials());
 
     StoreAuthenticationType(m_auth.type);
-    m_cs.Leave();
+    m_mutex.Leave();
 
     if (m_userSignInHandler)
         m_userSignInHandler();
@@ -220,7 +220,7 @@ void ConnectSignInManager::FinalizeSignIn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsSignedIn() const
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     return IsSignedInNoLock();
     }
 
@@ -237,11 +237,11 @@ bool ConnectSignInManager::IsSignedInNoLock() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SignOut()
     {
-    m_cs.Enter();
+    m_mutex.Enter();
     ClearSignInData();
 
     LOG.infov("ConnectSignOut");
-    m_cs.Leave();
+    m_mutex.Leave();
 
     if (m_userSignOutHandler)
         m_userSignOutHandler();
@@ -267,7 +267,7 @@ void ConnectSignInManager::ClearSignInData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
 
     UserInfo info;
 
@@ -315,7 +315,7 @@ Utf8String ConnectSignInManager::GetLastUsername() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     m_tokenExpiredHandler = handler;
     }
 
@@ -324,7 +324,7 @@ void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     m_userChangeHandler = handler;
     CheckUserChange();
     }
@@ -334,7 +334,7 @@ void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetUserSignInHandler(std::function<void()> handler)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     m_userSignInHandler = handler;
     }
 
@@ -343,7 +343,7 @@ void ConnectSignInManager::SetUserSignInHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     m_userSignOutHandler = handler;
     }
 
@@ -352,7 +352,7 @@ void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetConnectionClientSignInHandler(std::function<void()> handler)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     m_connectionClientSignInHandler = handler;
     }
 
@@ -366,7 +366,7 @@ IHttpHandlerPtr httpHandler,
 HeaderPrefix prefix
 ) const
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
 
     // Harcoded URI for first G0505 release (2016 Q1). May need to match service server URL in future.
     // Update: This seems to be good enough for IMS as most of services use generic AppliesTo anyway as of 2017-04 
@@ -389,7 +389,7 @@ HeaderPrefix prefix
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri) const
     {
-    BeMutexHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     return GetCachedTokenProvider(rpUri);
     }
 

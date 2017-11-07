@@ -10,7 +10,7 @@
 
 #include <WebServices/Cache/Persistence/CacheEnvironment.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
-#include <MobileDgn/Utils/Threading/AsyncError.h>
+#include <Bentley/Tasks/AsyncError.h>
 
 #include "../Instances/ObjectInfoManager.h"
 #include "FileStorage.h"

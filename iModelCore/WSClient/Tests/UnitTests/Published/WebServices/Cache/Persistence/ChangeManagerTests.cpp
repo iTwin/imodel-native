@@ -211,7 +211,7 @@ TEST_F(ChangeManagerTests, GetSyncingInstances_SetUploadActiveForInstance_SetWit
     // Act & Assert
     cache->GetChangeManager().SetUploadActive(instance1, true);
     const ECInstanceKeyMultiMap &map = cache->GetChangeManager().GetUploadingInstances();
-    ECInstanceKeyMultiMapPair pair(instance1.GetECClassId(), instance1.GetECInstanceId());
+    ECInstanceKeyMultiMapPair pair(instance1.GetClassId(), instance1.GetInstanceId());
     
     EXPECT_EQ(1, map.size());
     EXPECT_THAT(map, Contains<ECInstanceKeyMultiMapPair>(pair));

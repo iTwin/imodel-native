@@ -180,22 +180,13 @@ struct WebApiV1 : public WebApi
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
-
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
-            (
-            ObjectIdCR objectId,
-            JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName(),
-            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
-            ) const override;
         
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 

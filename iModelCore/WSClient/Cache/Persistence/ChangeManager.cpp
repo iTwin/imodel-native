@@ -72,8 +72,8 @@ bool ChangeManager::IsUploadActive(ECInstanceKeyCR instanceKey) const
     {
     if (!instanceKey.IsValid())
         return false;
-    for (auto it = m_activeUploadKeys->find(instanceKey.GetECClassId()); it != m_activeUploadKeys->end(); it++)
-        if (it->second == instanceKey.GetECInstanceId())
+    for (auto it = m_activeUploadKeys.find(instanceKey.GetClassId()); it != m_activeUploadKeys.end(); it++)
+        if (it->second == instanceKey.GetInstanceId())
             return true;
     return false;
     }
@@ -83,7 +83,7 @@ bool ChangeManager::IsUploadActive(ECInstanceKeyCR instanceKey) const
 
 const ECInstanceKeyMultiMap& ChangeManager::GetUploadingInstances() const
     {
-    return *m_activeUploadKeys;
+    return m_activeUploadKeys;
     }
 
 /*----------------`----------------------------------------------------------------------+
@@ -97,14 +97,14 @@ void ChangeManager::SetUploadActive(ECInstanceKeyCR instanceKey, bool active)
     if (active)
         {
         if (!IsUploadActive(instanceKey))
-            m_activeUploadKeys->Insert(instanceKey.GetECClassId(), instanceKey.GetECInstanceId());
+            m_activeUploadKeys.Insert(instanceKey.GetClassId(), instanceKey.GetInstanceId());
         }
     else
         {
-        for (auto it = m_activeUploadKeys->find(instanceKey.GetECClassId()); it != m_activeUploadKeys->end();)
+        for (auto it = m_activeUploadKeys.find(instanceKey.GetClassId()); it != m_activeUploadKeys.end();)
             {
-            if (it->second == instanceKey.GetECInstanceId())
-                it = m_activeUploadKeys->erase(it);
+            if (it->second == instanceKey.GetInstanceId())
+                it = m_activeUploadKeys.erase(it);
             else
                 it++;
             }

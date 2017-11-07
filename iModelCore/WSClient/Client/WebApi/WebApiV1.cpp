@@ -941,20 +941,6 @@ IWSRepositoryClient::RequestOptionsPtr options
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
     }
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Petras.Sukys    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
-(
-ObjectIdCR relatedObjectId,
-JsonValueCR objectCreationJson,
-BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct
-) const
-    {
-    return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
@@ -998,7 +984,7 @@ ICancellationTokenPtr ct
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError()));
         }
 
-    BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString()) 
+    BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString())
              && "schemaName in objectId parameter should match objectCreationJson schemanName.");
     BeAssert(objectId.className.Equals(objectCreationJson["instance"]["className"].asString())
              && "className in objectId parameter should match objectCreationJson className.");

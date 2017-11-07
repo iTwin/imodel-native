@@ -123,7 +123,6 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor UsageLoggingServicesLocation;
             WSCLIENT_EXPORT static const UrlDescriptor EntitlementPolicyService;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
-            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgRepositoryFederation;
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveSTSHelperService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsPassiveAuthUrl;
             };

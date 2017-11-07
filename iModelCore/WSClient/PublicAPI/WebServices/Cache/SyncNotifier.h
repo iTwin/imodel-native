@@ -10,7 +10,7 @@
 
 #include <WebServices/Cache/WebServicesCache.h>
 #include <WebServices/Cache/ICachingDataSource.h>
-#include <Bentley/BeMutex.h>
+#include <Bentley/BeThread.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

@@ -231,14 +231,6 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     &s_urlRegistry
     );
 
-const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederation(
-    "RepositoryFederationService.URL",
-    "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
-    "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
-    "https://bcsf.bentley.com/ProjectGateway/Wsg",
-    &s_urlRegistry
-    );
-
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveSTSHelperService(
     "ActiveSTSHelperServiceUrl",
     "https://qa-ims.bentley.com/rest/STSHelperService",

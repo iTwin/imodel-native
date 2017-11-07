@@ -526,7 +526,7 @@ CacheStatus CachedResponseManager::UpdatePageCachedDate(ResponseKeyCR responseKe
     if (!pageKey.IsValid())
         return CacheStatus::DataNotCached;
 
-    if (SUCCESS != UpdatePageCacheDate(pageKey.GetECInstanceId()))
+    if (SUCCESS != UpdatePageCacheDate(pageKey.GetInstanceId()))
         return CacheStatus::Error;
 
     return CacheStatus::OK;

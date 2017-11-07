@@ -72,7 +72,7 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsAndAutheTypeWindowsPasse
 
     GetHandler().ExpectRequests(2)
         .ForRequest(1, StubWSInfoHttpResponseWebApi13())
-        .ForRequest(2, [] (HttpRequestCR request)
+        .ForRequest(2, [] (Http::RequestCR request)
         {
         EXPECT_EQ(Credentials("TestUser", "TestPassword"), request.GetCredentials());
         EXPECT_STREQ("CredentialType=Windows", request.GetHeaders().GetValue(HEADER_MasConnectionInfo));
@@ -789,13 +789,13 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndReceivedAzureRedi
 
     EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
                 {HEADER_Location, "https://foo.com/boo"},
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
         });
-    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
         return StubHttpResponse(HttpStatus::NotFound,
@@ -1045,7 +1045,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24SkipTokenSuppliedAndSe
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
@@ -1191,7 +1191,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV25)
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 6}));
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_EQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();
@@ -1708,11 +1708,11 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV25WithRelatedObje
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/RelatedObjectSchema/RelatedObjectClass/RelatedObjectId/TargetObjectSchema.TargetObjectClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, ToJson(request.GetRequestBody()->AsString()));
         return StubHttpResponse(ConnectionStatus::OK);
         });
     client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Wait();
@@ -1739,11 +1739,11 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV25WithRelatedObje
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/RelatedObjectSchema/RelatedObjectClass/RelatedObjectId/TargetObjectClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, ToJson(request.GetRequestBody()->AsString()));
         return StubHttpResponse(ConnectionStatus::OK);
         });
     client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Wait();
@@ -2895,7 +2895,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV25_SendsPutRequestW
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
         return StubHttpResponse(HttpStatus::OK);

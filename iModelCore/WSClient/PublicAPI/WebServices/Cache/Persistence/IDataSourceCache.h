@@ -28,7 +28,7 @@
 #include <WebServices/Client/Response/WSObjectsResponse.h>
 #include <WebServices/Client/WSQuery.h>
 
-#include <MobileDgn/Utils/Threading/AsyncError.h>
+#include <Bentley/Tasks/AsyncError.h>
 
 #include <ECDb/ECDbApi.h>
 #include <ECObjects/ECObjects.h>

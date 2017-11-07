@@ -1432,12 +1432,12 @@ CacheStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLas
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
     if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate, errorOut))
+        CacheStatus::OK != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate, errorOut))
         {
         return CacheStatus::Error;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+

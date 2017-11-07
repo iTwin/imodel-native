@@ -188,7 +188,7 @@ struct IWSRepositoryClient
         //! @param objectId Used to construct URL for POST request. Any schema, class or instanceId included in the URL will come from this object.
         //!            <br> remoteId is optional. If supplied this implies that there are instances related to that instance that needs creation.
         //! @param objectCreationJson must follow WSG 2.0 format for creating objects.
-        //! @param filePath [optional] file
+        //! @param filePath [optional] file path to upload
         //! @param uploadProgressCallback [optional] upload callback for changeset
         //! @param ct [optional] cancellation token
         //! @note
@@ -203,22 +203,6 @@ struct IWSRepositoryClient
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
-            ) const = 0;
-
-        //! Create an object with a relation. With optional file attachment
-        //! @param relatedObjectId - relation target object (e. g. document for checkin)
-        //! @param objectCreationJson - Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
-        //! @param filePath - file path to upload
-        //! @param uploadProgressCallback - file upload progress
-        //! @param ct
-        //! @return JSON representing created object and new file ETag if available
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
-            (
-            ObjectIdCR relatedObjectId,
-            JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -407,19 +391,10 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
-            ObjectIdCR objectId,
-            JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
-            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
-            ) const override;
-
-        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
-            (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 

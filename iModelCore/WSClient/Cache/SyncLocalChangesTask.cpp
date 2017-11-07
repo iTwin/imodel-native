@@ -232,7 +232,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                 ECInstanceKey failedKey = revisions->find(oldId)->second->GetInstanceKey();;
                 revisions->erase(oldId);
 
-                auto it = std::find_if(changesetChangeGroups->begin(), changesetChangeGroups->end(), [&] (ChangeGroup* group)
+                auto it = std::find_if(changesetChangeGroups->begin(), changesetChangeGroups->end(), [&] (CacheChangeGroup* group)
                     {
                     return group->DoesContain(failedKey);
                     });
@@ -355,7 +355,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Petras.Sukys    08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
+void SyncLocalChangesTask::SetUploadActiveForChangeGroup(CacheTransactionCR txn, CacheChangeGroupCR changeGroup, bool active)
     {
     auto objectKey = changeGroup.GetObjectChange().GetInstanceKey();
     auto relationshipKey = changeGroup.GetRelationshipChange().GetInstanceKey();
