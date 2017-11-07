@@ -15,10 +15,7 @@ BEGIN_CS06BRIDGE_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus CS06Bridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
-    // TODO: This isn't correct.  Fix it.
-    WString arg(argv[iArg]);
-    if (arg.StartsWith(L"--DGN"))
-        return iModelBridge::CmdLineArgStatus::Success;
+    // Process any command-line arguments specific to the CS06Bridge here.
 
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
@@ -28,8 +25,8 @@ iModelBridge::CmdLineArgStatus CS06Bridge::_ParseCommandLineArg(int iArg, int ar
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString CS06Bridge::_SupplySqlangRelPath()
     {
-    // TODO: This is wrong.  Fix it.
-    return L"sqlang/DgnV8Converter_en-US.sqlang.db3";
+    // TODO: Find out how I should create my own db3 and what it needs to contain.  Where do the framework strings come from?
+    return L"sqlang/iModelBridgeFwk_en-US.sqlang.db3";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,24 +36,18 @@ BentleyStatus CS06Bridge::_Initialize(int argc, WCharCP argv[])
     {
     // TODO: Implement this!
 
-    /*AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
+    Teleporter::AppendDgnDb06SdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // The call to iModelBridge::_Initialize is the time to register domains.
-    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(AlignmentBim::RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(RoadRailBim::RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    Teleporter::RegisterDomains();
 
     if (!_GetParams().GetInputFileName().DoesPathExist() || _GetParams().GetInputFileName().IsDirectory())
         {
-        fwprintf(stderr, L"%ls: not found or not an OpenRoads Designer DGN file.\n", _GetParams().GetInputFileName().c_str());
+        // TODO: Localize this string.
+        // TODO: Write this out to the log file.
+        fwprintf(stderr, L"%ls: not found or not an OpenRoads ConceptStation file.\n", _GetParams().GetInputFileName().c_str());
         return BentleyStatus::ERROR;
         }
-
-    DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv);
-
-    // Initialize Cif SDK
-    DgnPlatformCivilLib::InitializeWithDefaultHost();
-    GeometryModelDgnECDataBinder::GetInstance().Initialize();*/
 
     return BentleyStatus::SUCCESS;
     }
@@ -76,18 +67,8 @@ BentleyStatus CS06Bridge::_OpenSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::SubjectCPtr CS06Bridge::CreateAndInsertJobSubject(DgnDbR db, Utf8CP jobName)
     {
-    // TODO: Is this correct?
-
-    //db.Schemas().CreateClassViewsInDb();
-
     auto subjectObj = Subject::Create(*db.Elements().GetRootSubject(), jobName);
-
-    Json::Value jobProps(Json::nullValue);
-    jobProps["Converter"] = "OpenRoads/Rail ConceptStation BIM Bridge";
-    jobProps["InputFile"] = Utf8String(_GetParams().GetInputFileName());
-
-    subjectObj->SetSubjectJsonProperties(Subject::json_Job(), jobProps);
-
+    JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
     return subjectObj->InsertT<Subject>();
     }
 
@@ -96,8 +77,6 @@ Dgn::SubjectCPtr CS06Bridge::CreateAndInsertJobSubject(DgnDbR db, Utf8CP jobName
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::SubjectCPtr CS06Bridge::QueryJobSubject(DgnDbR db, Utf8CP jobName)
     {
-    // TODO: Is this correct?
-
     DgnCode jobCode = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName);
     auto jobId = db.Elements().QueryElementIdByCode(jobCode);
     return db.Elements().Get<Subject>(jobId);
@@ -108,8 +87,6 @@ Dgn::SubjectCPtr CS06Bridge::QueryJobSubject(DgnDbR db, Utf8CP jobName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String CS06Bridge::ComputeJobSubjectName()
     {
-    // TODO: Is this correct?
-
     return Utf8String (_GetParams().GetInputFileName());
     }
 
@@ -118,8 +95,6 @@ Utf8String CS06Bridge::ComputeJobSubjectName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr CS06Bridge::_FindJob()
     {
-    // TODO: Is this correct?
-
     Utf8String jobName(ComputeJobSubjectName());
     return QueryJobSubject(GetDgnDbR(), jobName.c_str());
     }
@@ -148,8 +123,6 @@ SubjectCPtr CS06Bridge::_InitializeJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CS06Bridge::UpdateProjectExtents(SpatialModelR spatialModel)
     {
-    // TODO: Is this correct?
-
     DgnDbR db = spatialModel.GetDgnDb();
 
     AxisAlignedBox3d modelExtents = spatialModel.QueryModelRange();
@@ -179,6 +152,11 @@ void CS06Bridge::UpdateProjectExtents(SpatialModelR spatialModel)
 void CS06Bridge::_OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docSyncInfoid)
 	{
 	// TODO: Implement this.
+
+    // Called when the framework detects that a document has been deleted from the source DMS or at least removed from the job. The subclass should
+    // override this method to delete from the BIM all models and elements that it previously created from data that came from this document.
+    // @param docId Identifies the document in the source DMS. May be a GUID or a local file name.
+    // @param docSyncInfoid Identifies the document in the syncinfo file
 	}
 
 /*---------------------------------------------------------------------------------**//**
@@ -223,8 +201,6 @@ BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 extern "C" Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
     {
-    // TODO: Is this correct?
-
 	BeAssert(0 == BeStringUtilities::Wcsicmp(bridgeName, CS06Bridge::GetRegistrySubKey()));
     return new CS06Bridge();
     }

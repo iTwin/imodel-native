@@ -48,6 +48,8 @@ $(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${Mul
 
 $(o)CS06Bridge$(oext) : $(_MakeFilePath)CS06Bridge.cpp ${MultiCompileDepends} $(appPublicApi)CS06Bridge.h
 
+$(o)MarshalHelper$(oext) : $(_MakeFilePath)MarshalHelper.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -76,27 +78,26 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(li
 #LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 #LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
 #LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilDataExchange$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnDb06BimTeleporter$(libext)
 
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)ECObjects.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeom.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnPlatform.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnGeoCoord.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RmgrTools.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BaseGeoCoord.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidCore.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidAcisInterop.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RasterCore.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnView.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeomSerialization.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.SDK.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.DGN.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.CIF.GeometryModel.SDK.lib
-#LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.CIF.LinearGeometry.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BentleyAllocator.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BeSQLite.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)ECObjects.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BentleyGeom.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DgnPlatform.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DgnGeoCoord.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)RmgrTools.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BaseGeoCoord.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)PSolidCore.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)PSolidAcisInterop.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)RasterCore.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DgnView.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)VisEdgesLib.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DwgDgnIO.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)acpal.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BentleyGeomSerialization.lib
 LINKER_LIBRARIES_DELAYLOADED + msi.lib
 
 %include $(sharedMki)linkLibrary.mki

@@ -102,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CS06BridgeInternal.h" />
+    <ClInclude Include="MarshalHelper.h" />
     <ClInclude Include="PublicAPI\CS06Bridge\CS06Bridge.h" />
     <ClInclude Include="PublicAPI\CS06Bridge\CS06BridgeApi.h" />
   </ItemGroup>
@@ -109,6 +110,7 @@
     <ClCompile Include="CS06Bridge.cpp" />
     <ClCompile Include="CS06BridgeInternal.cpp" />
     <ClCompile Include="iModelBridgeAffinity.cpp" />
+    <ClCompile Include="MarshalHelper.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
