@@ -34,8 +34,6 @@ WString CS06Bridge::_SupplySqlangRelPath()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CS06Bridge::_Initialize(int argc, WCharCP argv[])
     {
-    // TODO: Implement this!
-
     Teleporter::AppendDgnDb06SdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // The call to iModelBridge::_Initialize is the time to register domains.
