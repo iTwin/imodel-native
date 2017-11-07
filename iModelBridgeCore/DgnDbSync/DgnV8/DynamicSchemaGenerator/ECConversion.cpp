@@ -1353,7 +1353,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
 
-    if ((RepositoryStatus::Success != GetDgnDb().BriefcaseManager().LockSchemas().Result()) || (SchemaStatus::Success != GetDgnDb().ImportSchemas(constSchemas)))
+    if (SchemaStatus::Success != GetDgnDb().ImportV8LegacySchemas(constSchemas))
         {
         return BentleyApi::ERROR;
         }
