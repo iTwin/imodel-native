@@ -114,6 +114,7 @@
     <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
     <ClCompile Include="Cache\SyncCachedInstancesTask.cpp" />
     <ClCompile Include="Cache\SyncLocalChangesTask.cpp" />
+    <ClCompile Include="Cache\SyncNotifier.cpp" />
     <ClCompile Include="Cache\SyncOptions.cpp" />
     <ClCompile Include="Cache\Transactions\BeSQLiteDbTransactionHandler.cpp" />
     <ClCompile Include="Cache\Transactions\CacheTransaction.cpp" />
