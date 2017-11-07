@@ -79,12 +79,13 @@ struct WSError : public AsyncError
     private:
         Status m_status = Status::None;
         Id m_id = Id::Unknown;
-        JsonValueCPtr       m_data;
+        JsonValueCPtr m_data;
 
     private:
         static bool DoesStringFieldExist(JsonValueCR json, Utf8CP name);
         static bool DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name);
-        static Utf8CP GetOptionalString(RapidJsonValueCR json);
+        static Utf8CP GetOptionalString(RapidJsonValueCR json, Utf8CP name);
+        static int GetOptionalInt(RapidJsonValueCR json, Utf8CP name);
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
         static Id GetErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
@@ -103,7 +104,7 @@ struct WSError : public AsyncError
             Id errorId,
             Utf8StringCR errorMessage,
             Utf8StringCR errorDescription,
-            JsonValueCPtr errorData = nullptr
+            JsonValueCP errorData
             );
 
     public:

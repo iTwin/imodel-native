@@ -704,7 +704,7 @@ TEST_F(WSErrorTests, Ctor_HttpErrorNotFound_IdUnknown)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, GetData_ReturnsData)
+TEST_F(WSErrorTests, GetData_JsonResponse_ReturnsSameJsonBody)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null, "customProperty":"TestData"})";
     WSError error(StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
@@ -718,7 +718,7 @@ TEST_F(WSErrorTests, GetData_ReturnsData)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, GetData_CanceledHttpStatus)
+TEST_F(WSErrorTests, GetData_CanceledHttpStatus_JsonNull)
     {
     WSError error(StubHttpResponse(ConnectionStatus::Canceled));
 
@@ -728,7 +728,7 @@ TEST_F(WSErrorTests, GetData_CanceledHttpStatus)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceled)
+TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceledResponse_JsonNull)
     {
     EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::None)).GetData());
     EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetData());
@@ -740,7 +740,7 @@ TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceled)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, GetData_IMSRedirect)
+TEST_F(WSErrorTests, GetData_IMSRedirectResponse_JsonNull)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
 
@@ -750,7 +750,7 @@ TEST_F(WSErrorTests, GetData_IMSRedirect)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, GetData_Xml)
+TEST_F(WSErrorTests, GetData_XmlBody_JsonNull)
     {
     auto body = R"( <ModelError
                       xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
