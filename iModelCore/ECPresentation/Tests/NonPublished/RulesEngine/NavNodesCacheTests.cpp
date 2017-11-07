@@ -1208,34 +1208,52 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsGrandParentNodeId
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void CacheNode(NodesCache& cache, ECDbR db, JsonNavNodeR node)
+    {
+    NavNodeExtendedData extendedData(node);
+    extendedData.SetConnectionId(db.GetDbGuid());
+    extendedData.SetRulesetId("ruleset_id");
+    
+    // cache root data source
+    DataSourceInfo info(db.GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+
+    // cache the node
+    cache.Cache(node, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     {
-    // create the root node
-    ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetClass);
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
-    extendedData.SetRulesetId("ruleset_id");
-    
-    // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+    // create a similar node in a closed connection
+    ECDbTestProject project;
+    project.Create("LocateNode_LocatesECInstanceNode", "RulesEngineTest.01.00.ecschema.xml");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    TestNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*widgetClass2);
+    CacheNode(*m_cache, project.GetECDb(), *node2);
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    project.GetECDb().CloseDb();
 
-    // cache the node
-    m_cache->Cache(*node, false);
+    // create a node in an open connection
+    ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    TestNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*widgetClass1);
+    CacheNode(*m_cache, s_project->GetECDb(), *node1);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*ECInstanceNodeKey::Create(*node->GetInstance()));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECInstanceNodeKey::Create(*node1->GetInstance()));
     ASSERT_TRUE(locatedNode.IsValid());
-    ASSERT_TRUE(node->Equals(*locatedNode));
+    ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when key is invalid
     ECInstanceKey invalidKey(
-        ECClassId(node->GetKey().AsECInstanceNodeKey()->GetECClassId().GetValue() + 1),
-        ECInstanceId(node->GetKey().AsECInstanceNodeKey()->GetInstanceId().GetValue() + 1));
-    locatedNode = m_cache->LocateNode(*ECInstanceNodeKey::Create(invalidKey));
+        ECClassId(node1->GetKey().AsECInstanceNodeKey()->GetECClassId().GetValue() + 100),
+        ECInstanceId(node1->GetKey().AsECInstanceNodeKey()->GetInstanceId().GetValue() + 100));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECInstanceNodeKey::Create(invalidKey));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1244,31 +1262,32 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     {
-    // create the root node
-    ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*widgetClass, "test label");
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
-    extendedData.SetRulesetId("ruleset_id");
-    
-    // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+    // create a similar node in a closed connection
+    ECDbTestProject project;
+    project.Create("LocateNode_LocatesECClassGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    TestNavNodePtr node2 = TestNodesHelper::CreateClassGroupingNode(*widgetClass2, "test label");
+    CacheNode(*m_cache, project.GetECDb(), *node2);
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    project.GetECDb().CloseDb();
 
-    // cache the node
-    m_cache->Cache(*node, false);
+    // create a node in an open connection
+    ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    TestNavNodePtr node1 = TestNodesHelper::CreateClassGroupingNode(*widgetClass1, "test label");
+    CacheNode(*m_cache, s_project->GetECDb(), *node1);
     
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*ECClassGroupingNodeKey::Create(node->GetNodeId(), widgetClass->GetId()));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECClassGroupingNodeKey::Create(node1->GetNodeId(), widgetClass1->GetId()));
     ASSERT_TRUE(locatedNode.IsValid());
-    ASSERT_TRUE(node->Equals(*locatedNode));
+    ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(*ECClassGroupingNodeKey::Create(node->GetNodeId() + 1, widgetClass->GetId()));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECClassGroupingNodeKey::Create(node1->GetNodeId() + 100, widgetClass1->GetId()));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when class id doesnt match
-    locatedNode = m_cache->LocateNode(*ECClassGroupingNodeKey::Create(node->GetNodeId(), ECClassId(widgetClass->GetId().GetValue() + 1)));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECClassGroupingNodeKey::Create(node1->GetNodeId(), ECClassId(widgetClass1->GetId().GetValue() + 100)));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1276,31 +1295,34 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
 * @bsitest                                      Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
-    {    
-    // create the root node
-    ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    ECPropertyCP groupingProperty = widgetClass->GetPropertyP("IntProperty");
+    {
     rapidjson::Document groupingValue;
     groupingValue.SetInt(9);
-    TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass, *groupingProperty, "test label", groupingValue, false);
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
-    extendedData.SetRulesetId("ruleset_id");
-    
-    // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
-    // cache the node
-    m_cache->Cache(*node, false);
+    // create a similar node in a closed connection
+    ECDbTestProject project;
+    project.Create("LocateNode_LocatesECPropertyValueGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
+    TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass2, *groupingProperty2, "test label", groupingValue, false);
+    CacheNode(*m_cache, project.GetECDb(), *node2);
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    project.GetECDb().CloseDb();
+
+    // create a node in an open connection
+    ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
+    TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass1, *groupingProperty1, "test label", groupingValue, false);
+    CacheNode(*m_cache, s_project->GetECDb(), *node1);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*ECPropertyGroupingNodeKey::Create(node->GetNodeId(), *widgetClass, *groupingProperty, -1, &groupingValue));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId(), *widgetClass1, *groupingProperty1, -1, &groupingValue));
     ASSERT_TRUE(locatedNode.IsValid());
-    ASSERT_TRUE(node->Equals(*locatedNode));
+    ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(*ECPropertyGroupingNodeKey::Create(node->GetNodeId() + 1, *widgetClass, *groupingProperty, -1, &groupingValue));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId() + 100, *widgetClass1, *groupingProperty1, -1, &groupingValue));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1308,31 +1330,34 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
 * @bsitest                                      Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
-    {    
-    // create the root node
-    ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    ECPropertyCP groupingProperty = widgetClass->GetPropertyP("IntProperty");
+    {
     rapidjson::Document groupingValue;
     groupingValue.SetInt(2);
-    TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass, *groupingProperty, "test label", groupingValue, true);
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
-    extendedData.SetRulesetId("ruleset_id");
-    
-    // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
 
-    // cache the node
-    m_cache->Cache(*node, false);
+    // create a similar node in a closed connection
+    ECDbTestProject project;
+    project.Create("LocateNode_LocatesECPropertyRangeGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
+    TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass2, *groupingProperty2, "test label", groupingValue, true);
+    CacheNode(*m_cache, project.GetECDb(), *node2);
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    project.GetECDb().CloseDb();
+
+    // create a node in an open connection
+    ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
+    TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass1, *groupingProperty1, "test label", groupingValue, true);
+    CacheNode(*m_cache, s_project->GetECDb(), *node1);
     
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*ECPropertyGroupingNodeKey::Create(node->GetNodeId(), *widgetClass, *groupingProperty, 2, nullptr));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId(), *widgetClass1, *groupingProperty1, 2, nullptr));
     ASSERT_TRUE(locatedNode.IsValid());
-    ASSERT_TRUE(node->Equals(*locatedNode));
+    ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(*ECPropertyGroupingNodeKey::Create(node->GetNodeId() + 1, *widgetClass, *groupingProperty, 2, nullptr));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId() + 100, *widgetClass1, *groupingProperty1, 2, nullptr));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1341,30 +1366,30 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
     {
-    // create the root node
-    TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode("test label");
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
-    extendedData.SetRulesetId("ruleset_id");
-    
-    // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+    // create a similar node in a closed connection
+    ECDbTestProject project;
+    project.Create("LocateNode_LocatesLabelGroupingNode");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    TestNavNodePtr node2 = TestNodesHelper::CreateLabelGroupingNode("test label");
+    CacheNode(*m_cache, project.GetECDb(), *node2);
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    project.GetECDb().CloseDb();
 
-    // cache the node
-    m_cache->Cache(*node, false);
+    // create a node in an open connection
+    TestNavNodePtr node1 = TestNodesHelper::CreateLabelGroupingNode("test label");
+    CacheNode(*m_cache, s_project->GetECDb(), *node1);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId(), "test label"));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label"));
     ASSERT_TRUE(locatedNode.IsValid());
-    ASSERT_TRUE(node->Equals(*locatedNode));
+    ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId() + 1, "test label"));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId() + 100, "test label"));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when label doesnt match
-    locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId(), "different label"));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "different label"));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1373,34 +1398,34 @@ TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     {
-    // create the root node
-    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
-    extendedData.SetRulesetId("ruleset_id");
-    
-    // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+    // create a similar node in a closed connection
+    ECDbTestProject project;
+    project.Create("LocateNode_LocatesCustomNode");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    CacheNode(*m_cache, project.GetECDb(), *node2);
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    project.GetECDb().CloseDb();
 
-    // cache the node
-    m_cache->Cache(*node, false);
+    // create a node in an open connection
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    CacheNode(*m_cache, s_project->GetECDb(), *node1);
     
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId(), "test label", "test type"));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label", "test type"));
     ASSERT_TRUE(locatedNode.IsValid());
-    ASSERT_TRUE(node->Equals(*locatedNode));
+    ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId() + 1, "test label", "test type"));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId() + 100, "test label", "test type"));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when label doesnt match
-    locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId(), "different label", "test type"));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "different label", "test type"));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when type doesnt match
-    locatedNode = m_cache->LocateNode(*DisplayLabelGroupingNodeKey::Create(node->GetNodeId(), "test label", "different type"));
+    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label", "different type"));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 

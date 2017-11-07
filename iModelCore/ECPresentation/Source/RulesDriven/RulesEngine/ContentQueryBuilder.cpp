@@ -50,7 +50,7 @@ void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater c
         }
         
     // Some grouping node
-    NavNodeCPtr node = nodesLocater.LocateNode(nodeKey);
+    NavNodeCPtr node = nodesLocater.LocateNode(helper.GetDb(), nodeKey);
     if (node.IsNull())
         {
         BeAssert(false);

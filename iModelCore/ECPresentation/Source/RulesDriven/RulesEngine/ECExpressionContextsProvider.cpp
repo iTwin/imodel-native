@@ -362,7 +362,7 @@ public:
         if (m_context.IsValid())
             return m_context;
 
-        NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(*m_key) : nullptr;
+        NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();

@@ -465,10 +465,10 @@ public:
 struct  INavNodeLocater
 {
 protected:
-    virtual NavNodeCPtr _LocateNode(NavNodeKeyCR key) const = 0;
+    virtual NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR) const = 0;
 public:
     virtual ~INavNodeLocater() {}
-    NavNodeCPtr LocateNode(NavNodeKeyCR key) const {return _LocateNode(key);}
+    NavNodeCPtr LocateNode(ECDbCR connection, NavNodeKeyCR key) const {return _LocateNode(connection, key);}
 };
 
 //=======================================================================================
