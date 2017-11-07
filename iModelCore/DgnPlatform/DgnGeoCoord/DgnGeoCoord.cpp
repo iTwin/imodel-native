@@ -285,6 +285,9 @@ GeoCoordType66      &extracted
     //   so that it will be retained and then saved back to the type 66, as that what I found in all existing type 66's.
     CSMap::CS_stncp(csDef.key_nm,  extracted.cs_knm, DIM(csDef.key_nm));
 
+
+    csDef.epsgNbr = (uint16_t)extracted.epsgNbr;
+
 #if 0
     // truncate desc_nm at comma. (from old version, claims it was stripping unit name).
     char*   pComma;
@@ -2105,6 +2108,7 @@ const CSDefinition  &csDef
     CSMap::CS_stncp(type66.prj_knm, csDef.prj_knm, DIM(type66.prj_knm));
     CSMap::CS_stncp(type66.source,  csDef.source,  DIM(type66.source));
     CSMap::CS_stncp(type66.desc_nm, csDef.desc_nm, DIM(type66.desc_nm));
+    type66.epsgNbr = csDef.epsgNbr;
     }
 
 /*---------------------------------------------------------------------------------**//**

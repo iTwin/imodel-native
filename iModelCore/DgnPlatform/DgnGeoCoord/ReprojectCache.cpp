@@ -651,7 +651,7 @@ WStringR    detailMessage
     WString fileName  = m_refModelRef->GetDgnFileP()->GetFileName();
     double seconds = BeTimeUtilities::QuerySecondsCounter() - m_startTime;
 
-    *hasWarnings = (m_usefulRangeErrors > 0) || (m_otherErrors > 0) || (m_datumConvertNotSetErrors > 0);
+    *hasWarnings = (m_usefulRangeErrors > 0) || (m_otherErrors > 0) || (m_datumConvertNotSetErrors > 0) || (m_verticalConvertErrors > 0);
     *hasErrors   = (m_domainErrors > 0);
 
     WString format;
