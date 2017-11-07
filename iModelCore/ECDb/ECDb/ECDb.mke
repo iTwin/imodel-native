@@ -465,6 +465,9 @@ $(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)E
 $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbSchemaPolicies.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)ECSchemas/ECDb/ChangeSummary.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ChangeSummary.01.00.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
 #----------------------------------------------------------------------
 # Deploy open source legal notices
 #----------------------------------------------------------------------

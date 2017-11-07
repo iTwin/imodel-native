@@ -1,0 +1,112 @@
+<ECSchema schemaName="ChangeSummary" alias="changes" version="01.00.00" description="Change Summary" displayLabel="Change Summary" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    
+    <!--Operation Type  enum -->
+    <ECEnumeration typeName="Operation" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="1" displayLabel="Insert"/>
+        <ECEnumerator value="2" displayLabel="Delete"/>
+        <ECEnumerator value="4" displayLabel="Update"/>
+
+    </ECEnumeration>
+
+    <!--Changeset represent a changeset that make up the change summary-->
+	<ECEntityClass typeName="Changeset" displayLabel="Changeset" modifier="Sealed">
+	    <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>OwnTable</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>    
+    
+    <!--Instance represent a changed instance that make up the changeset-->
+	<ECEntityClass typeName="Instance" displayLabel="Changed Instance" modifier="Sealed">
+	    <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>OwnTable</MapStrategy>
+            </ClassMap>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>uix_Instance_ChangedKey</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>ChangedInstanceId</string>
+                            <string>ChangedClassId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>	
+        <ECProperty propertyName="ChangedInstanceId" typeName="long" description="Changed ECInstanceId"/>
+        <ECProperty propertyName="ChangedClassId" typeName="long" description="Changed ECClassId"/>
+        <ECProperty propertyName="Operation" typeName="Operation" description="Operation type"/>
+		<ECProperty propertyName="Indirect" typeName="bool" description="Change happen due to a trigger "/>
+		<ECProperty propertyName="TableName" typeName="string" description="Change table name"/>		
+        <ECNavigationProperty
+			propertyName="Changeset"
+			description="Changeset to which this instance is part of"
+			readOnly="true"
+			relationshipName="ChangesetHasInstances"
+			direction="backward">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyConstraint>            
+        </ECNavigationProperty>
+    </ECEntityClass>
+    
+    <!--PropertyValue represent a value change of a property but at accessString level -->
+    <ECEntityClass typeName="PropertyValue" displayLabel="Changed PropertyValue" modifier="Sealed">
+	    <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>OwnTable</MapStrategy>
+            </ClassMap>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>uix_PropertyValue_Key</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Instance.Id</string>
+                            <string>AccessString</string>
+                        </Properties>
+                    </DbIndex>		
+                </Indexes>
+            </DbIndexList>            
+        </ECCustomAttributes>	
+	    <ECProperty propertyName="AccessString" typeName="string" description="Access string"/>
+        <ECProperty propertyName="RawOldValue" typeName="binary" description="Old value in raw format"/>
+        <ECProperty propertyName="RawNewValue" typeName="binary" description="New value in raw format"/>
+        <ECNavigationProperty
+			propertyName="Instance"
+			description="Changed Instance that contain the property"
+			readOnly="true"
+			relationshipName="InstanceHasPropertyValues"
+			direction="backward">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyConstraint>
+        </ECNavigationProperty>
+    </ECEntityClass>
+    
+    <!--ChangesetHasInstances changeset contains instances that have changed -->
+    <ECRelationshipClass typeName="ChangesetHasInstances" description="Associates changeset to instance" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="Changeset"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
+            <Class class="Instance"/>
+        </Target>
+    </ECRelationshipClass>
+    
+    <!--InstanceHasPropertyValues instance contain property values -->
+    <ECRelationshipClass typeName="InstanceHasPropertyValues" description="Associates instance to property values" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="Instance"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
+            <Class class="PropertyValue"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
+	

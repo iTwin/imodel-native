@@ -76,6 +76,10 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
+    schemaKey = SchemaKey("ECDbMeta", 1, 0, 0);
+    if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
+        return BE_SQLITE_ERROR;
+
     //import if already existing
     if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
         {

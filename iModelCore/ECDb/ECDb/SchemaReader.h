@@ -154,7 +154,7 @@ struct SchemaReader final
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
 
         ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
-        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem"}; }
+        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ChangeSummary"}; }
 
         void ClearCache() const;
     };
