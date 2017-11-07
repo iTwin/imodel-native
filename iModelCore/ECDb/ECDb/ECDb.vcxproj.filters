@@ -58,6 +58,9 @@
     <Filter Include="Profile">
       <UniqueIdentifier>{40e9ef85-b8b8-468a-ad73-fb807d2d3f09}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ChangeSummaryV2">
+      <UniqueIdentifier>{9778f9f9-eca7-4301-9580-fd4a67e200b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -398,6 +401,12 @@
     <ClInclude Include="JsonPersistenceHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
+    <ClInclude Include="ChangeSummaryImplV2.h">
+      <Filter>ChangeSummaryV2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ChangeSummaryV2.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -734,6 +743,9 @@
     </ClCompile>
     <ClCompile Include="ECSql\Parser\SqlParse.cpp">
       <Filter>ECSql\OSQLParser</Filter>
+    </ClCompile>
+    <ClCompile Include="ChangeSummaryImplV2.cpp">
+      <Filter>ChangeSummaryV2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
