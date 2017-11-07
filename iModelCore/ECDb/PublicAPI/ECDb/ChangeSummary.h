@@ -288,7 +288,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary : NonCopyableClass
         DbOpcode m_dbOpcode;
         int m_indirect;
         Utf8String m_tableName;
-        mutable ECSqlStatement m_valuesTableSelect;
+        mutable CachedStatementPtr m_valuesTableSelect;
 
         void SetupValuesTableSelectStatement(Utf8CP accessString) const;
 
@@ -452,7 +452,7 @@ private:
     InstancesTable* m_instancesTable;
     ValuesTable* m_valuesTable;
     ChangeExtractor* m_changeExtractor;
-    ECInstanceId m_changesetId;
+
     static int s_count;
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
     
@@ -498,8 +498,15 @@ public:
     //! Get a specific changed instance
     ECDB_EXPORT Instance GetInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
 
-    //! Return changeset id fromc ChangeSummary::Changeset::Id
-    ECDB_EXPORT ECInstanceId GetId() const { return m_changesetId; }
+    //! Get the name of the table containing summary of changed instances
+    //! @remarks The table includes ClassId, InstanceId, DbOpcode and Indirect columns, and can be used as part of other 
+    //! queries. Use @ref FromChangeSet to populate the ChangeSummary table.
+    ECDB_EXPORT Utf8String GetInstancesTableName() const;
+
+    //! Get the name of the table containing all the changed values
+    //! @remarks The table includes ClassId, InstanceId, AccessString, OldValue, NewValue columns, and can be used as part of other 
+    //! queries. Use @ref FromChangeSet to populate the ChangeSummary table.
+    ECDB_EXPORT Utf8String GetValuesTableName() const;
 
     //! @private internal use only
     //! Query for all changed instances of the specified class (and it's sub classes). 
