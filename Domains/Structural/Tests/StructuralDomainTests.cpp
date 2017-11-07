@@ -814,8 +814,6 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
 
 
 #define PUBLISHEDPROFILE_CODE_VALUE3       "PUBLISHEDPROFILE-003"
-
-
 TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     {   
     DgnDbPtr db = OpenDgnDb();
@@ -842,8 +840,6 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
 
     uint32_t iArrayOfStruct (0);
     DPoint2d test1 = { 0.0 };
-
-    publishedProfile->AddCustomCardinalPoint("aa", test1);
 
     status = publishedProfile->GetPropertyIndex(iArrayOfStruct, "CustomCardinalPoints");
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
@@ -914,3 +910,88 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
             }
         }
     }
+
+#define PUBLISHEDPROFILE_CODE_VALUE4       "PUBLISHEDPROFILE-004"
+TEST_F(StructuralDomainTestFixture, CustomCardinalPointsTests)
+{
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_PublishedProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE4);
+    ASSERT_TRUE(code.IsValid());
+
+    Dgn::DgnDbStatus status;
+    ECN::ECObjectsStatus objectStatus;
+    BentleyStatus bentleyStatus;
+
+    PublishedProfilePtr publishedProfile = PublishedProfile::Create(definitionModel);
+    ASSERT_TRUE(publishedProfile.IsValid());
+
+    status = publishedProfile->SetCode(code);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    DPoint2d test1 = { 0.0 };
+
+    test1.x = 0.14000;
+    test1.y = 0.14000;
+
+    publishedProfile->AddCustomCardinalPoint("aa", test1);
+
+    test1.x = 0.14000;
+    test1.y = 0.15002;
+
+    publishedProfile->AddCustomCardinalPoint("aa2", test1);
+
+    publishedProfile->RemoveCustomCardinalPoint("aa");
+
+    test1.x = 1.14000;
+    test1.y = 1.15002;
+
+    publishedProfile->SetCustomCardinalPoint("aa2", test1);
+
+    Dgn::DgnElementCPtr persistentElement = publishedProfile->Insert(&status);
+    ASSERT_TRUE(persistentElement.IsValid());
+
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE4);
+    ASSERT_TRUE(queriedElement.IsValid());
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    ECN::ECValue testValue;
+    status = queriedElement->GetPropertyValue(testValue, "CustomCardinalPoints");
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    ECN::ArrayInfo arrayInfo = testValue.GetArrayInfo();
+
+    for (uint32_t i = 0; i < arrayInfo.GetCount(); ++i)
+    {
+        ECN::IECInstancePtr checkInstance;
+        ECN::ECValue checkValue;
+        status = queriedElement->GetPropertyValue(checkValue, "CustomCardinalPoints", PropertyArrayIndex(i));
+        ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+        if (!checkValue.IsNull())
+        {
+            ECN::ECValue value;
+            checkInstance = checkValue.GetStruct();
+            ASSERT_TRUE(checkInstance.IsValid());
+
+            objectStatus = checkInstance->GetValue(value, "Name");
+            ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+            Utf8CP name = value.GetUtf8CP();
+
+            value.Clear();
+            objectStatus = checkInstance->GetValue(value, "Coordinates");
+            ASSERT_TRUE(ECN::ECObjectsStatus::Success == objectStatus);
+
+            DPoint2d point = value.GetPoint2d();
+        }
+    }
+}
