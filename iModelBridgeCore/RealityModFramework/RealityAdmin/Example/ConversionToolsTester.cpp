@@ -11,10 +11,10 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/RefCounted.h>
 
-#include <RealityPlatform/RealityDataDownload.h>
-#include <RealityPackage/RealityDataPackage.h>
-#include <RealityPlatform/md5.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
+#include <RealityPlatform/RealityDataPackage.h>
+#include <RealityPlatformTools/md5.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include <stdio.h>
 #include <conio.h>

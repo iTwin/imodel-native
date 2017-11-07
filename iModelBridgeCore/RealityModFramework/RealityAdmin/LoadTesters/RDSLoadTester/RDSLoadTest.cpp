@@ -10,7 +10,7 @@
 #include <queue>
 
 #include <Bentley/BeFile.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include "RDSLoadTest.h"
 

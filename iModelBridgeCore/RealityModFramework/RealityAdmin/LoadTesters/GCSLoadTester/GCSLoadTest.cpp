@@ -9,8 +9,8 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <RealityPlatform/RealityConversionTools.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 #include <CCApi/CCPublic.h>
 
 #include "GCSLoadTest.h"

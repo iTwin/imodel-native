@@ -11,8 +11,8 @@
 #include <Bentley/Bentley.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatform/RealityDataService.h>
-#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatformTools/RealityDataService.h>
+#include <RealityPlatformTools/WSGServices.h>
 #include <RealityAdmin/RealityDataServiceConsole.h>
 #include <CCApi/CCPublic.h>
 

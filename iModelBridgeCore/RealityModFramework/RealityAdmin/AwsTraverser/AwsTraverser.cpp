@@ -20,7 +20,7 @@
 #include <sstream>
 #include <vector>
 #include <curl/curl.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 #include "AwsTraverser.h"
 #include <RealityAdmin/ODBCSQLConnection.h>
 

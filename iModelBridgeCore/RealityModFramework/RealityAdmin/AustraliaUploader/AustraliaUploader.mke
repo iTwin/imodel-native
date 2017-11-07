@@ -38,6 +38,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)CCApi$(libext) \
                        $(ContextDeliveryDir)RealityPlatform.lib \
+                       $(ContextDeliveryDir)RealityPlatformTools.lib \
                        $(ContextDeliveryDir)RealityAdmin.lib 
 
 %include $(SharedMki)linktool.mki

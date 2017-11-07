@@ -14,7 +14,7 @@
 # Sourcedirs
 #----------------------------------------------------------
 RealityPlatformPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatform/
-RealityPackagePublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPackage/
+RealityPlatformToolsPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatformTools/
 RealityAdminPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityAdmin/
 
 #----------------------------------------------------------

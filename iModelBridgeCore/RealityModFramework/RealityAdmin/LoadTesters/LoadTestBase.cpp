@@ -11,7 +11,7 @@
 #include <CCApi/CCPublic.h>
 
 #include <Bentley/BeFile.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include "LoadTestBase.h"
 

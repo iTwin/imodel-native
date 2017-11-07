@@ -128,8 +128,8 @@
       <Component Id="NCSEcw.dll" Directory="bin" Guid="{20521954-2999-45EC-B45D-93F8DECB776B}">
         <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
       </Component>
-      <Component Id="RealityPackageB02.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
-        <File Id="RealityPackageB02.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackageB02.dll" />
+      <Component Id="RealityPlatformB02.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
+        <File Id="RealityPlatformB02.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPlatformB02.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>

@@ -1,0 +1,41 @@
+#----------------------------------------------------------------------
+#
+#     $Source: RealityPlatformTools/Example/RealityDataServiceToolsExample.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+ 
+%include mdl.mki
+
+appName             = RealityDataServiceToolsExample
+baseDir             = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)RealityDataServiceToolsExample$(oext) : $(baseDir)RealityDataServiceToolsExample.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)RealityDataServiceToolsExample$(oext)
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextDeliveryDir)RealityPlatform.lib \
+                       $(ContextDeliveryDir)RealityPlatformTools.lib 
+
+%include $(SharedMki)linktool.mki
+

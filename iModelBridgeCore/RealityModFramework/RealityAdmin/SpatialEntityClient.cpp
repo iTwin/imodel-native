@@ -11,7 +11,7 @@
 #include <BeXml/BeXml.h>
 
 #include <RealityPlatform/SpatialEntity.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 #include <RealityAdmin/SpatialEntityClient.h>
 #include <RealityAdmin/ISpatialEntityTraversalObserver.h>
 
