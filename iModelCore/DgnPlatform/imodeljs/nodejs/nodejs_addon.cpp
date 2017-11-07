@@ -138,6 +138,21 @@ USING_NAMESPACE_BENTLEY_EC
 using namespace v8;
 using namespace node;
 
+// We have to do something after invoking Promise.resolve.
+// See https://github.com/nodejs/node/issues/5691 for discussion of the problem. Note the comment by vkurchatkin:
+// "It also seems that it is implied by v8 authors that you should run microtasks manually when you work with promises from C++."
+#if NODE_MAJOR_VERSION >= 8 && NODE_MINOR_VERSION >= 9
+    // The RunMicrotasks work-around does not work in v8.9.0, at least when single-stepping the debugger. 
+    // We have switched to the work-around suggested by kkoopa in https://github.com/nodejs/nan/issues/539 does work work. 
+    // This work-around is invoke a dummy JS function using the nodejs MakeCallback function immediately after invoking resolve.
+    // MakeCallback runs the queues. See vkurchatkin commented on Mar 14 2016 in https://github.com/nodejs/node/issues/5691
+    static Nan::Callback tickKicker;
+    #define ADVANCE_THE_EVENT_QUEUE tickKicker();
+#else
+    // Work-around suggested by https://groups.google.com/forum/#!topic/nodejs/aAKtzaWDrPo
+    #define ADVANCE_THE_EVENT_QUEUE v8::Isolate::GetCurrent()->RunMicrotasks();
+#endif
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -198,7 +213,6 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         if (nullptr == m_resolver)
             return;
 
-        v8::Isolate::GetCurrent()->RunMicrotasks(); // *** WIP_NODE - work around bug in node - https://groups.google.com/forum/#!topic/nodejs/aAKtzaWDrPo
         m_resolver->Reset();
         delete m_resolver;
         }
@@ -212,6 +226,7 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         info.GetReturnValue().Set(resolver->GetPromise());
         v8::Local<v8::Object> retObj = NodeUtils::CreateBentleyReturnErrorObject(errorStatus);
         resolver->Resolve(retObj);
+        ADVANCE_THE_EVENT_QUEUE
         }
 
     void ScheduleAndReturnPromise(Nan::NAN_METHOD_ARGS_TYPE& info)
@@ -238,12 +253,14 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         {
         Nan::HandleScope scope;
         Nan::New(*m_resolver)->Resolve(CreateBentleyReturnSuccessObject());
+        ADVANCE_THE_EVENT_QUEUE
         }
 
     void HandleErrorCallback() override
         {
         Nan::HandleScope scope;
         Nan::New(*m_resolver)->Resolve(CreateBentleyReturnErrorObject());
+        ADVANCE_THE_EVENT_QUEUE
         }
 
     virtual bool _HadError() = 0;
@@ -1611,7 +1628,18 @@ static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetTickKicker(const FunctionCallbackInfo<Value>& info)
+    {
+#if NODE_MAJOR_VERSION >= 8 && NODE_MINOR_VERSION >= 9
+    // See comment on tickKicker for what this is for
+    tickKicker.SetFunction(info[0].As<v8::Function>());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object> module)
     {
@@ -1626,6 +1654,7 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     NodeAddonECSqlStatement::Init(target);
     NodeAddonDgnDb::Init(target);
     NodeAddonECDb::Init(target);
+    NODE_SET_METHOD(target, "setTickKicker", SetTickKicker);    // See comment on tickKicker for what this is for
     }
 
 Nan::Persistent<FunctionTemplate> NodeAddonECSqlStatement::s_constructor_template;
