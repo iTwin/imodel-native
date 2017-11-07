@@ -355,7 +355,6 @@ std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName
     return indexNames;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -364,9 +363,66 @@ bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnNam
     Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName);
 
     Utf8String fkSearchString;
-    fkSearchString.Sprintf("foreign key([%s]", foreignKeyColumnName);
-
+    fkSearchString.Sprintf("FOREIGN KEY([%s]", foreignKeyColumnName);
     return ddl.ContainsI(fkSearchString);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName, Utf8CP onDeleteAction, Utf8CP onUpdateAction) const
+    {
+    Utf8String fkConstraintDdl = GetForeignKeyConstraintDdl(tableName, foreignKeyColumnName);
+    if (fkConstraintDdl.empty())
+        return false;
+
+    if (!Utf8String::IsNullOrEmpty(onDeleteAction))
+        {
+        Utf8String actionSearchString;
+        actionSearchString.Sprintf("ON DELETE %s", onDeleteAction);
+
+        if (!fkConstraintDdl.ContainsI(actionSearchString))
+            return false;
+        }
+    else
+        {
+        if (fkConstraintDdl.ContainsI("ON DELETE"))
+            return false;
+        }
+
+    if (!Utf8String::IsNullOrEmpty(onUpdateAction))
+        {
+        Utf8String actionSearchString;
+        actionSearchString.Sprintf("ON UPDATE %s", onUpdateAction);
+
+        return fkConstraintDdl.ContainsI(actionSearchString);
+        }
+
+    return !fkConstraintDdl.ContainsI("ON UPDATE");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestHelper::GetForeignKeyConstraintDdl(Utf8CP tableName, Utf8CP foreignKeyColumnName) const
+    {
+    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName);
+
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(ddl.c_str(), ",", tokens);
+
+    for (Utf8StringCR token : tokens)
+        {
+        Utf8String fkSearchString1;
+        fkSearchString1.Sprintf("FOREIGN KEY([%s]", foreignKeyColumnName);
+        Utf8String fkSearchString2;
+        fkSearchString2.Sprintf("FOREIGN KEY(%s", foreignKeyColumnName);
+
+        if (token.ContainsI(fkSearchString1) || token.ContainsI(fkSearchString2))
+            return token;
+        }
+
+    return Utf8String();
     }
 
 //**************************************************************************************
