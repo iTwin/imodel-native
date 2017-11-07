@@ -78,9 +78,17 @@ struct TestHelper final
         std::vector<Utf8String> GetColumnNames(Utf8CP dbTableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, dbTableName); return std::vector<Utf8String>(cols.begin(), cols.end()); }
         //! Retrieves the physical column count for the specified table from the ECDb file
         int GetColumnCount(Utf8CP dbTableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, dbTableName); return (int) cols.size(); }
+
         //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
         bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn) const;
-        
+
+        //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
+        //! onDeleteAction and onUpdateAction must also match
+        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn, Utf8CP onDeleteAction, Utf8CP onUpdateAction) const;
+
+        //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
+        Utf8String GetForeignKeyConstraintDdl(Utf8CP dbTableName, Utf8CP foreignKeyColumn) const;
+
         //!logs the issues if there are any
         Utf8String GetDdl(Utf8CP entityName, Utf8CP entityType = "table") const;
         Utf8String GetIndexDdl(Utf8StringCR indexName) const { return GetDdl(indexName.c_str(), "index"); }
