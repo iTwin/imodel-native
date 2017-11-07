@@ -8,19 +8,20 @@
 #pragma once
 
 #include <Windows.h>
-#include <DgnPlatform/DgnPlatform.h>
 #include <DgnView/DgnViewLib.h>
+#include <DgnPlatform/DgnPlatform.h>
+
 #include <Bentley/BeFileName.h>
 
 #ifndef SM_DATA_PATH
 #define SM_DATA_PATH L"SMData"
 #endif
 
-#define VANCOUVER_API
+//#define VANCOUVER_API
 #ifndef VANCOUVER_API   
 #include <DgnView/ViewManager.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #define VIEWMANAGER ViewManager
 #else
 #define VIEWMANAGER IViewManager
@@ -55,19 +56,29 @@ namespace ScalableMeshGTestUtil
 
     bool FilterEntry(BeFileName& entry, bool isDir);
 
+#ifdef VANCOUVER_API
     struct ScalableMeshModule : DgnViewLib::Host
+#else
+    struct ScalableMeshModule : DgnPlatformLib::Host
+#endif
         {
         protected:
 
 #ifndef VANCOUVER_API   
-            virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new BentleyApi::Dgn::WindowsKnownLocationsAdmin(); }
+            virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() 
+                override 
+                { 
+                return *new BentleyApi::Dgn::KnownDesktopLocationsAdmin(); 
+                }
             virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
             virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ScalableMeshUnitTests"); }
 #else
             virtual void _SupplyProductName(WStringR name) override { name.assign(L"ScalableMeshUnitTests"); }
 #endif
 
+#ifdef VANCOUVER_API   
             virtual VIEWMANAGER& _SupplyViewManager() override;
+#endif
 
             virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
