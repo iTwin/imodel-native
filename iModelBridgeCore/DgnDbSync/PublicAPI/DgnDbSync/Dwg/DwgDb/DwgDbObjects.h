@@ -440,5 +440,17 @@ public:
     };  // DwgDbSortentsTable
 DWGDB_DEFINE_OBJECTPTR (SortentsTable)
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          05/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbXrecord : public DWGDB_EXTENDCLASS(Xrecord)
+    {
+    DWGDB_DECLARE_COMMON_MEMBERS(Xrecord)
+
+public:
+    DWGDB_EXPORT DwgResBufIterator  GetRbChain (DwgDbDatabaseP = nullptr, DwgDbStatus* status = nullptr) const;
+    };  // DwgDbXrecord
+DWGDB_DEFINE_OBJECTPTR (Xrecord)
+
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

@@ -30,9 +30,17 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
 
 %if $(DWGTOOLKIT) == "OpenDwg"
     DwgDbLibName    = OpenDwgDbExchange$(libext)
+    ToolkitLibs     = $(BuildContext)SubParts/teigha/Libs/
 
 %elif $(DWGTOOLKIT) == "RealDwg"
     DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/$(DWGTOOLKIT)$(VendorVersion)/
+
+    %if $(VendorVersion) == 2017
+        RealDwgSuffix = 21
+    %elif $(VendorVersion) == 2018
+        RealDwgSuffix = 22
+    %endif
 
     ### Suppress RealDWG import/export directives so we don't have to link with its libs.
     CCompOpts + -D_ADESK_STATIC_LINKING_
@@ -64,6 +72,10 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
+
+%if $(DWGTOOLKIT) == "RealDwg"
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+%endif
 
 %include $(sharedMki)linktool.mki
 
