@@ -74,7 +74,12 @@ GridAxisCPtr gridAxis,
 CurveVectorPtr  surfaceVector
 )
     {
-    return new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surfaceVector);
+    GridPlaneSurfacePtr surface = new GridPlaneSurface(CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surfaceVector);
+
+    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
+        return nullptr;
+    
+    return surface;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,7 +92,12 @@ GridAxisCPtr gridAxis,
 ISolidPrimitivePtr surface
 )
     {
-    return new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridPlaneSurfacePtr gridSurface = new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+
+    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
     }
 
 /*---------------------------------------------------------------------------------**//**

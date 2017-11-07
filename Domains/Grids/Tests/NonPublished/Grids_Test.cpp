@@ -1780,7 +1780,6 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
 
     db.SaveChanges();
-    element->Insert ();
 
     if (radialGrid.IsNull())
         {
@@ -1886,7 +1885,6 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
 
     GridAxisCPtr planeAxis = db.Elements().Get<GridAxis>(axesIds[0]);
     GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
-    GridAxisPtr axis1 = GridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
 
     bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
     bvector<GridPlaneSurfaceCPtr> planeElements;
@@ -2030,6 +2028,251 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     }    
     
 //---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+--------
+TEST_F(GridsTestFixture, SketchGrid_Created)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    SketchGridPortionPtr sketchGrid = SketchGridPortion::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is valid and has correct number of elements
+    /////////////////////////////////////////////////////////////
+    ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
+
+    ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
+    db.SaveChanges();
+
+    ASSERT_TRUE(sketchGrid->GetSurfacesModel().IsValid()) << "Failed to get sketch grid surfaces model";
+
+    int numSurfaces = sketchGrid->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_TRUE(numSurfaces == 0) << "incorrect number of gridSurfaces in sketchGrid";
+
+    /////////////////////////////////////////////////////////////
+    // Check if axes are valid and have correct number of elements
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(0, sketchGrid->MakeAxesIterator().BuildIdList<DgnElementId>().size()) << "new sketch grid should contain no elements";
+
+    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Grids::GridAxisPtr gridAxis = GridAxis::CreateAndInsert(defModel, *sketchGrid);
+
+    ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
+
+    ASSERT_EQ(0, gridAxis->MakeIterator().BuildIdList<DgnElementId>().size()) << "New axis should contain no elements";
+
+    /////////////////////////////////////////////////////////////
+    // Check if valid grid plane surfaces can be added to sketch grid
+    /////////////////////////////////////////////////////////////
+    DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 50, 20, 0 }, { 50, 70, 0 }, 90);
+    GridPlaneSurfacePtr plane = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+
+    ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
+
+    plane->Insert();
+    db.SaveChanges();
+
+    bvector<DgnElementId> axisElementsAfterFirstPlaneInsert = gridAxis->MakeIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(1, axisElementsAfterFirstPlaneInsert.size()) << "Axis should contain one element now";
+    ASSERT_TRUE(axisElementsAfterFirstPlaneInsert.back().IsValid()) << "Axis' element ids should be valid";
+    ASSERT_EQ(axisElementsAfterFirstPlaneInsert.back(), plane->GetElementId()) << "The axis element should be the inserted grid plane";
+
+    bvector<DgnElementId> gridElementsAfterFirstPlaneInsert = sketchGrid->MakeIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(1, gridElementsAfterFirstPlaneInsert.size());
+    ASSERT_TRUE(gridElementsAfterFirstPlaneInsert.back().IsValid()) << "Grid's element ids should be valid";
+    ASSERT_EQ(gridElementsAfterFirstPlaneInsert.back(), plane->GetElementId()) << "The grid element should be the inserted grid plane";
+
+    /////////////////////////////////////////////////////////////
+    // Check if invalid grid plane surfaces can't be added to sketch grid
+    /////////////////////////////////////////////////////////////
+    // Check grid plane from an empty curve vector
+    CurveVectorPtr emptyVector = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+    GridPlaneSurfacePtr invalidGridPlane_Empty = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, emptyVector);
+
+    ASSERT_TRUE(invalidGridPlane_Empty.IsNull()) << "Invalid grid plane surface has been created";
+
+    // Check grid plane with a non planar curve vector
+    CurveVectorPtr nonPlanarVector = CurveVector::CreateLinear({ { 0,0,0 },{ 10,10,0 },{ 10,20,0 },{ 10,10,10 },{ 0,0,0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+    GridPlaneSurfacePtr invalidGridPlane_NonPlanar = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, nonPlanarVector);
+
+    ASSERT_TRUE(invalidGridPlane_NonPlanar.IsNull()) << "Invalid grid plane surface has been created";
+
+    // Check grid plane created from extrusion with arc as base
+    DgnExtrusionDetail arcExtDetail = GeometryUtils::CreateArcExtrusionDetail(10 /*radius*/, msGeomConst_pi /*base angle*/, 10 /*height*/, 0 /*extend length*/);
+    GridPlaneSurfacePtr invalidGridPlane_Arc = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, arcExtDetail);
+
+    ASSERT_TRUE(invalidGridPlane_Arc.IsNull()) << "Invalid grid plane surface has been created";
+
+    // Check grid plane created from extrusion with spline as base
+    DgnExtrusionDetail splineExtDetail = GeometryUtils::CreateSplineExtrusionDetail({ {0, 0, 0}, {10, 0, 0}, {0, 10, 0} } /*poles*/, 10 /*height*/);
+    GridPlaneSurfacePtr invalidGridPlane_Spline = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, splineExtDetail);
+
+    ASSERT_TRUE(invalidGridPlane_Spline.IsNull()) << "Invalid grid plane surface has been created";
+
+    // Check grid plane create from handler
+    GridPlaneSurfaceHandler& planeHandler = GridPlaneSurfaceHandler::GetHandler();
+    DgnClassId planeClassId = db.Domains().GetClassId(planeHandler);
+    DgnElement::CreateParams planeParams(db, m_model->GetModelId(), planeClassId);
+
+    GridPlaneSurfacePtr invalidGridPlane_FromHandler = dynamic_cast<GridPlaneSurface *>(planeHandler.Create(planeParams).get());
+    ASSERT_TRUE(invalidGridPlane_FromHandler.IsValid()) << "element created from handler shouldn't be a nullptr";
+
+    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
+
+    invalidGridPlane_FromHandler->SetCategoryId(categoryId);
+    ASSERT_TRUE(invalidGridPlane_FromHandler->Insert().IsNull()) << "Element insertion should fail";
+
+    ASSERT_TRUE(!invalidGridPlane_FromHandler->GetElementId().IsValid()) << "element id should be invalid";
+
+    /////////////////////////////////////////////////////////////
+    // Check if valid grid arc surfaces can be added to sketch grid
+    /////////////////////////////////////////////////////////////
+    GridArcSurfacePtr arc = GridArcSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, arcExtDetail);
+
+    ASSERT_TRUE(arc.IsValid()) << "Failed to create grid plane surface";
+
+    arc->Insert();
+    db.SaveChanges();
+
+    bvector<DgnElementId> axisElementsAfterArcInsert = gridAxis->MakeIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(2, axisElementsAfterArcInsert.size()) << "Axis should contain two elements now";
+    ASSERT_TRUE(axisElementsAfterArcInsert.back().IsValid()) << "Axis' element ids should be valid";
+    ASSERT_EQ(axisElementsAfterArcInsert.back(), arc->GetElementId()) << "The axis element should be the inserted grid arc";
+
+    bvector<DgnElementId> gridElementsAfterArcInsert = sketchGrid->MakeIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(2, gridElementsAfterArcInsert.size());
+    ASSERT_TRUE(gridElementsAfterArcInsert.back().IsValid()) << "Grid's element ids should be valid";
+    ASSERT_EQ(gridElementsAfterArcInsert.back(), arc->GetElementId()) << "The grid element should be the inserted grid arc";
+
+    /////////////////////////////////////////////////////////////
+    // Check if invalid grid arc surfaces can't be added to sketch grid
+    /////////////////////////////////////////////////////////////
+    // Check grid arc created from extrusion with plane as base
+    GridArcSurfacePtr invalidGridArc_Plane = GridArcSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    ASSERT_TRUE(invalidGridArc_Plane.IsNull()) << "Invalid grid arc surface has been created";
+
+    // Check grid arc created from extrusion with spline as base
+    GridArcSurfacePtr invalidGridArc_Spline = GridArcSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, splineExtDetail);
+    ASSERT_TRUE(invalidGridArc_Spline.IsNull()) << "Invalid grid arc surface has been created";
+
+    // Check grid plane create from handler
+    GridArcSurfaceHandler& arcHandler = GridArcSurfaceHandler::GetHandler();
+    DgnClassId arcClassId = db.Domains().GetClassId(arcHandler);
+    DgnElement::CreateParams arcParams(db, m_model->GetModelId(), arcClassId);
+
+    GridArcSurfacePtr invalidGridArc_FromHandler = dynamic_cast<GridArcSurface *>(arcHandler.Create(arcParams).get());
+    ASSERT_TRUE(invalidGridArc_FromHandler.IsValid()) << "element created from handler shouldn't be a nullptr";
+
+    invalidGridArc_FromHandler->SetCategoryId(categoryId);
+    ASSERT_TRUE(invalidGridArc_FromHandler->Insert().IsNull()) << "Element insertion should fail";
+
+    ASSERT_TRUE(!invalidGridArc_FromHandler->GetElementId().IsValid()) << "element id should be invalid";
+
+    /////////////////////////////////////////////////////////////
+    // Check if valid grid spline surfaces can be added to sketch grid
+    /////////////////////////////////////////////////////////////
+    GridSplineSurfacePtr spline = GridSplineSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, splineExtDetail);
+
+    ASSERT_TRUE(spline.IsValid()) << "Failed to create grid spline surface";
+
+    spline->Insert();
+    db.SaveChanges();
+
+    bvector<DgnElementId> axisElementsAfterSplineInsert = gridAxis->MakeIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(3, axisElementsAfterSplineInsert.size()) << "Axis should contain two elements now";
+    ASSERT_TRUE(axisElementsAfterSplineInsert.back().IsValid()) << "Axis' element ids should be valid";
+    ASSERT_EQ(axisElementsAfterSplineInsert.back(), spline->GetElementId()) << "The axis element should be the inserted grid spline";
+
+    bvector<DgnElementId> gridElementsAfterSplineInsert = sketchGrid->MakeIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(3, gridElementsAfterSplineInsert.size());
+    ASSERT_TRUE(gridElementsAfterSplineInsert.back().IsValid()) << "Grid's element ids should be valid";
+    ASSERT_EQ(gridElementsAfterSplineInsert.back(), spline->GetElementId()) << "The grid element should be the inserted grid spline";
+
+    /////////////////////////////////////////////////////////////
+    // Check if invalid grid spline surfaces can't be added to sketch grid
+    /////////////////////////////////////////////////////////////
+    // Check grid spline created from extrusion with plane as base
+    GridSplineSurfacePtr invalidGridSpline_Plane = GridSplineSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    ASSERT_TRUE(invalidGridSpline_Plane.IsNull()) << "Invalid grid spline surface has been created";
+
+    // Check grid spline created from extrusion with spline as base
+    GridSplineSurfacePtr invalidGridSpline_Arc = GridSplineSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, arcExtDetail);
+    ASSERT_TRUE(invalidGridSpline_Arc.IsNull()) << "Invalid grid spline surface has been created";
+
+    // Check grid plane create from handler
+    GridSplineSurfaceHandler& splineHandler = GridSplineSurfaceHandler::GetHandler();
+    DgnClassId splineClassId = db.Domains().GetClassId(splineHandler);
+    DgnElement::CreateParams splineParams(db, m_model->GetModelId(), splineClassId);
+
+    GridSplineSurfacePtr invalidGridSpline_FromHandler = dynamic_cast<GridSplineSurface *>(splineHandler.Create(splineParams).get());
+    ASSERT_TRUE(invalidGridSpline_FromHandler.IsValid()) << "element created from handler shouldn't be a nullptr";
+
+    invalidGridSpline_FromHandler->SetCategoryId(categoryId);
+    ASSERT_TRUE(invalidGridSpline_FromHandler->Insert().IsNull()) << "Element insertion should fail";
+
+    ASSERT_TRUE(!invalidGridSpline_FromHandler->GetElementId().IsValid()) << "element id should be invalid";
+
+    /////////////////////////////////////////////////////////////
+    // Check if valid geometry can be set to grid surfaces
+    /////////////////////////////////////////////////////////////
+    // Check valid plane curve vector
+    CurveVectorPtr validGridPlaneVector = CurveVector::CreateLinear({ {0, 0, 0}, {10, 0, 0}, {10, 0, 10 }, {0, 0, 10}, {0, 0, 0} }, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+    plane->SetCurveVector(*validGridPlaneVector.get());
+
+    DgnDbStatus status;
+    plane->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update plane with valid curve vector";
+    db.SaveChanges();
+
+    // Check valid plane extrusion detail
+    DgnExtrusionDetail validGridPlaneExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 10, 0 }, { 10, 10, 0 }, 50);
+    ASSERT_EQ(BentleyStatus::SUCCESS, plane->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(validGridPlaneExtDetail))) << "Failed to set valid dgn extrusion";
+    plane->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update plane with valid dgn extrusion";
+    db.SaveChanges();
+
+    // Check valid arc extrusion detail
+    DgnExtrusionDetail validGridArcExtDetail = GeometryUtils::CreateArcExtrusionDetail(20, msGeomConst_pi / 2, 50);
+    ASSERT_EQ(BentleyStatus::SUCCESS, arc->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(validGridArcExtDetail))) << "Failed to set valid dgn extrusion";
+    arc->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update arc with valid dgn extrusion";
+    db.SaveChanges();
+
+    // Check valid spline extrusion detail
+    DgnExtrusionDetail validGridSplineExtDetail = GeometryUtils::CreateSplineExtrusionDetail({ { 0, 0, 0 }, {10, 0, 0}, {10, 30, 0}, {0, 0, 0} }, 50);
+    ASSERT_EQ(BentleyStatus::SUCCESS, spline->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(validGridSplineExtDetail))) << "Failed to set valid dgn extrusion";
+    spline->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status) << "Failed to update arc with valid dgn extrusion";
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check if invalid geometry can't be set to grid surfaces
+    /////////////////////////////////////////////////////////////
+    // Check invalid plane curve vector
+    plane->SetCurveVector(*emptyVector.get());
+    plane->Update(&status);
+    ASSERT_NE(DgnDbStatus::Success, status) << "Updating plane with invalid curve vector should not be allowed";
+    db.SaveChanges();
+
+    plane->SetCurveVector(*nonPlanarVector.get());
+    plane->Update(&status);
+    ASSERT_NE(DgnDbStatus::Success, status) << "Updating plane with invalid curve vector should not be allowed";
+    db.SaveChanges();
+
+    // Check invalid plane extrusion detail
+    ASSERT_NE(BentleyStatus::SUCCESS, plane->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(arcExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
+    ASSERT_NE(BentleyStatus::SUCCESS, plane->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(splineExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
+
+    // Check invalid arc exturion detail
+    ASSERT_NE(BentleyStatus::SUCCESS, arc->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(planeExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
+    ASSERT_NE(BentleyStatus::SUCCESS, arc->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(splineExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
+
+    // Check invalid spline extrusion detail
+    ASSERT_NE(BentleyStatus::SUCCESS, spline->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(planeExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
+    ASSERT_NE(BentleyStatus::SUCCESS, spline->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(arcExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
+    }
+
+//---------------------------------------------------------------------------------------
 // @betest                                      Jonas.Valiunas                  10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
@@ -2101,9 +2344,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     invalidVector->push_back (prim);
     GridPlaneSurfacePtr invalidPlaneSurface = GridPlaneSurface::Create (*grid->GetSurfacesModel (), axis1, invalidVector->Clone());
 
-    invalidPlaneSurface->Insert ();
-    ASSERT_TRUE (!invalidPlaneSurface->GetElementId ().IsValid ()) << "should fail to insert non-planar GridPlaneSurface";
-
+    ASSERT_TRUE(invalidPlaneSurface.IsNull()) << "a grid plane with invalid geometry should not be created";
 
     bvector<DPoint3d> planarPoints = { { 100,100,0 },{ 200,100,0 },{ 200,220,0 },{ 100,200,0 } };
     CurveVectorPtr validVector = CurveVector::CreateLinear (planarPoints, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);

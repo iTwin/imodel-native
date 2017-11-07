@@ -78,7 +78,7 @@ GridPortionCR grid
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::ElementIterator GridAxis::MakeIterator () const
     {
-    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Axis=?");
+    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridSurface), "WHERE Axis=?", "ORDER BY ECInstanceId ASC");
     ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces);
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
         {

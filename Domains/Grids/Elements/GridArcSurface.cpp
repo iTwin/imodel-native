@@ -60,7 +60,11 @@ GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    return new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridArcSurfacePtr gridSurface =  new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
     }
 
 //---------------------------------------------------------------------------------------
