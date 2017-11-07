@@ -62,6 +62,7 @@ DwgDbObjectId       DwgDbDatabase::GetMaterialDictionaryId () const { return DWG
 DwgDbObjectId       DwgDbDatabase::GetMaterialByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::byLayerMaterialId(), T_Super::byLayerMaterial()); }
 DwgDbObjectId       DwgDbDatabase::GetMaterialByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::byBlockMaterialId(), T_Super::byBlockMaterial()); }
 DwgDbObjectId       DwgDbDatabase::GetMaterialGlobalId () const { return DWGDB_CALLSDKMETHOD(T_Super::globalMaterialId(), T_Super::globalMaterial()); }
+DwgDbObjectId       DwgDbDatabase::GetNamedObjectsDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getNamedObjectsDictionaryId(), T_Super::namedObjectsDictionaryId()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17

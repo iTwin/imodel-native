@@ -36,6 +36,7 @@
 #include    <Teigha/Drawing/Include/DbClass.h>
 #include    <Teigha/Drawing/Include/DbObjectId.h>
 #include    <Teigha/Drawing/Include/DbDatabase.h>
+#include    <Teigha/Drawing/Include/DbXrecord.h>
 #include    <Teigha/Kernel/Include/OdString.h>
 #include    <Teigha/Drawing/Extensions/ExServices/ExHostAppServices.h>
 #include    <Teigha/Kernel/Extensions/ExServices/ExSystemServices.h>
@@ -57,6 +58,7 @@
 #include    <Realdwg/Base/dbsymutl.h>
 #include    <RealDwg/Base/dbboiler.h>
 #include    <Realdwg/Base/dbobjptr2.h>
+#include    <Realdwg/Base/dbxrecrd.h>
 #include    <RealDwg/Base/AcString.h>
 
 #else
@@ -357,6 +359,7 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbSpatialFilter)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSpatialIndex)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSpatialIndexIterator)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSortentsTable)
+DEFINE_DWGDB_TYPEDEFS (DwgDbXrecord)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDwgFiler)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDxfFiler)
 
