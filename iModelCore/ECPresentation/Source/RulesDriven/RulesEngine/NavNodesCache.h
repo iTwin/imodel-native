@@ -147,10 +147,10 @@ private:
     bool IsUpdatesDisabled(HierarchyLevelInfo const& info) const;
     void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
 
-    NavNodeCPtr LocateECInstanceNode(ECInstanceNodeKey const&) const;
-    NavNodeCPtr LocateECClassGroupingNode(ECClassGroupingNodeKey const&) const;
-    NavNodeCPtr LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey const&) const;
-    NavNodeCPtr LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeKey const&) const;
+    NavNodeCPtr LocateECInstanceNode(ECDbCR, ECInstanceNodeKey const&) const;
+    NavNodeCPtr LocateECClassGroupingNode(ECDbCR, ECClassGroupingNodeKey const&) const;
+    NavNodeCPtr LocateECPropertyGroupingNode(ECDbCR, ECPropertyGroupingNodeKey const&) const;
+    NavNodeCPtr LocateDisplayLabelGroupingNode(ECDbCR, DisplayLabelGroupingNodeKey const&) const;
 
     void AddQuick(HierarchyLevelInfo, NavNodesProviderR);
     void RemoveQuick(HierarchyLevelInfo const&);
@@ -177,7 +177,7 @@ protected:
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;
     
     // INavNodeLocater
-    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override;
+    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR) const override;
 
     // IConnectionsListener
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;

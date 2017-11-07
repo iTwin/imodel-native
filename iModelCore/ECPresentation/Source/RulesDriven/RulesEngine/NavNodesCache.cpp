@@ -1791,14 +1791,14 @@ bool NodesCache::HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateECInstanceNode(ECInstanceNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateECInstanceNode(ECDbCR connection, ECInstanceNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
-                       " WHERE [k].[Type] = ? AND [k].[ECClassId] = ? AND [k].[ECInstanceId] = ?";
+                       " WHERE [k].[Type] = ? AND [k].[ECClassId] = ? AND [k].[ECInstanceId] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1810,24 +1810,27 @@ NavNodeCPtr NodesCache::LocateECInstanceNode(ECInstanceNodeKey const& key) const
     stmt->BindText(1, NAVNODE_TYPE_ECInstanceNode, Statement::MakeCopy::No);
     stmt->BindId(2, key.GetECClassId());
     stmt->BindId(3, key.GetInstanceId());
+    stmt->BindGuid(4, connection.GetDbGuid());
     
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
 
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECClassGroupingNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECDbCR connection, ECClassGroupingNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[ECClassId] = ?";
+                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[ECClassId] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1839,24 +1842,27 @@ NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECClassGroupingNodeKey const& 
     stmt->BindUInt64(1, key.GetNodeId());
     stmt->BindText(2, key.GetType().c_str(), Statement::MakeCopy::No);
     stmt->BindId(3, key.GetECClassId());
+    stmt->BindGuid(4, connection.GetDbGuid());
         
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
-
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECDbCR connection, ECPropertyGroupingNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [k].[NodeId] = ?";
+                       " WHERE [k].[NodeId] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1866,24 +1872,27 @@ NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey c
         }
 
     stmt->BindUInt64(1, key.GetNodeId());
+    stmt->BindGuid(2, connection.GetDbGuid());
 
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
-
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(ECDbCR connection, DisplayLabelGroupingNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[Label] = ?";
+                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[Label] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1895,29 +1904,32 @@ NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeK
     stmt->BindUInt64(1, key.GetNodeId());
     stmt->BindText(2, key.GetType().c_str(), Statement::MakeCopy::No);
     stmt->BindText(3, key.GetLabel().c_str(), Statement::MakeCopy::No);
+    stmt->BindGuid(4, connection.GetDbGuid());
 
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
-
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::_LocateNode(NavNodeKeyCR nodeKey) const
+NavNodeCPtr NodesCache::_LocateNode(ECDbCR connection, NavNodeKeyCR nodeKey) const
     {
     if (nullptr != nodeKey.AsECInstanceNodeKey())
-        return LocateECInstanceNode(*nodeKey.AsECInstanceNodeKey());
+        return LocateECInstanceNode(connection, *nodeKey.AsECInstanceNodeKey());
     
     if (nullptr != nodeKey.AsECPropertyGroupingNodeKey())
-        return LocateECPropertyGroupingNode(*nodeKey.AsECPropertyGroupingNodeKey());
+        return LocateECPropertyGroupingNode(connection, *nodeKey.AsECPropertyGroupingNodeKey());
 
     if (nullptr != nodeKey.AsECClassGroupingNodeKey())
-        return LocateECClassGroupingNode(*nodeKey.AsECClassGroupingNodeKey());
+        return LocateECClassGroupingNode(connection, *nodeKey.AsECClassGroupingNodeKey());
     
     if (nullptr != nodeKey.AsDisplayLabelGroupingNodeKey())
-        return LocateDisplayLabelGroupingNode(*nodeKey.AsDisplayLabelGroupingNodeKey());
+        return LocateDisplayLabelGroupingNode(connection, *nodeKey.AsDisplayLabelGroupingNodeKey());
 
     BeAssert(false);
     return nullptr;

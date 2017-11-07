@@ -152,7 +152,7 @@ private:
     bmap<NavNodeKeyCP, NavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override
+    NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)
@@ -314,7 +314,7 @@ protected:
         {
         }
 
-    NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override
+    NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodeIdsByKey.find(&key);
         if (m_nodeIdsByKey.end() != iter)

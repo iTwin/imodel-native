@@ -53,6 +53,12 @@ struct TestConnectionManager : IConnectionManager
         for (IConnectionsListener* listener : m_listeners)
             listener->NotifyConnectionEvent(ConnectionEvent(connection, true, ConnectionEventType::Opened));
         }
+    void NotifyConnectionClosed(ECDbR connection) 
+        {
+        for (IConnectionsListener* listener : m_listeners)
+            listener->NotifyConnectionEvent(ConnectionEvent(connection, true, ConnectionEventType::Closed));
+        m_connections.erase(connection.GetDbGuid().ToString());
+        }
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE
