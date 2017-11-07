@@ -31,7 +31,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
         }
 
     DbTable const& table = ctx.GetPreparedStatement<SingleContextTableECSqlPreparedStatement>().GetContextTable();
-    if (table.GetType() == DbTable::Type::Virtual)
+    if (table.GetTypeInfo().IsVirtual())
         {
 
         BeAssert(false && "Should have been caught before");

@@ -71,6 +71,7 @@ struct Table final
     private:
         Utf8String m_name;
         Type m_type = Type::Primary;
+        Nullable<bool> m_isTemp;
         Utf8String m_parentTableName;
         ECN::ECClassId m_exclusiveRootClassId;
         std::vector<Column> m_columns;
@@ -81,8 +82,8 @@ struct Table final
 
     public:
         Table() {}
-        Table(Utf8StringCR name, Type type, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
-        Table(Table&& rhs) : m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
+        Table(Utf8StringCR name, Type type, Nullable<bool> isTemp, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_isTemp(isTemp), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
+        Table(Table&& rhs) : m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_isTemp(std::move(rhs.m_isTemp)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
             m_columns(std::move(rhs.m_columns)), m_columnLookupMap(std::move(rhs.m_columnLookupMap)) {}
 
         Table& operator=(Table&& rhs)
@@ -91,6 +92,7 @@ struct Table final
                 {
                 m_name = std::move(rhs.m_name);
                 m_type = std::move(rhs.m_type);
+                m_isTemp = std::move(rhs.m_isTemp);
                 m_parentTableName = std::move(rhs.m_parentTableName);
                 m_exclusiveRootClassId = std::move(rhs.m_exclusiveRootClassId);
                 m_columns = std::move(rhs.m_columns);
@@ -106,6 +108,7 @@ struct Table final
 
         Utf8StringCR GetName() const { return m_name; }
         Type GetType() const { return m_type; }
+        Nullable<bool> IsTemp() const { return m_isTemp; }
         Utf8StringCR GetParentTable() const { return m_parentTableName; }
         ECN::ECClassId GetExclusiveRootClassId() const { return m_exclusiveRootClassId; }
 
@@ -341,6 +344,7 @@ enum class MapStrategy
     OwnTable,
     TablePerHierarchy,
     ExistingTable,
+    TemporaryTablePerHierarchy,
     ForeignKeyRelationshipInTargetTable = 10,
     ForeignKeyRelationshipInSourceTable = 11
     };

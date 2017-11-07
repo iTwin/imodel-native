@@ -540,9 +540,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     BeAssert(table != nullptr);
-    BeAssert(table->GetType() != DbTable::Type::Virtual);
+    BeAssert(!table->GetTypeInfo().IsVirtual());
     NativeSqlBuilder nativeSqlSnippet;
-    nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
+    nativeSqlSnippet.AppendEscaped(table->GetName());
     nativeSqlSnippets.push_back(nativeSqlSnippet);
     return ECSqlStatus::Success;
     }

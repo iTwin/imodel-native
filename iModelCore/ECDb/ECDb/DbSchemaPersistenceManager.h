@@ -50,7 +50,6 @@ public:
         Error = 5
         };
 
-    
 private:
     DbSchemaPersistenceManager();
     ~DbSchemaPersistenceManager();
@@ -82,7 +81,9 @@ public:
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
-    static BentleyStatus RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName);
+    static BentleyStatus LoadTempTable(ECDbCR, DbTable const&);
+
+    static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP dbSchemaName = nullptr);
 
     static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
     static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
@@ -98,6 +99,14 @@ public:
             }
 
         return TId((uint64_t) id);
+        }
+
+    static bool TableExistsInDb(ECDbCR ecdb, Utf8CP tableName, Utf8CP dbSchemaName = nullptr)
+        { 
+        if (Utf8String::IsNullOrEmpty(dbSchemaName))
+            return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s]", tableName).c_str());
+
+        return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s].[%s]", dbSchemaName, tableName).c_str()); 
         }
     };
 

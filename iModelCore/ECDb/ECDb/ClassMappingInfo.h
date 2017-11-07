@@ -84,7 +84,7 @@ public:
 
     ECN::ECClassCR GetClass() const { return m_ecClass; }
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
-    ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
+    ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.IsTablePerHierarchy()); return m_tphBaseClassMap; }
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }

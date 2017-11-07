@@ -540,8 +540,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::PrepareLeafStatements(PrepareInfo& pre
     for (DbTable const* table : classMap.GetTables())
         {
         if (classMap.GetType() != ClassMap::Type::RelationshipEndTable &&
-            ((isPrimaryTable && table->GetType() != DbTable::Type::Primary) ||
-            (!isPrimaryTable && table->GetType() == DbTable::Type::Primary)))
+            ((isPrimaryTable && table->GetTypeInfo().GetType() != DbTable::Type::Primary) ||
+            (!isPrimaryTable && table->GetTypeInfo().GetType() == DbTable::Type::Primary)))
             {
             BeAssert(false && "We rely that the first table returned from ClassMap::GetTables is the primary table");
             return ECSqlStatus::Error;

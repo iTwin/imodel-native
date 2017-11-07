@@ -99,7 +99,7 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
 
     stmt->BindId(1, classId);
     stmt->BindInt(2, Enum::ToInt(mapStrategyExtInfo.GetStrategy()));
-    if (mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
+    if (mapStrategyExtInfo.IsTablePerHierarchy())
         {
         TablePerHierarchyInfo const& tphInfo = mapStrategyExtInfo.GetTphInfo();
         BeAssert(tphInfo.IsValid());
@@ -198,7 +198,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         }
 
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
-    if (mapStrategy == MapStrategy::TablePerHierarchy)
+    if (mapStrategy == MapStrategy::TablePerHierarchy || mapStrategy == MapStrategy::TemporaryTablePerHierarchy)
         {
         const TablePerHierarchyInfo::ShareColumnsMode shareColumnsMode = stmt->IsColumnNull(1) ? TablePerHierarchyInfo::ShareColumnsMode::No : Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(stmt->GetValueInt(1));
         Nullable<uint32_t> maxSharedColumnsBeforeOverflow;
@@ -207,12 +207,12 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
             maxSharedColumnsBeforeOverflow = Nullable<uint32_t>((uint32_t) stmt->GetValueInt64(2));
 
         const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(3) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(3));
-        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(shareColumnsMode, maxSharedColumnsBeforeOverflow, joinedTableInfo));
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy, TablePerHierarchyInfo(shareColumnsMode, maxSharedColumnsBeforeOverflow, joinedTableInfo));
         }
     else
         {
         BeAssert(stmt->IsColumnNull(1) && stmt->IsColumnNull(2) && stmt->IsColumnNull(3) &&
-                 "ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
+                 "ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy/TemporaryTablePerHierarchy");
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
 

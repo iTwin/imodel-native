@@ -2101,7 +2101,7 @@ bool ChangeIterator::RowEntry::IsPrimaryTable() const
         return false;
         }
 
-    return m_tableMap->GetDbTable()->GetType() == DbTable::Type::Primary; 
+    return m_tableMap->GetDbTable()->GetTypeInfo().GetType() == DbTable::Type::Primary; 
     }
 
 //---------------------------------------------------------------------------------------

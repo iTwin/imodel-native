@@ -79,13 +79,13 @@ struct TestHelper final
         //! Retrieves the physical column count for the specified table from the ECDb file
         int GetColumnCount(Utf8CP dbTableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, dbTableName); return (int) cols.size(); }
         //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
-        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn) const;
+        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn, Utf8CP dbSchemaName = nullptr) const;
         
         //!logs the issues if there are any
-        Utf8String GetDdl(Utf8CP entityName, Utf8CP entityType = "table") const;
-        Utf8String GetIndexDdl(Utf8StringCR indexName) const { return GetDdl(indexName.c_str(), "index"); }
-        bool IndexExists(Utf8StringCR indexName) const { return !GetDdl(indexName.c_str(), "index").empty(); }
-        std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR dbTableName) const;
+        Utf8String GetDdl(Utf8CP entityName, Utf8CP dbSchemaName = nullptr, Utf8CP entityType = "table") const;
+        Utf8String GetIndexDdl(Utf8StringCR indexName, Utf8CP dbSchemaName = nullptr) const { return GetDdl(indexName.c_str(), dbSchemaName, "index"); }
+        bool IndexExists(Utf8StringCR indexName, Utf8CP dbSchemaName = nullptr) const { return !GetDdl(indexName.c_str(), dbSchemaName, "index").empty(); }
+        std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR dbTableName, Utf8CP dbSchemaName = nullptr) const;
     };
 
 //=======================================================================================    

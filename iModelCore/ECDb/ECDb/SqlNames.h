@@ -123,6 +123,8 @@ static_assert(1 == (int) MapStrategy::OwnTable, "Persisted enum MapStrategy has 
 static_assert(2 == (int) MapStrategy::TablePerHierarchy, "Persisted enum MapStrategy has changed");
 #define SQLVAL_MapStrategy_ExistingTable "3"
 static_assert(3 == (int) MapStrategy::ExistingTable, "Persisted enum MapStrategy has changed");
+#define SQLVAL_MapStrategy_TemporaryTablePerHierarchy "4"
+static_assert(4 == (int) MapStrategy::TemporaryTablePerHierarchy, "Persisted enum MapStrategy has changed");
 #define SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable "10"
 static_assert(10 == (int) MapStrategy::ForeignKeyRelationshipInTargetTable, "Persisted enum MapStrategy has changed");
 #define SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "11"
@@ -205,8 +207,5 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Point2d == 0x701 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Point3d == 0x801 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
-
-//The SQL returns the issues as JSON string. JSON in a CSV file means that the double quotes must be escaped by preceding
-//them with another double quote
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

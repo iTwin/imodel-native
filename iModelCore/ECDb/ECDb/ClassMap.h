@@ -157,7 +157,7 @@ struct ClassMap : RefCountedBase
         std::vector<ClassMap const*> GetDerivedClassMaps() const;
         ECN::ECClassCR GetClass() const { return m_ecClass; }
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
-        //!Only call this if the map strategy is TablePerHierarchy
+        //!Only call this if the map strategy is TablePerHierarchy or TemporaryTablePerHierarchy
         TablePerHierarchyHelper const* GetTphHelper() const { BeAssert(m_tphHelper != nullptr); return m_tphHelper.get(); }
 
         StorageDescription const& GetStorageDescription() const;

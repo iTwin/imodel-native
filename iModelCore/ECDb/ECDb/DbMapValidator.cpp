@@ -85,7 +85,6 @@ BentleyStatus DbMapValidator::ValidateDbSchema() const
         if (SUCCESS != ValidateDbTable(*table))
             return ERROR;
 
-
         for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
             if (SUCCESS != ValidateDbIndex(*index))
@@ -103,7 +102,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
     {
     if (table.GetName().EqualsIAscii(DBSCHEMA_NULLTABLENAME))
         {
-        if (!table.GetColumns().empty() || table.GetType() != DbTable::Type::Virtual)
+        if (!table.GetColumns().empty() || !table.GetTypeInfo().IsVirtual())
             {
             BeAssert(false && "Programmer error: Null table " DBSCHEMA_NULLTABLENAME " should never have columns and must be virtual");
             Issues().Report("DbTable ' " DBSCHEMA_NULLTABLENAME "' should have no column and must be virtual.");
@@ -144,10 +143,16 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         return ERROR;
         }
 
-    switch (table.GetType())
+    switch (table.GetTypeInfo().GetType())
         {
             case DbTable::Type::Existing:
             {
+            if (!table.GetTypeInfo().GetIsTempFlag().IsNull())
+                {
+                Issues().Report("DbTable '%s' is if type 'Existing' which cannot be mapped with strategy 'TemporaryTable'.", table.GetName().c_str());
+                return ERROR;
+                }
+
             if (!GetECDb().TableExists(table.GetName().c_str()))
                 {
                 Issues().Report("DbTable '%s' is if type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
@@ -267,7 +272,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             default:
             {
-            Issues().Report("DbTable '%s' has unsupported DbTable::Type: %d.", table.GetName().c_str(), Enum::ToInt(table.GetType()));
+            Issues().Report("DbTable '%s' has unsupported DbTable::Type: %d.", table.GetName().c_str(), Enum::ToInt(table.GetTypeInfo().GetType()));
             return ERROR;
             }
         }
@@ -298,8 +303,8 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const
     {
-    DbTable::Type const tableType = column.GetTable().GetType();
-    if (!column.IsVirtual() && tableType != DbTable::Type::Virtual)
+    DbTable::TypeInfo const tableTypeInfo = column.GetTable().GetTypeInfo();
+    if (!column.IsVirtual() && !tableTypeInfo.IsVirtual())
         {
         if (physicalColumns.find(column.GetName()) == physicalColumns.end())
             {
@@ -310,7 +315,7 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
 
     if (column.IsShared())
         {
-        if (tableType == DbTable::Type::Existing || tableType == DbTable::Type::Virtual)
+        if (tableTypeInfo.GetType() == DbTable::Type::Existing || tableTypeInfo.GetType() == DbTable::Type::Virtual)
             {
             Issues().Report("The table '%s' is of type 'Existing' or 'Virtual', but its column '%s' is a shared column. This is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
             return ERROR;
@@ -448,7 +453,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
         return ERROR;
         }
 
-    if (index.GetTable().GetType() == DbTable::Type::Virtual)
+    if (index.GetTable().GetTypeInfo().IsVirtual())
         return SUCCESS;
 
     bset<DbTable const*> tables;
@@ -702,7 +707,7 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
         {
         for (DbTable const* table : tables)
             {
-            if (table->GetType() == DbTable::Type::Overflow)
+            if (table->GetTypeInfo().GetType() == DbTable::Type::Overflow)
                 return true;
             }
 
@@ -715,7 +720,7 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
     int nDataPropertyInOverflowTable = 0;
     for (DbTable const* table : classMap.GetTables())
         {
-        if (table->GetType() == DbTable::Type::Overflow)
+        if (table->GetTypeInfo().GetType() == DbTable::Type::Overflow)
             {
             hasOveflowTable = true;
             break;
@@ -734,7 +739,7 @@ BentleyStatus DbMapValidator::ValidateOverflowPropertyMaps(ClassMap const& class
             }
         else
             {
-            if (propertyMap->GetAs<DataPropertyMap>().GetTable().GetType() == DbTable::Type::Overflow)
+            if (propertyMap->GetAs<DataPropertyMap>().GetTable().GetTypeInfo().GetType() == DbTable::Type::Overflow)
                 nDataPropertyInOverflowTable++;
             }
         }
@@ -806,7 +811,8 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
 
                 if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                     {
-                    Issues().Report("The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy 'TablePerHierarchy'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.", classMap.GetClass().GetFullName());
+                    Issues().Report("The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy '%s'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.", classMap.GetClass().GetFullName(),
+                                    MapStrategyExtendedInfo::ToString(baseClassMap->GetMapStrategy().GetStrategy()));
                     return ERROR;
                     }
                 }
@@ -914,7 +920,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
         return ERROR;
         }
 
-    if (relMap.GetTables().size() != 1 || relMap.GetTables().front()->GetType() != DbTable::Type::Virtual)
+    if (relMap.GetTables().size() != 1 || !relMap.GetTables().front()->GetTypeInfo().IsVirtual())
         {
         Issues().Report("The foreign key type ECRelationshipClass '%s' does not map to a single virtual table: %s.", relMap.GetClass().GetFullName());
         return ERROR;
@@ -1132,7 +1138,7 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
                 }
 
             //for existing tables, the DbColumn type cannot always be determined
-            if (col.GetTable().GetType() != DbTable::Type::Existing && col.GetType() != DbColumn::Type::Integer)
+            if (col.GetTable().GetTypeInfo().GetType() != DbTable::Type::Existing && col.GetType() != DbColumn::Type::Integer)
                 {
                 Issues().Report("The system property map '%s.%s' maps to a column which is not of type 'Integer'. Violating column '%s.%s'.",
                                 propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),
@@ -1189,7 +1195,7 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         }
 
     //for existing tables we don't create constraints and such, so don't validate them in that case
-    if (propMap.GetTable().GetType() == DbTable::Type::Existing)
+    if (propMap.GetTable().GetTypeInfo().GetType() == DbTable::Type::Existing)
         {
         if (propMap.HasForeignKeyConstraint())
             {
@@ -1255,7 +1261,7 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
     else
         {
         //if the table per se is virtual (because it is a mixin or abstract class), then we must not do the check
-        if (relClassIdCol.GetTable().GetType() != DbTable::Type::Virtual && relClassIdCol.GetPersistenceType() == PersistenceType::Virtual)
+        if (!relClassIdCol.GetTable().GetTypeInfo().IsVirtual() && relClassIdCol.GetPersistenceType() == PersistenceType::Virtual)
             {
             Issues().Report("The navigation property '%s.%s' has the RelECClassId column '%s.%s' which is virtual, but should exist in the table because the navigation property's relationship is not sealed.",
                             propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());

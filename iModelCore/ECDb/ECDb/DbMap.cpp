@@ -534,7 +534,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
             usedIndexNames.insert(index.GetName().c_str());
 
         //indexes on virtual tables are ignored
-        if (index.GetTable().GetType() != DbTable::Type::Virtual)
+        if (!index.GetTable().GetTypeInfo().IsVirtual())
             {
             Utf8String ddl, comparableIndexDef;
             if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
@@ -607,7 +607,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
     //skip ExistingTable and NotMapped
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, t.Type= " SQLVAL_DbTable_Type_Virtual " FROM ec_Table t "
-                                     "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                                     "WHERE t.Type NOT IN (" SQLVAL_DbTable_Type_Existing ") AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
                                      "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
                                      "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
                                      "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
@@ -696,7 +696,7 @@ size_t DbMap::GetRelationshipConstraintTableCount(SchemaImportContext& ctx, ECRe
     for (ClassMap const* classMap : classMaps)
         {
         DbTable const* table = abstractEndPoint ? &classMap->GetJoinedOrPrimaryTable() : &classMap->GetPrimaryTable();
-        if (classMap->GetPrimaryTable().GetType() == DbTable::Type::Virtual)
+        if (classMap->GetPrimaryTable().GetTypeInfo().IsVirtual())
             hasAtLeastOneVirtualTable = true;
         else
             nonVirtualTables.insert(table);
@@ -723,7 +723,7 @@ std::set<DbTable const*> DbMap::GetRelationshipConstraintPrimaryTables(SchemaImp
         std::vector<DbTable const*> nonOverflowClassMapTables;
         for (DbTable const* table : classMap->GetTables())
             {
-            if (table->GetType() != DbTable::Type::Overflow)
+            if (table->GetTypeInfo().GetType() != DbTable::Type::Overflow)
                 nonOverflowClassMapTables.push_back(table);
             }
 
@@ -735,7 +735,7 @@ std::set<DbTable const*> DbMap::GetRelationshipConstraintPrimaryTables(SchemaImp
 
         for (DbTable const* table : nonOverflowClassMapTables)
             {
-            if (table->GetType() == DbTable::Type::Joined)
+            if (table->GetTypeInfo().GetType() == DbTable::Type::Joined)
                 {
                 DbTable::LinkNode const* primaryTable = table->GetLinkNode().GetParent();
                 BeAssert(primaryTable != nullptr);
@@ -759,7 +759,7 @@ std::set<DbTable const*> DbMap::GetRelationshipConstraintPrimaryTables(SchemaImp
     std::set<DbTable const*> finalSetOfTables;
     for (DbTable const* table : tables)
         {
-        if (table->GetType() != DbTable::Type::Virtual)
+        if (!table->GetTypeInfo().IsVirtual())
             finalSetOfTables.insert(table);
         }
 
@@ -782,7 +782,7 @@ std::set<ClassMap const*> DbMap::GetRelationshipConstraintClassMaps(SchemaImport
             return classMaps;
             }
 
-        const bool recursive = classMap->GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && constraint.GetIsPolymorphic();
+        const bool recursive = !classMap->GetMapStrategy().IsTablePerHierarchy() && constraint.GetIsPolymorphic();
         if (SUCCESS != GetRelationshipConstraintClassMaps(ctx, classMaps, *ecClass, recursive))
             {
             BeAssert(false);

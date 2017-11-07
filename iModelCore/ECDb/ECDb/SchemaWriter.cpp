@@ -2193,7 +2193,7 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
         }
 
     //Delete all instances
-    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy;
+    bool purgeECInstances = deletedClassMap->GetMapStrategy().IsTablePerHierarchy();
     if (purgeECInstances)
         {
         if (DeleteInstances(deletedClass) != SUCCESS)
@@ -2353,7 +2353,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
                 }
 
             //For virtual column delete column from ec_Column.
-            if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetType() == DbTable::Type::Virtual)
+            if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetTypeInfo().IsVirtual())
                 {
                 CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_Column WHERE Id=?");
                 if (stmt == nullptr ||

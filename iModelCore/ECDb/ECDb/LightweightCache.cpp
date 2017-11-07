@@ -398,7 +398,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     //add vertical partitions
     for (DbTable const* table : lwmc.GetVerticalPartitionsForClass(classId))
         {
-        if (table->GetType() == DbTable::Type::Virtual)
+        if (table->GetTypeInfo().IsVirtual())
             continue;
 
         Partition* vp = storageDescription->AddVerticalPartition(*table, storageDescription->GetHorizontalPartition(*table) != nullptr);
@@ -459,7 +459,7 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
     m_horizontalPartitions.push_back(Partition(table));
 
     const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
-    if (table.GetType() != DbTable::Type::Virtual)
+    if (!table.GetTypeInfo().IsVirtual())
         m_nonVirtualHorizontalPartitionIndices.push_back(indexOfAddedPartition);
 
     if (isRootPartition)
@@ -473,8 +473,8 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool isRootPartition)
     {
-    BeAssert(table.GetType() != DbTable::Type::Virtual);
-    if (table.GetType() == DbTable::Type::Virtual)
+    BeAssert(!table.GetTypeInfo().IsVirtual());
+    if (table.GetTypeInfo().IsVirtual())
         return nullptr;
 
     m_verticalPartitions.push_back(Partition(table));

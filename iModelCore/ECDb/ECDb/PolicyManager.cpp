@@ -141,7 +141,7 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
     else
         {
         StorageDescription const& desc = assertion.GetClassMap().GetStorageDescription();
-        if (desc.HasMultipleNonVirtualHorizontalPartitions() || assertion.GetClassMap().GetPrimaryTable().GetType() == DbTable::Type::Virtual)
+        if (desc.HasMultipleNonVirtualHorizontalPartitions() || assertion.GetClassMap().GetPrimaryTable().GetTypeInfo().IsVirtual())
             {
             Utf8String notSupportedMessage;
             notSupportedMessage.Sprintf("Cannot run polymorphic ECSQL INSERT, UPDATE or DELETE on ECClass '%s' because it has subclasses mapped to different tables. Consider mapping the class with strategy 'TablePerHierarchy'.",
