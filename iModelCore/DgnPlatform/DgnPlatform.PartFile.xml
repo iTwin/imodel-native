@@ -536,7 +536,9 @@
     <!-- ******************************************************************************************* -->
 
     <Part Name="DgnPlatformNoViewTested">
-      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <RequiredRepository>DgnDbTestingScripts</RequiredRepository><!--To Automate Unit Testing on Linux-->
+		
+	  <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
@@ -550,7 +552,9 @@
       <SubPart PartName="NoView-Gtest-RunAggregator-Windows" LibType="Dynamic" />
       <SubPart PartName="RunToyTileCreator-Unix" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
       <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
+	 
     </Part>
+	
 
     <Part Name="NoView-Gtest-RunAggregator-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
       <SubPart PartName="NoView-Gtest-RunAggregator"/>
