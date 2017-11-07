@@ -182,7 +182,7 @@ WSError::WSError(JsonValueCR jsonError)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSError::WSError(RapidJsonValueCR jsonError)
     {
-    int statusInt = jsonError[JSON_ErrorHttpStatusCode].IsInt() ? jsonError[JSON_ErrorHttpStatusCode].GetInt() : 0;
+    int statusInt = GetOptionalInt(jsonError, JSON_ErrorHttpStatusCode);
     if (statusInt == 0)
         {
         SetStatusServerNotSupported();
@@ -217,7 +217,7 @@ WSError::WSError(HttpErrorCR httpError)
         return;
         }
 
-    SetStatusReceivedError(httpError, Id::Unknown, nullptr, nullptr);
+    SetStatusReceivedError(httpError, Id::Unknown, nullptr, nullptr, nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -260,7 +260,7 @@ BentleyStatus WSError::ParseJsonError(JsonValueCR jsonError, HttpStatus status)
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
     Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
 
-    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription, &jsonError);
     return SUCCESS;
     }
 
@@ -272,11 +272,11 @@ BentleyStatus WSError::ParseJsonError(RapidJsonValueCR jsonError, HttpStatus sta
     if (!DoesStringFieldExist(jsonError, JSON_ErrorMessage))
         return ERROR;
 
-    WSError::Id errorId = ErrorIdFromString(GetOptionalString(jsonError[JSON_ErrorId]));
-    Utf8String errorMessage = GetOptionalString(jsonError[JSON_ErrorMessage]);
-    Utf8String errorDescription = GetOptionalString(jsonError[JSON_ErrorDescription]);
+    WSError::Id errorId = ErrorIdFromString(GetOptionalString(jsonError, JSON_ErrorId));
+    Utf8String errorMessage = GetOptionalString(jsonError, JSON_ErrorMessage);
+    Utf8String errorDescription = GetOptionalString(jsonError, JSON_ErrorDescription);
 
-    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription, nullptr); // TODO: pass json
     return SUCCESS;
     }
 
@@ -337,7 +337,7 @@ BentleyStatus WSError::ParseXmlError(Http::ResponseCR httpResponse)
 
     WSError::Id errorId = ErrorIdFromString(errorIdStr);
 
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription, nullptr);
     return SUCCESS;
     }
 
@@ -363,7 +363,7 @@ BentleyStatus WSError::ParseXmlAzureError(Http::ResponseCR httpResponse, BeXmlDo
     if (XML_Azure_BlobNotFound == errorCode)
         errorId = WSError::Id::FileNotFound;
 
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, nullptr);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, nullptr, nullptr);
     return SUCCESS;
     }
 
@@ -381,7 +381,7 @@ void WSError::SetStatusServerNotSupported()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription, JsonValueCPtr errorData)
+void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription, JsonValueCP errorData)
     {
     m_status = Status::ReceivedError;
 
@@ -439,7 +439,8 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         }
 
     // Set custom properties
-    m_data = errorData;
+    if (errorData)
+        m_data = std::make_shared<Json::Value>(*errorData);
     
     // Fallback to default messages if not enough information received
     if (m_message.empty())
@@ -477,11 +478,27 @@ bool WSError::DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP WSError::GetOptionalString(RapidJsonValueCR json)
+Utf8CP WSError::GetOptionalString(RapidJsonValueCR json, Utf8CP name)
     {
-    if (json.IsNull())
+    if (!json.HasMember(name))
         return nullptr;
-    return json.GetString();
+    RapidJsonValueCR member = json[name];
+    if (member.IsNull())
+        return nullptr;
+    return member.GetString();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+int WSError::GetOptionalInt(RapidJsonValueCR json, Utf8CP name)
+    {
+    if (!json.HasMember(name))
+        return 0;
+    RapidJsonValueCR member = json[name];
+    if (member.IsNull())
+        return 0;
+    return member.GetInt();
     }
 
 /*--------------------------------------------------------------------------------------+
