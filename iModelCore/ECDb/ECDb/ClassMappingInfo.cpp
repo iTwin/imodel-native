@@ -97,53 +97,94 @@ BentleyStatus ClassMappingInfo::InitializeFromSchema()
         {
         if (!m_userDefinedStrategy.IsNull() && m_userDefinedStrategy.Value() != MapStrategy::NotMapped)
             {
-            Issues().Report("Failed to map ECRelationshipClass %s. ECRelationshipClasses mapped as foreign key cannot be assigned a MapStrategy other than 'NotMapped'.",
-                            m_ecClass.GetFullName());
+            Issues().Report("Failed to map ECRelationshipClass %s. ECRelationshipClasses mapped as foreign key cannot be assigned a MapStrategy other than '%s'.",
+                            m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
             return ERROR;
             }
         }
 
-    if (m_userDefinedStrategy == MapStrategy::ExistingTable)
+    if (!m_userDefinedStrategy.IsNull())
         {
-        if (m_ecClass.GetClassModifier() != ECClassModifier::Sealed)
+        switch (m_userDefinedStrategy.Value())
             {
-            Issues().Report("Invalid MapStrategy 'ExistingTable' on ECClass '%s'. Only sealed classes can be assigned that map strategy.", m_ecClass.GetFullName());
-            return ERROR;
-            }
+                case MapStrategy::ExistingTable:
+                {
+                if (m_ecClass.GetClassModifier() != ECClassModifier::Sealed)
+                    {
+                    Issues().Report("Invalid MapStrategy '%s' on ECClass '%s'. Only sealed classes can be assigned that map strategy.", MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()), m_ecClass.GetFullName());
+                    return ERROR;
+                    }
 
-        if (m_tableName.empty())
-            {
-            Issues().Report("Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
-    else
-        {
-        if (!m_tableName.empty())
-            {
-            Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
+                if (m_tableName.empty())
+                    {
+                    Issues().Report("Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is '%s'.",
+                                    m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
+                    return ERROR;
+                    }
 
-    if (m_userDefinedStrategy == MapStrategy::OwnTable)
-        {
-        if (m_ecClass.IsRelationshipClass())
-            {
-            Issues().Report("Invalid MapStrategy 'OwnTable' on ECRelationshipClass '%s'. Relationship classes cannot be assigned that map strategy.", m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
+                break;
+                }
 
-    if (m_userDefinedStrategy == MapStrategy::TablePerHierarchy)
-        {
-        if (m_ecClass.GetClassModifier() == ECClassModifier::Sealed)
-            {
-            Issues().Report("Failed to map ECClass %s. MapStrategy 'TablePerHierarchy' cannot be applied to ECClasses with modifier 'Sealed'.",
-                            m_ecClass.GetFullName());
-            return ERROR;
+                case MapStrategy::OwnTable:
+                {
+                if (m_ecClass.IsRelationshipClass())
+                    {
+                    Issues().Report("Invalid MapStrategy '%s' on ECRelationshipClass '%s'. Relationship classes cannot be assigned that map strategy.", MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()), m_ecClass.GetFullName());
+                    return ERROR;
+                    }
+
+                if (!m_tableName.empty())
+                    {
+                    Issues().Report("Failed to map ECClass %s. TableName must not be set in ClassMap custom attribute if MapStrategy is '%s'.",
+                                    m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
+                    return ERROR;
+                    }
+
+                break;
+                }
+
+                case MapStrategy::TablePerHierarchy:
+                {
+                if (m_ecClass.GetClassModifier() == ECClassModifier::Sealed)
+                    {
+                    Issues().Report("Failed to map ECClass %s. MapStrategy '%s' cannot be applied to ECClasses with modifier 'Sealed'.",
+                                    m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
+                    return ERROR;
+                    }
+
+                if (!m_tableName.empty())
+                    {
+                    Issues().Report("Failed to map ECClass %s. TableName must not be set in ClassMap custom attribute if MapStrategy is '%s'.",
+                                    m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
+                    return ERROR;
+                    }
+
+                break;
+                }
+
+                case MapStrategy::TemporaryTablePerHierarchy:
+                {
+                if (!m_tableName.empty())
+                    {
+                    Issues().Report("Failed to map ECClass %s. TableName must not be set in ClassMap custom attribute if MapStrategy is '%s'.",
+                                    m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
+                    return ERROR;
+                    }
+
+                break;
+                }
+
+                default:
+                {
+                if (!m_tableName.empty())
+                    {
+                    Issues().Report("Failed to map ECClass %s. TableName must not be set in ClassMap custom attribute if MapStrategy is '%s'.",
+                                    m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
+                    return ERROR;
+                    }
+
+                break;
+                }
             }
         }
 
@@ -219,13 +260,13 @@ ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy()
             strategy = MapStrategy::ForeignKeyRelationshipInTargetTable;
         }
 
-    if (strategy == MapStrategy::TablePerHierarchy)
+    if (strategy == MapStrategy::TablePerHierarchy || strategy == MapStrategy::TemporaryTablePerHierarchy)
         {
         TablePerHierarchyInfo tphInfo;
         if (SUCCESS != tphInfo.Initialize(m_shareColumnsCA, nullptr, m_hasJoinedTablePerDirectSubclassCA, m_ecClass, Issues()))
             return ClassMappingStatus::Error;
 
-        m_mapStrategyExtInfo = MapStrategyExtendedInfo(tphInfo);
+        m_mapStrategyExtInfo = MapStrategyExtendedInfo(strategy, tphInfo);
         }
     else
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(strategy);
@@ -246,15 +287,15 @@ ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy()
         {
         if (m_hasJoinedTablePerDirectSubclassCA)
             {
-            GetDbMap().Issues().Report("ECClass '%s' has the 'JoinedTablePerDirectSubclass' custom attribute but not the MapStrategy 'TablePerHierarchy'. "
-                                       "The 'JoinedTablePerDirectSubclass' custom attribute can only be used with the MapStrategy 'TablePerHierarchy'.", m_ecClass.GetFullName());
+            GetDbMap().Issues().Report("ECClass '%s' has the 'JoinedTablePerDirectSubclass' custom attribute but not the MapStrategy 'TablePerHierarchy'/'TemporaryTablePerHierarchy'. "
+                                       "The 'JoinedTablePerDirectSubclass' custom attribute can only be used with the MapStrategy 'TablePerHierarchy'/'TemporaryTablePerHierarchy'.", m_ecClass.GetFullName());
             return ClassMappingStatus::Error;
             }
 
         if (m_shareColumnsCA.IsValid())
             {
-            GetDbMap().Issues().Report("ECClass '%s' has the 'ShareColumns' custom attribute but not the MapStrategy 'TablePerHierarchy'. "
-                                       "The 'ShareColumns' custom attribute can only be used with the MapStrategy 'TablePerHierarchy'.", m_ecClass.GetFullName());
+            GetDbMap().Issues().Report("ECClass '%s' has the 'ShareColumns' custom attribute but not the MapStrategy 'TablePerHierarchy'/'TemporaryTablePerHierarchy'. "
+                                       "The 'ShareColumns' custom attribute can only be used with the MapStrategy 'TablePerHierarchy'/'TemporaryTablePerHierarchy'.", m_ecClass.GetFullName());
             return ClassMappingStatus::Error;
             }
         }
@@ -331,6 +372,7 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassMapStrategy(ClassMap const& 
             }
 
             case MapStrategy::TablePerHierarchy:
+            case MapStrategy::TemporaryTablePerHierarchy:
                 return EvaluateNonRootClassTablePerHierarchyMapStrategy(baseClassMap);
 
             case MapStrategy::ForeignKeyRelationshipInSourceTable:
@@ -370,7 +412,7 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassMapStrategy(ClassMap const& 
 BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy(ClassMap const& baseClassMap)
     {
     MapStrategyExtendedInfo const& baseStrategy = baseClassMap.GetMapStrategy();
-    if (baseStrategy.GetStrategy() != MapStrategy::TablePerHierarchy && !baseStrategy.GetTphInfo().IsValid())
+    if (baseStrategy.GetStrategy() != m_mapStrategyExtInfo.GetStrategy() && (!baseStrategy.IsTablePerHierarchy() || !baseStrategy.GetTphInfo().IsValid()))
         {
         BeAssert(false);
         return ERROR;
@@ -384,7 +426,7 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy
             return SUCCESS;
             }
 
-        Issues().Report("Failed to map ECClass %s. For subclasses of a class with MapStrategy 'TablePerHierarchy', MapStrategy must be 'NotMapped' or unset.",
+        Issues().Report("Failed to map ECClass %s. For subclasses of a class with MapStrategy 'TablePerHierarchy' or 'TemporaryTablePerHierarchy', MapStrategy must be 'NotMapped' or unset.",
                         m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_userDefinedStrategy.Value()));
         return ERROR;
         }
@@ -429,7 +471,7 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy
             }
         }
 
-    m_mapStrategyExtInfo = MapStrategyExtendedInfo(tphInfo);
+    m_mapStrategyExtInfo = MapStrategyExtendedInfo(baseClassMap.GetMapStrategy().GetStrategy(), tphInfo);
     return SUCCESS;
     }
 
@@ -466,6 +508,7 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
         switch (baseMapStrategy)
             {
                 case MapStrategy::TablePerHierarchy:
+                case MapStrategy::TemporaryTablePerHierarchy:
                 {
                 if (tphBaseClassMap == nullptr)
                     {
@@ -476,7 +519,7 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
                 if (&baseClassMap->GetPrimaryTable() != &tphBaseClassMap->GetPrimaryTable() ||
                     &baseClassMap->GetJoinedOrPrimaryTable() != &tphBaseClassMap->GetJoinedOrPrimaryTable())
                     {
-                    ecdb.GetImpl().Issues().Report("ECClass '%s' has two base ECClasses with MapStrategy 'TablePerHierarchy' which don't map to the same tables. "
+                    ecdb.GetImpl().Issues().Report("ECClass '%s' has two base ECClasses with MapStrategy 'TablePerHierarchy'/'TemporaryTablePerHierarchy' which don't map to the same tables. "
                                     "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'. "
                                     "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'.",
                                     ecClass.GetFullName(), tphBaseClassMap->GetClass().GetFullName(),

@@ -90,7 +90,7 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
         if (ClassMapCP derivedClassMap = dbMap.GetClassMap(*derivedClass))
             {
             DbTable const& primTable = derivedClassMap->GetPrimaryTable();
-            if (primTable.GetType() == DbTable::Type::Virtual)
+            if (primTable.GetTypeInfo().IsVirtual())
                 continue;
 
             if (primTable != contextClassMap.GetPrimaryTable())
@@ -317,7 +317,7 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::E
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
         DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (effectiveTable.GetType() == DbTable::Type::Existing ||
+        if (effectiveTable.GetTypeInfo().GetType() == DbTable::Type::Existing ||
             (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                                                       existingColumn->GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                                                       existingColumn->GetConstraints().GetCollation() == params.GetCollation()))
@@ -501,7 +501,7 @@ DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8StringCR accessString, Db
 //-----------------------------------------------------------------------------------------
 DbColumn* ClassMapColumnFactory::HandleOverflowColumn(DbColumn* column) const
     {
-    if (column->IsShared() && column->GetTable().GetType() == DbTable::Type::Overflow && !m_overflowTable)
+    if (column->IsShared() && column->GetTable().GetTypeInfo().GetType() == DbTable::Type::Overflow && !m_overflowTable)
         {
         m_overflowTable = &column->GetTableR();
         if (!m_classMap.GetOverflowTable())
@@ -570,9 +570,9 @@ DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ct
         }
     else if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().size() == 1)
         {
-        DbTable::LinkNode const* overflowTable = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
-        if (overflowTable->GetType() == DbTable::Type::Overflow)
-            m_overflowTable = &overflowTable->GetTableR();
+        DbTable::LinkNode const* overflowTableNode = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
+        if (overflowTableNode->GetTable().GetTypeInfo().GetType() == DbTable::Type::Overflow)
+            m_overflowTable = &overflowTableNode->GetTableR();
         }
     
     if (m_overflowTable == nullptr)
@@ -619,7 +619,7 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     {
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
-        if (m_primaryOrJoinedTable->GetType() == DbTable::Type::Existing
+        if (m_primaryOrJoinedTable->GetTypeInfo().GetType() == DbTable::Type::Existing
             || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                 avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                 avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))

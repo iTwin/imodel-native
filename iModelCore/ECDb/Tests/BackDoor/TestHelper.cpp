@@ -228,7 +228,7 @@ MapStrategyInfo TestHelper::GetMapStrategy(ECClassId classId) const
 Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        R"sql(SELECT t.Id, t.Type, parent.Name, t.ExclusiveRootClassId
+        R"sql(SELECT t.Id,t.Type,t.IsTemporary,parent.Name,t.ExclusiveRootClassId
                 FROM ec_Table t LEFT JOIN ec_Table parent ON parent.Id = t.ParentTableId
                 WHERE t.Name=?)sql");
 
@@ -246,15 +246,19 @@ Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
     BeInt64Id tableId = stmt->GetValueId<BeInt64Id>(0);
 
     Table::Type type = (Table::Type) stmt->GetValueInt(1);
-    Utf8CP parentTableName = nullptr;
+    Nullable<bool> isTemp;
     if (!stmt->IsColumnNull(2))
-        parentTableName = stmt->GetValueText(2);
+        isTemp = stmt->GetValueBoolean(2);
+
+    Utf8CP parentTableName = nullptr;
+    if (!stmt->IsColumnNull(3))
+        parentTableName = stmt->GetValueText(3);
 
     ECClassId exclusiveRootClassId;
-    if (!stmt->IsColumnNull(3))
-        exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
+    if (!stmt->IsColumnNull(4))
+        exclusiveRootClassId = stmt->GetValueId<ECClassId>(4);
 
-    Table table(tableName, type, parentTableName, exclusiveRootClassId);
+    Table table(tableName, type, isTemp, parentTableName, exclusiveRootClassId);
 
     //now load columns
     stmt = m_ecdb.GetCachedStatement("SELECT " SQL_SELECTCLAUSE_ecColumn " FROM ec_Column c WHERE c.TableId=? ORDER BY c.Ordinal");
@@ -308,9 +312,14 @@ Column TestHelper::GetColumnFromCurrentRow(Utf8StringCR tableName, Statement& st
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP entityType) const
+Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP dbSchemaName, Utf8CP entityType) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE");
+    CachedStatementPtr stmt;
+    if (Utf8String::IsNullOrEmpty(dbSchemaName))
+        stmt = m_ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE");
+    else
+        stmt = m_ecdb.GetCachedStatement(Utf8PrintfString("SELECT sql FROM [%s].sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE", dbSchemaName).c_str());
+
     if (stmt == nullptr)
         return Utf8String();
 
@@ -330,12 +339,18 @@ Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP entityType) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName) const
+std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName, Utf8CP dbSchemaName) const
     {
     std::vector<Utf8String> indexNames;
 
+    Utf8String sql;
+    if (Utf8String::IsNullOrEmpty(dbSchemaName))
+        sql.assign("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE");
+    else
+        sql.Sprintf("SELECT name FROM [%s].sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE", dbSchemaName);
+
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE"))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
         {
         BeAssert(false && "Preparation failed");
         return indexNames;
@@ -359,9 +374,9 @@ std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName) const
+bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName, Utf8CP dbSchemaName) const
     {
-    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName);
+    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName, dbSchemaName);
 
     Utf8String fkSearchString;
     fkSearchString.Sprintf("foreign key([%s]", foreignKeyColumnName);

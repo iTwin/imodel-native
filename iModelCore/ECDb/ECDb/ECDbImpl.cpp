@@ -162,7 +162,7 @@ BentleyStatus ECDb::Impl::DetermineMaxIdForBriefcase(BeBriefcaseBasedId& maxId, 
         return ERROR;
 
     Utf8String sql;
-    sql.Sprintf("SELECT max(%s) FROM %s WHERE %s >= ? AND %s < ?", idColName, tableName, idColName, idColName);
+    sql.Sprintf("SELECT max([%s]) FROM [%s] WHERE [%s] >= ? AND [%s] < ?", idColName, tableName, idColName, idColName);
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))

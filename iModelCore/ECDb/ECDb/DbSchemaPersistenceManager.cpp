@@ -72,13 +72,11 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 //static
 DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
+    if (table.GetTypeInfo().GetType() == DbTable::Type::Virtual || table.GetTypeInfo().GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
 
-    Utf8CP tableName = table.GetName().c_str();
-
     CreateOrUpdateTableResult mode;
-    if (ecdb.TableExists(tableName))
+    if (ecdb.TableExists(table.GetName().c_str()))
         mode = IsTableChanged(ecdb, table) ? CreateOrUpdateTableResult::Updated : CreateOrUpdateTableResult::WasUpToDate;
     else
         mode = CreateOrUpdateTableResult::Created;
@@ -99,6 +97,38 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    10/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbSchemaPersistenceManager::LoadTempTable(ECDbCR ecdb, DbTable const& table)
+    {
+    if (!table.GetTypeInfo().IsTemp())
+        {
+        BeAssert(false && "May only be called for temp tables");
+        return ERROR;
+        }
+
+    if (TableExistsInDb(ecdb, table.GetName().c_str(), "temp"))
+        return SUCCESS;
+
+    if (SUCCESS != CreateTable(ecdb, table))
+        return ERROR;
+
+    for (std::unique_ptr<DbIndex> const& index : table.GetIndexes())
+        {
+        Utf8String ddl, comparableIndexDef;
+        if (SUCCESS != BuildCreateIndexDdl(ddl, comparableIndexDef, ecdb, *index))
+            return ERROR;
+
+        if (SUCCESS != CreateIndex(ecdb, *index, ddl))
+            return ERROR;
+        }
+
+    //create indexes
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static
@@ -110,25 +140,25 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
+    DbTable::TypeInfo const& typeInfo = table.GetTypeInfo();
+    if (typeInfo.GetType() == DbTable::Type::Existing || typeInfo.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "CreateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
         }
 
-    const std::vector<DbColumn const*> columns = table.FindAll(PersistenceType::Physical);
-    if (columns.empty())
-        {
-        BeAssert(false && "Table have no persisted columns");
-        return ERROR;
-        }
+    Utf8String ddl("CREATE TABLE ");
+    if (typeInfo.IsTemp())
+        ddl.append("temp.");
 
-    Utf8String ddl("CREATE TABLE [");
-    ddl.append(table.GetName()).append("](");
+    ddl.append("[").append(table.GetName()).append("](");
 
     bool isFirstCol = true;
-    for (DbColumn const* col : columns)
+    for (DbColumn const* col : table.GetColumns())
         {
+        if (col->GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
         if (!isFirstCol)
             ddl.append(", ");
 
@@ -136,6 +166,12 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
             return ERROR;
 
         isFirstCol = false;
+        }
+
+    if (isFirstCol)
+        {
+        BeAssert(false && "Table doesn't have any columns");
+        return ERROR;
         }
 
     // Append constraints;
@@ -168,7 +204,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 
     if (ecdb.ExecuteDdl(ddl.c_str()) != BE_SQLITE_OK)
         {
-        ecdb.GetImpl().Issues().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
+        ecdb.GetImpl().Issues().Report("Failed to create table %s: %s [%s]", table.GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
         return ERROR;
         }
 
@@ -181,39 +217,14 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 //static
 BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
+    if (table.GetTypeInfo().GetType() == DbTable::Type::Existing || table.GetTypeInfo().GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "UpdateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
         }
 
-    Utf8CP tableName = table.GetName().c_str();
-    DbSchema::EntityType type = DbSchema::GetEntityType(ecdb, tableName);
-    if (type == DbSchema::EntityType::None)
-        {
-        BeAssert(false && "Table is expected to exist already");
-        return ERROR;
-        }
-
-    //! Object type is view and exist in db. Action = DROP it and recreate it.
-    if (type == DbSchema::EntityType::View)
-        {
-        Utf8String sql("DROP VIEW [");
-        sql.append(tableName).append("]");
-        auto r = ecdb.ExecuteSql(sql.c_str());
-        if (r != BE_SQLITE_OK)
-            {
-            ecdb.GetImpl().Issues().Report("Failed to drop view '%s'", tableName);
-            return ERROR;
-            }
-
-        return CreateTable(ecdb, table);
-        }
-
-    BeAssert(type == DbSchema::EntityType::Table);
-
     bvector<Utf8String> existingColumnNamesInDb;
-    if (!ecdb.GetColumns(existingColumnNamesInDb, tableName))
+    if (!ecdb.GetColumns(existingColumnNamesInDb, table.GetName().c_str()))
         {
         BeAssert(false && "Failed to get column list for table");
         return ERROR;
@@ -233,7 +244,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
     //compute new columns;
     for (DbColumn const* col : columns)
         {
-        if (existingColumnNamesInDbSet.find(col->GetName().c_str()) == existingColumnNamesInDbSet.end())
+        if (existingColumnNamesInDbSet.find(col->GetName()) == existingColumnNamesInDbSet.end())
             newColumns.push_back(col);
         }
 
@@ -345,7 +356,7 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
 //static
 BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const& index, Utf8StringCR ddl)
     {
-    if (index.GetTable().GetType() == DbTable::Type::Virtual)
+    if (index.GetTable().GetTypeInfo().IsVirtual())
         {
         BeAssert(false && "Must not call this method for indexes on virtual tables");
         return ERROR;
@@ -353,8 +364,8 @@ BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
         {
-        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
-                                       ecdb.GetLastError().c_str());
+        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                                       ecdb.GetLastError().c_str(), ddl.c_str());
 
         return ERROR;
         }
@@ -379,12 +390,16 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, U
         comparableIndexDef.assign("u ");
         }
 
-    Utf8CP indexName = index.GetName().c_str();
-    Utf8CP tableName = index.GetTable().GetName().c_str();
+    Utf8StringCR tableName = index.GetTable().GetName();
     Utf8String columnsDdl;
     AppendColumnNamesToDdl(columnsDdl, index.GetColumns());
 
-    ddl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
+    ddl.append("INDEX ");
+    
+    if (index.GetTable().GetTypeInfo().IsTemp())
+        ddl.append(" temp.");
+
+    ddl.append("[").append(index.GetName()).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
     comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")");
 
     Utf8String whereClause;
@@ -409,7 +424,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     {
     auto buildECClassIdFilter = [] (Utf8StringR filterSqlExpression, StorageDescription const& desc, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
         {
-        if (table.GetType() == DbTable::Type::Virtual)
+        if (table.GetTypeInfo().IsVirtual())
             return SUCCESS; //-> noop
 
         Partition const* partition = desc.GetPartition(table);
@@ -525,15 +540,18 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             {
             if (failIfExists)
                 {
-                ecdb.GetImpl().Issues().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
+                ecdb.GetImpl().Issues().Report("Trigger %s already exists on table %s.", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str());
                 return ERROR;
                 }
 
             continue;
             }
 
-        Utf8String ddl("CREATE TRIGGER [");
-        ddl.append(trigger->GetName()).append("] ");
+        Utf8String ddl("CREATE TRIGGER ");
+        if (table.GetTypeInfo().IsTemp())
+            ddl.append("temp.");
+
+        ddl.append("[").append(trigger->GetName()).append("] ");
 
         switch (trigger->GetType())
             {
@@ -552,7 +570,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
             {
-            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
+            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s.%s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetTypeInfo().IsTemp() ? "temp" : "main", trigger->GetTable().GetName().c_str(),
                                                           ecdb.GetLastError().c_str());
             return ERROR;
             }
@@ -567,7 +585,12 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 //static
 bool DbSchemaPersistenceManager::TriggerExistsInDb(ECDbCR ecdb, DbTrigger const& trigger)
     {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from sqlite_master WHERE type='trigger' and name=?");
+    CachedStatementPtr stmt;
+    if (trigger.GetTable().GetTypeInfo().IsTemp())
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from temp.sqlite_master WHERE type='trigger' and name=?");
+    else
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from sqlite_master WHERE type='trigger' and name=?");
+
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -685,19 +708,50 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName)
+BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName, Utf8CP dbSchemaName)
     {
+    if (Utf8String::IsNullOrEmpty(dbSchemaName))
+        {
+        if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, "main"))
+            return ERROR;
+
+        if (!colInfos.empty())
+            return SUCCESS;
+
+        if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, "temp"))
+            return ERROR;
+
+        if (!colInfos.empty())
+            return SUCCESS;
+
+        Statement attachedDbStmt;
+        if (BE_SQLITE_OK != attachedDbStmt.Prepare(ecdb, "pragma database_list"))
+            return ERROR;
+
+        while (BE_SQLITE_ROW == attachedDbStmt.Step())
+            {
+            Utf8CP attachedSchemaName = attachedDbStmt.GetValueText(1);
+            if (BeStringUtilities::StricmpAscii(attachedSchemaName, "main") == 0 || BeStringUtilities::StricmpAscii(attachedSchemaName, "temp") == 0)
+                continue;
+
+            if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, attachedSchemaName))
+                return ERROR;
+
+            if (!colInfos.empty())
+                return SUCCESS;
+            }
+
+        return SUCCESS;
+        }
+
     colInfos.clear();
-    Utf8String sql("PRAGMA table_info('");
-    sql.append(tableName).append("')");
 
     Statement stmt;
-    if (stmt.Prepare(ecdb, sql.c_str()) != BE_SQLITE_OK)
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, Utf8PrintfString("PRAGMA [%s].table_info('%s')", dbSchemaName, tableName).c_str()))
         return ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)

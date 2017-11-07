@@ -354,7 +354,7 @@ public:
 
 private:
     DbTable const& m_table;
-    Utf8String m_triggerName;
+    Utf8String m_name;
     Type m_type;
     Utf8String m_condition;
     Utf8String m_body;
@@ -362,13 +362,13 @@ private:
     explicit DbTrigger(DbTable const& table) : m_table(table) {}
 
 public:
-    DbTrigger(Utf8CP triggerName, DbTable const& table, Type type, Utf8CP condition, Utf8CP body) : m_table(table), m_triggerName(triggerName), m_type(type), m_condition(condition), m_body(body) {}
+    DbTrigger(Utf8StringCR triggerName, DbTable const& table, Type type, Utf8StringCR condition, Utf8StringCR body) : m_table(table), m_name(triggerName), m_type(type), m_condition(condition), m_body(body) {}
 
     DbTable const& GetTable()const { return m_table; }
-    Utf8CP GetName()const { return m_triggerName.c_str(); }
+    Utf8StringCR GetName()const { return m_name; }
     Type GetType()const { return m_type; }
-    Utf8CP GetCondition()const { return m_condition.c_str(); }
-    Utf8CP GetBody()const { return m_body.c_str(); }
+    Utf8StringCR GetCondition()const { return m_condition; }
+    Utf8StringCR GetBody()const { return m_body; }
     };
 
 
@@ -383,10 +383,32 @@ public:
     enum class Type
         {
         Primary = 0,
-        Joined = 1, //! Derived Table cannot exist without a primary table
+        Joined = 1, //! Joined Table cannot exist without a primary table
         Existing = 2, 
-        Overflow = 3, //! Derived table cannot exist without a primary or joined table
+        Overflow = 3, //! Overflow table cannot exist without a primary or joined table
         Virtual = 4 //for abstract classes not using TPH and mixins
+        };
+
+    struct TypeInfo final
+        {
+        private:
+            Type m_type;
+            Nullable<bool> m_isTemp; // only for tables that ECDb creates and manages
+
+        public:
+            TypeInfo(Type type, Nullable<bool> isTemp) : m_type(type), m_isTemp(isTemp)
+                {
+                BeAssert(type != Type::Existing || isTemp.IsNull() && "IsTemp flag not relevant for Existing");
+                }
+
+            bool operator==(TypeInfo const& rhs) const { return m_type == rhs.m_type && m_isTemp == rhs.m_isTemp; }
+            bool operator!=(TypeInfo const& rhs) const { return !(*this == rhs); }
+            bool IsVirtual() const { return m_type == DbTable::Type::Virtual; }
+            Type GetType() const { return m_type; }
+            //The information whether a table is temporary or not is only maintained for ECDb owned
+            //tables, not for tables of type Existing.
+            Nullable<bool> GetIsTempFlag() const { return m_isTemp; }
+            bool IsTemp() const { BeAssert(!m_isTemp.IsNull() && "May not be called for type 'Existing'"); return !m_isTemp.IsNull() && m_isTemp.Value(); }
         };
 
     struct LinkNode final : NonCopyableClass
@@ -401,8 +423,7 @@ public:
 
             DbTable const& GetTable() const { return m_table; }
             DbTable& GetTableR() const { return const_cast<DbTable&>(m_table); }
-            DbTable::Type GetType() const { return m_table.GetType(); }
-            bool IsChildTable() const { return GetType() == Type::Joined || GetType() == Type::Overflow; }
+            bool IsChildTable() const { return m_table.GetTypeInfo().GetType() == Type::Joined || m_table.GetTypeInfo().GetType() == Type::Overflow; }
 
             LinkNode const* GetParent() const { return m_parent; }
             std::vector<LinkNode const*> const& GetChildren() const { return m_children; }
@@ -430,7 +451,7 @@ private:
     ECDbCR m_ecdb;
     DbTableId m_id;
     Utf8String m_name;
-    Type m_type;
+    TypeInfo m_typeInfo;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
     bvector<DbColumn const*> m_orderedColumns;
@@ -451,7 +472,7 @@ private:
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
+    DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, TypeInfo const&, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     bool operator==(DbTable const& rhs) const;
@@ -461,8 +482,11 @@ public:
     DbTableId GetId() const { BeAssert(m_id.IsValid() && "Must not call DbTable::GetId on unpersisted DbTable"); return m_id; }
     void SetId(DbTableId id) { BeAssert(!m_id.IsValid()); BeAssert(id.IsValid()); m_id = id; }
 
+    //!@remarks A DbTable is unique with an ECDb connection just by its name. It does not need
+    //! the DB schema name to make it unique. I.e. tables in the TEMP namespace or in an attached
+    //! database may not have the same name as in the MAIN namespace
     Utf8StringCR GetName() const { return m_name; }
-    Type GetType() const { return m_type; }
+    TypeInfo const& GetTypeInfo() const { return m_typeInfo; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
     ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
@@ -471,8 +495,8 @@ public:
     DbColumn* FindColumnP(Utf8CP name) const;
     DbColumn const& GetECClassIdColumn() const { BeAssert(m_classIdColumn != nullptr); return *m_classIdColumn; }
     bvector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
-    const std::vector<DbColumn const*> FindAll(PersistenceType) const;
-    const std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
+    std::vector<DbColumn const*> FindAll(PersistenceType) const;
+    std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
     DbColumn const* FindFirst(DbColumn::Kind) const;
 
     DbColumn* AddColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return AddColumn(DbColumnId(), name, type, kind, persistenceType); }
@@ -485,7 +509,7 @@ public:
     std::vector<std::unique_ptr<DbIndex>> const& GetIndexes() const { return m_indexes; }
     DbIndex* AddIndexDef(Utf8StringCR indexName, bool isUnique, std::vector<DbColumn const*> const&, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId, bool applyToSubclassesIfPartial);
 
-    BentleyStatus AddTrigger(Utf8CP triggerName, DbTrigger::Type, Utf8CP condition, Utf8CP body);
+    BentleyStatus AddTrigger(Utf8StringCR triggerName, DbTrigger::Type, Utf8StringCR condition, Utf8StringCR body);
     std::vector<const DbTrigger*> GetTriggers() const;
 
     EditHandle& GetEditHandleR() { return m_editHandle; }
@@ -546,7 +570,7 @@ public:
         public:
             explicit TableCollection(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
-            DbTable* Add(DbTableId, Utf8StringCR name, DbTable::Type tableType, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
+            DbTable* Add(DbTableId, Utf8StringCR name, DbTable::TypeInfo const&, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
             void Remove(Utf8StringCR tableName) const;
 
             DbTable const* Get(Utf8StringCR tableName) const;
@@ -558,15 +582,6 @@ public:
             std::vector<DbTable const*> GetTablesInDependencyOrder() const;
 
             void ClearCache() const { m_tableMapByName.clear(); m_cacheById.clear(); }
-        };
-
-    enum class EntityType
-        {
-        None,
-        Table,
-        View,
-        Index,
-        Trigger
         };
 
 private:
@@ -587,7 +602,8 @@ public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_tables(ecdb) {}
     ~DbSchema() {}
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* AddTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* AddTable(Utf8StringCR name, DbTable::TypeInfo const&, ECN::ECClassId exclusiveRootClassId);
+    DbTable* AddTable(Utf8StringCR name, DbTable::TypeInfo const&, ECN::ECClassId exclusiveRootClassId, DbTable const& parentTable);
     TableCollection const& Tables() const { return m_tables; }
     DbTable const* FindTable(Utf8StringCR name) const;
     DbTable* FindTableP(Utf8StringCR name) const;
@@ -607,8 +623,6 @@ public:
 
     ECDbCR GetECDb() const { return m_ecdb; }
     void ClearCache() const;
-
-    static EntityType GetEntityType(ECDbCR ecdb, Utf8CP name);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

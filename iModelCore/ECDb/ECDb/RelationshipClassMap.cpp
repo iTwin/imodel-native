@@ -443,7 +443,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
 
     //only create constraints on TPH root or if not TPH and not existing table
-    if (GetPrimaryTable().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
+    if (GetPrimaryTable().GetTypeInfo().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
         {
         Nullable<bool> createFkConstraints;
         ca.TryGetCreateForeignKeyConstraints(createFkConstraints);
@@ -540,7 +540,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImpo
 
     Utf8String columnName = DetermineConstraintECClassIdColumnName(ca, relationshipEnd);
     if (GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr &&
-        GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
+        !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         //Following error occurs in Upgrading ECSchema but is not fatal.
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains column named '%s'.",
@@ -574,7 +574,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
     {
     //**** SourceECInstanceId prop map 
     Utf8String columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Source);
-    if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
+    if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         ctx.Issues().Report("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
                    GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
@@ -604,7 +604,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
 
     //**** TargetECInstanceId prop map 
     columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Target);
-    if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
+    if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_TargetECInstanceId " column named '%s'.",
                    GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
@@ -644,7 +644,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& ctx, bool allowDuplicateRelationships)
     {
-    if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
+    if (GetPrimaryTable().GetTypeInfo().GetType() == DbTable::Type::Existing)
         return;
 
     // Add indices on the source and target based on cardinality
@@ -953,9 +953,9 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
     if (column != nullptr)
         return column;
 
-    persType = table.GetType() != DbTable::Type::Existing ? persType : PersistenceType::Virtual;
+    persType = table.GetTypeInfo().GetType() != DbTable::Type::Existing ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
-    if (table.GetType() != DbTable::Type::Virtual && persType == PersistenceType::Virtual)
+    if (!table.GetTypeInfo().IsVirtual() && persType == PersistenceType::Virtual)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for " ECDBSYS_PROP_SourceECInstanceId " or " ECDBSYS_PROP_TargetECInstanceId " in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.",
                    GetClass().GetFullName(), table.GetName().c_str());

@@ -34,6 +34,20 @@ DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
     return BE_SQLITE_OK;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    10/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE " TABLE_Table " ADD COLUMN IsTemporary BOOLEAN CHECK (IsTemporary IN (" SQLVAL_False "," SQLVAL_True "))"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Added column IsTemporary to table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added column IsTemporary to table ' " TABLE_Table "'.");
+    return BE_SQLITE_OK;
+    }
 
 //*************************************** ProfileSchemaUpgrader *********************************
 //-----------------------------------------------------------------------------------------

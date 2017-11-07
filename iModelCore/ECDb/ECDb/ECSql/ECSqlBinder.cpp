@@ -178,7 +178,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
 
             BeAssert(classMap.GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
             DbTable const& contextTable = classMap.GetJoinedOrPrimaryTable();
-            if (contextTable.GetType() == DbTable::Type::Virtual)
+            if (contextTable.GetTypeInfo().IsVirtual())
                 return true; //if table is virtual this is a noop.
 
             ConstraintECClassIdPropertyMap::PerTableIdPropertyMap const* contextConstraintClassIdPropMap = constraintClassIdPropMap.FindDataPropertyMap(contextTable);
@@ -188,7 +188,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             case PropertyMap::Type::NavigationRelECClassId:
             {
             DbColumn const& col = propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn();
-            if (col.GetTable().GetType() == DbTable::Type::Virtual)
+            if (col.GetTable().GetTypeInfo().IsVirtual())
                 return true;
 
             return col.GetPersistenceType() == PersistenceType::Virtual;

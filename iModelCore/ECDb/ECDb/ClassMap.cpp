@@ -35,7 +35,8 @@ DbTable& ClassMap::GetPrimaryTable() const
 
     for (DbTable* table : GetTables())
         {
-        if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+        DbTable::TypeInfo const& typeInfo = table->GetTypeInfo();
+        if (typeInfo.GetType() == DbTable::Type::Primary || typeInfo.GetType() == DbTable::Type::Existing || typeInfo.GetType() == DbTable::Type::Virtual)
             return *table;
         }
 
@@ -53,9 +54,11 @@ DbTable& ClassMap::GetJoinedOrPrimaryTable() const
     DbTable* primaryTable = nullptr;
     for (DbTable* table : m_tables)
         {
-        if (table->GetType() == DbTable::Type::Joined)
+        DbTable::TypeInfo const& typeInfo = table->GetTypeInfo();
+
+        if (typeInfo.GetType() == DbTable::Type::Joined)
             joinedTable = table;
-        else if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+        else if (typeInfo.GetType() == DbTable::Type::Primary || typeInfo.GetType() == DbTable::Type::Existing || typeInfo.GetType() == DbTable::Type::Virtual)
             primaryTable = table;
 
         if (joinedTable != nullptr)
@@ -73,7 +76,7 @@ DbTable* ClassMap::GetOverflowTable() const
     {
     for (DbTable* table : GetTables())
         {
-        if (table->GetType() == DbTable::Type::Overflow)
+        if (table->GetTypeInfo().GetType() == DbTable::Type::Overflow)
             return table;
         }
 
@@ -213,12 +216,12 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     //triggerName.Sprintf("%s_%s_SetCurrentTimeStamp", tableName, currentTimeStampColName);
     triggerName.Sprintf("%s_CurrentTimeStamp", tableName);
     Utf8String body;
-    body.Sprintf("BEGIN UPDATE %s SET %s=" CURRENTIMESTAMP_SQLEXP " WHERE %s=new.%s; END", tableName, currentTimeStampColName, instanceIdColName, instanceIdColName);
+    body.Sprintf("BEGIN UPDATE [%s] SET [%s]=" CURRENTIMESTAMP_SQLEXP " WHERE [%s]=new.[%s]; END", tableName, currentTimeStampColName, instanceIdColName, instanceIdColName);
 
     Utf8String whenCondition;
-    whenCondition.Sprintf("old.%s=new.%s AND old.%s!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
+    whenCondition.Sprintf("old.[%s]=new.[%s] AND old.[%s]!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
 
-    return table.AddTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
+    return table.AddTrigger(triggerName, DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -236,7 +239,7 @@ BentleyStatus ClassMap::AddOrUpdateTableList(DataPropertyMap const& propertyThat
     DbTable& propertyTable = const_cast< DbTable&>(propertyThatIsNotYetAdded.GetTable());
     if (std::find(m_tables.begin(), m_tables.end(), &propertyTable) == m_tables.end())
         {
-        if (propertyTable.GetType() == DbTable::Type::Overflow)
+        if (propertyTable.GetTypeInfo().GetType() == DbTable::Type::Overflow)
             return SetOverflowTable(propertyTable);
 
         AddTable(propertyTable);
@@ -263,7 +266,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
                 return ClassMappingStatus::Error;
                 }
 
-            if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
+            if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }
@@ -408,9 +411,9 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         std::vector<DbColumn const*> const& columns = propMapping.second;
         for (DbColumn const* column : columns)
             {
-            if (column->GetTable().GetType() == DbTable::Type::Joined)
+            if (column->GetTable().GetTypeInfo().GetType() == DbTable::Type::Joined)
                 joinedTables.insert(&column->GetTableR());
-            else if (column->GetTable().GetType() == DbTable::Type::Overflow)
+            else if (column->GetTable().GetTypeInfo().GetType() == DbTable::Type::Overflow)
                 overflowTables.insert(&column->GetTableR());
             else if (column->GetKind() != DbColumn::Kind::ECClassId)
                 primaryTables.insert(&column->GetTableR());
@@ -482,7 +485,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 return ERROR;
                 }
 
-            if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
+            if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }
@@ -634,9 +637,9 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
     {
-    if (GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy)
+    if (!GetMapStrategy().IsTablePerHierarchy())
         {
-        BeAssert(GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+        BeAssert(GetMapStrategy().IsTablePerHierarchy());
         return ERROR;
         }
 

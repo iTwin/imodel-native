@@ -343,7 +343,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 
     for (Partition const* partition : partitionOfInterest)
         {
-        if (partition->GetTable().GetType() == DbTable::Type::Virtual)
+        if (partition->GetTable().GetTypeInfo().IsVirtual())
             continue;
 
         //For vertical partition we like to skip the first primary partition table.
@@ -491,7 +491,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
     StorageDescription const& storageDesc = relationMap.GetStorageDescription();
     for (Partition const& partition : storageDesc.GetHorizontalPartitions())
         {
-        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
+        if (partition.GetTable().GetTypeInfo().IsVirtual())
             continue;
 
         NativeSqlBuilder view;
@@ -1129,7 +1129,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 //static
 BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
     {
-    if (table.GetType() == DbTable::Type::Virtual)
+    if (table.GetTypeInfo().IsVirtual())
         return SUCCESS;
 
     StorageDescription const& desc = classMap.GetStorageDescription();
@@ -1299,7 +1299,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
     if (!ignoreVirtualColumnCheck)
         {
         BeAssert(propertyMap.FindDataPropertyMap(*table) != nullptr);
-        if (table->GetType() == DbTable::Type::Virtual || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+        if (table->GetTypeInfo().IsVirtual() || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             return nullptr;
         }
 
