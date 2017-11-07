@@ -99,6 +99,24 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedToken_
     auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
 
     EXPECT_EQ(token->ToAuthorizationString(), result.GetValue());
+    EXPECT_NE(token->ToSAMLAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedTokenWithSamlAuth_ReturnsSamlTokenStr)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true);
+
+    SamlTokenPtr token = StubSamlToken(100);
+    EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
+
+    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
+
+    EXPECT_EQ(token->ToSAMLAuthorizationString(), result.GetValue());
+    EXPECT_NE(token->ToAuthorizationString(), result.GetValue());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -142,7 +160,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAt
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     bool legacyMode = false;
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), legacyMode);
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true, legacyMode);
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
