@@ -36,7 +36,7 @@
     <NMakeCleanCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest re  IntegrationTests-Published BeHttp-IntegrationTests Integration-Gtest -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)BeHttp\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\BeHttp\VendorAPI;$(OutRoot)Winx64\BuildContexts\BeHttp\PublicAPI;$(OutRoot)Winx64\build\BeHttpIntegrationTests\gensrc\;$(IncludePath)</IncludePath>
-    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(OutRoot)\$(TARGET_PROCESSOR_DIRECTORY)\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
