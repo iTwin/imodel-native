@@ -4511,7 +4511,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue)
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithoutValue_CacheDoesNotUpdateValueAsECDbNoLongerDoesThat)
     {
     auto cache = GetTestCache();
     auto key = StubCachedResponseKey(*cache);
@@ -4521,10 +4521,35 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_Caches
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
-    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"]);
+    EXPECT_FALSE("OldValue" == properties["TestCalculatedProperty"]); // Value is not calculated
+    EXPECT_EQ(Json::Value::GetNull(), properties["TestCalculatedProperty"]);
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "NewValue"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_FALSE("NewValue" == properties["TestCalculatedProperty"]); // Value is not calculated
+    EXPECT_EQ(Json::Value::GetNull(), properties["TestCalculatedProperty"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithValue_CachesProvidedValue)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestCalculatedProperty", "OldValue"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"]);
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestCalculatedProperty", "NewValue"}});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
