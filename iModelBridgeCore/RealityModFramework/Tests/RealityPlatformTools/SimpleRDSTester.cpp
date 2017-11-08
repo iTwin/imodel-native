@@ -65,7 +65,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\EnterpriseStat.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\EnterpriseStat.json");
         }));
 
     ConnectedRealityDataEnterpriseStat stat = ConnectedRealityDataEnterpriseStat();
@@ -86,7 +86,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipIdRequestTest)
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataRelationship.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataRelationship.json");
         }));
 
     ConnectedRealityDataProjectRelationship rel = ConnectedRealityDataProjectRelationship();
@@ -144,7 +144,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentTest)
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
 
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataDocument.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataDocument.json");
         }));
 
     ConnectedRealityDataDocument doc = ConnectedRealityDataDocument("72adad30-c07c-465d-a1fe-2f2dfac950a7");
@@ -163,7 +163,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderTest)
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataFolder.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataFolder.json");
         }));
 
     ConnectedRealityDataFolder folder = ConnectedRealityDataFolder("72adad30-c07c-465d-a1fe-2f2dfac950a7");
@@ -182,7 +182,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SingleRealityData-Helsinki.json");
         }));
 
     ConnectedRealityData rd = ConnectedRealityData("72adad30-c07c-465d-a1fe-2f2dfac950a5");

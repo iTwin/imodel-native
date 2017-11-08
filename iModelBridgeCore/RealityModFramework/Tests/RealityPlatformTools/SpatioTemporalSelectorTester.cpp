@@ -49,7 +49,7 @@ bvector<GeoPoint2d>* SpatioTemporalSelectorFixture::s_regionOfInterest = nullptr
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonAll)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
 
     auto Ids = SpatioTemporalSelector::GetIDsByResFromJson(json.c_str(), *s_regionOfInterest);
     EXPECT_EQ(Ids.size(), 3);
@@ -63,7 +63,7 @@ TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonAll)
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, OutsideRegionOfInterest)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
 
     auto regionOfInterest = bvector<GeoPoint2d>();
     regionOfInterest.emplace_back(GeoPoint2d::From(0, 0));
@@ -84,7 +84,7 @@ TEST_F(SpatioTemporalSelectorFixture, OutsideRegionOfInterest)
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIdsByResDistanceFilteringHasNoDataValue)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesMultipleDataforEachCriteria.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesMultipleDataforEachCriteria.json");
     auto dataset = SpatialEntityDataset::CreateFromJson(json.c_str());
 
     //distance filtering is only active if hasNoDataValue is true
@@ -111,7 +111,7 @@ TEST_F(SpatioTemporalSelectorFixture, GetIdsByResDistanceFilteringHasNoDataValue
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonResolutionCriteria)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
 
     auto regionOfInterest = bvector<GeoPoint2d>();
     regionOfInterest.emplace_back(GeoPoint2d::From(0, 0));
@@ -138,7 +138,7 @@ TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonResolutionCriteria)
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonCriteriaImagery)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
 
     //******** Low only
     // past to present
@@ -245,7 +245,7 @@ TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonCriteriaImagery)
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonCriteriaTerrain)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
     json.ReplaceAll("Imagery", "Terrain");
 
     //******** Low only
@@ -353,7 +353,7 @@ TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonCriteriaTerrain)
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIDsFromJsonCriteriaResolution)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
 
     DateTime dateMin;
     DateTime::FromString(dateMin, "2000-01-01");
@@ -374,7 +374,7 @@ TEST_F(SpatioTemporalSelectorFixture, GetIDsFromJsonCriteriaResolution)
 //=====================================================================================
 TEST_F(SpatioTemporalSelectorFixture, GetIDsFromJsonCriteriaDate)
     {
-    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SpatialEntitiesBigList.json");
 
     DateTime dateMin;
     DateTime::FromString(dateMin, "2000-01-01");
