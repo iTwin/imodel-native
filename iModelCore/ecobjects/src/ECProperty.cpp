@@ -983,38 +983,22 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     return status;
     }
 
-void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECPropertyCP ecProperty, ECVersion ecXmlVersion)
-    {
-    PrimitiveArrayECPropertyCP primArrProp = ecProperty->GetAsPrimitiveArrayProperty();
-    PrimitiveECPropertyCP primProp = ecProperty->GetAsPrimitiveProperty();
-
-    if (nullptr == primArrProp && nullptr == primProp)
-        return;
-
-    if ((nullptr == primArrProp) ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
-        {
-        Utf8String extendedTypeName = (nullptr == primArrProp) ? primProp->GetExtendedTypeName() : primArrProp->GetExtendedTypeName();
-        attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, extendedTypeName.c_str()));
-        }
-
-    bool isKindOfQuantityDefined = (nullptr == primArrProp) ? primProp->IsKindOfQuantityDefinedLocally() : primArrProp->IsKindOfQuantityDefinedLocally();
-    if (ecXmlVersion >= ECVersion::V3_0 && isKindOfQuantityDefined)
-        {
-        auto kindOfQuantity = (nullptr == primArrProp) ? primProp->GetKindOfQuantity() : primArrProp->GetKindOfQuantity();
-        if (kindOfQuantity != nullptr)
-            {
-            attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, kindOfQuantity->GetQualifiedName(ecProperty->GetClass().GetSchema()).c_str()));
-            }
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                    Stefan.Apfel   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
-    getExtendedTypeAndKindOfQuantityAttributes(attributes, this, ecXmlVersion);
+
+    if (IsExtendedTypeDefinedLocally())
+        attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
+
+    Utf8String koqQualifiedName;
+    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally()) 
+        {
+        koqQualifiedName = GetKindOfQuantity()->GetQualifiedName(GetClass().GetSchema());
+        attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, koqQualifiedName.c_str()));
+        }
 
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
@@ -1577,6 +1561,9 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
         additionalAttributes.push_back(make_bpair(MAX_OCCURS_ATTRIBUTE, "unbounded"));
         }
 
+    // This is needed to keep the qualified name in scope for calling the super class below....
+    Utf8String koqQualifiedName;
+
     Utf8CP elementName = EC_ARRAYPROPERTY_ELEMENT;
     if (m_arrayKind == ARRAYKIND_Struct)
         {
@@ -1586,7 +1573,16 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
     else // ARRAYKIND_Primitive
-        getExtendedTypeAndKindOfQuantityAttributes(additionalAttributes, this, ecXmlVersion);
+        {
+        if (this->GetAsPrimitiveArrayProperty()->IsExtendedTypeDefinedLocally())
+            additionalAttributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str()));
+
+        if (ecXmlVersion >= ECVersion::V3_0 && this->GetAsPrimitiveArrayProperty()->IsKindOfQuantityDefinedLocally())
+            {
+            koqQualifiedName = this->GetAsPrimitiveArrayProperty()->GetKindOfQuantity()->GetQualifiedName(GetClass().GetSchema()).c_str();
+            additionalAttributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, koqQualifiedName.c_str()));
+            }
+        }
 
     SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersion, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it

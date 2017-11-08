@@ -13,6 +13,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PropertyTest : ECTestFixture {};
+struct PropertySerializationTest : ECTestFixture {};
 struct PropertyDeserializationTest : ECTestFixture 
     {
     void VerifyDeserializedProperty(ECSchemaPtr deserializedSchema, ECPropertyCP expectedProp, Utf8StringCR className, Utf8StringCR propName);
@@ -998,6 +999,62 @@ TEST_F(PropertyDeserializationTest, CategoryAttributeInherited)
 
     EXPECT_EQ(derivedPropCategory, propCategory);
     EXPECT_STREQ(derivedPropCategory->GetFullName().c_str(), propCategory->GetFullName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// This is only needed for Primitive and PrimitiveArray properties
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
+    {
+    Utf8String schemaXml;
+
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+
+    ECEntityClassP entity;
+    EC_EXPECT_SUCCESS(schema->CreateEntityClass(entity, "TestEntity"));
+
+    KindOfQuantityP koq;
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "KoQ"));
+    koq->SetRelativeError(5);
+    EXPECT_TRUE(koq->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", "MM")));
+
+    PrimitiveECPropertyP primProp;
+    EC_EXPECT_SUCCESS(entity->CreatePrimitiveProperty(primProp, "TestPrimProp"));
+    EC_EXPECT_SUCCESS(primProp->SetExtendedTypeName("Json"));
+    EC_EXPECT_SUCCESS(primProp->SetKindOfQuantity(koq));
+
+    PrimitiveArrayECPropertyP primArr;
+    EC_EXPECT_SUCCESS(entity->CreatePrimitiveArrayProperty(primArr, "TestPrimArrProp"));
+    EC_EXPECT_SUCCESS(primArr->SetExtendedTypeName("Json"));
+    EC_EXPECT_SUCCESS(primArr->SetKindOfQuantity(koq));
+    
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXml));
+    }
+
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context);
+
+    ECEntityClassCP entity = schema->GetClassCP("TestEntity")->GetEntityClassCP();
+
+    PrimitiveECPropertyCP primProp = entity->GetPropertyP("TestPrimProp")->GetAsPrimitiveProperty();
+    EXPECT_STREQ("Json", primProp->GetExtendedTypeName().c_str());
+
+    EXPECT_TRUE(primProp->IsKindOfQuantityDefinedLocally());
+    KindOfQuantityCP primKoQ = primProp->GetKindOfQuantity();
+    EXPECT_STREQ("KoQ", primKoQ->GetName().c_str());
+
+    PrimitiveArrayECPropertyCP primArrProp = entity->GetPropertyP("TestPrimArrProp")->GetAsPrimitiveArrayProperty();
+    EXPECT_STREQ("Json", primArrProp->GetExtendedTypeName().c_str());
+
+    EXPECT_TRUE(primArrProp->IsKindOfQuantityDefinedLocally());
+    KindOfQuantityCP primArrKoQ = primArrProp->GetKindOfQuantity();
+    EXPECT_STREQ("KoQ", primArrKoQ->GetName().c_str());
+    }
     }
 
 //---------------------------------------------------------------------------------------
