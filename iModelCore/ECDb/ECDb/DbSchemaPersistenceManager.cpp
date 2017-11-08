@@ -97,38 +97,6 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle    10/2017
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus DbSchemaPersistenceManager::LoadTempTable(ECDbCR ecdb, DbTable const& table)
-    {
-    if (!table.GetTypeInfo().IsTemp())
-        {
-        BeAssert(false && "May only be called for temp tables");
-        return ERROR;
-        }
-
-    if (TableExistsInDb(ecdb, table.GetName().c_str(), "temp"))
-        return SUCCESS;
-
-    if (SUCCESS != CreateTable(ecdb, table))
-        return ERROR;
-
-    for (std::unique_ptr<DbIndex> const& index : table.GetIndexes())
-        {
-        Utf8String ddl, comparableIndexDef;
-        if (SUCCESS != BuildCreateIndexDdl(ddl, comparableIndexDef, ecdb, *index))
-            return ERROR;
-
-        if (SUCCESS != CreateIndex(ecdb, *index, ddl))
-            return ERROR;
-        }
-
-    //create indexes
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static

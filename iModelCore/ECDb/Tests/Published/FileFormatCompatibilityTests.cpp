@@ -1117,7 +1117,12 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
         benchmarkDdlLookupStmt.BindText(1, actualName, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == benchmarkDdlLookupStmt.Step())
             {
-            Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
+            Utf8CP benchmarkDdl;
+            if (BeStringUtilities::StricmpAscii(actualName, "ec_Table") == 0)
+                benchmarkDdl = "CREATE TABLE ec_Table(Id INTEGER PRIMARY KEY,ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,Type INTEGER NOT NULL,ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,UpdatableViewName TEXT, IsTemporary BOOLEAN CHECK (IsTemporary IN (0,1)))";
+            else
+                benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
+
             EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << actualName;
             }
         else

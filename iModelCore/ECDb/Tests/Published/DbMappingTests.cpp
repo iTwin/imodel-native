@@ -2984,102 +2984,6 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_PhysicalForeignKey)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("TemporaryTablePerHierarchyMapStrategy_PhysicalForeignKey.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-              <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Parent" modifier="Sealed">
-                <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
-                    </ClassMap>
-                </ECCustomAttributes>
-                <ECProperty propertyName="Name" typeName="string" />
-            </ECEntityClass>
-            <ECEntityClass typeName="Child" modifier="Sealed">
-                <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
-                    </ClassMap>
-                </ECCustomAttributes>
-                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
-                    <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00">
-                            <OnDeleteAction>Cascade</OnDeleteAction>
-                        </ForeignKeyConstraint>
-                    </ECCustomAttributes>
-                </ECNavigationProperty>
-                <ECProperty propertyName="Code" typeName="string" />
-            </ECEntityClass>
-           <ECRelationshipClass typeName="Rel" strength="Embedding" modifier="Sealed">
-              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
-                  <Class class ="Parent" />
-              </Source>
-              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
-                  <Class class="Child" />
-              </Target>
-           </ECRelationshipClass>
-        </ECSchema>)xml")));
-
-    ECInstanceKey parentKey, childKey;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, Utf8PrintfString("INSERT INTO ts.Child(Parent.Id,Code) VALUES(%s,'Child-1')",
-                                                                                        parentKey.GetInstanceId().ToString().c_str()).c_str()));
-
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT NULL FROM ts.Child"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT NULL FROM ts.Child")) << "Expected to be cascade deleted";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiMethod                                     Krischan.Eberle                  11/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_PhysicalForeignKeyToNonTempTable)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("TemporaryTablePerHierarchyMapStrategy_PhysicalForeignKey.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Foo" modifier="None">
-                <ECProperty propertyName="Name" typeName="string" />
-            </ECEntityClass>
-            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
-                <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
-                    </ClassMap>
-                </ECCustomAttributes>
-                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
-                    <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                    </ECCustomAttributes>
-                </ECNavigationProperty>
-                <ECProperty propertyName="Name" typeName="string" />
-                <ECProperty propertyName="Val" typeName="binary" />
-            </ECEntityClass>
-           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
-              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
-                  <Class class ="Foo" />
-              </Source>
-              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
-                  <Class class="SessionSetting" />
-              </Target>
-           </ECRelationshipClass>
-        </ECSchema>)xml")));
-
-    ECInstanceKey parentKey, childKey;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, Utf8PrintfString("INSERT INTO ts.Child(Parent.Id,Code) VALUES(%s,'Child-1')",
-                                                                                        parentKey.GetInstanceId().ToString().c_str()).c_str()));
-
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT NULL FROM ts.Child"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT NULL FROM ts.Child")) << "Expected to be cascade deleted";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiMethod                                     Krischan.Eberle                  10/17
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
@@ -3127,6 +3031,73 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
               </Target>
            </ECRelationshipClass>
         </ECSchema>)xml"))) << "Physical ForeignKey from temp to non-temp not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "Physical ForeignKey from non-temp to temp not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "Physical ForeignKey for temp tables never valid";
     }
 
 

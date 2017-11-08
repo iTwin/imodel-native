@@ -81,8 +81,6 @@ public:
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
-    static BentleyStatus LoadTempTable(ECDbCR, DbTable const&);
-
     static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP dbSchemaName = nullptr);
 
     static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
@@ -108,6 +106,25 @@ public:
 
         return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s].[%s]", dbSchemaName, tableName).c_str()); 
         }
+
+    static bool IndexExistsInDb(ECDbCR ecdb, Utf8CP indexName, Utf8CP dbSchemaName = nullptr)
+        {
+        CachedStatementPtr stmt;
+        if (Utf8String::IsNullOrEmpty(dbSchemaName))
+            stmt = ecdb.GetCachedStatement("SELECT 1 FROM sqlite_master where type='index' AND name=?");
+        else
+            stmt = ecdb.GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='index' AND name=?", dbSchemaName).c_str());
+        
+        if (stmt == nullptr)
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        stmt->BindText(1, indexName, Statement::MakeCopy::No);
+        return stmt->Step() == BE_SQLITE_ROW;
+        }
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

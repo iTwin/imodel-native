@@ -168,7 +168,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         "FROM ec_RelationshipConstraint rc "
         "INNER JOIN ec_RelationshipConstraintClass rcc ON rcc.ConstraintId=rc.Id "
         "LEFT JOIN " TABLE_ClassHierarchyCache " ch ON ch.BaseClassId=rcc.ClassId AND rc.IsPolymorphic= " SQLVAL_True " "
-        "WHERE COALESCE(ch.ClassId,rcc.ClassId) = ?");
+        "WHERE COALESCE(ch.ClassId,rcc.ClassId)=?");
 
     if (stmt == nullptr)
         {

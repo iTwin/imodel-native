@@ -406,6 +406,12 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return SUCCESS;
         }
 
+    if (m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TemporaryTablePerHierarchy)
+        {
+        if (SUCCESS != GetDbMap().GetDbSchema().LoadTempTables())
+            return ERROR;
+        }
+
     for (std::pair<Utf8String, std::vector<DbColumn const*>> const& propMapping : dbLoadCtx.GetPropertyMaps())
         {
         std::vector<DbColumn const*> const& columns = propMapping.second;
