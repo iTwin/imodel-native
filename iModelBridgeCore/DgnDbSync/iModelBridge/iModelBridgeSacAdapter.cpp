@@ -429,7 +429,7 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
         SetDocumentGuid(docGuid);
         }
 
-    if (argv[iArg] == wcsstr(argv[iArg], L"--bridge-assetsDir="))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--bridge-assetsDir"))
         {
         m_bridgeAssetsDir.SetName(iModelBridge::GetArgValueW(argv[iArg]).c_str());
         return iModelBridge::CmdLineArgStatus::Success;
