@@ -16,8 +16,6 @@
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 
-#define HISTORY_SUPPORT
-
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
 #endif
@@ -497,13 +495,6 @@ int wmain(int ac, wchar_t const** av)
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
     Host::EnsureAssertHandler();
-
-#ifdef HISTORY_SUPPORT
-    if (createParams.WantHistory())
-        {
-        return static_cast<int> (TilesetHistoryPublisher::PublishTilesetWithHistory (createParams));
-        }
-#endif
 
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())

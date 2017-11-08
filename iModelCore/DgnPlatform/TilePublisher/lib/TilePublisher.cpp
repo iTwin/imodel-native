@@ -3572,11 +3572,13 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
         if (foundRange == m_modelRanges.end())
             continue;
 
-        auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
+        
+        auto                        model = GetDgnDb().Models().GetModel(modelId).get();
         ModelSpatialClassifiers     classifiers;
 
-        if (nullptr != getTileTree && 
-            SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers) &&
+        if (nullptr != model && 
+            nullptr != model->ToSpatialModel() &&
+            SUCCESS == model->ToSpatialModel()->GetSpatialClassifiers(classifiers) &&
             !classifiers.empty())
             {
             T_ClassifierInfos       classifierInfos;

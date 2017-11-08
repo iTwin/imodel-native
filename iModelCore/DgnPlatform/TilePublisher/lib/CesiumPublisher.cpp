@@ -43,7 +43,7 @@ DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
+DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const
     {
     bool publishSingleView = !m_viewName.empty();
 
@@ -145,6 +145,11 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
         viewerOptions["imageryProvider"] = "NaturalEarth";
 
     json["viewerOptions"] = viewerOptions;
+
+    Json::Value     revisionsJson;
+    if (params.WantHistory() &&
+        TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params))
+        json["revisions"] = std::move(revisionsJson);
 
     if (Status::Success != (status = WriteAppJson (json)) ||
         Status::Success != (status = WriteHtmlFile()))
