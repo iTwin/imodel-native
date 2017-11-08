@@ -161,12 +161,22 @@ void CS06Bridge::UpdateProjectExtents(SpatialModelR spatialModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CS06Bridge::_OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docSyncInfoid)
 	{
-	// TODO: Implement this.
+	// TODO: Is this the way we should be handle document deletion?
 
-    // Called when the framework detects that a document has been deleted from the source DMS or at least removed from the job. The subclass should
-    // override this method to delete from the BIM all models and elements that it previously created from data that came from this document.
-    // @param docId Identifies the document in the source DMS. May be a GUID or a local file name.
-    // @param docSyncInfoid Identifies the document in the syncinfo file
+    // Look up the document-specific job subject element.
+    auto jobSubject = QueryJobSubject(GetDgnDbR(), ComputeJobSubjectName().c_str());
+    if (!jobSubject.IsValid())
+        return;
+
+    auto alignmentModelPtr = AlignmentBim::RoadRailAlignmentDomain::QueryAlignmentModel(*jobSubject, CS06BRIDGE_AlignmentModelName);
+    if (alignmentModelPtr.IsValid())
+        alignmentModelPtr->Delete();
+
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*jobSubject, CS06BRIDGE_PhysicalModelName);
+    if (physicalModelPtr.IsValid())
+        physicalModelPtr->Delete();
+
+    jobSubject->Delete();
 	}
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,20 +186,12 @@ BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
     {
     // TODO: Implement this.
 
-    //auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
+    auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
-    /*ORDConverter converter;
-    converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr);
+    //ORDConverter converter;
+    //converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr);
 
-    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
-    auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(jobSubject, ORDBRIDGE_PhysicalModelName);
-
-    UpdateProjectExtents(*alignmentModelPtr);
-    UpdateProjectExtents(*physicalModelPtr);
-
-    RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(jobSubject, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);*/
-
+    // TODO: This method no longer exists, but we may need to do something like it.
     // Infer deletions
     //changeDetectorPtr->_DeleteElementsNotSeen();
 

@@ -101,12 +101,14 @@
     <None Include="installer\installer.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChangeDetectorFacade.h" />
     <ClInclude Include="CS06BridgeInternal.h" />
     <ClInclude Include="MarshalHelper.h" />
     <ClInclude Include="PublicAPI\CS06Bridge\CS06Bridge.h" />
     <ClInclude Include="PublicAPI\CS06Bridge\CS06BridgeApi.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ChangeDetectorFacade.cpp" />
     <ClCompile Include="CS06Bridge.cpp" />
     <ClCompile Include="CS06BridgeInternal.cpp" />
     <ClCompile Include="iModelBridgeAffinity.cpp" />
