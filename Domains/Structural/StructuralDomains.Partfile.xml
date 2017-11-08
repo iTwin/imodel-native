@@ -90,11 +90,13 @@
     <ProductDirectoryList ListName="StructuralDomainsSDKDirs">
         <ProductDirectory Name="StructuralDomainsRoot"           Path=""/>
         <ProductDirectory Name="Assemblies"                      RelativeTo="StructuralDomainsRoot" Path=""/>
+        <ProductDirectory Name="Assemblies"                      LibType="static" Deliver="false"/>
         <ProductDirectory Name="Libs"                            RelativeTo="StructuralDomainsRoot" Path=""/>
         <ProductDirectory Name="Assets"                          RelativeTo="StructuralDomainsRoot" Path="Assets"/>
         <ProductDirectory Name="Assets"                          LibType="static" Deliver="false" />
         <ProductDirectory Name="StructuralDomainIncludes"        RelativeTo="StructuralDomainsRoot" Path="Include/StructuralDomain"/>
         <ProductDirectory Name="VendorNotices"                   RelativeTo="StructuralDomainsRoot" Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                   LibType="static" RelativeTo="StructuralDomainsRoot" Path="VendorNotices"/>
 
     </ProductDirectoryList>
 
