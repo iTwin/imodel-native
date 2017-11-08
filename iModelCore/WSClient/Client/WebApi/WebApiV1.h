@@ -73,6 +73,7 @@ struct WebApiV1 : public WebApi
         static void GetParametersFromObjectCreationJson
             (
             JsonValueCR objectCreationJson,
+            ObjectIdR newObjectId,
             Utf8StringR propertiesOut,
             ObjectIdR relObjectId,
             ObjectIdR parentObjectIdOut

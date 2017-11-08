@@ -254,16 +254,6 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(Http::Response& response) const
-    {
-    if (HttpStatus::Created == response.GetHttpStatus())
-        return WSCreateObjectResult::Success(ResolveUploadResponse(response));
-    return WSCreateObjectResult::Error(response);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
 WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response) const
     {
     if (HttpStatus::OK == response.GetHttpStatus())
@@ -588,7 +578,7 @@ ICancellationTokenPtr ct
 +--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
 (
-ObjectIdCR objectId,
+ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
@@ -596,44 +586,43 @@ ICancellationTokenPtr ct
 ) const
     {
     Utf8String url;
-    Utf8String instanceId;
-    if (objectId.IsValid())
+    if (!relatedObjectId.IsEmpty())
         {
-        Utf8String schemaName = objectId.schemaName;
-        Utf8String className = objectId.className;
-        instanceId = objectId.remoteId;
+        if (!relatedObjectId.IsValid())
+            {
+            BeAssert(false && "Invalid relatedObjectId");
+            return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+            }
 
-        url = GetUrl(CreateClassSubPath(schemaName, className));
-        if (!instanceId.empty())
-            url += "/" + instanceId;
+        Utf8String className = objectCreationJson["instance"]["className"].asString();
+        Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
 
-        auto createdClassName = objectCreationJson["instance"]["className"];
-
-        auto createdClassSchema = objectCreationJson["instance"]["schemaName"];
-
-        if (createdClassName.empty() || createdClassSchema.empty())
+        if (className.empty() || schemaName.empty())
             {
             BeAssert(false && "Invalid object creation JSON: no class name or schema name defined");
             return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
             }
 
+        url = GetUrl(CreateObjectSubPath(relatedObjectId));
         url += "/";
 
-        if (schemaName.compare(createdClassSchema.asCString()) != 0 )
-            url += createdClassSchema.asString() + ".";
+        if (relatedObjectId.schemaName != schemaName != 0)
+            url += schemaName + ".";
 
-        url += createdClassName.asString();
+        url += className;
         }
     else
         {
+        ObjectId objectId;
         Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
         Utf8String className = objectCreationJson["instance"]["className"].asString();
-        instanceId = objectCreationJson["instance"]["instanceId"].asString();
+        Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
 
         url = GetUrl(CreateClassSubPath(schemaName, className));
-        if (!instanceId.empty())
+        if (!instanceId.empty() && objectCreationJson["instance"]["changeState"].asString() != "new")
             url += "/" + instanceId;
         }
+
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
@@ -644,12 +633,11 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSCreateObjectResult>([this, instanceId] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSCreateObjectResult>([this] (Http::Response& response)
         {
-        if (instanceId.empty())
-            return ResolveCreateObjectResponse(httpResponse);
-        else
-            return ResolveUpdateObjectResponse(httpResponse);
+        if (HttpStatus::Created != response.GetHttpStatus() && HttpStatus::OK != response.GetHttpStatus())
+            return WSCreateObjectResult::Error(response);
+        return WSCreateObjectResult::Success(ResolveUploadResponse(response));
         });
     }
 
