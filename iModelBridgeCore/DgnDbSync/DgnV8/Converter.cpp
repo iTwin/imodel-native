@@ -3193,6 +3193,20 @@ bvector<ResolvedModelMapping> RootModelConverter::FindMappingsToV8Model(DgnV8Mod
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootModelConverter::IsLessInMappingOrder(DgnV8ModelP a, DgnV8ModelP b)
+    {
+    auto fid1 = GetV8FileSyncInfoId(*a->GetDgnFileP());
+    auto fid2 = GetV8FileSyncInfoId(*b->GetDgnFileP());
+    if (fid1 < fid2)
+        return true;
+    if (fid1 > fid2)
+        return false;
+    return a->GetModelId() < b->GetModelId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +--------------+---------------+---------------+---------------+---------------+------*/
 ResolvedModelMapping RootModelConverter::_FindFirstModelMappedTo(DgnV8ModelR v8Model)

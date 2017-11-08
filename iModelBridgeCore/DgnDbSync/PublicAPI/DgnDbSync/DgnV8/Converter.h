@@ -2163,7 +2163,7 @@ protected:
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
-    void MakeSchemaChanges(bset<DgnV8ModelP> const&);
+    void MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2410,6 +2410,7 @@ protected:
     DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindMappingsToV8Model(DgnV8ModelR v8Model);
+    bool IsLessInMappingOrder(DgnV8ModelP a, DgnV8ModelP b);
 
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.

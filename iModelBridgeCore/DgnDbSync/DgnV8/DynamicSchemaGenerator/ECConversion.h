@@ -123,8 +123,8 @@ struct DynamicSchemaGenerator
     SyncInfo& GetSyncInfo() {return m_converter.GetSyncInfo();}
     bool IsUpdating() const {return m_converter.IsUpdating();}
 
-    void CheckNoECSchemaChanges(bset<DgnV8ModelP> const&);
-    void BisifyV8Schemas(bset<DgnV8ModelP> const&);
+    void CheckNoECSchemaChanges(bvector<DgnV8ModelP> const&);
+    void BisifyV8Schemas(bvector<DgnV8FileP> const&, bvector<DgnV8ModelP> const&);
 
     public:
 
@@ -148,7 +148,7 @@ struct DynamicSchemaGenerator
     bool GetEcConversionFailed() const {return m_ecConversionFailed;}
     bool GetAnyImported() const {return m_anyImported;}
 
-    void GenerateSchemas(bset<DgnV8ModelP> const&);
+    void GenerateSchemas(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
 
     };
 

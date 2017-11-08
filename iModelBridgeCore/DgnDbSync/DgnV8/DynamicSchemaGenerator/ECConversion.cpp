@@ -1617,7 +1617,7 @@ void DynamicSchemaGenerator::FinalizeECSchemaConversion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DynamicSchemaGenerator::CheckNoECSchemaChanges(bset<DgnV8ModelP> const& uniqueModels)
+void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& uniqueModels)
     {
     bmap<Utf8String, uint32_t> syncInfoChecksums;
     GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums);
@@ -1708,7 +1708,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueModels)
+void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFiles, bvector<DgnV8ModelP> const& uniqueModels)
     {
     m_converter.SetStepName(Converter::ProgressMessage::STEP_DISCOVER_ECSCHEMAS());
 
@@ -1718,12 +1718,9 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
     
     AddTasks((uint32_t)uniqueModels.size());
 
-    bset<DgnV8FileP> uniqueFiles;
-
     for (DgnV8ModelP v8Model : uniqueModels)
         {
         RetrieveV8ECSchemas(*v8Model);
-        uniqueFiles.insert(v8Model->GetDgnFileP());
         }
 
     if (m_skipECContent)
@@ -1817,19 +1814,19 @@ static void     importHandlerExtensionsSchema(Converter& cvt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DynamicSchemaGenerator::GenerateSchemas(bset<DgnV8ModelP> const& uniqueModels)
+void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, bvector<DgnV8ModelP> const& models)
     {
     if (GetConfig().GetOptionValueBool("SkipECContent", false))
         return;
 
     if (m_converter.IsUpdating())
         {
-        CheckNoECSchemaChanges(uniqueModels);
+        CheckNoECSchemaChanges(models);
         if (!m_needReimportSchemas)
             return;
         }
         
-    BisifyV8Schemas(uniqueModels);
+    BisifyV8Schemas(files, models);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1848,7 +1845,7 @@ void SpatialConverterBase::CreateProvenanceTables()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueModels)
+void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrder, bvector<DgnV8ModelP> const& modelsInOrder)
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
@@ -1876,7 +1873,7 @@ void SpatialConverterBase::MakeSchemaChanges(bset<DgnV8ModelP> const& uniqueMode
         // *******
 
         DynamicSchemaGenerator gen(*this);
-        gen.GenerateSchemas(uniqueModels);
+        gen.GenerateSchemas(filesInOrder, modelsInOrder);
 
         m_skipECContent = gen.GetEcConversionFailed();
         }
@@ -1924,11 +1921,14 @@ void RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    bset<DgnV8ModelP> uniqueModels;
-    uniqueModels.insert(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end());
-    uniqueModels.insert(m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end());
+    bvector<DgnV8ModelP> modelsInFMOrder;   // models in file, modelid order - that matches the order in which the older converter processed models.
+    modelsInFMOrder.assign(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end());
+    modelsInFMOrder.insert(modelsInFMOrder.end(), m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end());
 
-    T_Super::MakeSchemaChanges(uniqueModels);
+    auto cmp = [&](DgnV8ModelP a, DgnV8ModelP b) { return IsLessInMappingOrder(a,b); };
+    std::sort(modelsInFMOrder.begin(), modelsInFMOrder.end(), cmp);
+
+    T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
     }
@@ -1940,12 +1940,15 @@ void TiledFileConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    bset<DgnV8ModelP> uniqueModels;
-    uniqueModels.insert(GetRootModelP());
+    bvector<DgnV8ModelP> modelsInOrder;
+    modelsInOrder.push_back(GetRootModelP());
+
+    bvector<DgnV8FileP> filesInOrder;
+    filesInOrder.push_back(GetRootModelP()->GetDgnFileP());
 
     GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
-    T_Super::MakeSchemaChanges(uniqueModels);
+    T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
     }
