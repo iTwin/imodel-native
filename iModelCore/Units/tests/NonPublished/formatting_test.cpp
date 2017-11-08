@@ -130,6 +130,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("in");
     }
 
+//#ifdef _WIN32
 //TEST(FormattingTest, SchemaValidation)
 //    {
 //    LOG.infov("================  Schema Validation ===========================");
@@ -138,7 +139,7 @@ TEST(FormattingTest, Preliminary)
 //    LOG.infov("================ Schema Validation (end) ===========================");
 // 
 //    }
-
+//#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
