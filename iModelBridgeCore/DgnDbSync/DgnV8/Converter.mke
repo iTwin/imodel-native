@@ -122,7 +122,7 @@ $(o)Levels$(oext):  $(baseDir)Levels.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${M
 
 $(o)DgnV8Text$(oext): $(baseDir)DgnV8Text.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
-$(o)DgnV8Tags$(oext): $(baseDir)DgnV8Tags.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DgnV8Tags$(oext): $(dynamicSchemaGeneratorDir)DgnV8Tags.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)ConvertLights$(oext): $(baseDir)ConvertLights.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 

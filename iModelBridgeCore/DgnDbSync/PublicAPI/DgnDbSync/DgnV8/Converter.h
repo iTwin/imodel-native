@@ -1799,6 +1799,12 @@ public:
     void ConvertTextStyleForRun(AnnotationRunBase&, DgnV8Api::DgnTextStyle const&);
     //! @}
 
+    //! @name  Tags
+    //! @{
+    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files);
+    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
+    //! @}
+
     //! @name Codes
     //! @{
 
@@ -2423,11 +2429,6 @@ protected:
     void ConvertNamedGroupsAndECRelationships();
     BentleyStatus ConvertECRelationships();
     BentleyStatus ConvertNamedGroupsRelationships();
-    //! @}
-
-    //! @name  Tags
-    //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags();
     //! @}
 
     //! @name  V8Files

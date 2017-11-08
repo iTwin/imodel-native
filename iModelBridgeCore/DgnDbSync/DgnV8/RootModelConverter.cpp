@@ -1761,13 +1761,6 @@ BentleyStatus  RootModelConverter::Process()
     
     ConverterLogging::LogPerformance(timer, "Convert Models");
 
-    timer.Start();
-    _ConvertDgnV8Tags();
-    if (WasAborted())
-        return ERROR;
-
-    ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
-    
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
 
     timer.Start();

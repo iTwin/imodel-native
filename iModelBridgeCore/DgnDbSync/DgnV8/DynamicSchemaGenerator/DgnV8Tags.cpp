@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------------------+
-|     $Source: DgnV8/DgnV8Tags.cpp $
+|     $Source: DgnV8/DynamicSchemaGenerator/DgnV8Tags.cpp $
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -16,8 +16,6 @@ void ConvertV8TagToDgnDbExtension::Register()
     ConvertV8TagToDgnDbExtension* instance = new ConvertV8TagToDgnDbExtension();
     RegisterExtension(DgnV8Api::TagElementHandler::GetInstance(), *instance);
     }
-
-#ifdef WIP_TAGS
 
 //---------------------------------------------------------------------------------------
 // Mostly identical to Sam's implementation in Graphite0505.
@@ -187,14 +185,11 @@ static void createClassPropertyThumbprint(WString& thumbprint, V8ECN::ECClassCR 
         }
     }
 
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2016
 //---------------------------------------------------------------------------------------
-void RootModelConverter::_ConvertDgnV8Tags()
+void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
     {
-#ifdef WIP_TAGS
     //...............................................................................................................................................
     //...............................................................................................................................................
     
@@ -224,7 +219,7 @@ void RootModelConverter::_ConvertDgnV8Tags()
     typedef Bentley::bset<Bentley::WString, CompareInsensitiveWString> T_ExistingClassNameSet;
     T_ExistingClassNameSet existingClassNames;
 
-    for (DgnV8FileP v8File : m_v8Files)
+    for (DgnV8FileP v8File : v8Files)
         {
         DgnV8Api::TagSetCollection tagSetDefs(*v8File);
         for (Bentley::ElementRefP tagSetDefElRef : tagSetDefs)
@@ -384,7 +379,7 @@ void RootModelConverter::_ConvertDgnV8Tags()
     //...............................................................................................................................................
     // Record which tag elements are associated with which target elements.
 
-    for (DgnV8FileP v8File : m_v8Files)
+    for (DgnV8FileP v8File : v8Files)
         {
         for (auto v8ElRef : v8File->GetAllElementsCollection())
             {
@@ -424,8 +419,8 @@ void RootModelConverter::_ConvertDgnV8Tags()
         SyncInfo::V8FileSyncInfoId targetFileId(selectTargets->GetValueInt(0));
         DgnV8Api::ElementId targetElementId = selectTargets->GetValueInt64(1);
         
-        bvector<DgnV8FileP>::const_iterator foundV8TargetFile = std::find_if(m_v8Files.begin(), m_v8Files.end(), [&](DgnV8FileP v8File) { return targetFileId == GetV8FileSyncInfoIdFromAppData(*v8File); });
-        if (m_v8Files.end() == foundV8TargetFile)
+        bvector<DgnV8FileP>::const_iterator foundV8TargetFile = std::find_if(v8Files.begin(), v8Files.end(), [&](DgnV8FileP v8File) { return targetFileId == GetV8FileSyncInfoIdFromAppData(*v8File); });
+        if (v8Files.end() == foundV8TargetFile)
             { BeAssert(false); continue; }
 
         // Since we see each EC property value independently as we traverse the individual tag elements, need to hold on to instances and write them at the end.
@@ -446,9 +441,9 @@ void RootModelConverter::_ConvertDgnV8Tags()
         while (DbResult::BE_SQLITE_ROW == selectTags->Step())
             {
             SyncInfo::V8FileSyncInfoId tagFileId(selectTags->GetValueInt(0));
-            bvector<DgnV8FileP>::const_iterator foundV8File = std::find_if(m_v8Files.begin(), m_v8Files.end(), [&](DgnV8FileP v8File) { return tagFileId == GetV8FileSyncInfoIdFromAppData(*v8File); });
+            bvector<DgnV8FileP>::const_iterator foundV8File = std::find_if(v8Files.begin(), v8Files.end(), [&](DgnV8FileP v8File) { return tagFileId == GetV8FileSyncInfoIdFromAppData(*v8File); });
             
-            if (m_v8Files.end() == foundV8File)
+            if (v8Files.end() == foundV8File)
                 { BeAssert(false); continue; }
 
             DgnV8Api::ModelId tagModelId = selectTags->GetValueInt(1);
@@ -572,7 +567,6 @@ void RootModelConverter::_ConvertDgnV8Tags()
                 { BeAssert(false); }
             }
         }
-#endif
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

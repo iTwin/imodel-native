@@ -118,7 +118,6 @@ struct DynamicSchemaGenerator
     BentleyStatus DoAnalyze(DgnV8Api::ElementHandle const&, BisConversionTargetModelInfoCR);
     void InitializeECSchemaConversion();
     void FinalizeECSchemaConversion();
-    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
 
     SyncInfo& GetSyncInfo() {return m_converter.GetSyncInfo();}
     bool IsUpdating() const {return m_converter.IsUpdating();}

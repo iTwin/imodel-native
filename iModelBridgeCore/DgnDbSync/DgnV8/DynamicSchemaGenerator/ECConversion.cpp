@@ -1115,7 +1115,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         bool isPrimary = ecClassInfo.second;
         
         // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
-        if (isPrimary && ecClass.m_schemaName.Equals(GetV8TagSetDefinitionSchemaName()))
+        if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
             isPrimary = false;
         
         ECClassName v8ClassName(Utf8String(ecClass.m_schemaName.c_str()).c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
@@ -1868,6 +1868,18 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         }
     else
         {
+        // V8TagSets - This is tricky. We convert V8 tagset defs into V8 ECClasses, and we add ECInstances to the tagged V8 elements. That way, the normal
+        //              schema conversion (below) will import the classes, and the normal element conversion will import the instances.
+        if (true)
+            {
+            StopWatch timer(true);
+            _ConvertDgnV8Tags(filesInOrder);
+            ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
+            }
+
+        if (WasAborted())
+            return;
+
         // *******
         // WARNING: GenerateSchemas calls Db::AbandonChanges if import fails! Make sure you commit your work before calling GenerateSchemas!
         // *******
@@ -1883,11 +1895,11 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
 
     GetDgnDb().SaveChanges();
 
-    // V8TagSets -> generate schemas
-    // *** TBD
-
     // Let handler extensions import schemas
     importHandlerExtensionsSchema(*this);
+
+    if (WasAborted())
+        return;
 
     GetDgnDb().SaveChanges();
 
