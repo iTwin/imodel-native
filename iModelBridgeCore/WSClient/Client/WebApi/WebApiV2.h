@@ -44,7 +44,6 @@ struct WebApiV2 : public WebApi
         static Utf8String GetNullableString(RapidJsonValueCR jsonValue);
 
         WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
-        WSCreateObjectResult ResolveCreateObjectResponse(Http::Response& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
         WSUploadResponse ResolveUploadResponse(Http::Response& response) const;
         WSObjectsResult ResolveObjectsResponse(Http::Response& response, bool requestHadSkipToken = false, const ObjectId* objectId = nullptr) const;

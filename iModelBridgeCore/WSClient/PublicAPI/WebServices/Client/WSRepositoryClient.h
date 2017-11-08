@@ -167,7 +167,7 @@ struct IWSRepositoryClient
             ) const = 0;
 
         //! Create object with any relationships or related objects. Optionally attach file.
-        //! @param objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param objectCreationJson must follow WSG 2.0 format for creating objects. URL will use "instanceId" field unless "changeState" : "new" is set.
         //! @param filePath [optional] file
         //! @param uploadProgressCallback [optional] upload callback for changeset
         //! @param ct [optional] cancellation token
@@ -185,9 +185,8 @@ struct IWSRepositoryClient
             ) const = 0;
 
         //! Create object with any relationships or related objects. Optionally attach file.
-        //! @param objectId Used to construct URL for POST request. Any schema, class or instanceId included in the URL will come from this object.
-        //!            <br> remoteId is optional. If supplied this implies that there are instances related to that instance that needs creation.
-        //! @param objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param relatedObjectId valid object id that new object should be related to
+        //! @param objectCreationJson must follow WSG 2.0 format for creating objects. URL will use "instanceId" field unless "changeState" : "new" is set. 
         //! @param filePath [optional] file path to upload
         //! @param uploadProgressCallback [optional] upload callback for changeset
         //! @param ct [optional] cancellation token
@@ -199,7 +198,7 @@ struct IWSRepositoryClient
         //! @return JSON representing created data and new file ETag if available
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
-            ObjectIdCR objectId,
+            ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
