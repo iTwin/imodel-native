@@ -19,6 +19,8 @@
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
 #include <DgnPlatform\Render.h>
+#include <DgnPlatform/ModelSpatialClassifier.h>
+
 
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
@@ -186,7 +188,8 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetPublishedTilesetI
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
     BE_JSON_NAME(scalablemesh)
-
+    BE_JSON_NAME(classifiers)
+        
 private:
     mutable SMScenePtr m_scene;
 
@@ -209,6 +212,7 @@ private:
     Utf8String                              m_path;
     bool                                    m_isProgressiveDisplayOn;
     bool                                    m_isInsertingClips;
+    ModelSpatialClassifiers                 m_classifiers;
 
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
@@ -243,7 +247,7 @@ protected:
     TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
     void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
     bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
-
+    BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override { classifiers = m_classifiers; return SUCCESS; }
 
     SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
@@ -264,6 +268,8 @@ public:
     void SetFileNameProperty(BeFileNameCR smFilename);
 
     Utf8String GetPath() const { return m_path; }
+
+    void SetClassifiers(Dgn::ModelSpatialClassifiersCR classifiers) { m_classifiers = classifiers; }
 
     //! A DgnDb can have only one terrain.
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
@@ -294,6 +300,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     MODELHANDLER_DECLARE_MEMBERS("ScalableMeshModel", ScalableMeshModel, ScalableMeshModelHandler, Dgn::dgn_ModelHandler::Spatial, SCALABLEMESH_SCHEMA_EXPORT)
 public :
     //NEEDS_WORK_SM : Currently for testing only
-    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true);
+    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, ModelSpatialClassifiersCP classifiers = nullptr);
 };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE

@@ -1999,7 +1999,7 @@ void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
         m_smPtr->GetAllClipIds(allShownIds);
     }
 
-IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile)
+IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile, ModelSpatialClassifiersCP classifiers)
     {
     /*
        BeFileName smtFileName;
@@ -2018,6 +2018,9 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
         nameToSet = Utf8String(smFilename.GetFileNameWithoutExtension().c_str());
 
     RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, modeledElement.GetElementId())));
+
+    if (nullptr != classifiers)
+        model->SetClassifiers(*classifiers);
 
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
@@ -2094,6 +2097,9 @@ void ScalableMeshModel::_OnSaveJsonProperties()
 
     m_properties.ToJson(val);
 
+    if (!m_classifiers.empty())
+        val[json_classifiers()] = m_classifiers.ToJson();
+
     SetJsonProperties(json_scalablemesh(), val);
     }
 
@@ -2107,6 +2113,9 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     Json::Value val(GetJsonProperties(json_scalablemesh()));
 
     m_properties.FromJson(val);
+
+    if (val.isMember(json_classifiers()))
+        m_classifiers.FromJson(val[json_classifiers()]);
 
     if (m_smPtr == 0 && !m_tryOpen)
         {
