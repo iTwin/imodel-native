@@ -366,7 +366,8 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     
     // Detect all V8 models. This process also classifies 2d design models and loads and fills drawings and sheets.
     // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
-    CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetV8FileSyncInfoId
+    CreateProvenanceTables(); // TRICKY: Call this before anyone calls _GetV8FileIntoSyncInfo
+    _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // TRICKY: Before looking for models, register the root file in syncinfo. This starts the process of populating m_v8files. Do NOT CALL GetV8FileSyncInfoId as that will fail to populate m_v8Files in some cases.
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
 
@@ -641,7 +642,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     if (BSISUCCESS == GetSyncInfo().FindModel(&mapping, *GetRootModelP(), &m_rootTrans, GetCurrentIdPolicy()))
         return ImportJobCreateStatus::FailedExistingNonRootModel;
 
-    // 1. Look up the root file's syncinfoid.
+    // 1. Look up the root file's syncinfoid. (_InitRootModel has already mapped in the root file.)
     auto fileId = GetV8FileSyncInfoId(*m_rootFile);
 #ifndef NDEBUG
     SyncInfo::FileById syncInfoFiles(GetDgnDb(), fileId);
@@ -762,19 +763,25 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool h
     {
     DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
 
+    if (!ShouldConvertToPhysicalModel(thisV8Model))
+        return;
+
     DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
 
+    GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
+
     bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+
+    if (haveFoundSpatialRoot && !isThisMyFile)
+        return; // we only go through another bridge's territory in order to find our own spatial root. don't follow any references from my spatial root into another bridge's file.
 
     if (isThisMyFile)
         haveFoundSpatialRoot = true;
 
-    bool firstTimeSeen = isThisMyFile?  m_spatialModels.insert(&thisV8Model).second:
-                                        m_spatialModelsOtherBridges.insert(&thisV8Model).second;
-    if (!firstTimeSeen)
+    if (!m_spatialModelsSeen.insert(&thisV8Model).second)
         return;
 
-    GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
+    m_spatialModelsInAttachmentOrder.push_back(&thisV8Model);
 
     ClassifyNormal2dModels (thisV8File); // Tells me which 2d design models should be treated as spatial models
 
@@ -789,20 +796,14 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool h
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
 
-        if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
-            continue; // this leads to models in another bridge's territory. Stay out.
-
-        if (ShouldConvertToPhysicalModel(*attachment->GetDgnModelP()))
-            {
-            FindSpatialV8Models(*attachment, haveFoundSpatialRoot);
-            }
+        FindSpatialV8Models(*attachment, haveFoundSpatialRoot);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindNonSpatialModelAndRefs(DgnV8ModelRefR v8ModelRef)
+void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool andRefs)
     {
     if (nullptr == v8ModelRef.GetDgnModelP())
         return;
@@ -834,11 +835,7 @@ void RootModelConverter::FindNonSpatialModelAndRefs(DgnV8ModelRefR v8ModelRef)
         _KeepFileAlive(thisV8File);     // keep the file alive
         }
 
-    // If this is a sheet model, then follow its reference attachments. If a drawing is referenced to a sheet, we must
-    //  find it via that attachment. See "DgnModel objects and Sheet attachments".
-    // If this is a drawing model, then do not follow its reference attachments. They must be found either directly
-    //  from the model index or as attachments to some sheet.
-    if (!v8ModelRef.IsSheet())
+    if (!andRefs)
         return;
 
     GetAttachments(thisV8Model);
@@ -851,7 +848,7 @@ void RootModelConverter::FindNonSpatialModelAndRefs(DgnV8ModelRefR v8ModelRef)
         if (nullptr == attachment->GetDgnModelP())
             continue; // missing reference 
 
-        FindNonSpatialModelAndRefs(*attachment);
+        FindNonSpatialModel(*attachment, true);
         }
     }
 
@@ -909,9 +906,15 @@ void RootModelConverter::FindV8DrawingsAndSheets()
         for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
             {
             if ((DgnV8Api::DgnModelType::Sheet == item.GetModelType()) && ((v8model = v8File->LoadModelById(item.GetModelId())).IsValid()))
-                FindNonSpatialModelAndRefs(*v8model);
+                FindNonSpatialModel(*v8model, true);
             }
         }
+
+    // Note: We follow and register the 3d reference attachments to sheets. That is so that we discover all drawings referenced to a sheet
+    //  via the sheet's attachment. See "DgnModel objects and Sheet attachments".
+    // For drawing models, however, we do not follow reference attachments. They must be found either directly
+    //  from the model index (or as attachments to some sheet).
+
 
     // 2. Drawings
     for (auto v8File : filesToSearch)
@@ -919,7 +922,7 @@ void RootModelConverter::FindV8DrawingsAndSheets()
         for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
             {
             if (IsV8DrawingModel(*v8File, item) && ((v8model = v8File->LoadModelById(item.GetModelId())).IsValid()))
-                FindNonSpatialModelAndRefs(*v8model);
+                FindNonSpatialModel(*v8model, false); 
             }
         }
     }
@@ -939,6 +942,9 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
     DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
     DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
+
+    BeAssert((m_spatialModelsSeen.find(&thisV8Model) != m_spatialModelsSeen.end()) && "All spatial models should have been found by FindSpatialV8Models");
+    BeAssert((std::find(m_v8Files.begin(), m_v8Files.end(), &thisV8File) != m_v8Files.end()) && "All V8 files should have been found by FindV8DrawingsAndSheets and FindSpatialV8Models");
 
     bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
     if (isThisMyFile)

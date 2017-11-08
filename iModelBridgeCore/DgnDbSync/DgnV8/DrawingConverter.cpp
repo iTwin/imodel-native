@@ -90,9 +90,15 @@ ModelsToBeMerged::Key ModelsToBeMerged::s_key;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& rootModelMapping)
     {
+#ifndef NDEBUG
+    bset<DgnV8ModelP> seen;
+#endif
+
     // Pass 1: sheets and attached drawings. IMPORTANT! See "DgnModel objects and Sheet attachments" for why this MUST BE DONE FIRST.
     for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
         {
+        BeAssert(seen.insert(v8Model).second && " no dups expected in m_nonSpatialModelsInModelIndexOrder");
+
         if (v8Model->IsSheet())
             ImportSheetModel(*v8Model, m_isRootModelSpatial);
         }
@@ -153,6 +159,8 @@ void RootModelConverter::_ConvertDrawings()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
     {
+    BeAssert(GetV8FileSyncInfoIdFromAppData(*v8model.GetDgnFileP()).IsValid() && "All V8 files should have been found discovered by _InitRootModel");
+
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
         LOG.tracev("Import2dModel %s", IssueReporter::FmtModel(v8model).c_str());
 
@@ -167,11 +175,6 @@ bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
 
         return make_bpair(foundmm, false); // v8model has already been imported
         }
-
-    GetV8FileSyncInfoId(*v8model.GetDgnFileP());  // we may have reached a new V8 file.
-
-    _KeepFileAlive(*v8model.GetDgnFileP()); 
-    _OnDrawingModelFound(v8model);
 
     auto bimModel = _GetModelForDgnV8Model(v8model, toMeters); // adds to m_v8ModelMappings
     if (!bimModel.IsValid())

@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <DgnDbSync/DgnV8/Converter.h>
+
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 struct DynamicSchemaGenerator;
@@ -22,6 +24,7 @@ public:
         ElementMultiAspect,
         ElementAspect
         };
+
 private:
     BisConversionRuleHelper();
     ~BisConversionRuleHelper();
@@ -32,7 +35,7 @@ public:
     //! Determines the conversion rule based on characteristics of a given v8 ECInstance
     //! @remarks The effective rule is a combination of both the instance and class based rule and will be computed
     //! by the converter
-    static BisConversionRule ConvertToBisConversionRule(V8ElementType v8ElementType, bool is3d, const bool namedGroupOwnsMembersFlag, bool isSecondaryInstancesClass = false);
+    static BisConversionRule ConvertToBisConversionRule(V8ElementType v8ElementType, BisConversionTargetModelInfoCR targetModelInfo, const bool namedGroupOwnsMembersFlag, bool isSecondaryInstancesClass = false);
     //! Determines the conversion rule based on the v8 ECClass
     //! @remarks The effective rule is a combination of both the instance and class based rule and will be computed
     //! by the converter
@@ -80,7 +83,7 @@ private:
     static BentleyStatus DoInsert(DgnDbR, ECClassName const& v8ClassName, BisConversionRule);
 
 public:
-    static BentleyStatus Insert(DynamicSchemaGenerator&, DgnV8EhCR, ECClassName const&, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, bool is3d);
+    static BentleyStatus Insert(DynamicSchemaGenerator&, DgnV8EhCR, ECClassName const&, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo);
 
     static BentleyStatus InsertOrUpdate(DynamicSchemaGenerator&, ECClassName const&, BisConversionRule);
     static BentleyStatus Insert(DynamicSchemaGenerator&, ECClassName const&, BisConversionRule);

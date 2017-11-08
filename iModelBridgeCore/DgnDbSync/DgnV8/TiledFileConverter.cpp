@@ -110,15 +110,13 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
 
     DgnV8ModelR v8Model = *v8ModelRef.GetDgnModelP();
 
-    ResolvedModelMapping unresolvedMapping(v8Model);
-
     Utf8String newModelName = _ComputeModelName(v8Model).c_str();
 
     // Map in the DgnV8 model.
     DgnModelId modelId = _MapModelIntoProject(v8Model, newModelName.c_str(), v8ModelRef.AsDgnAttachmentCP());
     if (!modelId.IsValid())
         {
-        return unresolvedMapping;
+        return ResolvedModelMapping();
         }
 
     SyncInfo::V8ModelMapping mapping;
@@ -128,7 +126,7 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         BeAssert(false);
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
         OnFatalError();
-        return unresolvedMapping;
+        return ResolvedModelMapping();
         }
 
     if (_WantProvenanceInBim())
@@ -139,7 +137,7 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         {
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
         OnFatalError();
-        return unresolvedMapping;
+        return ResolvedModelMapping();
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
 
@@ -173,15 +171,13 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
 
     _GetV8FileIntoSyncInfo(*v8Model.GetDgnFileP(), _GetIdPolicy(*v8Model.GetDgnFileP()));
 
-    ResolvedModelMapping unresolved(v8Model);
-
     SyncInfo::V8ModelMapping mapping;
     auto rc = m_syncInfo.InsertModel(mapping, targetModelId, v8Model, m_rootTrans);
     BeAssert(SUCCESS == rc);
 
     auto model = m_dgndb->Models().GetModel(targetModelId);
     if (!model.IsValid())
-        return unresolved;
+        return ResolvedModelMapping();
 
     ResolvedModelMapping v8mm(*model, v8Model, mapping, nullptr);
 

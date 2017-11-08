@@ -184,6 +184,29 @@ enum class BisConversionRule
 };
 
 //=======================================================================================
+// Information about the target BIM model that may be needed when deciding how to 
+// convert a V8 ECClass into a BIS class.
+// @bsiclass                                                    Sam.Wilson      11/2017
+//=======================================================================================
+struct BisConversionTargetModelInfo
+{
+    enum class ModelType
+        {
+        TwoD,
+        ThreeD,
+        Dictionary
+        };
+    ModelType m_modelType;
+
+    explicit BisConversionTargetModelInfo(DgnModelCR);
+    explicit BisConversionTargetModelInfo(ModelType mt) : m_modelType(mt) {}
+
+    bool IsDictionary() const {return ModelType::Dictionary == m_modelType;}
+    bool Is3d() const {return ModelType::ThreeD == m_modelType;}
+    bool Is2d() const {return ModelType::TwoD == m_modelType;}
+};
+
+//=======================================================================================
 // @bsiclass                                                    Sam.Wilson      1/17
 //=======================================================================================
 struct V8ElementECContent
@@ -253,8 +276,6 @@ struct ResolvedModelMapping
     public:
     //! Construct a ResolvedModelMapping in an invalid state
     ResolvedModelMapping() : m_model(nullptr), m_v8model(nullptr) {}
-    //! Construct a ResolvedModelMapping in an invalid state
-    explicit ResolvedModelMapping(DgnV8ModelR v8Model) : m_model(nullptr), m_v8model(&v8Model), m_v8attachment(nullptr) {}
     //! Construct a ResolvedModelMapping in an valid state
     ResolvedModelMapping(DgnModelR model, DgnV8ModelR v8Model, SyncInfo::V8ModelMapping const& mapping, DgnV8Api::DgnAttachment const* a) : m_model(&model), m_v8model(&v8Model), m_mapping(mapping), m_v8attachment(a) {}
     bool IsValid() const {return m_v8model != nullptr && m_mapping.IsValid();}
@@ -2356,8 +2377,8 @@ protected:
     bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     DgnV8Api::ViewGroupPtr m_viewGroup;
     bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
-    bset<DgnV8ModelP> m_spatialModels;
-    bset<DgnV8ModelP> m_spatialModelsOtherBridges;
+    bvector<DgnV8ModelP> m_spatialModelsInAttachmentOrder;
+    bset<DgnV8ModelP> m_spatialModelsSeen;
     bset<DgnV8ModelP> m_nonSpatialModelsSeen;
     bvector<DgnV8ModelP> m_nonSpatialModelsInModelIndexOrder;
     std::unique_ptr<IChangeDetector> m_changeDetector;
@@ -2388,6 +2409,8 @@ protected:
     DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
     DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
+    DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindMappingsToV8Model(DgnV8ModelR v8Model);
+
 
     // in the RootModelConverter, treatment of normal 2d models depends the user's input parameters.
     DGNDBSYNC_EXPORT bool _ConsiderNormal2dModelsSpatial() override;
@@ -2449,7 +2472,7 @@ protected:
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();
-    void FindNonSpatialModelAndRefs(DgnV8ModelRefR v8ModelRef);
+    void FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool andRefs);
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
@@ -2613,6 +2636,8 @@ public:
     void SetRootModel(DgnV8ModelP r) {m_rootModel=r;}
 };
 
+typedef BisConversionTargetModelInfo const& BisConversionTargetModelInfoCR;
+
 //=======================================================================================
 // This extension is used during DgnV8 > DgnDb conversion to allow handlers to be directly involved in the conversion process.
 // @bsiclass                                                    Jeff.Marker     08/2015
@@ -2623,7 +2648,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
 
     enum class Result {Proceed=0, SkipElement=1};
     virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) {return Result::Proceed;}
-    virtual BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) {return BisConversionRule::ToDefaultBisBaseClass;}
+    virtual BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) {return BisConversionRule::ToDefaultBisBaseClass;}
     virtual void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) {/* do nothing to let caller fallback */ }
     virtual void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) {/* do nothing to accept basic conversion */ }
     virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) {return false; /* caller will derive placement transform from geometry */ }
@@ -2667,7 +2692,7 @@ struct XDomain
     virtual BentleyStatus _ImportSchema(DgnDbR) {return BSISUCCESS;} 
 
     // Override the BIS conversion rule that will be applied to this element. Called after the applicable ConvertToDgnDbElementExtension is called.
-    virtual void _DetermineBisConversionRule(BisConversionRule&, DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) {;}
+    virtual void _DetermineBisConversionRule(BisConversionRule&, DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) {;}
 
     virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) {return false; /* caller will derive placement transform from geometry */ }
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
@@ -2694,7 +2719,7 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
 {
     static void Register();
 
-    BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) override;
+    BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) override;
     void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override;
     void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) override;
     bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) override;
@@ -2814,12 +2839,12 @@ struct ConverterLogging
 //! All source V8 geometry must be transformed into the BIM's coordinate system. ConvertElement does this for you. When you call geometry conversion
 //! utility functions, you must do it yourself.
 //!
-//! Normaly, you should call ComputeCoordinateSystemTransform up front. This prepares the units and GCS transformation 
-//! from a specified V8 root model to the BIM's coordinate system.
+//! Normaly, you should call SetRootModelAndSubject up front. This prepares the units and GCS transformation 
+//! from a specified V8 root model to the BIM's coordinate system. This also populates the list of files, spatial models, and non-spatial models in the source file set.
 //! @code
-//! cvt.ComputeCoordinateSystemTransform(rootModel);
+//! cvt.SetRootModelAndSubject(rootModel);
 //! @endcode
-//! You can then call Converter::GetRootTransform to query the computed transform. Note that ComputeCoordinateSystemTransform
+//! You can then call Converter::GetRootTransform to query the computed transform. Note that SetRootModelAndSubject
 //! may actually reproject your input V8 models in order to prepare for the GCS transformation.
 //!
 //! <h2>File and Model Mappings</h2>
@@ -2923,7 +2948,7 @@ public:
     DGNDBSYNC_EXPORT void RecordFileMapping(DgnV8FileR v8File);
 
     //! Compute the units transform from the specified root model into meters, and *also* prepare the transformation of geo-located data 
-    //! in the root model and its attachments into the GCS of the target BIM.
+    //! in the root model and its attachments into the GCS of the target BIM. This also populates the list of files, spatial models, and non-spatial models in the source file set.
     //! @param rootV8Model    The root DgnModel in the input V8
     //! @param jobSubject     The Job Subject element. Its transform property, if any, is post-multiplied onto the GCS root transform.
     //! @note This function will modify the data in rootV8Model and its attachments if reprojection is necessary.
@@ -2931,8 +2956,14 @@ public:
     //! @note If you want to set up a GCS on the output BIM (if it does not have one), do that before calling this function. @see Dgn::DgnGCS
     //! @note If you later call RecordModelMapping to enroll a model that is attached to this root model, you must call #ComputeAttachmentTransform
     //! in order to compute the units transform for the attached model and then pass that as the optional third argument to RecordModelMapping.
-    //! @see GetRootTrans
-    DGNDBSYNC_EXPORT void ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model, SubjectCR jobSubject);
+    //! @see GetRootTrans, GetSpatialModelsInAttachmentOrder, GetNonSpatialModelsInModelIndexOrder
+    DGNDBSYNC_EXPORT void SetRootModelAndSubject(DgnV8ModelR rootV8Model, SubjectCR jobSubject);
+
+    //! Get the list of all spatial models discovered by SetRootModelAndSubject
+    bvector<DgnV8ModelP> const& GetSpatialModelsInAttachmentOrder() const {return m_spatialModelsInAttachmentOrder;}
+
+    //! Get the list of all non-spatial models discovered by SetRootModelAndSubject
+    bvector<DgnV8ModelP> const& GetNonSpatialModelsInModelIndexOrder() const {return m_nonSpatialModelsInModelIndexOrder;}
 
     //! Record a V8->BIM model mapping
     //! @param sourceV8Model    A DgnModel in the input V8
@@ -2942,7 +2973,7 @@ public:
     //!                         Supply a different transform if the source V8 model is attached more than once with different transforms.
     //!                        @see ComputeUnitsScaleTransform, ComputeAttachmentTransform
     //! @return The record of the mapping, which includes the units transform from source to BIM
-    //! @note If you called ComputeCoordinateSystemTransform up front, then you must supply a transform when recording mappings for all 
+    //! @note If you called SetRootModelAndSubject up front, then you must supply a transform when recording mappings for all 
     //! attached models. Call #ComputeAttachmentTransform to get this transform.
     //! @see FindModelForDgnV8Model and FindFirstModelMappedTo
     DGNDBSYNC_EXPORT ResolvedModelMapping RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform = nullptr);

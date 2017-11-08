@@ -779,7 +779,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
     SubjectPtr noJobSubject = Subject::Create(*outputBim.Elements().GetRootSubject(), "DummyJobSubject");
     JobSubjectUtils::InitializeProperties(*noJobSubject, "Dummy");
 
-    cvt.ComputeCoordinateSystemTransform(rootModel, *noJobSubject);
+    cvt.SetRootModelAndSubject(rootModel, *noJobSubject);
 
 
     //  Convert spatial elements

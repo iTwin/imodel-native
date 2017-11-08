@@ -37,7 +37,7 @@ Utf8String ECClassName::GetClassFullName() const
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BisConversionRule BisConversionRuleHelper::ConvertToBisConversionRule(V8ElementType v8ElementType, const bool is3d, const bool namedGroupOwnsMembersFlag, bool isSecondaryInstancesClass)
+BisConversionRule BisConversionRuleHelper::ConvertToBisConversionRule(V8ElementType v8ElementType, BisConversionTargetModelInfoCR targetModelInfo, const bool namedGroupOwnsMembersFlag, bool isSecondaryInstancesClass)
     {
     if (isSecondaryInstancesClass)
         return BisConversionRule::ToAspectOnly;
@@ -53,7 +53,7 @@ BisConversionRule BisConversionRuleHelper::ConvertToBisConversionRule(V8ElementT
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     return is3d.IsSpatialModel() || nullptr != dynamic_cast<ComponentModel*>(&is3d) ? BisConversionRule::ToPhysicalElement : BisConversionRule::ToDrawingGraphic;
 #endif
-    return !is3d ? BisConversionRule::ToDrawingGraphic : BisConversionRule::ToPhysicalElement;
+    return !targetModelInfo.IsDictionary() && targetModelInfo.Is2d() ? BisConversionRule::ToDrawingGraphic : BisConversionRule::ToPhysicalElement;
     }
 
 //---------------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ bool V8ECClassInfo::TryFind(BECN::ECClassId& v8ClassId, BisConversionRule& rule,
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, bool is3d)
+BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR v8Eh, ECClassName const& v8ClassName, bool namedGroupOwnsMembers, bool isSecondaryInstancesClass, BisConversionTargetModelInfoCR targetModelInfo)
     {
     const V8ElementType v8ElementType = V8ElementTypeHelper::GetType(v8Eh);
 
@@ -283,11 +283,11 @@ BentleyStatus V8ECClassInfo::Insert(DynamicSchemaGenerator& converter, DgnV8EhCR
     BisConversionRule rule = BisConversionRule::ToDefaultBisBaseClass;
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8Eh.GetHandler());
     if (nullptr != upx)
-        rule = upx->_DetermineBisConversionRule(v8Eh, converter.GetDgnDb(), is3d);
+        rule = upx->_DetermineBisConversionRule(v8Eh, converter.GetDgnDb(), targetModelInfo);
     for (auto xdomain : XDomainRegistry::s_xdomains)
-        xdomain->_DetermineBisConversionRule(rule, v8Eh, converter.GetDgnDb(), is3d);
+        xdomain->_DetermineBisConversionRule(rule, v8Eh, converter.GetDgnDb(), targetModelInfo);
     if (BisConversionRule::ToDefaultBisBaseClass == rule)
-        rule = BisConversionRuleHelper::ConvertToBisConversionRule(v8ElementType, is3d, namedGroupOwnsMembers, isSecondaryInstancesClass);
+        rule = BisConversionRuleHelper::ConvertToBisConversionRule(v8ElementType, targetModelInfo, namedGroupOwnsMembers, isSecondaryInstancesClass);
 
     ECDiagnostics::LogV8InstanceDiagnostics(v8Eh, v8ElementType, v8ClassName, isSecondaryInstancesClass, rule);
 
@@ -1045,7 +1045,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, bool is3d)
+void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, BisConversionTargetModelInfoCR targetModelInfo)
     {
     if (m_skipECContent)
         return;
@@ -1064,7 +1064,7 @@ void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, bool is3d)
             //TODO if (_FilterElement(v8eh))
             //TODO     continue;
 
-            Analyze(v8eh, is3d);
+            Analyze(v8eh, targetModelInfo);
             }
         }
 
@@ -1080,7 +1080,7 @@ void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, bool is3d)
             //TODO if (_FilterElement(v8eh))
             //TODO     continue;
 
-            Analyze(v8eh, is3d);
+            Analyze(v8eh, targetModelInfo);
             }
         }
     }
@@ -1088,13 +1088,13 @@ void DynamicSchemaGenerator::AnalyzeECContent(DgnV8ModelR v8Model, bool is3d)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandle const& v8Element, bool is3d)
+BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandle const& v8Element, BisConversionTargetModelInfoCR targetModelInfo)
     {
-    DoAnalyze(v8Element, is3d);
+    DoAnalyze(v8Element, targetModelInfo);
     //recurse into component elements (if the element has any)
     for (DgnV8Api::ChildElemIter childIt(v8Element); childIt.IsValid(); childIt = childIt.ToNext())
         {
-        Analyze(childIt, is3d);
+        Analyze(childIt, targetModelInfo);
         }
 
     return BentleyApi::SUCCESS;
@@ -1104,7 +1104,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHandle const& v8Element, bool is3d)
+BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHandle const& v8Element, BisConversionTargetModelInfoCR targetModelInfo)
     {
     auto& v8ECManager = DgnV8Api::DgnECManager::GetManager();
     DgnV8Api::ElementECClassInfo classes;
@@ -1128,7 +1128,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             if (nullptr != ecClass)
                 namedGroupOwnsMembers = ecClass->GetCustomAttribute("NamedGroupOwnsMembers") != nullptr;
             }
-        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, is3d))
+        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
@@ -1744,8 +1744,9 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
         {
         SetTaskName(Converter::ProgressMessage::TASK_ANALYZE_EC_CONTENT(), Converter::IssueReporter::FmtModel(*v8Model).c_str());
 
-        bool is3d = m_converter.ShouldConvertToPhysicalModel(*v8Model);
-        AnalyzeECContent(*v8Model, is3d);
+        BisConversionTargetModelInfo targetModelInfo(m_converter.ShouldConvertToPhysicalModel(*v8Model)? BisConversionTargetModelInfo::ModelType::ThreeD:
+                                                                                                         BisConversionTargetModelInfo::ModelType::TwoD);
+        AnalyzeECContent(*v8Model, targetModelInfo);
         if (WasAborted())
             return;
         }
@@ -1756,7 +1757,8 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bset<DgnV8ModelP> const& uniqueMode
         SetTaskName(Converter::ProgressMessage::TASK_ANALYZE_EC_CONTENT(), Converter::IssueReporter::FmtModel(v8File->GetDictionaryModel()).c_str());
 
         DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
-        AnalyzeECContent(dictionaryModel, nullptr);
+        BisConversionTargetModelInfo targetModelInfo(BisConversionTargetModelInfo::ModelType::Dictionary);
+        AnalyzeECContent(dictionaryModel, targetModelInfo);
         if (WasAborted())
             return;
         }
@@ -1922,7 +1924,8 @@ void RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    bset<DgnV8ModelP> uniqueModels(m_spatialModels);
+    bset<DgnV8ModelP> uniqueModels;
+    uniqueModels.insert(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end());
     uniqueModels.insert(m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end());
 
     T_Super::MakeSchemaChanges(uniqueModels);
