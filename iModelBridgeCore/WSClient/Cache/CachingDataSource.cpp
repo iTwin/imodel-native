@@ -1507,7 +1507,10 @@ SyncOptions options
         if (objectsToSync)
             {
             auto txn = StartCacheTransaction();
-            syncTask->PrepareObjectsForSync(txn);
+            for (auto objToSync : *objectsToSync)
+                {
+                txn.GetCache().GetChangeManager().SetUploadActive(objToSync, true);
+                }
             txn.Commit();
             }
         m_syncLocalChangesQueue.push_back(syncTask);

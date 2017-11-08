@@ -54,15 +54,9 @@ void SyncLocalChangesTask::_OnExecute()
 
     m_instancesStillInSync.clear();
 
-    if (m_objectsToSyncPtr)
-        for (auto inst : *m_objectsToSyncPtr)
-            {
-            SetUploadActiveForSingleInstance(txn, inst, true);
-            }
-
     for (auto changeGroup : m_changeGroups)
         SetUploadActiveForChangeGroup(txn, *changeGroup, true);
-    
+
     txn.Commit();
 
     SyncNext()->Then(m_ds->GetCacheAccessThread(), [=]
@@ -74,14 +68,6 @@ void SyncLocalChangesTask::_OnExecute()
 
         txn.Commit();
         });
-    }
-
-void SyncLocalChangesTask::PrepareObjectsForSync(CacheTransactionCR txn)
-    {
-    for (auto objToSync : *m_objectsToSyncPtr)
-        {
-        txn.GetCache().GetChangeManager().SetUploadActive(objToSync, true);
-        }
     }
 
 /*--------------------------------------------------------------------------------------+
