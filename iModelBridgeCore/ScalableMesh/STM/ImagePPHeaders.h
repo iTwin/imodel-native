@@ -1,5 +1,6 @@
 #include "../mki/StaticAnalysisWarningsPush.h"
 #include <ImagePP/h/ExportMacros.h>
+#include <ImagePP\all\h\HFCAccessMode.h>
 #include <ImagePP/h/ImageppAPI.h>
 
 #ifdef VANCOUVER_API
@@ -46,6 +47,7 @@
 
 #include <ImagePP\all\h\HFCURLFile.h>
 #include <ImagePP\all\h\HRFRasterFileFactory.h>
+#include <ImagePP\all\h\HRFPngFile.h>
 #include <ImagePP\all\h\HVEClipShape.h>
 #include <ImagePP\all\h\HUTDEMRasterXYZPointsExtractor.h>
 

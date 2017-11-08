@@ -14,7 +14,7 @@
 #include "SMStreamedSourceStore.hpp"
 
 template class SMSQLiteStore<DRange3d>;
-
+   
 template class SMSQLiteNodeDataStore<DPoint3d, DRange3d>;
     
 template class SMStreamedSourceStore<byte, DRange3d>;
@@ -42,7 +42,7 @@ void SMSQLiteClipDefinitionExtOps::GetAllIDs(bvector<uint64_t>& allIds)
     {
     m_smSQLiteFile->GetAllClipIDs(allIds);
     } 
-
+ 
 void SMSQLiteClipDefinitionExtOps::GetAllCoverageIDs(bvector<uint64_t>& allIds)
     {
     m_smSQLiteFile->GetAllCoverageIDs(allIds);

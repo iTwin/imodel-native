@@ -47,7 +47,7 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
 
     try
         {     
-       if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
+       if (pImageURL != nullptr && HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
             {
             pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
             HRFVirtualEarthFile& rasterFile = static_cast<HRFVirtualEarthFile&>(*pRasterFile);
@@ -55,7 +55,19 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
             }    
         else
             {
-            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            WString localFilePath;
+
+            if (pImageURL == nullptr)
+                {
+                localFilePath.append(WString(L"file://"));
+                localFilePath.append(path);
+                }
+            else
+                {
+                localFilePath.append(path);
+                }
+            
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(localFilePath), TRUE);
             }
 
         pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
@@ -271,7 +283,7 @@ static bool s_outputTile = false;
 std::mutex s_imageppCopyFromLock; 
 #endif
 
-StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
+StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster, bool isRGBA, bool addHeader)
     {
     HFCMatrix<3, 3> transfoMatrix;
 /*
@@ -309,14 +321,28 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
         }
 
     HFCPtr<HRABitmap> pTextureBitmap;
+    HFCPtr<HRPPixelType> pPixelType;
+    int nbChannels;
 
-    HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV24R8G8B8());
-
+    if (isRGBA)
+        {
+        pPixelType = new HRPPixelTypeV32R8G8B8A8();
+        nbChannels = 4;
+        }
+    else
+        {
+        pPixelType = new HRPPixelTypeV24R8G8B8();
+        nbChannels = 3;
+        }    
    
 #ifdef VANCOUVER_API
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
 #endif
-    texData.resize(3 * sizeof(int) + width * height * 3);
+
+    if (addHeader)
+        texData.resize(3 * sizeof(int) + width * height * nbChannels);
+    else
+        texData.resize(width * height * nbChannels);
 
 #ifdef VANCOUVER_API
     pTextureBitmap = new HRABitmap(width,
@@ -336,8 +362,8 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
                                        8);
 #endif
 
-    byte* pixelBufferPRGB = new byte[width * height * 3];
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGB, width * height * 3);
+    byte* pixelBufferPRGB = new byte[width * height * nbChannels];
+    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGB, width * height * nbChannels);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
     HRAClearOptions clearOptions;
@@ -348,6 +374,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     ((uint8_t*)&green)[0] = 0;
     ((uint8_t*)&green)[1] = 0x77;
     ((uint8_t*)&green)[2] = 0;
+    ((uint8_t*)&green)[3] = 0x00;
 
     clearOptions.SetRawDataValue(&green);
 
@@ -367,20 +394,30 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     pTextureBitmap->CopyFrom(raster, copyFromOptions);
 #endif
 
+    Byte *pPixel;
 
-    Byte *pPixel = &texData[0] + 3 * sizeof(int);
-
-    int nChannels = 3;
-    memcpy(&texData[0], &width, sizeof(int));
-    memcpy(&texData[0] + sizeof(int), &height, sizeof(int));
-    memcpy(&texData[0] + 2 * sizeof(int), &nChannels, sizeof(int));
-
+    if (addHeader)
+        {
+        pPixel = &texData[0] + nbChannels * sizeof(int);        
+        memcpy(&texData[0], &width, sizeof(int));
+        memcpy(&texData[0] + sizeof(int), &height, sizeof(int));
+        memcpy(&texData[0] + 2 * sizeof(int), &nbChannels, sizeof(int));
+        }
+    else
+        {
+        pPixel = &texData[0];
+        }
 
     for (size_t i = 0; i < width*height; ++i)
         {
-        *pPixel++ = pixelBufferPRGB[i * 3];
-        *pPixel++ = pixelBufferPRGB[i * 3 + 1];
-        *pPixel++ = pixelBufferPRGB[i * 3 + 2];
+        *pPixel++ = pixelBufferPRGB[i * nbChannels];
+        *pPixel++ = pixelBufferPRGB[i * nbChannels + 1];
+        *pPixel++ = pixelBufferPRGB[i * nbChannels + 2];
+
+        if (nbChannels == 4)
+            {
+            *pPixel++ = pixelBufferPRGB[i * nbChannels + 3];
+            }
         }
     
 #ifndef NDEBUG
@@ -404,7 +441,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
                                                                         width,
                                                                         height,
         pPixelTypeBMP,
-        &texData[0] + 3 * sizeof(int));
+        &texData[0] + nbChannels * sizeof(int));
 	}
 #endif
     
