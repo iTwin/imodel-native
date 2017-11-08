@@ -93,6 +93,42 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                        Colin.Kerr              11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithUnknownUnitName)
+    {
+    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECProperty propertyName="Length" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <DimensionName>L</DimensionName>
+                        <UnitName>SILLYMETER</UnitName>
+                        <AllowableUnits />
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    
+    ASSERT_EQ(0, schema->GetKindOfQuantityCount()) << "No KOQ should have been created when unit is unknown";
+    ASSERT_EQ(nullptr, schema->GetClassCP("TestClass")->GetPropertyP("Length")->GetKindOfQuantity()) << "No KOQ should have been added to the property when the unit is unknown";
+
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                        Caleb.Shafer            06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)

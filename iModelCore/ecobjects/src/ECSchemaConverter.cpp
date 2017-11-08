@@ -988,6 +988,14 @@ ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, PrimitiveECPropertyP prop
     return createNewKindOfQuantity(schema, newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged, newKoqNameWithClassAndProperty.c_str());
     }
 
+void removePropertyUnitCustomAttributes(IECCustomAttributeContainerR container)
+    {
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -998,10 +1006,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
-        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
-        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+        removePropertyUnitCustomAttributes(container);
         return ECObjectsStatus::Success;
         }
 
@@ -1010,10 +1015,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
-        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
-        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+        removePropertyUnitCustomAttributes(container);
         return ECObjectsStatus::Success;
         }
 
@@ -1021,8 +1023,9 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (nullptr == newUnit)
         {
         Utf8String fullName = schema.GetFullSchemaName();
-        LOG.warningv("The property %s:%s.%s has an old unit '%s' that does not resolve to a new unit.  Creating a dummy unit to continue", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
-        newUnit = Units::UnitRegistry::Instance().AddDummyUnit(oldUnit.GetName());
+        LOG.warningv("The property %s:%s.%s has an old unit '%s' that does not resolve to a new unit.  Dropping unit to continue", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
+        removePropertyUnitCustomAttributes(container);
+        return ECObjectsStatus::Success;
         }
 
     KindOfQuantityP newKOQ;
@@ -1045,6 +1048,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
+        removePropertyUnitCustomAttributes(container);
         return status;
         }
 
@@ -1055,11 +1059,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         LOG.warningv("Unable to convert KindOfQuantity '%s' on property %s.%s because it conflicts with another KindOfQuantity in the base class hierarchy.", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
         }
-    prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-    prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
-    prop->RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-    prop->RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
 
+    removePropertyUnitCustomAttributes(container);
     return ECObjectsStatus::Success;
     }
 
