@@ -1493,6 +1493,9 @@
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\Stores\SMExternalProviderDataStore.cpp" />
+    <ClCompile Include="STM\ScalableMeshAnalysis_Ecef.cpp">
+      <Filter>Source\Core\Analysis</Filter>
+    </ClCompile>
     <ClCompile Include="STM\ScalableMeshInfo.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>

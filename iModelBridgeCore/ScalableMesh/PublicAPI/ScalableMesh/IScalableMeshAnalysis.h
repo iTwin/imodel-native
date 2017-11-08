@@ -29,7 +29,8 @@ struct SMVolumeSegment {
 
 struct ISMProgressReport
     {
-    double  m_workDone; //between 0-1
+    double  m_workDone;     // work advancement between 0-1
+    float   m_timeDelay;    // delay in sec for reports
     bool    m_processCanceled;
     };
 
@@ -69,12 +70,12 @@ class ISMGridVolume
         SMVolumeSegment* m_VolSegments; // table of segments ; one per grid element
         DRange3d m_range;               // range of the 3D grid volume
 
+        bool m_isWorld;     // The grid values are in World coordinates (not in 3SM coords)
+        bool m_isEcef;      // The grid values are in Ecef coordinates
+
     protected:
         int m_xSize;        // Size of the Grid in X
         int m_ySize;        // Size of the Grid in Y
-
-        double m_xStep;     // resolution on X
-        double m_yStep;     // resolution on Y
 
         bool m_bInitialised;
     };
