@@ -17,6 +17,7 @@ DWGDB_ENTITY_DEFINE_MEMBERS (Layout)
 DWGDB_ENTITY_DEFINE_MEMBERS (SpatialFilter)
 DWGDB_ENTITY_DEFINE_MEMBERS (SpatialIndex)
 DWGDB_ENTITY_DEFINE_MEMBERS (SortentsTable)
+DWGDB_ENTITY_DEFINE_MEMBERS (Xrecord)
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,4 +647,25 @@ DwgDbStatus     DwgDbSortentsTable::GetFullDrawOrder (DwgDbObjectIdArrayR sorted
             sortedOut.push_back (ids[i]);
         }
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgResBufIterator DwgDbXrecord::GetRbChain (DwgDbDatabaseP dwg, DwgDbStatus* status) const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    OdResult    es = OdResult::eNotApplicable;
+    OdResBufPtr resbuf = T_Super::rbChain (dwg, &es);
+    if (status != nullptr)
+        *status = ToDwgDbStatus (es);
+    return  DwgResBufIterator::CreateFrom(resbuf.get());
+    
+#elif DWGTOOLKIT_RealDwg
+    struct resbuf*  resbuf = nullptr;
+    Acad::ErrorStatus   es = T_Super::rbChain(&resbuf, dwg);
+    if (status != nullptr)
+        *status = ToDwgDbStatus (es);
+    return  DwgResBufIterator::CreateFromAndFree(resbuf);
+#endif
     }
