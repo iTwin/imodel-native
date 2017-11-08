@@ -592,7 +592,7 @@ LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const WString& IDTMLocalFileSource::Impl::GetPath (StatusInt& status) const
     {
-    if (BeFileName::DoesPathExist(m_path.c_str()))
+    if (BeFileName::DoesPathExist(m_path.c_str()) || BeFileName::IsUrl(m_path.c_str()))
         status = BSISUCCESS;
     else
         status = BSIERROR;
