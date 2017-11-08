@@ -3,7 +3,7 @@
 #include <omp.h>  
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-#define SM_ANALYSIS_DEBUG
+//#define SM_ANALYSIS_DEBUG
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Stephane.Nullans                  10/2017
@@ -297,7 +297,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     clock_t timer = clock();
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
-    //SNU #pragma omp parallel num_threads(numProcs)
+#pragma omp parallel num_threads(numProcs)
     {
 
 #pragma omp for
@@ -337,8 +337,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
 
             if (bret && Hits.size() > 0)
                 {
-                //SNU auto classif = curveVectorPtr->PointInOnOutXY(source);
-                //SNU if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
                         {
                         DRay3d ray1 = DRay3d::FromOriginAndVector(sourceW, directionWorld);
                         DRay3d ray = DRay3d::FromOriginAndVector(sourceEnu, directionEnu);
@@ -396,9 +394,10 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
 
     _FillGridVolumes(grid, intersected); // Sum the discrete volumes
 
-    DPoint3d lowerLeftWorld = ewgs84.enu2ecef(grid.m_range.low);
-    _convert3SMToWorld(m_scmPtr, lowerLeftWorld);
-    grid.m_range.low = lowerLeftWorld;
+    // Convert the range from Enu to World ???
+    DRange3d _range = grid.m_range;
+    grid.m_range = ewgs84.enu2ecef(_range);
+    grid.m_isEcef = true;
 
     if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;

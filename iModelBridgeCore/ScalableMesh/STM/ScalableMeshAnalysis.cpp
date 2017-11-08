@@ -4,7 +4,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-#define SM_ANALYSIS_DEBUG
+//#define SM_ANALYSIS_DEBUG
 
 struct  SMDummyProgressListener : public ISMAnalysisProgressListener
     {
@@ -817,21 +817,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
     if (!report.CheckContinueOnProgress())
         return DTMStatusInt::DTM_ERROR; //User abort
 
-/*    DRange3d rangeMesh; // extend of the scalable mesh
-    m_scmPtr->GetRange(rangeMesh);
-    // convert mesh range in World coordinate
-    _convert3SMToWorld(rangeMesh.low);
-    _convert3SMToWorld(rangeMesh.high);
-
-    DRange3d rangeRegion; // Extend of the polygon region - extended to mesh Z
-    DPoint3d P1 = polygon[0]; P1.z -= 1;  // keep only xy
-    DPoint3d P2 = polygon[1]; P2.z += 1;
-    rangeRegion = DRange3d::From(P1, P2);
-    for (auto point : polygon)
-        rangeRegion.Extend(point);
-    rangeRegion.low.z = rangeMesh.low.z - 1;
-    rangeRegion.high.z = rangeMesh.high.z + 1;*/
-
     DRange3d range; // get the computation range from data intersections
     if (_GetComputationRange(range, true, polygon, m_scmPtr, NULL, false) == false)
         return DTMStatusInt::DTM_ERROR; // no intersection
@@ -881,7 +866,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
     clock_t timer = clock();
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
-//SNU #pragma omp parallel num_threads(numProcs)
+#pragma omp parallel num_threads(numProcs)
     {
 
 #pragma omp for
@@ -920,9 +905,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
 
             if (bret && Hits.size() > 0)
                 {
-                //SNU auto classif = curveVectorPtr->PointInOnOutXY(source);
-                //SNU if (classif == CurveVector::InOutClassification::INOUT_In) // we are inside the restriction
-                    {
                     DRay3d ray = DRay3d::FromOriginAndVector(source, grid.m_direction);
                     DPoint3d polyHit; polyHit.Zero();
                     double rayFraction = 0;
@@ -964,7 +946,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
                             intersected[i*m_ySize + j] = true;
                             }
                         }
-                    }
                 }
             }
 #pragma omp critical
