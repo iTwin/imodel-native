@@ -1,4 +1,4 @@
-<ECSchema schemaName="ECDbChangeSummaries" alias="changes" version="01.00.00" description="ECDb Change Summaries" displayLabel="ECDb Change Summaries" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECDbChangeSummaries" alias="change" version="01.00.00" description="ECDb Change Summaries" displayLabel="ECDb Change Summaries" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     
     <!--Operation Type  enum -->
@@ -8,8 +8,8 @@
         <ECEnumerator value="4" displayLabel="Update"/>
     </ECEnumeration>
 
-    <!--Changeset represent a changeset that make up the change summary-->
-    <ECEntityClass typeName="Changeset" displayLabel="Changeset" modifier="Sealed">
+    <!--Summary represent a changeset that make up the change summary-->
+    <ECEntityClass typeName="Summary" displayLabel="Summary" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TemporaryTable</MapStrategy>
@@ -41,7 +41,7 @@
         <ECProperty propertyName="Operation" typeName="Operation" description="Operation type"/>
         <ECProperty propertyName="Indirect" typeName="bool" description="Change happen due to a trigger "/>
         <ECProperty propertyName="TableName" typeName="string" description="Change table name"/>
-        <ECNavigationProperty propertyName="Changeset" description="Changeset to which this instance is part of" relationshipName="ChangesetHasInstances" direction="backward" />
+        <ECNavigationProperty propertyName="Summary" description="Summary to which this instance is part of" relationshipName="ChangesetHasInstances" direction="backward" />
     </ECEntityClass>
     
     <!--PropertyValue represent a value change of a property but at accessString level -->
@@ -72,7 +72,7 @@
     <!--ChangesetHasInstances changeset contains instances that have changed -->
     <ECRelationshipClass typeName="ChangesetHasInstances" description="Associates changeset to instance" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
-            <Class class="Changeset"/>
+            <Class class="Summary"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
             <Class class="Instance"/>
