@@ -123,8 +123,27 @@ void    SubjectViewController::_OverrideGraphicParams(Dgn::Render::OvrGraphicPar
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::ToggleVisibility(DgnElementId subjectId, bool isVisible)
     {
-    m_subjectColors[subjectId].SetLineTransparency(isVisible ? 255 : 0);
-    m_subjectColors[subjectId].SetFillTransparency(isVisible ? 255 : 0);
+    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+        return;
+    
+    m_subjectColors[subjectId].SetLineTransparency(isVisible ? 0 : 255);
+    m_subjectColors[subjectId].SetFillTransparency(isVisible ? 0 : 255);
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod 												Diego.Pinate 	11/17
+//-------------------------------------------------------------------------------------------
+bool     SubjectViewController::IsVisible(DgnElementId subjectId) const
+    {
+    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+        {
+        BeAssert(false && "Subject not found in View Controller.");
+        return false;
+        }
+    
+    SubjectColorMap::const_iterator iter = m_subjectColors.find(subjectId);
+    Byte alpha = iter->second.GetFillColor().GetAlpha();
+    return alpha == 0;
     }
 
 //-------------------------------------------------------------------------------------------

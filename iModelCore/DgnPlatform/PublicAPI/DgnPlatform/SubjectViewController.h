@@ -54,6 +54,11 @@ public:
     //! @param[in] isVisible
     DGNPLATFORM_EXPORT void     ToggleVisibility(DgnElementId subjectId, bool isVisible);
 
+    //! Returns true if a subject is visible
+    //! @param[in] subjectId ID of the job subject
+    //! @return true if job subject is visible
+    DGNPLATFORM_EXPORT bool     IsVisible(DgnElementId subjectId) const;
+
     //! Sets overrides for a subject
     //! @param[in] subjectId
     //! @param[in] overrides
