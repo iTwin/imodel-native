@@ -2776,8 +2776,8 @@ void TriangleList::AddTriangle(TriangleCR triangle)
         
         m_indices.push_back(triangle.m_indices[i]);
         }
-    m_flags.push_back(flags);
 
+    m_flags.push_back(flags);
     }
 
 /*---------------------------------------------------------------------------------**//**

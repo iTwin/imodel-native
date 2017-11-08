@@ -243,6 +243,7 @@ public:
     const_iterator find(uint32_t color) const { return m_map.find(color); }
 
     void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const;
+    Map const& GetMap() const { return m_map; }
 };
 
 //=======================================================================================

@@ -75,7 +75,7 @@ BentleyStatus   GltfReader::ReadIndices(bvector<uint32_t>& indices, Json::Value 
         {
         case Gltf::DataType::UInt32:
             indices.resize(count);
-            memcpy(indices.data(), data.m_data, count);
+            memcpy(indices.data(), data.m_data, count*sizeof(uint32_t));
             return SUCCESS;
         case Gltf::DataType::UnsignedShort:
         case Gltf::DataType::UnsignedByte:
@@ -1604,7 +1604,37 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf)
     {
+#if defined(TEST_TILE_REBUILDER)
+    DgnTile::Header header;
+    header.Read(streamBuffer);
+    streamBuffer.ResetPos();
+    contentRange = header.contentRange;
+    isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
+
+    Render::FeatureTable features(100000);
+    Render::Primitives::MeshBuilderMap builders(0.0, &features, DRange3d::NullRange(), false);
+    DgnTile::Flags flags;
+    auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());
+    if (ReadStatus::Success != status)
+        { BeAssert(false); return status; }
+
+    for (auto& builder : builders)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (nullptr != mesh && !mesh->IsEmpty())
+            geometry.Meshes().push_back(mesh);
+        }
+
+    if (DgnTile::Flags::None != (flags & DgnTile::Flags::ContainsCurves))
+        geometry.MarkCurved();
+
+    if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
+        geometry.MarkIncomplete();
+
+    return ReadStatus::Success;
+#else
     return DgnTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

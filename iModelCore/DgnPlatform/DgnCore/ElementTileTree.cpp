@@ -50,7 +50,17 @@ struct TileContext;
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
 
+// Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
 #define TILECACHE_DEBUG
+
+// Uncomment to compare geometry read from tile cache data to that produced by LoadGeometryFromModel() and assert if unequal.
+// See TFS#772315 in which portions of geometry do not appear in tiles read from cache, but do appear if we disable the cache
+// #define DEBUG_TILE_CACHE_GEOMETRY
+#if defined(DEBUG_TILE_CACHE_GEOMETRY)
+    #if !defined(DISABLE_PARTIAL_TILES)
+        #define DISABLE_PARTIAL_TILES
+    #endif
+#endif
 
 #ifdef TILECACHE_DEBUG
 #define TILECACHE_PRINTF THREADLOG.debugv
@@ -1122,6 +1132,118 @@ folly::Future<BentleyStatus> Loader::_ReadFromDb()
     return status;
     }
 
+#if defined(DEBUG_TILE_CACHE_GEOMETRY)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T> static bool areEqual(T const& lhs, T const& rhs) { return lhs == rhs; }
+template <> bool areEqual(DisplayParamsCR lhs, DisplayParamsCR rhs) { return lhs.IsEqualTo(rhs); }
+template <> bool areEqual(FPoint2d const& lhs, FPoint2d const& rhs) { return bsiFPoint2d_pointEqual(&lhs, &rhs); }
+template <> bool areEqual(MeshPolyline const& lhs, MeshPolyline const& rhs) { return areEqual(lhs.GetIndices(), rhs.GetIndices()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T> static bool areEqual(bvector<T> const& lhs, bvector<T> const& rhs)
+    {
+    if (lhs.size() != rhs.size())
+        return false;
+
+    for (size_t i = 0; i < lhs.size(); i++)
+        if (!areEqual(lhs[i], rhs[i]))
+            return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T, typename U> static bool areEqual(bmap<T, U> const& lhs, bmap<T, U> const& rhs)
+    {
+    if (lhs.size() != rhs.size())
+        return false;
+
+    for (auto const& kvp : lhs)
+        {
+        auto iter = rhs.find(kvp.first);
+        if (rhs.end() == iter || !areEqual(kvp.second, iter->second))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T> static bool assertEqual(T const& lhs, T const& rhs)
+    {
+    bool equal = areEqual(lhs, rhs);
+    BeAssert(equal);
+    return equal;
+    }
+
+#define ASSERT_EQ(LHS, RHS) assertEqual((LHS), (RHS))
+#define ASSERT_EQ_MEMBER(MEMBER) ASSERT_EQ((lhs.MEMBER), (rhs.MEMBER))
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void assertEqual(MeshCR lhs, MeshCR rhs)
+    {
+    ASSERT_EQ_MEMBER(IsEmpty());
+    ASSERT_EQ_MEMBER(Is2d());
+    ASSERT_EQ_MEMBER(IsPlanar());
+    ASSERT_EQ_MEMBER(GetType());
+    ASSERT_EQ_MEMBER(GetDisplayParams());
+    ASSERT_EQ_MEMBER(Triangles().Indices());
+    ASSERT_EQ_MEMBER(Polylines());
+    ASSERT_EQ_MEMBER(Points());
+
+    // Normals may be generated during collection then discarded when written to cache
+    if (!lhs.GetDisplayParams().IgnoresLighting())
+        ASSERT_EQ_MEMBER(Normals());
+
+    ASSERT_EQ_MEMBER(Params());
+    ASSERT_EQ_MEMBER(Colors());
+    ASSERT_EQ_MEMBER(GetColorTable().GetMap());
+
+    //FeatureIndex lhsFeatures, rhsFeatures;
+    //lhs.ToFeatureIndex(lhsFeatures);
+    //rhs.ToFeatureIndex(rhsFeatures);
+    //ASSERT_EQ(lhsFeatures, rhsFeatures);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void assertEqual(MeshListCR lhs, MeshListCR rhs)
+    {
+    if (lhs.size() != rhs.size())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    for (size_t i = 0; i < lhs.size(); i++)
+        assertEqual(*lhs[i], *rhs[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void assertEqual(Render::Primitives::GeometryCollectionCR lhs, Render::Primitives::GeometryCollectionCR rhs)
+    {
+    ASSERT_EQ_MEMBER(IsEmpty());
+    ASSERT_EQ_MEMBER(IsComplete());
+    ASSERT_EQ_MEMBER(ContainsCurves());
+    assertEqual(lhs.Meshes(), rhs.Meshes());
+    }
+
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1141,13 +1263,16 @@ BentleyStatus Loader::_LoadTile()
         }
     else
         {
-        if (!m_tileBytes.empty() &&
-            TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache))
+        if (!m_tileBytes.empty())
             {
-            BeAssert(false);
-            return ERROR;
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache))
+                {
+                BeAssert(false);
+                return ERROR;
+                }
             }
         }
+
 #ifdef TILECACHE_DEBUG
     s_statistics.Update(stopWatch.GetCurrentSeconds(), geometry.IsEmpty());
 #endif
@@ -1239,8 +1364,21 @@ BentleyStatus Loader::DoGetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor());
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
+        BeAssert(!tile.IsPartial());
         if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
             return ERROR;
+
+#if defined(DEBUG_TILE_CACHE_GEOMETRY)
+        ElementAlignedBox3d readRange;
+        Render::Primitives::GeometryCollection readGeometry;
+        bool readIsLeaf;
+        m_tileBytes.ResetPos();
+        if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile(readRange, readGeometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), readIsLeaf))
+            BeAssert(false);
+
+        assertEqual(readGeometry, geometry);
+        m_tileBytes.ResetPos();
+#endif
         }
     
     m_saveToCache = true;
