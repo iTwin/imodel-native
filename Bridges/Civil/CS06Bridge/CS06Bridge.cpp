@@ -13,13 +13,6 @@ BEGIN_CS06BRIDGE_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CS06Bridge::CS06Bridge() : m_dgnDb06Ptr(nullptr)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus CS06Bridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
     // Process any command-line arguments specific to the CS06Bridge here.
@@ -62,12 +55,9 @@ BentleyStatus CS06Bridge::_Initialize(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CS06Bridge::_OpenSource()
     {
-    m_dgnDb06Ptr = 
-        Teleporter::OpenSourceFile(MarshalHelper::MarshalBimBeFileNameTo06BeFileName(_GetParams().GetInputFileName()));
-    if (m_dgnDb06Ptr.IsNull())
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
+    BentleyStatus status = 
+        static_cast<BentleyStatus>(Teleporter::OpenSourceFile(MarshalHelper::MarshalBimBeFileNameTo06BeFileName(_GetParams().GetInputFileName())));
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,11 +65,7 @@ BentleyStatus CS06Bridge::_OpenSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CS06Bridge::_CloseSource(BentleyStatus)
     {
-    if (m_dgnDb06Ptr.IsNull())
-        return;
-
-    Teleporter::CloseSourceFile(*m_dgnDb06Ptr);
-    m_dgnDb06Ptr = nullptr;
+    Teleporter::CloseSourceFile();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,16 +164,6 @@ void CS06Bridge::_OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile
     // @param docId Identifies the document in the source DMS. May be a GUID or a local file name.
     // @param docSyncInfoid Identifies the document in the syncinfo file
 	}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP CS06Bridge::GetRegistrySubKey()
-    {
-    // TODO: Do I need to register this key with someone?
-
-    return L"OpenRoads ConceptStation Bridge";
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017

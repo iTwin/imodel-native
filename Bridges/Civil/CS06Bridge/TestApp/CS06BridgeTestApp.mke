@@ -36,6 +36,3 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
 
 %include $(SharedMki)linktool.mki
-
-# $(BuildContext)Delivery/SampleToyTile.xml : $(_MakeFilePath)SampleToyTile.xml
-#    $(LinkFirstDepToFirstTarget)

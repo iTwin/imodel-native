@@ -19,9 +19,6 @@ struct CS06Bridge : Dgn::iModelBridgeWithSyncInfoBase
 {
 	DEFINE_T_SUPER(Dgn::iModelBridgeWithSyncInfoBase)
 
-private:
-    BentleyG06::Dgn::DgnDbPtr m_dgnDb06Ptr;
-
 protected:
 	void UpdateProjectExtents(Dgn::SpatialModelR);
 	Utf8String ComputeJobSubjectName();
@@ -40,9 +37,10 @@ public:
 	virtual Dgn::SubjectCPtr _FindJob() override;
 	virtual void _OnDocumentDeleted(Utf8StringCR docId, Dgn::iModelBridgeSyncInfoFile::ROWID docSyncInfoid) override;
 
-    static WCharCP GetRegistrySubKey();
+    // TODO: Do I need to register this key with someone?
+    static WCharCP GetRegistrySubKey() { return L"OpenRoads ConceptStation Bridge"; }
 
-    CS06Bridge();
+    CS06Bridge() = default;
     virtual ~CS06Bridge() = default;
 };
 
