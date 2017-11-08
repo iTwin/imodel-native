@@ -117,6 +117,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             CachingDataSource::ProgressCallback&& onProgress,
             ICancellationTokenPtr ct
             );
+        void PrepareObjectsForSync(CacheTransactionCR txn);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
