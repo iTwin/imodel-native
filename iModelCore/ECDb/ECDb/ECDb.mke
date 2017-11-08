@@ -465,7 +465,7 @@ $(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)E
 $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbSchemaPolicies.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ChangeSummary.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ChangeSummary.01.00.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbChangeSummaries.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbChangeSummaries.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------
