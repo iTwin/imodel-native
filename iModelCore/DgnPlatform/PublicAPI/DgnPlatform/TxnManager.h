@@ -64,6 +64,7 @@ struct TxnMonitor
 {
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
+    virtual void _OnPrepareForUndoRedo() {}
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
