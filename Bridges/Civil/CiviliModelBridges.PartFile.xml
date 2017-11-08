@@ -211,6 +211,9 @@
     <SubPart PartName="CS06BridgePublicAPI"/>
     <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
     <SubPart PartName="DgnDb06BimTeleporterLibrary" PartFile="CivilDataExchange" Repository="Civil-DataExchange" />
+    <SubPart PartName="LinearReferencing" PartFile="LinearReferencing" Repository="DgnDomains-LinearReferencing"/>
+    <SubPart PartName="RoadRailAlignment" PartFile="RoadRailAlignment" Repository="DgnDomains-RoadRailAlignment"/>
+    <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
     <Bindings>
       <Libs Required="false">Delivery/$(libprefix)CS06Bridge$(libext)</Libs>
       <Assemblies>Delivery/$(shlibprefix)CS06Bridge$(shlibext)</Assemblies>

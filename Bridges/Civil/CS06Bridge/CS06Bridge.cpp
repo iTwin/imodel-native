@@ -110,16 +110,20 @@ SubjectCPtr CS06Bridge::_FindJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr CS06Bridge::_InitializeJob()
     {
-    // TODO: Is this correct?
-
     Utf8String jobName(ComputeJobSubjectName());
 
     SubjectCPtr jobSubject = CreateAndInsertJobSubject(GetDgnDbR(), jobName.c_str());
     if (!jobSubject.IsValid())
         return nullptr;
 
-    //AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_AlignmentModelName);
-    //RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_PhysicalModelName);
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
+    auto repositoryLinkId = docLink.m_element->GetElementId();
+
+    AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(*jobSubject, CS06BRIDGE_AlignmentModelName);
+    RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(*jobSubject, CS06BRIDGE_PhysicalModelName);
+
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*jobSubject, CS06BRIDGE_PhysicalModelName);
+    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
 
     return jobSubject;
     }

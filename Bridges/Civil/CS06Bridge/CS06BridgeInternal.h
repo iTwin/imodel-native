@@ -22,7 +22,11 @@
 
 namespace Dgn06 = BentleyG06::Dgn;
 namespace BeSQLite06 = BentleyG06::BeSQLite;
+
 namespace Teleporter = BENTLEY_NAMESPACE_NAME::DgnDb06BimTeleporter;
+
+namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
+namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
 
 USING_NAMESPACE_BENTLEY_DGN
 

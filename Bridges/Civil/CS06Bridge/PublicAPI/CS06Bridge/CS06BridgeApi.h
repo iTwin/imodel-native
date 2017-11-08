@@ -29,6 +29,12 @@ BEGIN_CS06BRIDGE_NAMESPACE
 END_CS06BRIDGE_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
+// DgnModel names
+//-----------------------------------------------------------------------------------------
+#define CS06BRIDGE_AlignmentModelName    "ConceptStation-Bridge Alignment Model"
+#define CS06BRIDGE_PhysicalModelName     "ConceptStation-Bridge Physical Model"
+
+//-----------------------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------------------
 #include "CS06Bridge.h"

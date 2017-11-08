@@ -75,9 +75,9 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libex
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 #LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
-#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
-#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
-#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilDataExchange$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnDb06BimTeleporter$(libext)
 
