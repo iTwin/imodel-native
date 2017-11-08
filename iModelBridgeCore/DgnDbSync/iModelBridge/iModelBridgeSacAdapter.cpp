@@ -376,6 +376,7 @@ void iModelBridgeSacAdapter::Params::PrintUsage()
 "--input-guid=                  (optional) The document GUID of the input file.\n"
 "--doc-attributes=              (optional) Document atttributes for the input file (in JSON format).\n"
 "--transform=                   (optional) 3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
+"--bridge-assetsDir=            (optional) the full path to the assets directory for the bridge.\n"
     );
     }
 
@@ -468,6 +469,12 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
             return iModelBridge::CmdLineArgStatus::Error;
             }
         SetDocumentGuid(docGuid);
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--bridge-assetsDir"))
+        {
+        m_bridgeAssetsDir.SetName(iModelBridge::GetArgValueW(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
         }
 
     return iModelBridge::CmdLineArgStatus::NotRecognized;
@@ -786,6 +793,9 @@ BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(iModelBridge& bridge, Par
         PrintCommandLineUsage(bridge, argc, argv);
         return BSIERROR;
         }
+
+    if (!saparams.GetBridgeAssetsDir().empty())
+        bridge._GetParams().SetAssetsDir(saparams.GetBridgeAssetsDir());
 
     FixInputFileName(bridge._GetParams());
     FixBriefcaseName(bridge._GetParams());
