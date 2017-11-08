@@ -17,7 +17,10 @@ BEGIN_CS06BRIDGE_NAMESPACE
 //=======================================================================================
 struct CS06Bridge : Dgn::iModelBridgeWithSyncInfoBase
 {
-	DEFINE_T_SUPER(iModelBridgeBase)
+	DEFINE_T_SUPER(Dgn::iModelBridgeWithSyncInfoBase)
+
+private:
+    BentleyG06::Dgn::DgnDbPtr m_dgnDb06Ptr;
 
 protected:
 	void UpdateProjectExtents(Dgn::SpatialModelR);
@@ -31,7 +34,7 @@ public:
     virtual WString _SupplySqlangRelPath() override;
 	virtual BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
 	virtual BentleyStatus _OpenSource() override;
-	virtual void _CloseSource(BentleyStatus) override { }
+    virtual void _CloseSource(BentleyStatus) override;
 	virtual BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
 	virtual Dgn::SubjectCPtr _InitializeJob() override;
 	virtual Dgn::SubjectCPtr _FindJob() override;
@@ -39,7 +42,8 @@ public:
 
     static WCharCP GetRegistrySubKey();
 
-	CS06Bridge() {}
+    CS06Bridge();
+    virtual ~CS06Bridge() = default;
 };
 
 extern "C"

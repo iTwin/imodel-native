@@ -351,6 +351,7 @@
   </Part>
 
   <Part Name="CS06CiviliModelBridgesTested">
+    <SubPart PartName="CivilDataExchangeTested" Repository="Civil-DataExchange" PartFile="CivilDataExchange" />
     <SubPart PartName="RunGtest-CS06" />
   </Part>
 
