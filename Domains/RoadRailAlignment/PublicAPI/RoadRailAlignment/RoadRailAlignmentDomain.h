@@ -35,6 +35,7 @@ public:
     ROADRAILALIGNMENT_EXPORT static Dgn::CodeSpecId QueryAlignmentCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject, Utf8CP partitionName);
+	ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr QueryAlignmentModel(Dgn::SubjectCR parentSubject, Utf8CP modelName);
     static Utf8CP GetDefaultPartitionName() { return "Alignments"; }
 
 private:

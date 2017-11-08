@@ -209,3 +209,17 @@ DgnCode RoadRailAlignmentDomain::CreateCode(DgnModelCR scopeModel, Utf8StringCR 
     {
     return CodeSpec::CreateCode(BRRA_CODESPEC_Alignment, scopeModel, value);
     }
+	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Jonathan.DeCarlo                  11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentModelPtr RoadRailAlignmentDomain::QueryAlignmentModel(Dgn::SubjectCR parentSubject, Utf8CP modelName)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, modelName);
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    SpatialLocationPartitionCPtr partition = db.Elements().Get<SpatialLocationPartition>(partitionId);
+    if (!partition.IsValid())
+        return nullptr;
+    return dynamic_cast<AlignmentModelP>(partition->GetSubModel().get());
+    }
