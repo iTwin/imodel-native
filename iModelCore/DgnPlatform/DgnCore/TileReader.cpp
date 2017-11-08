@@ -229,7 +229,7 @@ BentleyStatus GltfReader::ReadVertices(QVertex3dListR vertexList, Json::Value co
 
     size_t              nValues             = count * 3;
 
-    switch (accessor["componentType"].asInt())
+    switch (static_cast<Gltf::DataType>(accessor["componentType"].asInt()))
         {
         case Gltf::DataType::UnsignedShort:
             {
@@ -273,7 +273,7 @@ BentleyStatus GltfReader::ReadNormals(OctEncodedNormalListR normals, Json::Value
     if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, value, accessorName))
         return ERROR;
 
-    switch (accessor["componentType"].asInt())
+    switch (static_cast<Gltf::DataType>(accessor["componentType"].asInt()))
         {
         case Gltf::DataType::UnsignedByte:
                 {
@@ -302,7 +302,7 @@ BentleyStatus GltfReader::ReadNormalPairs(OctEncodedNormalPairListR pairs, Json:
         return ERROR;
 
 
-    switch (accessor["componentType"].asInt())
+    switch (static_cast<Gltf::DataType>(accessor["componentType"].asInt()))
         {
         case Gltf::DataType::UnsignedByte:
             {
@@ -329,7 +329,7 @@ BentleyStatus GltfReader::ReadParams(bvector<FPoint2d>& params, Json::Value cons
     if (SUCCESS != GetBufferView (pData, count, byteLength, type, accessor, value, accessorName))
         return ERROR;
 
-    switch (accessor["componentType"].asInt())
+    switch (static_cast<Gltf::DataType>(accessor["componentType"].asInt()))
         {
         case Gltf::DataType::Float:
             {
@@ -478,9 +478,6 @@ ImageSource GltfReader::GetImageSource(Utf8CP name)
 
     size_t byteLength = bvJson["byteLength"].asUInt();
     void const* pData = m_binaryData + bvJson["byteOffset"].asUInt();
-
-    auto width = gltfJson["width"].asUInt(),
-         height = gltfJson["height"].asUInt();
 
     auto mimeType = gltfJson["mimeType"].asString();
     auto format = mimeType.EndsWith("png") ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
