@@ -573,6 +573,7 @@ const InstanceCacheHelper::CachedInstances& instances
     bset<CachedInstanceKey> oldCached;
 
     if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultClass, oldCached) ||
+        SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultWeakClass, oldCached) ||
         SUCCESS != m_relationshipInfoManager.ReadCachedRelationshipsFromHolder(pageKey, m_responsePageToResultClass, oldCached))
         {
         return ERROR;
@@ -611,7 +612,8 @@ const InstanceCacheHelper::CachedInstances& instances
         }
 
     if (SUCCESS != m_hierarchyManager.RelateCachedInstancesToHolder(pageKey, m_responsePageToResultClass, instancesToAdd) ||
-        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultClass, instancesToRemove))
+        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultClass, instancesToRemove) ||
+        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultWeakClass, instancesToRemove))
         {
         return ERROR;
         }
