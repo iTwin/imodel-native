@@ -13,7 +13,6 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include <Bentley/DateTime.h>
-#include <curl/curl.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
