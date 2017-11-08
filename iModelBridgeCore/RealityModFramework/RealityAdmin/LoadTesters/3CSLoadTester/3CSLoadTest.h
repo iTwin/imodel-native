@@ -9,6 +9,11 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 #include "../LoadTestBase.h"
+/*#include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/RealityDataService.h>
+#include <Bentley/Bentley.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <Bentley/BeFile.h>*/
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

@@ -54,7 +54,7 @@ BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
 BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley$(libext) \
                                 $(BuildContextSubPartsLibDir)BentleyGeom$(libext) \
-                                $(BuildContextSubPartsLibDir)RealityPlatform$(libext)
+                                $(BuildContextSubPartsLibDir)RealityPackage$(libext)
                                 
 
 #----------------------------------------------------------------------

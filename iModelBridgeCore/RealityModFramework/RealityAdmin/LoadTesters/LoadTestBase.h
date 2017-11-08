@@ -11,7 +11,7 @@
 #include <queue>
 
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatformTools/RealityDataService.h>
+#include <RealityPlatform/RealityDataService.h>
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/BeFile.h>

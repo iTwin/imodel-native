@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/WMSSource.h>
+#include <RealityPackage/RealityPackage.h>
+#include <RealityPackage/WMSSource.h>
 
 namespace RealityPackageNet
     {
@@ -84,6 +84,6 @@ namespace RealityPackageNet
             !WmsMapSettingsNet();
 
         private:
-            RealityPlatform::WmsMapSettingsPtr* m_pWmsMapSettings;
+            RealityPackage::WmsMapSettingsPtr* m_pWmsMapSettings;
         };
     }

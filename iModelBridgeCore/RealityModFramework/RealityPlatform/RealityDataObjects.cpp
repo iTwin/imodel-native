@@ -497,10 +497,10 @@ DRange2dCR RealityDataBase::GetFootprintExtent() const
 
             for (size_t index = 1 ; index < m_footprint.size() ; ++index)
                 {
-                m_footprintExtent.low.x  = std::min(m_footprint[index].longitude, m_footprintExtent.low.x );
-                m_footprintExtent.low.y  = std::min(m_footprint[index].latitude, m_footprintExtent.low.y );
-                m_footprintExtent.high.x = std::max(m_footprint[index].longitude, m_footprintExtent.high.x);
-                m_footprintExtent.high.y = std::max(m_footprint[index].latitude, m_footprintExtent.high.y);
+                m_footprintExtent.low.x  = min(m_footprint[index].longitude, m_footprintExtent.low.x );
+                m_footprintExtent.low.y  = min(m_footprint[index].latitude, m_footprintExtent.low.y );
+                m_footprintExtent.high.x = max(m_footprint[index].longitude, m_footprintExtent.high.x);
+                m_footprintExtent.high.y = max(m_footprint[index].latitude, m_footprintExtent.high.y);
                 }
             }
         else

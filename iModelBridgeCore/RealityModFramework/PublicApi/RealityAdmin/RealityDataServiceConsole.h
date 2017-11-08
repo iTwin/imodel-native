@@ -15,7 +15,7 @@
 #include <Bentley/DateTime.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatformTools/RealityDataService.h>
+#include <RealityPlatform/RealityDataService.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

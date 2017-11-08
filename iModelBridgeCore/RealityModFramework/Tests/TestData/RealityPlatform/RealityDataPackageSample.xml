@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<RealityDataPackage xmlns="http://www.bentley.com/RealityDataServer/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.1">
+<?xml version="1.0" encoding="utf-8"?>
+<RealityDataPackage version="2.1" xmlns="http://www.bentley.com/RealityDataServer/v2">
   <Origin>Origin1</Origin>
   <RequestingApplication>RequestingApplication1</RequestingApplication>
   <Name>Name1</Name>
   <Description>Description1</Description>
-  <CreationDate>1900-01-01T12:24:35.500</CreationDate>
+  <CreationDate>1900-01-01T01:01:01-05:00</CreationDate>
   <Copyright>Copyright1</Copyright>
   <Id>Id1</Id>
   <BoundingPolygon>0 0 0 1 1 1 1 0 0 0</BoundingPolygon>
@@ -23,7 +23,7 @@
           <ServerLoginMethod>ServerLoginMethod1</ServerLoginMethod>
           <ServerRegistrationPage>ServerRegistrationPage1</ServerRegistrationPage>
           <ServerOrganisationPage>ServerOrganisationPage1</ServerOrganisationPage>
-          <Size>555</Size>
+          <Size>0</Size>
           <Metadata type="type1">Metadata1</Metadata>
           <GeoCS>GeoCS1</GeoCS>
           <NoDataValue>NoDataValue1</NoDataValue>
@@ -41,7 +41,7 @@
         <UpperRight>1 1</UpperRight>
       </Corners>
     </ImageryData>
-    <ImageryData>
+	    <ImageryData>
       <Id>31675</Id>
       <Name>LC80130282015007LGN00</Name>
       <Dataset>Landat 8</Dataset>
@@ -52,11 +52,6 @@
           <Size>395300</Size>
           <Metadata>https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_MTL.txt</Metadata>
           <NoDataValue>0</NoDataValue>
-          <SisterFiles>
-            <File>http://uri55</File>
-            <File>http://uri56</File>
-            <File>http://uri57</File>
-          </SisterFiles>
           <Red>
             <Source uri="https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B4.TIF" type="tif">
               <Copyright>Data available from the U.S. Geological Survey.</Copyright>
@@ -109,7 +104,7 @@
       <Name>Name1</Name>
       <Dataset>Dataset1</Dataset>
       <Sources>
-        <Source uri="http://uri10" type="type10">
+        <Source uri="http://uri10" type="type10" streamed="false">
           <Copyright>Copyright10</Copyright>
           <TermOfUse>TermOfUse10</TermOfUse>
           <Id>Id10</Id>
@@ -135,7 +130,7 @@
       <Name>Name1</Name>
       <Dataset>Dataset1</Dataset>
       <Sources>
-        <Source uri="http://uri19" type="type19">
+        <Source uri="http://uri19" type="type19" streamed="true">
           <Copyright>Copyright19</Copyright>
           <TermOfUse>TermOfUse19</TermOfUse>
           <Id>Id19</Id>
@@ -163,7 +158,7 @@
       <Name>Name2</Name>
       <Dataset>Dataset2</Dataset>
       <Sources>
-        <Source uri="http://uri22" type="type22">
+        <Source uri="http://uri22" type="type22" streamed="false">
           <Copyright>Copyright22</Copyright>
           <TermOfUse>TermOfUse22</TermOfUse>
           <Id>Id22</Id>
@@ -194,7 +189,7 @@
             <File>http://uri67</File>
           </SisterFiles>
         </Source>
-        <Source uri="http://uri24" type="type24">
+        <Source uri="http://uri24" type="type24" streamed="false">
           <Copyright>Copyright24</Copyright>
           <TermOfUse>TermOfUse24</TermOfUse>
           <Id>Id24</Id>
@@ -224,7 +219,7 @@
       <Name>Name1</Name>
       <Dataset>Dataset1</Dataset>
       <Sources>
-        <Source uri="http://uri28" type="type28">
+        <Source uri="http://uri28" type="type28" streamed="false">
           <Copyright>Copyright28</Copyright>
           <TermOfUse>TermOfUse28</TermOfUse>
           <Id>Id28</Id>
@@ -262,20 +257,6 @@
           <Size>18</Size>
           <Metadata type="type37">Metadata37</Metadata>
           <GeoCS>GeoCS37</GeoCS>
-          <NoDataValue>NoDataValue37</NoDataValue>
-        </Source>
-        <Source uri="http://uri378" type="type378" streamed="true">
-          <Copyright>Copyright378</Copyright>
-          <TermOfUse>TermOfUse378</TermOfUse>
-          <Id>Id378</Id>
-          <Provider>Provider378</Provider>
-          <ServerLoginKey>ServerLoginKey37</ServerLoginKey>
-          <ServerLoginMethod>ServerLoginMethod37</ServerLoginMethod>
-          <ServerRegistrationPage>ServerRegistrationPage37</ServerRegistrationPage>
-          <ServerOrganisationPage>ServerOrganisationPage37</ServerOrganisationPage>
-          <Size>1888</Size>
-          <Metadata type="type37">Metadata37</Metadata>
-          <GeoCS>GeoCS3887</GeoCS>
           <NoDataValue>NoDataValue37</NoDataValue>
         </Source>
       </Sources>

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <RealityAdmin/ContextServicesWorkbench.h>
-#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatform/RealityConversionTools.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 

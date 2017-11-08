@@ -11,17 +11,17 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/RefCounted.h>
 
-#include <RealityPlatformTools/RealityDataDownload.h>
-#include <RealityPlatform/RealityDataPackage.h>
-#include <RealityPlatformTools/md5.h>
-#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPackage/RealityDataPackage.h>
+#include <RealityPlatform/md5.h>
+#include <RealityPlatform/RealityConversionTools.h>
 
 #include <stdio.h>
 #include <conio.h>
 #include <iostream>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
 WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be override by parameter at the execution.
 

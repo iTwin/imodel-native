@@ -12,10 +12,10 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTest.h>
 #include <Windows.h>
-#include <RealityPlatformTools/RealityDataService.h>
-#include <RealityPlatformTools/WSGServices.h>
-#include <RealityPlatformTools/GeoCoordinationService.h>
-#include <RealityPlatformTools/SimpleRDSApi.h>
+#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatform/GeoCoordinationService.h>
+#include <RealityPlatform/SimpleRDSApi.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

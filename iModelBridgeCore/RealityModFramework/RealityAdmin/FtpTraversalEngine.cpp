@@ -9,7 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
 
-#include <RealityPlatformTools/RealityDataDownload.h>
+#include <RealityPlatform/RealityDataDownload.h>
 #include <RealityAdmin/FtpTraversalEngine.h>
 #include <RealityAdmin/RealityDataHandler.h>
 #include <RealityAdmin/RealityPlatformUtil.h>

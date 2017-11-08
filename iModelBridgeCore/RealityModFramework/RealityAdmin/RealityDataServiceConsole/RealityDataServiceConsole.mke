@@ -36,7 +36,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextDeliveryDir)RealityPlatform.lib \
                        $(ContextDeliveryDir)RealityAdmin.lib \
-                       $(ContextDeliveryDir)RealityPlatformTools.lib 
+                       $(ContextDeliveryDir)RealityPackage.lib 
 
 %include $(SharedMki)linktool.mki
 

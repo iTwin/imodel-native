@@ -10,7 +10,7 @@
 #include <queue>
 
 #include <Bentley/BeFile.h>
-#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatform/RealityConversionTools.h>
 
 #include "RDSLoadTest.h"
 
@@ -613,7 +613,7 @@ void RDSUser::ValidateDeleteRealityData(int activeUsers)
 //+---------------+---------------+---------------+---------------+---------------+------*/
 void RDSUser::ValidatePrevious(int activeUsers)
     {
-    if(m_correspondance.response.toolCode != CURLE_OK)
+    if(m_correspondance.response.curlCode != CURLE_OK)
         {
         m_stats->InsertStats(this, false, activeUsers);
         return;

@@ -10,6 +10,7 @@
 #include <BeXml/BeXml.h>
 
 #include <RealityPlatform/SpatialEntity.h>
+#include <RealityPlatform/RealityDataDownload.h>
 
 
 #define THUMBNAIL_WIDTH     512

@@ -13,6 +13,9 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include <Bentley/DateTime.h>
+#include <curl/curl.h>
+#include <sql.h>
+#include <sqlext.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -488,7 +491,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const override;
 
 protected:
-    REALITYDATAPLATFORM_EXPORT RealityData();
+    RealityData();
 
     Utf8String m_realityDataType;
     bool     m_streamed;

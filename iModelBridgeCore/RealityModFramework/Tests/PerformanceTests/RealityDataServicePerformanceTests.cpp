@@ -9,9 +9,9 @@
 #include <Bentley/Bentley.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatformTools/RealityDataService.h>
-#include <RealityPlatformTools/WSGServices.h>
-#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatform/RealityConversionTools.h>
 
 
 #include <stdio.h>

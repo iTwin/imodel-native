@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPlatform/RealityDataPackage.h>
+#include <RealityPackage/RealityDataPackage.h>
 
 // Forward declaration
 namespace RealityPackageNet { ref class ImageryDataNet; }
@@ -85,7 +85,7 @@ namespace RealityPackageNet
             ~RealityDataPackageNet();
             !RealityDataPackageNet();
 
-            RealityPlatform::RealityDataPackagePtr* m_pPackage;
+            RealityPackage::RealityDataPackagePtr* m_pPackage;
         };
 
     //=====================================================================================
@@ -151,7 +151,7 @@ namespace RealityPackageNet
             ~ImageryDataNet();
             !ImageryDataNet();
 
-            RealityPlatform::ImageryDataPtr* m_pImageryData;
+            RealityPackage::ImageryDataPtr* m_pImageryData;
         };
 
     //=====================================================================================
@@ -171,7 +171,7 @@ namespace RealityPackageNet
             ~ModelDataNet();
             !ModelDataNet();
 
-            RealityPlatform::ModelDataPtr* m_pModelData;
+            RealityPackage::ModelDataPtr* m_pModelData;
         };
 
     //=====================================================================================
@@ -212,7 +212,7 @@ namespace RealityPackageNet
             ~PinnedDataNet();
             !PinnedDataNet();
 
-            RealityPlatform::PinnedDataPtr* m_pPinnedData;
+            RealityPackage::PinnedDataPtr* m_pPinnedData;
         };    
 
     //=====================================================================================
@@ -231,7 +231,7 @@ namespace RealityPackageNet
             ~TerrainDataNet();
             !TerrainDataNet();
 
-            RealityPlatform::TerrainDataPtr* m_pTerrainData;
+            RealityPackage::TerrainDataPtr* m_pTerrainData;
         };
 
     //=====================================================================================
@@ -250,6 +250,6 @@ namespace RealityPackageNet
             ~UndefinedDataNet();
             !UndefinedDataNet();
 
-            RealityPlatform::UndefinedDataPtr* m_pUndefinedData;
+            RealityPackage::UndefinedDataPtr* m_pUndefinedData;
         };
     }

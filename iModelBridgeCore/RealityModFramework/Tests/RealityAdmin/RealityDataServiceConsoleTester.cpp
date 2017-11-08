@@ -238,7 +238,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     fwrite("1", sizeof(char), 1, pFile);
     fclose(pFile);
 
-    Utf8String token = RequestConstructor().GetToken();
+    Utf8String token = CurlConstructor().GetToken();
     token.ReplaceAll("Authorization: Token ", "");
     Utf8String decodedToken = Base64Utilities::Decode(token);
     const char* charstring = decodedToken.c_str();

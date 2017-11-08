@@ -9,7 +9,7 @@
 // Package.
 #include "RealityDataSourceNet.h"
 
-using namespace RealityPlatform;
+using namespace RealityPackage;
 using namespace RealityPackageNet;
 
 // System.
@@ -43,7 +43,7 @@ UriPtr ManagedToNativeUri(UriNet^ managedUri)
     Utf8String uriUtf8;
     BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedUri->ToStr()).ToPointer()));
 
-    return RealityPlatform::Uri::Create(uriUtf8.c_str());
+    return RealityPackage::Uri::Create(uriUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
 //-------------------------------------------------------------------------------------
 RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ managedSource)
     {
-    RealityPlatform::UriPtr nativeUri = ManagedToNativeUri(managedSource->GetUri());
+    RealityPackage::UriPtr nativeUri = ManagedToNativeUri(managedSource->GetUri());
 
     Utf8String nativeType;
     BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
@@ -273,7 +273,7 @@ UriNet::UriNet(String^ resourceIdentifier)
     Utf8String resourceIdentifierUtf8;
     BeStringUtilities::WCharToUtf8(resourceIdentifierUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(resourceIdentifier).ToPointer()));
 
-    m_pUri = new RealityPlatform::UriPtr(RealityPlatform::Uri::Create(resourceIdentifierUtf8.c_str()));
+    m_pUri = new RealityPackage::UriPtr(RealityPackage::Uri::Create(resourceIdentifierUtf8.c_str()));
     }
 
 //-------------------------------------------------------------------------------------
@@ -288,7 +288,7 @@ UriNet::UriNet(String^ source, String^ fileInCompound)
     Utf8String fileInCompoundUtf8;
     BeStringUtilities::WCharToUtf8(fileInCompoundUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(fileInCompound).ToPointer()));
 
-    m_pUri = new RealityPlatform::UriPtr(RealityPlatform::Uri::Create(sourceUtf8.c_str(), fileInCompoundUtf8.c_str()));
+    m_pUri = new RealityPackage::UriPtr(RealityPackage::Uri::Create(sourceUtf8.c_str(), fileInCompoundUtf8.c_str()));
     }
 
 //-------------------------------------------------------------------------------------

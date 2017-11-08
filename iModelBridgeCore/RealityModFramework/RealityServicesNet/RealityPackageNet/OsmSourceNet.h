@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/OsmSource.h>
+#include <RealityPackage/RealityPackage.h>
+#include <RealityPackage/OsmSource.h>
 
 namespace RealityPackageNet
     {
@@ -34,6 +34,6 @@ namespace RealityPackageNet
             !OsmResourceNet();
 
         private:
-            RealityPlatform::OsmResourcePtr* m_pOsmResource;
+            RealityPackage::OsmResourcePtr* m_pOsmResource;
         };
     }
