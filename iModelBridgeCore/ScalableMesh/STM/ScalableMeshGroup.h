@@ -13,6 +13,7 @@
 
 #include "ScalableMesh.h"
 
+#include "ScalableMeshClippingOptions.h"
 #include <CloudDataSource/DataSourceManager.h>
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
@@ -117,6 +118,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         RefCountedPtr<ScalableMeshGroupDTM>  m_smGroupsDTM[DTMAnalysisType::Qty];
 
+		ScalableMeshClippingOptions m_options;
+
     protected:
 
         virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override {}
@@ -129,6 +132,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual bool          _IsTextured() override;
 
+        virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const override;
+        
         virtual bool          _IsCesium3DTiles() override{ return false; }
 
         virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
@@ -213,6 +218,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
+
+		virtual IScalableMeshClippingOptions&                               _EditClippingOptions() override { return m_options; };
 
         virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
         virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;

@@ -12,6 +12,9 @@
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshRDSProvider.h"
 #include <ConnectClientWrapperNative\ConnectClientWrapper.h>
+#include <ScalableMesh\ScalableMeshAdmin.h>
+#include <ScalableMesh\ScalableMeshLib.h>
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -119,6 +122,20 @@ void ScalableMeshRDSProvider::InitializeRealityDataService()
 
     RealityDataService::SetServerComponents(GetBuddiUrl(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName());
     RealityDataService::SetProjectId(m_ProjectGuid);
+
+    ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
+
+    if (!proxyInfo.m_serverUrl.empty())
+        {       
+#ifndef VANCOUVER_API
+        Utf8String proxyCreds = proxyInfo.m_user;
+        proxyCreds.append(":");
+        proxyCreds.append(proxyInfo.m_password);
+        RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
+#else 
+        assert(!"RealityDataService::SetProxyInfo not yet available");
+#endif
+        }    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -166,7 +183,7 @@ void ScalableMeshRDSProvider::UpdateToken()
         m_AzureConnection.m_tokenTimer += 1000 * 60 * 50;
         assert(!"Problem with the handshake");
         }
-    }
+    }    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017

@@ -1021,6 +1021,9 @@
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IClipDefinitionDataProvider.h" />
+    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.h" />
+    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1486,6 +1489,7 @@
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
+    <ClCompile Include="STM\Stores\SMExternalProviderDataStore.cpp" />
     <ClCompile Include="STM\ScalableMeshAnalysis_Ecef.cpp">
       <Filter>Source\Core\Analysis</Filter>
     </ClCompile>

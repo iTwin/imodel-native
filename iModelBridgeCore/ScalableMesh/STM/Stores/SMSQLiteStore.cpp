@@ -9,6 +9,7 @@
 #include <ScalableMeshPCH.h>
 
 #include "SMSQLiteStore.h"
+#include "SMExternalProviderDataStore.h"
 #include "SMSQLiteStore.hpp"
 #include "SMStreamedSourceStore.hpp"
 

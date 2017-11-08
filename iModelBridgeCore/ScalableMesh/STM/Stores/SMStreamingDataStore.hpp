@@ -22,6 +22,7 @@
 #include <ImagePP\all\h\HCDException.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
 #include "ScalableMesh\ScalableMeshLib.h"
+#include "SMExternalProviderDataStore.h"
 
 USING_NAMESPACE_IMAGEPP
 
@@ -139,6 +140,8 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStrea
     {
     m_transform.InitIdentity();
 
+	m_clipProvider = nullptr;
+
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
@@ -247,6 +250,15 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     // Create an account on the file service streaming
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+    
+    ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
+
+    if (!proxyInfo.m_serverUrl.empty())
+        {
+        assert(dynamic_cast<DataSourceAccountCURL*>(account) != nullptr);
+        static_cast<DataSourceAccountCURL*>(account)->setProxy(proxyInfo.m_user, proxyInfo.m_password, proxyInfo.m_serverUrl);
+        }
+
 
     if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
@@ -398,7 +410,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_isTerrain = false; // default, always non terrain
         indexHeader->m_singleFile = false; // default, always multifile
         indexHeader->m_isCesiumFormat = true; // default, always cesium datasets
-        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+        indexHeader->m_rootNodeBlockID = HPMBlockID(rootNodeBlockID); // default, starts at 0
 
         BeFileName baseUrl(m_masterFileName.c_str());
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
@@ -422,6 +434,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
+            indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
             }
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
@@ -1108,6 +1121,24 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     // assert(!"No implemented yet");
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::IsTextureAvailable()
+    {    
+    return true;
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::DoesClipFileExist() const
+{
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+}
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+   {
+	m_clipProvider = provider;
+   }
+
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
     {
     m_settings->SetSMID(smID);
@@ -1641,6 +1672,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {
+
+	if (m_clipProvider.IsValid())
+	{
+		dataStore = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		return true;
+	}
+
     SMSQLiteFilePtr sqlFilePtr;
 
     sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
@@ -1656,6 +1694,12 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
     {
     assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+	if (m_clipProvider.IsValid() && (dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon))
+	{
+		dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_clipProvider.get());
+		return true;
+	}
 
     SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
 
@@ -2434,7 +2478,6 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
         m_tileData.numUvs = uv_buffer_pointer.count;
         m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
-        auto& uvDecodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
 
         this->resize(m_tileData.numIndices * sizeof(int32_t) + m_tileData.numPoints * sizeof(DPoint3d) + m_tileData.numUvs * sizeof(DPoint2d) + m_tileData.textureSize);
 
@@ -2442,8 +2485,16 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             {
             m_tileData.uvOffset = 0; // m_tileData.pointOffset + m_tileData.numPoints * sizeof(DPoint3d);
             m_tileData.m_uvData = reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
+
             if (uvs_are_quantized)
                 {
+                auto& uvQuantizedAttr = uvAccessor["extensions"]["WEB3D_quantized_attributes"];
+                auto& uvDecodeMatrixJson = uvQuantizedAttr["decodeMatrix"];
+                auto& uvDecodeMin = uvQuantizedAttr["decodedMin"];
+                auto& uvDecodeMax = uvQuantizedAttr["decodedMax"];
+                DPoint2d decMin = { uvDecodeMin[0].asFloat(), uvDecodeMin[1].asFloat() };
+                DPoint2d decMax = { uvDecodeMax[0].asFloat(), uvDecodeMax[1].asFloat() };
+
                 const FPoint3d scale = { uvDecodeMatrixJson[0].asFloat(), uvDecodeMatrixJson[4].asFloat() };
                 const FPoint3d translate = { uvDecodeMatrixJson[6].asFloat(), uvDecodeMatrixJson[7].asFloat() };
                 //const DPoint3d scale = { uvDecodeMatrixJson[0].asDouble(), uvDecodeMatrixJson[4].asDouble() };
@@ -2452,7 +2503,14 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
                 for (uint32_t i = 0; i < m_tileData.numUvs; i++)
                     {
-                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y));
+                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y);
+                    auto& x = m_tileData.m_uvData[i].x;
+                    auto& y = m_tileData.m_uvData[i].y;
+                    if (x < decMin.x) x = decMin.x;
+                    if (y < decMin.y) y = decMin.y;
+                    if (x > decMax.x) x = decMax.x;
+                    if (y > decMax.y) y = decMax.y;
+                    m_tileData.m_uvData[i].y = 1.0f - m_tileData.m_uvData[i].y;
                     }
 
                 }

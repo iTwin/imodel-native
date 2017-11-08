@@ -21,6 +21,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     : SMSQLiteSisterFile(database)
     {
     m_smSQLiteFile = database;   
+	m_clipProvider = nullptr;
 
     SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
     m_smSQLiteFile->LoadSources(*sourcesData);
@@ -54,7 +55,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
         {
         //we create the raster only once per dataset. Apparently there is some race condition if we do it in the render threads.
-        if (indexHeader.m_textured == IndexTexture::Streaming) 
+        if (indexHeader.m_textured == SMTextureType::Streaming) 
             {
 
             SQLiteNodeHeader nodeHeader;
@@ -98,7 +99,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
             //path = WString(L"http://www.bing.com/maps/aerial/");
 
             DRange2d extent2d = DRange2d::From(m_totalExtent);
-            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d);
+            m_raster = RasterUtilities::LoadRaster(m_streamingRasterFile, path, m_cs, extent2d, true);        
             }
         }
 
@@ -247,13 +248,10 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
-#ifdef VANCOUVER_API
-        // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
-        uint32_t consumerID = 1;
-#else
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
-#endif
+        m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
+        m_preloadMutex.unlock();
         }
 
 #if 0 
@@ -308,18 +306,36 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
     {    
-#ifdef VANCOUVER_API
-    // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
-    return;
-#else
     if (m_streamingRasterFile != nullptr)
         { 
         HGFTileIDList blocks;
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
-#endif
     }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
+    {
+    if (m_masterHeader.m_textured == SMTextureType::Streaming && m_raster == nullptr)
+        {   
+        return false;         
+        }
+
+    return true;
+    }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::DoesClipFileExist() const
+   {
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+   }
+
+template <class EXTENT> void SMSQLiteStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+{
+	m_clipProvider = provider;
+}
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
@@ -390,7 +406,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                        
-    if (m_masterHeader.m_textured == IndexTexture::Streaming)
+    if (m_masterHeader.m_textured == SMTextureType::Streaming)
         {
         dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent, m_raster);
         return true;
@@ -430,6 +446,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3D
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     { 
+
+	if (m_clipProvider.IsValid())
+	{
+		dataStore = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		return true;
+	}
+
     SMSQLiteFilePtr sqlFilePtr;
     
     sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
@@ -445,6 +468,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCo
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
     {
     assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+
+	if (m_clipProvider.IsValid() && (dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon))
+	{
+		dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_clipProvider.get());
+		return true;
+	}
 
     SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
 

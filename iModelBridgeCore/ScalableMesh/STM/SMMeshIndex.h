@@ -883,6 +883,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
     mutable SMMemoryPoolItemId m_smMeshPoolItemId;
+
     private:
 
 		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity());
@@ -1010,6 +1011,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 
         bool m_isInsertingClips;
+
+		bool m_canUseBcLibClips;
 
         void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         SMMeshIndex<POINT, EXTENT>* GetSMTerrain();

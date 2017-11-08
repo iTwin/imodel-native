@@ -17,6 +17,8 @@
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
 #include <ScalableMesh/IScalableMeshAnalysis.h>
+#include <ScalableMesh/IScalableMeshInfo.h>
+#include <ScalableMesh/IScalableMeshClippingOptions.h>
 
 #undef static_assert
 
@@ -141,6 +143,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual bool          _IsTextured() = 0;
 
+        virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const = 0;
+        
         virtual bool          _IsCesium3DTiles() = 0;
 
         virtual Utf8String    _GetProjectWiseContextShareLink() = 0;
@@ -283,6 +287,8 @@ struct IScalableMesh abstract:  IRefCounted
         
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
 
+		virtual IScalableMeshClippingOptions&      _EditClippingOptions() = 0;
+
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
@@ -328,6 +334,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT bool          IsTerrain();
 
         BENTLEY_SM_EXPORT bool          IsTextured();
+
+        BENTLEY_SM_EXPORT StatusInt     GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const;        
 
         BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
 
@@ -468,6 +476,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetCoverageName(Utf8String& name, uint64_t id) const;
 
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
+
+		BENTLEY_SM_EXPORT IScalableMeshClippingOptions&      EditClippingOptions();
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
 

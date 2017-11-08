@@ -85,6 +85,10 @@ bool          ScalableMeshGroup::_IsTextured()
     return false;
     }
 
+StatusInt ScalableMeshGroup::_GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const
+    {
+    return ERROR;
+    }
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  ScalableMeshGroup::_GetDTMInterface(DTMAnalysisType type)
     {
@@ -564,6 +568,7 @@ BentleyStatus                      ScalableMeshGroup::_DeleteCoverage(uint64_t i
 
     return SUCCESS;
     }
+
 
 void ScalableMeshGroup::_SetGroupSelectionFromPoint(DPoint3d firstPoint)
 {
