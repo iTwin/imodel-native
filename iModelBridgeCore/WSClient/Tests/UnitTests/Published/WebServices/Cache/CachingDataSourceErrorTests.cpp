@@ -153,7 +153,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorAndEmptyAsyncError_Stat
     {
     auto error = CachingDataSource::Error(CacheStatus::Error, AsyncError());
     ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, error.GetStatus());
-    ASSERT_EQ("Internal cache error.", error.GetMessage());
+    ASSERT_EQ("Internal cache error", error.GetMessage());
     EXPECT_TRUE(error.GetDescription().empty());
     }
 

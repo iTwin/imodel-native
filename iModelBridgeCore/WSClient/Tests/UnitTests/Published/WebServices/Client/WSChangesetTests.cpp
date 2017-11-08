@@ -879,6 +879,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsSetAndInstanceAdded_ReturnsChang
     auto expectedJson = ToJson(R"({
         "instances":[
             {
+            "changeState" : "existing",
             "schemaName":"TestSchema",
             "className":"TestClass",
             "instanceId":"Foo"
