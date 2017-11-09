@@ -199,7 +199,7 @@ struct IScalableMeshCreator::Impl
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
 
-        StatusInt  SetTextureMosaic(HFCPtr<HIMMosaic>& mosaicP);
+        StatusInt  SetTextureMosaic(MOSAIC_TYPE* mosaicP);
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
         StatusInt  SetTextureStreamFromUrl(WString url);
 

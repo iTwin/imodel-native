@@ -291,9 +291,9 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
     return SUCCESS;
     }
 
-StatusInt   IScalableMeshCreator::SetTextureMosaic(HFCPtr<HIMMosaic>& mosaicPtr)
+StatusInt   IScalableMeshCreator::SetTextureMosaic(MOSAIC_TYPE* mosaicP)
     {
-    return m_implP->SetTextureMosaic(mosaicPtr);
+    return m_implP->SetTextureMosaic(mosaicP);
     }
 
 
@@ -404,9 +404,9 @@ IScalableMeshCreator::Impl::~Impl()
     StatusInt status = SaveToFile();
     assert(BSISUCCESS == status);
     m_scmPtr = 0;
-    }
+    }   
 
-StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HFCPtr<HIMMosaic>& mosaicPtr)
+StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(MOSAIC_TYPE* mosaicP)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
 
@@ -417,10 +417,17 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HFCPtr<HIMMosaic>& mosaic
     GetProgress()->Progress() = 0.0;
 	GetProgress()->UpdateListeners();
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
-    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();    
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
+
+    mosaicP->IncrementRef();
+    HFCPtr<HIMMosaic> mosaicPtr(mosaicP);
     ITextureProviderPtr textureProviderPtr = new MosaicTextureProvider(mosaicPtr);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Embedded);
     m_scmPtr->TextureFromRaster(textureProviderPtr);
+    textureProviderPtr = nullptr;
+    mosaicPtr = nullptr;
+    mosaicP->DecrementRef();
+
     GetProgress()->Progress() = 1.0;
 	GetProgress()->UpdateListeners();
     return SUCCESS;
