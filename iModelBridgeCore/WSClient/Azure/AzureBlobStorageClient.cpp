@@ -187,7 +187,7 @@ ICancellationTokenPtr ct
     if (BeFileStatus::Success != file.GetSize(fileSize))
         {
         Http::Response response(HttpResponseContent::Create(HttpStringBody::Create("Invalid file.")), "", ConnectionStatus::None, HttpStatus::BadRequest);
-        return CreateCompletedAsyncTask<AzureResult>(AzureResult::Error(HttpError(response)));
+        return CreateCompletedAsyncTask<AzureResult>(AzureResult::Error(response));
         }
     file.Close();
 

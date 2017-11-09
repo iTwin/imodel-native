@@ -20,11 +20,24 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ClientConfiguration 
     {
     private:
+        struct HeaderProvider : public IHttpHeaderProvider
+            {
+            private:
+                const IHttpHeaderProviderPtr m_customProvider;
+                HttpRequestHeaders m_defaultHeaders;
+            public:
+                HeaderProvider(IHttpHeaderProviderPtr provider) : m_customProvider(provider) {};
+                virtual void FillHttpRequestHeaders(HttpRequestHeaders& headersOut) const;
+                HttpRequestHeadersR GetDefaultHeaders() { return m_defaultHeaders; };
+            };
+
+    private:
         const Utf8String m_serverUrl;
         const Utf8String m_repositoryId;
+        const std::shared_ptr<HeaderProvider> m_headerProvider;
         const IWSSchemaProviderPtr m_schemaProvider;
-        std::shared_ptr<HttpClient> m_httpClient;
-        IHttpHandlerPtr m_httpHandler;
+        const std::shared_ptr<HttpClient> m_httpClient;
+        const IHttpHandlerPtr m_httpHandler;
         size_t m_maxUrlLength = 2048;
 
     public:
@@ -43,8 +56,10 @@ struct ClientConfiguration
         IHttpHandlerPtr GetHttpHandler() const;
         BeFileName GetDefaultSchemaPath(WSInfoCR info) const;
 
-        void SetMaxUrlLength(size_t length) {m_maxUrlLength = std::move(length);}
+        void SetMaxUrlLength(size_t length) {m_maxUrlLength = length;}
         size_t GetMaxUrlLength() const {return m_maxUrlLength;}
+
+        HttpRequestHeadersR GetDefaultHeaders();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

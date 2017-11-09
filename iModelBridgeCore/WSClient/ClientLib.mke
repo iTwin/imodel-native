@@ -52,6 +52,10 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)CCApi$(stlibext)	
+%endif
+
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)

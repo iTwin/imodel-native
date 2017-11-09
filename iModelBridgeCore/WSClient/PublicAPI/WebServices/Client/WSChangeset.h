@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSChangeset.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/ObjectId.h>
+#include <WebServices/Client/RequestOptions.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -42,26 +43,32 @@ struct WSChangeset
         struct Relationship;
         struct Options;
 
-        typedef std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)> IdHandler;
+        typedef std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)> SuccessHandler;
+        typedef std::function<BentleyStatus(ObjectIdCR oldId, WSErrorCR error)> ErrorHandler;
 
     private:
         Format m_format;
         bvector<std::shared_ptr<Instance>> m_instances;
         std::shared_ptr<Options> m_options;
+        Json::Value m_requestOptions;
+        size_t m_requestOptionsJsonSize = 0;
 
     private:
         void ToSingleInstanceRequestJson(JsonValueR json) const;
         void ToMultipleInstancesRequestJson(JsonValueR json) const;
         void ToOptionsRequestJson(JsonValueR json) const;
 
-        BentleyStatus ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const IdHandler& handler) const;
-        BentleyStatus ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const IdHandler& handler) const;
+        BentleyStatus ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const SuccessHandler& successHandler, const ErrorHandler& errorHandler) const;
+        BentleyStatus ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const SuccessHandler& successHandler, const ErrorHandler& errorHandler) const;
 
     public:
         //! Create changeset. 
         //! Specify Format::SingeInstance for one instance with related instances changeset format.
         //! Specify Format::MultipleInstance for multiple instances with telated instances changeset format.
         WSCLIENT_EXPORT WSChangeset(Format format = Format::MultipleInstances);
+
+        //! Get set request options for changeset
+        WSCLIENT_EXPORT void SetRequestOptions(RequestOptions options);
 
         //! Add new instance. 
         //! @return added instance. Will assert if adding second instance with Format::SingeInstance and return undefined result.
@@ -102,7 +109,12 @@ struct WSChangeset
         WSCLIENT_EXPORT void ToRequestJson(JsonValueR json) const;
 
         //! Extract ids for created instances from response JSON
-        WSCLIENT_EXPORT BentleyStatus ExtractNewIdsFromResponse(RapidJsonValueCR response, const IdHandler& handler) const;
+        WSCLIENT_EXPORT BentleyStatus ExtractNewIdsFromResponse
+            (
+            RapidJsonValueCR response,
+            const SuccessHandler& successHandler = [] (ObjectIdCR oldId, ObjectIdCR newId) { return SUCCESS; },
+            const ErrorHandler& errorHandler = [] (ObjectIdCR oldId, WSErrorCR error) { return ERROR; }
+            ) const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -113,8 +125,12 @@ struct WSChangeset::Instance
     friend struct WSChangeset;
 
     private:
+        static Instance s_invalidInstance;
+
+    private:
+        bool m_isValid;
         ObjectId m_id;
-        ChangeState m_state;
+        ChangeState m_state = ChangeState::Existing;
         std::shared_ptr<Json::Value> m_properties;
         mutable size_t m_baseSize = 0;
         bvector<std::shared_ptr<Relationship>> m_relationships;
@@ -124,7 +140,15 @@ struct WSChangeset::Instance
         size_t CalculateSize() const;
         void ToJson(JsonValueR instanceJsonOut) const;
 
-        BentleyStatus ExtractNewIdsFromInstanceAfterChange(RapidJsonValueCR instanceAfterChange, const IdHandler& handler) const;
+        BentleyStatus ExtractNewIdsFromInstanceAfterChange(RapidJsonValueCR instanceAfterChange, const SuccessHandler& successHandler, const ErrorHandler& errorHandler) const;
+        static BentleyStatus HandleInstance
+            (
+            RapidJsonValueCR instanceAfterChange,
+            ObjectId instanceId,
+            ChangeState state,
+            const SuccessHandler& successHandler,
+            const ErrorHandler& errorHandler
+            );
 
         static void FillBase(JsonValueR instanceJsonOut, ObjectIdCR id, ChangeState state, JsonValuePtr properties);
         static size_t CalculateBaseSize(ObjectIdCR id, ChangeState state, JsonValuePtr properties, size_t& propertiesSizeInOut);
@@ -133,8 +157,11 @@ struct WSChangeset::Instance
         static Utf8CP GetChangeStateStr(ChangeState state);
         static Utf8CP GetDirectionStr(ECRelatedInstanceDirection direction);
         static ObjectId GetObjectIdFromInstance(RapidJsonValueCR instance);
+        static const rapidjson::Value* GetErrorJsonFromInstance(RapidJsonValueCR instance);
 
     public:
+        Instance(bool isValid = true) : m_isValid(isValid) {};
+
         //! Add related instance
         //! @return added related instance
         WSCLIENT_EXPORT Instance& AddRelatedInstance

@@ -78,14 +78,14 @@ StatusInt FeatureTracking::RegisterFeatureUsage(bvector<FeatureTrackingData> usa
         }
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreatePostRequest(GetServiceUrl());
+    Http::Request request = client.CreatePostRequest(GetServiceUrl());
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
     Utf8String body = Json::FastWriter().write(usageList);
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
     request.SetRequestBody(requestBody);
 
-    HttpResponse httpResponse = request.Perform().get();
+    Http::Response httpResponse = request.Perform().get();
 
     if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
@@ -116,11 +116,11 @@ Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8Str
     Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreateGetRequest(getURL);
+    Http::Request request = client.CreateGetRequest(getURL);
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    HttpResponse httpResponse = request.Perform().get();
+    Http::Response httpResponse = request.Perform().get();
 
     Json::Value usages = httpResponse.GetBody().AsJson();
     return usages;
@@ -137,11 +137,11 @@ Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8Str
     Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreateGetRequest(url);
+    Http::Request request = client.CreateGetRequest(url);
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    HttpResponse httpResponse = request.Perform().get();
+    Http::Response httpResponse = request.Perform().get();
 
     Json::Value usages = httpResponse.GetBody().AsJson();
     return usages;

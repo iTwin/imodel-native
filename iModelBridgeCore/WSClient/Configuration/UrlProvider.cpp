@@ -9,6 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <BeHttp/HttpConfigurationHandler.h>
+#include "../Client/Logging.h"
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
 #define LOCAL_STATE_ENVIRONMENT "Environment"
@@ -49,15 +50,23 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "Mobile.ConnectEula",
     "https://dev-agreement-eus.cloudapp.net/rest",
-    "https://qa-agreement-eus.cloudapp.net/rest",
+    "https://qa-connect-agreement.bentley.com/rest",
     "https://connect-agreement.bentley.com/rest",
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectTermsOfServiceUrl(
+    "ConnectTermsOfServiceUrl",
+    "https://dev-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+    "https://qa-connect-agreementportal.bentley.com/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
+    "https://connect-agreementportal.bentley.com/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
+    &s_urlRegistry
+     );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     "Mobile.ConnectProjectUrl",
     "https://dev-webportal-eus.cloudapp.net/project/index?projectId=",
-    "https://qa-webportal-eus.cloudapp.net/project/index?projectId=",
+    "https://qa-connect-webportal.bentley.com/project/index?projectId=",
     "https://connect.bentley.com/project/index?projectId=",
     &s_urlRegistry
     );
@@ -65,7 +74,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -73,7 +82,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing(
     "Mobile.ConnectWsgPersonalPublishing",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -81,7 +90,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     "Mobile.ConnectWsgProjectContent",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -89,7 +98,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
     "Mobile.ConnectWsgProjectShare",
     "https://dev-projectsharestorage-eus.cloudapp.net",
-    "https://qa-projectsharestorage-eus.cloudapp.net",
+    "https://qa-connect-projectsharestorage.bentley.com",
     "https://connect-projectsharestorage.bentley.com",
     &s_urlRegistry
     );
@@ -97,7 +106,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "Mobile.PunchListWsg",
     "https://dev-punchlist-eus.cloudapp.net",
-    "https://qa-punchlist-eus.cloudapp.net",
+    "https://qa-connect-punchlist.bentley.com",
     "https://connect-punchlist.bentley.com",
     &s_urlRegistry
     );
@@ -105,7 +114,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
     "Mobile.ClashIssuesWsg",
     "https://dev-punchlist-eus.cloudapp.net",
-    "https://qa-punchlist-eus.cloudapp.net",
+    "https://qa-connect-punchlist.bentley.com",
     "https://connect-punchlist.bentley.com",
     &s_urlRegistry
     );
@@ -113,15 +122,23 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     "Mobile.ConnectWsgSharedContent",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederation(
+    "RepositoryFederationService.URL",
+    "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://bcsf.bentley.com/ProjectGateway/Wsg",
     &s_urlRegistry
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
     "Mobile.ConnectForms",
     "https://dev-formswsg-eus.cloudapp.net",
-    "https://qa-formswsg-eus.cloudapp.net",
+    "https://qa-connect-formswsg.bentley.com",
     "https://connect-formswsg.bentley.com",
     &s_urlRegistry
     );
@@ -209,16 +226,8 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::EntitlementPolicyService(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "BeXMPP",
     "dev-xmppcollab-eus.cloudapp.net",
-    "qa-xmppcollab-eus.cloudapp.net",
+    "qa-connect-xmppcollab.bentley.com",
     "connect-xmppcollab.bentley.com",
-    &s_urlRegistry
-    );
-
-const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederation(
-    "RepositoryFederationService.URL",
-    "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
-    "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
-    "https://bcsf.bentley.com/ProjectGateway/Wsg",
     &s_urlRegistry
     );
 
@@ -328,8 +337,10 @@ AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
         {
         Utf8String url = result.GetValue();
         if (!result.IsSuccess() || url.empty())
+            {
+            LOG.errorv("URL '%s' is not configured", urlName.c_str());
             return url;
-
+            }
         Json::Value record;
         record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         record[RECORD_Url] = url;

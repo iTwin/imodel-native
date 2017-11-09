@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/MockHttpHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "MockHttpHandler.h"
@@ -25,7 +25,7 @@ MockHttpHandler::MockHttpHandler()
             {
             BeDebugLog(Utf8PrintfString(
                 "\n%s(%u): \n"
-                "Uninteresting HttpRequest was performed: %s\n"
+                "Uninteresting Http::Request was performed: %s\n"
                 "Got %u requests.",
                 m_file.c_str(), m_line,
                 request.GetUrl().c_str(),
@@ -83,7 +83,7 @@ AsyncTaskPtr<Http::Response> MockHttpHandler::_PerformRequest(Http::RequestCR re
         if (m_expectedRequests != EXPECTED_COUNT_ANY && m_expectedRequests < m_perfomedRequests)
             {
             BeDebugLog(Utf8PrintfString(
-                "\n%s(%u): error: Unexpected HttpRequest\n"
+                "\n%s(%u): error: Unexpected Http::Request\n"
                 "Received: %u requests. Current: %s\n"
                 "Expected: %lld requests",
                 m_file.c_str(), m_line,

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSRepositoryClient.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,7 +56,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             return *m_client;
             }
 
-        MOCK_METHOD1(SetCredentials, void(Credentials credentials));
+        MOCK_METHOD2(SetCredentials, void(Credentials, IWSRepositoryClient::AuthenticationType));
 
         MOCK_METHOD1(SetCompressionOptions, void(CompressionOptions));
 

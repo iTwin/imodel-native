@@ -10,9 +10,28 @@
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_TASKS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Andrius.Zonys                     01/16
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_ReturnsErrorResponse)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForFirstRequest([=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        });
+
+    auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", StubFilePath())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSuccess)
     {
@@ -34,6 +53,24 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", filePath)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_ReturnsErrorResponse)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        });
+
+    auto result = client->SendUpdateFileRequest("SASUrl", StubFile())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
     }
 
 /*---------------------------------------------------------------------------------**//**

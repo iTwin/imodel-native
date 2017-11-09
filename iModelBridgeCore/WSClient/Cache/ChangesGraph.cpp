@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/ChangesGraph.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -318,6 +318,20 @@ void CacheChangeGroup::SetFileChange(ChangeManager::FileChangeCR change)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool CacheChangeGroup::DoesContain(ECInstanceKeyCR instanceKey) const
+    {
+    if (m_objectChange.GetInstanceKey() == instanceKey)
+        return true;
+    if (m_relationshipChange.GetInstanceKey() == instanceKey)
+        return true;
+    if (m_fileChange.GetInstanceKey() == instanceKey)
+        return true;
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 void CacheChangeGroup::AddDependency(CacheChangeGroupPtr other)
     {
     m_dependsOn.insert(other);
@@ -351,6 +365,21 @@ bool CacheChangeGroup::AreAllDependenciesSynced() const
             {
             return false;
             }
+        }
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CacheChangeGroup::AreAllUnsyncedDependenciesInSet(const bset<CacheChangeGroup*>& set)
+    {
+    for (CacheChangeGroupPtr& dependency : m_dependsOn)
+        {
+        if (dependency->IsSynced())
+            continue;
+        if (!set.count(dependency.get()))
+            return false;
         }
     return true;
     }

@@ -16,7 +16,7 @@ ConnectCMkiHeaders = $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaBuff
                      $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaGenPublic.h         \
                      $(ConnectCMkiPublicApiDir)ConnectWsgProjectShare/ProjectShareBufferGenPublic.h   \
                      $(ConnectCMkiPublicApiDir)ConnectWsgProjectShare/ProjectShareGenPublic.h         \
-					 $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchPublic.h                      \
+                     $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchPublic.h                      \
                      $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchBufferPublic.h                \
                      $(ConnectCMkiPublicApiDir)CWSCC.h                                          \
                      $(ConnectCMkiPublicApiDir)CWSCCBufferPublic.h                              \

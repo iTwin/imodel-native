@@ -82,7 +82,7 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_METHOD5 (CacheInstancesAndLinkToRoot,
             BentleyStatus (WSObjectsResponseCR, Utf8StringCR, ECInstanceKeyMultiMap*, bool, ICancellationTokenPtr));
         MOCK_METHOD2 (UpdateInstance,
-            BentleyStatus (ObjectIdCR objectId, WSObjectsResponseCR response));
+            CacheStatus (ObjectIdCR objectId, WSObjectsResponseCR response));
         MOCK_METHOD4 (UpdateInstances,
             BentleyStatus (WSObjectsResponseCR, bset<ObjectId>*, bset<ECInstanceKey>*, ICancellationTokenPtr));
         MOCK_METHOD3 (CacheFile,
@@ -157,8 +157,8 @@ struct MockDataSourceCache : public IDataSourceCache
             CacheStatus (ObjectIdCR objectId));
         MOCK_METHOD1 (RemoveFile,
             BentleyStatus (ObjectIdCR objectId));
-        MOCK_METHOD1 (RemoveFilesInTemporaryPersistence,
-            BentleyStatus (DateTimeCP maxLastAccessDate));
+        MOCK_METHOD2 (RemoveFilesInTemporaryPersistence,
+            CacheStatus (DateTimeCP maxLastAccessDate, AsyncError* errorOut));
         MOCK_METHOD1 (RemoveRoot,
             BentleyStatus (Utf8StringCR rootName));
         MOCK_METHOD1 (RemoveRootsByPrefix,

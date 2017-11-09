@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -19,30 +19,56 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct SyncCachedDataTask : public CachingTaskBase
     {
     private:
+        struct CacheQuery;
+
+        struct Instance
+            {
+            ECInstanceKey key;
+            bvector<std::weak_ptr<CacheQuery>> cacheQueries;
+
+            Instance() {};
+            Instance(ECInstanceKey key) : key(key) {};
+
+            void Remove(CacheQuery& node);
+            bool IsComplete();
+
+            bool operator==(const Instance& other) const { return key == other.key; }
+            bool operator!=(const Instance& other) const { return key != other.key; }
+            bool operator<(const Instance& other) const { return key < other.key; }
+            };
+
+        struct CacheQuery
+            {
+            IQueryProvider::Query query;
+            std::shared_ptr<Instance> instance;
+
+            CacheQuery() {};
+            CacheQuery(IQueryProvider::Query query) : query(query) {};
+            };
+        
+    private:
         bvector<IQueryProviderPtr>          m_queryProviders;
 
-        bvector<ECInstanceKey>              m_initialInstances;
-        std::deque<IQueryProvider::Query>   m_queriesToCache;
-        bset<ObjectId>                      m_instancesToRedownload;
+        bvector<Instance>        			       m_initialInstances;
+        std::deque<std::shared_ptr<CacheQuery>>    m_queriesToCache;
         bset<ECInstanceKey>                 m_filesToDownload;
 
         bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
-        std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;
+        std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;             
 
-        ICachingDataSource::SyncProgressCallback m_onProgress;
+        ICachingDataSource::ProgressCallback m_onProgress;
 
+        size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
-        size_t m_syncedRejectedInstances = 0;
         size_t m_syncedQueries = 0;
         size_t m_totalQueries = 0;
-        double m_syncedBytes = 0;
-        double m_totalBytes = 0;
+        CachingDataSource::Progress::State m_downloadBytesProgress;
 
     protected:
         virtual void _OnExecute();
 
         void StartCaching();
-        void CacheInitialInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys);
+        void CacheInitialInstances(CacheTransactionCR txn, const bset<Instance>& instanceKeys);
 
         void ContinueCachingQueries(CacheTransactionCR txn);
         void PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively);
@@ -50,11 +76,10 @@ struct SyncCachedDataTask : public CachingTaskBase
         void InvalidatePersistentInstances();
         bool IsInstancePersistent(CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
 
-        void CacheRejectedInstances();
         void CacheFiles();
 
         void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error);
-        void ReportProgress(Utf8StringCR label = nullptr);
+        void ReportProgress(Utf8StringCPtr label = nullptr);
 
     public:
         SyncCachedDataTask
@@ -63,7 +88,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ICachingDataSource::SyncProgressCallback onProgress,
+            ICachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
     };
