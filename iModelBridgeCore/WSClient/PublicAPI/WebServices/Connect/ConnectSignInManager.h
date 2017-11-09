@@ -108,7 +108,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         std::function<void()> m_userSignOutHandler;
         std::function<void()> m_connectionClientSignInHandler;
 
-        IConnectionClientInterfacePtr m_connectionClient;
+        mutable IConnectionClientInterfacePtr m_connectionClient;
         std::shared_ptr<ConnectionClientListener> m_connectionClientListener;
 
     private:
@@ -129,6 +129,8 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         void CheckAndUpdateTokenNoLock();
         bool IsSignedInNoLock()  const;
+
+        void InitializeConnectionClientInterface() const;
 
     public:
         //! Can be created after MobileDgn is initialized.

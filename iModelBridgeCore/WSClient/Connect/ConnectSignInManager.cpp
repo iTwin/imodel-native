@@ -48,15 +48,6 @@ m_connectionClient(connectionClient)
     {
     m_auth = CreateAuthentication(ReadAuthenticationType());
 
-    if (connectionClient == nullptr)
-        {
-#ifdef BENTLEY_WIN32
-        m_connectionClient = std::make_shared<ConnectionClientInterface>();
-#else
-        m_connectionClient = std::make_shared<IConnectionClientInterface>();
-#endif
-        }
-
     CheckAndUpdateTokenNoLock();
     }
 
@@ -516,10 +507,28 @@ void ConnectSignInManager::StoreSignedInUser()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::InitializeConnectionClientInterface() const
+    {
+    if (m_connectionClient != nullptr)
+        return;
+
+#ifdef BENTLEY_WIN32
+    m_connectionClient = std::make_shared<ConnectionClientInterface>();
+#else
+    m_connectionClient = std::make_shared<IConnectionClientInterface>();
+#endif
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Mark.Uvari          09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsConnectionClientInstalled()
     {
+    BeCriticalSectionHolder lock(m_cs);
+    InitializeConnectionClientInterface();
+
     return m_connectionClient->IsInstalled();
     }
 
@@ -528,6 +537,9 @@ bool ConnectSignInManager::IsConnectionClientInstalled()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionClientToken(Utf8StringCR rpUri)
     {
+    BeCriticalSectionHolder lock(m_cs);
+    InitializeConnectionClientInterface();
+
     if (!IsConnectionClientInstalled())
         return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message)));
 
@@ -553,6 +565,9 @@ AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionCli
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::StartConnectionClientListener()
     {
+    BeCriticalSectionHolder lock(m_cs);
+    InitializeConnectionClientInterface();
+
     if (!IsConnectionClientInstalled())
         return;
 
