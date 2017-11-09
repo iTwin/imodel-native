@@ -6028,6 +6028,35 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesSupplied_CachesIni
     EXPECT_THAT(result.GetValue(), IsEmpty());
     }
 
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesContainsInvalid_SkipsInvalidOnesAndReturnsAsFailedObjects)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(client, cache);
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    auto instanceKey = StubECInstanceKey(11, 22);
+    ObjectId objectId("TestSchema.TestClass", "TestId");
+    EXPECT_CALL(*cache, FindInstance(instanceKey)).WillRepeatedly(Return(objectId));
+
+    EXPECT_CALL(*cache, FindInstance(StubECInstanceKey(1, 2))).WillRepeatedly(Return(ObjectId()));
+    EXPECT_CALL(*cache, FindInstance(StubECInstanceKey(1, 3))).WillRepeatedly(Return(ObjectId()));
+    EXPECT_CALL(*cache, ReadInstanceLabel(_)).WillRepeatedly(Return(Utf8String()));
+    
+    EXPECT_CALL(*client, SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillOnce(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
+
+    EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+     
+    auto instances = StubBVector({StubECInstanceKey(1, 2), instanceKey, StubECInstanceKey(1, 3)});
+    auto result = ds->SyncCachedData(instances, bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ(2, result.GetValue().size());
+    }
+
 TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstancesSupplied_CachesIntialInstancesWithSeperateRequests)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -6427,7 +6456,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFileBu
 
     auto instanceKey = StubECInstanceKey(11, 22);
     ObjectId objectId("TestSchema.TestClass", "TestId");
-    EXPECT_CALL(*cache, FindInstance(instanceKey)).WillRepeatedly(Return(ObjectId()));
+    EXPECT_CALL(*cache, FindInstance(instanceKey)).WillOnce(Return(objectId)).WillRepeatedly(Return(ObjectId()));
     EXPECT_CALL(*cache, FindInstance(objectId)).WillRepeatedly(Return(instanceKey));
 
     EXPECT_CALL(*client, SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));

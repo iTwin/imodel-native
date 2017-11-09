@@ -103,8 +103,16 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
 
     bset<ObjectId> objectIds;
     for (auto& instance : instanceKeys)
-        objectIds.insert(txn.GetCache().FindInstance(instance.key));
-
+        {
+        ObjectId objectId = txn.GetCache().FindInstance(instance.key);
+        if (!objectId.IsValid())
+            {
+            RegisterError(txn, instance.key, {ICachingDataSource::Status::DataNotCached});
+            continue;
+            }
+        objectIds.insert(objectId);
+        }
+       
     auto onProgress = [=] (size_t synced, CacheTransactionCR txn, const bset<ECInstanceKey>& handled)
         {
         m_syncedInitialInstances = synced;
@@ -241,6 +249,20 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKey
         ICachingDataSource::Status::DataNotCached == error.GetStatus())
         {
         AddFailedObject(txn.GetCache(), txn.GetCache().FindInstance(responseKey.GetParent()), error);
+        return;
+        }
+    SetError(error);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, CachingDataSource::ErrorCR error)
+    {
+    if (WSError::Status::ReceivedError == error.GetWSError().GetStatus() ||
+        ICachingDataSource::Status::DataNotCached == error.GetStatus())
+        {
+        AddFailedObject(txn.GetCache(), txn.GetCache().FindInstance(instanceKey), error);
         return;
         }
     SetError(error);
