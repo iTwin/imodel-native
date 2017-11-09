@@ -841,13 +841,13 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     uint32_t iArrayOfStruct (0);
     DPoint2d test1 = { 0.0 };
 
-    status = publishedProfile->GetPropertyIndex(iArrayOfStruct, "CustomCardinalPoints");
+    status = publishedProfile->GetPropertyIndex(iArrayOfStruct, "CardinalPoints");
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     status = publishedProfile->AddPropertyArrayItems(iArrayOfStruct, 1);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    ECN::ECClassCP structClass = publishedProfile->GetElementClass()->GetSchema().GetClassCP("CustomCardinalPointStruct");
+    ECN::ECClassCP structClass = publishedProfile->GetElementClass()->GetSchema().GetClassCP("CardinalPointStruct");
     ASSERT_TRUE(nullptr != structClass);
 
     ECN::StandaloneECEnablerPtr cardinalPointsEnabler = structClass->GetDefaultStandaloneEnabler();
@@ -868,7 +868,7 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     bentleyStatus = structValue.SetStruct(cardPointsInstance.get());
     ASSERT_TRUE(BentleyStatus::SUCCESS == bentleyStatus);
 
-    status = publishedProfile->SetPropertyValue("CustomCardinalPoints", structValue, PropertyArrayIndex(0));
+    status = publishedProfile->SetPropertyValue("CardinalPoints", structValue, PropertyArrayIndex(0));
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     Dgn::DgnElementCPtr persistentElement = publishedProfile->Insert(&status);
@@ -879,7 +879,7 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     ECN::ECValue testValue;
-    status = queriedElement->GetPropertyValue(testValue, "CustomCardinalPoints");
+    status = queriedElement->GetPropertyValue(testValue, "CardinalPoints");
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     ECN::ArrayInfo arrayInfo = testValue.GetArrayInfo();
@@ -888,7 +888,7 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
         {
         ECN::IECInstancePtr checkInstance;
         ECN::ECValue checkValue;
-        status = queriedElement->GetPropertyValue(checkValue, "CustomCardinalPoints", PropertyArrayIndex(i));
+        status = queriedElement->GetPropertyValue(checkValue, "CardinalPoints", PropertyArrayIndex(i));
         ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
         if (!checkValue.IsNull())
@@ -912,7 +912,7 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     }
 
 #define PUBLISHEDPROFILE_CODE_VALUE4       "PUBLISHEDPROFILE-004"
-TEST_F(StructuralDomainTestFixture, CustomCardinalPointsTests)
+TEST_F(StructuralDomainTestFixture, CardinalPointsTests)
 {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
@@ -941,19 +941,26 @@ TEST_F(StructuralDomainTestFixture, CustomCardinalPointsTests)
     test1.x = 0.14000;
     test1.y = 0.14000;
 
-    publishedProfile->AddCustomCardinalPoint("aa", test1);
+    publishedProfile->AddCardinalPoint("aa", test1);
 
     test1.x = 0.14000;
     test1.y = 0.15002;
 
-    publishedProfile->AddCustomCardinalPoint("aa2", test1);
+    publishedProfile->AddCardinalPoint("aa2", test1);
+    publishedProfile->AddCardinalPoint("aa2", test1);
 
-    publishedProfile->RemoveCustomCardinalPoint("aa");
+    publishedProfile->RemoveCardinalPoint("aa");
 
     test1.x = 1.14000;
     test1.y = 1.15002;
 
-    publishedProfile->SetCustomCardinalPoint("aa2", test1);
+    publishedProfile->SetCardinalPoint("aa2", test1);
+
+    test1.x = 6.14000;
+    test1.y = 61.15002;
+
+
+    Profile::IsStandardCardinalPointName("hh");
 
     Dgn::DgnElementCPtr persistentElement = publishedProfile->Insert(&status);
     ASSERT_TRUE(persistentElement.IsValid());
@@ -963,17 +970,19 @@ TEST_F(StructuralDomainTestFixture, CustomCardinalPointsTests)
     ASSERT_TRUE(queriedElement.IsValid());
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    ECN::ECValue testValue;
-    status = queriedElement->GetPropertyValue(testValue, "CustomCardinalPoints");
+    ECN::ECValue CardinalPointsValue;
+    status = queriedElement->GetPropertyValue(CardinalPointsValue, "CardinalPoints");
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    ECN::ArrayInfo arrayInfo = testValue.GetArrayInfo();
+    ECN::ArrayInfo arrayInfo = CardinalPointsValue.GetArrayInfo();
+
+
 
     for (uint32_t i = 0; i < arrayInfo.GetCount(); ++i)
     {
         ECN::IECInstancePtr checkInstance;
         ECN::ECValue checkValue;
-        status = queriedElement->GetPropertyValue(checkValue, "CustomCardinalPoints", PropertyArrayIndex(i));
+        status = queriedElement->GetPropertyValue(checkValue, "CardinalPoints", PropertyArrayIndex(i));
         ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
         if (!checkValue.IsNull())

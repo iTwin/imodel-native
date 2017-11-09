@@ -1,55 +1,102 @@
 #include <StructuralDomain/StructuralProfiles/Profile.h>
+#include <Bentley/bvector.h>
 
 HANDLER_DEFINE_MEMBERS(ProfileHandler)
 
+static bvector<Utf8String> CardinalPointsStandardNames =
+    {
+    "LeftBottom",
+    "MiddleBottom",
+    "RightBottom",
+    "LeftMiddle",
+    "MiddleMiddle",
+    "RightMiddle",
+    "LeftTop",
+    "MiddleTop",
+    "RightTop",
+    "CentroidCentroid",
+    "CentroidBottom",
+    "LeftCentroid",
+    "RightCentroid",
+    "CentroidTop",
+    "ShearShear",
+    "ShearBottom",
+    "LeftShear",
+    "RightShear",
+    "ShearTop"
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
 Profile::Profile(CreateParams const& params) : T_Super(params)
     {
     }
 
-ECN::StandaloneECEnablerPtr Profile::GetCustomCardinalPointsEnabler()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+ECN::StandaloneECEnablerPtr Profile::GetECEnabler(Utf8CP className)
     {
-    ECN::ECClassCP structClass = GetElementClass()->GetSchema().GetClassCP(ecclass_name_CustomCardinalPointStruct());
+    ECN::ECClassCP structClass = GetElementClass()->GetSchema().GetClassCP(className);
     BeAssert(nullptr != structClass);
 
-    ECN::StandaloneECEnablerPtr customCardinalPointsEnabler = structClass->GetDefaultStandaloneEnabler();
-    BeAssert(customCardinalPointsEnabler.IsValid());
+    ECN::StandaloneECEnablerPtr enabler = structClass->GetDefaultStandaloneEnabler();
+    BeAssert(enabler.IsValid());
 
-    return customCardinalPointsEnabler;
+    return enabler;
     }
 
-bool Profile::RemoveAllCustomCardinalPoints()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::RemoveAllCardinalPoints()
     {
-    uint32_t iCustomCardinalPointsIndex(0);
+    uint32_t iCardinalPointsIndex(0);
 
-    Dgn::DgnDbStatus status = GetPropertyIndex(iCustomCardinalPointsIndex, prop_CustomCardinalPoints());
+    Dgn::DgnDbStatus status = GetPropertyIndex(iCardinalPointsIndex, prop_CardinalPoints());
     BeAssert(status == Dgn::DgnDbStatus::Success);
 
-    status = ClearPropertyArray(iCustomCardinalPointsIndex);
+    status = ClearPropertyArray(iCardinalPointsIndex);
 
     return Dgn::DgnDbStatus::Success == status;
     }
 
-bool Profile::SetCustomCardinalPoint(Utf8CP name, double x, double y)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::IsStandardCardinalPointName(Utf8CP name)
+    {
+    return CardinalPointsStandardNames.end() != std::find(CardinalPointsStandardNames.begin(), CardinalPointsStandardNames.end(), Utf8String(name));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::SetCardinalPoint(Utf8CP name, double x, double y)
     {
     DPoint2d coordinates;
     coordinates.Init(x, y);
 
-    return SetCustomCardinalPoint(name, coordinates);
+    return SetCardinalPoint(name, coordinates);
     }
 
-bool Profile::SetCustomCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::SetCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
     {
     uint32_t index(0);
-    bool bRet = FindCustomCardinalPointIndexByName(index, name);
+    bool bRet = FindCardinalPointIndexByName(index, name);
 
     if (false != bRet)
         {
-        uint32_t iCustomCardinalPointsIndex(0);
+        uint32_t iCardinalPointsIndex(0);
 
-        Dgn::DgnDbStatus status = GetPropertyIndex(iCustomCardinalPointsIndex, prop_CustomCardinalPoints());
+        Dgn::DgnDbStatus status = GetPropertyIndex(iCardinalPointsIndex, prop_CardinalPoints());
         BeAssert(status == Dgn::DgnDbStatus::Success);
 
-        ECN::IECInstancePtr structInstance = GetCustomCardinalPointsEnabler()->CreateInstance().get();
+        ECN::IECInstancePtr structInstance = GetECEnabler(ecclass_name_CardinalPointStruct())->CreateInstance().get();
         BeAssert(structInstance.IsValid());
 
         ECN::ECObjectsStatus objectStatus = structInstance->SetValue("Name", ECN::ECValue(name));
@@ -62,7 +109,7 @@ bool Profile::SetCustomCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
         BentleyStatus bentleyStatus = structValue.SetStruct(structInstance.get());
         BeAssert(BentleyStatus::SUCCESS == bentleyStatus);
 
-        status = SetPropertyValue(prop_CustomCardinalPoints(), structValue, Dgn::PropertyArrayIndex(index));
+        status = SetPropertyValue(prop_CardinalPoints(), structValue, Dgn::PropertyArrayIndex(index));
         BeAssert(Dgn::DgnDbStatus::Success == status);
 
         bRet = Dgn::DgnDbStatus::Success == status;
@@ -71,23 +118,29 @@ bool Profile::SetCustomCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
     return bRet;
     }
 
-bool Profile::LookupCustomCardinalPointByName(Utf8CP name)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::LookupCardinalPointByName(Utf8CP name)
     {
     uint32_t index(0);
-    return FindCustomCardinalPointIndexByName(index, name);
+    return FindCardinalPointIndexByName(index, name);
     }
 
-bool Profile::FindCustomCardinalPointIndexByName(uint32_t& index, Utf8CP name)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::FindCardinalPointIndexByName(uint32_t& index, Utf8CP name)
     {
     bool bRet(false);
     Dgn::DgnDbStatus status;
     ECN::ECValue testValue;
 
-    for (uint32_t uiIdx = 0; uiIdx < CustomCardinalPointsCount(); ++uiIdx)
+    for (uint32_t uiIdx = 0; uiIdx < GetECArrayCount(prop_CardinalPoints()); ++uiIdx)
         {
         ECN::IECInstancePtr checkInstance;
         ECN::ECValue checkValue;
-        status = GetPropertyValue(checkValue, prop_CustomCardinalPoints(), Dgn::PropertyArrayIndex(uiIdx));
+        status = GetPropertyValue(checkValue, prop_CardinalPoints(), Dgn::PropertyArrayIndex(uiIdx));
         BeAssert(Dgn::DgnDbStatus::Success == status);
 
         if (!checkValue.IsNull())
@@ -113,37 +166,46 @@ bool Profile::FindCustomCardinalPointIndexByName(uint32_t& index, Utf8CP name)
     return bRet;
     }
 
-bool Profile::RemoveCustomCardinalPoint(Utf8CP name)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::RemoveCardinalPoint(Utf8CP name)
     {
     uint32_t index(0);
-    bool bRet = FindCustomCardinalPointIndexByName(index, name);
+    bool bRet = FindCardinalPointIndexByName(index, name);
 
     if (false != bRet)
         {
-        uint32_t iCustomCardinalPointsIndex(0);
+        uint32_t iCardinalPointsIndex(0);
 
-        Dgn::DgnDbStatus status = GetPropertyIndex(iCustomCardinalPointsIndex, prop_CustomCardinalPoints());
+        Dgn::DgnDbStatus status = GetPropertyIndex(iCardinalPointsIndex, prop_CardinalPoints());
         BeAssert(status == Dgn::DgnDbStatus::Success);
 
-        status = RemovePropertyArrayItem(iCustomCardinalPointsIndex, index);
+        status = RemovePropertyArrayItem(iCardinalPointsIndex, index);
         bRet = (status == Dgn::DgnDbStatus::Success);
         }
 
     return bRet;
     }
 
-bool Profile::AddCustomCardinalPoint(Utf8CP name, double x, double y)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::AddCardinalPoint(Utf8CP name, double x, double y)
     {
     DPoint2d coordinates;
     coordinates.Init(x, y);
 
-    return AddCustomCardinalPoint(name, coordinates);
+    return AddCardinalPoint(name, coordinates);
     }
 
-uint32_t Profile::CustomCardinalPointsCount()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+uint32_t Profile::GetECArrayCount(Utf8CP arrayPropertyName)
     {
     ECN::ECValue testValue;
-    Dgn::DgnDbStatus status = GetPropertyValue(testValue, prop_CustomCardinalPoints());
+    Dgn::DgnDbStatus status = GetPropertyValue(testValue, arrayPropertyName);
     BeAssert(Dgn::DgnDbStatus::Success == status);
 
     ECN::ArrayInfo arrayInfo = testValue.GetArrayInfo();
@@ -151,25 +213,28 @@ uint32_t Profile::CustomCardinalPointsCount()
     return arrayInfo.GetCount();
     }
 
-bool Profile::AddCustomCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Arturas.Mizaras                   11/2017
+//---------------------------------------------------------------------------------------
+bool Profile::AddCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
     {
-    if (LookupCustomCardinalPointByName(name))
+    if (LookupCardinalPointByName(name))
         {
         return false;
         }
 
-    uint32_t iCustomCardinalPointsIndex(0);
+    uint32_t iCardinalPointsIndex(0);
 
-    Dgn::DgnDbStatus status = GetPropertyIndex(iCustomCardinalPointsIndex, prop_CustomCardinalPoints());
+    Dgn::DgnDbStatus status = GetPropertyIndex(iCardinalPointsIndex, prop_CardinalPoints());
     BeAssert(status == Dgn::DgnDbStatus::Success);
 
     ECN::ECObjectsStatus objectStatus(ECN::ECObjectsStatus::Success);
-    ECN::IECInstancePtr structInstance = GetCustomCardinalPointsEnabler()->CreateInstance().get();
+    ECN::IECInstancePtr structInstance = GetECEnabler(ecclass_name_CardinalPointStruct())->CreateInstance().get();
     BeAssert(structInstance.IsValid());
 
-    uint32_t size = CustomCardinalPointsCount();
+    uint32_t size = GetECArrayCount(prop_CardinalPoints());
 
-    status = InsertPropertyArrayItems(iCustomCardinalPointsIndex, size, 1);
+    status = InsertPropertyArrayItems(iCardinalPointsIndex, size, 1);
     BeAssert(status == Dgn::DgnDbStatus::Success);
 
     objectStatus = structInstance->SetValue("Name", ECN::ECValue(name));
@@ -182,7 +247,7 @@ bool Profile::AddCustomCardinalPoint(Utf8CP name, DPoint2dCR coordinates)
     BentleyStatus bentleyStatus = structValue.SetStruct(structInstance.get());
     BeAssert(BentleyStatus::SUCCESS == bentleyStatus);
 
-    status = SetPropertyValue(prop_CustomCardinalPoints(), structValue, Dgn::PropertyArrayIndex(size));
+    status = SetPropertyValue(prop_CardinalPoints(), structValue, Dgn::PropertyArrayIndex(size));
     BeAssert(Dgn::DgnDbStatus::Success == status);
 
     return Dgn::DgnDbStatus::Success == status;
