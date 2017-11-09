@@ -866,6 +866,34 @@ static DgnV8FileP findOpenV8FileByName(bvector<DgnV8FileP> const& files, BeFileN
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename CB>
+static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8FileP> const& allV8Files, CB cb)
+    {
+    bvector<DgnV8FileP> filesToSearchThisTime(filesToSearch);
+    while (!filesToSearchThisTime.empty())
+        {
+        for (auto v8File : filesToSearchThisTime)
+            {
+            for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
+                {
+                cb(*v8File, item);
+                }
+            }
+
+        filesToSearchThisTime.clear();
+        for (auto f : allV8Files)        // See if FindNonSpatialModel discovered new files while following 2-D attachments.
+            {
+            if (std::find(filesToSearch.begin(), filesToSearch.end(), f) == filesToSearch.end())
+                filesToSearchThisTime.push_back(f);
+            }
+
+        filesToSearch.insert(filesToSearch.end(), filesToSearchThisTime.begin(), filesToSearchThisTime.end());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::FindV8DrawingsAndSheets()
@@ -901,30 +929,16 @@ void RootModelConverter::FindV8DrawingsAndSheets()
     Bentley::DgnModelPtr v8model;
 
     // 1. Sheets
-    for (auto v8File : filesToSearch)
-        {
-        for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
-            {
-            if ((DgnV8Api::DgnModelType::Sheet == item.GetModelType()) && ((v8model = v8File->LoadModelById(item.GetModelId())).IsValid()))
-                FindNonSpatialModel(*v8model, true);
-            }
-        }
-
-    // Note: We follow and register the 3d reference attachments to sheets. That is so that we discover all drawings referenced to a sheet
-    //  via the sheet's attachment. See "DgnModel objects and Sheet attachments".
-    // For drawing models, however, we do not follow reference attachments. They must be found either directly
-    //  from the model index (or as attachments to some sheet).
-
+    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {
+        if ((DgnV8Api::DgnModelType::Sheet == item.GetModelType()) && ((v8model = v8File.LoadModelById(item.GetModelId())).IsValid()))
+            FindNonSpatialModel(*v8model, true);
+        });
 
     // 2. Drawings
-    for (auto v8File : filesToSearch)
-        {
-        for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
-            {
-            if (IsV8DrawingModel(*v8File, item) && ((v8model = v8File->LoadModelById(item.GetModelId())).IsValid()))
-                FindNonSpatialModel(*v8model, false); 
-            }
-        }
+    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {
+        if (IsV8DrawingModel(v8File, item) && ((v8model = v8File.LoadModelById(item.GetModelId())).IsValid()))
+            FindNonSpatialModel(*v8model, true); 
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
