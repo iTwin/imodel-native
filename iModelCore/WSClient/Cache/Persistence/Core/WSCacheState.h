@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/WSCacheState.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -43,7 +43,7 @@ struct WSCacheState : public IECDbSchemaChangeListener
                 ECSchemaCP cacheSchema = nullptr;
 
             public:
-                Core(ObservableECDb& db, CacheEnvironmentCR environment);
+                Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys);
                 ECSchemaCP GetCacheSchema();
 
                 ECDbAdapter             dbAdapter;
@@ -71,8 +71,8 @@ struct WSCacheState : public IECDbSchemaChangeListener
         ObservableECDb& m_db;
         CacheEnvironment m_environment;
 
-        bool m_isSyncActive;
         std::shared_ptr<Core> m_core;
+        ECInstanceKeyMultiMap m_activeSyncKeys;
 
     private:
         Core& GetCore();

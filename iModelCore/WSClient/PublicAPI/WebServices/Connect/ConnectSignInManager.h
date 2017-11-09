@@ -15,6 +15,7 @@
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Connect/IConnectionClientInterface.h>
 #include <BeHttp/AuthenticationHandler.h>
 #include <BeSecurity/SecureStore.h>
 
@@ -23,6 +24,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_SECURITY
 
 typedef AsyncResult<void, AsyncError> SignInResult;
+typedef AsyncResult<SamlTokenPtr, AsyncError> ConnectionClientTokenResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -37,17 +39,25 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
             Utf8String firstName;
             Utf8String lastName;
             Utf8String userId;
+            Utf8String organizationId;
+            bool IsComplete() const
+                {
+                return !(username.Equals("") || firstName.Equals("") || lastName.Equals("") || userId.Equals("") || organizationId.Equals(""));
+                };
             };
 
         struct Configuration
             {
-            //! Identity token lifetime to be requested in minutes 
+            //! Identity token lifetime to be requested in minutes. Defaults to 1 week.
+            //! If application is offline for given lifetime, signed-in state still persist because user would not be able to sign-in anyway.
+            //! First connection to network after lifetime will reject expired token and session expiration will be forced.
+            //! Session expiration will require user to be re-signed-in.
             uint32_t identityTokenLifetime = 7 * 24 * 60;
-            //! Identity token lifetime refresh rate in minutes 
+            //! Identity token lifetime refresh rate in minutes. Renews token to keep maximum lifetime available.
             uint32_t identityTokenRefreshRate = 60;
-            //! Delegation token lifetime to be requested in minutes
+            //! Delegation token lifetime to be requested in minutes. Delegation tokens with limited lifetime are meant for services.
             uint32_t delegationTokenLifetime = 60;
-            //! Renew delegation token 5 minutes (or other) before it expires
+            //! Renew delegation token 5 minutes (or other) before it expires. Gets new token before old one expires.
             uint32_t delegationTokenExpirationThreshold = 5;
             };
 
@@ -59,8 +69,27 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
             Token = 2
             };
 
+        struct Authentication
+            {
+            AuthenticationType type = AuthenticationType::None;
+            IConnectAuthenticationPersistencePtr persistence;
+            IConnectTokenProviderPtr tokenProvider;
+            };
+
+        struct ConnectionClientListener
+            {
+            private:
+                ConnectSignInManagerPtr m_manager;
+                static ConnectionClientListener* s_instance;
+
+            public:
+                ConnectionClientListener(ConnectSignInManagerPtr manager);
+                static void callback(int eventId, WCharCP data);
+                void ConnectionClientCallback(int eventId, WCharCP data);
+            };
+
     private:
-        mutable BeMutex m_cs;
+        mutable BeMutex m_mutex;
 
         IImsClientPtr m_client;
         IJsonLocalState& m_localState;
@@ -68,29 +97,38 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
 
         Configuration m_config;
 
-        AuthenticationType m_authType = AuthenticationType::None;
+        Authentication m_auth;
 
-        IConnectAuthenticationPersistencePtr m_persistence;
-        bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
+        IConnectTokenProviderPtr m_publicIdentityTokenProvider;
+        mutable bmap<Utf8String, std::shared_ptr<struct DelegationTokenProvider>> m_publicDelegationTokenProviders;
+
         std::function<void()> m_tokenExpiredHandler;
         std::function<void()> m_userChangeHandler;
         std::function<void()> m_userSignInHandler;
         std::function<void()> m_userSignOutHandler;
+        std::function<void()> m_connectionClientSignInHandler;
+
+        IConnectionClientInterfacePtr m_connectionClient;
+        std::shared_ptr<ConnectionClientListener> m_connectionClientListener;
 
     private:
-        ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore);
+        ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient);
 
         void CheckUserChange();
         void StoreSignedInUser();
 
-        AuthenticationType GetAuthenticationType();
+        AuthenticationType ReadAuthenticationType() const;
         void StoreAuthenticationType(AuthenticationType type);
 
-        IConnectAuthenticationPersistencePtr GetPersistenceMatchingAuthenticationType();
-        IConnectTokenProviderPtr GetBaseTokenProviderMatchingAuthenticationType();
+        Authentication CreateAuthentication(AuthenticationType type, IConnectAuthenticationPersistencePtr persistence = nullptr) const;
+        void Configure(Authentication& auth) const;
+        void Configure(struct DelegationTokenProvider& provider) const;
 
-        IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri);
+        IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri) const;
         void ClearSignInData();
+
+        void CheckAndUpdateTokenNoLock();
+        bool IsSignedInNoLock()  const;
 
     public:
         //! Can be created after MobileDgn is initialized.
@@ -99,12 +137,14 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! @param httpHandler - custom HttpHandler to route requests trough
         //! @param localState - custom LocalState to store encrypted authentication information between sessions
         //! @param secureStore - custom encryption provider
+        //! @param connectionClient - Connection Client API
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             ClientInfoPtr clientInfo,
             IHttpHandlerPtr httpHandler = nullptr,
             IJsonLocalState* localState = nullptr,
-            ISecureStorePtr secureStore = nullptr
+            ISecureStorePtr secureStore = nullptr,
+            IConnectionClientInterfacePtr connectionClient = nullptr
             );
 
         //! Can be created after MobileDgn is initialized.
@@ -112,11 +152,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! @param client - custom ImsClient for authenticating user
         //! @param localState - custom LocalState to store encrypted authentication information between sessions
         //! @param secureStore - custom encryption provider
+        //! @param connectionClient - Connection Client API
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             IImsClientPtr client,
             IJsonLocalState* localState = nullptr,
-            ISecureStorePtr secureStore = nullptr
+            ISecureStorePtr secureStore = nullptr,
+            IConnectionClientInterfacePtr connectionClient = nullptr
             );
 
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
@@ -126,7 +168,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
 
         //! Sign in using identity token.
         //! Note: Token can be retrieved from IMS sign-in page from browser, in-app web view, or other means.
-        WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token);
+        WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token, Utf8StringCR rpUri = nullptr);
         //! Sign in using user credentials. Credentials will be used for token retrieval but will not be stored.
         //! Note: this only works for IMS managed users. Federated users from organisations can only use SignInWithToken().
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
@@ -136,13 +178,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Sign-out user and remove all user information from disk
         WSCLIENT_EXPORT void SignOut();
         //! Check if user is signed-in
-        WSCLIENT_EXPORT bool IsSignedIn();
+        WSCLIENT_EXPORT bool IsSignedIn() const;
         //! Get user information stored in identity token
-        WSCLIENT_EXPORT UserInfo GetUserInfo();
+        WSCLIENT_EXPORT UserInfo GetUserInfo() const;
         //! Get user information stored in token
         WSCLIENT_EXPORT static UserInfo GetUserInfo(SamlTokenCR token);
         //! Get last or current user that was signed in. Returns empty if no user was signed in
-        WSCLIENT_EXPORT Utf8String GetLastUsername();
+        WSCLIENT_EXPORT Utf8String GetLastUsername() const;
 
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
@@ -156,27 +198,41 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Will be called after user sign-out
         WSCLIENT_EXPORT void SetUserSignOutHandler(std::function<void()> handler);
 
-        //! Get authentication handler for specific server when signed in.
-        //! It will automatically authenticate all HttpRequests that is used with.
+        //! Will be called after user signs in to Connection Client
+        WSCLIENT_EXPORT void SetConnectionClientSignInHandler(std::function<void()> handler);
+
+        //! Get authentication handler for specific server.
+        //! Will automatically authenticate all HttpRequests that is used with. 
+        //! Will always represent user that is signed-in when authenticating.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
-        //! @param httpHandler optional custom HTTP handler to send all requests trough
+        //! @param httpHandler optional custom HTTP handler to send all given server authenticated requests trough. It will not be used for secure/sensitive token retrieval service.
         //! @param prefix optional custom header prefix to use. Some services require different header format
         WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler
             (
             Utf8StringCR serverUrl, 
             IHttpHandlerPtr httpHandler = nullptr,
             HeaderPrefix prefix = HeaderPrefix::Token
-            ) override;
+            ) const override;
 
         //! Get delegation token provider when signed in. Delegation tokens are short lived.
         //! Only use this if AuthenticationHandlerPtr cannot be used.
-        //! See IConnectTokenProvider API for more info how to use it
+        //! Will always represent user that is signed-in when prividing token.
         //! @param rpUri relying party URI to use token for
-        WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
+        WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri) const;
 
         //! Check if token expired and renew/handle expiration
         WSCLIENT_EXPORT void CheckAndUpdateToken();
+
+        //! Check if Connection Client is installed
+        //! Should be called first to make sure the API will work correctly
+        WSCLIENT_EXPORT bool IsConnectionClientInstalled();
+
+        //! Uses Connection Client API to get a token to sign in with
+        WSCLIENT_EXPORT AsyncTaskPtr<ConnectionClientTokenResult> GetConnectionClientToken(Utf8StringCR rpUri);
+
+        //! Uses Connection Client API to listen to events fired by Connection Client
+        WSCLIENT_EXPORT void StartConnectionClientListener();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

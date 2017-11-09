@@ -10,6 +10,7 @@
 
 #include <WebServices/Cache/Persistence/CacheEnvironment.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
+#include <Bentley/Tasks/AsyncError.h>
 
 #include "../Instances/ObjectInfoManager.h"
 #include "FileStorage.h"
@@ -70,7 +71,12 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
 
         BentleyStatus SaveInfo(FileInfoR info);
 
-        BentleyStatus DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes, DateTimeCP maxLastAccessDate = nullptr);
+        CacheStatus DeleteFilesNotHeldByNodes
+            (
+            const ECInstanceKeyMultiMap& holdingNodes,
+            DateTimeCP maxLastAccessDate = nullptr,
+            AsyncError* errorOut = nullptr
+            );
 
         BeFileName ReadFilePath(CachedInstanceKeyCR cachedKey);
 

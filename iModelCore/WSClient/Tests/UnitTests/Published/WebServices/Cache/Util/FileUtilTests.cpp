@@ -332,7 +332,7 @@ TEST_F(FileUtilTests, CopyFileContent_ProgressCallbackExistAndFileExists_Records
         };
 
     ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target, onProgress));
-    EXPECT_EQ(2, i);
+    EXPECT_EQ(4, i);
     }
 
 /*---------------------------------------------------------------------------------**//**
