@@ -13,10 +13,14 @@
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
-struct ChangeDetectorFacade : RefCountedBase, Teleporter::IChangeDetector
+struct ChangeDetectorFacade : public Teleporter::IChangeDetector, RefCountedBase
     {
+    private:
+        Dgn::iModelBridgeSyncInfoFile::ChangeDetectorPtr m_changeDetectorPtr;
+        Dgn::iModelBridgeSyncInfoFile::ROWID m_fileScopeId;
+
     public:
-        ChangeDetectorFacade();
+        ChangeDetectorFacade(Dgn::iModelBridgeSyncInfoFile::ChangeDetector* changeDetector, Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId);
         virtual ~ChangeDetectorFacade() = default;
     };
 

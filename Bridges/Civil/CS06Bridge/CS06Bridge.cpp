@@ -188,12 +188,14 @@ BentleyStatus CS06Bridge::_ConvertToBim(SubjectCR jobSubject)
 
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
-    //ORDConverter converter;
-    //converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr);
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName());
+    auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
 
-    // TODO: This method no longer exists, but we may need to do something like it.
+    ChangeDetectorFacadePtr changeDetectorFacade = new ChangeDetectorFacade(changeDetectorPtr.get(), fileScopeId);
+    Teleporter::ConvertDgnDbToBim(jobSubject.GetDgnDb(), true, jobSubject, changeDetectorFacade.get());
+
     // Infer deletions
-    //changeDetectorPtr->_DeleteElementsNotSeen();
+    changeDetectorPtr->DeleteElementsNotSeenInScope(fileScopeId);
 
     return BentleyStatus::SUCCESS;
     }

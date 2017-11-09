@@ -18,7 +18,6 @@
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <VersionedDgnDb06Api/DgnPlatform/DgnPlatformApi.h>
 #include <DgnDb06BimTeleporter/DgnDb06BimTeleporterApi.h>
-#include "MarshalHelper.h"
 
 namespace Dgn06 = BentleyG06::Dgn;
 namespace BeSQLite06 = BentleyG06::BeSQLite;
@@ -28,6 +27,12 @@ namespace Teleporter = BENTLEY_NAMESPACE_NAME::DgnDb06BimTeleporter;
 namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
 namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
 
+#include "MarshalHelper.h"
+#include "ChangeDetectorFacade.h"
+
 USING_NAMESPACE_BENTLEY_DGN
+
+CS06BRIDGE_TYPEDEFS(ChangeDetectorFacade)
+CS06BRIDGE_REFCOUNTED_PTR(ChangeDetectorFacade)
 
 #endif

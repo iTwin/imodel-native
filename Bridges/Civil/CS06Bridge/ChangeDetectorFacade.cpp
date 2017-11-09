@@ -11,7 +11,9 @@
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
-ChangeDetectorFacade::ChangeDetectorFacade()
+ChangeDetectorFacade::ChangeDetectorFacade(Dgn::iModelBridgeSyncInfoFile::ChangeDetector* changeDetector, 
+    Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId) : m_changeDetectorPtr(changeDetector), 
+    m_fileScopeId(fileScopeId), Teleporter::IChangeDetector()
     {
     }
 

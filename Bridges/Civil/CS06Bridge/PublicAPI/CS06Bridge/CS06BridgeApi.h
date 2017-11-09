@@ -24,6 +24,18 @@
 #define END_CS06BRIDGE_NAMESPACE   } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_CS06BRIDGE using namespace BENTLEY_NAMESPACE_NAME::CS06BRIDGE_NAMESPACE_NAME;
 
+//-----------------------------------------------------------------------------------------
+// Define standard typedefs (P, CP, R, CR) in the CS06Bridge namespace
+//-----------------------------------------------------------------------------------------
+#define CS06BRIDGE_TYPEDEFS(_name_) \
+    BEGIN_CS06BRIDGE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_CS06BRIDGE_NAMESPACE
+
+//-----------------------------------------------------------------------------------------
+// Define RefCountedPtr and CPtr types
+//-----------------------------------------------------------------------------------------
+#define CS06BRIDGE_REFCOUNTED_PTR(_name_) \
+    BEGIN_CS06BRIDGE_NAMESPACE struct _name_; DEFINE_REF_COUNTED_PTR(_name_) END_CS06BRIDGE_NAMESPACE
+
 // create the BentleyApi.CS06_Bridge namespace
 BEGIN_CS06BRIDGE_NAMESPACE
 END_CS06BRIDGE_NAMESPACE
