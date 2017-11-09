@@ -132,6 +132,7 @@ struct IScalableMeshCreator::Impl
 
         static DataSourceManager            s_dataSourceManager;
 
+        StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
 
         StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
                                                             bool needBalancing = false);
@@ -151,7 +152,6 @@ struct IScalableMeshCreator::Impl
         virtual StatusInt                           Load();
         void                                        SetupFileForCreation();
         SMSQLiteFilePtr                             GetFile(bool fileExists);
-
 
         virtual bool                                IsFileDirty();
 
@@ -199,7 +199,7 @@ struct IScalableMeshCreator::Impl
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
 
-        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+        StatusInt  SetTextureMosaic(MOSAIC_TYPE* mosaicP);
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
         StatusInt  SetTextureStreamFromUrl(WString url);
 

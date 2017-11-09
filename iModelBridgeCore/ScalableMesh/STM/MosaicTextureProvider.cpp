@@ -138,7 +138,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     return RasterUtilities::CopyFromArea(texData, width, height, area, nullptr, *m_targetMosaic);
     }
 
-MosaicTextureProvider::MosaicTextureProvider(HIMMosaic* mosaic)
+MosaicTextureProvider::MosaicTextureProvider(HFCPtr<HIMMosaic>& mosaic)
     : m_targetMosaic(mosaic)
     {
     HGF2DExtent maxExt;
