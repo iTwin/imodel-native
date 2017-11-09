@@ -79,6 +79,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         void CacheFiles();
 
         void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error);
+        void RegisterError(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, CachingDataSource::ErrorCR error);
         void ReportProgress(Utf8StringCPtr label = nullptr);
 
     public:
