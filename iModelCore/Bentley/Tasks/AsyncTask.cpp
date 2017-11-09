@@ -340,17 +340,19 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::Wait ()
     {
+    BeMutexHolder holder(m_mutex);
     IsAsyncTaskCompletedPredicate predicate(*this);
-    m_completedCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
+    m_completedCV.ProtectedWaitOnCondition(holder, &predicate, BeConditionVariable::Infinite);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AsyncTask::WaitFor (int milliseconds) 
+void AsyncTask::WaitFor (int milliseconds)
     {
+    BeMutexHolder holder(m_mutex);
     IsAsyncTaskCompletedPredicate predicate(*this);
-    m_completedCV.WaitOnCondition(&predicate, milliseconds);
+    m_completedCV.ProtectedWaitOnCondition(holder, &predicate, milliseconds);
     }
 
 /*--------------------------------------------------------------------------------------+
