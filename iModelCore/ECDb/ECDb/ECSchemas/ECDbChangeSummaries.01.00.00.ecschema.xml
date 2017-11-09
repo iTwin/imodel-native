@@ -12,7 +12,7 @@
     <ECEntityClass typeName="Summary" displayLabel="Summary" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>TemporaryTable</MapStrategy>
+                <MapStrategy>OwnTable</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>    
@@ -21,7 +21,7 @@
     <ECEntityClass typeName="Instance" displayLabel="Changed Instance" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>TemporaryTable</MapStrategy>
+                <MapStrategy>OwnTable</MapStrategy>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
@@ -41,14 +41,14 @@
         <ECProperty propertyName="Operation" typeName="Operation" description="Operation type"/>
         <ECProperty propertyName="Indirect" typeName="bool" description="Change happen due to a trigger "/>
         <ECProperty propertyName="TableName" typeName="string" description="Change table name"/>
-        <ECNavigationProperty propertyName="Summary" description="Summary to which this instance is part of" relationshipName="ChangesetHasInstances" direction="backward" />
+        <ECNavigationProperty propertyName="Summary" description="Summary to which this instance is part of" relationshipName="SummaryHasInstances" direction="backward" />
     </ECEntityClass>
     
     <!--PropertyValue represent a value change of a property but at accessString level -->
     <ECEntityClass typeName="PropertyValue" displayLabel="Changed PropertyValue" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>TemporaryTable</MapStrategy>
+                <MapStrategy>OwnTable</MapStrategy>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
@@ -70,7 +70,7 @@
     </ECEntityClass>
     
     <!--ChangesetHasInstances changeset contains instances that have changed -->
-    <ECRelationshipClass typeName="ChangesetHasInstances" description="Associates changeset to instance" modifier="Sealed" strength="embedding">
+    <ECRelationshipClass typeName="SummaryHasInstances" description="Associates changeset to instance" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
             <Class class="Summary"/>
         </Source>

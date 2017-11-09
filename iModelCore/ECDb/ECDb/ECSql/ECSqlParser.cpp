@@ -643,12 +643,19 @@ BentleyStatus ECSqlParser::ParseParameter(std::unique_ptr<ValueExp>& exp, OSQLPa
         }
 
     Utf8StringCR paramTokenValue = parseNode->getChild(0)->getTokenValue();
-
-    Utf8CP paramName = nullptr;
-    if (paramTokenValue.Equals(":"))
+    Utf8String paramName ;
+    if (parseNode->count() == 2)
         {
-        OSQLParseNode const* param_nameNode = parseNode->getChild(1);
-        paramName = param_nameNode->getTokenValue().c_str();
+        if (paramTokenValue.Equals(":"))
+            {
+            OSQLParseNode const* param_nameNode = parseNode->getChild(1);
+            paramName = param_nameNode->getTokenValue();
+            }
+        else if (paramTokenValue.Equals("?"))
+            {
+            OSQLParseNode const* param_nameNode = parseNode->getChild(1);
+            paramName = "c" + param_nameNode->getTokenValue();
+            }
         }
     else
         {
@@ -660,7 +667,7 @@ BentleyStatus ECSqlParser::ParseParameter(std::unique_ptr<ValueExp>& exp, OSQLPa
             }
         }
 
-    exp = std::make_unique<ParameterExp>(paramName);
+    exp = std::make_unique<ParameterExp>(paramName.empty() ? nullptr : paramName.c_str());
     return SUCCESS;
     }
 

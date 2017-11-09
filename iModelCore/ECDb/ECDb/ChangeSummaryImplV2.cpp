@@ -42,25 +42,25 @@ void InstancesTableV2::PrepareStatements()
     BeAssert(!m_instancesTableInsert.IsPrepared());
     //Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,Indirect,TableName) VALUES(?1,?2,?3,?4,?5)", instancesTableName.c_str());
 
-    result = m_instancesTableInsert.Prepare(m_ecdb, "INSERT INTO cs.Instance (ChangedClassId, ChangedInstanceId, Operation, Indirect, TableName, Changeset) VALUES(?1,?2,?3,?4,?5,?6);");
+    result = m_instancesTableInsert.Prepare(m_ecdb, "INSERT INTO change.Instance (ChangedClassId, ChangedInstanceId, Operation, Indirect, TableName, Summary) VALUES (?1, ?2, ?3, ?4, ?5, ?6)");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableUpdate.IsPrepared());
     //Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,Indirect=?4 WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableUpdate.Prepare(m_ecdb, "UPDATE cs.Instance SET Operation=?4, Indirect=?5 WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    result = m_instancesTableUpdate.Prepare(m_ecdb, "UPDATE change.Instance SET Operation=?4, Indirect=?5 WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableSelect.IsPrepared());
     //Utf8PrintfString selectSql("SELECT DbOpcode, Indirect,TableName FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableSelect.Prepare(m_ecdb, "SELECT Operation, Indirect, TableName FROM cs.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    result = m_instancesTableSelect.Prepare(m_ecdb, "SELECT Operation, Indirect, TableName FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableDelete.IsPrepared());
     //Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM cs.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
-    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId,FROM cs.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Changeset.Id=?3");
+    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     }
@@ -76,7 +76,7 @@ void InstancesTableV2::Insert(ECClassId classId, ECInstanceId instanceId, DbOpco
     m_instancesTableInsert.BindInt(3, (int) dbOpcode);
     m_instancesTableInsert.BindInt(4, indirect);
     m_instancesTableInsert.BindText(5, tableName.c_str(), IECSqlBinder::MakeCopy::No);
-    m_instancesTableInsert.BindNavigationValue(1, m_changeSummary.GetId());
+    m_instancesTableInsert.BindNavigationValue(6, m_changeSummary.GetId());
 
     DbResult result = m_instancesTableInsert.Step();
     BeAssert(result == BE_SQLITE_DONE);
@@ -91,8 +91,8 @@ void InstancesTableV2::Update(ECClassId classId, ECInstanceId instanceId, DbOpco
     m_instancesTableUpdate.BindId(1, classId);
     m_instancesTableUpdate.BindId(2, instanceId);
     m_instancesTableInsert.BindId(3, m_changeSummary.GetId());
-    m_instancesTableUpdate.BindInt(3, (int) dbOpcode);
-    m_instancesTableUpdate.BindInt(4, indirect);
+    m_instancesTableUpdate.BindInt(4, (int) dbOpcode);
+    m_instancesTableUpdate.BindInt(5, indirect);
 
     DbResult result = m_instancesTableUpdate.Step();
     BeAssert(result == BE_SQLITE_DONE);
@@ -211,7 +211,7 @@ ECClassId InstancesTableV2::QueryChangedClassId(Utf8StringCR tableName, ECInstan
     {
     //TODO use cache statement
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "SELECT ChangedClassId FROM cs.Instance WHERE TableName=?1 AND ChangedInstanceId=?2 AND Changset.Id=?3");
+    stmt.Prepare(m_ecdb, "SELECT ChangedClassId FROM change.Instance WHERE TableName=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     stmt.BindText(1, tableName.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, instanceId);
     stmt.BindId(3, m_changeSummary.GetId());
@@ -245,12 +245,12 @@ void ValuesTableV2::Initialize()
 void ValuesTableV2::PrepareStatements()
     {
     BeAssert(!m_valuesTableInsert.IsPrepared());
-    //Utf8PrintfString insertSql("INSERT INTO cs.PropertyVs (ClassId,InstanceId,AccessString,OldValue,NewValue) VALUES(?1,?2,?3,?4,?5)", valuesTableName.c_str());
-    ECSqlStatus result = m_valuesTableInsert.Prepare(m_ecdb, "INSERT INTO cs.PropertyValue(Instance, AccessString, RawOldValue, RawNewValue) VALUES (?1, ?2, ?3, ?4)");
+    //Utf8PrintfString insertSql("INSERT INTO change.PropertyVs (ClassId,InstanceId,AccessString,OldValue,NewValue) VALUES(?1,?2,?3,?4,?5)", valuesTableName.c_str());
+    ECSqlStatus result = m_valuesTableInsert.Prepare(m_ecdb, "INSERT INTO change.PropertyValue(Instance, AccessString, RawOldValue, RawNewValue) VALUES (?1, ?2, ?3, ?4)");
     BeAssert(result == ECSqlStatus::Success);
 
 
-    //"SELECT ECInstanceId FROM cs.Instance WHERE ChangedInstanceId=?1 AND ChangedClassId=?2 AND Changeset.Id=?3"
+    //"SELECT ECInstanceId FROM change.Instance WHERE ChangedInstanceId=?1 AND ChangedClassId=?2 AND Changeset.Id=?3"
 
     }
 
@@ -286,11 +286,9 @@ void ValuesTableV2::Insert(ECN::ECClassId changedClassId, ECInstanceId changedIn
     ECSqlStatement& statement = m_valuesTableInsert;
     ECInstanceId instanceId = m_instancesTable.FindInstanceId(changedClassId, changedInstanceId);
     statement.BindNavigationValue(1, instanceId);
-    statement.BindId(2, changedClassId);
-    statement.BindId(3, changedInstanceId);
-    statement.BindText(4, accessString, IECSqlBinder::MakeCopy::No);
-    BindDbValue(statement, 5, oldValue);
-    BindDbValue(statement, 6, newValue);
+    statement.BindText(2, accessString, IECSqlBinder::MakeCopy::No);
+    BindDbValue(statement, 3, oldValue);
+    BindDbValue(statement, 4, newValue);
 
     DbResult result = statement.Step();
     statement.Reset();
@@ -306,19 +304,17 @@ void ValuesTableV2::Insert(ECN::ECClassId changedClassId, ECInstanceId changedIn
     ECSqlStatement& statement = m_valuesTableInsert;
     ECInstanceId instanceId = m_instancesTable.FindInstanceId(changedClassId, changedInstanceId);
     statement.BindNavigationValue(1, instanceId);
-    statement.BindId(2, changedClassId);
-    statement.BindId(3, changedInstanceId);
-    statement.BindText(4, accessString, IECSqlBinder::MakeCopy::No);
+    statement.BindText(2, accessString, IECSqlBinder::MakeCopy::No);
 
     if (oldValue.IsValid())
-        statement.BindId(5, oldValue);
+        statement.BindId(3, oldValue);
     else
-        statement.BindNull(5);
+        statement.BindNull(3);
 
     if (newValue.IsValid())
-        statement.BindId(6, newValue);
+        statement.BindId(4, newValue);
     else
-        statement.BindNull(6);
+        statement.BindNull(4);
 
     DbResult result = statement.Step();
     statement.Reset();
@@ -334,19 +330,17 @@ void ValuesTableV2::Insert(ECN::ECClassId changedClassId, ECInstanceId changedIn
     ECSqlStatement& statement = m_valuesTableInsert;
     ECInstanceId instanceId = m_instancesTable.FindInstanceId(changedClassId, changedInstanceId);
     statement.BindNavigationValue(1, instanceId);
-    statement.BindId(2, changedClassId);
-    statement.BindId(3, changedInstanceId);
-    statement.BindText(4, accessString, IECSqlBinder::MakeCopy::No);
+    statement.BindText(2, accessString, IECSqlBinder::MakeCopy::No);
 
     if (oldValue.IsValid())
-        statement.BindId(5, oldValue);
+        statement.BindId(3, oldValue);
     else
-        statement.BindNull(5);
+        statement.BindNull(3);
 
     if (newValue.IsValid())
-        statement.BindId(6, newValue);
+        statement.BindId(4, newValue);
     else
-        statement.BindNull(7);
+        statement.BindNull(4);
 
     DbResult result = statement.Step();
     statement.Reset();
@@ -830,6 +824,83 @@ ChangeSummaryV2::ChangeSummaryV2(ECDbCR ecdb) : m_ecdb(ecdb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan           11/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryV2::CreateSummaryEntry()
+    {
+    ECSqlStatement stmt;
+    if (stmt.Prepare(m_ecdb, "INSERT INTO change.Summary (ECInstanceId) VALUES (NULL)") != ECSqlStatus::Success)
+        return ERROR;
+
+    ECInstanceKey instanceKey;
+    if (stmt.Step(instanceKey) != BE_SQLITE_DONE)
+        return ERROR;
+
+    m_changesetId = instanceKey.GetInstanceId();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan           11/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryV2::DeleteSummaryEntry()
+    {
+    static auto deleteSummary = [] (ECDbCR ecdb, ECInstanceId summaryId)
+        {
+        ECSqlStatement stmt;
+        if (stmt.Prepare(ecdb, "DELETE FROM change.Summary WHERE ECInstanceId = ?") != ECSqlStatus::Success)
+            return ERROR;
+
+        stmt.BindId(1, summaryId);
+        if (stmt.Step() != BE_SQLITE_DONE)
+            return ERROR;
+
+        return SUCCESS;
+        };
+
+    static auto deleteInstance = [] (ECDbCR ecdb, ECInstanceId summaryId)
+        {
+        ECSqlStatement stmt;
+        if (stmt.Prepare(ecdb, "DELETE FROM change.Instance WHERE Summary.Id = ?") != ECSqlStatus::Success)
+            return ERROR;
+
+        stmt.BindId(1, summaryId);
+        if (stmt.Step() != BE_SQLITE_DONE)
+            return ERROR;
+
+        return SUCCESS;
+        };
+
+    static auto deletePropertyValue = [] (ECDbCR ecdb, ECInstanceId summaryId)
+        {
+        ECSqlStatement stmt;
+        if (stmt.Prepare(ecdb, "DELETE FROM change.PropertyValue WHERE Instance.Id IN (SELECT ECInstanceId FROM change.Instance WHERE Summary.Id = ?)") != ECSqlStatus::Success)
+            return ERROR;
+
+        stmt.BindId(1, summaryId);
+        if (stmt.Step() != BE_SQLITE_DONE)
+            return ERROR;
+
+        return SUCCESS;
+        };
+
+    if (!m_changesetId.IsValid())
+        return SUCCESS;
+
+    if (deletePropertyValue(m_ecdb, m_changesetId) != SUCCESS)
+        return ERROR;
+
+    if (deleteInstance(m_ecdb, m_changesetId) != SUCCESS)
+        return ERROR;
+
+    if (deleteSummary(m_ecdb, m_changesetId) != SUCCESS)
+        return ERROR;
+
+    m_changesetId = ECInstanceId();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 void ChangeSummaryV2::Initialize()
@@ -844,6 +915,11 @@ void ChangeSummaryV2::Initialize()
     m_valuesTable->Initialize();
 
     m_changeExtractor = new ChangeExtractorV2(*this, *m_instancesTable, *m_valuesTable);
+
+    if (CreateSummaryEntry() != SUCCESS)
+        {
+        BeAssert(false);
+        }
 
     m_isValid = true;
     }
@@ -866,6 +942,10 @@ void ChangeSummaryV2::Free()
     m_changeExtractor = nullptr;
 
     m_isValid = false;
+    //if (DeleteSummaryEntry() != SUCCESS)
+    //    {
+    //    BeAssert(false);
+    //    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -968,7 +1048,7 @@ void ChangeSummaryV2::Instance::SetupValuesTableSelectStatement(Utf8CP accessStr
     {//TODO ToECSql
     if (!m_valuesTableSelect.IsPrepared())
         {
-        m_valuesTableSelect.Prepare(m_changeSummary->GetDb(), "SELECT RawOldValue, RawNewValue FROM cs.PropertyValue WHERE ClassId=? AND InstanceId=? AND AccessString=?");
+        m_valuesTableSelect.Prepare(m_changeSummary->GetDb(), "SELECT RawOldValue, RawNewValue FROM change.PropertyValue WHERE ClassId=? AND InstanceId=? AND AccessString=?");
         m_valuesTableSelect.BindId(1, m_classId);
         m_valuesTableSelect.BindId(2, m_instanceId);
         }

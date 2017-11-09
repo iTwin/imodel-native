@@ -2563,12 +2563,19 @@ parameter:
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            }
+        }
     |    '?'
         {
             $$ = SQL_NEW_RULE; // test
             $$->append($1 = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
         }
+    |    '?' SQL_TOKEN_INTNUM
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+        }
+
     ;
 
 range_variable: 

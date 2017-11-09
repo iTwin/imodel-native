@@ -128,6 +128,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangeSummaryV2 : NonCopyableClass
         Utf8String FormatInstanceIdStr(ECInstanceId) const;
         Utf8String FormatClassIdStr(ECN::ECClassId) const;
 
+        BentleyStatus DeleteSummaryEntry();
+        BentleyStatus CreateSummaryEntry();
+
     public:
         //! Construct a ChangeSummaryV2 from a BeSQLite ChangeSet
         ECDB_EXPORT explicit ChangeSummaryV2(ECDbCR);
