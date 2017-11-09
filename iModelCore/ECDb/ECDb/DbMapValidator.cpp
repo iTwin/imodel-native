@@ -679,13 +679,8 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
         }
 
     bmap<DbColumn const*, SingleColumnDataPropertyMap const*> duplicateColumnMappings;
-    ECClassCR ecClass = classMap.GetClass();
     for (PropertyMap const* propMap : classMap.GetPropertyMaps())
         {
-        //ignore inherited properties as they were validated on their base classes
-        if (&propMap->GetProperty().GetClass() != &ecClass)
-            continue;
-
         if (SUCCESS != ValidatePropertyMap(*propMap, duplicateColumnMappings))
             return ERROR;
         }
@@ -1299,9 +1294,13 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMapNotNull(NavigationPro
         }
 
     BeAssert(isPhysicalFk);
+    const bool inheritedPropertyMap = propMap.GetClassMap().GetClass().GetId() != propMap.GetProperty().GetClass().GetId();
+    if (inheritedPropertyMap)
+        return SUCCESS;
+
     //The FK and RelECClassId can be made NOT NULL if the multiplicity on the referenced end is (1..X) AND
     //if the nav prop's class is the exclusive root of the table. If it wasn't base classes would face NOT NULL constraint violations
-    //because they will leave the FK column empty
+    //because they will leave the FK column empty    
     const bool isNavPropClassExclusiveRootClass = idCol.GetTable().HasExclusiveRootECClass() && idCol.GetTable().GetExclusiveRootECClassId() == propMap.GetClassMap().GetClass().GetId();
     const bool fkExpectedNotNull = propMap.CardinalityImpliesNotNull() && isNavPropClassExclusiveRootClass;
     if (fkExpectedNotNull)
