@@ -185,7 +185,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
-        //! @param[in] RetrieveOptions - specify what data to try returning
+        //! @param[in] retrieveOptions - specify what data to try returning
         //! @param[in] ct - (optional)
         virtual AsyncTaskPtr<KeysResult> GetObjectsKeys
             (
@@ -393,7 +393,7 @@ struct ICachingDataSource::RetrieveOptions
 
     public:
         //! @param[in] DataOrigin origin - specify what data to try returning
-        //! @param[in] backgroundSyncNotifier - (optional) if not null and there was no attempt to pull data from server - repeats the call with DataOrigin::RemoteData in the background
+        //! @param[in] syncNotifier - (optional) if not null and there was no attempt to pull data from server - repeats the call with DataOrigin::RemoteData in the background
         WSCACHE_EXPORT RetrieveOptions(DataOrigin origin, SyncNotifierPtr syncNotifier = nullptr) : 
             m_origin(origin), m_syncNotifier(syncNotifier) { }
 
