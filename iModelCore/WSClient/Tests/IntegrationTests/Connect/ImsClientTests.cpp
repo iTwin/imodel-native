@@ -182,7 +182,7 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
     // Invalid RP URI
     BeTest::SetFailOnAssert(false);
     result = client->RequestToken(credentials, "https://zz-wsg20-eus.cloudapp.net")->GetResult();
-    ASSERT_TRUE(result.IsSuccess()); //ASSERT_FALSE(result.IsSuccess()); // Apparently this started to work in 2017-Q4 and IMS is not rejecting any more
+    ASSERT_FALSE(result.IsSuccess());
     BeTest::SetFailOnAssert(true);
     }
 
