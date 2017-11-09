@@ -9,6 +9,11 @@
 
 //__PUBLISH_SECTION_START__
 
+#include <Bentley/Bentley.h>
+#include <dgnPlatform/ViewController.h>
+#include <dgnPlatform/Render.h>
+#include <DgnPlatform/DgnDb.h>
+
 #include "AecUnitsDefinitions.h"
 #include "AecUnitsDomain.h"
 

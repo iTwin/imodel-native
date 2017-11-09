@@ -8,13 +8,6 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include <Bentley/Bentley.h>
-#include <ECDb/ECDbTypes.h>
-#include <ECDb/ECDbApi.h>
-#include <ECObjects/ECSchema.h>
-#include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnDb.h>
-#include <DgnPlatform/DgnModel.h>
 
 
 #ifdef __AEC_UNITS_DOMAIN_BUILD__
