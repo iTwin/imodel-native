@@ -392,7 +392,7 @@ struct ICachingDataSource::RetrieveOptions
         SyncNotifierPtr m_syncNotifier;
 
     public:
-        //! @param[in] DataOrigin origin - specify what data to try returning
+        //! @param[in] origin - specify what data to try returning
         //! @param[in] syncNotifier - (optional) if not null and there was no attempt to pull data from server - repeats the call with DataOrigin::RemoteData in the background
         WSCACHE_EXPORT RetrieveOptions(DataOrigin origin, SyncNotifierPtr syncNotifier = nullptr) : 
             m_origin(origin), m_syncNotifier(syncNotifier) { }
