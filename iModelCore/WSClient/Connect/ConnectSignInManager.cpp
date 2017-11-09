@@ -540,7 +540,7 @@ void ConnectSignInManager::InitializeConnectionClientInterface() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSignInManager::IsConnectionClientInstalled()
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     InitializeConnectionClientInterface();
 
     return m_connectionClient->IsInstalled();
@@ -551,7 +551,7 @@ bool ConnectSignInManager::IsConnectionClientInstalled()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionClientToken(Utf8StringCR rpUri)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     InitializeConnectionClientInterface();
 
     if (!IsConnectionClientInstalled())
@@ -579,7 +579,7 @@ AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionCli
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::StartConnectionClientListener()
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_mutex);
     InitializeConnectionClientInterface();
 
     if (!IsConnectionClientInstalled())
