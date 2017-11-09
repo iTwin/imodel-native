@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <TilePublisher/CesiumPublisher.h>
+#include "Constants.h"
 #include "CesiumConstants.h"
 
 
@@ -43,7 +44,7 @@ DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
+DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const
     {
     bool publishSingleView = !m_viewName.empty();
 
@@ -51,7 +52,7 @@ DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
     ViewDefinitionCPtr view = ViewDefinition::Get(db, defaultViewId);
     if (view.IsNull())
         {
-        printf("View not found\n");
+        LOG.errorv("View not found\n");
         return DgnViewId();
         }
 
@@ -146,6 +147,11 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
 
     json["viewerOptions"] = viewerOptions;
 
+    Json::Value     revisionsJson;
+    if (params.WantHistory() &&
+        TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params))
+        json["revisions"] = std::move(revisionsJson);
+
     if (Status::Success != (status = WriteAppJson (json)) ||
         Status::Success != (status = WriteHtmlFile()))
         return  status;
@@ -221,7 +227,7 @@ PublisherContext::Status TilesetPublisher::WriteScripts()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
     {
-    printf("\nStatistics:\n"
+    LOG.debugv("\nStatistics:\n"
            "Tile count: %u\n"
            "Tile generation time: %.4f seconds\n"
            "Average per-tile: %.4f seconds\n",
@@ -242,17 +248,17 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 
     if (m_lastPercentCompleted == pctComplete && 99 != m_lastPercentCompleted)
         {
-        printf("...");
+        LOG.info("...");
         }
     else
         {
         if (m_publisher.WantVerboseStatistics())
             {
             auto stats = m_publisher.GetVerboseStatistics();
-            printf("\n%u models in progress: %s", stats.m_numModels, stats.m_modelNames.c_str());
+            LOG.infov("\n%u models in progress: %s", stats.m_numModels, stats.m_modelNames.c_str());
             }
 
-        printf("\nGenerating Tiles: %3u%% (%u/%u models completed)%s", pctComplete, completed, total, completed == total ? "\n" : "");
+        LOG.infov("\nGenerating Tiles: %3u%% (%u/%u models completed)%s", pctComplete, completed, total, completed == total ? "\n" : "");
         m_lastPercentCompleted = pctComplete;
         }
     }
@@ -344,7 +350,7 @@ TileGeneratorStatus TilesetPublisher::_EndProcessModel(DgnModelCR model, TileNod
         BeMutexHolder lock(m_mutex);
         auto const& modelName = model.GetName();
         m_modelsInProgress.erase(modelName);
-        printf("\nCompleted model %s (%f seconds elapsed)\n", modelName.c_str(), m_timer.GetCurrentSeconds());
+        LOG.debugv("\nCompleted model %s (%f seconds elapsed)\n", modelName.c_str(), m_timer.GetCurrentSeconds());
         GenerateModelNameList();
         }
 

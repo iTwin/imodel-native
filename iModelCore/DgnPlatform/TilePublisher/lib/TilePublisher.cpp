@@ -348,12 +348,12 @@ PublisherContext::PublisherContext::Statistics::~Statistics()
 #ifdef STATISTICS
     if (0.0 != m_textureCompressionMegaPixels)
         {
-        printf ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
-        printf ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
+        LOG.infov ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
+        LOG.infov ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
         }
     if (0 != m_pointCloudCount)
         {
-        printf ("Point Cloud count: %g, Total Points: %g, Min Points: %g, Max Points: %g, Average: %g\n", (double) m_pointCloudCount, (double) m_pointCloudTotalPoints, (double) m_pointCloudMinPoints,(double) m_pointCloudMaxPoints, (double) m_pointCloudTotalPoints / (double) m_pointCloudCount);
+        LOG.infov ("Point Cloud count: %g, Total Points: %g, Min Points: %g, Max Points: %g, Average: %g\n", (double) m_pointCloudCount, (double) m_pointCloudTotalPoints, (double) m_pointCloudMinPoints,(double) m_pointCloudMaxPoints, (double) m_pointCloudTotalPoints / (double) m_pointCloudCount);
         }
 #endif
     }
@@ -3572,11 +3572,13 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
         if (foundRange == m_modelRanges.end())
             continue;
 
-        auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
+        
+        auto                        model = GetDgnDb().Models().GetModel(modelId).get();
         ModelSpatialClassifiers     classifiers;
 
-        if (nullptr != getTileTree && 
-            SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers) &&
+        if (nullptr != model && 
+            nullptr != model->ToSpatialModel() &&
+            SUCCESS == model->ToSpatialModel()->GetSpatialClassifiers(classifiers) &&
             !classifiers.empty())
             {
             T_ClassifierInfos       classifierInfos;

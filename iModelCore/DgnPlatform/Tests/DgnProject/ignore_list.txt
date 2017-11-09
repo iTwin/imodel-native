@@ -622,3 +622,11 @@ ECInstancesCompatibility.ReadInstances
     # F:\Bim0200Dev\src\BeGTest\gtest\BeGTestExe.cpp(370): error: Failed
     # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
     # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
+
+# TFS 777195:
+BRepUtilTests.CreateBodyFromLoft
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 11/06/2017
+    # c:\build\src\mds06t\DgnPlatform\Tests\DgnProject\Published\BRepUtil_Tests.cpp(303): error:       Expected: SUCCESS
+    # Which is: 0
+    # To be equal to: BRepUtil::Create::BodyFromLoft(brep, profiles, &guides)
+    # Which is: 32768

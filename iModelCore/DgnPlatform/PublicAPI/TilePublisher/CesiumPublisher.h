@@ -36,7 +36,7 @@ struct PublisherParams
 {
 protected:
     BeFileName                      m_inputFileName;    //!< Path to the .bim
-    Utf8String                      m_viewName;         //!< Name of the view definition from which to publish
+    mutable Utf8String              m_viewName;         //!< Name of the view definition from which to publish
     BeFileName                      m_outputDir;        //!< Directory in which to place the output
     WString                         m_tilesetName;      //!< Root name of the output tileset files
     double                          m_groundHeight = 0.0; //!< Height of ground plane.
@@ -86,7 +86,7 @@ public:
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
     PublisherContext::GlobeMode GetGlobeMode() const { return m_globeMode; }
 
-    TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db);
+    TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
 
     // For History publishing...
@@ -192,10 +192,8 @@ public:
 //=======================================================================================
 struct TilesetHistoryPublisher : TilesetPublisher
 {
-    TILEPUBLISHER_EXPORT static Status PublishTilesetWithHistory(PublisherParamsR params);
-
-
-
+    TILEPUBLISHER_EXPORT static Status PublishHistoryWithBaseline(PublisherParamsCR params);
+    TILEPUBLISHER_EXPORT static Status PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params);
 
 };  // TilesetHistoryPublisher
 

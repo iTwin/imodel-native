@@ -3981,7 +3981,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!entityPtr.IsValid())
                     {
-                    if (!reader.Get(egOp, entityPtr))
+                    if (!reader.Get(egOp, entityPtr) ||
+                        !entityPtr.IsValid())
                         break;
 
                     // Resolve/Cook face attachments...need to do this even when output isn't QVis because it's going to be cached...
