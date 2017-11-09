@@ -9,7 +9,7 @@
 // Package.
 #include "WmsSourceNet.h"
 
-using namespace RealityPackage;
+using namespace RealityPlatform;
 using namespace RealityPackageNet;
 
 // System.

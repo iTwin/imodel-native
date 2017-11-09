@@ -58,8 +58,8 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatformTools$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)CCAPI$(libext)\
                        odbc32$(libext)

@@ -9,19 +9,9 @@
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatform/SpatioTemporalSelector.h>
+#include <RealityPlatformTools/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
-#include <RealityPlatform/WSGServices.h>
-
-/*#include <WebServices/Client/WSClient.h>
-#include <WebServices/Connect/Authentication.h>
-#include <WebServices/Connect/Connect.h>
-#include <WebServices/Connect/ConnectSetup.h>
-#include <WebServices/Connect/ConnectSpaces.h>
-#include <WebServices/Connect/SamlToken.h>
-#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Licensing/UsageTracking.h>*/
+#include <RealityPlatformTools/WSGServices.h>
 
 #include <curl/curl.h>
 

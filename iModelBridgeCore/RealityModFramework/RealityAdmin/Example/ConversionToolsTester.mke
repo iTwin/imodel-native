@@ -43,7 +43,7 @@ EXE_OBJS     = $(o)ConversionToolsTester$(oext)
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                        $(ContextDeliveryDir)RealityPlatform.lib \
-                       $(ContextDeliveryDir)RealityPackage.lib 
+                       $(ContextDeliveryDir)RealityPlatformTools.lib 
 
 %include $(SharedMki)linktool.mki
 

@@ -9,7 +9,7 @@
 // Package.
 #include "OsmSourceNet.h"
 
-using namespace RealityPackage;
+using namespace RealityPlatform;
 using namespace RealityPackageNet;
 
 // System.

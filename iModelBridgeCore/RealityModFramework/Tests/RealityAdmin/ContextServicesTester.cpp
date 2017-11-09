@@ -14,8 +14,8 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 #include <RealityAdmin/ContextServicesWorkbench.h>
-#include <RealityPlatform/RealityConversionTools.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

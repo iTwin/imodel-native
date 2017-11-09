@@ -10,7 +10,7 @@
 
 
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/RealityDataHandler.h>
+#include <RealityPlatformTools/RealityDataHandler.h>
 
 
 #define THUMBNAIL_WIDTH     512

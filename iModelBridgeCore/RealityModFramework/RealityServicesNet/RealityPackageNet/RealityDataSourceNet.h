@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPackage/RealityDataPackage.h>
+#include <RealityPlatform/RealityDataPackage.h>
 
 
 namespace RealityPackageNet
@@ -39,7 +39,7 @@ namespace RealityPackageNet
             !UriNet();
 
         private:
-            RealityPackage::UriPtr* m_pUri;
+            RealityPlatform::UriPtr* m_pUri;
         };
 
 
@@ -134,7 +134,7 @@ namespace RealityPackageNet
             !RealityDataSourceNet();
    
         private:
-            RealityPackage::RealityDataSourcePtr* m_pSource;
+            RealityPlatform::RealityDataSourcePtr* m_pSource;
         };
 
     //=====================================================================================
@@ -160,7 +160,7 @@ namespace RealityPackageNet
             !WmsDataSourceNet();
 
         private:
-            RealityPackage::WmsDataSourcePtr* m_pSource;
+            RealityPlatform::WmsDataSourcePtr* m_pSource;
         };
 
     //=====================================================================================
@@ -184,7 +184,7 @@ namespace RealityPackageNet
             !OsmDataSourceNet();
 
         private:
-            RealityPackage::OsmDataSourcePtr* m_pSource;
+            RealityPlatform::OsmDataSourcePtr* m_pSource;
         };
 
     //=====================================================================================
@@ -218,6 +218,6 @@ namespace RealityPackageNet
             !MultiBandSourceNet();
 
         private:
-            RealityPackage::MultiBandSourcePtr* m_pSource;
+            RealityPlatform::MultiBandSourcePtr* m_pSource;
         };
     }
