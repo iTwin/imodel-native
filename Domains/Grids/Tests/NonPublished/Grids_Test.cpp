@@ -246,7 +246,7 @@ RadialGridPortion::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForR
                                            13, /*circular interval*/
                                            70, /*length*/
                                            50, /*height*/
-                                           "Radial grid",
+                                           "Radial Grid",
                                            false, /*extend heihgt*/
                                            normal);
     }
@@ -273,6 +273,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
     int numSurfaces = orthogonalGridUnconstrained->MakeIterator ().BuildIdList<DgnElementId> ().size ();
     ASSERT_TRUE (numSurfaces == 9) << "incorrect number of gridPlaneSurfaces in orthogonalGrid";
 
+    ASSERT_TRUE(0 == std::strcmp("Unconstrained Grid", orthogonalGridUnconstrained->GetName())) << "Grid name is not correct";
 
     /////////////////////////////////////////////////////////////
     // Check if axes are valid and have correct number of elements
@@ -663,6 +664,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
     int numSurfaces = orthogonalGridUnconstrainedExtended->MakeIterator().BuildIdList<DgnElementId>().size();
     ASSERT_TRUE(numSurfaces == 9) << "incorrect number of gridPlaneSurfaces in orthogonalGrid";
 
+    ASSERT_TRUE(0 == std::strcmp("Unconstrained Grid", orthogonalGridUnconstrainedExtended->GetName())) << "Grid name is not correct";
 
     /////////////////////////////////////////////////////////////
     // Check if axes are valid and have correct number of elements
@@ -966,6 +968,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
     int numSurfaces = orthogonalGridConstrained->MakeIterator().BuildIdList<DgnElementId>().size();
     ASSERT_TRUE(numSurfaces == 9) << "incorrect number of gridPlaneSurfaces in orthogonalGrid";
 
+    ASSERT_TRUE(0 == std::strcmp("Constrained Grid", orthogonalGridConstrained->GetName())) << "Grid name is not correct";
 
     /////////////////////////////////////////////////////////////
     // Check if axes are valid and have correct number of elements
@@ -1356,6 +1359,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
     int numSurfaces = orthogonalGridConstrainedExtended->MakeIterator().BuildIdList<DgnElementId>().size();
     ASSERT_TRUE(numSurfaces == 9) << "incorrect number of gridPlaneSurfaces in orthogonalGrid";
 
+    ASSERT_TRUE(0 == std::strcmp("Constrained Grid", orthogonalGridConstrainedExtended->GetName())) << "Grid name is not correct";
 
     /////////////////////////////////////////////////////////////
     // Check if axes are valid and have correct number of elements
@@ -1658,6 +1662,7 @@ TEST_F(GridsTestFixture, RadialGrid_Created)
     int numSurfaces = radialGrid->MakeIterator().BuildIdList<DgnElementId>().size();
     ASSERT_TRUE(numSurfaces == 12) << "incorrect number of gridSurfaces in radialGrid";
 
+    ASSERT_TRUE(0 == std::strcmp("Radial Grid", radialGrid->GetName())) << "Grid name is not correct";
 
     /////////////////////////////////////////////////////////////
     // Check if axes are valid and have correct number of elements
@@ -2040,6 +2045,8 @@ TEST_F(GridsTestFixture, SketchGrid_Created)
 
     int numSurfaces = sketchGrid->MakeIterator().BuildIdList<DgnElementId>().size();
     ASSERT_TRUE(numSurfaces == 0) << "incorrect number of gridSurfaces in sketchGrid";
+
+    ASSERT_TRUE(0 == std::strcmp("Sketch Grid", sketchGrid->GetName())) << "Grid name is not correct";
 
     /////////////////////////////////////////////////////////////
     // Check if axes are valid and have correct number of elements

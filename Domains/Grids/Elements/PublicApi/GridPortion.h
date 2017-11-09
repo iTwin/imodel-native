@@ -113,6 +113,10 @@ public:
     //! Make an iterator over gridAxis that compose this Grid
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeAxesIterator () const;
     
+    //! Returns name of this grid
+    //! @return name of model this grid is in
+    GRIDELEMENTS_EXPORT Utf8CP  GetName() const;
+
     //! Returns a grid portion with given parent element and name
     GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
 
