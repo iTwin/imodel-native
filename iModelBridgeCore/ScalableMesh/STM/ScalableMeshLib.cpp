@@ -407,9 +407,13 @@ void ScalableMeshLib::Host::Initialize()
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
 
-    s_bingAuthCallback = new BingAuthenticationCallback();
+    //Ensure to avoid overwriting any specialized Imagepp authentication provided by an application.
+    if (m_scalableTerrainModelAdmin->_ProvideImageppAuthentication())
+        {
+        s_bingAuthCallback = new BingAuthenticationCallback();
 
-    HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());
+        HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
