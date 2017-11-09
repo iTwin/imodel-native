@@ -227,7 +227,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
 +---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: eB schema incomaptible to BIM02
 // SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectSyncServiceShare_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectSyncServiceShare_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     Utf8String serverUrl = "https://qa-connect-wsg20.bentley.com";
@@ -244,11 +244,11 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectSyncServiceShar
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     Utf8String serverUrl = "https://qa-connect-projectsharestorage.bentley.com";
@@ -269,32 +269,10 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://qa-projectsharestorage-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectShareV2--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0";
-    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
-    BeFileName cachePath = GetTestCachePath();
-
-    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
-    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
-    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: 
 // BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
 // SOLUTION: "IssuePlugin--default" is only used in Graphite generation, no fix
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds_KnowIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -320,7 +298,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
 // BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
 // BIM02: ECClass 'ClashDetection:ResultBase' has invalid base class : An abstract class must not have a non - abstract base class.
 // SOLUTION: Need IssuePluginV1.2 with changes
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -411,7 +389,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectBIMReviewShare_Succeed
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
+// ERROR    ECDb                 JsonInserter failure. The JSON member '$id' does not match with a property in ECClass 'WSCacheMetaSchema:ECSchemaDef'
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds_KnownIssue_MaybeClientFixPossible)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -430,7 +409,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Succeeds)
+// ERROR    ECDb                 JsonInserter failure. The JSON member '$id' does not match with a property in ECClass 'WSCacheMetaSchema:ECSchemaDef'.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Succeeds_KnownIssue_MaybeClientFixPossible)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -451,8 +431,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
 +---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL:
 // BIM02: Invalid property in ECClass 'Bentley_SP:Field': The property 'ID' has a name of an ECSQL system property which is not allowed.
+// ERROR    ECDb                 JsonInserter failure. The JSON member '$id' does not match with a property in ECClass 'WSCacheMetaSchema:ECSchemaDef'.
 // SOLUTION: bim02 added this constraing, share point plugin is deprecated, no fix
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succeeds_KnowIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -473,7 +454,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
 +---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: eB schema incomaptible to BIM02
 // SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -492,8 +473,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-// FAIL: server down
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeeds)
+// FAIL: 
+// ERROR    ECDb                 ECClass 'PW_WSG:Set' has invalid base class: An abstract class must not have a non-abstract base class.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -512,7 +494,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeed
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithImsUser_Succeeds)
+// FAIL:
+// ERROR    ECDb                 ECClass 'PW_WSG:Set' has invalid base class: An abstract class must not have a non-abstract base class.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithImsUser_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -563,7 +547,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInva
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue)
+// FAIL:
+// ERROR    ECDb                 ECClass 'PW_WSG:Set' has invalid base class: An abstract class must not have a non-abstract base class.
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -691,7 +677,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 // WIP06: Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
-TEST_F(CachingDataSourceTests, GetObjects_WSG250ProjectWiseSpatialQuery_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, GetObjects_WSG250ProjectWiseSpatialQuery_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -733,7 +719,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG250ProjectWiseSpatialQuery_Succeeds
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 // BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version, need IssuePluginV1.2--default
-TEST_F(CachingDataSourceTests, GetObjects_PunchlistV11Queries_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, GetObjects_PunchlistV11Queries_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
