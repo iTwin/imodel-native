@@ -75,6 +75,7 @@
     <Part Name="Grids-Tested">
       <SubPart PartName="Grids"/>
       <SubPart PartName="Gtest-RunAggregator"/>
+      <SubPart PartName="ConstraintSystem-Tested" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
     </Part>
 
     <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
