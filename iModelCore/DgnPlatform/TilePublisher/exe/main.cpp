@@ -15,6 +15,9 @@
 #include <RealityPlatform/RealityDataService.h>
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#include <Logging/bentleylogging.h>
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -173,7 +176,7 @@ DgnDbPtr Params::OpenDgnDb() const
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
     DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, m_inputFileName, openParams);
     if (db.IsNull())
-        printf("Failed to open file %ls\n", m_inputFileName.c_str());
+        LOG.errorv("Failed to open file %ls\n", m_inputFileName.c_str());
 
     return db;
     }
@@ -208,7 +211,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GroundPoint:
                if (3 != swscanf (arg.m_value.c_str(), L"%lf,%lf,%lf", &m_groundPoint.x, &m_groundPoint.y, &m_groundPoint.z))
                     {
-                    printf ("Unrecognized ground point: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized ground point: %ls\n", av[i]);
                     return false;
                     }
                 m_groundMode = GroundMode::FixedPoint;
@@ -217,7 +220,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GroundHeight:
                 if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_groundHeight))
                     {
-                    printf ("Unrecognized ground height: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized ground height: %ls\n", av[i]);
                     return false;
                     }
                 m_groundMode = GroundMode::FixedHeight;
@@ -225,7 +228,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::Depth:
                 if (1 != swscanf (arg.m_value.c_str(), L"%u", &m_depth))
                     {
-                    printf ("Expected unsigned integer for depth parameter\n");
+                    LOG.error ("Expected unsigned integer for depth parameter\n");
                     return false;
                     }
                 break;
@@ -238,7 +241,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GeographicLocation:
                 if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
                     {
-                    printf ("Unrecognized geographic location: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
                     }
                 m_geoLocated = true;
@@ -255,12 +258,12 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
 
                 if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_tolerance))
                     {
-                    printf ("Unrecognized tolerance value: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized tolerance value: %ls\n", av[i]);
                     return false;
                     }
                 if (m_tolerance < s_minTolerance || s_maxTolerance > s_maxTolerance)
                     {
-                    printf ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
+                    LOG.errorv ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
                     return false;
                     }
                 break;
@@ -281,7 +284,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                     m_textureMode = PublisherContext::TextureMode::Compressed;
                 else
                     {
-                    printf ("Unrecognized texture mode: %ls\n", arg.m_value.c_str());
+                    LOG.errorv ("Unrecognized texture mode: %ls\n", arg.m_value.c_str());
                     return false;
                     }
                     
@@ -322,7 +325,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
 
             default:
-                printf("Unrecognized command option %ls\n", av[i]);
+                LOG.errorv("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
@@ -332,7 +335,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         {
         if (m_userName.empty() || m_password.empty())
             {
-            printf ("Username and password are reaquired for history publishing\n");
+            LOG.error ("Username and password are reaquired for history publishing\n");
             return false;
             }
         if (!m_repository.empty())
@@ -342,7 +345,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
     
     if (!haveInput)
         {
-        printf("Input filename is required\n");
+        LOG.error("Input filename is required\n");
         return false;
         }
 
@@ -368,11 +371,11 @@ static void printUsage(WCharCP exePath)
     {
     WString exeName = BeFileName::GetFileNameAndExtension(exePath);
 
-    printf("Publish the contents of a DgnDb view as a Cesium tileset viewable in a web browser.\n\n");
-    printf("Usage: %ls -i|--input= [OPTIONS...]\n\n", exeName.c_str());
+    LOG.info("Publish the contents of a DgnDb view as a Cesium tileset viewable in a web browser.\n\n");
+    LOG.infov("Usage: %ls -i|--input= [OPTIONS...]\n\n", exeName.c_str());
     
     for (auto const& cmdArg : s_paramTable)
-        printf("  --%ls=|-%ls=\t(%ls)\t%ls\n", cmdArg.m_verbose, cmdArg.m_abbrev, cmdArg.m_required ? L"required" : L"optional", cmdArg.m_descr);
+        LOG.infov("  --%ls=|-%ls=\t(%ls)\t%ls\n", cmdArg.m_verbose, cmdArg.m_abbrev, cmdArg.m_required ? L"required" : L"optional", cmdArg.m_descr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,7 +396,7 @@ static void printStatus(PublisherContext::Status status)
 
     auto index = static_cast<uint32_t>(status);
     Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
-    printf("Result: %hs.\n", msg);
+    LOG.debugv("Result: %hs.\n", msg);
     }
 
 //=======================================================================================
@@ -413,7 +416,7 @@ private:
 
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
-        printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
+        LOG.errorv("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
         }
 public:
     Host() { EnsureAssertHandler(); }
@@ -477,6 +480,9 @@ int wmain(int ac, wchar_t const** av)
     _getch();
 #endif
 
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity(L"TilePublisher", NativeLogging::LOG_TRACE);
+
     Params createParams;
     if (!createParams.ParseArgs(ac, av))
         {
@@ -514,12 +520,12 @@ int wmain(int ac, wchar_t const** av)
         BeFileName  outputFile (nullptr, createParams.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), L".html");
         if (outputFile.DoesPathExist())
             {
-            printf ("Output file: %ls aready exists and \"No Replace\" option is specified\n", outputFile.c_str());
+            LOG.errorv ("Output file: %ls aready exists and \"No Replace\" option is specified\n", outputFile.c_str());
             return 1;
             }
         }
 
-    printf("Publishing:\n"
+    LOG.debugv("Publishing:\n"
            "\tInput: View %s from %ls\n"
            "\tOutput: %ls%ls.html\n"
            "\tData: %ls\n",

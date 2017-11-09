@@ -474,7 +474,7 @@ static TilesetPublisher::Status initialize(ClientPtr& client, DgnDbPtr& tempDb, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static TilesetPublisher::Status publishChangeSets(Json::Value& revisionsJson, ClientPtr client, DgnDbR tempDb, BeFileNameCR tempDbName, bvector<DgnRevisionPtr> const& changeSets, PublisherParamsCR params)
     {
-    printf ("Publishing History with %d Revisions\n", (int) changeSets.size());
+    LOG.infov ("Publishing History with %d Revisions\n", (int) changeSets.size());
 
     revisionsJson = Json::objectValue;
 
@@ -490,7 +490,7 @@ static TilesetPublisher::Status publishChangeSets(Json::Value& revisionsJson, Cl
              
         changeSummary->GetChangedElements(elementIds, ecClassIds, opCodes);
 
-        printf ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
+        LOG.infov ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
         Json::Value         revisionElementsJson = Json::objectValue;
         DgnElementIdSet     addedOrModifiedIds, deletedOrModifiedIds;
 
