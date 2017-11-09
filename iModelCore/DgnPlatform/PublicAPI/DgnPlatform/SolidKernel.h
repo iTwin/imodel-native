@@ -555,10 +555,11 @@ struct Create
     //! @param[out] out The new body.
     //! @param[in] profiles The cross sections profiles.
     //! @param[in] guides An optional set of guide curves for controlling the loft.
+    //! @param[in] periodic When true start profile is also used as end profile to create a periodic result in loft direction.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @note Requires a minimum input of 2 profiles, or 1 profile and 1 guide to produce a valid loft.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, uint32_t nodeId = 0L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, bool periodic, uint32_t nodeId = 0L);
 
     //! Create a new sheet or solid body by sweeping a cross section profile along a path.
     //! @param[out] out The new body.
