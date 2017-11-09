@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildInstallSet>
+
+    <Product>
+        <ProductName>Real Dwg Importer</ProductName>
+        <ProductShortName>RealDwgImporter</ProductShortName>
+        <ProductCode>${REL_V}.${MAJ_V}.${MIN_V}.${PartName}.${Platform}.RealDwgImporter.MSI</ProductCode>
+        <UpgradeCode>{A5317CFE-71FB-4171-B77A-D033B05A66DB};{990A583A-74DE-4238-9A5C-54CFC392AB7A}</UpgradeCode>
+
+        <WxsElementRefs>UIRef=WixUI_WithInstallLocations</WxsElementRefs>
+    </Product>
+
+
+</BuildInstallSet>
+

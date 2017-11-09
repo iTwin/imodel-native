@@ -103,11 +103,14 @@
 
 
     <!-- Build the default DwgImporter using RealDWG Toolkit -->
-    <Product Name="RealDwgImporter">
+    <Product Name="RealDwgImporter" BuildInstallSet="true">
         <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" /> <!-- This is here only for bb1 so it will trigger linking the partfile into the buildcontext which is needed for the DirectoryList -->
         <SubPart PartName="RealDwgImportExe" />
         <Directories DirectoryListName="RealDwgConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList" />
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+      
+        <InstallerWixFile SourceFile="install\RealDwgImporter"/>
     </Product>
 
     <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
