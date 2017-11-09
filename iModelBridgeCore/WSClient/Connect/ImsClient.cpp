@@ -50,10 +50,10 @@ ImsClient::ImsClient(ClientInfoPtr clientInfo, IHttpHandlerPtr httpHandler) :
 m_clientInfo(clientInfo),
 m_httpHandler(httpHandler)
     {
-	//this "username:apikey" is hardcoded into CONNECTION Client source code, so we have it here as well
-	//it can be overriden by the client application by calling SetImsActiveSTSHelperServiceAuthKey
-	SetImsActiveSTSHelperServiceAuthKey("BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
-	}
+    //this "username:apikey" is hardcoded into CONNECTION Client source code, so we have it here as well
+    //it can be overriden by the client application by calling SetImsActiveSTSHelperServiceAuthKey
+    SetImsActiveSTSHelperServiceAuthKey("BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
