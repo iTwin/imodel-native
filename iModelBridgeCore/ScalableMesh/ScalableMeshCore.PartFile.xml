@@ -18,6 +18,7 @@
 
     <Part Name="ScalableMeshRDSDependencies" >
       <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
+      <SubPart PartName="RealityPlatformTools"                        PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
       <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
     </Part>
 

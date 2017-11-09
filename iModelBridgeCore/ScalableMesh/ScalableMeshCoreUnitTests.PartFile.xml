@@ -67,7 +67,7 @@
     <ProductDirectory   Name="BeCurlAssemblies"                         Path="Dlls"/>
     <ProductDirectory   Name="PlatformTechNativeExceptions"             Path="Dlls"/>
     <ProductDirectory   Name="RealityAssemblies"                        Path="Dlls"                      />
-    <ProductDirectory   Name="RealityPlatformLibs"                      Path="Libs"                      />
+    <ProductDirectory   Name="RealityPlatformToolsLibs"                 Path="Libs"                      />
     <ProductDirectory   Name="ZlibNativeAssemblies"                     Path="Dlls" />
     <ProductDirectory   Name="BentleyDesktopClientApi"                  Path="Dlls" />
     <ProductDirectory   Name="MergeModules" Path="Dlls"/>
