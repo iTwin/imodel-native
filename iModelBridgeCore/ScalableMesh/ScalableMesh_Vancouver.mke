@@ -505,7 +505,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 	$(ContextSubpartsLibs)PointCloud.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
+    $(ContextSubpartsLibs)CCApi.lib\
     
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 #    $(DgnPlatformV8LibDir)Bentley.lib \

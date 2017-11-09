@@ -10,6 +10,49 @@
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/IScalableMeshProgress.h>
 
+class ScalableMeshEnvironment : public ::testing::Environment
+    {
+    virtual void SetUp() 
+        { 
+        // Check that dataset path is valid
+        BeFileName dataPath(SM_DATA_PATH);
+
+        ASSERT_TRUE(ScalableMeshGTestUtil::GetDataPath(dataPath));
+
+        ASSERT_TRUE(ScalableMeshGTestUtil::InitScalableMesh());
+
+        BeFileName tempPath = ScalableMeshGTestUtil::GetUserSMTempDir();
+
+        //if folder exists delete what we have inside
+        if (BeFileName::DoesPathExist(tempPath.c_str()))
+            {
+            BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
+            EXPECT_EQ(status == BeFileNameStatus::Success, true);
+            }
+        }
+    virtual void TearDown() 
+        {
+        BeFileName test;
+#ifdef VANCOUVER_API
+        BeFileName::BeGetTempPath(test);
+#else
+        Desktop::FileSystem::BeGetTempPath(test);
+#endif
+        BeFileName tempPath = ScalableMeshGTestUtil::GetUserSMTempDir();
+        if (test != tempPath && BeFileName::DoesPathExist(tempPath.c_str()))
+            {
+            BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
+
+            if (status != BeFileNameStatus::Success)
+                {
+                assert(!"Error while removing 3dtiles in temp folder");
+                }
+            }
+        }
+    };
+
+::testing::Environment* const sm_env = ::testing::AddGlobalTestEnvironment(new ScalableMeshEnvironment);
+
 class ScalableMeshTest : public ::testing::TestWithParam<BeFileName>
     {
     protected:
@@ -110,43 +153,45 @@ INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTest, ::testing::ValuesIn(Scal
     if (!(isTrue)) return 1; \
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Richard.Bois      10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-int main(int argc, char **argv) 
-    {
-    ::testing::InitGoogleTest(&argc, argv);
 
-    // Check that dataset path is valid
-    BeFileName dataPath(SM_DATA_PATH);
-
-    FAIL_IF_FALSE((ScalableMeshGTestUtil::GetDataPath(dataPath)));
-
-    FAIL_IF_FALSE((ScalableMeshGTestUtil::InitScalableMesh()));
-
-    BeFileName tempPath = ScalableMeshGTestUtil::GetUserSMTempDir();
-
-    //if folder exists delete what we have inside
-    if (BeFileName::DoesPathExist(tempPath.c_str()))
-        {
-        BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
-        EXPECT_EQ(status == BeFileNameStatus::Success, true);
-        }
-
-    auto retCode = RUN_ALL_TESTS();
-
-    // clean up
-    BeFileName test;
-    BeFileName::BeGetTempPath(test);
-    if (test != tempPath && BeFileName::DoesPathExist(tempPath.c_str()))
-        {
-        BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
-
-        if (status != BeFileNameStatus::Success)
-            {
-            assert(!"Error while removing 3dtiles in temp folder");
-            }
-        }
-
-    return retCode;
-    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Richard.Bois      10/2017
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//int main(int argc, char **argv) 
+//    {
+//    ::testing::InitGoogleTest(&argc, argv);
+//
+//    // Check that dataset path is valid
+//    BeFileName dataPath(SM_DATA_PATH);
+//
+//    FAIL_IF_FALSE((ScalableMeshGTestUtil::GetDataPath(dataPath)));
+//
+//    FAIL_IF_FALSE((ScalableMeshGTestUtil::InitScalableMesh()));
+//
+//    BeFileName tempPath = ScalableMeshGTestUtil::GetUserSMTempDir();
+//
+//    //if folder exists delete what we have inside
+//    if (BeFileName::DoesPathExist(tempPath.c_str()))
+//        {
+//        BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
+//        EXPECT_EQ(status == BeFileNameStatus::Success, true);
+//        }
+//
+//    auto retCode = RUN_ALL_TESTS();
+//
+//    // clean up
+//    BeFileName test;
+//    Desktop::FileSystem::BeGetTempPath(test);
+//    //BeFileName::BeGetTempPath(test);
+//    if (test != tempPath && BeFileName::DoesPathExist(tempPath.c_str()))
+//        {
+//        BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
+//
+//        if (status != BeFileNameStatus::Success)
+//            {
+//            assert(!"Error while removing 3dtiles in temp folder");
+//            }
+//        }
+//
+//    return retCode;
+//    }

@@ -17,7 +17,7 @@
 
   <Part Name="ScalableMeshRDSDependencies" >
     <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
-    <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
+    <SubPart PartName="ClientAPI"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
   </Part>
 
   <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="G" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
