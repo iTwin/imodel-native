@@ -16,7 +16,7 @@
 #include <VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h>
 
 #include <ScalableMesh/ScalableMeshLib.h>
-#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatformTools/RealityDataService.h>
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
