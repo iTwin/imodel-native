@@ -453,6 +453,9 @@ void IDTMSource::Impl::_NotifyOfLastEditUpdate (Time updatedLastEditTime)
 +----------------------------------------------------------------------------*/ 
 bool IDTMSource::Impl::_IsReachable () const
     {
+    if (BeFileName::IsUrl(m_path.c_str()))
+        return true;
+
     return std::ifstream(m_path.c_str()).good();
     }
 

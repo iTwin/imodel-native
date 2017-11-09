@@ -244,10 +244,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
                                                             HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> nodePtr,
                                                             const unsigned __int64& maxNumberCountedPoints) const;
 
-        unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;
-
-
-        static DRange3d                 ComputeTotalExtentFor          (const MeshIndexType*           pointIndexP);
+        unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;        
 
         bool                            AreDataCompressed              ();
 
@@ -422,8 +419,32 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         void SetMainIndexP(HFCPtr<MeshIndexType> newIndex) { m_scmIndexPtr = newIndex; }
 
         void SetNeedsNeighbors(bool needsNeighbors) { m_needsNeighbors = needsNeighbors; }
+
+        static DRange3d ComputeTotalExtentFor(const MeshIndexType*           pointIndexP);
                                     
     };
+
+template <class POINT>
+DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor(const MeshIndexType*   pointIndexP)
+    {
+    typedef ExtentOp<Extent3dType>         PtExtentOpType;
+
+    DRange3d totalExtent;
+    memset(&totalExtent, 0, sizeof(totalExtent));
+
+    if ((pointIndexP != 0) && (!pointIndexP->IsEmpty()))
+        {
+        Extent3dType ExtentPoints = pointIndexP->GetContentExtent();
+        totalExtent.low.x = PtExtentOpType::GetXMin(ExtentPoints);
+        totalExtent.high.x = PtExtentOpType::GetXMax(ExtentPoints);
+        totalExtent.low.y = PtExtentOpType::GetYMin(ExtentPoints);
+        totalExtent.high.y = PtExtentOpType::GetYMax(ExtentPoints);
+        totalExtent.low.z = PtExtentOpType::GetZMin(ExtentPoints);
+        totalExtent.high.z = PtExtentOpType::GetZMax(ExtentPoints);
+        }
+
+    return totalExtent;
+    }
 
 
 /*__PUBLISH_SECTION_END__*/

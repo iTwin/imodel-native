@@ -79,7 +79,7 @@ public:
 
         BENTLEY_SM_EXPORT SMStatus               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false, bool doPartialUpdate = false);
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(HFCPtr<MOSAIC_TYPE>& mosaicP);
         BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider);
 
 
