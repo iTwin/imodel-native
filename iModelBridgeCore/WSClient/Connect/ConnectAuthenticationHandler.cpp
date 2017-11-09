@@ -126,9 +126,8 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectAuthenticationHandler::IsTokenAuthorization(Utf8StringCR auth) const
     {
-    static Utf8CP prefix = "token ";
+    Utf8CP prefix = m_shouldUseSAMLAuthorization ? "SAML " : "token ";
     if (0 == auth.compare(0, strlen(prefix), prefix))
-        return true;
-
+        return true; 
     return false;
     }
