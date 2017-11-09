@@ -12,7 +12,7 @@
 #include <Raster/RasterApi.h>
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include <ScalableMesh/ScalableMeshLib.h>
-#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatformTools/RealityDataService.h>
 #include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <Logging/bentleylogging.h>
