@@ -366,8 +366,16 @@
         </Bindings>
     </Part>
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // CCApi binding                                                          // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    
     <Part Name="BentleyDesktopClient" BentleyBuildMakeFile="BentleyDesktopClientCCApi.prewire.mke" OnlyPlatforms="x64,x86">
         <SdkSource>Vancouver-BentleyDesktopClient</SdkSource>
+        <Bindings>
+            <Libs>SubParts/Libs/$(libprefix)CCApi$(libext)</Libs>
+            <Assemblies>SubParts/Assemblies/$(libprefix)CCApi$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
