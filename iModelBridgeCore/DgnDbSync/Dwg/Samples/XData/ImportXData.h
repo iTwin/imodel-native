@@ -70,7 +70,9 @@ public:
     };  // ImportXData
 
 //=======================================================================================
-// A sample iModelBridge class that runs ImportXData bridge
+// A sample iModelBridge class that runs ImportXData and can also be registered as a 
+// separate iModelBridge by supplying itself an independent instance and affinity to the
+// framework(see the .cpp file for implementation).
 // @bsiclass
 //=======================================================================================
 struct ImportXDataSample : public DwgBridge

@@ -354,6 +354,30 @@ L"\
 END_DGNDBSYNC_DWG_NAMESPACE
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
+    {
+    // Supply a our sample Bridge
+    return  new ImportXDataSample();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
+    {
+    // Want our sample Bridge to precede the generic DwgBridge, i.e. set to a higher level.
+    BeFileName  filename(dwgdxfName);
+    if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"ImportXDataSample");
+        }
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -365,10 +389,13 @@ int wmain (int argc, wchar_t const* argv[])
 
     No arguments will print usage.
     -----------------------------------------------------------------------------------*/
-    ImportXDataSample     sampleImporter;
+    ImportXDataSample     sampleBridge;
+
+    // Register this sample as an iModelBridge:
+    sampleBridge.GetImportOptions().SetBridgeRegSubKey (L"XDataSampleBridge");
 
     // Begin importing DWG file into DgnDb
-    BentleyStatus   status = sampleImporter.RunAsStandaloneExe (argc, argv);
+    BentleyStatus   status = sampleBridge.RunAsStandaloneExe (argc, argv);
 
     return (int)status;
     }

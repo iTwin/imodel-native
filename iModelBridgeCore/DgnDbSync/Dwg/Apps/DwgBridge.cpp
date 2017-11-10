@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnDbSync/Dwg/DwgBridge.h>
+#include    <DgnDbSync/Dwg/DwgHelper.h>
 #include    <iModelBridge/iModelBridgeSacAdapter.h>
 
 USING_NAMESPACE_BENTLEY
@@ -334,3 +335,27 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
     }
 
 END_DGNDBSYNC_DWG_NAMESPACE
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
+    {
+    // Supply a generic DwgBridge
+    return  new DwgBridge();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
+    {
+    // A generic DwgBridge supports any valid DWG, DXF and DXB file type.
+    BeFileName  filename(dwgdxfName);
+    if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DwgBridge");
+        }
+    }

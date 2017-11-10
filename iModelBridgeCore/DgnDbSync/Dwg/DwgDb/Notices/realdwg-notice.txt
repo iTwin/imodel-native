@@ -1,0 +1,3 @@
+Certain portions Copyright (c) 2008 Autodesk, Inc. All rights reserved.
+
+Contains Autodesk (R) DWG (TM) technology by Autodesk, Inc.

@@ -2731,6 +2731,15 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2016
 //=======================================================================================
+struct RealityMeshAttachmentConversion
+{
+    static StatusInt ExtractAttachment (BentleyApi::Utf8StringR rootUrl, Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId);
+                         
+};
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2016                                                                    
+//=======================================================================================
 struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 {
     static void Register();
