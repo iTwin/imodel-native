@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPackage/RealityDataPackageTester.cpp $
+//:>     $Source: Tests/RealityPlatform/RealityDataPackageTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -8,14 +8,14 @@
 
 
 #include <Bentley/BeTest.h>
-#include <RealityPackage/RealityDataPackage.h>
-#include <RealityPackage/WMSSource.h>
-#include <RealityPackage/OsmSource.h>
-#include <RealityPackage/RealityDataSource.h>
+#include <RealityPlatform/RealityDataPackage.h>
+#include <RealityPlatform/WMSSource.h>
+#include <RealityPlatform/OsmSource.h>
+#include <RealityPlatform/RealityDataSource.h>
 #include <Bentley/BeTextFile.h>
 #include "../Common/RealityModFrameworkTestsCommon.h"
 
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 #define _STRINGIFY(s) #s
 #define STRINGIFY(s) _STRINGIFY(s)
@@ -2342,7 +2342,7 @@ TEST_F(PackageTestFixture, Write2_1)
     WStringP parseError = nullptr;
 
     // Read a sample package and write it down
-    auto packageSample = RealityModFrameworkTestsUtils::GetTestDataPath(L"Testdata//RealityPackage//RealityDataPackageSample.xml");
+    auto packageSample = RealityModFrameworkTestsUtils::GetTestDataPath(L"Testdata//RealityPlatform//RealityDataPackageSample.xml");
 
     BeFileName filename(packageSample);
     RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromFile(status, filename, parseError);

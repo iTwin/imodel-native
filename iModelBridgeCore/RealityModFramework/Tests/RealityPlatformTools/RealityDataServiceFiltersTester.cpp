@@ -1,13 +1,13 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/RealityDataServiceFiltersTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/RealityDataServiceFiltersTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatformTools/RealityDataService.h>
 #include <RealityPlatform/RealityDataObjects.h>
 #include <ostream>
 

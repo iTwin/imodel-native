@@ -1,13 +1,13 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/GeoCoordinationServiceTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/GeoCoordinationServiceTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/GeoCoordinationService.h>
-#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatformTools/GeoCoordinationService.h>
+#include <RealityPlatformTools/RealityDataService.h>
 #include <ostream>
 #include <Bentley/BeTextFile.h>
 #include <Bentley/BeFileName.h>

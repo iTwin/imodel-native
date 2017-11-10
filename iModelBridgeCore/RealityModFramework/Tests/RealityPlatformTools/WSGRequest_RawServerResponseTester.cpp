@@ -1,5 +1,5 @@
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatformTools/WSGServices.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ostream>
 

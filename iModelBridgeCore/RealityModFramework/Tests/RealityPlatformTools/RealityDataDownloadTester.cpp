@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/RealityDataDownloadTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/RealityDataDownloadTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -12,7 +12,7 @@
 
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

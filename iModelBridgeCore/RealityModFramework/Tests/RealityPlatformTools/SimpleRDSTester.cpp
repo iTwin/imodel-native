@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/SimpleRDSTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/SimpleRDSTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>

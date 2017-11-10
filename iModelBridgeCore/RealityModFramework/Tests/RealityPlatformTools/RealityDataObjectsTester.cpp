@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/RealityDataObjectsTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/RealityDataObjectsTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -14,7 +14,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataObjects.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include <algorithm>
 

@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/WSGServicesTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/WSGServicesTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -11,7 +11,7 @@
 
 #include <Bentley/BeTest.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatformTools/WSGServices.h>
 #include "../common/RealityModFrameworkTestsCommon.h"
 
 

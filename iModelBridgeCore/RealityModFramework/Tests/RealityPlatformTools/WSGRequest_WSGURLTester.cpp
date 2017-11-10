@@ -1,5 +1,5 @@
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/WSGServices.h>
+#include <RealityPlatformTools/WSGServices.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

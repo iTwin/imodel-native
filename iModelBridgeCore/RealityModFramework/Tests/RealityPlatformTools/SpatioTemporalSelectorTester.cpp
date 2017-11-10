@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/RealityPlatform/SpatioTemporalSelectorTester.cpp $
+|     $Source: Tests/RealityPlatformTools/SpatioTemporalSelectorTester.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/SpatioTemporalSelector.h>
+#include <RealityPlatformTools/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include "../Common/RealityModFrameworkTestsCommon.h"

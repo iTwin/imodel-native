@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/RealityPlatform/RealityModFrameworkTestsCommon.cpp $
+|     $Source: Tests/RealityPlatformTools/RealityModFrameworkTestsCommon.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

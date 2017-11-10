@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/RealityConversionToolsTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/RealityConversionToolsTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -11,7 +11,7 @@
 
 #include <Bentley/BeTest.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

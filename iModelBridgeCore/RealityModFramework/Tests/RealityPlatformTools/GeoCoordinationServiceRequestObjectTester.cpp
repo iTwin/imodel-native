@@ -1,13 +1,13 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatform/GeoCoordinationServiceRequestObjectTester.cpp $
+//:>     $Source: Tests/RealityPlatformTools/GeoCoordinationServiceRequestObjectTester.cpp $
 //:>
 //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/GeoCoordinationService.h>
+#include <RealityPlatformTools/GeoCoordinationService.h>
 #include "../Common/RealityModFrameworkTestsCommon.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
