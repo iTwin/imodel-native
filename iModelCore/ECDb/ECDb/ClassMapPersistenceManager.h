@@ -24,6 +24,32 @@ struct DbClassMapLoadContext final : public NonCopyableClass
 
         static BentleyStatus ReadPropertyMaps(DbClassMapLoadContext&, ECDbCR, ECN::ECClassId);
 
+
+        static Nullable<MapStrategy> ToMapStrategy(int val)
+            {
+            if (val == Enum::ToInt(MapStrategy::NotMapped) || val == Enum::ToInt(MapStrategy::OwnTable) || val == Enum::ToInt(MapStrategy::TablePerHierarchy) ||
+                val == Enum::ToInt(MapStrategy::ExistingTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
+                return Enum::FromInt<MapStrategy>(val);
+
+            return Nullable<MapStrategy>();
+            };
+
+        static Nullable<TablePerHierarchyInfo::ShareColumnsMode> ToShareColumnsMode(int val)
+            {
+            if (val == Enum::ToInt(TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly) || val == Enum::ToInt(TablePerHierarchyInfo::ShareColumnsMode::No) || val == Enum::ToInt(TablePerHierarchyInfo::ShareColumnsMode::Yes))
+                return Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(val);
+
+            return Nullable<TablePerHierarchyInfo::ShareColumnsMode>();
+            };
+
+        static Nullable<JoinedTableInfo> ToJoinedTableInfo(int val)
+            {
+            if (val == Enum::ToInt(JoinedTableInfo::None) || val == Enum::ToInt(JoinedTableInfo::JoinedTable) || val == Enum::ToInt(JoinedTableInfo::ParentOfJoinedTable))
+                return Enum::FromInt<JoinedTableInfo>(val);
+
+            return Nullable<JoinedTableInfo>();
+            };
+
     public:
         DbClassMapLoadContext() {}
         ~DbClassMapLoadContext() {}

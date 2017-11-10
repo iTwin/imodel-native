@@ -14,10 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-bool DbMapSaveContext::IsAlreadySaved(ClassMapCR classMap) const
-    {
-    return m_savedClassMaps.find(classMap.GetClass().GetId()) != m_savedClassMaps.end();
-    }
+bool DbMapSaveContext::IsAlreadySaved(ClassMapCR classMap) const { return m_savedClassMaps.find(classMap.GetClass().GetId()) != m_savedClassMaps.end(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
@@ -197,23 +194,43 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
                 return ERROR;
         }
 
-    const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
+    Nullable<MapStrategy> mapStrategy = ToMapStrategy(stmt->GetValueInt(0));
+    if (mapStrategy.IsNull())
+        {
+        LOG.errorv("Failed to load class map for '%s'. It has an unsupported map strategy (%d). The ECDb file might have been created by a new version of the software.",
+                                       ecClass.GetFullName(), stmt->GetValueInt(0));
+        return ERROR;
+        }
+
     if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
-        const TablePerHierarchyInfo::ShareColumnsMode shareColumnsMode = stmt->IsColumnNull(1) ? TablePerHierarchyInfo::ShareColumnsMode::No : Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(stmt->GetValueInt(1));
+        Nullable<TablePerHierarchyInfo::ShareColumnsMode> shareColumnsMode(TablePerHierarchyInfo::ShareColumnsMode::No);
+        if (!stmt->IsColumnNull(1))
+            shareColumnsMode = ToShareColumnsMode(stmt->GetValueInt(1));
+
         Nullable<uint32_t> maxSharedColumnsBeforeOverflow;
         //uint32_t are persisted as int64 to not lose unsigned-ness
         if (!stmt->IsColumnNull(2))
             maxSharedColumnsBeforeOverflow = Nullable<uint32_t>((uint32_t) stmt->GetValueInt64(2));
 
-        const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(3) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(3));
-        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(shareColumnsMode, maxSharedColumnsBeforeOverflow, joinedTableInfo));
+        Nullable<JoinedTableInfo> joinedTableInfo(JoinedTableInfo::None);
+        if (!stmt->IsColumnNull(3))
+            joinedTableInfo = ToJoinedTableInfo(stmt->GetValueInt(3));
+
+        if (shareColumnsMode.IsNull() || joinedTableInfo.IsNull())
+            {
+            LOG.errorv("Failed to load class map for '%s'. It has an unsupported value for ShareColumnsMode or JoinedTableInfo. The ECDb file might have been created by a new version of the software.",
+                                           ecClass.GetFullName(), stmt->GetValueInt(0));
+            return ERROR;
+            }
+
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(shareColumnsMode.Value(), maxSharedColumnsBeforeOverflow, joinedTableInfo.Value()));
         }
     else
         {
         BeAssert(stmt->IsColumnNull(1) && stmt->IsColumnNull(2) && stmt->IsColumnNull(3) &&
                  "ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
-        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy.Value());
         }
 
     stmt = nullptr; //to release the statement.

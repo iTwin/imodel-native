@@ -421,19 +421,26 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
         {
         DbColumnId id = stmt->GetValueId<DbColumnId>(0);
         Utf8CP name = stmt->GetValueText(1);
-        const DbColumn::Type type = Enum::FromInt<DbColumn::Type>(stmt->GetValueInt(2));
+        Nullable<DbColumn::Type> type = DbSchemaPersistenceManager::ToDbColumnType(stmt->GetValueInt(2));
         const PersistenceType persistenceType = stmt->GetValueBoolean(3) ? PersistenceType::Virtual : PersistenceType::Physical;
 
         const bool hasNotNullConstraint = stmt->GetValueBoolean(notNullColIx);
         const bool hasUniqueConstraint = stmt->GetValueBoolean(uniqueColIx);
         Utf8CP constraintCheck = !stmt->IsColumnNull(checkColIx) ? stmt->GetValueText(checkColIx) : nullptr;
         Utf8CP constraintDefault = !stmt->IsColumnNull(defaultValueColIx) ? stmt->GetValueText(defaultValueColIx) : nullptr;
-        const DbColumn::Constraints::Collation collationConstraint = Enum::FromInt<DbColumn::Constraints::Collation>(stmt->GetValueInt(collationColIx));
+        Nullable<DbColumn::Constraints::Collation> collationConstraint = DbSchemaPersistenceManager::ToDbColumnCollation(stmt->GetValueInt(collationColIx));
 
         int primaryKeyOrdinal = stmt->IsColumnNull(pkOrdinalColIx) ? -1 : stmt->GetValueInt(pkOrdinalColIx);
-        const DbColumn::Kind columnKind = Enum::FromInt<DbColumn::Kind>(stmt->GetValueInt(kindColIx));
+        Nullable<DbColumn::Kind> columnKind = DbSchemaPersistenceManager::ToDbColumnKind(stmt->GetValueInt(kindColIx));
 
-        DbColumn* column = table.AddColumn(id, Utf8String(name), type, columnKind, persistenceType);
+        if (type.IsNull() || collationConstraint.IsNull() || columnKind.IsNull())
+            {
+            LOG.errorv("Failed to load information for column '%s.%s' from " TABLE_Column ". The ECDb file might have been created by a new version of the software.",
+                       table.GetName().c_str(),name);
+            return ERROR;
+            }
+
+        DbColumn* column = table.AddColumn(id, Utf8String(name), type.Value(), columnKind.Value(), persistenceType);
         if (column == nullptr)
             {
             BeAssert(false);
@@ -446,7 +453,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
         if (hasUniqueConstraint)
             column->GetConstraintsR().SetUniqueConstraint();
 
-        column->GetConstraintsR().SetCollation(collationConstraint);
+        column->GetConstraintsR().SetCollation(collationConstraint.Value());
 
         if (!Utf8String::IsNullOrEmpty(constraintCheck))
             column->GetConstraintsR().SetCheckConstraint(constraintCheck);
@@ -512,7 +519,14 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
         return nullptr;
 
     DbTableId id = stmt->GetValueId<DbTableId>(0);
-    DbTable::Type tableType = Enum::FromInt<DbTable::Type>(stmt->GetValueInt(1));
+    Nullable<DbTable::Type> tableType = DbSchemaPersistenceManager::ToDbTableType(stmt->GetValueInt(1));
+    if (tableType.IsNull())
+        {
+        LOG.errorv("Failed to load information about table '%s'. It has a type not supported by this software. The file might have been used with newer versions of the software.",
+                                         name.c_str());
+        return nullptr;
+        }
+
     ECClassId exclusiveRootClassId;
     if (!stmt->IsColumnNull(2))
         exclusiveRootClassId = stmt->GetValueId<ECClassId>(2);
@@ -520,7 +534,7 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     DbTableId parentTableId;
     if (!stmt->IsColumnNull(3))
         {
-        BeAssert((DbTable::Type::Joined == tableType || DbTable::Type::Overflow == tableType) && "Expecting joined or overflow table if parent table id is not null");
+        BeAssert((tableType == DbTable::Type::Joined || tableType == DbTable::Type::Overflow) && "Expecting joined or overflow table if parent table id is not null");
         parentTableId = stmt->GetValueId<DbTableId>(3);
         }
 
@@ -529,7 +543,7 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     DbTable const* parentTable = parentTableId.IsValid() ? FindTable(parentTableId) : nullptr;
     BeAssert(!parentTableId.IsValid() || parentTable != nullptr && "Failed to find parent table");
 
-    DbTable* table = const_cast<TableCollection&>(m_tables).Add(id, name, tableType, exclusiveRootClassId, parentTable);
+    DbTable* table = const_cast<TableCollection&>(m_tables).Add(id, name, tableType.Value(), exclusiveRootClassId, parentTable);
     if (table == nullptr)
         {
         BeAssert(false);
