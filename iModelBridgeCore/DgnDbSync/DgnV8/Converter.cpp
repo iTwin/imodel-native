@@ -240,8 +240,6 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
     SyncInfo::V8FileProvenance provenance(file, m_syncInfo, policy);
     if (!provenance.FindByName(true))
         {
-        BeAssert(m_newFilesOk);
-
         provenance.Insert();
 
         if (_WantProvenanceInBim())
@@ -3423,7 +3421,6 @@ ConverterLibrary::ConverterLibrary(DgnDbR bim, RootModelSpatialParams& params) :
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
     {
-    m_newFilesOk = true;
     GetV8FileSyncInfoId(v8File);
     }
 
@@ -3471,7 +3468,6 @@ ResolvedModelMapping ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Mo
     if (v8mm.IsValid())
         return v8mm;
 
-    m_newFilesOk = true;
     GetV8FileSyncInfoId(*sourceV8Model.GetDgnFileP());
 
     SyncInfo::V8ModelMapping mapping;

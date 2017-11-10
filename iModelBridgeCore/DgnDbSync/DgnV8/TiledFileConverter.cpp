@@ -57,8 +57,6 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
     // *** NB: Do not create elements (or models) in here. This is running as part of the initialization phase.
     //          Only schema changes are allowed in this phase.
 
-    m_newFilesOk = true;
-
     //  Open the root V8File
     DgnV8Api::DgnFileStatus openStatus;    
     m_rootFile = OpenDgnV8File(openStatus, GetRootFileName());

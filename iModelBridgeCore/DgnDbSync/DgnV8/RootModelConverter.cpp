@@ -323,8 +323,6 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     // *** NB: Do not create elements (or models) in here. This is running as part of the initialization phase.
     //          Only schema changes are allowed in this phase.
 
-    m_newFilesOk = true;
-
     // don't bother to convert a DWG master file - let DwgImporter do the job.
     BeFileNameCR rootFileName = GetRootFileName ();
     if (Converter::IsDwgOrDxfFile(rootFileName))
@@ -383,8 +381,6 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
         BeAssert((syncInfoFile != syncInfoFiles.end()) && "We should be able to look up V8 files in syncinfo by their V8FileSyncInfoId's");
         }
 #endif
-
-    m_newFilesOk = false;
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
