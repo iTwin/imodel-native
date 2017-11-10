@@ -64,14 +64,6 @@ void RoadRailCategory::InsertDomainCategories(DgnDbR db)
 
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Road, ColorDef::MediumGrey());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Track, ColorDef::MediumGrey());
-
-    InsertDrawingCategory(*modelPtr, BRRP_CATEGORY_TravelwayDefComponent, ColorDef::Black());
-    InsertDrawingCategory(*modelPtr, BRRP_CATEGORY_TravelwaySideDefComponent, ColorDef::Green());
-    InsertDrawingCategory(*modelPtr, BRRP_CATEGORY_TravelwayStructureDefComponent, ColorDef::MediumGrey());
-    auto pointCatCPtr = InsertDrawingCategory(*modelPtr, BRRP_CATEGORY_TypicalSectionPoint, ColorDef::Red());
-
-    InsertSubCategory(*pointCatCPtr, BRRP_SUBCATEGORY_TypicalSectionPoint_SignificantPoint, ColorDef::DarkCyan());
-    InsertSubCategory(*pointCatCPtr, BRRP_SUBCATEGORY_TypicalSectionPoint_ProxyPoint, ColorDef::DarkMagenta());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,11 +155,3 @@ DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR db, DgnCategoryId c
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId RoadRailCategory::GetRoad(DgnDbR db)  { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Road);    BeAssert(categoryId.IsValid()); return categoryId; }
 DgnCategoryId RoadRailCategory::GetTrack(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Track);   BeAssert(categoryId.IsValid()); return categoryId; }
-
-DgnCategoryId RoadRailCategory::GetTypicalSectionPoint(DgnDbR db) { DgnCategoryId categoryId = QueryDrawingCategoryId(db, BRRP_CATEGORY_TypicalSectionPoint);    BeAssert(categoryId.IsValid()); return categoryId; }
-DgnSubCategoryId RoadRailCategory::GetTypicalSection_SignificantPoint(DgnDbR db) { DgnSubCategoryId subCategoryId = QuerySubCategoryId(db, QueryDrawingCategoryId(db, BRRP_CATEGORY_TypicalSectionPoint), BRRP_SUBCATEGORY_TypicalSectionPoint_SignificantPoint);    BeAssert(subCategoryId.IsValid()); return subCategoryId; }
-DgnSubCategoryId RoadRailCategory::GetTypicalSection_ProxyPoint(DgnDbR db) { DgnSubCategoryId subCategoryId = QuerySubCategoryId(db, QueryDrawingCategoryId(db, BRRP_CATEGORY_TypicalSectionPoint), BRRP_SUBCATEGORY_TypicalSectionPoint_ProxyPoint);    BeAssert(subCategoryId.IsValid()); return subCategoryId; }
-
-DgnCategoryId RoadRailCategory::GetTravelwayDefComponent(DgnDbR db) { DgnCategoryId categoryId = QueryDrawingCategoryId(db, BRRP_CATEGORY_TravelwayDefComponent);    BeAssert(categoryId.IsValid()); return categoryId; }
-DgnCategoryId RoadRailCategory::GetTravelwayStructureDefComponent(DgnDbR db) { DgnCategoryId categoryId = QueryDrawingCategoryId(db, BRRP_CATEGORY_TravelwayStructureDefComponent);    BeAssert(categoryId.IsValid()); return categoryId; }
-DgnCategoryId RoadRailCategory::GetTravelwaySideDefComponent(DgnDbR db) { DgnCategoryId categoryId = QueryDrawingCategoryId(db, BRRP_CATEGORY_TravelwaySideDefComponent);    BeAssert(categoryId.IsValid()); return categoryId; }

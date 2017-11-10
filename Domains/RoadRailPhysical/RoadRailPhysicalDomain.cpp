@@ -28,76 +28,10 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
 
-    RegisterHandler(OverallTypicalSectionBreakDownModelHandler::GetHandler());
-    RegisterHandler(TypicalSectionPortionBreakDownModelHandler::GetHandler());
-
-    RegisterHandler(TypicalSectionPortionDefinitionElementHandler::GetHandler());
-    RegisterHandler(OverallTypicalSectionHandler::GetHandler());
-    RegisterHandler(OverallTypicalSectionAlignmentHandler::GetHandler());
-    RegisterHandler(OverallTypicalSectionPortionHandler::GetHandler());
-    RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
-    RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
-    RegisterHandler(TravelwaySideDefinitionHandler::GetHandler());
-    RegisterHandler(TravelwayStructureDefinitionHandler::GetHandler());
-
-    RegisterHandler(TypicalSectionComponentElementHandler::GetHandler());
-    RegisterHandler(TravelwayStructureComponentElementHandler::GetHandler());
-    RegisterHandler(TravelwaySideComponentElementHandler::GetHandler());
-    RegisterHandler(TravelwayComponentElementHandler::GetHandler());
-    RegisterHandler(BarrierComponentHandler::GetHandler());
-    RegisterHandler(BufferComponentHandler::GetHandler());
-    RegisterHandler(CurbComponentHandler::GetHandler());
-    RegisterHandler(SideSlopeConditionComponentHandler::GetHandler());
-    RegisterHandler(RoadLaneComponentHandler::GetHandler());
-    RegisterHandler(RoadShoulderComponentHandler::GetHandler());
-    RegisterHandler(PavementComponentHandler::GetHandler());
-
-    RegisterHandler(SignificantPointDefinitionHandler::GetHandler());
-    RegisterHandler(TravelwaySignificantPointDefHandler::GetHandler());
-    RegisterHandler(TravelwaySideSignificantPointDefHandler::GetHandler());
-    RegisterHandler(TravelwayStructureSignificantPointDefHandler::GetHandler());
-
-    RegisterHandler(TypicalSectionPointHandler::GetHandler());
-    RegisterHandler(TypicalSectionProxyPointHandler::GetHandler());
-    RegisterHandler(TypicalSectionConstraintSourceHandler::GetHandler());
-    RegisterHandler(TypicalSectionConstraintWithOffsetHandler::GetHandler());
-    RegisterHandler(TypicalSectionHorizontalConstraintHandler::GetHandler());
-    RegisterHandler(TypicalSectionVerticalConstraintHandler::GetHandler());
-    RegisterHandler(TypicalSectionSlopeConstraintHandler::GetHandler());
-    RegisterHandler(TypicalSectionConstraintOffsetHandler::GetHandler());
-    RegisterHandler(TypicalSectionConstraintConstantOffsetHandler::GetHandler());
-    RegisterHandler(TypicalSectionConstraintSlopeHandler::GetHandler());
-    RegisterHandler(TypicalSectionConstraintConstantSlopeHandler::GetHandler());
-
     RegisterHandler(PathwayElementHandler::GetHandler());
-    RegisterHandler(TravelwaySegmentElementHandler::GetHandler());
-    RegisterHandler(RegularTravelwaySegmentHandler::GetHandler());
-    RegisterHandler(TravelwayTransitionHandler::GetHandler());
-    RegisterHandler(TravelwayIntersectionSegmentElementHandler::GetHandler());
 
-    RegisterHandler(TravelwaySideSegmentElementHandler::GetHandler());
-    RegisterHandler(RegularTravelwaySideSegmentHandler::GetHandler());
-    RegisterHandler(TravelwayStructureSegmentElementHandler::GetHandler());
-    RegisterHandler(RegularTravelwayStructureSegmentHandler::GetHandler());
-    
-    RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
-    RegisterHandler(RoadClassDefinitionTableHandler::GetHandler());
-    RegisterHandler(RoadClassDefinitionModelHandler::GetHandler());
-    RegisterHandler(RoadClassDefinitionHandler::GetHandler());
-    RegisterHandler(RoadClassHandler::GetHandler());
-
-    RegisterHandler(DesignSpeedDefinitionTableHandler::GetHandler());
-    RegisterHandler(DesignSpeedDefinitionModelHandler::GetHandler());
-    RegisterHandler(DesignSpeedDefinitionElementHandler::GetHandler());
-    RegisterHandler(RoadDesignSpeedDefinitionHandler::GetHandler());
-    RegisterHandler(DesignSpeedHandler::GetHandler());
-    
     RegisterHandler(RailwayHandler::GetHandler());
     RegisterHandler(RoadwayHandler::GetHandler());    
-    RegisterHandler(RoadIntersectionLegElementHandler::GetHandler());    
-
-    RegisterHandler(LinearlyLocatedStatusHandler::GetHandler());
-    RegisterHandler(StatusAspectHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -138,33 +72,9 @@ PhysicalModelPtr RoadRailPhysicalDomain::QueryPhysicalModel(Dgn::SubjectCR paren
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
-    {
-    DgnDbStatus status;
-
-    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(subject, "Roadway Standards");
-    if (roadwayStandardsPartitionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto roadwayStandardsModelPtr = RoadwayStandardsModel::Create(
-        RoadwayStandardsModel::CreateParams(subject.GetDgnDb(), roadwayStandardsPartitionPtr->GetElementId()));
-
-    if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, Utf8CP physicalPartitionName)
     {
     DgnDbStatus status;
-
-    if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
-
-        return status;
 
     if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, physicalPartitionName)))
         return status;
@@ -178,89 +88,6 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, 
 void createCodeSpecs(DgnDbR dgndb)
     {
     auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TravelwaySide, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-	codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TravelwayStructure, CodeScopeSpec::CreateModelScope());
-	BeAssert(codeSpecPtr.IsValid());
-	if (codeSpecPtr.IsValid())
-		{
-		codeSpecPtr->Insert();
-		BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-		}
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_OverallTypicalSection, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionParameter, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_SignificantPointDefinition, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionPoint, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        auto sequenceSpec = CodeFragmentSpec::FromSequence();
-        sequenceSpec.SetStartNumber(1);
-        codeSpecPtr->GetFragmentSpecsR().push_back(sequenceSpec);
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinitionTable, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinition, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinitionTable, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpecPtr.IsValid());
-    if (codeSpecPtr.IsValid())
-        {
-        codeSpecPtr->Insert();
-        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
-        }
-
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {

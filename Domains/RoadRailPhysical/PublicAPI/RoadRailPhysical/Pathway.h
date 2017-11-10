@@ -31,8 +31,6 @@ protected:
     explicit PathwayElement(CreateParams const& params) : T_Super(params) {}
 
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
-    virtual Dgn::DgnDbStatus _OnChildUpdate(Dgn::DgnElementCR original, Dgn::DgnElementCR replacement) const override;
-    virtual void _OnChildUpdated(Dgn::DgnElementCR child) const override;
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
@@ -52,15 +50,9 @@ struct Roadway : PathwayElement
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_Roadway, PathwayElement);
     friend struct RoadwayHandler;
 
-private:
-    Dgn::DgnDbStatus ValidateTravelwaySegment(Dgn::DgnElementCR child) const;
-
 protected:
     //! @private
     explicit Roadway(CreateParams const& params) : T_Super(params) {}
-
-    virtual Dgn::DgnDbStatus _OnChildInsert(Dgn::DgnElementCR child) const override;
-    virtual Dgn::DgnDbStatus _OnChildUpdate(Dgn::DgnElementCR original, Dgn::DgnElementCR replacement) const override;
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(Roadway)
