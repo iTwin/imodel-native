@@ -212,8 +212,11 @@ void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isR
     if (!m_nonSpatialModelsSeen.insert(&thisV8Model).second)   // Already seen this model?
         return;
 
-    if (isRootASheet && v8ModelRef.IsDgnAttachment())       // Mark all 2-D models that are attached to a sheet.
-        SheetAttachmentMarker::AddTo(thisV8Model);
+    if (&thisV8Model != GetRootModelP())                        // Except in the special case where a drawing is the root model,
+        {
+        if (isRootASheet && v8ModelRef.IsDgnAttachment())       // Mark 2-D models that are attached to a sheet, so that we can handle them specially later on.
+            SheetAttachmentMarker::AddTo(thisV8Model);
+        }
 
     // Build up a list of non-spatial models in the order in which they were found. This is 
     // so that we will (later) import those models in that same order. That is necessary so that
@@ -229,8 +232,6 @@ void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isR
         _KeepFileAlive(thisV8File);     // keep the file alive
         }
 
-    GetAttachments(thisV8Model);
-
     if (nullptr == v8ModelRef.GetDgnAttachmentsP())
         return;
 
@@ -239,7 +240,7 @@ void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isR
         if (nullptr == attachment->GetDgnModelP())
             continue; // missing reference 
 
-        FindNonSpatialModel(*attachment, true);
+        FindNonSpatialModel(*attachment, isRootASheet);
         }
     }
 
@@ -317,8 +318,6 @@ void RootModelConverter::FindV8DrawingsAndSheets()
         ClassifyNormal2dModels (*fileToSearch); // This tells us whether a given 2d design model should become a drawing or a spatial model
 
     // *** EXTREMELY TRICKY: See "DgnModel objects and Sheet attachments" for why we need TWO PASSES
-    Bentley::DgnModelPtr v8model;
-
     processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {FindSheetModel(v8File, item);});
     processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {FindDrawingModel(v8File, item);});
     }
@@ -336,7 +335,7 @@ void RootModelConverter::FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelInde
         return;
 
     // Already found as a sheet attachment? Move on. See "DgnModel objects and Sheet attachments"
-    if (SheetAttachmentMarker::IsFoundOn(*v8model) && (v8model.get() != GetRootModelP()))
+    if (SheetAttachmentMarker::IsFoundOn(*v8model))
         return;
 
     GetAttachments(*v8model);
