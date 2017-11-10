@@ -17,7 +17,6 @@
 
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
