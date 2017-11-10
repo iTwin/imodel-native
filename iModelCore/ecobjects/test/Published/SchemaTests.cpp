@@ -451,6 +451,47 @@ TEST_F(SchemaTest, GetBaseClassProperty)
     WheelsChildInstance->SetValue ("Name", v);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaTest, HierarchyInCorrectOrder)
+    {
+    ECSchemaPtr schemaA;
+    ECSchemaPtr schemaB;
+    ECSchemaPtr schemaC;
+    ECSchemaPtr schemaD;
+    ECSchemaPtr schemaE;
+    ECSchemaPtr schemaF;
+    ECSchema::CreateSchema(schemaA, "A", "a", 1, 0, 0);
+    ECSchema::CreateSchema(schemaB, "B", "b", 1, 0, 0);
+    ECSchema::CreateSchema(schemaC, "C", "c", 1, 0, 0);
+    ECSchema::CreateSchema(schemaD, "D", "d", 1, 0, 0);
+    ECSchema::CreateSchema(schemaE, "E", "e", 1, 0, 0);
+    ECSchema::CreateSchema(schemaF, "F", "f", 1, 0, 0);
+
+    schemaA->AddReferencedSchema(*schemaB);
+    schemaA->AddReferencedSchema(*schemaC);
+    schemaA->AddReferencedSchema(*schemaE);
+    schemaA->AddReferencedSchema(*schemaF);
+
+    schemaB->AddReferencedSchema(*schemaC);
+
+    schemaC->AddReferencedSchema(*schemaD);
+
+    schemaF->AddReferencedSchema(*schemaD);
+
+    bvector<ECSchemaP> schemas;
+    schemaA->FindAllSchemasInGraph(schemas, true);
+
+    // Expected order: E, D, C, B, A
+    EXPECT_TRUE(schemas[0]->GetAlias().EqualsIAscii("d"));
+    EXPECT_TRUE(schemas[1]->GetAlias().EqualsIAscii("f"));
+    EXPECT_TRUE(schemas[2]->GetAlias().EqualsIAscii("e"));
+    EXPECT_TRUE(schemas[3]->GetAlias().EqualsIAscii("c"));
+    EXPECT_TRUE(schemas[4]->GetAlias().EqualsIAscii("b"));
+    EXPECT_TRUE(schemas[5]->GetAlias().EqualsIAscii("a"));
+
+    }
 //=======================================================================================
 //! SchemaSearchTest
 //=======================================================================================

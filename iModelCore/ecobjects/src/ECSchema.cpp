@@ -2589,10 +2589,10 @@ void ECSchema::CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bo
             {
             allSchemas.erase(it);
             allSchemas.push_back(iter->second.get());
-            continue;
+            iter->second->CollectAllSchemasInGraph(allSchemas, false);
             }
-
-        iter->second->CollectAllSchemasInGraph (allSchemas, true);
+        else
+            iter->second->CollectAllSchemasInGraph (allSchemas, true);
         }
     }
 
