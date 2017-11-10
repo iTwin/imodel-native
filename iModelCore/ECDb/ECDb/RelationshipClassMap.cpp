@@ -359,6 +359,13 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
         return ERROR;
         }
 
+    if (sourceECInstanceIdPropMap->GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::TemporaryTablePerHierarchy ||
+        targetECInstanceIdPropMap->GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::TemporaryTablePerHierarchy)
+        {
+        if (SUCCESS != GetDbMap().GetDbSchema().LoadTempTables())
+            return ERROR;
+        }
+
     if (GetPropertyMapsR().Insert(targetClassIdPropMap) != SUCCESS)
         return ERROR;
 
@@ -427,6 +434,22 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
         }
 
+    DbTable const* sourceTable = *sourceTables.begin();
+    DbTable const* targetTable = *targetTables.begin();
+
+    Nullable<bool> sourceIsTemp = sourceTable->GetTypeInfo().GetIsTempFlag();
+    Nullable<bool> targetIsTemp = targetTable->GetTypeInfo().GetIsTempFlag();
+
+    if (GetMapStrategy().GetStrategy() != MapStrategy::TemporaryTablePerHierarchy)
+        {
+        if (sourceIsTemp == true || targetIsTemp == true)
+            {
+            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as a link table. As its source or target class has the map strategy 'TemporaryTablePerHierarchy', the ECRelationshipClass must also specify that strategy.",
+                            GetClass().GetFullName());
+            return ClassMappingStatus::Error;
+            }
+        }
+
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
     DetermineConstraintClassIdColumnHandling(addSourceECClassIdColumnToTable, sourceConstraint);
@@ -443,7 +466,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
 
     //only create constraints on TPH root or if not TPH and not existing table
-    if (GetPrimaryTable().GetTypeInfo().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
+    if (GetPrimaryTable().GetTypeInfo().GetType() != DbTable::Type::Existing && !GetPrimaryTable().GetTypeInfo().IsTemp() && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
         {
         Nullable<bool> createFkConstraints;
         ca.TryGetCreateForeignKeyConstraints(createFkConstraints);
@@ -451,13 +474,11 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
             createFkConstraints.Value())
             {
             //Create FK from Source-Primary to LinkTable
-            DbTable const* sourceTable = *sourceTables.begin();
             DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
             DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
             GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
 
             //Create FK from Target-Primary to LinkTable
-            DbTable const* targetTable = *targetTables.begin();
             fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
             referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
             GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);

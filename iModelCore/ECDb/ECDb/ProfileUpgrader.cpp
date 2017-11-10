@@ -45,6 +45,12 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE " TABLE_Table " SET IsTemporary=" SQLVAL_False " WHERE Type<>" SQLVAL_DbTable_Type_Existing))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Populating column IsTemporary in table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
     LOG.debug("ECDb profile upgrade: Added column IsTemporary to table ' " TABLE_Table "'.");
     return BE_SQLITE_OK;
     }

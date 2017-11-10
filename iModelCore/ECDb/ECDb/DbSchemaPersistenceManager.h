@@ -130,7 +130,8 @@ public:
     static Nullable<MapStrategy> ToMapStrategy(int val)
         {
         if (val == Enum::ToInt(MapStrategy::NotMapped) || val == Enum::ToInt(MapStrategy::OwnTable) || val == Enum::ToInt(MapStrategy::TablePerHierarchy) ||
-            val == Enum::ToInt(MapStrategy::ExistingTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
+            val == Enum::ToInt(MapStrategy::ExistingTable) || val == Enum::ToInt(MapStrategy::TemporaryTablePerHierarchy) ||
+            val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
             return Enum::FromInt<MapStrategy>(val);
 
         return Nullable<MapStrategy>();

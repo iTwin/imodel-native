@@ -317,24 +317,27 @@ BentleyStatus ClassMappingInfo::EvaluateRootClassMapStrategy()
         SchemaPolicy const* noAdditionalRootEntityClassPolicy = nullptr;
         if (m_ctx.GetSchemaPolicies().IsOptedIn(noAdditionalRootEntityClassPolicy, SchemaPolicy::Type::NoAdditionalRootEntityClasses))
             {
-            if (SUCCESS != noAdditionalRootEntityClassPolicy->GetAs<NoAdditionalRootEntityClassesPolicy>().Evaluate(m_ctx.GetECDb(), *entityClass))
+            //TODO cache the builtin schema list as it is created for every class during mapping
+            bset<Utf8CP, CompareIUtf8Ascii> builtinSchemaNames = ProfileManager::GetBuiltinSchemaNames();
+            if (builtinSchemaNames.find(entityClass->GetSchema().GetName().c_str()) == builtinSchemaNames.end() &&
+                SUCCESS != noAdditionalRootEntityClassPolicy->GetAs<NoAdditionalRootEntityClassesPolicy>().Evaluate(m_ctx.GetECDb(), *entityClass))
                 return ERROR;
             }
+
+        return SUCCESS;
         }
-    else
+
+    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
+    BeAssert(relClass != nullptr && "Other class types should have been caught before");
+    BeAssert(!m_relMappingType.IsNull());
+    if (m_relMappingType != RelationshipMappingType::LinkTable)
+        return SUCCESS;
+
+    SchemaPolicy const* noAdditionalLinkTablesPolicy = nullptr;
+    if (m_ctx.GetSchemaPolicies().IsOptedIn(noAdditionalLinkTablesPolicy, SchemaPolicy::Type::NoAdditionalLinkTables))
         {
-        ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-        BeAssert(relClass != nullptr && "Other class types should have been caught before");
-        BeAssert(!m_relMappingType.IsNull());
-        if (m_relMappingType == RelationshipMappingType::LinkTable)
-            {
-            SchemaPolicy const* noAdditionalLinkTablesPolicy = nullptr;
-            if (m_ctx.GetSchemaPolicies().IsOptedIn(noAdditionalLinkTablesPolicy, SchemaPolicy::Type::NoAdditionalLinkTables))
-                {
-                if (SUCCESS != noAdditionalLinkTablesPolicy->GetAs<NoAdditionalLinkTablesPolicy>().Evaluate(m_ctx.GetECDb(), *relClass))
-                    return ERROR;
-                }
-            }
+        if (SUCCESS != noAdditionalLinkTablesPolicy->GetAs<NoAdditionalLinkTablesPolicy>().Evaluate(m_ctx.GetECDb(), *relClass))
+            return ERROR;
         }
 
     return SUCCESS;

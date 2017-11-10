@@ -80,11 +80,11 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
     ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
-            <ECEntityClass typeName="Foo1" modifier="Abstract">
+            <ECEntityClass typeName="Foo1">
                 <ECProperty propertyName="S" typeName="string" />
                 <ECProperty propertyName="I" typeName="int" />
             </ECEntityClass>
-            <ECEntityClass typeName="Foo2" modifier="Abstract">
+            <ECEntityClass typeName="Foo2">
                 <ECProperty propertyName="Dt" typeName="dateTime" />
                 <ECProperty propertyName="Origin" typeName="Point2d" />
             </ECEntityClass>
@@ -114,7 +114,7 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
     ASSERT_EQ(BE_SQLITE_OK, revision2.FromChangeTrack(tracker));
     tracker.Restart();
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE ts.Foo1 WHERE I=1"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Foo1 WHERE I=1"));
     m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());

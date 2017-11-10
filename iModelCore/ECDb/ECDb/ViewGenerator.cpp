@@ -44,7 +44,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
                                      "SELECT c.Id FROM " TABLE_Class " c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND "
                                      "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
-                                     "cm.MapStrategy<>" SQLVAL_MapStrategy_NotMapped))
+                                     "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_TemporaryTablePerHierarchy ")"))
         return ERROR;
 
     bvector<ECClassId> classIds;
@@ -86,9 +86,9 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
             return ERROR;
             }
 
-        if (classMap->GetType() == ClassMap::Type::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
+        if (classMap->GetType() == ClassMap::Type::NotMapped || classMap->GetMapStrategy().GetStrategy() == MapStrategy::TemporaryTablePerHierarchy || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
             {
-            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityclass or ECRelationshipClass.",
+            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or has the map strategy 'TemporaryTablePerHierarchy' or not an ECEntityClass or ECRelationshipClass.",
                                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }

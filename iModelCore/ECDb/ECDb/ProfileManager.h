@@ -76,6 +76,19 @@ public:
     //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
     //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
     static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly);
+
+    static bset<Utf8CP, CompareIUtf8Ascii> GetBuiltinSchemaNames()
+        { 
+        bset<Utf8CP, CompareIUtf8Ascii> names;
+        names.insert("ECDbChangeSummaries");
+        names.insert("ECDbFileInfo");
+        names.insert("ECDbMap");
+        names.insert("ECDbMeta");
+        names.insert("ECDbSchemaPolicies");
+        names.insert("ECDbSystem");
+        return names;
+        }
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

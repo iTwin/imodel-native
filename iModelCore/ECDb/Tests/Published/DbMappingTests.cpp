@@ -2952,12 +2952,27 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
                   <Class class="SessionSetting" />
               </Target>
            </ECRelationshipClass>
+           <ECRelationshipClass typeName="LinkTableRel" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
         </ECSchema>)xml")));
 
-    ECInstanceKey fooKey, settingKey;
+    ECInstanceKey fooKey, settingKey, linkTableRel;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging',true)",
                                                                                           fooKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                                          fooKey.GetInstanceId().ToString().c_str(), settingKey.GetInstanceId().ToString().c_str()).c_str()));
 
     EXPECT_TRUE(GetHelper().GetIndexNamesForTable("ts_Foo").empty());
     EXPECT_EQ(std::vector<Utf8String>({"ix_sessionsetting_val", "uix_sessionsetting_name"}), GetHelper().GetIndexNamesForTable("ts_SessionSetting", "temp"));
@@ -2971,14 +2986,155 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Temp table expected to be empty after opening a new session";
     stmt.Finalize();
 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.LinkTableRel")) << "temp table expected to be recreated in new session";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Temp table expected to be empty after opening a new session";
+    stmt.Finalize();
+
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging',true)",
                                                                                           fooKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                                            fooKey.GetInstanceId().ToString().c_str(), settingKey.GetInstanceId().ToString().c_str()).c_str()));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Foo.Id,Name,Val FROM ts.SessionSetting")) << "temp table expected to exist";
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(fooKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
     ASSERT_STREQ("Logging", stmt.GetValueText(1));
     ASSERT_TRUE(stmt.GetValueBoolean(2));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,SourceECInstanceId,TargetECInstanceId FROM ts.LinkTableRel")) << "temp table expected to exist";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(linkTableRel.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    ASSERT_EQ(fooKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(1));
+    ASSERT_EQ(settingKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("TemporaryTablePerHierarchyMapStrategy_LinkTables.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="A" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B" modifier="Sealed">
+                <ECProperty propertyName="Val" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="ATemp" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="BTemp" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Val" typeName="int" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel1" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="A" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="B" />
+              </Target>
+           </ECRelationshipClass>
+           <ECRelationshipClass typeName="Rel2" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="A" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="BTemp" />
+              </Target>
+           </ECRelationshipClass>
+           <ECRelationshipClass typeName="Rel3" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="ATemp" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="B" />
+              </Target>
+           </ECRelationshipClass>
+           <ECRelationshipClass typeName="Rel4" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="ATemp" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="BTemp" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey aKey, bKey, aTempKey, bTempKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.A(Name) VALUES('A 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aTempKey, "INSERT INTO ts.ATemp(Name) VALUES('ATemp 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.B(Val) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.BTemp(Val) VALUES(1)"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Rel1(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                                            aKey.GetInstanceId().ToString().c_str(), bKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Rel2(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                                            aKey.GetInstanceId().ToString().c_str(), bTempKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Rel3(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                        aTempKey.GetInstanceId().ToString().c_str(), bKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Rel4(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                        aTempKey.GetInstanceId().ToString().c_str(), bTempKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    std::map<Utf8CP, std::pair<ECInstanceKey, ECInstanceKey>> expectedResults
+        {
+                {"Rel1", {aKey, bKey}},
+                {"Rel2", {aKey, bTempKey}},
+                {"Rel3", {aTempKey, bKey}},
+                {"Rel4", {aTempKey, bTempKey}}
+        };
+
+    for (auto const& kvPair : expectedResults)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.%s", kvPair.first);
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql;
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+        ECInstanceKey const& expectedSourceKey = kvPair.second.first;
+        ECInstanceKey const& expectedTargetKey = kvPair.second.second;
+        ASSERT_EQ(expectedSourceKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+        ASSERT_EQ(expectedSourceKey.GetClassId(), stmt.GetValueId<ECClassId>(1)) << stmt.GetECSql();
+        ASSERT_EQ(expectedTargetKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(2)) << stmt.GetECSql();
+        ASSERT_EQ(expectedTargetKey.GetClassId(), stmt.GetValueId<ECClassId>(3)) << stmt.GetECSql();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -3098,6 +3254,37 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
               </Target>
            </ECRelationshipClass>
         </ECSchema>)xml"))) << "Physical ForeignKey for temp tables never valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "Link tables between classes with temp table mapping";
     }
 
 
@@ -9604,6 +9791,7 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
 
     std::vector<Utf8CP> expectedSchemas;
     expectedSchemas.push_back("CoreCustomAttributes");
+    expectedSchemas.push_back("ECDbChangeSummaries");
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
     expectedSchemas.push_back("ECDbMeta");

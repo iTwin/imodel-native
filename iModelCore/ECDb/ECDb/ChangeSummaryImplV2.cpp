@@ -60,7 +60,7 @@ void InstancesTableV2::PrepareStatements()
     result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM change.Instance WHERE ClassIdOfChangedInstance=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
-    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId FROM change.Instance WHERE ChangeClassIdOfChangedInstancedClassId=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
+    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId FROM change.Instance WHERE ClassIdOfChangedInstance=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     }

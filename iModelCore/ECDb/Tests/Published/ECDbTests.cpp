@@ -377,16 +377,19 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
                                         {briefcaseAId.GetValue(), 0}, {briefcaseBId.GetValue(), 0}};
 
     ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
-    sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(40);
+    sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(55);
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(briefcaseAId));
     ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
-    sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(40);
+    sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(55);
 
     m_ecdb.CloseDb();
 
     TestECDb testDb;
     ASSERT_EQ(BE_SQLITE_OK, testDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+
+    //force loading of temp tables
+    ASSERT_EQ(ECSqlStatus::Success, TestHelper(testDb).PrepareECSql("SELECT * FROM change.Summary"));
 
     ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
 
