@@ -20,6 +20,7 @@ struct IECSqlPreparedStatement;
 struct SingleECSqlPreparedStatement;
 struct SingleContextTableECSqlPreparedStatement;
 
+
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan    06/2013
 //+===============+===============+===============+===============+===============+======
@@ -113,7 +114,6 @@ struct ECSqlPrepareContext final : NonCopyableClass
         ExpScopeStack m_scopes;
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
-
 
     public:
         explicit ECSqlPrepareContext(IECSqlPreparedStatement&);

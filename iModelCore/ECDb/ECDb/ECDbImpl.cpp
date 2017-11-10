@@ -299,6 +299,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     {
     m_ecdb.AddFunction(Base64ToBlobSqlFunction::GetSingleton());
     m_ecdb.AddFunction(BlobToBase64SqlFunction::GetSingleton());
+
+    m_changeValueSqlFunc = std::unique_ptr<ChangedValue>(new ChangedValue(m_ecdb));
+    m_ecdb.AddFunction(*m_changeValueSqlFunc);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -311,6 +315,8 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
 
     m_ecdb.RemoveFunction(Base64ToBlobSqlFunction::GetSingleton());
     m_ecdb.RemoveFunction(BlobToBase64SqlFunction::GetSingleton());
+    m_ecdb.RemoveFunction(*m_changeValueSqlFunc);
+    m_changeValueSqlFunc = nullptr;
     }
 
 //---------------------------------------------------------------------------------------

@@ -119,59 +119,89 @@ void ChangedValue::SetValue(Context& ctx, ECSqlStatement& stmt)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ChangedValue::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) 
     {
-    //1 - csInstanceId        [Required]
-    //2 - AccessString        [Required]
-    //3 - Operation           [Requied] inserted|updated_old|updated_new|deleted
-    //4 - FallBackValue       [Required]
     if (nArgs < 4)
         {
         ctx.SetResultError("Not enough parameters");
         return;
         }
 
-    //following should moved out 
-    enum OpCode
+    if (nArgs > 5)
         {
-        OP_INSERTED = 1,
-        OP_UPDATED_NEW = 2,
-        OP_UPDATED_OLD = 3,
-        OP_DELETED = 4
-        };
+        ctx.SetResultError("Too many parameters");
+        return;
+        }
+
+    const int kInstanceId = 0;      // [Required]
+    const int kAccessString = 1;    // [Required]
+    const int kOperation = 2;       // [Required]
+    const int kFallBackValue = 3;   // [Required]
+    const int kStage = 4;           // [Optional]
 
     //Decode and verify parameters
-    if (args[0].GetValueType() == DbValueType::IntegerVal)
+    if (args[kInstanceId].GetValueType() != DbValueType::IntegerVal)
         {
         ctx.SetResultError("Parameter one expect to be of integer type and cannot be null");
         return;
         }
 
-    if (args[1].GetValueType() == DbValueType::TextVal)
+    if (args[kAccessString].GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultError("Parameter two expect to be of text type and cannot be null");
         return;
         }
 
-    if (args[2].GetValueType() == DbValueType::IntegerVal)
+    if (args[kOperation].GetValueType() != DbValueType::IntegerVal)
         {
         ctx.SetResultError("Parameter three expect to be of integer type and cannot be null");
         return;
         }
 
-    const ECInstanceId csInstanceId = args[0].GetValueId<ECInstanceId>();
-    Utf8CP accessString = args[1].GetValueText();
-    const OpCode operation = (OpCode) args[2].GetValueInt();
-    const DbValue& fallbackValue = args[3];
 
-    //Optimize case do not need to query
-    // Update + New is already part of db
-    if (operation == OP_INSERTED || operation == OP_UPDATED_NEW) //OP_INSERTED | OP_UPDATED_NEW
+    if (nArgs == 5 && args[kStage].GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultValue(fallbackValue); //fallback is the current value of the column
+        ctx.SetResultError("Parameter three expect to be of integer type and cannot be null");
         return;
         }
 
-    //Use cached statement as this would be called very frequently
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM cs.PropertyValue PV WHERE  PV.Instance.Id = ?1 AND PV.AccessString = ?2 ");
+    const ECInstanceId csInstanceId = args[kInstanceId].GetValueId<ECInstanceId>();
+    Utf8CP accessString = args[kAccessString].GetValueText();
+    const ChangeSummaryV2::Operation operation = (ChangeSummaryV2::Operation) args[kOperation].GetValueInt();
+    const DbValue& fallbackValue = args[kFallBackValue];
+
+    ChangeSummaryV2::Stage stage;
+    if (operation == ChangeSummaryV2::Operation::Inserted)
+        stage = ChangeSummaryV2::Stage::New;
+    else if (operation == ChangeSummaryV2::Operation::Deleted)
+        stage = ChangeSummaryV2::Stage::Old;
+    else if (operation == ChangeSummaryV2::Operation::Updated)
+        stage = ChangeSummaryV2::Stage::Unset;
+    else
+        {
+        ctx.SetResultError("'Opeartion' parameter has a invalid value.");
+        return;
+        }
+
+    if (nArgs == 5)
+        {
+        stage = (ChangeSummaryV2::Stage) args[kStage].GetValueInt();        
+        if (operation == ChangeSummaryV2::Operation::Inserted && stage != ChangeSummaryV2::Stage::New)
+            {
+            ctx.SetResultError("'Stage' arumgent for 'Insert' operation must must be set to 'New'");
+            return;
+            }
+        else if (operation == ChangeSummaryV2::Operation::Deleted && stage != ChangeSummaryV2::Stage::Old)
+            {
+            ctx.SetResultError("'Stage' arumgent for 'Delete' operation must must be set to 'Old'");
+            return;
+            }            
+        }
+
+    CachedECSqlStatementPtr stmt;
+    if (stage== ChangeSummaryV2::Stage::Old)
+        stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM change.PropertyValue PV WHERE  PV.Instance.Id = ?1 AND PV.AccessString = ?2 ");
+    else if (stage == ChangeSummaryV2::Stage::New)
+        stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM change.PropertyValue PV WHERE  PV.Instance.Id = ?1 AND PV.AccessString = ?2 ");
+
     if (stmt == nullptr)
         {
         ctx.SetResultError("Failed to prepare ECSql statement necessary for ChangedValue()");
@@ -191,7 +221,7 @@ void ChangedValue::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 // @bsimethod                                   Krischan.Eberle                   11/17
 //+---------------+---------------+---------------+---------------+---------------+------
 ChangedValue::ChangedValue(ECDbR ecdb)
-    :ScalarFunction("ChangedValue", 4, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(20) //it will never have 20 infact just one statement at any given time.
+    :ScalarFunction("ChangedValue", -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(20) //it will never have 20 infact just one statement at any given time.
     {
     if (s_setValueMap.empty())
         {

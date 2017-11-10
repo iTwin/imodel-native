@@ -17,6 +17,35 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan           11/2017
+//---------------------------------------------------------------------------------------
+static ChangeSummaryV2::Operation FomOpCode(DbOpcode code)
+    {
+    static std::map<DbOpcode, ChangeSummaryV2::Operation> map = 
+        {
+            {DbOpcode::Insert, ChangeSummaryV2::Operation::Inserted},
+            {DbOpcode::Update, ChangeSummaryV2::Operation::Updated},
+            {DbOpcode::Delete, ChangeSummaryV2::Operation::Deleted}
+        };
+
+    return map[code];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan          11/2017
+//---------------------------------------------------------------------------------------
+static DbOpcode ToOpCode(ChangeSummaryV2::Operation code)
+    {
+    static std::map<ChangeSummaryV2::Operation, DbOpcode> map =
+        {
+                {ChangeSummaryV2::Operation::Inserted, DbOpcode::Insert},
+                {ChangeSummaryV2::Operation::Updated, DbOpcode::Update},
+                {ChangeSummaryV2::Operation::Deleted, DbOpcode::Delete}
+        };
+
+    return map[code];
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
@@ -40,23 +69,18 @@ void InstancesTableV2::PrepareStatements()
     ECSqlStatus result;
 
     BeAssert(!m_instancesTableInsert.IsPrepared());
-    //Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,Indirect,TableName) VALUES(?1,?2,?3,?4,?5)", instancesTableName.c_str());
-
     result = m_instancesTableInsert.Prepare(m_ecdb, "INSERT INTO change.Instance (ChangedClassId, ChangedInstanceId, Operation, Indirect, TableName, Summary) VALUES (?1, ?2, ?3, ?4, ?5, ?6)");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableUpdate.IsPrepared());
-    //Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,Indirect=?4 WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
     result = m_instancesTableUpdate.Prepare(m_ecdb, "UPDATE change.Instance SET Operation=?4, Indirect=?5 WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableSelect.IsPrepared());
-    //Utf8PrintfString selectSql("SELECT DbOpcode, Indirect,TableName FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
     result = m_instancesTableSelect.Prepare(m_ecdb, "SELECT Operation, Indirect, TableName FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableDelete.IsPrepared());
-    //Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
     result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
@@ -73,11 +97,11 @@ void InstancesTableV2::Insert(ECClassId classId, ECInstanceId instanceId, DbOpco
     m_instancesTableInsert.Reset();
     m_instancesTableInsert.BindId(1, classId);
     m_instancesTableInsert.BindId(2, instanceId);
-    m_instancesTableInsert.BindInt(3, (int) dbOpcode);
+    m_instancesTableInsert.BindInt(3, (int) FomOpCode(dbOpcode));
     m_instancesTableInsert.BindInt(4, indirect);
     m_instancesTableInsert.BindText(5, tableName.c_str(), IECSqlBinder::MakeCopy::No);
     m_instancesTableInsert.BindNavigationValue(6, m_changeSummary.GetId());
-
+    
     DbResult result = m_instancesTableInsert.Step();
     BeAssert(result == BE_SQLITE_DONE);
     }
@@ -91,7 +115,7 @@ void InstancesTableV2::Update(ECClassId classId, ECInstanceId instanceId, DbOpco
     m_instancesTableUpdate.BindId(1, classId);
     m_instancesTableUpdate.BindId(2, instanceId);
     m_instancesTableInsert.BindId(3, m_changeSummary.GetId());
-    m_instancesTableUpdate.BindInt(4, (int) dbOpcode);
+    m_instancesTableUpdate.BindInt(4, (int) FomOpCode(dbOpcode));
     m_instancesTableUpdate.BindInt(5, indirect);
 
     DbResult result = m_instancesTableUpdate.Step();
@@ -101,7 +125,7 @@ void InstancesTableV2::Update(ECClassId classId, ECInstanceId instanceId, DbOpco
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void InstancesTableV2::InsertOrUpdate(ChangeSummaryV2::InstanceCR instance)
+void InstancesTableV2::InsertOrUpdate(ChangedInstanceCR instance)
     {
     /*
     * Here's the logic to consolidate new changes with the ones
@@ -120,7 +144,7 @@ void InstancesTableV2::InsertOrUpdate(ChangeSummaryV2::InstanceCR instance)
     DbOpcode dbOpcode = instance.GetDbOpcode();
     int indirect = instance.GetIndirect();
 
-    ChangeSummaryV2::Instance foundInstance = QueryChangedInstance(classId, instanceId);
+    ChangedInstance foundInstance = QueryChangedInstance(classId, instanceId);
     if (!foundInstance.IsValid())
         {
         Insert(classId, instanceId, dbOpcode, indirect, instance.GetTableName());
@@ -151,15 +175,15 @@ void InstancesTableV2::Delete(ECClassId classId, ECInstanceId instanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ChangeSummaryV2::Instance InstancesTableV2::QueryChangedInstance(ECClassId classId, ECInstanceId instanceId) const
+ChangedInstance InstancesTableV2::QueryChangedInstance(ECClassId classId, ECInstanceId instanceId) const
     {
     m_instancesTableSelect.BindId(1, classId);
     m_instancesTableSelect.BindId(2, instanceId);
     m_instancesTableSelect.BindId(3, m_changeSummary.GetId());
     const DbResult result = m_instancesTableSelect.Step();
-    ChangeSummaryV2::Instance instance;
+    ChangedInstance instance;
     if (result == BE_SQLITE_ROW)
-        instance = ChangeSummaryV2::Instance(m_changeSummary, classId, instanceId, (DbOpcode) m_instancesTableSelect.GetValueInt(0), m_instancesTableSelect.GetValueInt(1), Utf8String(m_instancesTableSelect.GetValueText(2)));
+        instance = ChangedInstance(m_changeSummary, classId, instanceId, ToOpCode((ChangeSummaryV2::Operation) m_instancesTableSelect.GetValueInt(0)), m_instancesTableSelect.GetValueInt(1), Utf8String(m_instancesTableSelect.GetValueText(2)));
     else
         {
         BeAssert(result == BE_SQLITE_DONE);
@@ -429,7 +453,7 @@ BentleyStatus ChangeExtractorV2::FromChangeSet(IChangeSet& changeSet, ExtractOpt
 //---------------------------------------------------------------------------------------
 void ChangeExtractorV2::ExtractInstance(ChangeIterator::RowEntry const& rowEntry)
     {
-    ChangeSummaryV2::Instance instance(m_changeSummary, rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId(), rowEntry.GetDbOpcode(), rowEntry.GetIndirect(), rowEntry.GetTableName());
+    ChangedInstance instance(m_changeSummary, rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId(), rowEntry.GetDbOpcode(), rowEntry.GetIndirect(), rowEntry.GetTableName());
     bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
     RecordInstance(instance, rowEntry, recordOnlyIfUpdatedProperties);
     }
@@ -467,7 +491,7 @@ void ChangeExtractorV2::ExtractRelInstances(ChangeIterator::RowEntry const& rowE
 //---------------------------------------------------------------------------------------
 void ChangeExtractorV2::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap)
     {
-    ChangeSummaryV2::Instance instance(m_changeSummary, rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId(), rowEntry.GetDbOpcode(), rowEntry.GetIndirect(), rowEntry.GetTableName());
+    ChangedInstance instance(m_changeSummary, rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId(), rowEntry.GetDbOpcode(), rowEntry.GetIndirect(), rowEntry.GetTableName());
 
     ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
     GetRelEndInstanceKeys(oldSourceInstanceKey, newSourceInstanceKey, rowEntry, relClassMap, instance.GetInstanceId(), ECRelationshipEnd_Source);
@@ -587,7 +611,7 @@ void ChangeExtractorV2::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry co
         newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
         }
 
-    ChangeSummaryV2::Instance instance(m_changeSummary, relClassId, relInstanceId, relDbOpcode, rowEntry.GetIndirect(), rowEntry.GetTableName());
+    ChangedInstance instance(m_changeSummary, relClassId, relInstanceId, relDbOpcode, rowEntry.GetIndirect(), rowEntry.GetTableName());
 
     RecordRelInstance(instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
     }
@@ -595,7 +619,7 @@ void ChangeExtractorV2::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-bool ChangeExtractorV2::RecordRelInstance(ChangeSummaryV2::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey)
+bool ChangeExtractorV2::RecordRelInstance(ChangedInstanceCR instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey)
     {
     bool recordOnlyIfUpdatedProperties = false; // Even if any of the properties of the relationship is not updated, the relationship needs to be recorded since the source/target keys would have changed (to get here)
     RecordInstance(instance, rowEntry, recordOnlyIfUpdatedProperties);
@@ -614,7 +638,7 @@ bool ChangeExtractorV2::RecordRelInstance(ChangeSummaryV2::InstanceCR instance, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-void ChangeExtractorV2::RecordInstance(ChangeSummaryV2::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties)
+void ChangeExtractorV2::RecordInstance(ChangedInstanceCR instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties)
     {
     ECN::ECClassId classId = instance.GetClassId();
     ECInstanceId instanceId = instance.GetInstanceId();
@@ -646,7 +670,7 @@ void ChangeExtractorV2::RecordInstance(ChangeSummaryV2::InstanceCR instance, Cha
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-bool ChangeExtractorV2::RecordValue(ChangeSummaryV2::InstanceCR instance, ChangeIterator::ColumnEntry const& columnEntry)
+bool ChangeExtractorV2::RecordValue(ChangedInstanceCR instance, ChangeIterator::ColumnEntry const& columnEntry)
     {
     DbOpcode dbOpcode = instance.GetDbOpcode();
 
@@ -819,7 +843,7 @@ ECN::ECClassId ChangeExtractorV2::GetRelEndClassIdFromRelClass(ECN::ECRelationsh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     09/2015
 //---------------------------------------------------------------------------------------
-ChangeSummaryV2::ChangeSummaryV2(ECDbCR ecdb) : m_ecdb(ecdb)
+ChangeSummaryV2::ChangeSummaryV2(ECDbCR ecdb, bool autoCleanUp) : m_ecdb(ecdb),m_autoCleanUp(autoCleanUp)
     {
     }
 
@@ -942,10 +966,13 @@ void ChangeSummaryV2::Free()
     m_changeExtractor = nullptr;
 
     m_isValid = false;
-    //if (DeleteSummaryEntry() != SUCCESS)
-    //    {
-    //    BeAssert(false);
-    //    }
+    if (m_autoCleanUp)
+        {
+        if (DeleteSummaryEntry() != SUCCESS)
+            {
+            BeAssert(false);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -965,15 +992,6 @@ BentleyStatus ChangeSummaryV2::FromChangeSet(IChangeSet& changeSet, ChangeSummar
     return m_changeExtractor->FromChangeSet(changeSet, options.GetIncludeRelationshipInstances());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-bool ChangeSummaryV2::ContainsInstance(ECClassId classId, ECInstanceId instanceId) const { return m_instancesTable->ContainsInstance(classId, instanceId); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-ChangeSummaryV2::Instance ChangeSummaryV2::GetInstance(ECClassId classId, ECInstanceId instanceId) const { return m_instancesTable->QueryChangedInstance(classId, instanceId); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
@@ -1010,27 +1028,7 @@ Utf8String ChangeSummaryV2::FormatClassIdStr(ECClassId id) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-// static
-BentleyStatus ChangeSummaryV2::GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb)
-    {
-    // TODO: This functionality needs to be moved to some publicly available ECDb mapping utility. 
-    ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
-    if (!classMap)
-        return ERROR;
-
-    DbTable& table = classMap->GetPrimaryTable();
-    if (!table.IsValid())
-        return ERROR;
-
-    tableName = classMap->GetPrimaryTable().GetName();
-    isTablePerHierarcy = classMap->GetMapStrategy().IsTablePerHierarchy();
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-ChangeSummaryV2::Instance& ChangeSummaryV2::Instance::operator=(InstanceCR other)
+ChangedInstance& ChangedInstance::operator=(ChangedInstanceCR other)
     {
     m_classId = other.m_classId;
     m_instanceId = other.m_instanceId;
@@ -1044,7 +1042,7 @@ ChangeSummaryV2::Instance& ChangeSummaryV2::Instance::operator=(InstanceCR other
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryV2::Instance::SetupValuesTableSelectStatement(Utf8CP accessString) const
+void ChangedInstance::SetupValuesTableSelectStatement(Utf8CP accessString) const
     {//TODO ToECSql
     if (!m_valuesTableSelect.IsPrepared())
         {
@@ -1060,7 +1058,7 @@ void ChangeSummaryV2::Instance::SetupValuesTableSelectStatement(Utf8CP accessStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     08/2015
 //---------------------------------------------------------------------------------------
-DbDupValue ChangeSummaryV2::Instance::GetOldValue(Utf8CP accessString) const
+DbDupValue ChangedInstance::GetOldValue(Utf8CP accessString) const
     {
     BeAssert(IsValid());
     //TODO ToECSql
@@ -1080,7 +1078,7 @@ DbDupValue ChangeSummaryV2::Instance::GetOldValue(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     08/2015
 //---------------------------------------------------------------------------------------
-DbDupValue ChangeSummaryV2::Instance::GetNewValue(Utf8CP accessString) const
+DbDupValue ChangedInstance::GetNewValue(Utf8CP accessString) const
     {
     BeAssert(IsValid());
     //TODO ToECSql
@@ -1100,7 +1098,7 @@ DbDupValue ChangeSummaryV2::Instance::GetNewValue(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     08/2015
 //---------------------------------------------------------------------------------------
-bool ChangeSummaryV2::Instance::ContainsValue(Utf8CP accessString) const
+bool ChangedInstance::ContainsValue(Utf8CP accessString) const
     {
     if (!IsValid())
         {
@@ -1115,39 +1113,5 @@ bool ChangeSummaryV2::Instance::ContainsValue(Utf8CP accessString) const
 
     return (result == BE_SQLITE_ROW);
     }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     08/2015
-//---------------------------------------------------------------------------------------
-Utf8String ChangeSummaryV2::ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const
-    {
-    Utf8String whereInStr;
-    if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Insert))
-        {
-        Utf8PrintfString addStr("%d", Enum::ToInt(DbOpcode::Insert));
-        whereInStr.append(addStr);
-        }
-    if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Update))
-        {
-        if (!whereInStr.empty())
-            whereInStr.append(",");
-
-        Utf8PrintfString addStr("%d", Enum::ToInt(DbOpcode::Update));
-        whereInStr.append(addStr);
-        }
-    if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Delete))
-        {
-        if (!whereInStr.empty())
-            whereInStr.append(",");
-        Utf8PrintfString addStr("%d", Enum::ToInt(DbOpcode::Delete));
-        whereInStr.append(addStr);
-        }
-
-    BeAssert(!whereInStr.empty());
-
-    return Utf8PrintfString("Operation IN (%s)", whereInStr.c_str());
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -3,11 +3,17 @@
     
     <!--Operation Type  enum -->
     <ECEnumeration typeName="Operation" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="1" displayLabel="Insert"/>
-        <ECEnumerator value="2" displayLabel="Delete"/>
-        <ECEnumerator value="4" displayLabel="Update"/>
+        <ECEnumerator value="1" displayLabel="Inserted"/>
+        <ECEnumerator value="2" displayLabel="Deleted"/>
+        <ECEnumerator value="4" displayLabel="Updated"/>
     </ECEnumeration>
-
+    
+    <!--Value Type  enum -->
+    <ECEnumeration typeName="Stage" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="1" displayLabel="Old"/>
+        <ECEnumerator value="2" displayLabel="New"/>
+    </ECEnumeration>
+    
     <!--Summary represent a changeset that make up the change summary-->
     <ECEntityClass typeName="Summary" displayLabel="Summary" modifier="Sealed">
         <ECCustomAttributes>
@@ -15,6 +21,7 @@
                 <MapStrategy>OwnTable</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
+        <ECProperty propertyName="Description" typeName="string" description="Description"/>
     </ECEntityClass>    
     
     <!--Instance represent a changed instance that make up the changeset-->
@@ -40,7 +47,7 @@
         <ECProperty propertyName="ChangedClassId" typeName="long" description="Changed ECClassId"/>
         <ECProperty propertyName="Operation" typeName="Operation" description="Operation type"/>
         <ECProperty propertyName="Indirect" typeName="bool" description="Change happen due to a trigger "/>
-        <ECProperty propertyName="TableName" typeName="string" description="Change table name"/>
+        <ECProperty propertyName="TableName" typeName="string" description="Table Name"/>
         <ECNavigationProperty propertyName="Summary" description="Summary to which this instance is part of" relationshipName="SummaryHasInstances" direction="backward" />
     </ECEntityClass>
     
