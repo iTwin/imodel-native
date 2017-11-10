@@ -128,6 +128,63 @@ BeFileName ScalableMeshGTestUtil::GetUserSMTempDir()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Elenie.Godzaridis                     11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> ScalableMeshGTestUtil::GetListOfValues(BeFileName listingFile)
+{
+	std::ifstream f;
+	bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> resultList;
+	if(!ScalableMeshGTestUtil::GetDataPath(listingFile))
+		return resultList;
+	f.open(listingFile.c_str());
+	if (f.fail())
+		return resultList;
+	while (!f.eof())
+	{
+		std::string nameStr;
+		f >> nameStr;
+
+		DMatrix4d mat;
+		mat.InitIdentity();
+		for(size_t i =0; i <3 ;++i)
+			for(size_t j =0; j <4; ++j)
+		      f >> mat.coff[i][j];
+
+		int nOfSourcePts;
+		f >> nOfSourcePts;
+		bvector<DPoint3d> sourcePts;
+		for (size_t i = 0; i < nOfSourcePts; ++i)
+		{
+			DPoint3d pt;
+			f >> pt.x;
+			f >> pt.y;
+			f >> pt.z;
+			sourcePts.push_back(pt);
+		}
+
+		int nOfResultPts;
+		f >> nOfResultPts;
+		bvector<DPoint3d> resultPts;
+		for (size_t i = 0; i < nOfResultPts; ++i)
+		{
+			DPoint3d pt;
+			f >> pt.x;
+			f >> pt.y;
+			f >> pt.z;
+			resultPts.push_back(pt);
+		}
+
+		BeFileName name;
+		ScalableMeshGTestUtil::GetDataPath(name);
+		name.AppendToPath(SM_DATA_PATH);
+		name.AppendToPath(WString(nameStr.c_str()).c_str());
+		std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>> entries(name, mat,sourcePts, resultPts);
+		resultList.push_back(entries);
+	}
+	return resultList;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScalableMeshGTestUtil::InitScalableMesh()

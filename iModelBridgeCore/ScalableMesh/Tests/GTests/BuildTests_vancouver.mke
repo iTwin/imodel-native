@@ -30,6 +30,9 @@ $(o)SMUnitTestUtil.obj   : $(_MakeFilePath)/SMUnitTestUtil.cpp $(_MakeFilePath)/
 libsUsed = \
         $(BuildContext)SubParts/Libs/Bentley.lib \
         $(BuildContext)SubParts/Libs/ScalableMesh.lib \
+		$(BuildContext)SubParts/Libs/BaseGeoCoord.lib \
+		$(BuildContext)SubParts/Libs/BentleyGeom.lib \
+		$(BuildContext)SubParts/Libs/TerrainModelCore.lib \
         $(BuildContext)SubParts/Libs/gtest.lib \
         $(BuildContext)SubParts/Libs/DgnGeoCoord.lib \
         $(BuildContext)SubParts/Libs/BentleyAllocator.lib \

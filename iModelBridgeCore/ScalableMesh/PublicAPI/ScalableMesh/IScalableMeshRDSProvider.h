@@ -37,6 +37,8 @@ protected:
 
     virtual Utf8String _GetToken() = 0;
 
+    virtual Utf8String _GetRootDocument() = 0;
+
 
     /*__PUBLISH_SECTION_START__*/
 
@@ -47,6 +49,8 @@ public:
     BENTLEY_SM_EXPORT Utf8String GetRDSURLAddress();
 
     BENTLEY_SM_EXPORT Utf8String GetToken();
+
+    BENTLEY_SM_EXPORT Utf8String GetRootDocument();
 
     BENTLEY_SM_EXPORT static IScalableMeshRDSProviderPtr Create(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
 };

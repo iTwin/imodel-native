@@ -15,6 +15,7 @@
 
 #ifndef SM_DATA_PATH
 #define SM_DATA_PATH L"SMData"
+#define SM_LISTING_FILE_NAME L"list.txt"
 #endif
 
 //#define VANCOUVER_API
@@ -51,6 +52,8 @@ namespace ScalableMeshGTestUtil
         };
 
     bvector<BeFileName> GetFiles(BeFileName dataPath);
+
+	bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> GetListOfValues(BeFileName listingFile);
     
     SMMeshType GetFileType(BeFileName file);
 
