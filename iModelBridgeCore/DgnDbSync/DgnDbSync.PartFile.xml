@@ -158,6 +158,8 @@
 	    <ProductDirectory Name="Assemblies" LibType="Static" Path="lib/x64"  RelativeTo="applicationroot"/>
 	    <ProductDirectory Name="DgnV8ConverterLibs" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnV8Dlls"      Path="DgnV8"    RelativeTo="Assemblies"/>
         <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="PublicApi" LibType="Static" Path="include"  RelativeTo="applicationroot"/>
@@ -168,6 +170,8 @@
         <ProductDirectory Name="Libs" LibType="Static" Path=""         RelativeTo="Assemblies"/>
         <ProductDirectory Name="DgnV8ConverterLibs" Path=""     RelativeTo="Assemblies"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""     RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""     RelativeTo="Assemblies" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
     </ProductDirectoryList>
 
 
@@ -190,6 +194,8 @@
         <ProductDirectory Name="DataCaptureAssemblies"      Deliver="true" Path="Libs"/>
         <ProductDirectory Name="DataCaptureLibs"            Deliver="true" Path="Libs"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="true" Path="Libs" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Deliver="true" Path="Libs"/>
 
   </ProductDirectoryList>
   
@@ -222,6 +228,8 @@
         <ProductDirectory Name="DgnPlatformV8Assemblies"                         RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnPlatformV8TranskitEn"            Path="en"    RelativeTo="applicationroot"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies"                   RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"                         RelativeTo="applicationroot" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"                  RelativeTo="applicationroot"/>
     </ProductDirectoryList>
 
     <Part Name="ConverterApp-Source" BentleyBuildMakeFile="DgnV8/Converters/DeliverConverterAppSource.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
