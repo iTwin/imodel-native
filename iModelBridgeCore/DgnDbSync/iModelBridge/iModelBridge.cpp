@@ -743,9 +743,17 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
     {
     Transform jobTrans = params.GetSpatialDataTransform();
     
+    // Report the jobTrans in a property of the JobSubject. 
+    // Note that we NOT getting the transform from the JobSubject. We are SETTING
+    // the property on the JobSubject, so that the user and apps can see what the 
+    // bridge configuration transform is.
     Transform jobSubjectTransform;
-    if (BSISUCCESS == JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject) && !jobSubjectTransform.IsIdentity())
-        jobTrans = Transform::FromProduct(jobTrans, jobSubjectTransform);
+    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans))
+        {
+        auto jobSubjectED = jobSubject.MakeCopy<Subject>();
+        JobSubjectUtils::SetTransform(*jobSubjectED, jobTrans);
+        jobSubjectED->Update();
+        }
 
     return jobTrans;
     }
