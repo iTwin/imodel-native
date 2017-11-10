@@ -93,11 +93,11 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0">
+  <Part Name="iModelJsNodeAddonLib-MacOS" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0">
     <SubPart PartName="node-gyp-standalone_8_9_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
         Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
         Delivery/iModelJsNodeAddon/N_8_9_0/package.json
       </Files>
@@ -107,7 +107,7 @@
     </Bindings>
   </Part>
 
-  <!-- This part builds our node native code addon -->
+<!-- This part builds our node native code addon -->
   <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>

@@ -106,6 +106,13 @@ THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
 DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
 #LINKER_LIBRARIES  + $(BuildContext)SubParts/NodeJs/node
 
+%ifdef __apple
+# OSX Specific library
+LINKER_LIBRARIES  + -framework CoreFoundation
+# This is a hack, Mac is not set up with the various context definitions like linux
+BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+%endif
+
 # Always produce a .SO (even though this is a static build)
 %undef CREATE_STATIC_LIBRARIES
 %include dlmlink.mki
