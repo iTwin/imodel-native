@@ -192,7 +192,6 @@ public:
 //=======================================================================================
 struct TilesetHistoryPublisher : TilesetPublisher
 {
-    TILEPUBLISHER_EXPORT static Status PublishHistoryWithBaseline(PublisherParamsCR params);
     TILEPUBLISHER_EXPORT static Status PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params, TilesetPublisher& tilesetPublisher);
 
 };  // TilesetHistoryPublisher

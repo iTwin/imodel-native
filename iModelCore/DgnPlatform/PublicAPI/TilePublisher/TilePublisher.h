@@ -260,6 +260,7 @@ struct PublisherContext : TileGenerator::ITileCollector
         CantOpenBriefcase,
         CantExtractHistory,
         CantFindDefaultView,
+        NoHistoryFound,
         };
 
     struct  Statistics
