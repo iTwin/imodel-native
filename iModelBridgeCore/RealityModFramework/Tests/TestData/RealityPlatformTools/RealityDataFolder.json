@@ -1,0 +1,15 @@
+{
+    "instances": [
+        {
+            "instanceId": "43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene",
+            "schemaName": "S3MX",
+            "className": "Folder",
+            "properties": {
+                "Name": "Scene123",
+                "RealityDataId": "43a4a51a-bfd3-4271-a9d9-21db56cdcf10",
+                "ParentFolderId": "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/"
+            },
+            "eTag": "agKs8UGYbn244uJSSjBZp+nt8wo="
+        }
+    ]
+}

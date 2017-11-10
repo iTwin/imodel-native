@@ -2,6 +2,7 @@
 #include <RealityPlatformTools/WSGServices.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ostream>
+#include <curl/curl.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -12,7 +13,7 @@ TEST(RawServerResponseTestBase, DefaultConstructor)
     {
     auto serverResponseToTest = RawServerResponse();
     EXPECT_TRUE(serverResponseToTest.responseCode == -1);
-    EXPECT_TRUE(serverResponseToTest.curlCode == ServerType::WSG);
+    EXPECT_TRUE(serverResponseToTest.toolCode == ServerType::WSG);
     EXPECT_TRUE(serverResponseToTest.status == RequestStatus::UNSENT);
     EXPECT_STREQ(serverResponseToTest.header.c_str(), "");
     EXPECT_STREQ(serverResponseToTest.body.c_str(), "");
@@ -42,13 +43,13 @@ TEST(RawServerResponseTestBase, ClearMethod)
     serverResponseToTest.header = "header";
     serverResponseToTest.body = "body";
     serverResponseToTest.responseCode = 5454545;
-    serverResponseToTest.curlCode = ServerType::Azure;
+    serverResponseToTest.toolCode = ServerType::Azure;
     serverResponseToTest.status = RequestStatus::LASTPAGE;
 
     serverResponseToTest.clear();
 
     EXPECT_TRUE(serverResponseToTest.responseCode == -1);
-    EXPECT_TRUE(serverResponseToTest.curlCode == ServerType::WSG);
+    EXPECT_TRUE(serverResponseToTest.toolCode == ServerType::WSG);
     EXPECT_TRUE(serverResponseToTest.status == RequestStatus::UNSENT);
     EXPECT_STREQ(serverResponseToTest.header.c_str(), "");
     EXPECT_STREQ(serverResponseToTest.body.c_str(), "");
@@ -59,7 +60,7 @@ TEST(RawServerResponseTestBase, ClearMethod)
 //=====================================================================================
 struct response_state
     {
-    int curlCode;
+    int toolCode;
     long responseCode;
     RequestStatus result;
     Utf8String body;
@@ -67,7 +68,7 @@ struct response_state
     friend std::ostream& operator<<(std::ostream& os, const response_state& obj)
         {
         return os
-            << "curlCode: " << obj.curlCode
+            << "toolCode: " << obj.toolCode
             << " responseCode: " << obj.responseCode
             << " result: " << obj.result
             << " body: " << obj.body;
@@ -99,7 +100,7 @@ struct RawServerValidationResponseTest : RawServerResponseTest, testing::WithPar
     {
     RawServerValidationResponseTest()
         {
-        rawServerResponse->curlCode = GetParam().curlCode;
+        rawServerResponse->toolCode = GetParam().toolCode;
         rawServerResponse->responseCode = GetParam().responseCode;
         }
     };
@@ -111,7 +112,7 @@ struct RawServerJSONValidationResponseTest : RawServerResponseTest, testing::Wit
     {
     RawServerJSONValidationResponseTest()
         {
-        rawServerResponse->curlCode = GetParam().curlCode;
+        rawServerResponse->toolCode = GetParam().toolCode;
         rawServerResponse->responseCode = GetParam().responseCode;
         rawServerResponse->body = GetParam().body;
         }

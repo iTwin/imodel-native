@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include <Bentley/BeTest.h>
-#include "../../RealityPlatform/RealityDataServiceInternal.h"
+#include "../../RealityPlatformTools/RealityDataServiceInternal.h"
 #include "../Common/RealityModFrameworkTestsCommon.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -36,7 +36,7 @@ using ::testing::Return;
         {
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         response.header = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\WSGHeader.json");
         }));
 
@@ -64,8 +64,8 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
         {
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\EnterpriseStat.json");
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\EnterpriseStat.json");
         }));
 
     ConnectedRealityDataEnterpriseStat stat = ConnectedRealityDataEnterpriseStat();
@@ -85,8 +85,8 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipIdRequestTest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RealityDataId+eq+'72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a6'");
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataRelationship.json");
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataRelationship.json");
         }));
 
     ConnectedRealityDataProjectRelationship rel = ConnectedRealityDataProjectRelationship();
@@ -117,7 +117,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipCreateRequestTes
 
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
         }));
 
     ConnectedRealityDataProjectRelationship rel = ConnectedRealityDataProjectRelationship();
@@ -142,9 +142,9 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentTest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
+        response.toolCode = CURLE_OK;
 
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataDocument.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataDocument.json");
         }));
 
     ConnectedRealityDataDocument doc = ConnectedRealityDataDocument("72adad30-c07c-465d-a1fe-2f2dfac950a7");
@@ -162,8 +162,8 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderTest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\RealityDataFolder.json");
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataFolder.json");
         }));
 
     ConnectedRealityDataFolder folder = ConnectedRealityDataFolder("72adad30-c07c-465d-a1fe-2f2dfac950a7");
@@ -181,8 +181,8 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
         response.status = ::OK;
         response.responseCode = 200;
-        response.curlCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SingleRealityData-Helsinki.json");
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SingleRealityData-Helsinki.json");
         }));
 
     ConnectedRealityData rd = ConnectedRealityData("72adad30-c07c-465d-a1fe-2f2dfac950a5");

@@ -29,7 +29,7 @@ struct SpatialEntityWithDetailsSpatialRequest_response_state
     friend std::ostream& operator<<(std::ostream& os, const SpatialEntityWithDetailsSpatialRequest_response_state& obj)
     {
         return os
-            << "curlCode: " /*<< obj.status
+            << "toolCode: " /*<< obj.status
             << " body: " << obj.body
             << " keyword: " << obj.keyword
             << " result: " << obj.result*/;
