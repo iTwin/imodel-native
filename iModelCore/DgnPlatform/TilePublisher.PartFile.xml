@@ -83,6 +83,8 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
     </ProductDirectoryList>
 
 </BuildContext>
