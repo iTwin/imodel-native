@@ -36,7 +36,7 @@ struct PublisherParams
 {
 protected:
     BeFileName                      m_inputFileName;    //!< Path to the .bim
-    Utf8String                      m_viewName;         //!< Name of the view definition from which to publish
+    mutable Utf8String              m_viewName;         //!< Name of the view definition from which to publish
     BeFileName                      m_outputDir;        //!< Directory in which to place the output
     WString                         m_tilesetName;      //!< Root name of the output tileset files
     double                          m_groundHeight = 0.0; //!< Height of ground plane.
@@ -86,7 +86,7 @@ public:
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
     PublisherContext::GlobeMode GetGlobeMode() const { return m_globeMode; }
 
-    TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db);
+    TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
 
     // For History publishing...
@@ -151,16 +151,16 @@ protected:
         void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput, GlobeMode globeMode)
-        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishNonSurfaces, maxTilesetDepth, textureMode, globeMode),
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, AxisAlignedBox3dCR projectExtents, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput, GlobeMode globeMode)
+        : PublisherContext(db, viewIds, outputDir, tilesetName, projectExtents, geoLocation, publishNonSurfaces, maxTilesetDepth, textureMode, globeMode),
           m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(L"TileSets").AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
         }
 
-    TilesetPublisher(DgnDbR db, PublisherParamsR params, DgnViewIdSet const& viewsToPublish, DgnViewId defaultView, size_t maxTilesetDepth=5)
-        : TilesetPublisher(db, viewsToPublish, defaultView, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
+    TilesetPublisher(DgnDbR db, AxisAlignedBox3dCR projectExtents, PublisherParamsR params, DgnViewIdSet const& viewsToPublish, DgnViewId defaultView, size_t maxTilesetDepth=5)
+        : TilesetPublisher(db, viewsToPublish, defaultView, projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) { }
 
     TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
@@ -192,10 +192,8 @@ public:
 //=======================================================================================
 struct TilesetHistoryPublisher : TilesetPublisher
 {
-    TILEPUBLISHER_EXPORT static Status PublishTilesetWithHistory(PublisherParamsR params);
-
-
-
+    TILEPUBLISHER_EXPORT static Status PublishHistoryWithBaseline(PublisherParamsCR params);
+    TILEPUBLISHER_EXPORT static Status PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params, TilesetPublisher& tilesetPublisher);
 
 };  // TilesetHistoryPublisher
 

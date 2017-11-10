@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/WString.h>
+#include <Logging/bentleylogging.h>
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
 USING_NAMESPACE_BENTLEY
 

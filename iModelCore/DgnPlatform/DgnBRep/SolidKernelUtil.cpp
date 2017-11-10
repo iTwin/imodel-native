@@ -1987,10 +1987,10 @@ BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, Poly
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, uint32_t nodeId)
+BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, bool periodic, uint32_t nodeId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidGeom::BodyFromLoft(entityOut, &profiles.front(), profiles.size(), guides ? &guides->front() : nullptr, guides ? guides->size() : 0, nodeId);
+    return PSolidGeom::BodyFromLoft(entityOut, &profiles.front(), profiles.size(), guides ? &guides->front() : nullptr, guides ? guides->size() : 0, periodic, nodeId);
 #else
     return ERROR;
 #endif
