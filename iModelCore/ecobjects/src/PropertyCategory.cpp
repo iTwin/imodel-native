@@ -119,4 +119,31 @@ SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion e
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_SCHEMA_NAME_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_SCHEMA_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        }
+
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = PROPERTY_CATEGORY_ELEMENT;
+
+    if (GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // Property Category properties
+    outValue[PRIORITY_ATTRIBUTE] = GetPriority();
+    return SchemaWriteStatus::Success;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

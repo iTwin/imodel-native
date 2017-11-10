@@ -20,7 +20,7 @@
 
 #define DEFAULT_VERSION_READ       1
 #define DEFAULT_VERSION_WRITE      0
-#define DEFAULT_VERSION_MINOR       0
+#define DEFAULT_VERSION_MINOR      0
 
 EC_TYPEDEFS(QualifiedECAccessor)
 
@@ -239,6 +239,7 @@ protected:
 
     CustomAttributeReadStatus           ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter) const;
+    SchemaWriteStatus                   WriteCustomAttributes(Json::Value& outValue) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
 
@@ -626,6 +627,7 @@ struct PropertyCategory : NonCopyableClass
 friend struct ECSchema; // needed for SetName() method 
 friend struct SchemaXmlWriter; // needed for WriteXml() method
 friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
+friend struct SchemaJsonWriter; // needed for the WriteJson() method
 
 private:
     uint32_t m_priority;
@@ -638,6 +640,8 @@ private:
 
     SchemaReadStatus ReadXml(BeXmlNodeR propertyCategoryNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+
+    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECObjectsStatus SetName(Utf8CP name);
 
@@ -680,6 +684,11 @@ public:
     //! Intended to be called by ECDb or a similar system
     void SetId(PropertyCategoryId id) {BeAssert(!m_propertyCategoryId.IsValid()); m_propertyCategoryId = id;}
     bool HasId() const {return m_propertyCategoryId.IsValid();}
+
+    //! Write the PropertyCategory as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const {return WriteJson(outValue, true, includeSchemaVersion);}
 };
 
 //=======================================================================================
@@ -720,6 +729,10 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
+
+    virtual SchemaWriteStatus           _WriteJson(Json::Value& outValue) const;
+    SchemaWriteStatus           _WriteJson(Json::Value& outValue, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const { return GetTypeName(); }
     void                                _AdjustMinMaxAfterTypeChange();
 
@@ -751,7 +764,7 @@ protected:
 
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with an alias
     // relative to the containing schema.
-    virtual Utf8String                  _GetTypeName () const = 0;
+    virtual Utf8String                  _GetTypeName (bool useFullName = false) const = 0;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const = 0;
@@ -829,6 +842,8 @@ public:
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with an alias
     //! relative to the containing schema.
     ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
+    //! The ECJSON typename for the property. Returns the typename qualified by the full schema name of the property in the form {schemaName}.{typeName}.
+    ECOBJECTS_EXPORT Utf8String         GetTypeFullName() const;
     //! Sets the description for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
     //! The Description of this ECProperty.  Returns the localized description if one exists.
@@ -971,14 +986,16 @@ private:
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
 
     PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr) {};
-
 protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+
+    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+
     bool _IsPrimitive() const override {return true;}
     PrimitiveECPropertyCP _GetAsPrimitivePropertyCP() const override {return this;}
     PrimitiveECPropertyP _GetAsPrimitivePropertyP() override {return this;}
-    Utf8String _GetTypeName() const override;
+    Utf8String _GetTypeName(bool useFullName = false) const override;
     Utf8String _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
@@ -1013,7 +1030,6 @@ public:
 
     //! Resets the extended type on this property.
     bool RemoveExtendedTypeName() {return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);}
-
 };
 
 //=======================================================================================
@@ -1033,10 +1049,13 @@ private:
 protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+
+    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+
     bool _IsStruct() const override { return true;}
     StructECPropertyCP _GetAsStructPropertyCP() const override {return this;}
     StructECPropertyP _GetAsStructPropertyP() override {return this;}
-    Utf8String _GetTypeName() const override;
+    Utf8String _GetTypeName(bool useFullName = false) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructProperty;}
@@ -1074,6 +1093,7 @@ protected:
 
     SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+
     bool                        _IsArray () const override {return true;}
     ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
     ArrayECPropertyP            _GetAsArrayPropertyP() override {return this;}
@@ -1133,7 +1153,8 @@ protected:
         };
 
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    Utf8String _GetTypeName() const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    Utf8String _GetTypeName(bool useFullName = false) const override;
     Utf8String _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
@@ -1190,7 +1211,8 @@ private:
         };
 
 protected:
-    Utf8String _GetTypeName() const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    Utf8String _GetTypeName(bool useFullName = false) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _IsStructArray() const override {return true;}
     StructArrayECPropertyCP _GetAsStructArrayPropertyCP() const override {return this;}
@@ -1233,14 +1255,15 @@ protected:
 protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
 
     bool _IsNavigation() const override {return true;}
     NavigationECPropertyCP _GetAsNavigationPropertyCP() const override {return this;}
     NavigationECPropertyP _GetAsNavigationPropertyP() override {return this;}
 
-    Utf8String _GetTypeName() const override;
     // Not valid because type cannot be set from xml, it must be set at runtime
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override {return ECObjectsStatus::OperationNotSupported;}
+    Utf8String _GetTypeName(bool useFullName = false) const override;
 
     bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::NavigationProperty;}
@@ -1361,6 +1384,7 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlReader2;
 friend struct SchemaXmlReader3;
 friend struct SchemaXmlWriter;
+friend struct SchemaJsonWriter;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
@@ -1454,6 +1478,9 @@ protected:
 
     virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
+
+    virtual SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bvector<bpair<Utf8String, Json::Value>> attributes) const;
 
     virtual ECClassType _GetClassType() const {return ECClassType::Entity;} // default type
 
@@ -1678,6 +1705,11 @@ public:
 
     ECOBJECTS_EXPORT bool Validate() const;
 
+    //! Write the class as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) { return _WriteJson(outValue, true, includeSchemaVersion); }
+
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
@@ -1729,6 +1761,7 @@ struct ECEnumeration : NonCopyableClass
 friend struct ECSchema;
 friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
+friend struct SchemaJsonWriter;
 
 private:
     ECSchemaCR m_schema;
@@ -1756,6 +1789,8 @@ private:
 
     SchemaReadStatus ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+
+    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
 public:
     //! The ECSchema that this enumeration is defined in
@@ -1825,6 +1860,11 @@ public:
     //! Intended to be called by ECDb or a similar system
     void SetId(ECEnumerationId id) {BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id;}
     bool HasId() const {return m_ecEnumerationId.IsValid();}
+
+    //! Write the Enumeration as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const {return WriteJson(outValue, true, includeSchemaVersion);};
 };
 
 //=======================================================================================
@@ -1888,6 +1928,7 @@ struct KindOfQuantity : NonCopyableClass
 friend struct ECSchema;
 friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
+friend struct SchemaJsonWriter;
 
 private:
     ECSchemaCR m_schema;
@@ -1916,6 +1957,8 @@ private:
 
     SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+
+    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
 public:
     //! The ECSchema that this kind of quantity is defined in
@@ -2005,6 +2048,11 @@ public:
     ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
     bool IsUnitComparable(Utf8CP unitName) {return Utf8String::IsNullOrEmpty(unitName) ? false : m_persistenceFUS.IsUnitComparable(unitName);}
     ECOBJECTS_EXPORT Json::Value ToJson(bool useAlias) const;
+
+    //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
 };
 
 //---------------------------------------------------------------------------------------
@@ -2032,6 +2080,7 @@ protected:
     virtual ~ECEntityClass() {}
 
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const override;
     ECEntityClassCP _GetEntityClassCP() const override {return this;}
     ECEntityClassP _GetEntityClassP() override {return this;}
     ECClassType _GetClassType() const override {return ECClassType::Entity;}
@@ -2089,6 +2138,7 @@ private:
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const override;
     ECClassType _GetClassType() const override {return ECClassType::CustomAttribute;}
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override {return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override {return this;}
@@ -2134,7 +2184,6 @@ protected:
     ECStructClassP _GetStructClassP() override {return this;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructClass;}
 };
-
 
 //=======================================================================================
 //! This class describes the multiplicity of a relationship. It is based on the
@@ -2232,6 +2281,8 @@ private:
 
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
+
+    SchemaWriteStatus           WriteJson(Json::Value& outValue);
 
     bool                        IsValid(bool resolveIssues);
     ECObjectsStatus             ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
@@ -2401,6 +2452,7 @@ private:
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const override;
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
 
@@ -2451,7 +2503,6 @@ public:
     ECOBJECTS_EXPORT bool Verify() const;
     //! Returns true if the relationship is verified.
     ECOBJECTS_EXPORT bool GetIsVerified();
-
 }; // ECRelationshipClass
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
@@ -3145,6 +3196,7 @@ friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
+friend struct SchemaJsonWriter;
 
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
@@ -3488,33 +3540,41 @@ public:
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
-    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
-    //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlString(WStringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::Latest) const;
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
-    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
-    //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion ecXmlVersion = ECVersion::Latest) const;
 
     //! Serializes an ECXML schema to a file
-    //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
-    //! @param[in]  ecXmlVersion   The version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
-    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
-    //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
+    //! @param[in]  ecSchemaXmlFile The absolute path of the file to serialize the schema to
+    //! @param[in]  ecXmlVersion    The version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  utf16           'false' (the default) to use utf-8 encoding
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false) const;
 
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @param[in]  ecXmlVersion        The version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
-    //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
-    //! will contain the serialized schema.
+    //! @param[in]  utf16               'false' (the default) to use utf-8 encoding
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream will contain the serialized schema.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlStream(IStreamP ecSchemaXmlStream, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false);
-    
+
+    //! Writes a schema to a Json::Value
+    //! @param[out] ecSchemaJsonValue Json::Value the schema is serialized to on success.
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the Json value will contain the serialized schema.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteToJsonValue(Json::Value& ecSchemaJsonValue) const;
+
+    //! Writes a schema as a Json string.
+    //! @param[out] ecSchemaJsonString  String the schema is serialized to on success.
+    //! @param[in]  minify              If true the Json string will be minified to take up the least number of characters.
+    //! If false the Json string will be written in a more human readable format.
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the string will contain the serialized schema.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify = false) const;
+
     //! Return full schema name in format GetName().RR.ww.mm where Name is the schema name RR is read version, ww is the write compatibility version and mm is minor version.
     Utf8String GetFullSchemaName() const {return m_key.GetFullSchemaName();}
 

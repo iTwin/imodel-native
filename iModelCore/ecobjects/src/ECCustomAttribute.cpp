@@ -710,16 +710,15 @@ SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes
 BeXmlWriterR xmlWriter
 ) const
     {
-    if (m_primaryCustomAttributes.size() < 1)
+    if (m_primaryCustomAttributes.size() == 0)
         return SchemaWriteStatus::Success;
 
-    SchemaWriteStatus   status = SchemaWriteStatus::Success;
-    ECCustomAttributeCollection::const_iterator iter;
     if (m_primaryCustomAttributes.begin() == m_primaryCustomAttributes.end())
-        return status;
+        return SchemaWriteStatus::Success;
 
     // Add the <ECCustomAttributes> node.
     xmlWriter.WriteElementStart(EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         Utf8CP className = (*iter)->GetClass().GetName().c_str();
@@ -729,11 +728,27 @@ BeXmlWriterR xmlWriter
         else if (0 == BeStringUtilities::StricmpAscii(className, "DisplayUnitSpecificationAttr"))
             className = "DisplayUnitSpecification";
 
-        (*iter)->WriteToBeXmlNode (xmlWriter, className);
+        (*iter)->WriteToBeXmlNode(xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 
-    return status;
+    return SchemaWriteStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes(Json::Value& outValue) const
+    {
+    outValue = Json::Value(Json::ValueType::arrayValue);
+    for (IECInstancePtr pInstance : GetCustomAttributes(false))
+        {
+        Json::Value instanceJson;
+        JsonEcInstanceWriter::WriteInstanceToSchemaJson(instanceJson, *pInstance);
+        outValue.append(instanceJson);
+        }
+
+    return SchemaWriteStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

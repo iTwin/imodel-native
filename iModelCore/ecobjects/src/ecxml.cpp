@@ -110,8 +110,22 @@ Utf8CP ECXml::StrengthToString (StrengthType strength)
             return ECXML_STRENGTH_EMBEDDING;
         default:
             return EMPTY_STRING;
-           
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ECXml::StrengthToJsonString(StrengthType strength)
+    {
+    if (StrengthType::Embedding == strength)
+        return ECXML_STRENGTH_EMBEDDING;
+    else if (StrengthType::Referencing == strength)
+        return ECXML_STRENGTH_REFERENCING;
+    else if (StrengthType::Holding == strength)
+        return ECXML_STRENGTH_HOLDING;
+    else
+        return EMPTY_STRING;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,6 +161,19 @@ Utf8CP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
         default:
             return EMPTY_STRING;
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ECXml::DirectionToJsonString(ECRelatedInstanceDirection direction)
+    {
+    if (ECRelatedInstanceDirection::Forward == direction)
+        return ECJSON_DIRECTION_FORWARD;
+    else if (ECN::ECRelatedInstanceDirection::Backward == direction)
+        return ECJSON_DIRECTION_BACKWARD;
+    else
+        return EMPTY_STRING;
     }
  
 /*---------------------------------------------------------------------------------**//**
@@ -281,6 +308,18 @@ Utf8CP ECXml::ModifierToString(ECClassModifier modifier)
     if (ECClassModifier::Sealed == modifier)
         return ECXML_MODIFIER_SEALED;
     return ECXML_MODIFIER_NONE;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ECXml::ModifierToJsonString(ECClassModifier modifier)
+    {
+    if (ECClassModifier::Abstract == modifier)
+        return ECJSON_MODIFIER_ABSTRACT;
+    else if (ECClassModifier::Sealed == modifier)
+        return ECJSON_MODIFIER_SEALED;
+    return ECJSON_MODIFIER_NONE;
     }
 
 //---------------------------------------------------------------------------------------

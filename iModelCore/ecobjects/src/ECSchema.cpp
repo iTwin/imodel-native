@@ -8,6 +8,7 @@
 
 #include "ECObjectsPch.h"
 #include "SchemaXml.h"
+#include "SchemaJson.h"
 #include "StronglyConnectedGraph.h"
 #if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
@@ -2532,6 +2533,36 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
     if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize(utf16)))
         return status;
 
+    return SchemaWriteStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECSchema::WriteToJsonValue(Json::Value& ecSchemaJsonValue) const
+    {
+    ecSchemaJsonValue.clear();
+    SchemaJsonWriter schemaWriter(ecSchemaJsonValue, *this);
+
+    SchemaWriteStatus status;
+    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
+        return status;
+
+    return SchemaWriteStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
+    {
+    Json::Value jsonSchema;
+
+    SchemaWriteStatus status;
+    if (SchemaWriteStatus::Success != (status = WriteToJsonValue(jsonSchema)))
+        return status;
+
+    ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
     return SchemaWriteStatus::Success;
     }
 

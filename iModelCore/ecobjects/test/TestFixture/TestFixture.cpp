@@ -1,3 +1,4 @@
+#include "TestFixture.h"
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: test/TestFixture/TestFixture.cpp $
@@ -172,6 +173,11 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFil
     file.Close();
 
     return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
+    }
+
+bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
+    {
+    return a.ToString() == b.ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**

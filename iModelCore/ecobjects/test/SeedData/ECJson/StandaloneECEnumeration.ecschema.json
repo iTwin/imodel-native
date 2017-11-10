@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+  "schemaChildType": "Enumeration",
+  "schemaVersion": "03.01.00",
+  "name": "ExampleEnumeration",
+  "schema": "ExampleSchema",
+  "backingTypeName": "int",
+  "isStrict": true,
+  "enumerators": [
+    {
+      "value": 1,
+      "label": "None"
+    },
+    {
+       "value": 2,
+       "label": "SomeVal"
+    },
+    {
+      "value": 3,
+      "label": "AnotherVal"
+    }
+  ]
+}

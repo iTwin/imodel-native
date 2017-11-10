@@ -41,6 +41,18 @@ ECClassCP ECJsonUtilities::GetClassFromClassNameJson(JsonValueCR json, IECClassL
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus)
+    {
+    Json::Value val(Json::objectValue);
+    val[ECJSON_PRESENTATION_UNIT_OBJECT_UNIT] = fus.GetUnitName();
+    val[ECJSON_PRESENTATION_UNIT_OBJECT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
+    return val;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -70,6 +82,7 @@ BentleyStatus ECJsonUtilities::IdToJson(Json::Value& json, BeInt64Id id)
     json = id.ToHexStr();
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
@@ -1702,6 +1715,19 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
     else
         valueToPopulate[className.c_str()] = instanceObj;
 
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECOBJECTS_EXPORT StatusInt JsonEcInstanceWriter::WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance)
+    {
+    ECClassCR ecClass = ecInstance.GetClass();
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(valueToPopulate, ecClass, ecInstance, nullptr, true);
+    if (BSISUCCESS != status)
+        return status;
+    valueToPopulate[ECJsonSystemNames::ClassName()] = ECJsonUtilities::FormatClassName(ecClass);
     return BSISUCCESS;
     }
 

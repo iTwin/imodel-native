@@ -201,6 +201,7 @@ enum class SchemaWriteStatus
     Success,
     FailedToSaveXml,
     FailedToCreateXml,
+    FailedToCreateJson,
     FailedToWriteFile,
     };
 
