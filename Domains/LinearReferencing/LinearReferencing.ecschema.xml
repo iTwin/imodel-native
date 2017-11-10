@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="LinearReferencing" alias="lr" version="01.00.00" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
+    <!--ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/-->
+    
+    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />
+
     <ECEntityClass typeName="ILinearElement" description="Interface to be mixed-in by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
@@ -94,10 +97,10 @@
         </Target>
     </ECRelationshipClass>
     <ECStructClass typeName="DistanceExpression">
-        <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="aecu:LENGTH"/>
-        <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="aecu:LENGTH"/>
-        <ECProperty propertyName="VerticalOffsetFromILinearElement" typeName="double" kindOfQuantity="aecu:LENGTH"/>
-        <ECProperty propertyName="DistanceAlongFromReferent" typeName="double" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="VerticalOffsetFromILinearElement" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceAlongFromReferent" typeName="double" kindOfQuantity="LENGTH"/>
     </ECStructClass>
     <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
