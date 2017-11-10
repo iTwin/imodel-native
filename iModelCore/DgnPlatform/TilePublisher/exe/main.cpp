@@ -512,7 +512,7 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-    TilesetPublisher publisher(*db, createParams, viewsToPublish, defaultView, s_maxTilesetDepth);
+    TilesetPublisher publisher(*db, db->GeoLocation().ComputeProjectExtents(), createParams, viewsToPublish, defaultView, s_maxTilesetDepth);
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {

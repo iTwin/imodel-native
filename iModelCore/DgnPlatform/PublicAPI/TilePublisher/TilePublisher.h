@@ -311,7 +311,7 @@ protected:
     TextureMode                                 m_textureMode;
     bmap<DgnModelId, T_ClassifierInfos>         m_classifierMap;
     bmap<DgnModelId, Utf8String>                m_directUrls;
-    AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    AxisAlignedBox3d                            m_projectExtents; 
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
     bool                                        m_isGeoLocated;
     ITileGenerationFilterP                      m_generationFilter;
@@ -322,7 +322,7 @@ protected:
     GlobeMode                                   m_globeMode = GlobeMode::FromDisplayStyle;
 
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded, GlobeMode = GlobeMode::FromDisplayStyle);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, AxisAlignedBox3dCR projectExtents, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded, GlobeMode = GlobeMode::FromDisplayStyle);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
 
@@ -377,6 +377,7 @@ public:
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     TextureMode GetTextureMode() const { return m_textureMode; }
     bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
+    AxisAlignedBox3dCR GetProjectExtents() const { return m_projectExtents; }
     WString GetTileExtension (TileNodeCR tile) const;
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
     T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }

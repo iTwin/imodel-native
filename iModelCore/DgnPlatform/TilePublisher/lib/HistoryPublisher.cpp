@@ -273,8 +273,8 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetRevisionPublisher(DgnDbR db, PublisherParamsCR params, int index, bool preview) : m_preview(preview), m_index(index),
-    TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
+TilesetRevisionPublisher(DgnDbR db, PublisherParamsCR params, AxisAlignedBox3dCR projectExtents, int index, bool preview) : m_preview(preview), m_index(index),
+    TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) 
     { 
     m_revisionName = WPrintfString(L"Revision_%d", index);
@@ -346,8 +346,8 @@ struct BaselinePublisher : TilesetPublisher
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BaselinePublisher(DgnDbR db, PublisherParamsCR params,  DgnViewIdSet const& viewIds, DgnViewId defaultViewId) : 
-    TilesetPublisher(db, viewIds, defaultViewId, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
+BaselinePublisher(DgnDbR db, PublisherParamsCR params,  DgnViewIdSet const& viewIds, DgnViewId defaultViewId, AxisAlignedBox3dCR projectExtents) : 
+    TilesetPublisher(db, viewIds, defaultViewId, projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) { }
 
 /*---------------------------------------------------------------------------------**//**
@@ -472,7 +472,7 @@ static TilesetPublisher::Status initialize(ClientPtr& client, DgnDbPtr& tempDb, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static TilesetPublisher::Status publishChangeSets(Json::Value& revisionsJson, ClientPtr client, DgnDbR tempDb, BeFileNameCR tempDbName, bvector<DgnRevisionPtr> const& changeSets, PublisherParamsCR params)
+static TilesetPublisher::Status publishChangeSets(Json::Value& revisionsJson, ClientPtr client, DgnDbR tempDb, BeFileNameCR tempDbName, bvector<DgnRevisionPtr> const& changeSets, PublisherParamsCR params, AxisAlignedBox3dCR projectExtents)
     {
     LOG.infov ("Publishing History with %d Revisions\n", (int) changeSets.size());
 
@@ -565,7 +565,7 @@ static TilesetPublisher::Status publishChangeSets(Json::Value& revisionsJson, Cl
 
         if (!addedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(tempDb, params, revisionIndex, false);
+            TilesetRevisionPublisher    revisionPublisher(tempDb, params, projectExtents, revisionIndex, false);
             DgnModelIdSet               modelIds = getElementModelIds(addedOrModifiedIds, tempDb);
 
             for (auto& modelId : postModelIds)
@@ -584,7 +584,7 @@ static TilesetPublisher::Status publishChangeSets(Json::Value& revisionsJson, Cl
 
         if (!deletedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(tempDb, params, revisionIndex, true);
+            TilesetRevisionPublisher    revisionPublisher(tempDb, params, projectExtents, revisionIndex, true);
             DgnModelIdSet               modelIds = getElementModelIds(deletedOrModifiedIds, tempDb);
 
             if (!modelIds.empty())
@@ -616,20 +616,21 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishHistoryWithBaseline(Pub
     if (Status::Success != (status = initialize(client, tempDb, tempDbName, changeSets, params)))
         return status;
 
-    DgnViewIdSet    viewsToPublish;
-    DgnViewId       defaultView = params.GetViewIds(viewsToPublish, *tempDb);
+    DgnViewIdSet            viewsToPublish;
+    DgnViewId               defaultView = params.GetViewIds(viewsToPublish, *tempDb);
+    AxisAlignedBox3d        projectExtents = tempDb->GeoLocation().ComputeProjectExtents();
 
     if (!defaultView.IsValid())
         return Status::CantFindDefaultView;
 
-    BaselinePublisher  baselinePublisher(*tempDb, params, viewsToPublish, defaultView);
+    BaselinePublisher  baselinePublisher(*tempDb, params, viewsToPublish, defaultView, projectExtents);
 
     if (Status::Success != (status = baselinePublisher.Initialize()))
         return status;
 
     Json::Value             revisionsJson;
 
-    if (Status::Success != (status = publishChangeSets(revisionsJson, client, *tempDb, tempDbName, changeSets, params)))
+    if (Status::Success != (status = publishChangeSets(revisionsJson, client, *tempDb, tempDbName, changeSets, params, projectExtents)))
         return status;
 
     return baselinePublisher.Publish(params, std::move(revisionsJson));
@@ -638,7 +639,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishHistoryWithBaseline(Pub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetHistoryPublisher::PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params)
+TilesetPublisher::Status TilesetHistoryPublisher::PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params, TilesetPublisher& tipPublisher)
     {
     Status                  status;      
     BeFileName              tempDbName;
@@ -649,6 +650,6 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishHistory(Json::Value& re
     if (Status::Success != (status = initialize(client, tempDb, tempDbName, changeSets, params)))
         return status;
 
-    return publishChangeSets(revisionsJson, client, *tempDb, tempDbName, changeSets, params);
+    return publishChangeSets(revisionsJson, client, *tempDb, tempDbName, changeSets, params, tipPublisher.GetProjectExtents());
     }
 
