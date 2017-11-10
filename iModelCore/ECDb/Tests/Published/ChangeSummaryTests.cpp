@@ -73,6 +73,33 @@ bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ECDbCR ecdb, Change
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  11/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1" modifier="Abstract">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2" modifier="Abstract">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('1', 1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo2(Dt) VALUES(DATE '2000-01-01')"));
+    m_ecdb.SaveChanges();
+
+    ASSERT_TRUE(tracker.HasChanges());
+
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, InvalidSummary)
@@ -106,6 +133,7 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
     result = changeSet.FromChangeTrack(tracker);
     ASSERT_EQ(BE_SQLITE_OK, result);
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
