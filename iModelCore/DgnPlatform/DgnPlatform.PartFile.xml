@@ -593,15 +593,20 @@
 
     <Product Name="BimConsole">
         <SubPart PartName="BimConsoleExe-Windows" LibType="Dynamic" />
-        <SubPart PartName="BimConsoleExe-Unix" LibType="Static" />
+        <SubPart PartName="BimConsoleExe-Linux" LibType="Static" />
+         <SubPart PartName="BimConsoleExe-MacOS" LibType="Static" />
         <Directories DirectoryListName="BimConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe-Windows" OnlyPlatforms="x64,MacOS*" ExcludeLibType="Static">
+    <Part Name="BimConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BimConsoleExe" />
     </Part>
     
-    <Part Name="BimConsoleExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+    <Part Name="BimConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="BimConsoleExe" />
+    </Part>
+
+    <Part Name="BimConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
         <SubPart PartName="BimConsoleExe" />
     </Part>
 

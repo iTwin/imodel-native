@@ -291,22 +291,19 @@ TEST_F(BRepUtilTests, CreateBodyFromLoft)
     Points.push_back(DPoint3d::From(3, 2, 0.5));
     CurveVectorPtr line = CurveVector::CreateLinear(Points);
     profiles.push_back(line);
-    //bvector<DPoint3d> Point1s;
-    Points.erase(Points.begin(), Points.begin() + 1);
+    Points.clear();
     Points.push_back(DPoint3d::From(1, 5, 0.5));
     Points.push_back(DPoint3d::From(3, 5, 0.5));
     CurveVectorPtr line2 = CurveVector::CreateLinear(Points);
     profiles.push_back(line2);
     bvector<CurveVectorPtr>guides;
-    ICurvePrimitivePtr arc1 = ICurvePrimitive::CreateArc(DEllipse3d::From(5, 10, 0, 10, 0, 0, 0, 10, 0, 0.0, Angle::TwoPi()));
+    ICurvePrimitivePtr arc1 = ICurvePrimitive::CreateArc(DEllipse3d::FromVectors(DPoint3d::From(1, 3.5, 0.5), DVec3d::From(0.0, -1.5, 0.0), DVec3d::From(0.0, 0.0, 1.5), 0.0, Angle::Pi()));
     guides.push_back(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, arc1));
-    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromLoft(brep, profiles, &guides));
-    /* WIP
+    ASSERT_EQ(SUCCESS, BRepUtil::Create::BodyFromLoft(brep, profiles, &guides, false));
     ASSERT_TRUE(!brep.IsNull());
-    ASSERT_EQ(2, BRepUtil::GetBodyFaces(NULL, *brep));
+    ASSERT_EQ(1, BRepUtil::GetBodyFaces(NULL, *brep));
     ASSERT_EQ(4, BRepUtil::GetBodyEdges(NULL, *brep));
     ASSERT_EQ(4, BRepUtil::GetBodyVertices(NULL, *brep));
-    */
     }
 #endif
 

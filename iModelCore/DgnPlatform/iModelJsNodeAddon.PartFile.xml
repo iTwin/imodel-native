@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
@@ -9,6 +9,7 @@
   <Product Name="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon-Windows" />
     <SubProduct ProductName="iModelJsNodeAddon-Linux" />
+    <SubProduct ProductName="iModelJsNodeAddon-MacOS" />
   </Product>
 
   <Product Name="iModelJsNodeAddon-Windows">
@@ -19,6 +20,11 @@
 
   <Product Name="iModelJsNodeAddon-Linux">
     <SubPart PartName="iModelJsNodeAddonLib-Linux" LibType="Static" />
+    <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
+  </Product>
+
+  <Product Name="iModelJsNodeAddon-MacOS">
+    <SubPart PartName="iModelJsNodeAddonLib-MacOS" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
@@ -78,6 +84,20 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
+        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
+        Delivery/iModelJsNodeAddon/N_8_9_0/package.json
+      </Files>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>	  
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNodeAddonLib-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_9_0">
+    <SubPart PartName="node-gyp-standalone_8_9_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <Bindings>
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
         Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
         Delivery/iModelJsNodeAddon/N_8_9_0/package.json
       </Files>

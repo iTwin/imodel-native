@@ -348,12 +348,12 @@ PublisherContext::PublisherContext::Statistics::~Statistics()
 #ifdef STATISTICS
     if (0.0 != m_textureCompressionMegaPixels)
         {
-        printf ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
-        printf ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
+        LOG.infov ("Total Compression: %f megapixels, %f seconds (%f minutes, %f hours)\n", m_textureCompressionMegaPixels, m_textureCompressionSeconds, m_textureCompressionSeconds / 60.0, m_textureCompressionSeconds / 3600.0);
+        LOG.infov ("Compression Rate: %f megapixels/second\n", m_textureCompressionMegaPixels / m_textureCompressionSeconds);
         }
     if (0 != m_pointCloudCount)
         {
-        printf ("Point Cloud count: %g, Total Points: %g, Min Points: %g, Max Points: %g, Average: %g\n", (double) m_pointCloudCount, (double) m_pointCloudTotalPoints, (double) m_pointCloudMinPoints,(double) m_pointCloudMaxPoints, (double) m_pointCloudTotalPoints / (double) m_pointCloudCount);
+        LOG.infov ("Point Cloud count: %g, Total Points: %g, Min Points: %g, Max Points: %g, Average: %g\n", (double) m_pointCloudCount, (double) m_pointCloudTotalPoints, (double) m_pointCloudMinPoints,(double) m_pointCloudMaxPoints, (double) m_pointCloudTotalPoints / (double) m_pointCloudCount);
         }
 #endif
     }
@@ -3121,15 +3121,12 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode, GlobeMode globeMode)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_generationFilter(nullptr), m_currentClassifier(nullptr), m_globeMode(globeMode)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  AxisAlignedBox3dCR projectExtents, GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode, GlobeMode globeMode)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_projectExtents(projectExtents), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_generationFilter(nullptr), m_currentClassifier(nullptr), m_globeMode(globeMode)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
-
-    // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
-    m_projectExtents = db.GeoLocation().ComputeProjectExtents();
 
 #if defined(WIP_MESHTILE_3SM)
     m_isEcef = true; // ###TODO: Remove after YII...
@@ -3572,11 +3569,13 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
         if (foundRange == m_modelRanges.end())
             continue;
 
-        auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
+        
+        auto                        model = GetDgnDb().Models().GetModel(modelId).get();
         ModelSpatialClassifiers     classifiers;
 
-        if (nullptr != getTileTree && 
-            SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers) &&
+        if (nullptr != model && 
+            nullptr != model->ToSpatialModel() &&
+            SUCCESS == model->ToSpatialModel()->GetSpatialClassifiers(classifiers) &&
             !classifiers.empty())
             {
             T_ClassifierInfos       classifierInfos;
