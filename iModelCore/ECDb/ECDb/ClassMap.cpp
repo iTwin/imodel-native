@@ -486,10 +486,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             {
             ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
-                {
-                BeAssert(false);
                 return ERROR;
-                }
 
             if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                 tphBaseClassMaps.push_back(baseClassMap);

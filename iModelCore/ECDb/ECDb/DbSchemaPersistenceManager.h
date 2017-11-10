@@ -98,8 +98,8 @@ public:
 
         return TId((uint64_t) id);
         }
-
-    static bool TableExistsInDb(ECDbCR ecdb, Utf8CP tableName, Utf8CP dbSchemaName = nullptr)
+		
+	   static bool TableExistsInDb(ECDbCR ecdb, Utf8CP tableName, Utf8CP dbSchemaName = nullptr)
         { 
         if (Utf8String::IsNullOrEmpty(dbSchemaName))
             return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s]", tableName).c_str());
@@ -125,6 +125,48 @@ public:
         return stmt->Step() == BE_SQLITE_ROW;
         }
 
+    //!Safe method to cast an integer value to the DbTable::Type enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbTable::Type> ToDbTableType(int val)
+        {
+        if (val == Enum::ToInt(DbTable::Type::Existing) || val == Enum::ToInt(DbTable::Type::Joined) || val == Enum::ToInt(DbTable::Type::Overflow) ||
+            val == Enum::ToInt(DbTable::Type::Primary) || val == Enum::ToInt(DbTable::Type::Virtual))
+            return Enum::FromInt<DbTable::Type>(val);
+
+        return Nullable<DbTable::Type>();
+        };
+
+    //!Safe method to cast an integer value to the DbColumn::Kind enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbColumn::Kind> ToDbColumnKind(int val)
+        {
+        if (val == Enum::ToInt(DbColumn::Kind::Default) || val == Enum::ToInt(DbColumn::Kind::ECClassId) || val == Enum::ToInt(DbColumn::Kind::ECInstanceId) || val == Enum::ToInt(DbColumn::Kind::SharedData))
+            return Enum::FromInt<DbColumn::Kind>(val);
+
+        return Nullable<DbColumn::Kind>();
+        };
+
+    //!Safe method to cast an integer value to the DbColumn::Type enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbColumn::Type> ToDbColumnType(int val)
+        {
+        if (val == Enum::ToInt(DbColumn::Type::Any) || val == Enum::ToInt(DbColumn::Type::Blob) || val == Enum::ToInt(DbColumn::Type::Boolean) || val == Enum::ToInt(DbColumn::Type::Integer) ||
+            val == Enum::ToInt(DbColumn::Type::Real) || val == Enum::ToInt(DbColumn::Type::Text) || val == Enum::ToInt(DbColumn::Type::TimeStamp))
+            return Enum::FromInt<DbColumn::Type>(val);
+
+        return Nullable<DbColumn::Type>();
+        };
+
+    //!Safe method to cast an integer value to the DbColumn::Constraints::Collation enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbColumn::Constraints::Collation> ToDbColumnCollation(int val)
+        {
+        if (val == Enum::ToInt(DbColumn::Constraints::Collation::Binary) || val == Enum::ToInt(DbColumn::Constraints::Collation::NoCase) ||
+            val == Enum::ToInt(DbColumn::Constraints::Collation::RTrim) || val == Enum::ToInt(DbColumn::Constraints::Collation::Unset))
+            return Enum::FromInt<DbColumn::Constraints::Collation>(val);
+
+        return Nullable<DbColumn::Constraints::Collation>();
+        };
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

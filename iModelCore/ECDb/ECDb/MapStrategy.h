@@ -36,6 +36,7 @@ enum class JoinedTableInfo
     ParentOfJoinedTable = 2
     };
 
+
 struct MapStrategyExtendedInfo;
 
 //======================================================================================
@@ -73,7 +74,6 @@ struct TablePerHierarchyInfo final
         Nullable<uint32_t> GetMaxSharedColumnsBeforeOverflow() const { return m_maxSharedColumnsBeforeOverflow; }
         JoinedTableInfo GetJoinedTableInfo() const { return m_joinedTableInfo; }
     };
-
 
 //======================================================================================
 // @bsiclass                                Krischan.Eberle                08/2016
@@ -117,6 +117,22 @@ public:
         return SUCCESS;
         }
 
+    };
+
+
+//======================================================================================
+// @bsiclass                                Krischan.Eberle                11/2017
+//+===============+===============+===============+===============+===============+=====
+struct MapStrategyValidator final
+    {
+    private:
+        MapStrategyValidator() = delete;
+        ~MapStrategyValidator() = delete;
+
+    public:
+        static bool Validate(MapStrategy strat) { return strat == MapStrategy::ExistingTable || strat == MapStrategy::ForeignKeyRelationshipInSourceTable || strat == MapStrategy::ForeignKeyRelationshipInTargetTable || strat == MapStrategy::NotMapped || strat == MapStrategy::OwnTable || strat == MapStrategy::TablePerHierarchy; }
+        static bool Validate(TablePerHierarchyInfo::ShareColumnsMode mode) { return mode == TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly || mode == TablePerHierarchyInfo::ShareColumnsMode::No || mode == TablePerHierarchyInfo::ShareColumnsMode::Yes; }
+        static bool Validate(JoinedTableInfo info) { return info == JoinedTableInfo::JoinedTable || info == JoinedTableInfo::None || info == JoinedTableInfo::ParentOfJoinedTable; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
