@@ -42,25 +42,25 @@ void InstancesTableV2::PrepareStatements()
     BeAssert(!m_instancesTableInsert.IsPrepared());
     //Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,Indirect,TableName) VALUES(?1,?2,?3,?4,?5)", instancesTableName.c_str());
 
-    result = m_instancesTableInsert.Prepare(m_ecdb, "INSERT INTO change.Instance (ChangedClassId, ChangedInstanceId, Operation, Indirect, TableName, Summary) VALUES (?1, ?2, ?3, ?4, ?5, ?6)");
+    result = m_instancesTableInsert.Prepare(m_ecdb, "INSERT INTO change.Instance(ClassIdOfChangedInstance, IdOfChangedInstance, Operation, Indirect, TableName, Summary) VALUES (?1, ?2, ?3, ?4, ?5, ?6)");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableUpdate.IsPrepared());
     //Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,Indirect=?4 WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableUpdate.Prepare(m_ecdb, "UPDATE change.Instance SET Operation=?4, Indirect=?5 WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
+    result = m_instancesTableUpdate.Prepare(m_ecdb, "UPDATE change.Instance SET Operation=?4, Indirect=?5 WHERE ClassIdOfChangedInstance=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableSelect.IsPrepared());
     //Utf8PrintfString selectSql("SELECT DbOpcode, Indirect,TableName FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableSelect.Prepare(m_ecdb, "SELECT Operation, Indirect, TableName FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
+    result = m_instancesTableSelect.Prepare(m_ecdb, "SELECT Operation, Indirect, TableName FROM change.Instance WHERE ClassIdOfChangedInstance=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     BeAssert(!m_instancesTableDelete.IsPrepared());
     //Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", instancesTableName.c_str());
-    result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
+    result = m_instancesTableDelete.Prepare(m_ecdb, "DELETE FROM change.Instance WHERE ClassIdOfChangedInstance=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
-    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId FROM change.Instance WHERE ChangedClassId=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
+    result = m_findInstance.Prepare(m_ecdb, "SELECT ECInstanceId FROM change.Instance WHERE ChangeClassIdOfChangedInstancedClassId=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     BeAssert(result == ECSqlStatus::Success);
 
     }
@@ -211,7 +211,7 @@ ECClassId InstancesTableV2::QueryChangedClassId(Utf8StringCR tableName, ECInstan
     {
     //TODO use cache statement
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "SELECT ChangedClassId FROM change.Instance WHERE TableName=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
+    stmt.Prepare(m_ecdb, "SELECT ClassIdOfChangedInstance FROM change.Instance WHERE TableName=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
     stmt.BindText(1, tableName.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, instanceId);
     stmt.BindId(3, m_changeSummary.GetId());
@@ -245,12 +245,11 @@ void ValuesTableV2::Initialize()
 void ValuesTableV2::PrepareStatements()
     {
     BeAssert(!m_valuesTableInsert.IsPrepared());
-    //Utf8PrintfString insertSql("INSERT INTO change.PropertyVs (ClassId,InstanceId,AccessString,OldValue,NewValue) VALUES(?1,?2,?3,?4,?5)", valuesTableName.c_str());
     ECSqlStatus result = m_valuesTableInsert.Prepare(m_ecdb, "INSERT INTO change.PropertyValue(Instance, AccessString, RawOldValue, RawNewValue) VALUES (?1, ?2, ?3, ?4)");
     BeAssert(result == ECSqlStatus::Success);
 
 
-    //"SELECT ECInstanceId FROM change.Instance WHERE ChangedInstanceId=?1 AND ChangedClassId=?2 AND Changeset.Id=?3"
+    //"SELECT ECInstanceId FROM change.Instance WHERE IdOfChangedInstance=?1 AND ClassIdOfChangedInstance=?2 AND Changeset.Id=?3"
 
     }
 

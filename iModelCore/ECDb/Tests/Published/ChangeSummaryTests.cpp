@@ -86,6 +86,7 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
             </ECEntityClass>
             <ECEntityClass typeName="Foo2" modifier="Abstract">
                 <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -93,12 +94,36 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
     tracker.EnableTracking(true);
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('1', 1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo2(Dt) VALUES(DATE '2000-01-01')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo2(Dt,Origin.X,Origin.Y) VALUES(DATE '2000-01-01',2,2)"));
     m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
+    TestChangeSet revision1;
+    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
+    tracker.Restart();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Foo1 SET S='Foo1-1'"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('Foo1-2',2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Foo2 SET Origin.X=20, Origin.Y=20"));
+    m_ecdb.SaveChanges();
+
+    ASSERT_TRUE(tracker.HasChanges());
+
+    TestChangeSet revision2;
+    ASSERT_EQ(BE_SQLITE_OK, revision2.FromChangeTrack(tracker));
+    tracker.Restart();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE ts.Foo1 WHERE I=1"));
+    m_ecdb.SaveChanges();
+
+    ASSERT_TRUE(tracker.HasChanges());
+
+    TestChangeSet revision3;
+    ASSERT_EQ(BE_SQLITE_OK, revision3.FromChangeTrack(tracker));
+
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
 //---------------------------------------------------------------------------------------
