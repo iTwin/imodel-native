@@ -70,3 +70,11 @@ private:
 };  // DwgBridge
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+// Supply DwgBridge to and register it for iModelBridge Framework
+extern "C"
+    {
+    EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
+    EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    }

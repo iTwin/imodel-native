@@ -52,6 +52,7 @@
 
     <Part Name="OpenDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
+        <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridge"/>
         <SubPart PartName="DwgResources" />
         <SubPart PartName="OpenDwgBridge" />
         <SubPart PartName="OpenDwgImportDLL" />
@@ -92,6 +93,7 @@
             <Libs ProductDirectoryName="DwgDbLibs" Required="false">Delivery/OpenDwgImporter/$(libprefix)OpenDwgDbExchange$(libext)</Libs>
             <Assemblies ProductDirectoryName="DwgDbAssemblies">Delivery/OpenDwgImporter/$(shlibprefix)OpenDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
             <Assemblies ProductDirectoryName="DwgDbAssemblies">Delivery/OpenDwgImporter/$(shlibprefix)OdGripPoints$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="VendorNotices">Delivery/OpenDwgImporter/teigha-notice.txt</Files>
         </Bindings>
     </Part>
 
@@ -115,6 +117,7 @@
 
     <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
+        <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridge"/>
         <SubPart PartName="DwgResources" />
         <SubPart PartName="RealDwgBridge" />
         <SubPart PartName="RealDwgImportDLL" />
@@ -155,6 +158,7 @@
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
             <Files ProductDirectoryName="DwgDbLibs" SubPartDirectory="Libs\RealDwg2018" Required="false">Delivery/RealDwg2018Importer/$(libprefix)RealDwgDbExchange$(libext)</Files>
             <Assemblies ProductDirectoryName="DwgDbAssemblies">Delivery/RealDwg2018Importer/$(shlibprefix)RealDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="VendorNotices">Delivery/RealDwg2018Importer/realdwg-notice.txt</Files>
         </Bindings>
     </Part>
 
@@ -170,8 +174,8 @@
     <ProductDirectoryList ListName="DwgAppCommonDirList">
         <ProductDirectory Name="ApplicationRoot"            Path="" />
         <ProductDirectory Name="VendorNotices"              Path="Notices" />
+        <ProductDirectory Name="VendorNotices"              Path="Notices" LibType="static" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="Notices" />
-        <ProductDirectory Name="VendorNotices"              Deliver="false" LibType="static" />
         <ProductDirectory Name="Assemblies"                 Deliver="false" LibType="static" />
         <ProductDirectory Name="Assemblies"                 Deliver="true"                  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="PublisherLoggingConfigXml"                                  RelativeTo="ApplicationRoot" />
@@ -230,6 +234,7 @@
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
             <Files ProductDirectoryName="DwgDbLibs2017" SubPartDirectory="Libs\RealDwg2017" Required="false">Delivery/RealDwg2017Importer/$(libprefix)RealDwgDbExchange$(libext)</Files>
             <Assemblies ProductDirectoryName="DwgDbAssemblies2017" SubPartDirectory="RealDwg2017">Delivery/RealDwg2017Importer/$(shlibprefix)RealDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="VendorNotices">Delivery/RealDwg2017Importer/realdwg-notice.txt</Files>
         </Bindings>
     </Part>
 
