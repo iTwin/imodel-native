@@ -1076,7 +1076,13 @@ int CS_wktToCsEx (struct cs_Csdef_ *csDef,struct cs_Dtdef_ *dtDef,struct cs_Elde
 	// fallback business is so slow, it is nice to be able to turn it
 	// off and still be able to see the conditions under which it is
 	// invoked if it were active.
+#ifdef GEOCOORD_ENHANCEMENT
+    // The process tried to match Lat/Long projections while hundreds could satisfy. For example LL NAD 83 got matched with Antarctic98.LL
+    // because, in theory, their definition is identical. If the datum and ellipsoid were matched we do not need CS keyname matched.
+    if (csMapCsName[0] == '\0' && 0 != strcmp(csDef->prj_knm, "LL") || (csMapElName[0] == '\0' && csMapDtName[0] == '\0'))
+#else
   	if (csMapCsName [0] == '\0'  || (csMapElName [0] == '\0' && csMapDtName [0] == '\0'))
+#endif
 	{
 		// The above code which attempts to map the WKT to a CS-MAP coordinate system
 		// failed.  The following is a rather effective, though very painful, means of
