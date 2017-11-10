@@ -1986,16 +1986,17 @@ BentleyStatus   PSolidGeom::BodyFromCone (PK_BODY_t& bodyTag, RotMatrixCR rMatri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PSolidGeom::BodyFromLoft (PK_BODY_t& bodyTag, PK_BODY_t* profiles, PK_VERTEX_t* startVertices, size_t nProfiles, PK_BODY_t* guides, size_t nGuides)
+BentleyStatus   PSolidGeom::BodyFromLoft (PK_BODY_t& bodyTag, PK_BODY_t* profiles, PK_VERTEX_t* startVertices, size_t nProfiles, PK_BODY_t* guides, size_t nGuides, bool periodic)
     {
-    if ((nProfiles < 1) || (nProfiles < 2 && nGuides < 1))
+    if ((nProfiles < 1) || (nProfiles < (periodic ? 3 : 2) && nGuides < 1))
         return ERROR;
 
     PK_BODY_make_lofted_body_o_t    options;
     PK_BODY_tracked_loft_r_t        result;
 
-    PK_BODY_make_lofted_body_o_m (options);
     memset (&result, 0, sizeof (result));
+    PK_BODY_make_lofted_body_o_m (options);
+    options.end_conditions.periodic = periodic ? PK_PARAM_periodic_yes_c : PK_PARAM_periodic_no_c;
 
     if (nGuides)
         {
@@ -2740,12 +2741,148 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
 POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Hopen.He                        03/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addVerticesToEdge(PK_EDGE_t edge, int addVertexCount)
+    {
+    PK_CURVE_t curve;
+    if (SUCCESS != PK_EDGE_ask_curve(edge, &curve))
+        return;
+
+    PK_VERTEX_t vertics[2];
+    if (SUCCESS != PK_EDGE_ask_vertices(edge, vertics))
+        return;
+
+    PK_POINT_t psPt1, psPt2;
+    PK_POINT_sf_t psSf1, psSf2;
+
+    PK_VERTEX_ask_point(vertics[0], &psPt1);
+    PK_VERTEX_ask_point(vertics[1], &psPt2);
+    PK_POINT_ask(psPt1, &psSf1);
+    PK_POINT_ask(psPt2, &psSf2);
+
+    PK_INTERVAL_t interval;
+    if (SUCCESS != PK_CURVE_find_vector_interval(curve, psSf1.position, psSf2.position, &interval))
+        return;
+
+    double everyPoint = (interval.value[1] - interval.value[0]) / (addVertexCount + 1);
+    PK_EDGE_t currEdge = PK_ENTITY_null;
+
+    for (int i = 1; i <= addVertexCount; i++)
+        {
+        double        u = interval.value[0] + i * everyPoint;
+        PK_VECTOR_t   startVec;
+        PK_POINT_sf_t pointSF;
+        PK_POINT_t    pointTag = PK_ENTITY_null;
+        PK_EDGE_t     newEdge = PK_ENTITY_null;
+        PK_VERTEX_t   newVertex = PK_ENTITY_null;
+
+        PK_CURVE_eval(curve, u, 0, &startVec);
+        pointSF.position.coord[0] = startVec.coord[0];
+        pointSF.position.coord[1] = startVec.coord[1];
+        pointSF.position.coord[2] = startVec.coord[2];
+
+        if (SUCCESS != PK_POINT_create(&pointSF, &pointTag))
+            continue;
+
+        if ((PK_ENTITY_null != currEdge && SUCCESS == PK_EDGE_imprint_point(currEdge, pointTag, &newVertex, &newEdge)) ||
+            (currEdge != edge && SUCCESS == PK_EDGE_imprint_point(edge, pointTag, &newVertex, &newEdge)))
+            currEdge = newEdge;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Hopen.He                        03/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addVerticesToEdges(PK_EDGE_t const* edges, int edgeNum, int addVertexCount)
+    {
+    if (nullptr == edges || edgeNum < 1 || addVertexCount < 1)
+        return;
+
+    for (int i = 0; i < edgeNum; i++)
+        addVerticesToEdge(edges[i], addVertexCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Hopen.He                        03/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addProfileVertices(PK_BODY_t body, int targetVertexCount)
+    {
+    PK_BODY_type_t bodyType;
+    if (SUCCESS != PK_BODY_ask_type(body, &bodyType) || PK_BODY_type_minimum_c == bodyType)
+        return; // Leave minimal bodies alone...
+
+    int numVertex = 0;
+    if (SUCCESS != PK_BODY_ask_vertices(body, &numVertex, nullptr) || numVertex >= targetVertexCount)
+        return;
+
+    int edgeNum = 0;
+    PK_EDGE_t* edges = nullptr;
+    if (SUCCESS != PK_BODY_ask_edges(body, &edgeNum, &edges) || 0 == edgeNum)
+        return;
+
+    int addCount = targetVertexCount - numVertex;
+    if (addCount == edgeNum)
+        {
+        addVerticesToEdges(edges, edgeNum, 1); // Add a single vertex to every edge...
+        }
+    else if (addCount > edgeNum)
+        {
+        int everyNum = addCount / edgeNum;
+        int remainNum = addCount - (everyNum * edgeNum);
+
+        addVerticesToEdges(edges, edgeNum, everyNum); // Add everyNum vertices to every edge...
+
+        if (remainNum > 0)
+            {
+            PK_MEMORY_free(edges);
+            edges = nullptr;
+            edgeNum = 0;
+
+            if (SUCCESS == PK_BODY_ask_edges(body, &edgeNum, &edges) && edgeNum >= remainNum)
+                addVerticesToEdges(edges, remainNum, 1); // Add a single vertex to the first remainNum edges...
+            }
+        }
+    else
+        {
+        addVerticesToEdges(edges, addCount, 1); // Add a single vertex to the first addNum edges...
+        }
+
+    PK_MEMORY_free(edges);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Hopen.He                        03/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+static void makeProfilesWithUniformVertexCount(PK_BODY_t const* bodies, size_t nBodies)
+    {
+    if (nullptr == bodies || nBodies < 2)
+        return;
+
+    int maxVertex = 0;
+
+    for (size_t iBody = 0; iBody < nBodies; iBody++)
+        {
+        int nVertex = 0;
+
+        if (SUCCESS == PK_BODY_ask_vertices(bodies[iBody], &nVertex, nullptr) && nVertex > maxVertex)
+            maxVertex = nVertex;
+        }
+
+    if (0 == maxVertex)
+        return;
+
+    for (size_t iBody = 0; iBody < nBodies; iBody++)
+        addProfileVertices(bodies[iBody], maxVertex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId)
+BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, bool periodic, uint32_t nodeId)
     {
     // NOTE: Parity/Union regions not currently supported...
-    if (NULL == profiles || 0 == nProfiles)
+    if (nullptr == profiles || 0 == nProfiles)
         return ERROR;
 
     DPoint3d    origin;
@@ -2768,7 +2905,14 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
         
     for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
         {
-        bool    coverClosed = (0 == iProfile || iProfile+1 == nProfiles); // NOTE: Only end caps may be sheet bodies...
+        bool coverClosed = (0 == iProfile || (!periodic && iProfile+1 == nProfiles)); // NOTE: Only end caps may be sheet bodies...
+
+        // Degenerate point profile is allowed for first or last profile...
+        if (coverClosed && SUCCESS == (status = degeneratePointFromCurveVector(profileBodies[iProfile], *profiles[iProfile], dgnToSolid)))
+            {
+            startVertices[iProfile] = PK_ENTITY_null;
+            continue;
+            }
 
         if (SUCCESS != (status = PSolidGeom::BodyFromCurveVector (profileBodies[iProfile], &startVertices[iProfile], *profiles[iProfile], dgnToSolid, coverClosed)))
             break;
@@ -2788,7 +2932,9 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
 
         PK_BODY_t   bodyTag = PK_ENTITY_null;
 
-        if (SUCCESS == (status = PSolidGeom::BodyFromLoft (bodyTag, profileBodies, startVertices, nProfiles, guideBodies, nGuides)))
+        makeProfilesWithUniformVertexCount(profileBodies, nProfiles);
+
+        if (SUCCESS == (status = PSolidGeom::BodyFromLoft (bodyTag, profileBodies, startVertices, nProfiles, guideBodies, nGuides, periodic)))
             {
             if (nodeId)
                 PSolidTopoId::AddNodeIdAttributes (bodyTag, nodeId, true);

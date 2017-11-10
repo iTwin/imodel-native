@@ -54,7 +54,6 @@
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
