@@ -389,14 +389,16 @@ struct ICachingDataSource::Error : public AsyncError
 struct ICachingDataSource::RetrieveOptions
     {
     private:
-        DataOrigin m_origin;
+        DataOrigin m_origin = DataOrigin::CachedData;
         SyncNotifierPtr m_syncNotifier;
 
     public:
+        WSCACHE_EXPORT RetrieveOptions() {}
+
         //! @param[in] DataOrigin origin - specify what data to try returning
         //! @param[in] backgroundSyncNotifier - (optional) if not null and there was no attempt to pull data from server - repeats the call with DataOrigin::RemoteData in the background
         WSCACHE_EXPORT RetrieveOptions(DataOrigin origin, SyncNotifierPtr syncNotifier = nullptr) : 
-            m_origin(origin), m_syncNotifier(syncNotifier) { }
+            m_origin(origin), m_syncNotifier(syncNotifier) {}
 
         WSCACHE_EXPORT DataOrigin GetOrigin() const { return m_origin; }
         WSCACHE_EXPORT SyncNotifierPtr GetSyncNotifier() const { return m_syncNotifier; }
