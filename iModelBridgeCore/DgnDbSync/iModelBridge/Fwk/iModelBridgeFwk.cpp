@@ -1295,8 +1295,6 @@ int iModelBridgeFwk::UpdateExistingBim()
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
 
-        BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
-
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
         m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
