@@ -19,7 +19,7 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Main Linear-Element used in Road & Rail applications.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISegmentableLinearElement, LinearReferencing::ISpatialLinearElement
+struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISpatialLinearElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Dgn::SpatialLocationElement);
     friend struct AlignmentHandler;
@@ -53,7 +53,6 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelCR model);
-    ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentCR parentAlignment);
 
     AlignmentModelPtr GetAlignmentModel() const { return dynamic_cast<AlignmentModelP>(GetModel().get()); }
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr QueryHorizontal() const;    
