@@ -80,7 +80,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="google_gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="google_gtest.prewire.mke">
+    <Part Name="google_gtest" BentleyBuildMakeFile="google_gtest.prewire.mke">
         <Bindings>
             <VendorAPI Domain="gtest"/>
             <Directory SourceName="Delivery/google_gtest" SubPartDirectory="google_gtest" Required="false"/>
