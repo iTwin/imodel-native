@@ -1373,29 +1373,6 @@ template <class POINT> int ScalableMesh<POINT>::Close
     return SUCCESS;        
     }
 
-template <class POINT>
-DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   pointIndexP)
-    {
-    typedef ExtentOp<Extent3dType>         PtExtentOpType;
-
-    DRange3d totalExtent;
-    memset(&totalExtent, 0, sizeof(totalExtent));
-
-    if ((pointIndexP != 0) && (!pointIndexP->IsEmpty()))
-        {
-        Extent3dType ExtentPoints = pointIndexP->GetContentExtent();
-        totalExtent.low.x = PtExtentOpType::GetXMin(ExtentPoints);
-        totalExtent.high.x = PtExtentOpType::GetXMax(ExtentPoints);
-        totalExtent.low.y = PtExtentOpType::GetYMin(ExtentPoints);
-        totalExtent.high.y = PtExtentOpType::GetYMax(ExtentPoints);
-        totalExtent.low.z = PtExtentOpType::GetZMin(ExtentPoints);
-        totalExtent.high.z = PtExtentOpType::GetZMax(ExtentPoints);
-        }
-
-    return totalExtent;
-    }
-
-
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ComputeTileBoundaryDuringQuery
 +----------------------------------------------------------------------------*/

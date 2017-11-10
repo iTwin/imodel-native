@@ -495,6 +495,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
+    Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
@@ -504,7 +505,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 	$(ContextSubpartsLibs)PointCloud.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
+    $(ContextSubpartsLibs)CCApi.lib\
     
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 #    $(DgnPlatformV8LibDir)Bentley.lib \

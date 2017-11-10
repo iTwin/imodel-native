@@ -8,6 +8,9 @@
 
 #include "SMUnitTestUtil.h"
 #include <Bentley/BeDirectoryIterator.h>
+#ifndef VANCOUVER_API
+#include <Bentley/Desktop/FileSystem.h>
+#endif
 
 using namespace ScalableMeshGTestUtil;
 
@@ -114,7 +117,11 @@ BeFileName ScalableMeshGTestUtil::GetModuleFileDirectory()
 BeFileName ScalableMeshGTestUtil::GetUserSMTempDir()
     {
     BeFileName tempPath;
+#ifdef VANCOUVER_API
     BeFileName::BeGetTempPath(tempPath);
+#else
+    Desktop::FileSystem::BeGetTempPath(tempPath);
+#endif
     tempPath.AppendToPath(L"SMGTestOutput");
 
     return tempPath;
@@ -194,6 +201,7 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
     };
 
 
+#ifdef VANCOUVER_API
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -220,6 +228,7 @@ VIEWMANAGER& ScalableMeshModule::_SupplyViewManager()
         };
     return *new ExeViewManager();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
@@ -227,10 +236,11 @@ VIEWMANAGER& ScalableMeshModule::_SupplyViewManager()
 DgnPlatformLib::Host::GeoCoordinationAdmin& ScalableMeshModule::_SupplyGeoCoordinationAdmin()
     {
     BeFileName geocoordinateDataPath = GetModuleFileDirectory();
-    geocoordinateDataPath.AppendToPath(L"GeoCoordinateData");
 #ifndef VANCOUVER_API  
+    geocoordinateDataPath.AppendToPath(L"Assets/DgnGeoCoord");
     return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath);
 #else
+    geocoordinateDataPath.AppendToPath(L"GeoCoordinateData");
     return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath, IACSManager::GetManager());
 #endif
     }
@@ -240,7 +250,7 @@ DgnPlatformLib::Host::GeoCoordinationAdmin& ScalableMeshModule::_SupplyGeoCoordi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModule::Initialize()
     {
-    struct SMHost : public Bentley::ScalableMesh::ScalableMeshLib::Host
+    struct SMHost : public BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host
         {
         SMHost()
             {}
@@ -250,9 +260,13 @@ BentleyStatus ScalableMeshModule::Initialize()
                 return *new ScalableMesh::ScalableMeshAdmin(); // delete will be hopefully called by ScalableMeshAdmin::_OnHostTermination
                 };
         };
-    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
+#ifdef VANCOUVER_API
     DgnViewLib::Initialize(*this, true); // this initializes the DgnDb libraries
+#else
+    DgnPlatformLib::Initialize(*this, true);
+#endif	
+    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
                                          // Initialize RasterLib
                                          //DgnDomains::RegisterDomain(RasterSchema::RasterDomain::GetDomain());
