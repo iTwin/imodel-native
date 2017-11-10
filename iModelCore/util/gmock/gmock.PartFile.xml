@@ -10,7 +10,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="google_gmock" DeferType="BuildUnitTests" BentleyBuildMakeFile="gmock.prewire.mke">
+    <Part Name="google_gmock" BentleyBuildMakeFile="gmock.prewire.mke">
         <Bindings>
             <VendorAPI Domain="gmock"/>
         </Bindings>
