@@ -1341,8 +1341,8 @@ public:
     //! Map a V8 sheet model to a BIM SheetModel.
     //! @param v8model the V8 sheet model
     //! @param isRootModelSpatial pass true if the root model for the output BIM is a spatial model.
-    //! @note ImportSheetModelsInFile will terminate with a fatal error if isRootModelSpatial is @a false and if it encounters a reference from a sheet to a 3D model.
-    void ImportSheetModelsInFile(DgnV8FileR v8File, bool isRootModelSpatial);
+    //! @note ImportSheetModel will terminate with a fatal error if isRootModelSpatial is @a false and if it encounters a reference from a sheet to a 3D model.
+    void ImportSheetModel(DgnV8ModelR v8model, bool isRootModelSpatial);
 
     //! Convert an element in a sheet model. @see DoConvertDrawingElement
     void _ConvertSheetElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
@@ -1448,8 +1448,7 @@ public:
     SectionDrawingPtr CreateSectionDrawing(Utf8CP label);
     SectionDrawingCPtr CreateSectionDrawingAndInsert(Utf8CP label) {auto d = CreateSectionDrawing(label); return d.IsValid()? GetDgnDb().Elements().Insert<SectionDrawing>(*d): nullptr;}
 
-    //! Map the drawing and other non-sheet 2D models in the V8 file to BIM DrawingModels. However, the "Consider2dModelsSpatial" option causes Normal models to be treated as Spatial models rather than Drawing models.
-    void ImportDrawingModelsInFile(DgnV8FileR, ResolvedModelMapping& rootModelMapping);
+    void ImportDrawingModel(ResolvedModelMapping& rootModelMapping, DgnV8ModelR v8model);
 
     //! Map the specified 2d model to a BIM model 
     bpair<ResolvedModelMapping,bool> Import2dModel(DgnV8ModelR v8model);
@@ -2475,7 +2474,9 @@ protected:
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();
-    void FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool andRefs);
+    void FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet);
+    void FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
