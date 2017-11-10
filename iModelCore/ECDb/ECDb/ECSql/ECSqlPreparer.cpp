@@ -479,6 +479,8 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
     return SUCCESS;
     }
 
+
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -497,8 +499,51 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
     if (currentScopeECSqlType == ECSqlType::Select)
         {
+        MemberFunctionCallExp const* memberFunc = exp.GetMemberFunctionCall();
+        ViewGenerator::MemberInfo memberInfo;
+        if (memberFunc != nullptr)
+            {
+            if (!memberFunc->GetFunctionName().EqualsIAscii("changesummary"))
+                {
+                ctx.GetECDb().GetImpl().Issues().Report("Unknown member funtion: %s", memberFunc->GetFunctionName().c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+
+            if (memberFunc->GetChildrenCount() < 2 || memberFunc->GetChildrenCount() > 3)
+                {
+                ctx.GetECDb().GetImpl().Issues().Report("%s member function expect two or three argument", memberFunc->GetFunctionName().c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+
+            NativeSqlBuilder::List summaryIdSql;
+            NativeSqlBuilder::List operationSql;
+            //none-optional parameter
+            const ValueExp* summaryId = memberFunc->GetChildren()[0]->GetAsCP<ValueExp>();
+            if (PrepareValueExp(summaryIdSql, ctx, *summaryId) != ECSqlStatus::Success)
+                return ECSqlStatus::Error;
+
+            const ValueExp* operation = memberFunc->GetChildren()[1]->GetAsCP<ValueExp>();
+            if (PrepareValueExp(operationSql, ctx, *operation) != ECSqlStatus::Success)
+                return ECSqlStatus::Error;
+
+            memberInfo.SetName(memberFunc->GetFunctionName().c_str());
+            memberInfo.SetArg("summary_id", summaryIdSql.front().GetSql().c_str());
+            memberInfo.SetArg("operation", operationSql.front().GetSql().c_str());
+
+            //optional parameter
+            if (memberFunc->GetChildrenCount() == 3)
+                {
+                NativeSqlBuilder::List stageSql;
+                const ValueExp* stage = memberFunc->GetChildren()[2]->GetAsCP<ValueExp>();
+                if (PrepareValueExp(stageSql, ctx, *stage) != ECSqlStatus::Success)
+                    return ECSqlStatus::Error;
+
+                memberInfo.SetArg("stage", stageSql.front().GetSql().c_str());
+                }
+            }
+
         NativeSqlBuilder classViewSql;
-        if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic()))
+        if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic(), memberInfo.Valid() ? &memberInfo : nullptr))
             {
             BeAssert(false && "SELECT view generation failed during preparation of class name expression.");
             return ECSqlStatus::Error;
