@@ -8,6 +8,8 @@
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h"
+#include <map>
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -69,14 +71,14 @@ BENTLEYDTM_EXPORT long bcdtmList_nextAntDtmObject(BC_DTM_OBJ *dtmP,long p1,long 
 /*
 ** Scan Circular List
 */
- cListHP = NULL;
+ cListHP = nullptr;
  clpPtr = nodeAddrP(dtmP,p1)->cPtr ;
  while ( clpPtr != dtmP->nullPtr )
    {
     cListP = clistAddrP(dtmP,clpPtr) ;
     if( cListP->pntNum == p2 )
       {
-       if( cListHP != NULL) return( cListHP->pntNum ) ;
+       if( cListHP != nullptr) return( cListHP->pntNum ) ;
        clpPtr = cListP->nextPtr;
        if (clpPtr != dtmP->nullPtr)
            while( (clhPtr = (cListP = clistAddrP(dtmP,clpPtr))->nextPtr) != dtmP->nullPtr ) clpPtr = clhPtr ;
@@ -1164,7 +1166,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   p,ap,np,pp,sp,lp,numPointHullFeatures ;
- DTMTinPointFeatures *phfP,*pointHullFeatures=NULL ;
+ DTMTinPointFeatures *phfP,*pointHullFeatures=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -1293,7 +1295,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
 ** Clean Up
 */
  cleanup :
- if( pointHullFeatures != NULL ) { free(pointHullFeatures) ; pointHullFeatures = NULL ; }
+ if( pointHullFeatures != nullptr ) { free(pointHullFeatures) ; pointHullFeatures = nullptr ; }
 /*
 ** Job Completed
 */
@@ -1654,7 +1656,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidsInDtmObject(BC_DTM_OBJ *dtmP,bool& v
 /*
 ** Scan Dtm Features
 */
- if( dtmP->fTablePP != NULL )
+ if( dtmP->fTablePP != nullptr )
    {
     ofs = 0 ;
     partitionNum = 0 ;
@@ -1974,7 +1976,7 @@ BENTLEYDTM_Public int bcdtmList_getHullFeaturesForPointDtmObject(BC_DTM_OBJ *dtm
 ** Initialise
 */
  *numPointFeaturesP = 0 ;
- if( *pointFeaturesPP != NULL ) { free(*pointFeaturesPP) ; *pointFeaturesPP = NULL ; }
+ if( *pointFeaturesPP != nullptr ) { free(*pointFeaturesPP) ; *pointFeaturesPP = nullptr ; }
 /*
 ** Scan P1 And Test For Void, Hole Or Island Hull
 */
@@ -2009,9 +2011,9 @@ BENTLEYDTM_Public int bcdtmList_getHullFeaturesForPointDtmObject(BC_DTM_OBJ *dtm
        if( *numPointFeaturesP == memFeatureTable )
          {
           memFeatureTable = memFeatureTable + memInc ;
-          if( *pointFeaturesPP == NULL ) *pointFeaturesPP = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+          if( *pointFeaturesPP == nullptr ) *pointFeaturesPP = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
           else                           *pointFeaturesPP = ( DTMTinPointFeatures * ) realloc ( *pointFeaturesPP , memFeatureTable * sizeof(DTMTinPointFeatures)) ;
-          if( *pointFeaturesPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( *pointFeaturesPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
 **     Store Point Feature
@@ -2336,7 +2338,7 @@ BENTLEYDTM_Public int bcdtmList_getPointerAndOffsetToNextDtmFeatureTypeOccurrenc
 /*
 ** Initialise
 */
- *dtmFeaturePP   = NULL ;
+ *dtmFeaturePP   = nullptr ;
  *dtmFeatureNumP = 0    ;
 /*
 ** Do First Call Processing
@@ -2345,7 +2347,7 @@ BENTLEYDTM_Public int bcdtmList_getPointerAndOffsetToNextDtmFeatureTypeOccurrenc
 /*
 ** Scan feature For Next Occurrence
 */
- for( feature = lastFeature + 1 ; feature < dtmP->numFeatures && *dtmFeaturePP == NULL ; ++feature )
+ for( feature = lastFeature + 1 ; feature < dtmP->numFeatures && *dtmFeaturePP == nullptr ; ++feature )
    {
     dtmFeatureP =  ftableAddrP(dtmP,feature) ;
     if( dtmFeatureP->dtmFeatureType == dtmFeatureType )
@@ -2376,7 +2378,7 @@ BENTLEYDTM_Public int bcdtmList_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
 {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long     node,fTable,fList,cList ;
- long     ofs,ofs1,ofs2,*srP,*sortP=NULL,*tempP=NULL ;
+ long     ofs,ofs1,ofs2,*srP,*sortP=nullptr,*tempP=nullptr ;
  DTM_TIN_NODE      *nodeP,tempNode  ;
  DPoint3d     tempPoint  ;
  DTM_CIR_LIST      *cListP ;
@@ -2404,9 +2406,9 @@ BENTLEYDTM_Public int bcdtmList_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
 **  Allocate Memory For New Sort Pointers
 */
     sortP = ( long * ) malloc(dtmP->numPoints*sizeof(long)) ;
-    if( sortP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if( sortP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
     tempP = ( long * ) malloc(dtmP->numPoints*sizeof(long)) ;
-    if( tempP == NULL ) {  bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if( tempP == nullptr ) {  bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **  Quick Sort The Additional Data Points
 */
@@ -2539,8 +2541,8 @@ BENTLEYDTM_Public int bcdtmList_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
 **  Clean Up
 */
  cleanup :
- if( sortP != NULL ) free(sortP) ;
- if( tempP != NULL ) free(tempP) ;
+ if( sortP != nullptr ) free(sortP) ;
+ if( tempP != nullptr ) free(tempP) ;
 /*
 ** Job ComfListPeted
 */
@@ -2627,7 +2629,8 @@ BENTLEYDTM_Public int bcdtmList_setNumberOfSortedPointsDtmObject(BC_DTM_OBJ *dtm
 */
 {
  int   ret=DTM_SUCCESS ;
- long  point,process=TRUE ;
+ long  point;
+ bool process=true;
  DPoint3d *p1P,*p2P ;
 /*
 ** Check For Valid Dtm Object
@@ -2646,13 +2649,13 @@ BENTLEYDTM_Public int bcdtmList_setNumberOfSortedPointsDtmObject(BC_DTM_OBJ *dtm
 **  Scan Points And To First Point Out Of Sort Order
 */
     p1P = dtmP->pointsPP[0] ;
-    for( point = 1 ; point < dtmP->numPoints && process == TRUE ; ++point )
+    for( point = 1 ; point < dtmP->numPoints && process == true ; ++point )
       {
        p2P = pointAddrP(dtmP,point)  ;
        if( p1P->x > p2P->x || ( p1P->x == p2P->x && p1P->y > p2P->y ))
          {
           dtmP->numSortedPoints = point  ;
-          process = FALSE ;
+          process = false ;
          }
        p1P = p2P ;
       }
@@ -3024,7 +3027,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyAllDtmFeatureTypePointsToPointArraysDtmObjec
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long dtmFeature,numDtmFeaturePts,memDtmFeatures=0,memDtmFeaturesInc=1000 ;
- DPoint3d  *dtmFeaturePtsP=NULL ;
+ DPoint3d  *dtmFeaturePtsP=nullptr ;
  BC_DTM_FEATURE  *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -3033,7 +3036,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyAllDtmFeatureTypePointsToPointArraysDtmObjec
 /*
 ** Initialise
 */
- if( *featuresPPP != NULL ) bcdtmMem_freePointerArrayToPointArrayMemory(featuresPPP,*numFeaturesP) ;
+ if( *featuresPPP != nullptr ) bcdtmMem_freePointerArrayToPointArrayMemory(featuresPPP,*numFeaturesP) ;
  *numFeaturesP = 0 ;
 /*
 ** Test For Valid DTM Object
@@ -3057,7 +3060,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyAllDtmFeatureTypePointsToPointArraysDtmObjec
        if( *numFeaturesP == memDtmFeatures )
          {
           memDtmFeatures = memDtmFeatures + memDtmFeaturesInc ;
-          if( *featuresPPP == NULL ) *featuresPPP = ( DTM_POINT_ARRAY ** ) malloc ( memDtmFeatures * sizeof( DTM_POINT_ARRAY *)) ;
+          if( *featuresPPP == nullptr ) *featuresPPP = ( DTM_POINT_ARRAY ** ) malloc ( memDtmFeatures * sizeof( DTM_POINT_ARRAY *)) ;
           else                         *featuresPPP = ( DTM_POINT_ARRAY ** ) realloc ( *featuresPPP , memDtmFeatures * sizeof( DTM_POINT_ARRAY *)) ;
          }
 /*
@@ -3066,16 +3069,16 @@ BENTLEYDTM_EXPORT int bcdtmList_copyAllDtmFeatureTypePointsToPointArraysDtmObjec
        (*(*featuresPPP+*numFeaturesP))->pointsP   = dtmFeaturePtsP ;
        (*(*featuresPPP+*numFeaturesP))->numPoints = numDtmFeaturePts ;
        ++*numFeaturesP ;
-       dtmFeaturePtsP = NULL ;
+       dtmFeaturePtsP = nullptr ;
       }
    }
 /*
 ** Realloc Memory
 */
- if( *featuresPPP != NULL && *numFeaturesP != memDtmFeatures )
+ if( *featuresPPP != nullptr && *numFeaturesP != memDtmFeatures )
    {
     if( *numFeaturesP > 0 && *numFeaturesP < memDtmFeatures ) *featuresPPP = ( DTM_POINT_ARRAY ** ) realloc ( *featuresPPP , memDtmFeatures * sizeof( DTM_POINT_ARRAY *)) ;
-    else                                                      {  free(*featuresPPP) ; *featuresPPP = NULL ;  }
+    else                                                      {  free(*featuresPPP) ; *featuresPPP = nullptr ;  }
    }
 
 /*
@@ -3116,7 +3119,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(BC_DTM
 ** Initialise
 */
  *numFeatPtsP = 0 ;
- if( *featPtsPP != NULL ) { free(*featPtsPP) ; *featPtsPP = NULL ; }
+ if( *featPtsPP != nullptr ) { free(*featPtsPP) ; *featPtsPP = nullptr ; }
 /*
 ** Test For Valid DTM Object
 */
@@ -3161,7 +3164,7 @@ BENTLEYDTM_Public int bcdtmList_copyDtmFeaturePointsToPointOffsetArrayDtmObject(
 ** Initialise
 */
  *numFeatPtsP = 0 ;
- if( *featPtsPP != NULL ) { free(*featPtsPP) ; *featPtsPP = NULL ; }
+ if( *featPtsPP != nullptr ) { free(*featPtsPP) ; *featPtsPP = nullptr ; }
 /*
 ** Test For Valid DTM Object
 */
@@ -3963,76 +3966,109 @@ BENTLEYDTM_Public int bcdtmList_getFirstAndLastPointForDtmTinFeatureDtmObject(BC
 |                                                             |
 |                                                             |
 +------------------------------------------------------------*/
+inline void bcdtmList_removeNoneFeatureHullLinesDtmObject_AddLink(BC_DTM_OBJ *dtmP, std::multimap<double, long>& links, long sp, long np)
+    {
+    long ap;
+    if ((ap = bcdtmList_nextAntDtmObject(dtmP, sp, np)) < 0) return;
+    if (nodeAddrP(dtmP, ap)->hPtr == dtmP->nullPnt && !bcdtmList_testForDtmFeatureLineDtmObject(dtmP, sp, np))
+        {
+        DPoint3dP sPt = pointAddrP(dtmP, sp);
+        DPoint3dP nPt = pointAddrP(dtmP, np);
+        links.emplace(-bcdtmMath_distanceSquared(sPt->x, sPt->y, nPt->x, nPt->y), sp);
+        }
+    }
+
+/*------------------------------------------------------------+
+|                                                             |
+|                                                             |
+|                                                             |
++------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmList_removeNoneFeatureHullLinesDtmObject(BC_DTM_OBJ *dtmP)
 /*
 ** This Function Removes None Feature Hull Lines
 */
-{
- int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long  sp,np,ap ;
- int isModified = FALSE;
-/*
-** Write Entry Messages
-*/
- if( dbg ) bcdtmWrite_message(0,0,0,"Deleting None Feature Hull Lines") ;
-/*
-** Test For Valid DTM Object
-*/
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
-/*
-** Check DTM Is Triangulated
-*/
- if( dtmP->dtmState != DTMState::Tin )
-   {
-    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
-    goto errexit ;
-   }
-/*
-** Scan Around Edge And Remove Non Feature Hull Lines
-*/
- sp = dtmP->hullPoint ;
- do
-   {
-    np = nodeAddrP(dtmP,sp)->hPtr ;
-    if( (ap = bcdtmList_nextAntDtmObject(dtmP,sp,np) ) < 0 ) goto errexit ;
-    while ( nodeAddrP(dtmP,ap)->hPtr == dtmP->nullPnt && ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,sp,np) )
-      {
-       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Deleting Hull Line ** p1 = %8ld p2 = %8ld",sp,np) ;
-       if( bcdtmList_deleteLineDtmObject(dtmP,sp,np)) goto errexit ;
-       isModified = TRUE;
-       nodeAddrP(dtmP,sp)->hPtr = ap ;
-       nodeAddrP(dtmP,ap)->hPtr = np ;
-       np = ap ;
-       if( (ap = bcdtmList_nextAntDtmObject(dtmP,sp,np) ) < 0 ) goto errexit ;
-      }
-    sp = np ;
-   } while ( sp != dtmP->hullPoint ) ;
-/*
-** Reset Triangle Counts
-*/
- bcdtmList_countTrianglesAndLinesDtmObject(dtmP,&sp,&np) ;
-/*
-**  Update Modified Time
- */
- if (isModified)
-   bcdtmObject_updateLastModifiedTime (dtmP) ;
-/*
-** Clean Up
-*/
- cleanup :
-/*
-** Job Completed
-*/
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Deleting None Feature Hull Lines Completed") ;
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Deleting None Feature Hull Lines Error") ;
- return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
+    {
+    int   ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0);
+    long  sp, np, ap;
+    bool isModified = false;
+    std::multimap<double, long> links;
+    /*
+    ** Write Entry Messages
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Deleting None Feature Hull Lines");
+    /*
+    ** Test For Valid DTM Object
+    */
+    if (bcdtmObject_testForValidDtmObject(dtmP)) goto errexit;
+    /*
+    ** Check DTM Is Triangulated
+    */
+    if (dtmP->dtmState != DTMState::Tin)
+        {
+        bcdtmWrite_message(1, 0, 0, "Method Requires Triangulated DTM");
+        goto errexit;
+        }
+    /*
+    ** Scan Around Edge And Remove Non Feature Hull Lines
+    */
+    sp = dtmP->hullPoint;
+    do
+        {
+        np = nodeAddrP(dtmP, sp)->hPtr;
+        bcdtmList_removeNoneFeatureHullLinesDtmObject_AddLink(dtmP, links, sp, np);
+        sp = np;
+        } while (sp != dtmP->hullPoint);
+
+        while (!links.empty())
+            {
+            auto largestIt = links.begin();
+            sp = largestIt->second;
+            links.erase(largestIt);
+            np = nodeAddrP(dtmP, sp)->hPtr;
+            if ((ap = bcdtmList_nextAntDtmObject(dtmP, sp, np)) < 0) goto errexit;
+
+            if (nodeAddrP(dtmP, ap)->hPtr == dtmP->nullPnt)
+                {
+                if (dbg == 2) bcdtmWrite_message(0, 0, 0, "Deleting Hull Line ** p1 = %8ld p2 = %8ld", sp, np);
+                if (bcdtmList_deleteLineDtmObject(dtmP, sp, np)) goto errexit;
+                isModified = true;
+                nodeAddrP(dtmP, sp)->hPtr = ap;
+                nodeAddrP(dtmP, ap)->hPtr = np;
+
+                bcdtmList_removeNoneFeatureHullLinesDtmObject_AddLink(dtmP, links, sp, ap);
+                bcdtmList_removeNoneFeatureHullLinesDtmObject_AddLink(dtmP, links, ap, np);
+                }
+            }
+
+
+        if (isModified)
+            {
+            /*
+            ** Reset Triangle Counts
+            */
+            bcdtmList_countTrianglesAndLinesDtmObject(dtmP, &sp, &np);
+            /*
+            **  Update Modified Time
+            */
+            bcdtmObject_updateLastModifiedTime(dtmP);
+            }
+        /*
+        ** Clean Up
+        */
+    cleanup :
+        /*
+        ** Job Completed
+        */
+        if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Deleting None Feature Hull Lines Completed") ;
+        if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Deleting None Feature Hull Lines Error") ;
+        return(ret) ;
+        /*
+        ** Error Exit
+        */
+    errexit :
+        if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+        goto cleanup ;
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4349,7 +4385,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullDtmObject(BC_DTM_OBJ *dtmP, DPoint3d 
 ** Initialise
 */
  *numHullPtsP = 0 ;
- if( *hullPtsPP != NULL ) { free(*hullPtsPP) ; *hullPtsPP = NULL ; }
+ if( *hullPtsPP != nullptr ) { free(*hullPtsPP) ; *hullPtsPP = nullptr ; }
 /*
 ** Check For Valid Dtm Object
 */
@@ -4376,7 +4412,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullDtmObject(BC_DTM_OBJ *dtmP, DPoint3d 
 **  Allocate Memory To Store Hull Points
 */
     *hullPtsPP = ( DPoint3d * ) malloc(*numHullPtsP*sizeof(DPoint3d)) ;
-    if( *hullPtsPP == NULL )
+    if( *hullPtsPP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -4436,7 +4472,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullDtmObject(BC_DTM_OBJ *dtmP, DPoint3d 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  *numHullPtsP = 0 ;
- if( *hullPtsPP != NULL ) { free(*hullPtsPP) ; *hullPtsPP = NULL ; }
+ if( *hullPtsPP != nullptr ) { free(*hullPtsPP) ; *hullPtsPP = nullptr ; }
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -4524,9 +4560,10 @@ BENTLEYDTM_Public int bcdtmList_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtm
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long    hullPnt,nextPnt,priorPnt,listPnt,lowPnt,highPnt,intersectResult;
- long    firstPnt,listPtr,dtmFeature,voidPoint,numIslandPts=0,numVoidPts=0,noVoidPoint ;
- DPoint3d     *islandPtsP=NULL,*voidPtsP=NULL ;
- DTM_DAT_OBJ *dataP=NULL ;
+ long    firstPnt, listPtr, dtmFeature, numIslandPts = 0, numVoidPts = 0;
+ bool    noVoidPoint = false, voidPoint = false;
+ DPoint3d     *islandPtsP=nullptr,*voidPtsP=nullptr ;
+ DTM_DAT_OBJ *dataP=nullptr ;
  wchar_t   outFile[128] ;
  static long fileNum=0 ;
  DTM_GUID nullGuid=DTM_NULL_GUID ;
@@ -4551,7 +4588,7 @@ BENTLEYDTM_Public int bcdtmList_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtm
 **     Scan Island Hull And Look For A Corresponding Void Hull Line
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Island Hull") ;
-       noVoidPoint = TRUE ;
+       noVoidPoint = true ;
        priorPnt = ftableAddrP(dtmP,islandFeature)->dtmFeaturePts.firstPoint ;
        bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,islandFeature,priorPnt,&hullPnt) ;
        bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,islandFeature,hullPnt,&nextPnt) ;
@@ -4561,27 +4598,27 @@ BENTLEYDTM_Public int bcdtmList_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtm
 /*
 **        Check If Island Point Is A Void Point
 */
-          voidPoint = FALSE ;
+          voidPoint = false ;
           listPtr = nodeAddrP(dtmP,hullPnt)->fPtr ;
-          while( listPtr != dtmP->nullPtr && voidPoint == FALSE )
+          while( listPtr != dtmP->nullPtr && voidPoint == false)
             {
              dtmFeature = flistAddrP(dtmP,listPtr)->dtmFeature ;
              listPtr    = flistAddrP(dtmP,listPtr)->nextPtr ;
-             if( ftableAddrP(dtmP,dtmFeature)->dtmFeatureType == DTMFeatureType::Void && ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint != dtmP->nullPnt ) voidPoint = TRUE ;
+             if( ftableAddrP(dtmP,dtmFeature)->dtmFeatureType == DTMFeatureType::Void && ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint != dtmP->nullPnt ) voidPoint = true ;
             }
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Hull Point = %8ld ** Void Point = %1ld",hullPnt,voidPoint) ;
 /*
 **        If Void Point Test For Surrounding Void
 */
-          if( voidPoint == TRUE )
+          if( voidPoint == true )
             {
-             noVoidPoint = FALSE ;
+             noVoidPoint = false ;
              if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Testing For Surrounding Void At Hull Point = %8ld ** %12.4lf %12.4lf %10.4lf",hullPnt,pointAddrP(dtmP,hullPnt)->x,pointAddrP(dtmP,hullPnt)->y,pointAddrP(dtmP,hullPnt)->z) ;
              listPnt = nextPnt ;
              while ( listPnt != priorPnt && *voidFeatureP == dtmP->nullPnt )
                {
                 if( bcdtmList_testForSurroundingDtmFeatureTypeDtmObject(dtmP,hullPnt,nextPnt,priorPnt,DTMFeatureType::Void,voidFeatureP) != DTM_SUCCESS ) goto errexit ;
-                if( *voidFeatureP == dtmP->nullPnt ) noVoidPoint = TRUE ;
+                if( *voidFeatureP == dtmP->nullPnt ) noVoidPoint = true ;
                 if(( listPnt = bcdtmList_nextClkDtmObject(dtmP,hullPnt,listPnt)) < 0 ) goto errexit ;
                 if( dbg && *voidFeatureP != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"Surrounding Void Found = %6ld",*voidFeatureP) ;
                }
@@ -4597,7 +4634,7 @@ BENTLEYDTM_Public int bcdtmList_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtm
 /*
 **     Scan Out From Island Hull Looking For Surrounding Void
 */
-       if( noVoidPoint == TRUE )
+       if( noVoidPoint == true )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Out From Island Hull") ;
           if( bcdtmList_getVoidFeatureExternalToIslandFeatureDtmObject(dtmP,islandFeature,voidFeatureP) ) goto errexit ;
@@ -4618,12 +4655,12 @@ BENTLEYDTM_Public int bcdtmList_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtm
 */
        if( cdbg )
          {
-          if( islandPtsP == NULL ) { if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,islandFeature,&islandPtsP,&numIslandPts) ) goto errexit ; }
-          if( voidPtsP   == NULL && *voidFeatureP != dtmP->nullPnt ) { if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,*voidFeatureP,&voidPtsP,&numVoidPts) ) goto errexit ; }
+          if( islandPtsP == nullptr ) { if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,islandFeature,&islandPtsP,&numIslandPts) ) goto errexit ; }
+          if( voidPtsP   == nullptr && *voidFeatureP != dtmP->nullPnt ) { if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,*voidFeatureP,&voidPtsP,&numVoidPts) ) goto errexit ; }
           if( bcdtmObject_createDataObject(&dataP)) goto errexit ;
           bcdtmObject_setMemoryAllocationParametersDataObject(dataP,numIslandPts+numVoidPts,100) ;
-          if( islandPtsP != NULL ) { if( bcdtmObject_storeDtmFeatureInDataObject(dataP,DTMFeatureType::Island,DTM_NULL_USER_TAG,nullGuid,islandPtsP,numIslandPts)) goto errexit ; }
-          if( voidPtsP   != NULL ) { if( bcdtmObject_storeDtmFeatureInDataObject(dataP,DTMFeatureType::Void,DTM_NULL_USER_TAG,nullGuid,voidPtsP,numVoidPts)) goto errexit ; }
+          if( islandPtsP != nullptr ) { if( bcdtmObject_storeDtmFeatureInDataObject(dataP,DTMFeatureType::Island,DTM_NULL_USER_TAG,nullGuid,islandPtsP,numIslandPts)) goto errexit ; }
+          if( voidPtsP   != nullptr ) { if( bcdtmObject_storeDtmFeatureInDataObject(dataP,DTMFeatureType::Void,DTM_NULL_USER_TAG,nullGuid,voidPtsP,numVoidPts)) goto errexit ; }
           if( *voidFeatureP != dtmP->nullPnt ) swprintf(outFile,50,L"islandVoid%d.dat",fileNum) ;
           else                                 swprintf(outFile,50,L"islandVoidError%d.dat",fileNum) ;
           if( bcdtmWrite_dataFileFromDataObject(dataP,outFile) ) goto errexit ;
@@ -4636,9 +4673,9 @@ BENTLEYDTM_Public int bcdtmList_getVoidExternalToIslandDtmObject(BC_DTM_OBJ *dtm
 ** Clean Up
 */
  cleanup :
- if( islandPtsP != NULL ) free(islandPtsP) ;
- if( voidPtsP   != NULL ) free(voidPtsP) ;
- if( dataP      != NULL ) bcdtmObject_deleteDataObject(&dataP) ;
+ if( islandPtsP != nullptr ) free(islandPtsP) ;
+ if( voidPtsP   != nullptr ) free(voidPtsP) ;
+ if( dataP      != nullptr ) bcdtmObject_deleteDataObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -5215,7 +5252,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListToPointArrayDtmObject
 ** Initialise
 */
  *numTptrPtsP = 0 ;
- if( *tptrPtsPP != NULL ) { free(*tptrPtsPP) ; *tptrPtsPP = NULL ; }
+ if( *tptrPtsPP != nullptr ) { free(*tptrPtsPP) ; *tptrPtsPP = nullptr ; }
 /*
 ** Validate
 */
@@ -5241,7 +5278,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListToPointArrayDtmObject
 ** Allocate memory For DPoint3d Array
 */
  *tptrPtsPP = ( DPoint3d * ) malloc( *numTptrPtsP * sizeof(DPoint3d)) ;
- if( *tptrPtsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( *tptrPtsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Scan Tptr List And Copy Points To DPoint3d Array
 */
@@ -5302,7 +5339,7 @@ BENTLEYDTM_Public int bcdtmList_copySptrListToPointArrayDtmObject
 ** Initialise
 */
  *numTptrPtsP = 0 ;
- if( *tptrPtsPP != NULL ) { free(*tptrPtsPP) ; *tptrPtsPP = NULL ; }
+ if( *tptrPtsPP != nullptr ) { free(*tptrPtsPP) ; *tptrPtsPP = nullptr ; }
 /*
 ** Validate
 */
@@ -5328,7 +5365,7 @@ BENTLEYDTM_Public int bcdtmList_copySptrListToPointArrayDtmObject
 ** Allocate memory For DPoint3d Array
 */
  *tptrPtsPP = ( DPoint3d * ) malloc( *numTptrPtsP * sizeof(DPoint3d)) ;
- if( *tptrPtsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( *tptrPtsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Scan Tptr List And Copy Points To DPoint3d Array
 */
@@ -5381,12 +5418,12 @@ BENTLEYDTM_Public int bcdtmList_copyTptrValuesToPointListDtmObject(BC_DTM_OBJ *d
 /*
 ** Initialise
 */
- if( *pntListPP != NULL ) free(*pntListPP) ;
+ if( *pntListPP != nullptr ) free(*pntListPP) ;
 /*
 ** Allocate Memory To Point List
 */
  *pntListPP = (long * ) malloc( dtmP->numPoints * sizeof(long)) ;
- if( *pntListPP == NULL )
+ if( *pntListPP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -5424,7 +5461,7 @@ BENTLEYDTM_Public int bcdtmList_copyPointListToTptrValuesDtmObject(BC_DTM_OBJ *d
 /*
 ** Initialise
 */
- if( pntListP == NULL ) return(DTM_SUCCESS) ;
+ if( pntListP == nullptr ) return(DTM_SUCCESS) ;
 /*
 ** Copy Tptr List
 */
@@ -5449,8 +5486,8 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListToPointListDtmObject(BC_DTM_OBJ *dtm
 /*
 ** Initialise
 */
- if( *pntListPP != NULL ) free(*pntListPP) ;
- *pntListPP = NULL ;
+ if( *pntListPP != nullptr ) free(*pntListPP) ;
+ *pntListPP = nullptr ;
  *numPntListP = 0 ;
 /*
 ** Count Number Of Tptr List Points
@@ -5475,7 +5512,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListToPointListDtmObject(BC_DTM_OBJ *dtm
 */
     *numPntListP = numPoints ;
     *pntListPP = (long * ) malloc( *numPntListP * sizeof(long)) ;
-    if( *pntListPP == NULL )
+    if( *pntListPP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -5523,8 +5560,8 @@ BENTLEYDTM_Public int bcdtmList_copySptrListToPointListDtmObject(BC_DTM_OBJ *dtm
 /*
 ** Initialise
 */
- if( *pntListPP != NULL ) free(*pntListPP) ;
- *pntListPP = NULL ;
+ if( *pntListPP != nullptr ) free(*pntListPP) ;
+ *pntListPP = nullptr ;
  *numPntListP = 0 ;
 /*
 ** Count Number Of Tptr List Points
@@ -5545,7 +5582,7 @@ BENTLEYDTM_Public int bcdtmList_copySptrListToPointListDtmObject(BC_DTM_OBJ *dtm
 */
     *numPntListP = numPoints ;
     *pntListPP = (long * ) malloc( *numPntListP * sizeof(long)) ;
-    if( *pntListPP == NULL )
+    if( *pntListPP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -5596,7 +5633,7 @@ BENTLEYDTM_Public int bcdtmList_copyPointListToTptrListDtmObject(BC_DTM_OBJ *dtm
 /*
 ** Copy Point List To Tptr List
 */
-  if( pntListP != NULL )
+  if( pntListP != nullptr )
    {
     *startPointP = *pntListP ;
     for( longP = pntListP ; longP < pntListP + numPntList - 1 ; ++longP )
@@ -6314,19 +6351,19 @@ BENTLEYDTM_Public int bcdtmList_insertTptrPolygonAroundPointDtmObject(BC_DTM_OBJ
 */
 {
  int   ret=DTM_SUCCESS ;
- long  sp,lp,np,clc,extPoint ;
+ long  sp, lp, np, clc;
+ bool  extPoint = false;
 /*
 ** Initialise
 */
- extPoint = FALSE ;
  *startPntP = dtmP->nullPnt ;
  if( point < 0 || point >= dtmP->numPoints ) goto errexit ;
  if( nodeAddrP(dtmP,point)->cPtr == dtmP->nullPtr ) goto errexit ;
- if( nodeAddrP(dtmP,point)->hPtr != dtmP->nullPnt ) extPoint = TRUE ;
+ if( nodeAddrP(dtmP,point)->hPtr != dtmP->nullPnt ) extPoint = true ;
 /*
 ** Set Tptr Polygon Around Internal Point
 */
- if( extPoint == FALSE )
+ if( extPoint == false )
    {
     clc = nodeAddrP(dtmP,point)->cPtr ;
     sp = *startPntP = clistAddrP(dtmP,clc)->pntNum ;
@@ -6343,7 +6380,7 @@ BENTLEYDTM_Public int bcdtmList_insertTptrPolygonAroundPointDtmObject(BC_DTM_OBJ
 /*
 ** Set Tptr Polygon Around External Point
 */
- if( extPoint == TRUE )
+ if( extPoint == true )
    {
     sp = lp = nodeAddrP(dtmP,point)->hPtr ;
     nodeAddrP(dtmP,point)->tPtr = lp ;
@@ -6445,7 +6482,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListFromDtmObjectToDtmObject
 {
  int   ret=DTM_SUCCESS ;
  long  sp,numPts ;
- DPoint3d   *p3dP,*featurePtsP=NULL ;
+ DPoint3d   *p3dP,*featurePtsP=nullptr ;
  DPoint3d *pointP ;
 /*
 ** Check For Valid Dtm Objects
@@ -6474,7 +6511,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListFromDtmObjectToDtmObject
 ** Allocate Memory For Feature Points
 */
  featurePtsP = ( DPoint3d * ) malloc ( numPts * sizeof(DPoint3d)) ;
- if( featurePtsP == NULL )
+ if( featurePtsP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -6515,7 +6552,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListFromDtmObjectToDtmObject
 /*
 ** Job Completed
 */
- if( featurePtsP != NULL ) free(featurePtsP) ;
+ if( featurePtsP != nullptr ) free(featurePtsP) ;
  return(ret) ;
 /*
 ** Error Exit
@@ -6565,7 +6602,7 @@ BENTLEYDTM_Public int bcdtmList_copyCircularListPointsToPointArrayFromDtmObjectT
 ** Initialise
 */
  *numCirPtsP = 0 ;
- if( *cirPtsPP != NULL ) { free(*cirPtsPP) ; *cirPtsPP = NULL ; }
+ if( *cirPtsPP != nullptr ) { free(*cirPtsPP) ; *cirPtsPP = nullptr ; }
 /*
 ** Check For Valid Dtm Object
 */
@@ -6623,7 +6660,7 @@ BENTLEYDTM_Public int bcdtmList_copyCircularListPointsToPointArrayFromDtmObjectT
 **  Allocate memory
 */
     *cirPtsPP = ( DPoint3d * ) malloc( *numCirPtsP * sizeof(DPoint3d)) ;
-    if( *cirPtsPP == NULL )
+    if( *cirPtsPP == nullptr )
       {
        bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
        *numCirPtsP = 0 ;
@@ -6684,7 +6721,7 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(BC
 ** Initialise
 */
  *numPointFeatures = 0 ;
- if( *pointFeatures != NULL ) { free(*pointFeatures) ; *pointFeatures = NULL ; }
+ if( *pointFeatures != nullptr ) { free(*pointFeatures) ; *pointFeatures = nullptr ; }
 /*
 ** Scan P1 And Test For Requested Feature Type
 */
@@ -6717,9 +6754,9 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(BC
        if( *numPointFeatures == memFeatureTable )
          {
           memFeatureTable = memFeatureTable + memInc ;
-          if( *pointFeatures == NULL ) *pointFeatures = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+          if( *pointFeatures == nullptr ) *pointFeatures = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
           else                         *pointFeatures = ( DTMTinPointFeatures * ) realloc ( *pointFeatures , memFeatureTable * sizeof(DTMTinPointFeatures)) ;
-          if( *pointFeatures == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( *pointFeatures == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
 **     Store Point Feature
@@ -6770,7 +6807,7 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(BC_
 ** Initialise
 */
  *numLineFeatures = 0 ;
- if( *lineFeatures != NULL ) { free(*lineFeatures) ; *lineFeatures = NULL ; }
+ if( *lineFeatures != nullptr ) { free(*lineFeatures) ; *lineFeatures = nullptr ; }
 /*
 ** Scan P1 And Test For Connection To P2
 */
@@ -6786,9 +6823,9 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(BC_
        if( *numLineFeatures == memFeatureTable )
          {
           memFeatureTable = memFeatureTable + memInc ;
-          if( *lineFeatures == NULL ) *lineFeatures = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+          if( *lineFeatures == nullptr ) *lineFeatures = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
           else                        *lineFeatures = ( DTMTinPointFeatures * ) realloc ( *lineFeatures , memFeatureTable * sizeof(DTMTinPointFeatures)) ;
-          if( *lineFeatures == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( *lineFeatures == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
 **     Store Point Feature
@@ -6884,7 +6921,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getBreakLineUsertagsAtPointDtmObject
 ** Validate
 */
  *numUserTagsP = 0 ;
- if( *userTagsPP != NULL ) { bcdtmWrite_message(1,0,0,"userTagsPP Array Not Initialised To Null") ; goto errexit ; }
+ if( *userTagsPP != nullptr ) { bcdtmWrite_message(1,0,0,"userTagsPP Array Not Initialised To Null") ; goto errexit ; }
 /*
 ** Check For Valid Dtm Object
 */
@@ -6926,7 +6963,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getBreakLineUsertagsAtPointDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  *numUserTagsP = 0 ;
- if( *userTagsPP != NULL ) { free(*userTagsPP) ; *userTagsPP = NULL ; }
+ if( *userTagsPP != nullptr ) { free(*userTagsPP) ; *userTagsPP = nullptr ; }
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -7004,7 +7041,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getBreakLineUsertagsAtTinPointDtmObject
 ** Validate
 */
  if( tinPoint < 0 || tinPoint >= dtmP->numPoints ) { bcdtmWrite_message(2,0,0,"Tin Point Range Error") ; goto errexit ; }
- if( *userTagsPP != NULL ) { bcdtmWrite_message(2,0,0,"userTagsPP Not Initialised To Null") ; goto errexit ; }
+ if( *userTagsPP != nullptr ) { bcdtmWrite_message(2,0,0,"userTagsPP Not Initialised To Null") ; goto errexit ; }
 /*
 ** If Not A Void Point Get Dtm Feature List For Point
 */
@@ -7032,7 +7069,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getBreakLineUsertagsAtTinPointDtmObject
 */
        *numUserTagsP = numBreak ;
        *userTagsPP = ( DTMUserTag * ) malloc( *numUserTagsP * sizeof(DTMUserTag)) ;
-       if( *userTagsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( *userTagsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **     Copy Break Line User Tags To userTagsPP
 */
@@ -7061,7 +7098,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getBreakLineUsertagsAtTinPointDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  *numUserTagsP = 0 ;
- if( *userTagsPP != NULL ) { free(*userTagsPP) ; *userTagsPP = NULL ; }
+ if( *userTagsPP != nullptr ) { free(*userTagsPP) ; *userTagsPP = nullptr ; }
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -7112,7 +7149,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedBreakLineUsertagsAtPointDtmObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    p,clc,npt,addToList,memTags=0,memTagsInc=10,numBrkUserTags ;
- DTMUserTag *brkUserTagsP=NULL,*tagP ;
+ DTMUserTag *brkUserTagsP=nullptr,*tagP ;
 /*
 ** Write Debug Information
 */
@@ -7129,7 +7166,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedBreakLineUsertagsAtPointDtmObject
 ** Validate
 */
  *numUserTagsP = 0 ;
- if( *userTagsPP != NULL ) { bcdtmWrite_message(1,0,0,"userTagsPP Array Not Initialised To Null") ; goto errexit ; }
+ if( *userTagsPP != nullptr ) { bcdtmWrite_message(1,0,0,"userTagsPP Array Not Initialised To Null") ; goto errexit ; }
 /*
 ** Check For Valid Dtm Object
 */
@@ -7190,16 +7227,16 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedBreakLineUsertagsAtPointDtmObject
                    if( *numUserTagsP == memTags )
                      {
                       memTags = memTags + memTagsInc ;
-                      if( *userTagsPP == NULL ) *userTagsPP = (DTMUserTag*)malloc ( memTags * sizeof(DTMUserTag)) ;
+                      if( *userTagsPP == nullptr ) *userTagsPP = (DTMUserTag*)malloc ( memTags * sizeof(DTMUserTag)) ;
                       else                      *userTagsPP = (DTMUserTag*)realloc( *userTagsPP , memTags * sizeof(DTMUserTag)) ;
-                      if( *userTagsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                      if( *userTagsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                      }
                    *(*userTagsPP+*numUserTagsP) = *(brkUserTagsP+npt) ;
                    ++*numUserTagsP ;
                   }
                }
              free(brkUserTagsP) ;
-             brkUserTagsP = NULL ;
+             brkUserTagsP = nullptr ;
             }
          }
       }
@@ -7212,7 +7249,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedBreakLineUsertagsAtPointDtmObject
 ** Clean Up
 */
  cleanup :
- if( brkUserTagsP != NULL ) free(brkUserTagsP) ;
+ if( brkUserTagsP != nullptr ) free(brkUserTagsP) ;
 /*
 ** Return
 */
@@ -7225,7 +7262,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedBreakLineUsertagsAtPointDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  *numUserTagsP = 0 ;
- if( *userTagsPP != NULL ) { free(*userTagsPP) ; *userTagsPP = NULL ; }
+ if( *userTagsPP != nullptr ) { free(*userTagsPP) ; *userTagsPP = nullptr ; }
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -7255,7 +7292,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedUsertagsDtmObject
 **
 ** 1. No Validity Checking On The Tin Object
 ** 2. No Validity Checking On User Tag
-** 3. userTagsPP checked if set to NULL
+** 3. userTagsPP checked if set to nullptr
 **
 ** Return Values
 **
@@ -7271,7 +7308,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedUsertagsDtmObject
  long    nt,dtmFeature,tinPoint,inList,memTags=0,memTagsInc=100,numFeatures ;
  DTMUserTag            utag ;
  BC_DTM_FEATURE          *dtmFeatureP ;
- DTMTinPointFeatures  *featP,*featuresP=NULL ;
+ DTMTinPointFeatures  *featP,*featuresP=nullptr ;
  bvector<DTMTinPointFeatures> features;
 /*
 ** Write Status Message
@@ -7284,7 +7321,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedUsertagsDtmObject
 /*
 ** Validate
 */
- if( *userTagsPP != NULL ) { bcdtmWrite_message(1,0,0,"userTagsPP Not NULL") ; goto errexit ; }
+ if( *userTagsPP != nullptr ) { bcdtmWrite_message(1,0,0,"userTagsPP Not nullptr") ; goto errexit ; }
 /*
 ** Check For Valid Dtm Object
 */
@@ -7346,9 +7383,9 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedUsertagsDtmObject
                 if( *numUserTagsP == memTags )
                   {
                    memTags = memTags + memTagsInc ;
-                   if( *userTagsPP == NULL ) *userTagsPP = ( DTMUserTag *) malloc( memTags * sizeof(DTMUserTag)) ;
+                   if( *userTagsPP == nullptr ) *userTagsPP = ( DTMUserTag *) malloc( memTags * sizeof(DTMUserTag)) ;
                    else                      *userTagsPP = ( DTMUserTag *) realloc( *userTagsPP,memTags*sizeof(DTMUserTag)) ;
-                   if( *userTagsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto  errexit ; }
+                   if( *userTagsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto  errexit ; }
                   }
 /*
 **              Store User Tag In List
@@ -7384,7 +7421,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedUsertagsDtmObject
 */
  errexit :
  *numUserTagsP = 0 ;
- if( *userTagsPP != NULL ) { free(*userTagsPP) ; *userTagsPP = NULL ; }
+ if( *userTagsPP != nullptr ) { free(*userTagsPP) ; *userTagsPP = nullptr ; }
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
@@ -7427,7 +7464,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractDtmFeatureForUsertagDtmObject
  *numFeaturesP    = 0 ;
  *numFeaturePtsP  = 0 ;
  *featureTypeP    = DTM_NULL_PNT ;
- if( *featurePtsPP != NULL ) { free(*featurePtsPP) ; *featurePtsPP = NULL ; }
+ if( *featurePtsPP != nullptr ) { free(*featurePtsPP) ; *featurePtsPP = nullptr ; }
 /*
 ** Test For Valid Data Object
 */
@@ -7619,15 +7656,15 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
 {
  int     ret=DTM_SUCCESS;
  long    sp,np,pp,nf,numPrior,numNext,numFeat,inList ;
- DTMFeatureType *priorDtmFeatureTypesP = NULL, *nextDtmFeatureTypesP = NULL;
- DTMUserTag *priorUserTagsP=NULL,*nextUserTagsP=NULL ;
+ DTMFeatureType *priorDtmFeatureTypesP = nullptr, *nextDtmFeatureTypesP = nullptr;
+ DTMUserTag *priorUserTagsP=nullptr,*nextUserTagsP=nullptr ;
  P3DTAG  *hullP ;
  FEATTAG *ftP,*ft1P,*ft2P ;
 /*
 ** Validate Input Parameters
 */
  *numHullPtsP = 0 ;
- if( *hullPtsPP != NULL ) { bcdtmWrite_message(1,0,0,"Hull Points Not Initialised To Null") ; goto errexit ; }
+ if( *hullPtsPP != nullptr ) { bcdtmWrite_message(1,0,0,"Hull Points Not Initialised To Null") ; goto errexit ; }
 /*
 ** Count Number of Points In Hull
 */
@@ -7642,7 +7679,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
 ** Allocate Memory To Store Hull Points
 */
  *hullPtsPP = ( P3DTAG * ) malloc(*numHullPtsP*sizeof(P3DTAG)) ;
- if( *hullPtsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( *hullPtsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Store Hull Points
 */
@@ -7656,7 +7693,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
     hullP->y = pointAddrP(dtmP,sp)->y  ;
     hullP->z = pointAddrP(dtmP,sp)->z  ;
     hullP->NumberOfTags = 0 ;
-    hullP->Tags = NULL ;
+    hullP->Tags = nullptr ;
 /*
 ** Get Dtm Features And Tags For Hull Point
 */
@@ -7672,7 +7709,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
 **      Allocate memory For Dtm Features And Tags
 */
        hullP->Tags = ( FEATTAG *) malloc( numFeat*sizeof(FEATTAG)) ;
-       if( hullP->Tags == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( hullP->Tags == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **    Copy Prior Dtm Features And UserTags To hullp->Tag Array
 */
@@ -7706,12 +7743,12 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
 /*
 **     Free memory
 */
-       free(priorDtmFeatureTypesP) ; priorDtmFeatureTypesP = NULL ;
-       free(priorUserTagsP)    ; priorUserTagsP    = NULL ;
-       free (nextDtmFeatureTypesP); nextDtmFeatureTypesP = NULL;
-       free(nextUserTagsP)     ; nextUserTagsP     = NULL ;
+       free(priorDtmFeatureTypesP) ; priorDtmFeatureTypesP = nullptr ;
+       free(priorUserTagsP)    ; priorUserTagsP    = nullptr ;
+       free (nextDtmFeatureTypesP); nextDtmFeatureTypesP = nullptr;
+       free(nextUserTagsP)     ; nextUserTagsP     = nullptr ;
       }
-    else hullP->Tags = NULL ;
+    else hullP->Tags = nullptr ;
 /*
 ** Reset For Next Hull Point
 */
@@ -7728,16 +7765,16 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
  hullP->z = (*hullPtsPP)->z ;
  hullP->NumberOfTags = (*hullPtsPP)->NumberOfTags ;
  hullP->Tags = ( FEATTAG *) malloc(hullP->NumberOfTags*sizeof(FEATTAG)) ;
- if( hullP->Tags == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( hullP->Tags == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
  memcpy(hullP->Tags,(*hullPtsPP)->Tags,hullP->NumberOfTags*sizeof(FEATTAG)) ;
 /*
 ** Clean Up
 */
  cleanup :
- if( priorDtmFeatureTypesP != NULL ) free(priorDtmFeatureTypesP) ;
- if( priorUserTagsP    != NULL ) free(priorUserTagsP) ;
- if (nextDtmFeatureTypesP != NULL) free (nextDtmFeatureTypesP);
- if( nextUserTagsP     != NULL ) free(nextUserTagsP) ;
+ if( priorDtmFeatureTypesP != nullptr ) free(priorDtmFeatureTypesP) ;
+ if( priorUserTagsP    != nullptr ) free(priorUserTagsP) ;
+ if (nextDtmFeatureTypesP != nullptr) free (nextDtmFeatureTypesP);
+ if( nextUserTagsP     != nullptr ) free(nextUserTagsP) ;
 /*
 ** Job Completed
 */
@@ -7750,13 +7787,13 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithConnectingUserTagsDtmObject(BC_DT
 /*
 ** Free memory
 */
- if( *hullPtsPP != NULL )
+ if( *hullPtsPP != nullptr )
    {
     for( hullP = *hullPtsPP ; hullP < *hullPtsPP + *numHullPtsP ; ++hullP)
       {
-       if( hullP->Tags != NULL ) { free(hullP->Tags) ; hullP->Tags = NULL ; }
+       if( hullP->Tags != nullptr ) { free(hullP->Tags) ; hullP->Tags = nullptr ; }
       }
-    free(*hullPtsPP) ; *hullPtsPP = NULL ;
+    free(*hullPtsPP) ; *hullPtsPP = nullptr ;
    }
  goto cleanup ;
 }
@@ -7807,8 +7844,8 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeaturesAndUserTagsForTinLineDtmObject(BC_
 */
  if( P1 < 0 || P1 >= dtmP->numPoints ) { bcdtmWrite_message(2,0,0,"Tin Point Range Error") ; goto errexit ; }
  if( P2 < 0 || P2 >= dtmP->numPoints ) { bcdtmWrite_message(2,0,0,"Tin Point Range Error") ; goto errexit ; }
- if (*dtmFeaturesTypesPP != NULL) { bcdtmWrite_message (2, 0, 0, "dtmFeaturesPP Not Initialised To Null"); goto errexit; }
- if( *dtmUserTagsPP != NULL ) { bcdtmWrite_message(2,0,0,"dtmUserTagsPP Not Initialised To Null") ; goto errexit ; }
+ if (*dtmFeaturesTypesPP != nullptr) { bcdtmWrite_message (2, 0, 0, "dtmFeaturesPP Not Initialised To Null"); goto errexit; }
+ if( *dtmUserTagsPP != nullptr ) { bcdtmWrite_message(2,0,0,"dtmUserTagsPP Not Initialised To Null") ; goto errexit ; }
 /*
 ** Count Number Of Dtm Features At Point
 */
@@ -7841,7 +7878,7 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeaturesAndUserTagsForTinLineDtmObject(BC_
 */
    *dtmFeaturesTypesPP = (DTMFeatureType *)malloc (*numFeaturesP * sizeof(DTMFeatureType));
     *dtmUserTagsPP = ( DTMUserTag *) malloc(*numFeaturesP * sizeof(DTMUserTag)) ;
-    if( *dtmFeaturesTypesPP == NULL || *dtmUserTagsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if( *dtmFeaturesTypesPP == nullptr || *dtmUserTagsPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **  Copy dtmFeaturesPP And dtmUserTagsPP To User Arrays
 */
@@ -7962,13 +7999,13 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
  long    np,nf,numPointFeatures ;
  P3DTAG  *hullP ;
  FEATTAG *ftP   ;
- DTMTinPointFeatures *pointFeaturesP=NULL ;
+ DTMTinPointFeatures *pointFeaturesP=nullptr ;
  bvector<DTMTinPointFeatures> pointFeatures;
 /*
 ** Validate Input Parameters
 */
  *numHullPtsP = 0 ;
- if( *hullPtsPP != NULL ) { bcdtmWrite_message(1,0,0,"Hull Points Not Initialised To Null") ; goto errexit ; }
+ if( *hullPtsPP != nullptr ) { bcdtmWrite_message(1,0,0,"Hull Points Not Initialised To Null") ; goto errexit ; }
 /*
 ** Count Number of Points In Hull
 */
@@ -7983,7 +8020,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
 ** Allocate Memory To Store Hull Points
 */
  *hullPtsPP = ( P3DTAG * ) malloc(*numHullPtsP*sizeof(P3DTAG)) ;
- if( *hullPtsPP == NULL )
+ if( *hullPtsPP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -7999,7 +8036,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
     hullP->y = pointAddrP(dtmP,np)->y  ;
     hullP->z = pointAddrP(dtmP,np)->z  ;
     hullP->NumberOfTags = 0 ;
-    hullP->Tags = NULL ;
+    hullP->Tags = nullptr ;
 /*
 **  Get Dtm Feature Types And Tags For Hull Point
 */
@@ -8015,7 +8052,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
 **     Allocate memory For Dtm featureTypesP And Tags
 */
        hullP->Tags = ( FEATTAG *) malloc( numPointFeatures*sizeof(FEATTAG)) ;
-       if( hullP->Tags == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( hullP->Tags == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **     Copy Dtm Feature Types And userTagsP To hullp->Tag Array
 */
@@ -8028,9 +8065,9 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
 /*
 **     Free memory
 */
-       if( pointFeaturesP != NULL ) { free(pointFeaturesP) ; pointFeaturesP = NULL ;}
+       if( pointFeaturesP != nullptr ) { free(pointFeaturesP) ; pointFeaturesP = nullptr ;}
       }
-    else hullP->Tags = NULL ;
+    else hullP->Tags = nullptr ;
 /*
 ** Reset For Next Hull Point
 */
@@ -8045,7 +8082,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
  hullP->z = (*hullPtsPP)->z ;
  hullP->NumberOfTags = (*hullPtsPP)->NumberOfTags ;
  hullP->Tags = ( FEATTAG *) malloc(hullP->NumberOfTags*sizeof(FEATTAG)) ;
- if( hullP->Tags == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( hullP->Tags == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
  memcpy(hullP->Tags,(*hullPtsPP)->Tags,hullP->NumberOfTags*sizeof(FEATTAG)) ;
 /*
 ** Clean Up
@@ -8063,13 +8100,13 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
 /*
 ** Free memory
 */
- if( *hullPtsPP != NULL )
+ if( *hullPtsPP != nullptr )
    {
     for( hullP = *hullPtsPP ; hullP < *hullPtsPP + *numHullPtsP ; ++hullP)
       {
-       if( hullP->Tags != NULL ) { free(hullP->Tags) ; hullP->Tags = NULL ; }
+       if( hullP->Tags != nullptr ) { free(hullP->Tags) ; hullP->Tags = nullptr ; }
       }
-    free(*hullPtsPP) ; *hullPtsPP = NULL ;
+    free(*hullPtsPP) ; *hullPtsPP = nullptr ;
    }
  goto cleanup ;
 }
@@ -8361,7 +8398,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObject
          }
        process = 1 ;
        fPtr = nodeAddrP(dtmP,P1)->fPtr ;
-       while ( fPtr != dtmP->nullPtr && voidLine == FALSE && process )
+       while ( fPtr != dtmP->nullPtr && voidLine == false && process )
          {
          auto flistP = flistAddrP(dtmP, fPtr);
           if( flistP->nextPnt == P2 ) process = 0 ;  // Consecutive Points On Hull
@@ -8536,8 +8573,9 @@ BENTLEYDTM_Public int bcdtmList_testForPointBetweenCircularListPointsDtmObject
 )
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long clPtr,firstPntFnd ;
- DTM_CIR_LIST *clistP=NULL ;
+ long clPtr;
+ bool firstPntFnd;
+ DTM_CIR_LIST *clistP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -8572,18 +8610,18 @@ BENTLEYDTM_Public int bcdtmList_testForPointBetweenCircularListPointsDtmObject
 **  Scan To First Point
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning To First Point ** %8ld",firstPoint) ;
-    firstPntFnd = FALSE ;
-    while( clPtr != dtmP->nullPtr && firstPntFnd == FALSE )
+    firstPntFnd = false ;
+    while( clPtr != dtmP->nullPtr && firstPntFnd == false )
       {
        clistP = clistAddrP(dtmP,clPtr) ;
        if( dbg ) bcdtmWrite_message(0,0,0,"**** %8ld",clistP->pntNum) ;
-       if( clistP->pntNum == firstPoint ) firstPntFnd = TRUE ;
+       if( clistP->pntNum == firstPoint ) firstPntFnd = true ;
        else                               clPtr = clistP->nextPtr ;
       }
 /*
 **  Scan To Second Point
 */
-    if( firstPntFnd == TRUE )
+    if( firstPntFnd == true )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Scanning To Last Point ** %8ld",lastPoint) ;
        do

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LandXMLExporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -576,7 +576,7 @@ void LandXMLExporter::WriteFeatureStuff (WStringCR nodeType, const DTMLandXMLFea
 WString LandXMLExporter::FormatDouble (double const& val)
     {
     WString sVal;
-    sVal.Sprintf (L"%f", val);
+    sVal.Sprintf (L"%.17g", val);
     return sVal;
     }
 

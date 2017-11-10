@@ -4065,7 +4065,7 @@ DTMStatusInt BcDTM::_GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMP
         BENTLEY_NAMESPACE_NAME::Transform trfs;
         BENTLEY_NAMESPACE_NAME::Transform curTrfs;
 
-        if (_dtmTransformHelper.IsValid() && _dtmTransformHelper->GetTransformationFromDTM (curTrfs))
+        if (_dtmTransformHelper.IsValid() && !_dtmTransformHelper->GetTransformationFromDTM (curTrfs))
             trfs.InitProduct (curTrfs, transformation);
         else
             trfs = transformation;

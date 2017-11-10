@@ -1538,7 +1538,7 @@ BENTLEYDTM_Private                     int bcdtmWrite_xyzBinaryFileToDtmFeatureF
 BENTLEYDTM_EXPORT                      int bcdtmWrite_xyzFileToDtmFeatureFile (WCharCP xyzFileNameP, WCharCP dtmFileNameP);
 
 ///////// bcdtmWriteStream/////////
-BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
+BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
 BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
 BENTLEYDTM_Private                     int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
 BENTLEYDTM_Public                      int bcdtmWriteStream_writeAtFilePositionGeopakTinObjectDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
