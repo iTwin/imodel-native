@@ -2905,7 +2905,14 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
         
     for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
         {
-        bool    coverClosed = (0 == iProfile || (!periodic && iProfile+1 == nProfiles)); // NOTE: Only end caps may be sheet bodies...
+        bool coverClosed = (0 == iProfile || (!periodic && iProfile+1 == nProfiles)); // NOTE: Only end caps may be sheet bodies...
+
+        // Degenerate point profile is allowed for first or last profile...
+        if (coverClosed && SUCCESS == (status = degeneratePointFromCurveVector(profileBodies[iProfile], *profiles[iProfile], dgnToSolid)))
+            {
+            startVertices[iProfile] = PK_ENTITY_null;
+            continue;
+            }
 
         if (SUCCESS != (status = PSolidGeom::BodyFromCurveVector (profileBodies[iProfile], &startVertices[iProfile], *profiles[iProfile], dgnToSolid, coverClosed)))
             break;
