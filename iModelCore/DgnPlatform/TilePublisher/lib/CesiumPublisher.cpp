@@ -41,6 +41,7 @@ DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
 
     return viewId;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -149,7 +150,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
 
     Json::Value     revisionsJson;
     if (params.WantHistory() &&
-        TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params))
+        TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
         json["revisions"] = std::move(revisionsJson);
 
     if (Status::Success != (status = WriteAppJson (json)) ||
