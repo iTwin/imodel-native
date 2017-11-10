@@ -8,8 +8,6 @@
 #include "LinearReferencingInternal.h"
 #include <LinearReferencing/ILinearElement.h>
 
-HANDLER_DEFINE_MEMBERS(GeometricElementAsReferentHandler)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -356,22 +354,4 @@ void ILinearlyLocatedSingleFromTo::SetToDistanceAlong(double newFrom)
     BeAssert(locationP);
 
     return locationP->GetToPositionR().SetDistanceAlongFromStart(newFrom);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId GeometricElementAsReferent::QueryGeometricElementId() const
-    {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT SourceECInstanceId FROM " BLR_SCHEMA(BLR_REL_GeometricElementDrivesReferent)
-        " WHERE TargetECInstanceId = ?");
-    BeAssert(stmtPtr.IsValid());
-
-    stmtPtr->BindId(1, GetElementId());
-
-    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
-        return DgnElementId();
-
-    return stmtPtr->GetValueId<DgnElementId>(0);
     }

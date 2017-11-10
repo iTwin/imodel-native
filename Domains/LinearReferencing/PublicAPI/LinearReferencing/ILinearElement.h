@@ -259,39 +259,4 @@ public:
     LINEARREFERENCING_EXPORT NullableDouble GetRestartValue() const { return _GetRestartValue(); }    
 }; // IReferent
 
-//=======================================================================================
-//! Specialization of IReferent implemented by referents that are linearly-located.
-//! @see IReferent
-//! @ingroup GROUP_LinearReferencing
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElementAsReferent : Dgn::SpatialLocationElement, IReferent
-{
-    DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_GeometricElementAsReferent, Dgn::SpatialLocationElement);
-    friend struct GeometricElementAsReferentHandler;
-
-protected:
-    //! @private
-    explicit GeometricElementAsReferent(CreateParams const& params) : T_Super(params) {}
-
-    virtual DPoint3d _GetSpatialLocation() const { return DPoint3d(); }
-    virtual Dgn::DgnElementCR _IReferentToDgnElement() const override { return *this; }
-    virtual NullableDouble _GetRestartValue() const override { return NullableDouble(); }
-
-public:
-    DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(GeometricElementAsReferent)
-
-    LINEARREFERENCING_EXPORT DPoint3d GetSpatialLocation() const { return _GetSpatialLocation(); }
-    LINEARREFERENCING_EXPORT Dgn::DgnElementId QueryGeometricElementId() const;
-}; // GeometricElementReferent
-
-
-//=================================================================================
-//! ElementHandler for GeometricElementAsReferent Element
-//! @ingroup GROUP_LinearReferencing
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElementAsReferentHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_GeometricElementAsReferent, GeometricElementAsReferent, GeometricElementAsReferentHandler, Dgn::dgn_ElementHandler::SpatialLocation, LINEARREFERENCING_EXPORT)
-}; // GeometricElementAsReferentHandler
-
 END_BENTLEY_LINEARREFERENCING_NAMESPACE
