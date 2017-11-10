@@ -778,8 +778,7 @@ void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool h
     if (isThisMyFile)
         haveFoundSpatialRoot = true;
 
-    if (!m_spatialModelsSeen.insert(&thisV8Model).second)
-        return;
+    m_spatialModelsSeen.insert(&thisV8Model);   // Note that we may very well encounter the same model via more than one attachment path. Each path may have a different setting for nesting depth, so keep going.
 
     m_spatialModelsInAttachmentOrder.push_back(&thisV8Model);
 
