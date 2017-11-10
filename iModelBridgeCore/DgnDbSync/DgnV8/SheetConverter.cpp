@@ -129,6 +129,7 @@ double Converter::SheetsComputeScale(DgnV8ModelCR v8SheetModel)
         return 1.0;
 
     bvector<ScaleVote> votes;
+    size_t totalVotesCast = 0;
     for (DgnV8Api::DgnAttachment* v8DgnAttachment : *attachments)
         {
         // We only care about scaled attachments. 
@@ -159,21 +160,24 @@ double Converter::SheetsComputeScale(DgnV8ModelCR v8SheetModel)
             iFound->votes++;
         else
             votes.push_back(ScaleVote(dscale, 1));
+
+        ++totalVotesCast;
         }
 
     if (votes.size() == 0)
         return 1.0;
 
-    // Obviously, if there's only one attachment, then it determines the scale
     if (votes.size() == 1)
-        return votes.front().scale;
+        return votes.front().scale;     // It's unanimous
 
-    // If there are many attachments, see which scale is used most often
-    std::sort(votes.begin(), votes.end(), [](ScaleVote const& lhs, ScaleVote const& rhs) {return lhs.votes - rhs.votes;});
+    // If there are many attachments, see which scale is used most often. That is, sort by #votes, from highest to lowest.
+    std::sort(votes.begin(), votes.end(), [](ScaleVote const& lhs, ScaleVote const& rhs) {
+        return lhs.votes > rhs.votes;
+        });
     
     auto const& mostPopular = votes[0];
     // If one scale is used by two thirds or more of the attachments, then we can reasonably infer that that is the sheet's scale.
-    if ((mostPopular.votes / (double)votes.size()) > 0.6)
+    if ((mostPopular.votes / (double)totalVotesCast) > 0.6)
         {
         return mostPopular.scale;
         }
