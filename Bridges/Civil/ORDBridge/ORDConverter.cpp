@@ -646,7 +646,6 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
     auto roadwayPtr = RoadRailBim::Roadway::Create(*m_bimPhysicalModelPtr);
 
     ORDConverterUtils::AssignFederationGuid(*roadwayPtr, cifCorridor.GetSyncId());
-    RoadRailBim::StatusAspect::Set(*roadwayPtr, *RoadRailBim::StatusAspect::Create(RoadRailBim::StatusAspect::Status::Proposed));
 
     if (!WString::IsNullOrEmpty(cifCorridor.GetName().c_str()))
         roadwayPtr->SetUserLabel(Utf8String(cifCorridor.GetName().c_str()).c_str());
