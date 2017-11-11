@@ -454,7 +454,24 @@ void IDTMSource::Impl::_NotifyOfLastEditUpdate (Time updatedLastEditTime)
 bool IDTMSource::Impl::_IsReachable () const
     {
     if (BeFileName::IsUrl(m_path.c_str()))
-        return true;
+        {
+        
+        assert(m_sourceDataType == DTM_SOURCE_DATA_IMAGE);        
+
+        try
+            {
+            HFCPtr<HFCURL> pUrl(HFCURL::Instanciate(m_path));
+
+            assert(pUrl != nullptr);
+            //Currently only Bing, use Image++ to ensure the URL can be accessed.
+            HRFRasterFileFactory::GetInstance()->OpenFile(pUrl, HFC_SHARE_READ_ONLY);
+            return true;
+            }
+        catch (HFCException&)
+            {
+            return false;
+            }
+        }           
 
     return std::ifstream(m_path.c_str()).good();
     }
@@ -595,8 +612,29 @@ LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const WString& IDTMLocalFileSource::Impl::GetPath (StatusInt& status) const
     {
-    if (BeFileName::DoesPathExist(m_path.c_str()) || BeFileName::IsUrl(m_path.c_str()))
+    if (BeFileName::IsUrl(m_path.c_str()))
+        {
+        assert(m_sourceDataType == DTM_SOURCE_DATA_IMAGE);
+
+        try
+            {
+            HFCPtr<HFCURL> pUrl(HFCURL::Instanciate(m_path));
+
+            assert(pUrl != nullptr);
+            //Currently only Bing, use Image++ to ensure the URL can be accessed.
+            HRFRasterFileFactory::GetInstance()->OpenFile(pUrl, HFC_SHARE_READ_ONLY);
+            status = BSISUCCESS;
+            }
+        catch (HFCException&)
+            {            
+            status = BSIERROR;            
+            }
+        }
+    else
+    if (BeFileName::DoesPathExist(m_path.c_str()))
+        {
         status = BSISUCCESS;
+        }
     else
         status = BSIERROR;
         
