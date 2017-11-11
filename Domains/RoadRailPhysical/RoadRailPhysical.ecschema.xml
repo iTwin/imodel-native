@@ -3,8 +3,8 @@
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
-    <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
-    
+    <!--ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/-->
+
     <ECEntityClass typeName="RoadRailCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
