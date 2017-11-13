@@ -48,8 +48,24 @@ struct ImportXData : public DwgImporter
     {
     DEFINE_T_SUPER (DwgImporter)
 
+    struct SampleOptions
+        {
+    private:
+        Utf8String  m_regappName;
+        bool        m_dumpXrecords;
+
+    public:
+        SampleOptions () : m_dumpXrecords(false) {}
+        // Desired RegApp name to dump entity XData
+        Utf8StringCR    GetRegAppName () const { return m_regappName; }
+        void    SetRegAppName (Utf8StringCR newName) { m_regappName = newName; }
+        // Should also dump xRecords in the dictionary section?
+        bool    ShouldDumpXrecords () const { return m_dumpXrecords; }
+        void    SetShouldDumpXrecords (bool shouldDump) { m_dumpXrecords = shouldDump; }
+        };  // SampleOptions
+
 private:
-    bool        m_dumpXrecords;
+    SampleOptions   m_sampleOptions;
     size_t      m_dumpCount;
     Utf8String  m_xRecordName;
 
@@ -62,7 +78,7 @@ private:
 
 public:
     // Constructor
-    ImportXData (DwgImporter::Options const& options, bool showxr) : T_Super(options), m_dumpXrecords(showxr), m_dumpCount(0) { }
+    ImportXData (DwgImporter::Options const& options, SampleOptions const& sample) : T_Super(options), m_sampleOptions(sample), m_dumpCount(0) { }
     // override _BeginImport when we may optionally dump Xrecord's in dictionaries
     virtual void    _BeginImport () override;
     // Override _ImportEntity to convert both entity and its xdata
@@ -82,12 +98,12 @@ struct ImportXDataSample : public DwgBridge
 private:
     // The effective instance of a DwgImporter:
     std::unique_ptr<ImportXData>    m_importer;
-    // An option to dump xRecords in the dictionary section:
-    bool    m_dumpXrecords;
+    // Options for this sample:
+    ImportXData::SampleOptions      m_sampleOptions;
 
 public:
     // The constructor
-    ImportXDataSample () : T_Super(), m_dumpXrecords(false) {}
+    ImportXDataSample () : T_Super() {}
     // Override this method to parse command arguments specific for this sample app:
     iModelBridge::CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
     void           _PrintUsage () override;
