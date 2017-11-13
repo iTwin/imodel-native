@@ -31,7 +31,7 @@ BEGIN_UNNAMED_NAMESPACE
 struct TileContext;
 
 // Temporary: Disabling edge generation by default until memory consumption issues resolved. Comment out following to re-enable
-#define DISABLE_EDGE_GENERATION
+// #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
