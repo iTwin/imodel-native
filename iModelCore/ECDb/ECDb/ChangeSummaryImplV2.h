@@ -9,79 +9,8 @@
 //_BENTLEY_INTERNAL_ONLY_
 #include "ECDbInternalTypes.h"
 #include <ECDb/ChangeSummaryV2.h>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//=======================================================================================
-// @bsiclass                                              Ramanujam.Raman      10/2017
-//=======================================================================================
-struct ChangesetTable final : NonCopyableClass
-    {
-    private:
-        ChangeSummaryV2CR m_changeSummary;
-        ECDbCR m_ecdb;
-
-    public:
-        mutable ECSqlStatement m_instancesTableDelete;
-    };
-//=======================================================================================
-// @bsiclass                                              Ramanujam.Raman      10/2015
-//=======================================================================================
-struct InstancesTableV2 final : NonCopyableClass
-    {
-    private:
-        ChangeSummaryV2CR m_changeSummary;
-        ECDbCR m_ecdb;
-        mutable ECSqlStatement m_instancesTableDelete;
-        mutable ECSqlStatement m_instancesTableInsert;
-        mutable ECSqlStatement m_instancesTableUpdate;
-        mutable ECSqlStatement m_instancesTableSelect;
-        mutable ECSqlStatement m_findInstance;
-
-        void PrepareStatements();
-
-        void Insert(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName);
-        void Update(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
-
-    public:
-        InstancesTableV2(ChangeSummaryV2CR changeSummary);
-        ~InstancesTableV2() {}
-
-        void Initialize();
-
-        ECDbCR GetDb() const { return m_ecdb; }
-        ChangeSummaryV2CR GetChangeSummary() const { return m_changeSummary; }
-        ECInstanceId GetChangesetId() const { return m_changeSummary.GetId(); }
-        void InsertOrUpdate(ChangeSummaryV2::InstanceCR changeInstance);
-        void Delete(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId);
-        ChangeSummaryV2::Instance QueryChangedInstance(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const;
-        ECInstanceId FindInstanceId(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const;
-        ECN::ECClassId QueryChangedClassId(Utf8StringCR tableName, ECInstanceId changedInstanceId) const;
-        bool ContainsInstance(ECN::ECClassId changedClassId, ECInstanceId changedInstanceId) const;
-    };
-
-//=======================================================================================
-// @bsiclass                                              Ramanujam.Raman      10/2015
-//=======================================================================================
-struct ValuesTableV2 final : NonCopyableClass
-    {
-    private:
-        ChangeSummaryV2CR m_changeSummary;
-        ECDbCR m_ecdb;
-        InstancesTableV2 const& m_instancesTable;
-        Utf8String m_valuesTableNameNoPrefix;
-        mutable ECSqlStatement m_valuesTableInsert;
-
-        void PrepareStatements();
-        static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
-    public:
-        explicit ValuesTableV2(InstancesTableV2 const&);
-        ~ValuesTableV2() {}
-
-        void Initialize();
-
-        void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue);
-        void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId);
-        void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId);
-    };
 
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
@@ -94,15 +23,11 @@ struct ChangeExtractorV2 final : NonCopyableClass
         RelationshipInstancesOnly = 2
         };
 
-    typedef bmap<Utf8String, TableMapPtr> TableMapByName; // TODO: Remove tochange iterator
-
     private:
-        ChangeSummaryV2CR m_changeSummary;
+        ChangeSummaryV2 const& m_changeSummary;
 
-        ECDbCR m_ecdb;
-        mutable TableMapByName m_tableMapByName; // TODO: REmove to ChangeIterator
-        InstancesTableV2& m_instancesTable;
-        ValuesTableV2& m_valuesTable;
+        InstanceChangeManager& m_instanceChangeManager;
+        PropertyValueChangeManager& m_propertyValueChangeManager;
 
         BentleyStatus FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption);
 
@@ -112,19 +37,69 @@ struct ChangeExtractorV2 final : NonCopyableClass
         static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
         int GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntry const& rowEntry) const;
 
-        void ExtractInstance(ChangeIterator::RowEntry const& rowEntry);
-        void RecordInstance(ChangeSummaryV2::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties);
-        bool RecordValue(ChangeSummaryV2::InstanceCR instance, ChangeIterator::ColumnEntry const& columnEntry);
+        BentleyStatus ExtractInstance(ChangeIterator::RowEntry const& rowEntry);
+        BentleyStatus RecordInstance(ChangeSummaryV2::Instance const& instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties);
+        BentleyStatus RecordValue(bool& isNoNeedToRecord, ChangeSummaryV2::Instance const& instance, ChangeIterator::ColumnEntry const& columnEntry);
+        BentleyStatus RecordRelInstance(ChangeSummaryV2::Instance const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
 
-        void ExtractRelInstances(ChangeIterator::RowEntry const& rowEntry);
-        void ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap);
-        void ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, TableClassMap::EndTableRelationshipMap const& endTableRelMap);
+        BentleyStatus ExtractRelInstances(ChangeIterator::RowEntry const& rowEntry);
+        BentleyStatus ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap);
+        BentleyStatus ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, TableClassMap::EndTableRelationshipMap const& endTableRelMap);
         bool ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const;
-        bool RecordRelInstance(ChangeSummaryV2::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
+
+        static bool RawIndirectToBool(int indirect) { return indirect != 0; }
 
     public:
-        ChangeExtractorV2(ChangeSummaryV2CR changeSummary, InstancesTableV2& instancesTable, ValuesTableV2& valuesTable);
+        ChangeExtractorV2(ChangeSummaryV2 const& changeSummary, InstanceChangeManager& instanceChangeManager, PropertyValueChangeManager& propertyValueChangeManager)
+            : m_changeSummary(changeSummary), m_instanceChangeManager(instanceChangeManager), m_propertyValueChangeManager(propertyValueChangeManager)
+            {}
+
         BentleyStatus FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances);
     };
 
+//=======================================================================================
+// @bsiclass                                              Ramanujam.Raman      10/2015
+//=======================================================================================
+struct InstanceChangeManager final : NonCopyableClass
+    {
+    private:
+        ChangeSummaryV2 const& m_changeSummary;
+        ECSqlStatementCache m_stmtCache;
+
+    public:
+        explicit InstanceChangeManager(ChangeSummaryV2 const& changeSummary) : m_changeSummary(changeSummary), m_stmtCache(6) {}
+        ~InstanceChangeManager() {}
+
+        ChangeSummaryV2 const& GetChangeSummary() const { return m_changeSummary; }
+        DbResult InsertOrUpdate(ChangeSummaryV2::Instance const&);
+        DbResult Delete(ECInstanceKey const&);
+        ChangeSummaryV2::Instance QueryChangedInstance(ECInstanceKey const&) const;
+        ECInstanceId FindChangeId(ECInstanceKey const&) const;
+        ECN::ECClassId QueryClassIdOfChangedInstance(Utf8StringCR tableName, ECInstanceId idOfChangedInstance) const;
+        bool ContainsChange(ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(keyOfChangedInstance).IsValid(); }
+    };
+
+//=======================================================================================
+// @bsiclass                                              Ramanujam.Raman      10/2015
+//=======================================================================================
+struct PropertyValueChangeManager final : NonCopyableClass
+    {
+    private:
+        ChangeSummaryV2 const& m_changeSummary;
+        InstanceChangeManager const& m_instancesTable;
+        Utf8String m_valuesTableNameNoPrefix;
+        mutable ECSqlStatement m_valuesTableInsert;
+
+        ECSqlStatus PrepareStatements();
+        static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
+    public:
+        explicit PropertyValueChangeManager(InstanceChangeManager const& tab) : m_instancesTable(tab), m_changeSummary(tab.GetChangeSummary()) {}
+        ~PropertyValueChangeManager() {}
+
+        BentleyStatus Initialize() { return PrepareStatements() == ECSqlStatus::Success ? SUCCESS : ERROR; }
+
+        DbResult Insert(ECInstanceKey const&, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue);
+        DbResult Insert(ECInstanceKey const&, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId);
+        DbResult Insert(ECInstanceKey const&, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId);
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

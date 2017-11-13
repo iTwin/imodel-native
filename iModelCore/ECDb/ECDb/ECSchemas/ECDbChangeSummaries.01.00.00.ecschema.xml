@@ -36,7 +36,7 @@
         <ECProperty propertyName="IdOfChangedInstance" typeName="long" />
         <ECProperty propertyName="ClassIdOfChangedInstance" typeName="long" />
         <ECProperty propertyName="Operation" typeName="Operation"/>
-        <ECProperty propertyName="Indirect" typeName="bool" description="Change happened due to a foreign key action or trigger"/>
+        <ECProperty propertyName="IsIndirect" typeName="bool" description="Change happened due to a foreign key action or trigger"/>
         <ECProperty propertyName="TableName" typeName="string"/>
         <ECNavigationProperty propertyName="Summary" relationshipName="SummaryContainsInstanceChanges" direction="backward" />
     </ECEntityClass>
