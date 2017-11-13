@@ -57,6 +57,6 @@ public:
     DateTimeCR GetCreatedDate() const {return m_createdDate;}
     UserInfoPtr GetOwnerInfo() const { return m_ownerInfo; }
 
-    static void AddOwnerInfoSelect(Utf8StringR);
+    static void AddCreatorInfoSelect(Utf8StringR);
 };
 END_BENTLEY_IMODELHUB_NAMESPACE

@@ -316,7 +316,7 @@ void Briefcase::SubscribeForChangeSetEvents()
             }
         });
     auto subscribeResult = SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
-    m_eventsAvailable = ExecuteAsync(subscribeResult).IsSuccess();
+    m_eventsAvailable = ExecuteAsync(subscribeResult)->IsSuccess();
     }
 
 //---------------------------------------------------------------------------------------
@@ -400,7 +400,7 @@ void Briefcase::CheckCreatingChangeSet() const
             return;
 
         auto creatingChangeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetById(creatingChangeSetId));
-        if (creatingChangeSetResult.IsSuccess())
+        if (creatingChangeSetResult->IsSuccess())
             {
             m_db->Revisions().FinishCreateRevision();
             }
@@ -567,14 +567,14 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
 
     auto versionManager = m_imodelConnection->GetVersionsManager();
 
-    ChangeSetsInfoResult changeSetResult = ExecuteAsync(versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
+    ChangeSetsInfoResultPtr changeSetResult = ExecuteAsync(versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
 
-    if (!changeSetResult.IsSuccess())
+    if (!changeSetResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult->GetError()));
         }
-    auto changeSetInfos = changeSetResult.GetValue();
+    auto changeSetInfos = changeSetResult->GetValue();
 
     auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
     if (!changeSetsResult.IsSuccess())
@@ -610,15 +610,15 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileNotFound));
         }
 
-    ChangeSetsInfoResult changeSetResult;
+    ChangeSetsInfoResultPtr changeSetResult;
     changeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
 
-    if (!changeSetResult.IsSuccess())
+    if (!changeSetResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult.GetError()));
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult->GetError()));
         }
-    auto changeSetInfos = changeSetResult.GetValue();
+    auto changeSetInfos = changeSetResult->GetValue();
 
     auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
     if (!changeSetsResult.IsSuccess())

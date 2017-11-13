@@ -151,7 +151,7 @@ ICancellationTokenPtr cancellationToken
         WSQuery query = WSQuery(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
         query.AddFilterIdsIn(locallyUnavailableUserObjects);
 
-        UsersInfoResult queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > (([=] ()
+        UsersInfoResultPtr queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > (([=] ()
             {
             //Execute query
             return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UsersInfoResult>
@@ -172,10 +172,10 @@ ICancellationTokenPtr cancellationToken
                 });
             })));
 
-            if (!queryUsersResult.IsSuccess())
-                return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult.GetError()));
+            if (!queryUsersResult->IsSuccess())
+                return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult->GetError()));
 
-            for (auto userInfo : queryUsersResult.GetValue())
+            for (auto userInfo : queryUsersResult->GetValue())
                 {
                 usersList.push_back(userInfo);
                 BeMutexHolder lock(s_userInfoCacheMutex);
