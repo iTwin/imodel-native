@@ -157,7 +157,9 @@ protected:
         void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, AxisAlignedBox3dCR projectExtents, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput, GlobeMode globeMode)
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, AxisAlignedBox3dCR projectExtents, BeFileNameCR outputDir, WStringCR tilesetName,
+        GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput,
+        GlobeMode globeMode, bool copyScripts=true)
         : PublisherContext(db, viewIds, outputDir, tilesetName, projectExtents, geoLocation, publishNonSurfaces, maxTilesetDepth, textureMode, globeMode),
           m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput), m_copyScripts(copyScripts)
         {

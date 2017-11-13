@@ -162,7 +162,7 @@ GeometryBuilderPtr TestFixture::CreateGeometryBuilder(DgnModelR model, DgnCatego
 +---------------+---------------+---------------+---------------+---------------+------*/
 Cesium::TilesetPublisher::Status TestFixture::PublishTiles()
     {
-    UpdateProjectExtents();
+    auto extents = UpdateProjectExtents();
     SaveDb();
 
     auto filename = GetDb().GetFileName();
@@ -173,7 +173,7 @@ Cesium::TilesetPublisher::Status TestFixture::PublishTiles()
     EXPECT_TRUE(defaultView.IsValid());
     EXPECT_FALSE(views.empty());
 
-    Cesium::TilesetPublisher publisher(GetDb(), params, views, defaultView, 5);
+    Cesium::TilesetPublisher publisher(GetDb(), extents, params, views, defaultView, 5);
     return publisher.Publish(params);
     }
 

@@ -30,6 +30,9 @@ BEGIN_UNNAMED_NAMESPACE
 
 struct TileContext;
 
+// Temporary: Disabling edge generation by default until memory consumption issues resolved. Comment out following to re-enable
+#define DISABLE_EDGE_GENERATION
+
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
@@ -2328,8 +2331,13 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     bool                    anyContributed = false;
     uint32_t                fillColor = displayParams.GetFillColor();
 
-//  BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
-    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
+#if defined(DISABLE_EDGE_GENERATION)
+    auto edgeOptions = MeshEdgeCreationOptions::NoEdges;
+#else
+    auto edgeOptions = tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+#endif
+
+    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(edgeOptions));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
         if (isContained || GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
