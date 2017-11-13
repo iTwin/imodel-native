@@ -18,7 +18,7 @@ o = $(OutputRootDir)packages/
     PlatformAndArch=LinuxX64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
     Platform=MacOS
-    PlatformAndArch=MacOSX64
+    PlatformAndArch=DarwinX64
 %else
     %error iModelJsNodeAddon is not available for this platform
 %endif
