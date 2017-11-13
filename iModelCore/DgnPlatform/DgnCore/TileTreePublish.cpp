@@ -307,8 +307,8 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
     TileTree::TilePtr           unusedInputTilePtr;
     auto                        requestTileQueue = std::make_shared<BeFolly::LimitingTaskQueue<BentleyStatus>>(BeFolly::ThreadPool::GetIoPool(), 20);
     Context                     context(unusedOutputTilePtr, unusedInputTilePtr, Transform::FromIdentity(), nullptr, collector, leafTolerance, model, requestTileQueue);
-    RenderSystem                renderSys(context);
-    TileTree::RootCPtr          tileRoot = model->GetTileTree(&renderSys);
+    auto                        renderSystem = std::make_shared<RenderSystem>(context);
+    TileTree::RootCPtr          tileRoot = model->GetTileTree(renderSystem.get());
     ClipVectorPtr               clip; // = tileRoot->_GetClipVector();
 #if 0
     // ###TODO: clips need to be processed
@@ -336,6 +336,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
         })
     .then([=](GenerateTileResult result)
         {
+        RenderSystemP renderSystemP = renderSystem.get(); // Must ensure renderSystem persists throughout execution of lambdas
         m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
         return collector->_EndProcessModel(*model, result.m_tile.get(), result.m_status);   
         });
