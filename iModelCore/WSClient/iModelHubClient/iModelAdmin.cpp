@@ -35,9 +35,9 @@ IRepositoryManagerP iModelAdmin::_GetRepositoryManager(DgnDbR db) const
         {
         FileInfoPtr fileInfo = FileInfo::Create(db, "");
         auto managerResult = ExecuteAsync(m_client->CreateiModelManager(*iModelInfo, *fileInfo, briefcase));
-        if (!managerResult.IsSuccess())
+        if (!managerResult->IsSuccess())
             return nullptr;
-        (*m_managers)[iModelId] = managerResult.GetValue();
+        (*m_managers)[iModelId] = managerResult->GetValue();
         }
 
     return (*m_managers)[iModelId].get();

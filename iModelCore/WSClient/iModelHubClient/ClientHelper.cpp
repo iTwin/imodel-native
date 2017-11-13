@@ -62,9 +62,9 @@ ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials 
 
     m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
     auto signInResult = ExecuteAsync(m_signinMgr->SignInWithCredentials(credentials));
-    if (!signInResult.IsSuccess())
+    if (!signInResult->IsSuccess())
         {
-        error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());
+        error = AsyncError(signInResult->GetError().GetMessage(), signInResult->GetError().GetDescription());
         return nullptr;
         }
 
@@ -80,9 +80,9 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
 
     m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
     auto signInResult = ExecuteAsync(m_signinMgr->SignInWithToken(token));
-    if (!signInResult.IsSuccess())
+    if (!signInResult->IsSuccess())
         {
-        error = AsyncError(signInResult.GetError().GetMessage(), signInResult.GetError().GetDescription());
+        error = AsyncError(signInResult->GetError().GetMessage(), signInResult->GetError().GetDescription());
         return nullptr;
         }
 
@@ -132,13 +132,13 @@ Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProje
     query.SetFilter (Utf8PrintfString ("Active+eq+true+and+Number+eq+'%s'", bcsProjectName.c_str()));
 
     auto result = ExecuteAsync(client->SendQueryRequest(query));
-    if (!result.IsSuccess())
+    if (!result->IsSuccess())
         {
-        error = result.GetError();
+        error = result->GetError();
         return "";
         }
 
-    JsonValueCR instance = result.GetValue().GetJsonValue()["instances"][0];
+    JsonValueCR instance = result->GetValue().GetJsonValue()["instances"][0];
     Utf8String projectId = instance["instanceId"].asString();
 
     if (projectId.empty())
