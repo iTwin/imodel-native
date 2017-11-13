@@ -601,9 +601,9 @@ BentleyStatus iModelBridgeSyncInfoFile::DeleteItem(ROWID irid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeWithSyncInfoBase::_OnConvertToBim(DgnDbR db)
+BentleyStatus iModelBridgeWithSyncInfoBase::_OnOpenBim(DgnDbR db)
     {
-    if (BentleyStatus::SUCCESS != T_Super::_OnConvertToBim(db))
+    if (BentleyStatus::SUCCESS != T_Super::_OnOpenBim(db))
         return BentleyStatus::ERROR;
 
     // Note that I must attach my syncinfo in _OnConvertToBim -- outside of the bulk update txn -- I must not wait until _ConvertToBim.
@@ -613,10 +613,10 @@ BentleyStatus iModelBridgeWithSyncInfoBase::_OnConvertToBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeWithSyncInfoBase::_OnConvertedToBim(BentleyStatus status)
+void iModelBridgeWithSyncInfoBase::_OnCloseBim(BentleyStatus status)
     {
     m_syncInfo.DetachFromBIM();
-    T_Super::_OnConvertedToBim(status);
+    T_Super::_OnCloseBim(status);
     }
 
 /*---------------------------------------------------------------------------------**//**

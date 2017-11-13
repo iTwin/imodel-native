@@ -47,8 +47,8 @@ protected:
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _FindJob () override;
     DGNDBSYNC_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
-    DGNDBSYNC_EXPORT BentleyStatus  _OnConvertToBim (DgnDbR db) override;
-    DGNDBSYNC_EXPORT void           _OnConvertedToBim (BentleyStatus) override;
+    DGNDBSYNC_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
+    DGNDBSYNC_EXPORT void           _OnCloseBim (BentleyStatus) override;
     DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;
     DGNDBSYNC_EXPORT void           _CloseSource (BentleyStatus) override;
     DGNDBSYNC_EXPORT void           _DeleteSyncInfo () override;
@@ -70,3 +70,11 @@ private:
 };  // DwgBridge
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+// Supply DwgBridge to and register it for iModelBridge Framework
+extern "C"
+    {
+    EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
+    EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    }

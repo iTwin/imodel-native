@@ -56,8 +56,8 @@ public:
 BentleyStatus   ImportXData::ConvertXData (DgnElementR element, DwgDbEntityCR entity)
     {
     // Get xdata from the entity - an empty regapp name extracts all xdata
-    DwgString           allRegApps;
-    DwgResBufIterator   xdata = entity.GetXData (allRegApps);
+    DwgString           regAppName (WString(m_sampleOptions.GetRegAppName().c_str(), true).c_str());
+    DwgResBufIterator   xdata = entity.GetXData (regAppName);
 
     BentleyStatus       status = BSISUCCESS;
 
@@ -301,8 +301,43 @@ void ImportXData::_BeginImport ()
     m_xRecordName.clear ();
     m_dumpCount = 0;
 
+    // Read Regapp table and validate the desired regapp name
+    Utf8String  desiredRegappName = m_sampleOptions.GetRegAppName ();
+    if (!desiredRegappName.empty())
+        {
+        bool    isValid = false;
+        DwgDbRegAppTablePtr regappTable(GetDwgDb().GetRegAppTableId(), DwgDbOpenMode::ForRead);
+        if (!regappTable.IsNull())
+            {
+            DwgDbSymbolTableIterator iter = regappTable->NewIterator ();
+            if (iter.IsValid())
+                {
+                for (iter.Start(); !iter.Done(); iter.Step())
+                    {
+                    DwgDbRegAppTableRecordPtr   regapp(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+                    if (!regapp.IsNull())
+                        {
+                        Utf8String  utf8Name (regapp->GetName().c_str());
+                        if (utf8Name.CompareToI(desiredRegappName.c_str()) == 0)
+                            {
+                            // The input desired regapp name exists in Regapp table.
+                            isValid = true;
+                            break;
+                            }
+                        }
+                    }
+                }
+            }
+
+        if (!isValid)
+            {
+            m_sampleOptions.SetRegAppName ("");
+            ReportIssue (IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::Message(), Utf8PrintfString("Desired Regapp %s is not found in DWG, will dump XDATA for all Regapp's.", desiredRegappName.c_str()).c_str());
+            }
+        }
+
     // If our bridge option wants to dump dictionary xRecords, do it now
-    if (m_dumpXrecords)
+    if (m_sampleOptions.ShouldDumpXrecords())
         {
         DwgDbDictionaryPtr  mainDictionary (GetDwgDb().GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
         if (mainDictionary.IsNull())
@@ -321,7 +356,7 @@ void ImportXData::_BeginImport ()
 DwgImporter* ImportXDataSample::_CreateDwgImporter ()
     {
     // Create our sample importer
-    return  new ImportXData (GetImportOptions(), m_dumpXrecords);
+    return  new ImportXData (GetImportOptions(), m_sampleOptions);
     }
 
 //---------------------------------------------------------------------------------------
@@ -329,10 +364,18 @@ DwgImporter* ImportXDataSample::_CreateDwgImporter ()
 //---------------------------------------------------------------------------------------
 iModelBridge::CmdLineArgStatus ImportXDataSample::_ParseCommandLineArg (int iArg, int argc, WCharCP argv[])
     {
-    if (0 == wcscmp(argv[iArg], L"--dumpxrecords"))
+    if (0 == wcsncmp(argv[iArg], L"--regappname=", 13))
+        {
+        // Will only dump XDATA of the specified regApp.
+        WString cmdlineArg(argv[iArg]);
+        cmdlineArg = cmdlineArg.substr (cmdlineArg.find_first_of(L'=', 0) + 1);
+        m_sampleOptions.SetRegAppName (Utf8String(cmdlineArg.c_str()));
+        return CmdLineArgStatus::Success;
+        }
+    else if (0 == wcscmp(argv[iArg], L"--dumpxrecords"))
         {
         // Will dump dictionary xRecords.
-        m_dumpXrecords = true;
+        m_sampleOptions.SetShouldDumpXrecords (true);
         return CmdLineArgStatus::Success;
         }
     // Not our sample option.
@@ -347,11 +390,36 @@ void ImportXDataSample::_PrintUsage ()
     // Print out our sample options, along with all inherited iModelBridge options:
     fwprintf (stderr,
 L"\
+--regappname=\t\t(optional) A desired regApp to dump entity XData (default dumps all).\n\
 --dumpxrecords\t\t(optional; logging only) An option to read and print out dictionary xRecords.\n\
 ");
     }
 
 END_DGNDBSYNC_DWG_NAMESPACE
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
+    {
+    // Supply a our sample Bridge
+    return  new ImportXDataSample();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
+    {
+    // Want our sample Bridge to precede the generic DwgBridge, i.e. set to a higher level.
+    BeFileName  filename(dwgdxfName);
+    if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"ImportXDataSample");
+        }
+    }
 
 
 //---------------------------------------------------------------------------------------
@@ -365,10 +433,13 @@ int wmain (int argc, wchar_t const* argv[])
 
     No arguments will print usage.
     -----------------------------------------------------------------------------------*/
-    ImportXDataSample     sampleImporter;
+    ImportXDataSample     sampleBridge;
+
+    // Register this sample as an iModelBridge:
+    sampleBridge.GetImportOptions().SetBridgeRegSubKey (L"XDataSampleBridge");
 
     // Begin importing DWG file into DgnDb
-    BentleyStatus   status = sampleImporter.RunAsStandaloneExe (argc, argv);
+    BentleyStatus   status = sampleBridge.RunAsStandaloneExe (argc, argv);
 
     return (int)status;
     }

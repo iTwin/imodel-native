@@ -18,6 +18,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnIModel.h>
+#include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -179,16 +180,47 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
     else
         {
         BeSQLite::DbResult dbres;
-        bool madeSchemaChanges_dont_care, madeDynamicSchemaChange;
-        db = bridge.OpenBim(dbres, madeSchemaChanges_dont_care, madeDynamicSchemaChange);
+        bool _hadDomainSchemaChanges = false;
+        db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges);
         if (!db.IsValid())
             {
             fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
             return BSIERROR;
             }
 
-        BentleyStatus bstatus(BSISUCCESS);
-        bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
+        //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
+        iModelBridgeCallOpenCloseFunctions callCloseOnReturn(bridge, *db);
+        if (!callCloseOnReturn.IsReady())
+            {
+            LOG.fatalv("Bridge is not ready or could not open source file");
+            return BentleyStatus::ERROR;
+            }
+
+        db->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                           // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+
+        //  Let the bridge generate schema changes
+        bridge._MakeSchemaChanges();
+
+        bool madeDynamicSchemaChanges = db->Txns().HasChanges(); // see if _MakeSchemaChanges made any changes.
+
+        if (madeDynamicSchemaChanges) // if _MakeSchemaChanges made any dynamic schema changes, we close and re-open in order to accommodate them.
+            {
+            callCloseOnReturn.CallCloseFunctions();
+
+            _hadDomainSchemaChanges = false;
+            db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges);
+            if (!db.IsValid())
+                {
+                fwprintf(stderr, L"%ls - open failed with error %x\n", inputFileName.GetName(), (int)dbres);
+                return BentleyStatus::ERROR;
+                }
+            BeAssert(!_hadDomainSchemaChanges);
+            
+            callCloseOnReturn.CallOpenFunctions(*db);
+            }
+
+        BentleyStatus bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
         
         if (BSISUCCESS != bstatus)
             {
@@ -233,30 +265,40 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();
 
-    if (isBimExt(inputFileName) && isImodelExt(outputFileName))
+    iModelBridgeCallTerminate callTerminate(bridge);
+    callTerminate.m_status = BSISUCCESS;
+    bool isNewFile = false;
+    if (true)
         {
-        CreateIModel(outputFileName, inputFileName, saparams);
-        return BSISUCCESS;
-        }
-    if (isImodelExt(inputFileName) && isBimExt(outputFileName))
-        {
-        return ExtractFromIModel(outputFileName, inputFileName);
-        }
-
-    if (!saparams.ShouldTryUpdate())
-        BeFileName::BeDeleteFile(outputFileName);
-
-    bool isNewFile = !outputFileName.DoesPathExist();
-    
-    bridge._GetParams().SetInputFileName(inputFileName);
-    if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
-        {
-        if (isNewFile)
+        if (isBimExt(inputFileName) && isImodelExt(outputFileName))
             {
-            outputFileName.BeDeleteFile();
+            CreateIModel(outputFileName, inputFileName, saparams);
+            return BSISUCCESS;
+            }
+        if (isImodelExt(inputFileName) && isBimExt(outputFileName))
+            {
+            return ExtractFromIModel(outputFileName, inputFileName);
+            }
+
+        if (!saparams.ShouldTryUpdate())
+            {
+            BeFileName::BeDeleteFile(outputFileName);
             bridge._DeleteSyncInfo();
             }
-        return BSIERROR;
+
+        isNewFile = !outputFileName.DoesPathExist();
+    
+        bridge._GetParams().SetInputFileName(inputFileName);
+        if (BSISUCCESS != CreateOrUpdateBim(bridge, saparams))
+            {
+            if (isNewFile)
+                {
+                outputFileName.BeDeleteFile();
+                bridge._DeleteSyncInfo();
+                }
+            callTerminate.m_status = BSIERROR;
+            return BSIERROR;
+            }
         }
 
     /* NEEDS WORK
@@ -512,23 +554,9 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
     if (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs=") || argv[iArg] == wcsstr(argv[iArg], L"--output-gcs="))
         {
         unSupportedFwkArg(argv[iArg]);
-        iModelBridge::GCSDefinition* gcs = (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))? &bparams.m_inputGcs: &bparams.m_outputGcs;
-        if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(*gcs, iModelBridge::GetArgValue(argv[iArg])))
-            return iModelBridge::CmdLineArgStatus::Error;
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--geoCalculation="))
-        {
-        unSupportedFwkArg(argv[iArg]);
-        if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(bparams.m_gcsCalculationMethod, iModelBridge::GetArgValue(argv[iArg])))
-            return iModelBridge::CmdLineArgStatus::Error;
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--transform="))
-        {
-        if (BSISUCCESS != iModelBridge::Params::ParseTransform(bparams.m_spatialDataTransform, iModelBridge::GetArgValue(argv[iArg])))
+        Json::Value json;
+        json.From(iModelBridge::GetArgValue(argv[iArg]));
+        if (json.isNull() || (BSISUCCESS != bparams.ParseJsonArgs(json, argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))))
             return iModelBridge::CmdLineArgStatus::Error;
         return iModelBridge::CmdLineArgStatus::Success;
         }
@@ -858,8 +886,8 @@ L"Usage: %ls -i|--input= -o|--output= [OPTIONS...]\n"
 L"--input=                    (required)  A directory or wildcard specfication for the tile files. May appear multiple times.\n"
 L"--output=                   (required)  Output directory\n"
 L"OPTIONS:\n"
-L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
-L"--output-gcs=gcsspec        (optional)  Specifies the GCS of the output DgnDb file. Ignored if the output DgnDb file already has a GCS (update mode).\n"
+L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS. gcsspec must be in JSON format.\n"
+L"--output-gcs=gcsspec        (optional)  Specifies the GCS of the output DgnDb file. Ignored if the output DgnDb file already has a GCS (update mode). gcsspec must be in JSON format.\n"
 L"                                        gcsspec is either the keyname of a GCS or the coordinates of the origin and the azimuthal angle for an AZMEA GCS.\n"
 L"--drawings-dirs=            (optional)  A semicolon-separated list of directories to search recursively for drawings and sheets.\n"
 L"--geoCalculation=           (optional)  If a new model is added with the --update option, sets the geographic coordinate calculation method. Possible Values are:\n"

@@ -48,6 +48,7 @@ struct iModelBridgeSacAdapter;
 
 An iModel "bridge" converts data from an external data source into a BIM.
 
+See @ref ANCHOR_BridgeCheckList "iModelBridge implementation checklist" for a summary of how to write a bridge.
 See @ref ANCHOR_TypicalBridgeConversionLogic "iModelBridge conversion logic pattern" for details on how to write bridge conversion logic.
 
 A bridge is normally called as part of a @ref ANCHOR_iModelBridgeJobOverview "job" by the @ref GROUP_iModelBridgeFwk "iModelBridge Framework"
@@ -59,6 +60,31 @@ A bridge must be @ref ANCHOR_BridgeLoading "implemented by a shared library", an
 
 Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 
+@anchor  ANCHOR_BridgeCheckList
+<h2>iModelBridge Implementation Checklist</h2>
+
+- Subclass from iModelBridge
+
+- Override iModelBridge::_MakeSchemaChanges to import required schemas during @ref ANCHOR_InitializationPhase "initialization phase"
+
+- Keep track of source data -> iModel element mappings by using something like syncinfo. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic".
+
+- Use syncinfo data to detect changes and convert only changed data. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic".
+
+- @ref ANCHOR_TrackingDocuments "Track source document GUIDs".
+
+- Relate all models created from document to a RepositoryLink that captures the document's properties. See @ref ANCHOR_PartitionOriginatesFromRepository "PartitionOriginatesFromRepository".
+
+- Track all document content, scoped to document. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic" and @ref ANCHOR_ScopeItemsToDocuments "scope items to documents".
+
+- @ref ANCHOR_DetectDeletedDocuments "Detect deleted documents".
+
+- @ref ANCHOR_SpatialDataTransform "Apply optional spatial data transform to all spatial data."
+
+- @ref ANCHOR_BridgeLoading "A bridge must be implemented by a shared library that exports functions called iModelBridge_getInstance and iModelBridge_getAffinity"
+
+- @ref ANCHOR_BridgeRegistration "You will need an installer that registers the bridge in the Windows registry."
+
 <h2>Data Conversion</h2>
 
 Here is a summary of the process that is conducted by the framework when running bridges to convert data, starting from a spatial root file. 
@@ -68,14 +94,29 @@ The process shown here is for the case of a bridge doing an incremental update. 
 -# The framework signs into iModelHub and gets access to the specified iModel
 -# The framework acquires a briefcse from iModelHub, if necessary, and pulls and merges revisions to make sure it is up to date.
 -# The framework @ref ANCHOR_BridgeLoading "loads the bridge dll specified for the job and asks it to create a bridge object".
+
 The framework then makes the following calls on the bridge object:
+
+@anchor ANCHOR_InitializationPhase
+<h3>I. Initialization Phase</h3>
+During this phase, the bridge may register domains and import schemas, and the bridge may call SaveChanges on the DgnDb.
+
 -# iModelBridge::_ParseCommandLine (standalone converters only)
 -# iModelBridge::_Initialize
 -# The framework opens the BIM.
     -# The framework calls BentleyApi::Dgn::DgnDomains::ImportSchemas, if necessary, in order to ensure that the domains
 registered by the bridge in its _Initialize method are imported into the BIM and are up to date.
--# iModelBridge::_OnConvertToBim
+-# iModelBridge::_OnOpenBim     (may call _OnCloseBim and _OnOpenBim more than once in the Initialization Phase.)
 -# iModelBridge::_OpenSource
+-# iModelBridge::_MakeSchemaChanges. The framework may close and reopen the briefcase at this point.
+
+The framework will pullmergepush as necessary in order to capture schema changes and push them to iModelHub. 
+If the necessary schema lock cannot be acquired, then the bridge is terminated with an error.
+
+@anchor ANCHOR_ConversionPhase
+<h3>II. Conversion Phase</h3>
+During this phase, the bridge must not try to change the schema and must not call SaveChanges on the DgnDb.
+
 -# Find or initialize the @ref ANCHOR_BridgeJobSubject "job subject"
     -# iModelBridge::_GetParams().SetIsUpdating (true);
     -# jobsubject = iModelBridge::_FindJob
@@ -83,21 +124,22 @@ registered by the bridge in its _Initialize method are imported into the BIM and
         -# iModelBridge::_GetParams().SetIsUpdating (false)
         -# jobsubject = iModelBridge::_InitializeJob
 -# iModelBridge::_ConvertToBim
-    -# If _ConvertToBim fails,
-        -# then the framework will abandon all changes.
--# The framework attempts to obtain the @ref ANCHOR_iModelBridgeLocksAndCodes "locks and codes" that are required by the inserts and updates that were done by iModelBridge::_ConvertToBim.
-    -# If locks and codes are not acquired,
-        -# then the framework will abandon all changes.
+
+@anchor ANCHOR_FinalizationPhase
+<h3>II. Finalization Phase</h3>
+During this phase, the framework processes the changes generated by the bridge and terminates the bridge.
+
 -# iModelBridge::_CloseSource
--# iModelBridge::_OnConvertedToBim
--# DgnDb::SaveChanges
--# The framework attempts to pull, merge, and push.
+-# iModelBridge::_OnCloseBim
+-# iModelBridge::_Terminate
 
-If pullmergepush fails, then the bridge's local BIM will still contain the results of the conversion,
-but no revision was created on the iModelHub. The framework will retry the pullmergepush step automatically the next time it runs.
-
-If pullmergepush succeeds, then a new revision containing the BIM conversion results is on the iModelHub
-and may be downloaded by other briefcases.
+If the call to _ConvertToBim above returned an error, then the framework will abandon all changes.
+Otherwise, the framework will call DgnDb::SaveChanges.
+Then, the framework will attempt to obtain the @ref ANCHOR_iModelBridgeLocksAndCodes "locks and codes" that are required by the inserts and updates that were done by 
+iModelBridge::_ConvertToBim. If locks and codes are not acquired, then the framework will abandon all changes.
+Finally, the framework will attempt to pullmergepush. If pullmergepush fails, then the bridge's local BIM will still contain the results of the conversion,
+but no revision was created on the iModelHub. The framework will retry the pullmergepush step automatically the next time it runs. If pullmergepush succeeds, 
+then a new revision containing the BIM conversion results is on the iModelHub and may be downloaded by other briefcases.
 
 <h3>Creating a New Repository</h3>
 
@@ -117,7 +159,78 @@ If the target iModel has a Geographic Coordinate System (GCS), the bridge must t
 Similarly, if the iModel has a global origin, the bridge must subtract off that global origin from the source data as part of the conversion.
 Call DgnDb::GeoLocation::GetDgnGCS to get the details of the iModel's GCS and global origin.
 
-Also see iModelBridge::GetTransformCorrectionFromJobSubject for an additional transform that the bridge may be required to apply to all converted spatial data.
+@anchor ANCHOR_SpatialDataTransform
+
+Your bridge should also call iModelBridge::GetSpatialDataTransform for an additional transform that it must apply to all converted spatial data.
+In addition, your iModelBridge must detect when this transform changes and re-convert all spatial data, applying the new transform. 
+ToyTileBridge shows an example of how to do this. In a nutshell, you can add the support like this:
+
+Add a member variable that keeps track of the fact that the spatial data transform has changed:
+
+@verbatim
+
+struct EXPORT_VTABLE_ATTRIBUTE ToyTileBridge : Dgn::iModelBridgeWithSyncInfoBase
+{
+...
+    bool m_spatialDataTransformHasChanged = false;
+
+@endverbatim
+
+Set this flag in your _ConvertToBim method:
+
+@verbatim
+
+BentleyStatus ToyTileBridge::_ConvertToBim(SubjectCR jobSubject)
+    {
+    iModelBridgeSyncInfoFile::ChangeDetectorPtr changeDetector = GetSyncInfo().GetChangeDetectorFor(*this);
+...
+    // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
+    Transform _old, _new;
+    m_spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetector, m_fileScopeId, "JobTrans", "JobTrans");
+
+@endverbatim
+
+When you convert physical elements, pass the flag to the change detector:
+
+@verbatim
+
+BentleyStatus ToyTileBridge::ConvertPhysicalElements(PhysicalModelR model, iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, ToyTileGroupModelCR groupModel)
+    {
+...
+        auto change = changeDetector._DetectChange(m_fileScopeId, "T", sourceItem, nullptr, m_spatialDataTransformHasChanged);     // only convert a tile if it is new or has changed in the source
+@endverbatim
+
+... And don't forget to apply the transform to the converted data:
+
+@verbatim
+
+        ToyTilePhysicalElementPtr tileElement = ToyTilePhysicalElement::Create(tileNode->GetName(), model, ToyTilePhysicalElement::ParseCasingMaterial(casingMaterial.c_str()));
+                ...
+
+        // Bridge may be requested to apply an additional transform to spatial data
+        placement.TryApplyTransform(GetSpatialDataTransform());
+
+        if (DgnDbStatus::Success != tileElement->SetPlacement(placement))
+            return BentleyStatus::ERROR;
+
+        iModelBridgeSyncInfoFile::ConversionResults results;
+        results.m_element = tileElement;
+        if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(results, change))                // write the converted tile element to the BIM
+
+@endverbatim
+
+Note that, as long as you follow the guidelines and make your element geometrystream data relative to the placement, then you only need to transform the placement.
+
+Or, you could transform the converted element itself, if that works out better for you:
+@verbatim
+    DgnElementTransformer::ApplyTransformTo(*results.m_element, GetSpatialDataTransform());
+@endverbatim
+
+If your bridge already computes a root spatial transform and applies that to all converted data, then the pattern is even easier: just pre-multiply it with the user-supplied spatial data transform:
+@verbatim
+    m_rootTrans = BentleyApi::Transform::FromProduct(GetSpatialDataTransform(), m_rootTrans); // NB: pre-multiply!
+@endverbatim
+                
 
 @anchor ANCHOR_TrackingDocuments
 <h2>Tracking Documents</h2>
@@ -130,6 +243,44 @@ A bridge should identify a document by using the GUID assigned to it by its home
 See iModelBridge::QueryDocumentGuid.
 
 Use the GUID for tracking the document in syncinfo.
+
+Record the document in syncinfo and make a note of its syncinfo ID. This might happen in your _InitializeJob and _ConvertToBim methods: 
+
+@verbatim
+
+Dgn::SubjectCPtr ToyTileBridge::_InitializeJob()
+    {
+...
+    // IMODELBRIDGE PROVENANCE REQUIREMENT: Store information about the source document
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
+...
+    }
+
+BentleyStatus ToyTileBridge::_ConvertToBim(SubjectCR jobSubject)
+    {
+...
+    // IMODELBRIDGE PROVENANCE REQUIREMENT: Keep information about the source document up to date.
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName());
+    m_fileScopeId = docLink.m_syncInfoRecord.GetROWID();
+
+@endverbatim
+
+@anchor ANCHOR_ScopeItemsToDocuments
+
+Use the syncinfo ID of the recorded document as the scope for other elements that you record. For example:
+
+@verbatim
+
+BentleyStatus ToyTileBridge::ConvertGroupElements(ToyTileGroupModelR model, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector)
+    {
+...
+    for (BeXmlNodeP groupNode = groupListNode->GetFirstChild(); nullptr != groupNode; groupNode = groupNode->GetNextSibling())
+        {
+        XmlNodeSourceItem sourceItem(groupNode);
+        auto change = changeDetector._DetectChange(m_fileScopeId, "G", sourceItem);     // only convert a group if it's new or has changed in the source
+
+
+@endverbatim
 
 Use the document GUID for generating codes that relate to the document, especially for the @ref ANCHOR_BridgeJobSubject "Job Subject" element. A job subject must be specific
 to the root document. Here is an example of how to compute a unique job subject name.
@@ -155,11 +306,43 @@ Utf8String ToyTileBridge::ComputeJobSubjectName()
 An iModelBridge is responsible for storing provenance data that relates elements in the iModel to information in the source documents.
 Currently, provenance for model elements is required. Provenance for other kinds of elements is optional.
 
+@anchor ANCHOR_PartitionOriginatesFromRepository
 <h3>PartitionOriginatesFromRepository</h3>
 A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
 Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
 to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
 
+When you create a physical partition model, link it to the RepositoryLink that corresponds to the source document. For example:
+
+@verbatim
+
+Dgn::SubjectCPtr ToyTileBridge::_InitializeJob()
+    {
+...
+    // IMODELBRIDGE PROVENANCE REQUIREMENT: Store information about the source document
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
+    auto rlinkId = docLink.m_element->GetElementId();
+
+    if (!CreateGroupModel(*jobSubject, TOYTILEBRIDGE_GroupModelName).IsValid() || 
+        !CreatePhysicalModel(*jobSubject, TOYTILEBRIDGE_PhysicalModelName, rlinkId).IsValid() ||
+        !CreateDefinitionModel(*jobSubject, TOYTILEBRIDGE_DefinitionModelName).IsValid())
+        return nullptr;
+    }
+
+PhysicalModelPtr ToyTileBridge::CreatePhysicalModel(SubjectCR parentSubject, Utf8StringCR name, DgnElementId repositoryLinkId)
+    {
+...
+    PhysicalModelPtr model = PhysicalModel::Create(*partition);
+...
+    // IMODELBRIDGE PROVENANCE REQUIREMENT: Relate this model to the source document
+    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), model->GetModeledElementId(), repositoryLinkId);
+
+    return model;
+    }
+
+@endverbatim
+
+@anchor ANCHOR_DetectDeletedDocuments
 <h2>Detecting Deleted Documents</h2>
 
 A bridge must be able to detect deleted files and clean up the iModel as appropriate. See _DetectDeletedDocuments. The algorithm must be along these lines
@@ -229,7 +412,7 @@ struct iModelBridge
         Utf8String           m_coordSysKeyName; //!< the coordinate system key name
         DPoint3d             m_originUors;      //!< The XYZ coordinates of the origin
         BentleyApi::GeoPoint m_geoPoint;        //!< The longitude and latitude of the origin
-        double               m_azimuthAngle;    //!< The azimuthal angle of the Cartesian coordinate system
+        double               m_azimuthAngle;    //!< The angle, clockwise from true north in decimal degrees, of the rotation to be applied.
         GCSDefinition() : m_isValid(false) {}
 
         IMODEL_BRIDGE_EXPORT DgnGCSPtr CreateGcs(DgnDbR);
@@ -302,15 +485,56 @@ struct iModelBridge
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
 
-      public:
+        //! Parse JSON that captures either a 3X4 transform or an offset and angle. This function parses the result of both
+        //! MakeTransformJson and MakeOffsetJson.
+        //! @param[out] trans   The resulting transform
+        //! @param[in] json  The transformation data in JSON format
+        //! @return non-zero error status if @a jsonStr does not contain a valid JSON description of a spatial transform
+        //! @see MakeTransformJson, MakeOffsetJson
+        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseTransformJson(Transform& trans, JsonValueCR json);
+
+        //! Parse JSON that captures a GCSDefinition.
+        //! @param[out] gcsDef   The resulting GCS def
+        //! @param[out] gcsCalculationMethod The calculation method to be used
+        //! @param[in] json  The transformation data in JSON format
+        //! @return non-zero error status if @a jsonStr does not contain a valid JSON description of a GCSDefinition
+        //! @see MakeGcsJson
+        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGcsJson(GCSDefinition& gcsDef, GCSCalculationMethod& gcsCalculationMethod, JsonValueCR json);
+
+        IMODEL_BRIDGE_EXPORT static BentleyStatus GCSCalculationMethodFromString(GCSCalculationMethod& cm, Utf8StringCR value);
+        IMODEL_BRIDGE_EXPORT static Utf8String GCSCalculationMethodToString(GCSCalculationMethod const& cm);
+
+    public:
         IMODEL_BRIDGE_EXPORT Params();
 
         //! @name Helper functions
         //! @{
 
-        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGcsSpec(GCSDefinition& gcs, Utf8StringCR gcsParms);
-        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGCSCalculationMethod(GCSCalculationMethod& cm, Utf8StringCR value);
-        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseTransform(Transform& cm, Utf8StringCR value);
+        BE_JSON_NAME(transform);    //!< Linear transform specification
+        BE_JSON_NAME(gcs);          //!< GCS definition
+
+        //! Get additional parameters from JSON
+        //! @see SetTransformJson, SetOffsetJson, SetGcsJson
+        IMODEL_BRIDGE_EXPORT BentleyStatus ParseJsonArgs(JsonValueCR obj, bool isInputGcs = true);
+
+        //! Generate the JSON that captures a full 3X4 transform that should be applied by a bridge to its spatial source data.
+        //! @param json         Json object with the transform data filled in
+        //! @param transform    The transform that the bridge should apply to its spatial source data.
+        IMODEL_BRIDGE_EXPORT static void SetTransformJson(JsonValueR json, TransformCR transform);
+
+        //! Generate the JSON that captures an offset and rotation that should be applied by a bridge to its spatial source data.
+        //! Offset and angle are really just a special case of a transform. It may be preferable to use the offset and angle format
+        //! if that is what the user is more familiar with, and also as this format constrains the transform to be just an offset and azimuth angle.
+        //! @param json         Json object with the transform data filled in
+        //! @param offset       The offset that the bridge should apply to its spatial source data.
+        //! @param azimuthAngle The angle, clockwise from true north in decimal degrees, of the rotation to be applied.
+        IMODEL_BRIDGE_EXPORT static void SetOffsetJson(JsonValueR json, DPoint3dCR offset, AngleInDegrees azimuthAngle);
+
+        //! Generate the JSON that captures a Geographic Coordinate System that should be applied by a bridge to its spatial source data.
+        //! @param json         Json object with the GCS data filled in
+        //! @param gcsDef       The GCS that the bridge should apply to the spatial source data
+        //! @param gcsCalculationMethod How to transform the source GCS into the iModel's GCS
+        IMODEL_BRIDGE_EXPORT static void SetGcsJson(JsonValueR json, GCSDefinition const& gcsDef, GCSCalculationMethod const& gcsCalculationMethod = GCSCalculationMethod::UseDefault);
 
         //! @}
 
@@ -381,9 +605,8 @@ struct iModelBridge
     //! @private
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
-    //! @param[out] madeSchemaChanges Set to true if OpenDgnDb imported or upgraded schemas.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
-    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, bool& hasDynamicSchemaChange);
+    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges);
 
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
@@ -391,7 +614,7 @@ struct iModelBridge
     //! @param[in] detectDeletedFiles If true, the bridge will also detect deleted files and delete content that was extracted from them.
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
-    //! @see OpenBim
+    //! @see OpenBimAndMergeSchemaChanges
     IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
 
     //! @}
@@ -454,37 +677,37 @@ public:
     //! @param argc the number of command line arguments
     //! @param argv the command line arguments
     //! @return non-zero error status if the bridge cannot run. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @see iModelBridgeBimHost
+    //! @see iModelBridgeBimHost, _Terminate
     //! @note The bridge must wait until _Initialize to register domains.
     virtual BentleyStatus _Initialize(int argc, WCharCP argv[]) = 0;
+
+    //! Called at the end of the conversion, just after the Bim is closed for the final time.
+    //! @param convertStatus The outcome of the conversion
+    virtual void _Terminate(BentleyStatus convertStatus) {}
 
     //! This is called in the rare case where an attempt to create a new dgndb failed. This function should clean up syncinfo.
     //! The BIM is closed when this is called.
     virtual void _DeleteSyncInfo() {}
 
     //! The bridge should prepare to write to the BIM.
-    //! <p>In its implementation of _OnConvertToBim, the bridge should:
+    //! <p>In its implementation of _OnOpenBim, the bridge should:
     //! - Should store a pointer to @a db.
     //! - @ref ANCHOR_MutiFileTransaction "Open and attach its syncinfo file".
     //! - Create temp tables.
-    //! <p>_OnConvertToBim may call DgnDb::SaveChanges and in fact should do that if it creates temp tables or attaches syncinfo.
-    //! <p>This function is called after _ParseCommandLine, _Initialize, and _OpenSyncInfo. It is called right after the
+    //! <p>_OnOpenBim may call DgnDb::SaveChanges and in fact should do that if it creates temp tables or attaches syncinfo.
+    //! <p>This function is called after _ParseCommandLine and _Initialize. It is called before _OpenSource. It is called right after the
     //! framework opens the BIM. It is called after domains are imported.
     //! <p>The bridge should wait for the call to _FindJob/_InitializeJob before creating elements or models in the BIM.
     //! @param db   The BIM or local DgnDb that is being updated
     //! @return non-zero error status if the bridge cannot perform the conversion. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @see _OnConvertedToBim, _FindJob, _InitializeJob, _ConvertToBim
-    //! @note _OnConvertToBim is called @em before domains and schemas are imported.
-    virtual BentleyStatus _OnConvertToBim(DgnDbR db) = 0;
+    //! @see _OnCloseBim
+    virtual BentleyStatus _OnOpenBim(DgnDbR db) = 0;
 
-    //! The conversion is finished. It may have been terminated abnormally.
-    //! <p>The bridge must drop its pointer to the DgnDb that was passed to _OnConvertToBim. The DgnDb will be closed after this function is called.
-    //! <p>If the bridge has attached syncinfo to the DgnDb, it must close syncinfo.
-    //! <p>This function will not be called if _OnConvertToBim returns an error status.
+    //! When this function is called, the bridge must let go of any pointer it may be holding to the briefcase, and it must detach
+    //! syncinfo from the briefcase. 
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
-    //! @note Even if updateStatus is SUCCESS, the bridge's changes have not yet been saved to the BIM or pushed to the iModelHub.
-    //! @see _OnConvertToBim
-    virtual void _OnConvertedToBim(BentleyStatus updateStatus) = 0;
+    //! @note _OnOpenBim and _OnCloseBim may be called more than once during a conversion.
+    virtual void _OnCloseBim(BentleyStatus updateStatus) = 0;
 
     //! Open the data source and be prepared to do the conversion
     //! @return non-zero error status if the bridge cannot open the source. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
@@ -495,6 +718,14 @@ public:
     //! This function will not be called if _OpenSource returned a non-zero error status.
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
     virtual void _CloseSource(BentleyStatus updateStatus) {}
+    
+    //! By overriding this function, the bridge may make changes to schemas in the briefcase.
+    //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
+    //! The bridge may generate a schema dynamically, based on the content of the source files. Or, in the case of an update, the bridge can upgrade or change a previously generated schema. 
+    //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
+    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas.
+    //! @note The bridge should *not* convert elements or models in this function.
+    virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
 
     //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
     //! This is called prior to _ConvertToBim.
@@ -535,10 +766,10 @@ public:
     //! <p>
     //! @note The bridge should create all subjects, views, categories, and other definitions as children (perhaps indirectly) of its @ref ANCHOR_BridgeJobSubject "job subject".
     //! @note _ConvertToBim must not call SaveChanges on the BIM. If it does, the job will be terminated and all changes rolled back and lost.
-    //! @note _ConvertToBim must not attempt to create temp tables or call Db::AttachDb. See #_OnConvertToBim.
+    //! @note _ConvertToBim must not attempt to create temp tables or call Db::AttachDb. See #_OnOpenBim.
     //! @param[in] jobSubject The bridge's job subject, as returned by _FindJob or _IntializeJob.
     //! @return non-zero error status if the bridge cannot conversion the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @see _OnConvertToBim
+    //! @see _OnOpenBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
 
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
@@ -554,9 +785,6 @@ public:
 
     Transform GetSpatialDataTransform(SubjectCR jobSubject) {return GetSpatialDataTransform(_GetParams(), jobSubject);}
 
-    //!This function called before _ConvertToBim method. It provides bridges an oppurtunity to post a schema change Changeset into the imodelhub. This makes the
-    //!revision comparison operations work well in sqlite. Return true if a schema change was detected.
-    virtual bool _UpgradeDynamicSchema(DgnDbR db) { return false; }
 
     //! @name Document Properties Helper Functions
     //! @{
@@ -654,10 +882,12 @@ public:
     DgnDbR GetDgnDbR() {return *m_db;}
 
     //! Store a reference to the BIM that the bridge is to write.
-    BentleyStatus _OnConvertToBim(DgnDbR db) override {m_db = &db; return BSISUCCESS;}
+    BentleyStatus _OnOpenBim(DgnDbR db) override {m_db = &db; return BSISUCCESS;}
 
     //! Release the reference to the BIM when the conversion is over.
-    void _OnConvertedToBim(BentleyStatus) override {m_db = nullptr;}
+    void _OnCloseBim(BentleyStatus) override {m_db = nullptr;}
+
+    void _Terminate(BentleyStatus) override {}
 
     //! Get a reference to the bridge's parameters. This base class assumes that the bridge
     //! has no additional parameters of its own.

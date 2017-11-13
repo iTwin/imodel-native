@@ -335,6 +335,8 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.SetIsUpdating(false);
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        creator.MakeSchemaChanges();
+        ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
         creator.Process();
         DgnDbR db = creator.GetDgnDb();
@@ -351,6 +353,8 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.SetIsUpdating(false);
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        creator.MakeSchemaChanges();
+        ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TiledFileConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
         creator.ConvertRootModel();
         for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
@@ -383,10 +387,15 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
-        ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
-        updater.Process();
+        updater.MakeSchemaChanges();
         ASSERT_EQ(expectFailure, updater.WasAborted());
-        m_count = updater.GetElementsConverted();
+        if (!updater.WasAborted())
+            {
+            ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
+            updater.Process();
+            ASSERT_EQ(expectFailure, updater.WasAborted());
+            m_count = updater.GetElementsConverted();
+            }
         }
     else
         {
@@ -397,13 +406,18 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
-        ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
-        updater.ConvertRootModel();
-        for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
-            updater.ConvertTile(tileName);
-        updater.FinishedConversion();
+        updater.MakeSchemaChanges();
         ASSERT_EQ(expectFailure, updater.WasAborted());
-        m_count = updater.GetElementsConverted();
+        if (!updater.WasAborted())
+            {
+            ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, updater.FindJob());
+            updater.ConvertRootModel();
+            for (BentleyApi::BeFileName const& tileName : m_opts.m_tiles)
+                updater.ConvertTile(tileName);
+            updater.FinishedConversion();
+            ASSERT_EQ(expectFailure, updater.WasAborted());
+            m_count = updater.GetElementsConverted();
+            }
         }
     db->SaveChanges();
     }
@@ -622,22 +636,6 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         DgnElementCPtr dgnDbElement = syncInfo.m_dgndb->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(!dgnDbElement.IsValid());
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void ConverterTestBaseFixture::AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext)
-    {
-    _AddSupplementalSchemas(supplementalSchemas, readContext);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void TestRootModelCreator::_AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext)
-    {
-    m_testFixture->AddSupplementalSchemas(supplementalSchemas, readContext);
     }
 
 /*---------------------------------------------------------------------------------**//**

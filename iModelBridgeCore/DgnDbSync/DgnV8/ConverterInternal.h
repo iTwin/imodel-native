@@ -67,6 +67,7 @@
 
 #include <DgnDbSync/DgnDbSync.h>
 #include <Bentley/Bentley.h>
+#include <Bentley/NonCopyableClass.h>
 
 #include <DgnDbSync/DgnV8/Converter.h>
 #include <DgnDbSync/DgnV8/SyncInfo.h>
@@ -97,9 +98,7 @@
 #include <PointCloud/PointCloudApi.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
-#include "ECDiff.h"
-#include "EntityConverter.h"
-#include "ECConversion.h"
+#include "ECSchemaMappings.h"
 #include "LinkConverter.h"
 #include <DgnPlatform/DgnProgressMeter.h>
 

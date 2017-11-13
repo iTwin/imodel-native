@@ -1,11 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/ECDiff.cpp $
+|     $Source: DgnV8/DynamicSchemaGenerator/ECDiff.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include "ECDiff.h"
 #include <stack>
 #include <set>
 

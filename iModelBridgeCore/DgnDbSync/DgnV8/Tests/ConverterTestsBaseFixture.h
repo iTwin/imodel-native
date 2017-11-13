@@ -15,7 +15,6 @@
 struct ConverterTestBaseFixture : public testing::Test
     {
     protected:
-        virtual void _AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext) {}
         DgnElementCPtr FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, uint8_t dgnIndex = 1);
 
         void InitializeTheConverter();
@@ -67,7 +66,6 @@ struct ConverterTestBaseFixture : public testing::Test
     void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false);
 
     void TestElementChanges(BentleyApi::BeFileNameCR rootV8FileName, BentleyApi::BeFileNameCR editV8FileName, size_t nModelsExpected);
-    void AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext);
     DgnClassId getBisClassId(DgnDbR db, Utf8CP className);
     DgnElementId findFirstElementByClass(DgnDbR db, DgnClassId classId);
     void countElements(DgnModel& model, int expected);
@@ -83,9 +81,6 @@ struct TestRootModelCreator : RootModelConverter
     DEFINE_T_SUPER(RootModelConverter)
     private:
         ConverterTestBaseFixture* m_testFixture;
-
-    protected:
-        virtual void _AddSupplementalSchemas(BentleyApi::bvector<BentleyApi::ECN::ECSchemaP>& supplementalSchemas, BentleyApi::ECN::ECSchemaReadContextR readContext) override;
 
     public:
         explicit TestRootModelCreator(RootModelConverter::RootModelSpatialParams& params, ConverterTestBaseFixture* fixture) : T_Super(params), m_testFixture(fixture) {}

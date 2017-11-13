@@ -493,7 +493,7 @@ void ConvertV8TextToDgnDbExtension::Register()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BisConversionRule ConvertV8TextToDgnDbExtension::_DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d)
+BisConversionRule ConvertV8TextToDgnDbExtension::_DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR)
     {
     DgnV8Api::DisplayHandler* v8DisplayHandler = v8eh.GetDisplayHandler();
     if (nullptr == v8DisplayHandler)

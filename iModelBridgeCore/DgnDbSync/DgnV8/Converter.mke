@@ -22,6 +22,7 @@ DgnDbSyncAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
 DgnV8APISrc         = $(DgnDbSyncAPISrc)DgnV8/
 
 dgndbsyncSyncDir    = $(baseDir)../
+dynamicSchemaGeneratorDir = $(baseDir)DynamicSchemaGenerator/
 
 DgnDbSyncDepends    = $(DgnDbSyncAPISrc)DgnDbSync.h
 
@@ -31,11 +32,12 @@ SrcV8IModelExtraFiles = $(SrcRoot)V8IModelExtraFiles/
 DgnV8Depends        = $(DgnV8APISrc)Converter.h \
                       $(DgnV8APISrc)SyncInfo.h \
                       $(baseDir)ConverterInternal.h \
-                      $(baseDir)EntityConverter.h \
                       $(baseDir)LinkConverter.h \
-                      $(baseDir)ECConversion.h \
-                      $(baseDir)ECDiff.h \
                       $(SrcV8IModelExtraFiles)V8IModelExtraFiles.h
+
+dynamicSchemaGeneratorDepends = $(dynamicSchemaGeneratorDir)ECConversion.h \
+                      $(dynamicSchemaGeneratorDir)ECDiff.h
+
 
 o = $(OutputRootDir)Build/DgnDbSync/DgnV8/Converter/
 
@@ -88,11 +90,7 @@ $(o)TiledFileConverter$(oext):  $(baseDir)TiledFileConverter.cpp $(DgnV8Depends)
 
 $(o)RootModelConverter$(oext):  $(baseDir)RootModelConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
-$(o)EntityConverter$(oext):  $(baseDir)EntityConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
-
-$(o)ECConversion$(oext):  $(baseDir)ECConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
-
-$(o)ECDiff$(oext):  $(baseDir)ECDiff.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ECElementConverter$(oext):  $(baseDir)ECElementConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)GeometryConversion$(oext):  $(baseDir)GeometryConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
@@ -124,7 +122,7 @@ $(o)Levels$(oext):  $(baseDir)Levels.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${M
 
 $(o)DgnV8Text$(oext): $(baseDir)DgnV8Text.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
-$(o)DgnV8Tags$(oext): $(baseDir)DgnV8Tags.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DgnV8Tags$(oext): $(dynamicSchemaGeneratorDir)DgnV8Tags.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)ConvertLights$(oext): $(baseDir)ConvertLights.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
@@ -133,6 +131,12 @@ $(o)LinkConverter$(oext): $(baseDir)LinkConverter.cpp $(DgnV8Depends) $(DgnDbSyn
 $(o)DwgDgnV8Host$(oext): $(baseDir)DwgDgnV8Host.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)ForeignFileHandlers$(oext): $(baseDir)ForeignFileHandlers.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ECConversion$(oext):  $(dynamicSchemaGeneratorDir)ECConversion.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ECDiff$(oext):  $(dynamicSchemaGeneratorDir)ECDiff.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)EntityConverter$(oext):  $(dynamicSchemaGeneratorDir)EntityConverter.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects =% $(MultiCompileObjectList)
@@ -193,7 +197,6 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatformTools.lib
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
 
 

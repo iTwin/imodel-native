@@ -6,300 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
-#include <regex>
 
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
 // to bim and v8. The problem is that the V8 Bentley namespace is shifted in.
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
-
-//=======================================================================================
-// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
-// strings
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIUtf8Ascii
-    {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
-    };
-
-static bool s_doFileSaveTimeCheck = true;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-Converter::SchemaConversionScope::SchemaConversionScope(Converter& converter)
-: m_converter(converter), m_succeeded(false)
-    {
-    m_converter.InitializeECSchemaConversion();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-Converter::SchemaConversionScope::~SchemaConversionScope()
-    {
-    m_converter.FinalizeECSchemaConversion();
-    if (!m_succeeded)
-        {
-        m_converter.SetSkipECContent(true);
-        m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Error(), "Failed to transform the v8 ECSchemas to a BIS based ECSchema. Therefore EC content is not converted. See logs for details. Please try to adjust the v8 ECSchemas.");
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   11/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::ConsolidateV8ECSchemas()
-    {
-    if (m_skipECContent)
-        return BentleyApi::SUCCESS;
-
-    ECSchemaXmlDeserializer schemaXmlDeserializer(*this);
-    bset<Utf8String> targetSchemaNames;
-//#define EXPORT_V8SCHEMA_XML 1
-#ifdef EXPORT_V8SCHEMA_XML
-    BeFileName bimFileName = m_dgndb->GetFileName();
-    BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_V8").c_str());
-    if (!outFolder.DoesPathExist())
-        BeFileName::CreateNewDirectory(outFolder.GetName());
-
-#endif
-
-    for (auto const& entry : V8ECSchemaXmlInfo::Iterable(*m_dgndb))
-        {
-        BECN::SchemaKey key = entry.GetSchemaKey();
-        Utf8StringCR schemaName = key.GetName();
-        targetSchemaNames.insert(schemaName);
-        Utf8CP schemaXml = entry.GetSchemaXml();
-
-        if (entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic)
-            schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
-        else
-            schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
-
-#ifdef EXPORT_V8SCHEMA_XML
-        WString fileName;
-        fileName.AssignUtf8(key.GetFullSchemaName().c_str());
-        fileName.append(L".ecschema.xml");
-
-        BeFileName outPath(outFolder);
-        outPath.AppendToPath(fileName.c_str());
-
-        if (outPath.DoesPathExist())
-            outPath.BeDeleteFile();
-        BeFile outFile;
-        outFile.Create(outPath.GetName());
-        Utf8String xmlString(schemaXml);
-        outFile.Write(nullptr, xmlString.c_str(), static_cast<uint32_t>(xmlString.size()));
-#endif
-
-        }
-
-     if (BentleyApi::SUCCESS != schemaXmlDeserializer.DeserializeSchemas(*m_schemaReadContext, ECN::SchemaMatchType::Latest, *this))
-         {
-         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "Failed to merge dynamic V8 ECSchemas.");
-         BeAssert(false && "Failed to merge dynamic V8 ECSchemas.");
-         return BSIERROR;
-         }
-
-    return SupplementV8ECSchemas();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   03/2015
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::SupplementV8ECSchemas()
-    {
-    DgnPlatformLib::Host* host = DgnPlatformLib::QueryHost();
-    if (host == nullptr)
-        {
-        BeAssert(false && "Could not retrieve Graphite DgnPlatformLib Host.");
-        return BSIERROR;
-        }
-
-    BeFileName supplementalECSchemasDir = _GetParams().GetAssetsDir();
-    supplementalECSchemasDir.AppendToPath(L"ECSchemas");
-    supplementalECSchemasDir.AppendToPath(L"Supplemental");
-
-    if (!supplementalECSchemasDir.DoesPathExist())
-        {
-        Utf8String error;
-        error.Sprintf("Could not find deployed system supplemental ECSchemas.Directory '%s' does not exist.", supplementalECSchemasDir.GetNameUtf8().c_str());
-        ReportIssue(IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-        BeAssert(false && "Could not find deployed system supplemental ECSchemas.");
-        return BSIERROR;
-        }
-
-    //Schemas from v8 file were retrieved via XML. In that case the primary schemas have not been supplemented by DgnECManager.
-    //So we have to do it ourselves.
-    bvector<BECN::ECSchemaP> primarySchemas;
-    bvector<BECN::ECSchemaP> supplementalSchemas;
-    bvector<BECN::ECSchemaP> schemas;
-    m_schemaReadContext->GetCache().GetSchemas(schemas);
-    for (BECN::ECSchemaP schema : schemas)
-        {
-        if (schema->IsSupplementalSchema())
-            supplementalSchemas.push_back(schema);
-        else if (!schema->IsStandardSchema())
-            primarySchemas.push_back(schema);
-        }
-
-    BeFileName entryName;
-    bool isDir = false;
-    for (BeDirectoryIterator dirs(supplementalECSchemasDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
-        {
-        if (!isDir && FileNamePattern::MatchesGlob(entryName, L"*Supplemental*.ecschema.xml"))
-            {
-            BECN::ECSchemaPtr supplementalSchema = nullptr;
-            if (BECN::SchemaReadStatus::Success != BECN::ECSchema::ReadFromXmlFile(supplementalSchema, entryName.GetName(), *m_schemaReadContext))
-                {
-                Utf8String error;
-                error.Sprintf("Failed to read supplemental ECSchema from file '%s'.", entryName.GetNameUtf8().c_str());
-                ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                continue;
-                }
-
-            supplementalSchemas.push_back(supplementalSchema.get ());
-            }
-        }
-    _AddSupplementalSchemas(supplementalSchemas, *m_schemaReadContext);
-    for (BECN::ECSchemaP primarySchema : primarySchemas)
-        {
-        if (primarySchema->IsSupplemented())
-            {
-            BeAssert(false && "V8 primary schemas are not expected to be supplemented already when deserialized from XML.");
-            continue;
-            }
-
-        BECN::SupplementedSchemaBuilder builder;
-        if (BECN::SupplementedSchemaStatus::Success != builder.UpdateSchema(*primarySchema, supplementalSchemas, false))
-            {
-            Utf8String error;
-            error.Sprintf("Failed to supplement ECSchema '%s'. See log file for details.", Utf8String(primarySchema->GetName ()).c_str());
-            ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-            continue;
-            }
-        if (!ECN::ECSchemaConverter::Convert(*primarySchema, false))
-            {
-            Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", primarySchema->GetFullSchemaName().c_str());
-            ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-            return BentleyApi::BSIERROR;
-            }
-        }
-
-    //now remove the supp schemas from the read context as they are not needed anymore and as the read context will
-    //be used for the ECDb schema import (where ECDb would attempt to supplement again if the supp schemas were still there)
-    for (BECN::ECSchemaP suppSchema : supplementalSchemas)
-        {
-        m_schemaReadContext->GetCache().DropSchema(suppSchema->GetSchemaKey());
-        }
-
-    for (BECN::ECSchemaCP schema : schemas)
-        {
-        if (schema->GetName().EqualsIAscii("Unit_Attributes"))
-            {
-            m_schemaReadContext->GetCache().DropSchema(schema->GetSchemaKey());
-            break;
-            }
-        }
-    return BentleyApi::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-void Converter::AnalyzeECContent(DgnV8ModelR v8Model, DgnModel* targetModel)
-    {
-    if (m_skipECContent)
-        return;
-
-    uint64_t count = 0;
-
-    DgnV8Api::PersistentElementRefList* graphicElements = v8Model.GetGraphicElementsP();
-    if (nullptr != graphicElements)
-        {
-        for (DgnV8Api::PersistentElementRef* v8Element : *graphicElements)
-            {
-            if ((++count % 1000) == 0)
-                ReportProgress();
-
-            DgnV8Api::ElementHandle v8eh(v8Element);
-            //TODO if (_FilterElement(v8eh))
-            //TODO     continue;
-
-            Analyze(v8eh, targetModel);
-            }
-        }
-
-    DgnV8Api::PersistentElementRefList* controlElems = v8Model.GetControlElementsP();
-    if (nullptr != controlElems)
-        {
-        for (DgnV8Api::PersistentElementRef* v8Element : *controlElems)
-            {
-            if ((++count % 1000) == 0)
-                ReportProgress();
-
-            DgnV8Api::ElementHandle v8eh(v8Element);
-            //TODO if (_FilterElement(v8eh))
-            //TODO     continue;
-
-            Analyze(v8eh, targetModel);
-            }
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::Analyze(DgnV8Api::ElementHandle const& v8Element, DgnModel* targetModel)
-    {
-    DoAnalyze(v8Element, targetModel);
-    //recurse into component elements (if the element has any)
-    for (DgnV8Api::ChildElemIter childIt(v8Element); childIt.IsValid(); childIt = childIt.ToNext())
-        {
-        Analyze(childIt, targetModel);
-        }
-
-    return BentleyApi::SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     03/2015
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::DoAnalyze(DgnV8Api::ElementHandle const& v8Element, DgnModel* targetModel)
-    {
-    auto& v8ECManager = DgnV8Api::DgnECManager::GetManager();
-    DgnV8Api::ElementECClassInfo classes;
-    v8ECManager.FindECClassesOnElement(v8Element.GetElementRef(), classes);
-    for (auto& ecClassInfo : classes)
-        {
-        auto& ecClass = ecClassInfo.first;
-        bool isPrimary = ecClassInfo.second;
-        
-        // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
-        if (isPrimary && ecClass.m_schemaName.Equals(GetV8TagSetDefinitionSchemaName()))
-            isPrimary = false;
-        
-        ECClassName v8ClassName(Utf8String(ecClass.m_schemaName.c_str()).c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
-        ECN::SchemaKey conversionKey(Utf8String(v8ClassName.GetSchemaName()).append("_DgnDbSync").c_str(), 1, 0);
-        ECN::ECSchemaPtr conversionSchema = m_syncReadContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
-        bool namedGroupOwnsMembers = false;
-        if (conversionSchema.IsValid())
-            {
-            ECN::ECClassCP ecClass = conversionSchema->GetClassCP(v8ClassName.GetClassName());
-            if (nullptr != ecClass)
-                namedGroupOwnsMembers = ecClass->GetCustomAttribute("NamedGroupOwnsMembers") != nullptr;
-            }
-        if (BentleyApi::SUCCESS != V8ECClassInfo::Insert(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModel))
-            return BSIERROR;
-        if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(*m_dgndb, v8Element, v8ClassName)))
-            return BSIERROR;
-        }
-
-    return BentleyApi::SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
@@ -575,286 +285,6 @@ bool Converter::DoesRelationshipExist(Utf8StringCR relName, BeSQLite::EC::ECInst
     return stmt->GetValueInt(0) > 0;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::ConvertToBisBasedECSchemas()
-    {
-    BisClassConverter::SchemaConversionContext context(*this, *m_schemaReadContext, *m_syncReadContext, m_config.GetOptionValueBool("AutoDetectMixinParams", true));
-
-    if (BentleyApi::SUCCESS != BisClassConverter::PreprocessConversion(context))
-        return BentleyApi::ERROR;
-
-    bset<BECN::ECClassP> rootClasses;
-    bset<BECN::ECRelationshipClassP> relationshipClasses;
-
-    for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
-        {
-        BECN::ECSchemaP schema = kvpair.second;
-        //only interested in the domain schemas, so skip standard, system and supp schemas
-        if (context.ExcludeSchemaFromBisification(*schema))
-            continue;
-
-        for (BECN::ECClassP ecClass : schema->GetClasses())
-            {
-            BECN::ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-            if (relClass != nullptr && !relClass->HasBaseClasses())
-                relationshipClasses.insert(relClass);
-            else if (ecClass->HasBaseClasses())
-                continue;
-            else
-                rootClasses.insert(ecClass);
-            }
-        }
-
-    for (BECN::ECClassP rootClass : rootClasses)
-        {
-        ECClassName rootClassName(*rootClass);
-        if (BisClassConverter::ConvertECClass(context, rootClassName) != BentleyApi::SUCCESS)
-            return BentleyApi::BSIERROR;
-        }
-
-    for (BECN::ECClassP rootClass : rootClasses)
-        {
-        BisClassConverter::CheckForMixinConversion(context, *rootClass);
-        }
-
-    if (BisClassConverter::FinalizeConversion(context) != BentleyApi::SUCCESS)
-        return BentleyApi::BSIERROR;
-
-    for (BECN::ECRelationshipClassP relationshipClass : relationshipClasses)
-        {
-        if (BisClassConverter::ConvertECRelationshipClass(context, *relationshipClass, m_syncReadContext.get()) != BentleyApi::SUCCESS)
-            return BentleyApi::BSIERROR;
-        }
-
-    for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
-        {
-        BECN::ECSchemaP schema = kvpair.second;
-        if (context.ExcludeSchemaFromBisification(*schema))
-            continue;
-
-        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
-            {
-            Utf8String errorMsg;
-            errorMsg.Sprintf("Failed to validate ECSchema %s as an EC3.1 ECSchema.", schema->GetFullSchemaName().c_str());
-            ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
-            return BentleyApi::BSIERROR;
-            }
-        }
-
-    return BentleyApi::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema
-* @bsimethod                                 Ramanujam.Raman                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DirectlyReferences(ECN::ECSchemaCP thisSchema, ECN::ECSchemaCP possiblyReferencedSchema)
-    {
-    ECN::ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      01/2013
-//---------------------------------------------------------------------------------------
-bool DependsOn(ECN::ECSchemaCP thisSchema, ECN::ECSchemaCP possibleDependency)
-    {
-    if (DirectlyReferences(thisSchema, possibleDependency))
-        return true;
-
-    ECN::SupplementalSchemaMetaDataPtr metaData;
-    if (ECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency)
-        && metaData.IsValid()
-        && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, ECN::SchemaMatchType::Latest))
-        {
-        return true; // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
-        }
-
-    // Maybe possibleDependency supplements one of my references?
-    ECN::ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (DependsOn(it->second.get(), possibleDependency))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InsertSchemaInDependencyOrderedList(bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP insertSchema)
-    {
-    if (std::find(schemas.begin(), schemas.end(), insertSchema) != schemas.end())
-        return; // This (and its referenced ECSchemas) are already in the list
-
-    bvector<ECN::ECSchemaP>::reverse_iterator rit;
-    for (rit = schemas.rbegin(); rit < schemas.rend(); ++rit)
-        {
-        if (DependsOn(*rit, insertSchema))
-            {
-            schemas.insert(rit.base(), insertSchema); // insert right after the referenced schema in the list
-            return;
-            }
-        }
-
-    schemas.insert(schemas.begin(), insertSchema); // insert at the beginning
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BuildDependencyOrderedSchemaList(bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP insertSchema)
-    {
-    InsertSchemaInDependencyOrderedList(schemas, insertSchema);
-    ECN::ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
-    for (ECN::ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
-        {
-        ECN::ECSchemaR referencedSchema = *iter->second.get();
-        BuildDependencyOrderedSchemaList(schemas, &referencedSchema);
-        }
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::ImportTargetECSchemas()
-    {
-    bvector<BECN::ECSchemaP> schemas;
-    m_schemaReadContext->GetCache().GetSchemas(schemas);
-    if (schemas.empty())
-        return BentleyApi::SUCCESS; //no schemas to import
-
-    // need to ensure there are no duplicated aliases.  Also need to remove unused references
-    bset<Utf8String, CompareIUtf8Ascii> prefixes;
-    for (ECN::ECSchemaP schema : schemas)
-        {
-        schema->RemoveUnusedSchemaReferences();
-
-        auto it = prefixes.find(schema->GetAlias());
-        if (it == prefixes.end())
-            {
-            prefixes.insert(schema->GetAlias());
-            continue;
-            }
-        int subScript;
-        Utf8String tryPrefix;
-        for (subScript = 1; subScript < 500; subScript++)
-            {
-            Utf8Char temp[256];
-            tryPrefix.clear();
-            tryPrefix.Sprintf("%s%d", schema->GetAlias().c_str(), subScript);
-            it = prefixes.find(tryPrefix);
-            if (it == prefixes.end())
-                {
-                schema->SetAlias(tryPrefix);
-                prefixes.insert(tryPrefix);
-                break;
-                }
-            }
-        }
-
-    bvector<BECN::ECSchemaCP> constSchemas = m_schemaReadContext->GetCache().GetSchemas();
-    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
-    auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
-    constSchemas.erase(removeAt, constSchemas.end());
-
-//#define EXPORT_BISIFIEDECSCHEMAS 1
-#ifdef EXPORT_BISIFIEDECSCHEMAS
-    {
-    BeFileName bimFileName = GetDgnDb().GetFileName();
-    BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().c_str());
-    if (!outFolder.DoesPathExist())
-        BeFileName::CreateNewDirectory(outFolder.GetName());
-
-    for (BECN::ECSchemaCP schema : constSchemas)
-        {
-        WString fileName;
-        fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
-        fileName.append(L".ecschema.xml");
-
-        BeFileName outPath(outFolder);
-        outPath.AppendToPath(fileName.c_str());
-
-        if (outPath.DoesPathExist())
-            outPath.BeDeleteFile();
-
-        schema->WriteToXmlFile(outPath.GetName());
-        }
-    }
-#endif
-
-    if (SchemaStatus::Success != GetDgnDb().ImportV8LegacySchemas(constSchemas))
-        {
-        return BentleyApi::ERROR;
-        }
-
-    GetChangeDetector()._OnSchemasConverted(*this, constSchemas);
-
-    return BentleyApi::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-void Converter::InitializeECSchemaConversion()
-    {
-    //set-up required schema locaters and search paths
-    m_schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
-    m_syncReadContext = ECN::ECSchemaReadContext::CreateContext();
-
-    m_schemaReadContext->AddSchemaLocater(GetDgnDb().GetSchemaLocater());
-    auto host = DgnPlatformLib::QueryHost();
-    if (host != nullptr)
-        {
-        BeFileName ecschemasDir = _GetParams().GetAssetsDir();
-        ecschemasDir.AppendToPath(L"ECSchemas");
-
-        BeFileName dgnECSchemasDir(ecschemasDir);
-        dgnECSchemasDir.AppendToPath(L"Dgn");
-        m_schemaReadContext->AddSchemaPath(dgnECSchemasDir.c_str());
-
-        BeFileName v3ConversionECSchemasDir(ecschemasDir);
-        v3ConversionECSchemasDir.AppendToPath(L"V3Conversion");
-        m_schemaReadContext->AddConversionSchemaPath(v3ConversionECSchemasDir.c_str());
-
-        BeFileName dgndbECSchemasDir(ecschemasDir);
-        dgndbECSchemasDir.AppendToPath(L"Standard");
-        m_syncReadContext->AddSchemaPath(dgnECSchemasDir.c_str());
-
-        BeFileName dgndbSyncECSchemasDir(ecschemasDir);
-        dgndbSyncECSchemasDir.AppendToPath(L"DgnDbSync");
-        m_syncReadContext->AddSchemaPath(dgndbSyncECSchemasDir.c_str());
-
-    	m_syncReadContext->AddSchemaLocater(GetDgnDb().GetSchemaLocater());
-
-        BeFileName ecdbECSchemasDir(ecschemasDir);
-        ecdbECSchemasDir.AppendToPath(L"ECDb");
-        m_syncReadContext->AddSchemaPath(ecdbECSchemasDir.c_str());
-        }
-    else
-        {
-        BeAssert(false && "Could not retrieve DgnPlatformLib Host.");
-        }
-    m_syncReadContext->SetSkipValidation(true);
-    m_schemaReadContext->SetSkipValidation(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-void Converter::FinalizeECSchemaConversion()
-    {
-    m_schemaReadContext = nullptr;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -890,6 +320,9 @@ void RootModelConverter::_ConvertSpatialViews()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     {
+    // *** NB: Do not create elements (or models) in here. This is running as part of the initialization phase.
+    //          Only schema changes are allowed in this phase.
+
     // don't bother to convert a DWG master file - let DwgImporter do the job.
     BeFileNameCR rootFileName = GetRootFileName ();
     if (Converter::IsDwgOrDxfFile(rootFileName))
@@ -911,8 +344,8 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
 
-    //  Load the root model
-    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId);
+    //  Load the root model and all of its reference attachments. Let V8 do this, so that we know that it's done correctly and in the same way that MicroStation would do it.
+    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
     if (NULL == m_rootModelRef)
         return openStatus;
 
@@ -925,6 +358,29 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
         ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Unsupported(), Converter::Issue::RootModelMustBePhysical(), Converter::IssueReporter::FmtModel(*GetRootModelP()).c_str());
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
+
+    if (WasAborted())
+        return DgnV8Api::DGNFILE_STATUS_UnknownError;
+    
+    // Detect all V8 models. This process also classifies 2d design models and loads and fills drawings and sheets.
+    // The of models that we find will be fed into the ECSchema conversion logic. These functions will ALSO enroll the v8files that they find in syncinfo.
+    CreateProvenanceTables(); // TRICKY: Call this before anyone calls _GetV8FileIntoSyncInfo
+    _GetV8FileIntoSyncInfo(*m_rootFile, _GetIdPolicy(*m_rootFile)); // TRICKY: Before looking for models, register the root file in syncinfo. This starts the process of populating m_v8files. Do NOT CALL GetV8FileSyncInfoId as that will fail to populate m_v8Files in some cases.
+    FindSpatialV8Models(*GetRootModelP());
+    FindV8DrawingsAndSheets();
+
+#ifndef NDEBUG
+    BeAssert((m_v8Files.size() >= 1) && "FindSpatialV8Models should have populated m_v8Files");
+    for (auto f : m_v8Files)
+        {
+        auto cachedSfid = GetV8FileSyncInfoIdFromAppData(*f);
+        BeAssert(cachedSfid.IsValid() && "We should have cached the V8FileSyncInfoId for each V8 file that we found");
+
+        SyncInfo::FileById syncInfoFiles(GetDgnDb(), cachedSfid);
+        SyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
+        BeAssert((syncInfoFile != syncInfoFiles.end()) && "We should be able to look up V8 files in syncinfo by their V8FileSyncInfoId's");
+        }
+#endif
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
@@ -941,6 +397,9 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
         }
     BeAssert(m_rootFile.IsValid() && "Must define root file before loading the job");
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before loading the job");
+
+    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
+    WriteRepositoryLink(*GetRootV8File());  // Find the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
     m_importJob = FindImportJobForModel(*GetRootModelP());
 
@@ -994,7 +453,7 @@ BentleyStatus SpatialConverterBase::FindRootModelFromImportJob()
         ReportError(IssueCategory::CorruptData(), Issue::Error(), "V8ModelMapping has bad DgnModelId");
         return BSIERROR;
         }
-    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping);
+    m_rootModelMapping = ResolvedModelMapping(*rootBimModel, *GetRootModelP(), syncInfoModelMapping, nullptr);
     _AddResolvedModelMapping(m_rootModelMapping);
     return BSISUCCESS;
     }
@@ -1147,6 +606,9 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         return ImportJobCreateStatus::FailedExistingRoot;
         }
 
+    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
+    WriteRepositoryLink(*GetRootV8File());  // Write the RepositoryLink element for the root file now. This is the order in which the older converter did it.
+
     Utf8String jobName = _GetParams().GetBridgeJobName();
     if (jobName.empty())
         {
@@ -1167,25 +629,21 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     BeAssert((nullptr != m_rootModelRef) && "Must define root model before creating the job");
     BeAssert(!jobName.empty());
 
-    // 0. Make sure that the domains/schemas and other fixed tables that I use are imported
-    CreateJobStructure_ImportSchemas();
-
+    // Make sure that we don't already have a job for this root ...
     if (FindImportJobForModel(*GetRootModelP()).IsValid())
         return ImportJobCreateStatus::FailedExistingRoot;
 
+    // ... and that we don't already have this V8 model mapped in as a reference to some other root.
     SyncInfo::V8ModelMapping mapping;
     if (BSISUCCESS == GetSyncInfo().FindModel(&mapping, *GetRootModelP(), &m_rootTrans, GetCurrentIdPolicy()))
         return ImportJobCreateStatus::FailedExistingNonRootModel;
 
-    // 1. Map in the root file.
-    auto fileId = GetV8FileSyncInfoId(*m_rootFile); // NB! file might already be in syncinfo! The logic that tries to detect an existing Job puts it there!
+    // 1. Look up the root file's syncinfoid. (_InitRootModel has already mapped in the root file.)
+    auto fileId = GetV8FileSyncInfoId(*m_rootFile);
+#ifndef NDEBUG
     SyncInfo::FileById syncInfoFiles(GetDgnDb(), fileId);
-    SyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
-    if (syncInfoFile == syncInfoFiles.end())
-        {
-        BeAssert(false);
-        return ImportJobCreateStatus::FailedExistingNonRootModel;
-        }
+    BeAssert(syncInfoFiles.begin() != syncInfoFiles.end());
+#endif
 
     _SetChangeDetector(false);
 
@@ -1295,6 +753,49 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::FindSpatialV8Models(DgnV8ModelRefR thisModelRef, bool haveFoundSpatialRoot)
+    {
+    DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
+
+    if (!ShouldConvertToPhysicalModel(thisV8Model))
+        return;
+
+    DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
+
+    GetV8FileSyncInfoId(thisV8File); // Register this FILE in syncinfo. Also populates m_v8files
+
+    bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
+
+    if (haveFoundSpatialRoot && !isThisMyFile)
+        return; // we only go through another bridge's territory in order to find our own spatial root. don't follow any references from my spatial root into another bridge's file.
+
+    if (isThisMyFile)
+        haveFoundSpatialRoot = true;
+
+    m_spatialModelsSeen.insert(&thisV8Model);   // Note that we may very well encounter the same model via more than one attachment path. Each path may have a different setting for nesting depth, so keep going.
+
+    m_spatialModelsInAttachmentOrder.push_back(&thisV8Model);
+
+    ClassifyNormal2dModels (thisV8File); // Tells me which 2d design models should be treated as spatial models
+
+    if (nullptr == thisModelRef.GetDgnAttachmentsP())
+        return; 
+
+    // All attachments to a spatial model are spatial, unless they are specifically DgnModelType::Drawing or DgnModelType::Sheet, which BIM doesn't support.
+    ForceAttachmentsToSpatial (*thisModelRef.GetDgnAttachmentsP());
+
+    for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
+        {                  
+        if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
+            continue; // missing reference 
+
+        FindSpatialV8Models(*attachment, haveFoundSpatialRoot);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * The purpose of this function is to *discover* spatial models, not to convert their contents.
 * The outcome of this function is to a) create an (empty) BIM spatial model for each discovered V8 spatial model,
 * and b) to discover and record the spatial transform that should be applied when (later) converting
@@ -1310,14 +811,17 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     DgnV8ModelR thisV8Model = *thisModelRef.GetDgnModelP();
     DgnV8FileR  thisV8File  = *thisV8Model.GetDgnFileP();
 
+    BeAssert((m_spatialModelsSeen.find(&thisV8Model) != m_spatialModelsSeen.end()) && "All spatial models should have been found by FindSpatialV8Models");
+    BeAssert((std::find(m_v8Files.begin(), m_v8Files.end(), &thisV8File) != m_v8Files.end()) && "All V8 files should have been found by FindV8DrawingsAndSheets and FindSpatialV8Models");
+
     bool isThisMyFile = IsFileAssignedToBridge(thisV8File);
     if (isThisMyFile)
         haveFoundSpatialRoot = true;
 
-    // look at the models in this file. If there are 2d models with DgnModelType::Normal, decide whether they should be considered to be spatial models or drawing models.
-    ClassifyNormal2dModels (thisV8File);
+    // FindSpatialV8Models has already called ClassifyNormal2dModels (thisV8File);
 
     SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoId(thisV8File);
+    WriteRepositoryLink(thisV8File);    // write the RepositoryLink element for this v8 file now. This the order in which the older converter did it.
 
     // NB: We must not try to skip entire files if we need to follow reference attachments. Instead, we can skip 
     //      the elements in a model if the model (i.e., the file) is unchanged.
@@ -1325,31 +829,10 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     // Map this v8 model into the project
     ResolvedModelMapping v8mm = GetModelForDgnV8Model(thisModelRef, trans);
 
-    if (true)
-        {
-        auto fillMsg = ProgressMessage::GetString(ProgressMessage::TASK_FILLING_V8_MODELS());
-        DgnV8Api::IDgnProgressMeter::TaskMark loading(Bentley::WString(fillMsg.c_str(),true).c_str());
-        DgnV8Api::DgnAttachmentLoadOptions loadOptions;
-        loadOptions.SetTopLevelModel(!thisModelRef.IsDgnAttachment() || &thisModelRef == GetRootModelRefP());
-        loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::Model);
-        // If we know that we won't be processing graphics in this model but only attachments
-        // then we can save a lot of time by filling only the control section. We do that in two
-        // cases: 1) this bridge should not convert this file (but may have to convert references attached to it),
-        // or 2) this is an update and this file has not changed and so no elements in it will be converted.
-        if (!isThisMyFile || GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm)) 
-            loadOptions.SetSectionsToFill(DgnV8Api::DgnModelSections::ControlElements);
-
-        if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
-            loadOptions.m_loadRasterRefs = true;
-
-        thisModelRef.ReadAndLoadDgnAttachments(loadOptions);
-        }
-
     if (nullptr == thisModelRef.GetDgnAttachmentsP())
         return; 
 
-    // All attachments to a spatial model are spatial, unless they are specifically DgnModelType::Drawing or DgnModelType::Sheet, which BIM doesn't support.
-    ForceAttachmentsToSpatial (*thisModelRef.GetDgnAttachmentsP());
+	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
     SubjectCR parentRefsSubject = _GetSpatialParentSubject();
 
@@ -1361,11 +844,6 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
         if (haveFoundSpatialRoot && !IsFileAssignedToBridge(*attachment->GetDgnModelP()->GetDgnFileP()))
             continue; // this leads to models in another bridge's territory. Stay out.
-
-        // Keep the mapping between models and the attachment that references the model
-        DgnV8Api::Fd_opts fdOpts = attachment->GetFDOptsCR();
-        Bentley::DgnModelP dgnModelP = attachment->GetDgnModelP();
-        m_modelAttachmentMapping[dgnModelP] = attachment;
 
         if (!hasPushedReferencesSubject)
             {
@@ -1527,307 +1005,10 @@ RootModelConverter::RootModelConverter(RootModelSpatialParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::_ConvertSchemas()
-    {
-    if (IsUpdating())
-        {
-        CheckNoECSchemaChanges();
-        if (!m_needReimportSchemas)
-            return;
-        if (WasAborted())
-            return;
-        }
-
-    SetStepName(Converter::ProgressMessage::STEP_DISCOVER_ECSCHEMAS());
-
-    bset<DgnV8ModelP> uniqueModels;
-    SchemaConversionScope scope(*this);
-
-    StopWatch timer(true);
-    
-    for (auto& modelMapping : m_v8ModelMappings)
-        uniqueModels.insert(&modelMapping.GetV8Model());
-
-    AddTasks((uint32_t)uniqueModels.size());
-
-    for (DgnV8ModelP v8Model : uniqueModels)
-        RetrieveV8ECSchemas(*v8Model);
-
-    if (m_skipECContent)
-        {
-        scope.SetSucceeded();
-        return;
-        }
-
-    if (SUCCESS != ConsolidateV8ECSchemas() || WasAborted())
-        return;
-
-    ConverterLogging::LogPerformance(timer, "Convert Schemas> Total Retrieve and consolidate V8 ECSchemas");
-
-    AddTasks((int32_t)(m_v8ModelMappings.size() + m_v8Files.size()));
-
-    timer.Start();
-    for (auto& modelMapping : m_v8ModelMappings)
-        {
-        SetTaskName(ProgressMessage::TASK_ANALYZE_EC_CONTENT(), Converter::IssueReporter::FmtModel(modelMapping.GetV8Model()).c_str());
-
-        AnalyzeECContent(modelMapping.GetV8Model(), &modelMapping.GetDgnModel());
-        if (WasAborted())
-            return;
-        }
-
-    //analyze named groups in dictionary models
-    for (DgnV8FileP v8File : m_v8Files)
-        {
-        SetTaskName(ProgressMessage::TASK_ANALYZE_EC_CONTENT(), Converter::IssueReporter::FmtModel(v8File->GetDictionaryModel()).c_str());
-
-        DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
-        AnalyzeECContent(dictionaryModel, nullptr);
-        if (WasAborted())
-            return;
-        }
-
-    ConverterLogging::LogPerformance(timer, "Convert Schemas> Analyze V8 EC content");
-
-    SetStepName(Converter::ProgressMessage::STEP_IMPORT_SCHEMAS());
-
-    timer.Start();
-    if (BentleyApi::SUCCESS != ConvertToBisBasedECSchemas())
-        return;
-
-    ReportProgress();
-    ConverterLogging::LogPerformance(timer, "Convert Schemas> Upgrade V8 ECSchemas");
-
-    timer.Start();
-    ChangeDetector* changeDetector = nullptr;
-    if (IsUpdating())
-        {
-        changeDetector = dynamic_cast<ChangeDetector*> (m_changeDetector.get());
-        if (nullptr != changeDetector)
-            changeDetector->ReleaseIterators();
-        }
-    //The schema import is wrapped into transaction management so that in case of a failed
-    //schema import the DB can be set into a clean state again. This also means
-    //* any previous changes to the file are committed
-    //* in case of a successful schema import, changes are committed again
-    if (BentleyApi::SUCCESS != ImportTargetECSchemas())
-        return;
-
-    if (IsUpdating() && nullptr != changeDetector)
-        changeDetector->PrepareIterators(GetDgnDb());
-
-    ReportProgress();
-    ConverterLogging::LogPerformance(timer, "Convert Schemas> Import ECSchemas");
-
-    if (WasAborted())
-        return;
-    scope.SetSucceeded();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ConvertSpatialElements()
     {
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_ELEMENTS());
     DoConvertSpatialElements();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::RetrieveV8ECSchemas(DgnV8ModelR v8Model)
-    {
-    SetTaskName(ProgressMessage::TASK_READING_V8_ECSCHEMA(), Utf8String(v8Model.GetDgnFileP()->GetFileName().c_str()).c_str());
-    if (BentleyApi::SUCCESS != RetrieveV8ECSchemas(v8Model, DgnV8Api::ECSCHEMAPERSISTENCE_Stored))
-        return BentleyApi::ERROR;
-    return RetrieveV8ECSchemas(v8Model, DgnV8Api::ECSCHEMAPERSISTENCE_External);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus Converter::RetrieveV8ECSchemas(DgnV8ModelR v8Model, DgnV8Api::ECSchemaPersistence persistence)
-    {
-    auto& dgnv8EC = DgnV8Api::DgnECManager::GetManager();
-    const DgnV8Api::ReferencedModelScopeOption modelScopeOption = DgnV8Api::REFERENCED_MODEL_SCOPE_None;
-
-    Bentley::bvector<DgnV8Api::SchemaInfo> v8SchemaInfos;
-    dgnv8EC.DiscoverSchemasForModel(v8SchemaInfos, v8Model, persistence, modelScopeOption);
-    if (v8SchemaInfos.empty())
-        return BentleyApi::SUCCESS;
-
-    for (auto& v8SchemaInfo : v8SchemaInfos)
-        {
-        ReportProgress();
-
-        ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
-        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
-            LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
-            v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
-            v8SchemaInfo.GetLocation(),
-            v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
-            v8SchemaInfo.GetProviderName());
-
-        //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
-
-        Bentley::Utf8String schemaName(schemaKey.GetName());
-
-        bool isDynamicSchema = false;
-        Bentley::Utf8String schemaXml;
-        if (v8SchemaInfo.IsStoredSchema())
-            {
-            Bentley::WString schemaXmlW;
-            auto stat = dgnv8EC.LocateSchemaXmlInModel(schemaXmlW, v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact, v8Model, modelScopeOption);
-            if (stat != BentleyApi::SUCCESS)
-                {
-                ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "Could not read v8 ECSchema XML.");
-                BeAssert(false && "Could not locate v8 ECSchema.");
-                return BSIERROR;
-                }
-
-            schemaXml = Bentley::Utf8String(schemaXmlW);
-            const size_t xmlByteSize = schemaXml.length() * sizeof(Utf8Char);
-            schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
-
-            isDynamicSchema = IsDynamicSchema(schemaName, schemaXml);
-            }
-        else
-            {
-            if (0 != wcscmp(L"External", v8SchemaInfo.GetLocation())) // System schemas are returned by the 'External' persistence designation
-                continue;
-            // handle external schemas
-            //TBD: DgnECManager doesn't seem to allow to just return the schema xml (Is this possible somehow?)
-            //So we need to get the ECSchema and then serialize it to a string.
-            //(we need the string anyways as this is the only way to marshal the schema from v8 to Graphite)
-            auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact);
-            if (externalSchema == nullptr)
-                {
-                Utf8PrintfString error("Could not locate external v8 ECSchema %s.  Instances of classes from this schema will not be converted.", schemaName.c_str());
-                ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::Message(), nullptr, error.c_str());
-                continue;
-                }
-
-            isDynamicSchema = IsDynamicSchema(*externalSchema);
-
-            if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != externalSchema->WriteToXmlString(schemaXml))
-                {
-                Utf8PrintfString error("Could not serialize external v8 ECSchema %s.  Instances of classes from this schema will not be converted.", schemaName.c_str());
-                ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::Message(), nullptr, error.c_str());
-                continue;
-                }
-            }
-
-        BECN::SchemaKey existingSchemaKey;
-        SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
-        if (m_syncInfo.TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
-            {
-            //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
-            //and also check whether the existing one and the new one are compatible.
-
-            if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
-                {
-                if (!isDynamicSchema)
-                    {
-                    Utf8String error;
-                    error.Sprintf("Dynamic ECSchema %s already found in the V8 file. Copy in model %s is not dynamic and therefore ignored.",
-                                  schemaName.c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
-                    ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                    continue;
-                    }
-                }
-            else
-                {
-                if (isDynamicSchema)
-                    {
-                    Utf8String error;
-                    error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
-                                  Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
-                    ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                    continue;
-                    }
-
-                const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
-                const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
-                const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
-
-                if (existingToNewVersionDiff >= 0)
-                    {
-                    if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
-                        {
-                        Utf8String error;
-                        error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                      existingSchemaKey.GetFullSchemaName().c_str(), existingSchemaKey.m_checkSum,
-                                      Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
-                        ReportIssue(IssueSeverity::Warning, IssueCategory::Sync(), Issue::Message(), error.c_str());
-                        }
-                    else
-                        continue;
-                    }
-                }
-            }
-
-        ECN::ECSchemaId schemaId;
-        if (BE_SQLITE_OK != m_syncInfo.InsertECSchema(schemaId, *v8Model.GetDgnFileP(),
-                                                 schemaName.c_str(),
-                                                 schemaKey.GetVersionMajor(),
-                                                 schemaKey.GetVersionMinor(),
-                                                 isDynamicSchema,
-                                                 schemaKey.m_checkSum))
-            {
-            BeAssert(false && "Failed to insert ECSchema sync info");
-            return BSIERROR;
-            }
-
-        BeAssert(schemaId.IsValid());
-
-        if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(*m_dgndb, schemaId, schemaXml.c_str()))
-            {
-            BeAssert(false && "Could not insert foreign schema xml");
-            return BSIERROR;
-            }
-
-        m_skipECContent = false;
-        }
-
-    return BentleyApi::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-bool Converter::IsDynamicSchema(Bentley::Utf8StringCR schemaName, Bentley::Utf8StringCR schemaXml)
-    {
-    if (IsWellKnownDynamicSchema(schemaName))
-        return true;
-
-    std::regex exp("DynamicSchema\\s+xmlns\\s*=\\s*[\'\"]\\s*Bentley_Standard_CustomAttributes\\.[0-9]+\\.+[0-9]+");
-    size_t searchEndOffset = schemaXml.find("ECClass");
-    Utf8String::const_iterator endIt = (searchEndOffset == Utf8String::npos) ? schemaXml.begin() : (schemaXml.begin() + searchEndOffset);
-    return std::regex_search<Utf8String::const_iterator>(schemaXml.begin(), endIt, exp);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-bool Converter::IsDynamicSchema(ECObjectsV8::ECSchemaCR schema)
-    {
-    Bentley::Utf8String schemaName(schema.GetName().c_str());
-    if (IsWellKnownDynamicSchema(schemaName))
-        return true;
-
-    //TBD: Should be replaced by schema.IsDynamicSchema once Graphite ECObjects has been merged back to Topaz
-    return schema.GetCustomAttribute(L"DynamicSchema") != nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-bool Converter::IsWellKnownDynamicSchema(Bentley::Utf8StringCR schemaName)
-    {
-    return BeStringUtilities::Strnicmp(schemaName.c_str(),"PFLModule", 9) == 0 ||
-        schemaName.EqualsI("CivilSchema_iModel") ||
-        schemaName.EqualsI("BuildingDataGroup");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2448,28 +1629,6 @@ BentleyStatus  RootModelConverter::Process()
     
     ConverterLogging::LogPerformance(timer, "Convert Models");
 
-    timer.Start();
-    _ConvertDgnV8Tags();        // *** TRICKY! You must convert tags BEFORE calling _ConvertSchemas ***
-    if (WasAborted())
-        return ERROR;
-
-    ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
-
-    timer.Start();
-    if (!m_config.GetOptionValueBool("SkipECContent", false))
-        _ConvertSchemas();  // Convert the ECSchemas found in spatial and drawing models
-    if (WasAborted())
-        return ERROR;
-
-    // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
-    if (m_config.GetOptionValueBool("CreateECClassViews", true))
-        {
-        SetStepName(Converter::ProgressMessage::STEP_CREATE_CLASS_VIEWS());
-        GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
-        }
-
-    ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
-    
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
 
     timer.Start();

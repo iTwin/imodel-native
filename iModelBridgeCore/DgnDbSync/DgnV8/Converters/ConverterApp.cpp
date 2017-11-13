@@ -435,7 +435,16 @@ void ConverterApp::_DeleteSyncInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OnConvertToBim(DgnDbR db)
+BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
+    {
+    m_converter->MakeSchemaChanges();
+    return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     {
     m_converter.reset(new RootModelConverter(m_params));
     m_converter->SetDgnDb(db);
@@ -446,9 +455,9 @@ BentleyStatus RootModelConverterApp::_OnConvertToBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_OnConvertedToBim(BentleyStatus)
+void RootModelConverterApp::_OnCloseBim(BentleyStatus)
     {
-    m_converter.reset(nullptr);
+    m_converter.reset(nullptr); // this also has the side effect of closing the source files
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,6 +491,7 @@ BentleyStatus RootModelConverterApp::_OpenSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverterApp::_CloseSource(BentleyStatus)
     {
+    // _OnCloseBim will close the source files
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -21,6 +21,8 @@
 struct V8AttachmentTests : public ConverterTestBaseFixture
     {
     DEFINE_T_SUPER(ConverterTestBaseFixture);
+    void AttachForeignReferenceFile (WCharCP foreignFilename);
+    void CheckForeignReferenceOutput (int numElementsInRef);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,3 +296,148 @@ TEST_F(V8AttachmentTests, UnDisplayedReference)
         EXPECT_EQ(4, CountGeometricModels(*db));
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void V8AttachmentTests::AttachForeignReferenceFile (WCharCP foreignFilename)
+    {
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    BentleyApi::BeFileName inputFilename = GetInputFileName(foreignFilename);
+    BentleyApi::BeFileName outputFilename = GetOutputFileName(foreignFilename);
+
+    // Copy seed 3D V8DGN file
+    MakeWritableCopyOf(outputFilename, inputFilename, inputFilename.GetFileNameAndExtension().c_str());
+
+    // Put a line in the default
+    Bentley::DgnModelP model = v8editor.m_defaultModel;
+    ASSERT_TRUE(model->Is3d());
+    DgnV8Api::ElementId id;
+    v8editor.AddLine(&id, model);
+
+    // Attach the input file of a foreign file format as a reference to the default model:
+    DgnV8Api::DgnAttachment* attachment = nullptr;
+    Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(outputFilename.c_str());
+    ASSERT_EQ( BentleyApi::SUCCESS, model->CreateDgnAttachment(attachment, *moniker, L"Default", true));
+    ASSERT_TRUE(nullptr != attachment);        
+    ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel());
+
+    v8editor.Save();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
+    {
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+    // Should have the default, the attachment, Streets and Satellite phisical models, and no drawing model:
+    countModels(*db, 0, 4);
+
+    // Should have 1 of each of these elements:
+    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
+    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
+    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+
+    BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
+    idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    ASSERT_EQ(2, idlist.size());
+    auto physical = db->Models().GetModel(idlist[0]);
+    ASSERT_TRUE(physical.IsValid());
+
+    // Should have 1 line element in the default model:
+    countElements(*physical, 1);
+    auto refmodel = db->Models().GetModel(idlist[1]);
+    ASSERT_TRUE(refmodel.IsValid());
+
+    // Count elements in the reference model converted from the foreign file format:
+    countElements(*refmodel, expectedElements);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, Attach3dm)
+    {
+    LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
+    if (true)
+        AttachForeignReferenceFile (L"HumanHead.3dm");
+    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    if (true)
+        CheckForeignReferenceOutput (81);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, Attach3ds)
+    {
+    LineUpFiles(L"3ds.ibim", L"Test3d.dgn", false);
+    ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
+    if (true)
+        AttachForeignReferenceFile (L"bed.3ds");
+    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    if (true)
+        CheckForeignReferenceOutput (13);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, AttachFbx)
+    {
+    LineUpFiles(L"fbx.ibim", L"Test3d.dgn", false);
+    ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
+    if (true)
+        AttachForeignReferenceFile (L"candles.fbx");
+    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    if (true)
+        CheckForeignReferenceOutput (103);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, AttachIfc)
+    {
+    LineUpFiles(L"ifc.ibim", L"Test3d.dgn", false);
+    ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
+    if (true)
+        AttachForeignReferenceFile (L"candles.fbx");
+    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    if (true)
+        CheckForeignReferenceOutput (103);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, AttachObj)
+    {
+    LineUpFiles(L"obj.ibim", L"Test3d.dgn", false);
+    ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
+    if (true)
+        AttachForeignReferenceFile (L"bottle.obj");
+    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    // a mesh in a cell counts as 2 elements
+    if (true)
+        CheckForeignReferenceOutput (2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, AttachSkp)
+    {
+    LineUpFiles(L"sketchup.ibim", L"Test3d.dgn", false);
+    ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
+    if (true)
+        AttachForeignReferenceFile (L"Kubelis.skp");
+    DoConvert(m_dgnDbFileName, m_v8FileName); 
+    if (true)
+        CheckForeignReferenceOutput (2);
+    }
+
