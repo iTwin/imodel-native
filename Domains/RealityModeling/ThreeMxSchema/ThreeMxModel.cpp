@@ -607,36 +607,5 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
     return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree(Dgn::Render::SystemP renderSys) const
-    {
-    Load(renderSys);
-
-    return m_scene.get();
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip () const
-    {
-    return m_clip.IsValid() ? m_clip->Clone(nullptr) : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxModel::_GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const
-    {
-    classifiers = m_classifiers;
-    return SUCCESS;
-    }
 #endif
-
-
-
-
 

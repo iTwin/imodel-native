@@ -156,7 +156,7 @@ private:
 //! to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : Dgn::SpatialModel
+struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGetTileTreeForPublishing
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;

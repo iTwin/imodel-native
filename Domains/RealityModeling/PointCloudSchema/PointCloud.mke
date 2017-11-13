@@ -88,6 +88,8 @@ $(o)PointCloudDomain$(oext)             : $(SrcPointCloud)PointCloudDomain.cpp  
 
 $(o)PointCloudTileTree$(oext)           : $(SrcPointCloud)PointCloudTileTree.cpp             $(pointCloudDepends)  ${MultiCompileDepends} 
 
+$(o)PointCloudTilePublish$(oext)        : $(SrcPointCloud)PointCloudTilePublish.cpp          $(pointCloudDepends)  ${MultiCompileDepends} 
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
