@@ -47,7 +47,7 @@
         <ECProperty propertyName="Operation" typeName="Operation" description="Operation type"/>
         <ECProperty propertyName="Indirect" typeName="bool" description="Change happen due to a trigger "/>
         <ECProperty propertyName="TableName" typeName="string" description="Table Name"/>
-        <ECNavigationProperty propertyName="Summary" description="Summary to which this instance is part of" relationshipName="SummaryHasInstances" direction="backward" />
+        <ECNavigationProperty propertyName="Summary" description="Summary to which this instance is part of" relationshipName="SummaryContainsInstanceChanges" direction="backward" />
     </ECEntityClass>
     
     <ECEntityClass typeName="PropertyValue" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">
