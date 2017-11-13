@@ -180,14 +180,8 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-input-sheet=          (required)  Input sheet file name. Can be more than one.\n"
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
-        L"--fwk-transform=            (optional)  3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
+        L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
-        L"--fwk-input-gcs=gcsspec     (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
-        L"--fwk-geoCalculation=       (optional)  If a new model is added with the --update option, sets the geographic coordinate calculation method. Possible Values are:\n"
-        L"                                           Default   - Base the calculation method on the source GCS. GCS's calculated from Placemarks are transformed, others are reprojected\n"
-        L"                                           Reproject - Do full geographic reprojection of each point\n"
-        L"                                           Transform - use the source GCS and DgnDb GCS to construct and use a linear transform\n"
-        L"                                           TransformScaled - Similar to Transform, except the transform is scaled to account for the GCS grid to ground scale (also known as K factor).\n"
         );
     }
 
@@ -382,28 +376,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-transform="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-argsJson="))
             {
-            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, getArgValue(argv[iArg])))
-                return BSIERROR;
+            m_argsJson.From(getArgValue(argv[iArg]));
             continue;
             }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input-gcs="))
-            {
-            iModelBridge::GCSDefinition gcs;
-            if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(m_inputGcs, getArgValue(argv[iArg])))
-                return BSIERROR;
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-geoCalculation="))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(m_gcsCalculationMethod, getArgValue(argv[iArg])))
-                return BSIERROR;
-            continue;
-            }
-        
+                
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-bridgeAssetsDir="))
             {
             BeFileName assetsDir(getArgValueW(argv[iArg]));
@@ -419,39 +397,6 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
 
     BeFileName::FixPathName(m_fwkAssetsDir, fwkAssetsDirRaw.c_str());
     m_fwkAssetsDir.BeGetFullPathName();
-
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      10/17
-//---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::JobDefArgs::ParseJsonArgs(JsonValueCR obj)
-    {
-    for (auto const& propName : obj.getMemberNames())
-        {
-        if (propName.EqualsI("transform"))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, obj["transform"].asCString()))
-                return BSIERROR;
-            }
-        else if (propName.EqualsI("gcs"))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(m_inputGcs, obj["gcs"].asCString()))
-                return BSIERROR;
-            }
-
-        else if (propName.EqualsI("geoCalculation"))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(m_gcsCalculationMethod, obj["geoCalculation"].asCString()))
-                return BSIERROR;
-            }
-        else
-            {
-            fprintf(stderr, "%s - unrecognized JSON document property", propName.c_str());
-            return BSIERROR;
-            }
-        }
 
     return BSISUCCESS;
     }
@@ -524,7 +469,7 @@ BentleyStatus iModelBridgeFwk::ParseDocProps()
         return BSIERROR;
         }
 
-    return m_jobEnvArgs.ParseJsonArgs(jsonValue);
+    return m_jobEnvArgs.m_argsJson = jsonValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -997,13 +942,11 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     params.m_libraryDir = m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName();
     params.m_repoAdmin = ra;
     params.m_inputFileName = m_jobEnvArgs.m_inputFileName;
-    params.m_gcsCalculationMethod = m_jobEnvArgs.m_gcsCalculationMethod;
-    params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
     params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
-    params.SetSpatialDataTransform(m_jobEnvArgs.m_spatialDataTransform);
+    params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

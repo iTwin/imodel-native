@@ -554,23 +554,9 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
     if (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs=") || argv[iArg] == wcsstr(argv[iArg], L"--output-gcs="))
         {
         unSupportedFwkArg(argv[iArg]);
-        iModelBridge::GCSDefinition* gcs = (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))? &bparams.m_inputGcs: &bparams.m_outputGcs;
-        if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(*gcs, iModelBridge::GetArgValue(argv[iArg])))
-            return iModelBridge::CmdLineArgStatus::Error;
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--geoCalculation="))
-        {
-        unSupportedFwkArg(argv[iArg]);
-        if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(bparams.m_gcsCalculationMethod, iModelBridge::GetArgValue(argv[iArg])))
-            return iModelBridge::CmdLineArgStatus::Error;
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--transform="))
-        {
-        if (BSISUCCESS != iModelBridge::Params::ParseTransform(bparams.m_spatialDataTransform, iModelBridge::GetArgValue(argv[iArg])))
+        Json::Value json;
+        json.From(iModelBridge::GetArgValue(argv[iArg]));
+        if (json.isNull() || (BSISUCCESS != bparams.ParseJsonArgs(json, argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))))
             return iModelBridge::CmdLineArgStatus::Error;
         return iModelBridge::CmdLineArgStatus::Success;
         }
@@ -900,8 +886,8 @@ L"Usage: %ls -i|--input= -o|--output= [OPTIONS...]\n"
 L"--input=                    (required)  A directory or wildcard specfication for the tile files. May appear multiple times.\n"
 L"--output=                   (required)  Output directory\n"
 L"OPTIONS:\n"
-L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
-L"--output-gcs=gcsspec        (optional)  Specifies the GCS of the output DgnDb file. Ignored if the output DgnDb file already has a GCS (update mode).\n"
+L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS. gcsspec must be in JSON format.\n"
+L"--output-gcs=gcsspec        (optional)  Specifies the GCS of the output DgnDb file. Ignored if the output DgnDb file already has a GCS (update mode). gcsspec must be in JSON format.\n"
 L"                                        gcsspec is either the keyname of a GCS or the coordinates of the origin and the azimuthal angle for an AZMEA GCS.\n"
 L"--drawings-dirs=            (optional)  A semicolon-separated list of directories to search recursively for drawings and sheets.\n"
 L"--geoCalculation=           (optional)  If a new model is added with the --update option, sets the geographic coordinate calculation method. Possible Values are:\n"

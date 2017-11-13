@@ -264,51 +264,11 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
 // *******************
 /// Command-line parsing utilities
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus parseGeoPointAndAzimuth(iModelBridge::GCSDefinition& gcs, Utf8StringCR u)
-    {
-    auto parser = AngleParser::Create();
-    parser->SetAngleMode(AngleMode::DegMinSec);
-
-    size_t start=0, end;
-
-    if ((end = u.find(',')) == Utf8String::npos)
-        return BSIERROR;
-
-    if (BSISUCCESS != parser->ToValue(gcs.m_geoPoint.latitude, u.substr(start, end-start).c_str()))
-        return BSIERROR;
-
-    bool firstValueIsLongitude = (Utf8String::npos != u.substr(start, end-start).find_first_of("ewEW"));
-
-    start = end + 1;
-
-    if ((end = u.find(',', start)) == Utf8String::npos)
-        return BSIERROR;
-
-    if (BSISUCCESS != parser->ToValue(gcs.m_geoPoint.longitude, u.substr(start, end-start).c_str()))
-        return BSIERROR;
-
-    bool secondValueIsLatitude = (Utf8String::npos != u.substr(start, end-start).find_first_of("nsNS"));
-
-    start = end + 1;
-
-    if (BSISUCCESS != parser->ToValue(gcs.m_azimuthAngle, u.substr(start).c_str()))
-        return BSIERROR;
-
-    if (firstValueIsLongitude || secondValueIsLatitude)
-        {
-        std::swap(gcs.m_geoPoint.longitude, gcs.m_geoPoint.latitude);
-        }
-
-    return BSISUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::Params::ParseGCSCalculationMethod(GCSCalculationMethod& cm, Utf8StringCR value)
+BentleyStatus iModelBridge::Params::GCSCalculationMethodFromString(GCSCalculationMethod& cm, Utf8StringCR value)
     {
     if (value.EqualsI("default"))
         {
@@ -334,34 +294,19 @@ BentleyStatus iModelBridge::Params::ParseGCSCalculationMethod(GCSCalculationMeth
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::Params::ParseGcsSpec(GCSDefinition& gcs, Utf8StringCR gcsParms)
+Utf8String iModelBridge::Params::GCSCalculationMethodToString(GCSCalculationMethod const& cm)
     {
-    if (gcsParms.empty())
+    switch(cm)
         {
-        fprintf(stderr, "expected at least coordinate system key name");
-        return BSIERROR;
+        case GCSCalculationMethod::UseDefault: return "default";
+        case GCSCalculationMethod::UseReprojection: return "reproject";
+        case GCSCalculationMethod::UseGcsTransform: return "transform";
+        case GCSCalculationMethod::UseGcsTransformWithScaling: return "transformscaled";
         }
-
-    if (isalpha(gcsParms[0]))
-        gcs.m_coordSysKeyName = gcsParms;
-    else
-        {
-        gcs.m_coordSysKeyName.clear();
-        if (BSISUCCESS != parseGeoPointAndAzimuth(gcs, gcsParms)
-            && (3 != sscanf(gcsParms.c_str(), "%lf,%lf,%lf", &gcs.m_geoPoint.latitude, &gcs.m_geoPoint.longitude, &gcs.m_azimuthAngle)))
-            {
-            fprintf(stderr, "%s - invalid GCS values - expected latitude,longitude,azimuthangle\n", gcsParms.c_str());
-            return BSIERROR;
-            }
-        }
-
-    gcs.m_geoPoint.elevation = 0.0;
-    gcs.m_originUors.Init(0,0,0);
-    gcs.m_isValid = true;
-
-    return BSISUCCESS;
+    BeAssert(false && "unrecognized GCSCalculationMethod -- keep this function consistent with the enum definition!");
+    return "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,40 +330,171 @@ DgnGCSPtr iModelBridge::GCSDefinition::CreateGcs(DgnDbR db)
     return gcs;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::SetGcsJson(JsonValueR json, GCSDefinition const& gcsDef, GCSCalculationMethod const& gcsCalculationMethod)
+    {
+    if (!gcsDef.m_isValid)
+        {
+        BeAssert(false);
+        }
+
+    if (gcsCalculationMethod != GCSCalculationMethod::UseDefault)
+        json[json_gcs()]["gcsCalculationMethod"] = GCSCalculationMethodToString(gcsCalculationMethod);
+
+    if (!gcsDef.m_coordSysKeyName.empty())
+        {
+        auto& member = json[json_gcs()]["coordinateSystemKeyName"];
+        member["key"] = gcsDef.m_coordSysKeyName;
+        return;
+        }
+
+    auto& member = json[json_gcs()]["azmea"];
+    JsonUtils::DPoint3dToJson(member["sourceOrigin"], gcsDef.m_originUors);
+    member["azimuthAngle"] = gcsDef.m_azimuthAngle;   // The angle, clockwise from true north in decimal degrees, of the rotation to be applied.
+    auto& geoPoint = member["geoPoint"];
+    geoPoint["latitude"] = gcsDef.m_geoPoint.latitude;
+    geoPoint["longitude"] = gcsDef.m_geoPoint.longitude;
+    geoPoint["elevation"] = gcsDef.m_geoPoint.elevation;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridge::Params::ParseGcsJson(GCSDefinition& gcsDef, GCSCalculationMethod& gcsCalculationMethod, JsonValueCR json)
+    {
+    if (!json.isMember("gcsCalculationMethod"))
+        gcsCalculationMethod = GCSCalculationMethod::UseDefault;
+    else
+        {
+        auto const& member = json["gcsCalculationMethod"];
+        if (BSISUCCESS != GCSCalculationMethodFromString(gcsCalculationMethod, member.asCString()))
+            return BSIERROR;
+        }
+
+    if (json.isMember("coordinateSystemKeyName"))
+        {
+        gcsDef.m_coordSysKeyName = json["coordinateSystemKeyName"].asCString();
+        return BSISUCCESS;
+        }
+    
+    if (json.isMember("azmea"))
+        {
+        auto const& member = json["azmea"];
+        gcsDef.m_azimuthAngle = member["azimuthAngle"].asDouble();
+        auto const& geoPoint = member["geoPoint"];
+        gcsDef.m_geoPoint.latitude = geoPoint["latitude"].asDouble();
+        gcsDef.m_geoPoint.longitude = geoPoint["longitude"].asDouble();
+        gcsDef.m_geoPoint.elevation = geoPoint["elevation"].asDouble();
+        return BSISUCCESS;
+        }
+    
+    BeAssert(false);
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::SetTransformJson(JsonValueR json, TransformCR transform)
+    {
+    auto& member = json[json_transform()]["transform"];
+    JsonUtils::TransformToJson(member, transform);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::SetOffsetJson(JsonValueR json, DPoint3dCR offset, AngleInDegrees azimuthAngle)
+    {
+    auto& member = json[json_transform()]["offsetAndAngle"];
+    JsonUtils::DPoint3dToJson(member["offset"], offset);
+    member["angle"] = azimuthAngle.Degrees();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::Params::ParseTransform(Transform& trans, Utf8StringCR str)
+BentleyStatus iModelBridge::Params::ParseTransformJson(Transform& trans, JsonValueCR json)
     {
-    if (str.empty())
-        return BSIERROR;
-
-    trans.InitIdentity();
-
-    if (str[0] == '{')
+    if (json.isMember("transform"))
         {
-        Json::Value json = Json::Value::From(str);
-        if (json.isNull())
-            return BSIERROR;
-        JsonUtils::TransformFromJson(trans, json);
+        JsonUtils::TransformFromJson(trans, json["transform"]);
         return BSISUCCESS;
         }
 
-    if (str[0] == '(')
+    if (json.isMember("offsetAndAngle"))
         {
-        double x,y,z,rdeg;
-        if (4 != sscanf(str.c_str(), "(%lf,%lf,%lf)%lf", &x, &y, &z, &rdeg))
-            {
-            fprintf(stderr, "%s - invalid translation + rotation values - expected (x,y,z)angle\n", str.c_str());
-            return BSIERROR;
-            }
+        auto& member = json["offsetAndAngle"];
+        DPoint3d sourceOrigin;
+        JsonUtils::DPoint3dFromJson(sourceOrigin, member["sourceOrigin"]);
+        DPoint3d offset;
+        JsonUtils::DPoint3dFromJson(offset, member["offset"]);
+        double rdeg = 0;
+        if (member.isMember("angle"))
+            rdeg = member["angle"].asDouble();
         double rrad = Angle::DegreesToRadians(rdeg);
-        trans = Transform::FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rrad);
-        trans.SetTranslation(DPoint3d::From(x,y,z));
+        auto zAxis = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::From(0, 0, 1));
+        trans = Transform::FromAxisAndRotationAngle(zAxis, rrad);
+        trans.SetTranslation(offset);
         return BSISUCCESS;
         }
+
+    BeAssert(false && "malformed iModelBridge transform JSON data");
 
     return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInputGcs)
+    {
+    for (auto const& propName : obj.getMemberNames())
+        {
+        if (propName.EqualsI(json_transform()))
+            {
+            if (obj.isMember(json_gcs()))
+                {
+                BeAssert(false);
+                fprintf(stderr, "Specify transform or GCS, but not both\n");
+                return BSIERROR;
+                }
+
+            if (BSISUCCESS != ParseTransformJson(m_spatialDataTransform, obj[json_transform()]))
+                return BSIERROR;
+            }
+        else if (propName.EqualsI(json_gcs()))
+            {
+            if (obj.isMember(json_transform()))
+                {
+                BeAssert(false);
+                fprintf(stderr, "Specify transform or GCS, but not both\n");
+                return BSIERROR;
+                }
+
+            BentleyStatus status;
+            if (isForInputGcs)
+                status = ParseGcsJson(m_inputGcs, m_gcsCalculationMethod, obj[json_gcs()]);
+            else
+                {
+                GCSCalculationMethod ignore;
+                status = ParseGcsJson(m_outputGcs, ignore, obj[json_gcs()]);
+                }
+
+            if (BSISUCCESS != status)
+                return status;
+            }
+        else
+            {
+            BeAssert(false);
+            fprintf(stderr, "%s - unrecognized JSON value\n", propName.c_str());
+            return BSIERROR;
+            }
+        }
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -412,7 +412,7 @@ struct iModelBridge
         Utf8String           m_coordSysKeyName; //!< the coordinate system key name
         DPoint3d             m_originUors;      //!< The XYZ coordinates of the origin
         BentleyApi::GeoPoint m_geoPoint;        //!< The longitude and latitude of the origin
-        double               m_azimuthAngle;    //!< The azimuthal angle of the Cartesian coordinate system
+        double               m_azimuthAngle;    //!< The angle, clockwise from true north in decimal degrees, of the rotation to be applied.
         GCSDefinition() : m_isValid(false) {}
 
         IMODEL_BRIDGE_EXPORT DgnGCSPtr CreateGcs(DgnDbR);
@@ -485,15 +485,56 @@ struct iModelBridge
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
 
-      public:
+        //! Parse JSON that captures either a 3X4 transform or an offset and angle. This function parses the result of both
+        //! MakeTransformJson and MakeOffsetJson.
+        //! @param[out] trans   The resulting transform
+        //! @param[in] json  The transformation data in JSON format
+        //! @return non-zero error status if @a jsonStr does not contain a valid JSON description of a spatial transform
+        //! @see MakeTransformJson, MakeOffsetJson
+        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseTransformJson(Transform& trans, JsonValueCR json);
+
+        //! Parse JSON that captures a GCSDefinition.
+        //! @param[out] gcsDef   The resulting GCS def
+        //! @param[out] gcsCalculationMethod The calculation method to be used
+        //! @param[in] json  The transformation data in JSON format
+        //! @return non-zero error status if @a jsonStr does not contain a valid JSON description of a GCSDefinition
+        //! @see MakeGcsJson
+        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGcsJson(GCSDefinition& gcsDef, GCSCalculationMethod& gcsCalculationMethod, JsonValueCR json);
+
+        IMODEL_BRIDGE_EXPORT static BentleyStatus GCSCalculationMethodFromString(GCSCalculationMethod& cm, Utf8StringCR value);
+        IMODEL_BRIDGE_EXPORT static Utf8String GCSCalculationMethodToString(GCSCalculationMethod const& cm);
+
+    public:
         IMODEL_BRIDGE_EXPORT Params();
 
         //! @name Helper functions
         //! @{
 
-        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGcsSpec(GCSDefinition& gcs, Utf8StringCR gcsParms);
-        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseGCSCalculationMethod(GCSCalculationMethod& cm, Utf8StringCR value);
-        IMODEL_BRIDGE_EXPORT static BentleyStatus ParseTransform(Transform& cm, Utf8StringCR value);
+        BE_JSON_NAME(transform);    //!< Linear transform specification
+        BE_JSON_NAME(gcs);          //!< GCS definition
+
+        //! Get additional parameters from JSON
+        //! @see SetTransformJson, SetOffsetJson, SetGcsJson
+        IMODEL_BRIDGE_EXPORT BentleyStatus ParseJsonArgs(JsonValueCR obj, bool isInputGcs = true);
+
+        //! Generate the JSON that captures a full 3X4 transform that should be applied by a bridge to its spatial source data.
+        //! @param json         Json object with the transform data filled in
+        //! @param transform    The transform that the bridge should apply to its spatial source data.
+        IMODEL_BRIDGE_EXPORT static void SetTransformJson(JsonValueR json, TransformCR transform);
+
+        //! Generate the JSON that captures an offset and rotation that should be applied by a bridge to its spatial source data.
+        //! Offset and angle are really just a special case of a transform. It may be preferable to use the offset and angle format
+        //! if that is what the user is more familiar with, and also as this format constrains the transform to be just an offset and azimuth angle.
+        //! @param json         Json object with the transform data filled in
+        //! @param offset       The offset that the bridge should apply to its spatial source data.
+        //! @param azimuthAngle The angle, clockwise from true north in decimal degrees, of the rotation to be applied.
+        IMODEL_BRIDGE_EXPORT static void SetOffsetJson(JsonValueR json, DPoint3dCR offset, AngleInDegrees azimuthAngle);
+
+        //! Generate the JSON that captures a Geographic Coordinate System that should be applied by a bridge to its spatial source data.
+        //! @param json         Json object with the GCS data filled in
+        //! @param gcsDef       The GCS that the bridge should apply to the spatial source data
+        //! @param gcsCalculationMethod How to transform the source GCS into the iModel's GCS
+        IMODEL_BRIDGE_EXPORT static void SetGcsJson(JsonValueR json, GCSDefinition const& gcsDef, GCSCalculationMethod const& gcsCalculationMethod = GCSCalculationMethod::UseDefault);
 
         //! @}
 
