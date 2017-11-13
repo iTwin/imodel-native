@@ -18,6 +18,7 @@ DwgDbObjectId       DwgDbDatabase::GetLayerTableId () const { return DWGDB_CALLS
 DwgDbObjectId       DwgDbDatabase::GetLayer0Id () const { return DWGDB_CALLSDKMETHOD(T_Super::getLayerZeroId, T_Super::layerZero)(); }
 DwgDbObjectId       DwgDbDatabase::GetLayerDefpointsId () { return DWGDB_CALLSDKMETHOD(T_Super::getLayerDefpointsId(false), acdbSymUtil()->layerDefpointsId(this)); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeTableId, T_Super::linetypeTableId)(); }
+DwgDbObjectId       DwgDbDatabase::GetRegAppTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getRegAppTableId, T_Super::regAppTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetTextStyleTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getTextStyleTableId, T_Super::textStyleTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetViewportTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getViewportTableId, T_Super::viewportTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetModelspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(this)); }

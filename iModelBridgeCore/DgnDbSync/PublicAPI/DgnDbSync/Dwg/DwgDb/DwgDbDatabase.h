@@ -55,6 +55,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetLayer0Id () const;
     DWGDB_EXPORT DwgDbObjectId      GetLayerDefpointsId ();
     DWGDB_EXPORT DwgDbObjectId      GetLinetypeTableId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetRegAppTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetTextStyleTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetViewportTableId () const;
     DWGDB_EXPORT DwgString          GetFileName () const;

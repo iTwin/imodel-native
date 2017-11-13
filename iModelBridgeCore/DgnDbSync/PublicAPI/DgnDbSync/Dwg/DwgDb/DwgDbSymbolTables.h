@@ -356,5 +356,29 @@ public:
     };  // DwgDbLineTypeTable
 DWGDB_DEFINE_OBJECTPTR (LinetypeTable)
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbRegAppTableRecord : public DWGDB_EXTENDCLASS(RegAppTableRecord)
+    {
+    DWGDB_DECLARE_COMMON_MEMBERS(RegAppTableRecord)
+
+public:
+    DWGDB_EXPORT DwgString                  GetName () const;
+    };  // DwgDbRegAppTableRecord
+DWGDB_DEFINE_OBJECTPTR (RegAppTableRecord)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbRegAppTable : public DWGDB_EXTENDCLASS(RegAppTable)
+    {
+    DWGDB_DECLARE_COMMON_MEMBERS(RegAppTable)
+
+public:
+    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
+    };  // DwgDbRegAppTable
+DWGDB_DEFINE_OBJECTPTR (RegAppTable)
+
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__
