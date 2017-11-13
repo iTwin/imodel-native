@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/MSBsplineSurfaceLofting.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -14,10 +14,11 @@
 
 #include "msbsplinemaster.h"
 
-
 #if !defined BIGD
 #define      BIGD         1.7976931348623158e+308
 #endif
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    peter.yu                        03/2009
@@ -456,7 +457,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int makeCurvesCompatibleWithConsByApprox
+Public GEOMDLLIMPEXP int bspcurv_makeCurvesCompatibleWithConsByApprox
 (
 MSBsplineCurve  *pOut,          /* <= array of input curves, shuld be allocated before calling this */
 MSBsplineCurve  *pIn,           /* => array of input curves */
@@ -516,6 +517,8 @@ bool            *shift          /* if true, the coincident points are shifted */
     return (true);
     }
 
+END_BENTLEY_GEOMETRY_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -540,7 +543,7 @@ double              tolerance
         {
         MSBsplineCurve  ruleCurves[2];
 
-        if (SUCCESS == (status = makeCurvesCompatibleWithConsByApprox (
+        if (SUCCESS == (status = bspcurv_makeCurvesCompatibleWithConsByApprox (
             ruleCurves, pCurves, 2,
             (approxComp == true) ? tolerance : 0.0, 3, true, 1, false)))
             status = bspsurf_ruledSurfaceFromCompatibleCopiesOfCurves (this, &ruleCurves[0], &ruleCurves[1]);
@@ -561,7 +564,7 @@ double              tolerance
 
         if (applyComp == true)
             {
-            if (SUCCESS != (status = makeCurvesCompatibleWithConsByApprox (
+            if (SUCCESS != (status = bspcurv_makeCurvesCompatibleWithConsByApprox (
                 cvArray, pCurves, numCurves,
                 (approxComp == true) ? tolerance : 0.0, 3, true, 1, true)))
                 {
