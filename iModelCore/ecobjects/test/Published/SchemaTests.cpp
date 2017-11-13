@@ -858,7 +858,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
 
     class1->CreateStructProperty(structProp, "StructMember", *structClass);
     class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", *structClass);
-    class1->CreateNavigationProperty(navProp, "NavProp", *navRelClass, ECRelatedInstanceDirection::Forward, PrimitiveType::PRIMITIVETYPE_Long, false);
+    class1->CreateNavigationProperty(navProp, "NavProp", *navRelClass, ECRelatedInstanceDirection::Forward, false);
 
     class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);

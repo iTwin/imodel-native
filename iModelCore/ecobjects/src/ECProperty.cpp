@@ -2408,21 +2408,6 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
     return ECObjectsStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus NavigationECProperty::SetType(PrimitiveType type)
-    {
-    if (m_type != type)
-        {
-        m_type = type;
-        SetCachedTypeAdapter(nullptr);
-        InvalidateClassLayout();
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/

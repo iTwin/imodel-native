@@ -942,8 +942,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             }
         else
             destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
-        
-        destNav->SetType(sourceNav->GetType());
+
         destProperty = destNav;
         }
 
@@ -2791,10 +2790,9 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ecProperty->SetType(type);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);
@@ -4505,10 +4503,9 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
+ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ecProperty->SetType(type);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);

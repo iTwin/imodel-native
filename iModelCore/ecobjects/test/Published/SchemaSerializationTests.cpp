@@ -692,7 +692,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithClassProperties)
     structArrProp->SetMaxOccurs(5309);
 
     NavigationECPropertyP navProp;
-    entityClass->CreateNavigationProperty(navProp, "ExampleNavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Backward, PrimitiveType::PRIMITIVETYPE_Integer, false);
+    entityClass->CreateNavigationProperty(navProp, "ExampleNavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Backward, false);
 
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaJson, true)); Json::Value testDataJson;

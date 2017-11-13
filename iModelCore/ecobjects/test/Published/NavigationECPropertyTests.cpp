@@ -31,23 +31,21 @@ struct NavigationECPropertyTests : ECTestFixture
 
 struct NavigationPropertyValueTests : ECTestFixture 
 {
-    void InstanceWithNavProp(PrimitiveType navPropType);
-    void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson, PrimitiveType navPropType);
-    void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml, PrimitiveType navPropType);
-    void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized, PrimitiveType navPropType);
+    void InstanceWithNavProp();
+    void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson);
+    void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml);
+    void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized);
     void TestSettingNavPropLongValuesWithId(IECInstanceR instance);
     void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipClassCP expectedRelClass);
     void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, BeInt64Id expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, ECClassId expectedRelClassId = ECClassId());
-    void TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass);
-    void VerifyNavPropStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP expectedValue, ECRelationshipClassCP expectedRelClass);
 };
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CreateNavProp(ECEntityClassP ecClass, Utf8StringCR propName, ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, NavigationECPropertyP& navProp, PrimitiveType type = PRIMITIVETYPE_String)
+void CreateNavProp(ECEntityClassP ecClass, Utf8StringCR propName, ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, NavigationECPropertyP& navProp)
     {
-    ECObjectsStatus status = ecClass->CreateNavigationProperty(navProp, propName, relClass, direction, type);
+    ECObjectsStatus status = ecClass->CreateNavigationProperty(navProp, propName, relClass, direction);
     ASSERT_EQ(ECObjectsStatus::Success, status) << "Failed to create navigation property '" << ecClass->GetFullName() << "." << propName << "'.";
     ASSERT_NE(nullptr, navProp) << "Navigation property " << propName << " null though success returned";
     ASSERT_EQ(propName, navProp->GetName()) << "Navigation property " << propName << " does not have expected name";
@@ -771,53 +769,7 @@ TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     ECPropertyP navPropSourceDeserialized = sourceDeserialized->GetPropertyP("MyTarget");
     ASSERT_NE(nullptr, navPropSourceDeserialized) << "Source.MyTarget property does not exist after deserialization from ECXml 2.0";
     ASSERT_FALSE(navPropSourceDeserialized->GetIsNavigation()) << "Source.MyTarget property is still navigation property after deserializing from ECXml 2.0"; // Not that it couldn't be just that we don't need it to
-    ASSERT_EQ("string", navPropSourceDeserialized->GetTypeName()) << "Expected navigation property to be of type string after roundtripped to ECXml 2.0";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::VerifyNavPropStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP expectedValue, ECRelationshipClassCP expectedRelClass)
-    {
-    ECValueAccessor accessor;
-    ECValueAccessor::PopulateValueAccessor(accessor, instance, propertyAccessor);
-    ECValue myTarget;
-    ASSERT_EQ(ECObjectsStatus::Success, instance.GetValueUsingAccessor(myTarget, accessor)) << "Failed to get ECValue for '" << propertyAccessor << "' Navigation Propertyt";
-    ASSERT_FALSE(myTarget.IsNull()) << "Expected Navigation Property '" << propertyAccessor << "' to be not null but it was";
-    EXPECT_STREQ(expectedValue, myTarget.GetUtf8CP()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
-    ASSERT_TRUE(myTarget.IsNavigation());
-
-    ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-    EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
-    {
-    ECValue myTargetValue("IdOfTarget");
-    ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTarget", myTargetValue)) << "Failed to set the value of MyTarget nav prop to a string";
-    EXPECT_STREQ("IdOfTarget", myTargetValue.GetUtf8CP()) << "Value of MyTarget nav property not as expected";
-
-    VerifyNavPropStringValue(instance, "MyTarget", "IdOfTarget", expectedRelClass);
-
-    /* Array Navigation Properties are not currently supported
-    ECValueAccessor accessor;
-    ECValueAccessor::PopulateValueAccessor(accessor, instance, "MyTargetMult[0]");
-    ECValue myTargetValueMult("IdOfTarget");
-    ASSERT_EQ(ECObjectsStatus::Success, instance.SetValueUsingAccessor(accessor, myTargetValueMult)) << "Failed to set the value of MyTargetMult nav prop to a string";
-    EXPECT_STREQ("IdOfTarget", myTargetValueMult.GetUtf8CP()) << "Value of MyTargetMult nav property not as expected";
-
-    VerifyNavPropStringValue(instance, "MyTargetMult[0]", "IdOfTarget");
-    
-    ECValueAccessor::PopulateValueAccessor(accessor, instance, "MyTargetMult[1]");
-    ECValue myTargetValueMult1("IdOfTarget1");
-    ASSERT_EQ(ECObjectsStatus::Success, instance.SetValueUsingAccessor(accessor, myTargetValueMult1)) << "Failed to set the value of MyTargetMult nav prop to a string";
-    EXPECT_STREQ("IdOfTarget1", myTargetValueMult1.GetUtf8CP()) << "Value of MyTargetMult nav property not as expected";
-
-    VerifyNavPropStringValue(instance, "MyTargetMult[1]", "IdOfTarget1");
-    */
+    ASSERT_EQ("long", navPropSourceDeserialized->GetTypeName()) << "Expected navigation property to be of type string after roundtripped to ECXml 2.0";
     }
 
 //---------------------------------------------------------------------------------------
@@ -839,6 +791,7 @@ void NavigationPropertyValueTests::VerifyNavPropLongValue(IECInstanceR instance,
 
         if (nullptr != expectedRelClass)
             {
+            ASSERT_TRUE(nullptr != relClass) << "The relationship for '" << propertyAccessor << "' is null when it should not be.";
             EXPECT_EQ(expectedRelClass->GetId(), myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id of '" << propertyAccessor << "' is different than expected.";
             EXPECT_TRUE(ECClass::ClassesAreEqualByName(expectedRelClass, relClass)) << "The relationship for '" << propertyAccessor << "' was not the expected relationship.";
             }
@@ -915,53 +868,36 @@ void NavigationPropertyValueTests::TestSettingNavPropLongValuesWithId(IECInstanc
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized, PrimitiveType navPropType)
+void NavigationPropertyValueTests::VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized)
     {
-    ECValue stringValue;
-    sourceInstance.GetValue(stringValue, "sProp");
-    ECValue stringValueDes;
-    ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized.GetValue(stringValueDes, "sProp")) << "Failed to get standard string property value after deserialization";
-    ASSERT_STREQ(stringValue.GetUtf8CP(), stringValueDes.GetUtf8CP()) << "Standard String property value failed to deserialize correctly";
-
     ECValue intValue;
     sourceInstance.GetValue(intValue, "iProp");
     ECValue intValueDes;
     ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized.GetValue(intValueDes, "iProp")) << "Failed to get standard int property value after deserialization";
     ASSERT_EQ(intValue.GetInteger(), intValueDes.GetInteger()) << "Standard Int property value failed to deserialize correctly";
 
-    if (PrimitiveType::PRIMITIVETYPE_String == navPropType)
-        {
-        VerifyNavPropStringValue(sourceDeserialized, "MyTarget", "IdOfTarget", schema->GetClassCP("RelClass")->GetRelationshipClassCP());
-        //VerifyNavPropStringValue(*sourceDeserialized, "MyTargetMult[0]", "IdOfTarget");
-        //VerifyNavPropStringValue(*sourceDeserialized, "MyTargetMult[1]", "IdOfTarget1");
-        }
-    else // type is PrimitiveType::PRIMITIVETYPE_Long
-        {
-        VerifyNavPropLongValue(sourceDeserialized, "MyTarget", BeInt64Id(42), schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
-        VerifyNavPropLongValue(sourceDeserialized, "MyTargetNoRel", BeInt64Id(50), nullptr);
-        VerifyNavPropLongValue(sourceDeserialized, "MyTargetWithRelId", BeInt64Id(42), nullptr, ECClassId((uint64_t) 25));
-        //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[0]", 42LL);
-        //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[1]", 43LL);
-        }
+    VerifyNavPropLongValue(sourceDeserialized, "MyTarget", BeInt64Id(42), schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
+    VerifyNavPropLongValue(sourceDeserialized, "MyTargetNoRel", BeInt64Id(50), nullptr);
+    VerifyNavPropLongValue(sourceDeserialized, "MyTargetWithRelId", BeInt64Id(42), nullptr, ECClassId((uint64_t) 25));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml, PrimitiveType navPropType)
+void NavigationPropertyValueTests::DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml)
     {
     ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(*schema);
     IECInstancePtr sourceDeserialized;
     InstanceReadStatus readStatus = StandaloneECInstance::ReadFromXmlString(sourceDeserialized, instanceXml.c_str(), *readContext);
     ASSERT_EQ(InstanceReadStatus::Success, readStatus) << "Failed to deserialize an instance with a nav property";
 
-    VerifyInstance(schema, sourceInstance, *sourceDeserialized, navPropType);
+    VerifyInstance(schema, sourceInstance, *sourceDeserialized);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson, PrimitiveType navPropType)
+void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson)
     {
     IECInstancePtr sourceDeserialized = sourceInstance.GetClass().GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(sourceDeserialized.IsValid());
@@ -969,13 +905,13 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr 
     BentleyStatus readStatus = JsonECInstanceConverter::JsonToECInstance(*sourceDeserialized, instanceJson, classLocater);
     ASSERT_EQ(BentleyStatus::SUCCESS, readStatus);
 
-    VerifyInstance(schema, sourceInstance, *sourceDeserialized, navPropType);
+    VerifyInstance(schema, sourceInstance, *sourceDeserialized);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NavigationPropertyValueTests::InstanceWithNavProp(PrimitiveType navPropType)
+void NavigationPropertyValueTests::InstanceWithNavProp()
     {
     ECSchemaPtr schema;
     ECEntityClassP sourceClass;
@@ -1013,23 +949,17 @@ void NavigationPropertyValueTests::InstanceWithNavProp(PrimitiveType navPropType
     relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
     NavigationECPropertyP navPropSource;
-    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, navPropType);
+    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
     NavigationECPropertyP navPropSourceNoRel;
-    CreateNavProp(sourceClass, "MyTargetNoRel", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceNoRel, navPropType);
+    CreateNavProp(sourceClass, "MyTargetNoRel", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceNoRel);
     NavigationECPropertyP navPropSourceRelId;
-    CreateNavProp(sourceClass, "MyTargetWithRelId", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceRelId, navPropType);
-    //NavigationECPropertyP navPropSourceMult;
-    //CreateNavProp(sourceClass, "MyTargetMult", *relClass2, ECRelatedInstanceDirection::Forward, navPropSourceMult, navPropType);
-    PrimitiveECPropertyP stringProp;
-    sourceClass->CreatePrimitiveProperty(stringProp, "sProp", PrimitiveType::PRIMITIVETYPE_String);
+    CreateNavProp(sourceClass, "MyTargetWithRelId", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceRelId);
     PrimitiveECPropertyP intProp;
     sourceClass->CreatePrimitiveProperty(intProp, "iProp", PrimitiveType::PRIMITIVETYPE_Integer);
 
     StandaloneECEnablerPtr enabler = sourceClass->GetDefaultStandaloneEnabler();
     StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
 
-    ECValue stringValue("SomeValue");
-    sourceInstance->SetValue("sProp", stringValue);
     ECValue intValue(42);
     sourceInstance->SetValue("iProp", intValue);
 
@@ -1048,29 +978,18 @@ void NavigationPropertyValueTests::InstanceWithNavProp(PrimitiveType navPropType
     ASSERT_TRUE(myTargetRelIdValueFromInst.IsNull()) << "Expected Navigation Property MyTargetWithRelId to be null but it was not";
     ASSERT_TRUE(myTargetRelIdValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
-    if (PrimitiveType::PRIMITIVETYPE_String == navPropType)
-        {
-        TestSettingNavPropStringValues(*sourceInstance, relClass);
-        }
-    else // type is PrimitiveType::PRIMITIVETYPE_Long
-        {
-        TestSettingNavPropLongValuesWithRel(*sourceInstance, derivedRelClass);
-        TestSettingNavPropLongValuesWithId(*sourceInstance);
-        }
+    TestSettingNavPropLongValuesWithRel(*sourceInstance, derivedRelClass);
+    TestSettingNavPropLongValuesWithId(*sourceInstance);
 
     Utf8String xmlString;
     InstanceWriteStatus writeStatus = sourceInstance->WriteToXmlString(xmlString, true, false);
     ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance to xml with a nav property";
-    DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
+    DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString);
 
     Json::Value jsonValue;
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
-    DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue["Source"], navPropType);
-
-    //if (PrimitiveType::PRIMITIVETYPE_Long == navPropType)
-    //    ASSERT_NE(0, xmlString.ReplaceAll("long", "string")) << "Failed to replace 'long' with 'string' in the serialzied xml";
-    //DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
+    DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue["Source"]);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1078,15 +997,7 @@ void NavigationPropertyValueTests::InstanceWithNavProp(PrimitiveType navPropType
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(NavigationPropertyValueTests, InstanceWithNavProp_Long)
     {
-    InstanceWithNavProp(PrimitiveType::PRIMITIVETYPE_Long);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                Colin.Kerr                         01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(NavigationPropertyValueTests, InstanceWithNavProp_String)
-    {
-    InstanceWithNavProp(PrimitiveType::PRIMITIVETYPE_String);
+    InstanceWithNavProp();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1222,7 +1133,7 @@ TEST_F(NavigationPropertyValueTests, JsonRelatedInstanceIdSerialization)
     relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     NavigationECPropertyP navPropSource;
-    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, PrimitiveType::PRIMITIVETYPE_Long);
+    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
 
     StandaloneECEnablerPtr enabler = sourceClass->GetDefaultStandaloneEnabler();
     StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
@@ -1245,4 +1156,3 @@ TEST_F(NavigationPropertyValueTests, JsonRelatedInstanceIdSerialization)
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
-
