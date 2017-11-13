@@ -317,9 +317,7 @@ BentleyStatus ClassMappingInfo::EvaluateRootClassMapStrategy()
         SchemaPolicy const* noAdditionalRootEntityClassPolicy = nullptr;
         if (m_ctx.GetSchemaPolicies().IsOptedIn(noAdditionalRootEntityClassPolicy, SchemaPolicy::Type::NoAdditionalRootEntityClasses))
             {
-            //TODO cache the builtin schema list as it is created for every class during mapping
-            bset<Utf8CP, CompareIUtf8Ascii> builtinSchemaNames = ProfileManager::GetBuiltinSchemaNames();
-            if (builtinSchemaNames.find(entityClass->GetSchema().GetName().c_str()) == builtinSchemaNames.end() &&
+            if (m_ctx.GetBuiltinSchemaNames().find(entityClass->GetSchema().GetName().c_str()) == m_ctx.GetBuiltinSchemaNames().end() &&
                 SUCCESS != noAdditionalRootEntityClassPolicy->GetAs<NoAdditionalRootEntityClassesPolicy>().Evaluate(m_ctx.GetECDb(), *entityClass))
                 return ERROR;
             }

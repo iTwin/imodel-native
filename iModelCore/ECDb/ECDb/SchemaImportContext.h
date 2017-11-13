@@ -142,9 +142,10 @@ struct SchemaImportContext final
         bset<ECN::ECClassId> m_classMapsToSave;
         FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
         SchemaPolicies m_schemaPolicies;
+        bset<Utf8CP, CompareIUtf8Ascii> m_builtinSchemaNames;
 
     public:
-        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options) {}
+        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options), m_builtinSchemaNames(ProfileManager::GetBuiltinSchemaNames()) {}
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
         Phase GetPhase() const { return m_phase; }
         void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
@@ -157,6 +158,8 @@ struct SchemaImportContext final
 
         SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
+
+        bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
 
         DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         ECDbCR GetECDb() const { return m_ecdb; }

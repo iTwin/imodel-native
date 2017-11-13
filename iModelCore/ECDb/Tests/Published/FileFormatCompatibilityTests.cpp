@@ -1073,6 +1073,13 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     ECDb upgradedFile;
     ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
+    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    }
+
     
     BeFileStatus stat = BeFileStatus::Success;
     
@@ -1100,39 +1107,40 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath.GetNameUtf8();
 
     Statement benchmarkDdlLookupStmt;
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master WHERE name=?"));
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.Prepare(benchmarkFile, "SELECT name,sql FROM sqlite_master ORDER BY name"));
 
 
     Statement actualDdlStmt;
-    ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT name, sql FROM sqlite_master ORDER BY name"));
-    int actualMasterTableRowCount = 0;
-    while (BE_SQLITE_ROW == actualDdlStmt.Step())
+    ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT sql FROM sqlite_master WHERE name=?"));
+    int benchmarkRowCount = 0;
+    while (BE_SQLITE_ROW == benchmarkDdlLookupStmt.Step())
         {
-        actualMasterTableRowCount++;
-        Utf8CP actualName = actualDdlStmt.GetValueText(0);
-        Utf8CP actualDdl = actualDdlStmt.GetValueText(1);
+        benchmarkRowCount++;
+        Utf8CP benchmarkName = benchmarkDdlLookupStmt.GetValueText(0);
+        Utf8CP benchmarkDdl = nullptr;
+        if (BeStringUtilities::StricmpAscii(benchmarkName, "ec_Table") == 0)
+            benchmarkDdl = "CREATE TABLE ec_Table(Id INTEGER PRIMARY KEY,ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,Type INTEGER NOT NULL,ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,UpdatableViewName TEXT, IsTemporary BOOLEAN CHECK (IsTemporary IN (0,1)))";
+        else
+            benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(1);
 
-        actualDdlDumpFile->PutLine(WString(actualDdl, BentleyCharEncoding::Utf8).c_str(), true);
-
-        benchmarkDdlLookupStmt.BindText(1, actualName, Statement::MakeCopy::No);
-        if (BE_SQLITE_ROW == benchmarkDdlLookupStmt.Step())
+        actualDdlStmt.BindText(1, benchmarkName, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == actualDdlStmt.Step())
             {
-            Utf8CP benchmarkDdl;
-            if (BeStringUtilities::StricmpAscii(actualName, "ec_Table") == 0)
-                benchmarkDdl = "CREATE TABLE ec_Table(Id INTEGER PRIMARY KEY,ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,Type INTEGER NOT NULL,ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,UpdatableViewName TEXT, IsTemporary BOOLEAN CHECK (IsTemporary IN (0,1)))";
-            else
-                benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
+            Utf8CP actualDdl = actualDdlStmt.GetValueText(0);
 
-            EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << actualName;
+            EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << benchmarkName;
+            actualDdlDumpFile->PutLine(WString(actualDdl, BentleyCharEncoding::Utf8).c_str(), true);
             }
         else
-            EXPECT_TRUE(false) << "DB object in upgraded file not found: " << actualName;
+            EXPECT_TRUE(false) << "DB object in upgraded file not found: " << benchmarkName;
 
-        benchmarkDdlLookupStmt.Reset();
-        benchmarkDdlLookupStmt.ClearBindings();
+        actualDdlStmt.Reset();
+        actualDdlStmt.ClearBindings();
         }
-
-    ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath.GetNameUtf8();
+    actualDdlStmt.Finalize();
+    ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
+    ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
+    ASSERT_EQ(benchmarkMasterTableRowCount, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1176,58 +1184,6 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Column", PROFILETABLE_SELECT_Column));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Index", PROFILETABLE_SELECT_Index));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  07/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileFormatCompatibilityTests, CompareProfileTables_UpgradedFile)
-    {
-    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
-    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
-    Db benchmarkFile;
-    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath.GetNameUtf8();
-
-    BeFileName artefactOutDir;
-    BeTest::GetHost().GetOutputRoot(artefactOutDir);
-    if (!artefactOutDir.DoesPathExist())
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
-
-    BeFileName upgradedFilePath(artefactOutDir);
-    upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
-    ECDb upgradedFile;
-    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-
-    //profile table count check
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
-    }
-
-    //schema profile tables
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Schema", PROFILETABLE_SELECT_Schema, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_SchemaReference", PROFILETABLE_SELECT_SchemaReference, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Class", PROFILETABLE_SELECT_Class, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassHasBaseClasses", PROFILETABLE_SELECT_ClassHasBaseClasses, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Enumeration", PROFILETABLE_SELECT_Enumeration, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_KindOfQuantity", PROFILETABLE_SELECT_KindOfQunatity, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyCategory", PROFILETABLE_SELECT_PropertyCategory, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Property", PROFILETABLE_SELECT_Property, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraint", PROFILETABLE_SELECT_RelationshipConstraint, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraintClass", PROFILETABLE_SELECT_RelationshipConstraintClass, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_CustomAttribute", PROFILETABLE_SELECT_CustomAttribute, CompareOptions::DoNotComparePk));
-
-    //mapping profile tables
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassMap", PROFILETABLE_SELECT_ClassMap, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyPath", PROFILETABLE_SELECT_PropertyPath, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyMap", PROFILETABLE_SELECT_PropertyMap, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Table", PROFILETABLE_SELECT_Table, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Column", PROFILETABLE_SELECT_Column, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Index", PROFILETABLE_SELECT_Index, CompareOptions::DoNotComparePk));
-    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn, CompareOptions::DoNotComparePk));
     }
 
 //---------------------------------------------------------------------------------------
