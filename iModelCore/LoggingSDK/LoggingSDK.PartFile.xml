@@ -45,10 +45,14 @@
     </Part>
 
     <Part Name="LoggingManagedLog4net" BMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="B02">
-        <RequiredRepository>libsrc-Log4net</RequiredRepository>
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <NuGetPackage>log4net</NuGetPackage>
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
-            <Assemblies>Delivery\Bentley.Logging.log4net$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>
+                Nuget\Net40-Client\log4net.dll
+                Delivery\Bentley.Logging.log4net$(ApiNumber)$(shlibext)
+            </Assemblies>
         </Bindings>
     </Part>
 
