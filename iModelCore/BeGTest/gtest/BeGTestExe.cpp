@@ -413,7 +413,7 @@ int main(int argc, char **argv)
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
         printf("%d\n",WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
         printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
-		
+
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
 
