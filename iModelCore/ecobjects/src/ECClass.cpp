@@ -2376,6 +2376,110 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    return _WriteJson(outValue, standalone, includeSchemaVersion, bvector<bpair<Utf8String, Json::Value>>());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_SCHEMA_NAME_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_SCHEMA_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        }
+
+    bool isMixin = false;
+    Utf8String childType;
+    if (IsEntityClass())
+        {
+        if (GetEntityClassCP()->IsMixin())
+            {
+            isMixin = true;
+            childType = ECJSON_MIXIN_ELEMENT;
+            }
+        else
+            childType = ECJSON_ENTITYCLASS_ELEMENT;
+        }
+    else if (IsRelationshipClass())
+        childType = ECJSON_RELATIONSHIP_CLASS_ELEMENT;
+    else if (IsStructClass())
+        childType = ECJSON_STRUCTCLASS_ELEMENT;
+    else if (IsCustomAttributeClass())
+        childType = ECJSON_CUSTOMATTRIBUTECLASS_ELEMENT;
+    else
+        return SchemaWriteStatus::FailedToCreateJson;
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = childType;
+
+    if (GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (0 != GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // Common ECClass properties
+    ECClassModifier const modifier = GetClassModifier();
+    if (!isMixin && (ECClassModifier::None != modifier || IsRelationshipClass()))
+        outValue[MODIFIER_ATTRIBUTE] = ECXml::ModifierToJsonString(modifier);
+
+    if (HasBaseClasses() && !IsEntityClass()) // Entity class assigns base class in its _WriteJson method
+        {
+        auto& baseClasses = GetBaseClasses();
+        if (0 != baseClasses.size())
+            {
+            outValue[ECJSON_BASE_CLASS_ELEMENT] = ECJsonUtilities::FormatClassName(*(baseClasses.at(0)));
+            }
+        }
+
+    SchemaWriteStatus status;
+    if (GetPropertyCount(false))
+        {
+        auto& propertiesArr = outValue[ECJSON_SCHEMA_CHILD_PROPERTIES_ATTRIBUTE] = Json::Value(Json::ValueType::arrayValue);
+        for (const auto& prop : GetProperties())
+            {
+            Json::Value propJson(Json::ValueType::objectValue);
+            if (SchemaWriteStatus::Success != (status = prop->_WriteJson(propJson)))
+                return status;
+            propertiesArr.append(propJson);
+            }
+        }
+
+    // Mixin attributes are treated different from other custom attributes in that the mixin already specifies that
+    // it's a mixin with its schema child type, so there is no reason to duplicate the custom attribute. Rather than
+    // handle the logic somewhere up the inheritance hierarchy and overcomplicate everything it's easiest to just
+    // handle the specific case here.
+    Json::Value customAttributesArr;
+    WriteCustomAttributes(customAttributesArr);
+    if (IsEntityClass() && GetEntityClassCP()->IsMixin())
+        {
+        // Remove the CoreCustomAttributes.IsMixin custom attribute.
+        for (Json::ArrayIndex i = 0; i < customAttributesArr.size(); ++i)
+            {
+            if (customAttributesArr[i][ECJsonSystemNames::ClassName()] == "CoreCustomAttributes.IsMixin")
+                {
+                customAttributesArr.removeIndex(i);
+                break;
+                }
+            }
+        }
+    if (!customAttributesArr.empty())
+        outValue[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
+
+    for (auto const& attribute : additionalAttributes)
+        outValue[attribute.first] = attribute.second;
+
+    return SchemaWriteStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
@@ -2531,6 +2635,50 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
     else
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_ENTITYCLASS_ELEMENT, nullptr, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECEntityClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+
+    if (IsMixin())
+        {
+        ECEntityClassCP appliesTo = GetAppliesToClass();
+        BeAssert(nullptr != appliesTo);
+        attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO, ECJsonUtilities::FormatClassName(*appliesTo)));
+        if (HasBaseClasses())
+            attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*(GetBaseClasses()[0]))));
+        }
+    else
+        {
+        if (HasBaseClasses())
+            {
+            Json::Value mixinArr(Json::ValueType::arrayValue);
+            for (auto const& baseClass : GetBaseClasses())
+                {
+                if (baseClass->GetEntityClassCP()->IsMixin())
+                    mixinArr.append(ECJsonUtilities::FormatClassName(*baseClass));
+                else
+                    {
+                    BeAssert([](auto const& attr) // Assert base element hasn't already been added.
+                        {
+                        for (auto const& elem : attr)
+                            if (elem.first == ECJSON_BASE_CLASS_ELEMENT)
+                                return false;
+                        return true;
+                        }(attributes));
+                    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*baseClass)));
+                    }
+                }
+            if (0 != mixinArr.size())
+                attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MIXIN_ATTRIBUTE, mixinArr));
+            }
+        }
+
+    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2751,6 +2899,16 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVe
         additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = appliesToAttributeValue.c_str();
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECCustomAttributeClass::_WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+    attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO, ECXml::ContainerTypeToString(m_containerType)));
+    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3494,6 +3652,31 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     return status;
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECRelationshipConstraint::WriteJson(Json::Value& outValue)
+    {
+    outValue = Json::Value(Json::ValueType::objectValue);
+    outValue[MULTIPLICITY_ATTRIBUTE] = GetMultiplicity().ToString();
+    outValue[ROLELABEL_ATTRIBUTE] = GetInvariantRoleLabel();
+    outValue[POLYMORPHIC_ATTRIBUTE] = GetIsPolymorphic();
+
+    if (nullptr != m_abstractConstraint)
+        outValue[ABSTRACTCONSTRAINT_ATTRIBUTE] = ECJsonUtilities::FormatClassName(*GetAbstractConstraint());
+
+    auto const& constraintClasses = GetConstraintClasses();
+    if (constraintClasses.size() != 0)
+        {
+        Json::Value constraintClassArr(Json::ValueType::arrayValue);
+        for (auto const constraintClass : constraintClasses)
+            constraintClassArr.append(ECJsonUtilities::FormatClassName(*constraintClass));
+        outValue[ECJSON_CONSTRAINT_CLASSES] = constraintClassArr;
+        }
+
+    return SchemaWriteStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4105,6 +4288,31 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
     xmlWriter.WriteElementEnd();
 
     return status;
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECRelationshipClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+
+    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, ECXml::StrengthToJsonString(GetStrength())));
+    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToJsonString(GetStrengthDirection())));
+
+    SchemaWriteStatus status;
+
+    Json::Value sourceJson;
+    if (SchemaWriteStatus::Success != (status = GetSource().WriteJson(sourceJson)))
+        return status;
+    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_SOURCECONSTRAINT_ELEMENT, sourceJson));
+
+    Json::Value targetJson;
+    if (SchemaWriteStatus::Success != (status = GetTarget().WriteJson(targetJson)))
+        return status;
+    attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_TARGETCONSTRAINT_ELEMENT, targetJson));
+
+    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**

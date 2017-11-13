@@ -1,0 +1,15 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaChildType": "EntityClass",
+  "name": "ExampleEntity",
+  "modifier": "sealed",
+  "label": "ExampleEntity",
+  "description": "An example entity class.",
+  "baseClass": "ExampleSchema.ExampleBaseEntity",
+  "mixins": [
+    "ExampleSchema.ExampleMixinA",
+    "ExampleSchema.ExampleMixinB"
+  ]
+}

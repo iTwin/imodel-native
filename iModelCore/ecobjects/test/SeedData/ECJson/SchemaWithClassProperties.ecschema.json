@@ -1,0 +1,45 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaChildType": "EntityClass",
+  "name": "ExampleEntityClass",
+  "properties": [
+    {
+      "name" : "ExamplePrimitiveProperty",
+      "propertyType" : "PrimitiveProperty",
+      "description" : "An example primitive property.",
+      "label" : "PrimitivePropertyDisplayLabel",
+      "readOnly" : true,
+      "category" : "ExampleSchema.ExamplePropertyCategory",
+      "typeName" : "int",
+      "extendedTypeName" : "Example Primitive Property",
+      "minValue" : 42,
+      "maxValue" : 1999
+    },
+    {
+      "name" : "ExampleStructProperty",
+      "propertyType" : "StructProperty",
+      "typeName" : "ExampleSchema.ExampleStructClass"
+    },
+    {
+      "name" : "ExamplePrimitiveArrayProperty",
+      "propertyType" : "PrimitiveArrayProperty",
+      "minOccurs" : 7,
+      "typeName" : "string"
+    },
+    {
+      "name" : "ExampleStructArrayProperty",
+      "propertyType" : "StructArrayProperty",
+      "minOccurs" : 867,
+      "maxOccurs" : 5309,
+      "typeName" : "ExampleSchema.ExampleStructClass"
+    },
+    {
+      "name" : "ExampleNavigationProperty",
+      "propertyType" : "NavigationProperty",
+      "direction" : "backward",
+      "relationshipName" : "ExampleSchema.ExampleRelationshipClass"
+    }
+  ]
+}

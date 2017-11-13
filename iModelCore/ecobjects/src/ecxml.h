@@ -9,6 +9,56 @@
 
 #include <ECObjects/ECObjects.h>
 
+#define     ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema"
+#define     ECJSON_SCHEMA_CHILD_URI             "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild"
+
+#define     ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
+#define     ECJSON_NAME_ATTRIBUTE               "name"
+#define     ECJSON_DISPLAY_LABEL_ATTRIBUTE      "label"
+#define     ECJSON_REFERENCES_ATTRIBUTE         "references"
+#define     ECJSON_SCHEMA_CHILDREN_ATTRIBUTE    "children"
+#define     ECJSON_SCHEMA_NAME_ATTRIBUTE        "schema"
+#define     ECJSON_SCHEMA_VERSION_ATTRIBUTE     "schemaVersion"
+#define     ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE  "name"
+#define     ECJSON_SCHEMA_CHILD_PROPERTIES_ATTRIBUTE "properties"
+#define     ECJSON_MINIMUM_VALUE_ATTRIBUTE      "minValue"
+#define     ECJSON_MAXIMUM_VALUE_ATTRIBUTE      "maxValue"
+#define     ECJSON_MINIMUM_LENGTH_ATTRIBUTE     "minLength"
+#define     ECJSON_MAXIMUM_LENGTH_ATTRIBUTE     "maxLength"
+#define     ECJSON_SCHEMA_CHILD_TYPE            "schemaChildType"
+
+#define     ECJSON_CUSTOM_ATTRIBUTES_ELEMENT    "customAttributes"
+#define     ECJSON_MIXIN_ELEMENT                "Mixin"
+#define     ECJSON_ENTITYCLASS_ELEMENT          "EntityClass"
+#define     ECJSON_RELATIONSHIP_CLASS_ELEMENT   "RelationshipClass"
+#define     ECJSON_STRUCTCLASS_ELEMENT          "StructClass"
+#define     ECJSON_CUSTOMATTRIBUTECLASS_ELEMENT "CustomAttributeClass"
+#define     ECJSON_BASE_CLASS_ELEMENT           "baseClass"
+#define     ECJSON_MIXIN_ATTRIBUTE              "mixins"
+#define     ECJSON_SOURCECONSTRAINT_ELEMENT     "source"
+#define     ECJSON_TARGETCONSTRAINT_ELEMENT     "target"
+#define     ECJSON_ENUMERATION_ELEMENT          "Enumeration"
+#define     ECJSON_ENUMERATOR_ELEMENT           "enumerators"
+#define     ECJSON_PRECISION_ATTRIBUTE          "precision"
+#define     ECJSON_PRESENTATION_UNIT_OBJECT_UNIT   "unit"
+#define     ECJSON_PRESENTATION_UNIT_OBJECT_FORMAT "format"
+
+#define     ECJSON_ECPROPERTY_NAME              "name"
+#define     ECJSON_ECPROPERTY_PRIMITIVE         "PrimitiveProperty"
+#define     ECJSON_ECPROPERTY_STRUCT            "StructProperty"
+#define     ECJSON_ECPROPERTY_PRIMITIVEARRAY    "PrimitiveArrayProperty"
+#define     ECJSON_ECPROPERTY_STRUCTARRAY       "StructArrayProperty"
+#define     ECJSON_ECPROPERTY_TYPE              "propertyType"
+#define     ECJSON_ECPROPERTY_NAVIGATION        "NavigationProperty"
+#define     ECJSON_CONSTRAINT_CLASSES           "constraintClasses"
+
+#define     ECJSON_DIRECTION_FORWARD            "forward"
+#define     ECJSON_DIRECTION_BACKWARD           "backward"
+
+#define     ECJSON_MODIFIER_NONE                "none"
+#define     ECJSON_MODIFIER_ABSTRACT            "abstract"
+#define     ECJSON_MODIFIER_SEALED              "sealed"
+
 #define     ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
 #define     EC_NAMESPACE_PREFIX                 "ec"
 #define     EC_NAMESPACE_PREFIX3                "ec3"
@@ -67,8 +117,8 @@
 #define     SCHEMAREF_VERSION_ATTRIBUTE         "version"
 #define     SCHEMAREF_PREFIX_ATTRIBUTE          "prefix"
 #define     ALIAS_ATTRIBUTE                     "alias"
-#define     MAXIMUM_VALUE_ATTRIBUTE             "maximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "minimumValue"
+#define     MAXIMUM_VALUE_ATTRIBUTE             "maximumValue"
 #define     MINIMUM_LENGTH_ATTRIBUTE            "minimumLength"
 #define     MAXIMUM_LENGTH_ATTRIBUTE            "maximumLength"
 #define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
@@ -181,13 +231,16 @@ public:
     static Utf8CP GetPrimitiveTypeName (PrimitiveType primitiveType);
     static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType, Utf8StringCR typeName);
     static Utf8CP StrengthToString (StrengthType strength);
+    static Utf8CP StrengthToJsonString(StrengthType strength);
     static ECObjectsStatus ParseStrengthType (StrengthType& strength, Utf8StringCR strengthString);
     static Utf8CP DirectionToString (ECRelatedInstanceDirection direction);
+    static Utf8CP DirectionToJsonString(ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
     static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
     static ECObjectsStatus ParseMultiplicityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
     static Utf8String MultiplicityToLegacyString (RelationshipMultiplicity multiplicity);
     static Utf8CP ModifierToString(ECClassModifier modifier);
+    static Utf8CP ModifierToJsonString(ECClassModifier modifier);
     static ECObjectsStatus ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
     static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     static ECObjectsStatus ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString);

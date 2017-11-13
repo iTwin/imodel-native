@@ -229,8 +229,60 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_SCHEMA_NAME_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_SCHEMA_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        }
+
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = KIND_OF_QUANTITY_ELEMENT;
+
+    if (GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (0 != GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // KindOfQuantity Properties
+    if (GetPersistenceUnit().HasProblem())
+        {
+        LOG.errorv("Failed to write schema because persistance UNIT for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), GetPersistenceUnit().GetProblemDescription().c_str());
+        return SchemaWriteStatus::FailedToCreateJson;
+        }
+
+    outValue[PERSISTENCE_UNIT_ATTRIBUTE] = ECJsonUtilities::FormatUnitSetToUnitFormatJson(GetPersistenceUnit());
+
+    outValue[ECJSON_PRECISION_ATTRIBUTE] = GetRelativeError();
+
+    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    if (0 != presentationUnits.size())
+        {
+        Json::Value presentationUnitArr(Json::ValueType::arrayValue);
+        for (auto const& fus : presentationUnits)
+            {
+            if (fus.HasProblem())
+                {
+                LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
+                return SchemaWriteStatus::FailedToCreateJson;
+                }
+            presentationUnitArr.append(ECJsonUtilities::FormatUnitSetToUnitFormatJson(fus));
+            }
+        outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
+        }
+
+    return SchemaWriteStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context)
     {

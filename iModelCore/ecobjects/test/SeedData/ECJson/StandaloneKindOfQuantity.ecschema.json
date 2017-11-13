@@ -1,0 +1,26 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+  "schemaVersion": "03.01.00",
+  "schemaChildType": "KindOfQuantity",
+  "schema": "ExampleSchema",
+  "name": "ExampleKoQ",
+  "precision": 3.0,
+  "persistenceUnit": {
+    "unit": "MM",
+    "format": "DefaultReal"
+  },
+  "presentationUnits": [
+    {
+      "unit": "IN",
+      "format": "DefaultReal"
+    },
+    {
+      "unit": "MM",
+      "format": "DefaultReal"
+    },
+    {
+      "unit": "CM",
+      "format": "DefaultReal"
+    }
+  ]
+}

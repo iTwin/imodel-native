@@ -76,6 +76,8 @@ $(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaV
 
 $(o)SchemaXml$(oext)                                       : $(baseDir)SchemaXml.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)SchemaJson$(oext)                                      : $(baseDir)SchemaJson.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)ECType$(oext)                                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}

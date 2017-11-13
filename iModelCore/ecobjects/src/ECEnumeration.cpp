@@ -180,6 +180,51 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_SCHEMA_NAME_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_SCHEMA_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        }
+
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = ECJSON_ENUMERATION_ELEMENT;
+
+    if (this->GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (0 != this->GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // ECEnumeration Properties
+    outValue[BACKING_TYPE_NAME_ATTRIBUTE] = GetTypeName();
+    outValue[IS_STRICT_ATTRIBUTE] = GetIsStrict();
+
+    Json::Value enumeratorArr = Json::Value(Json::ValueType::arrayValue);
+    for (const auto enumerator : GetEnumerators())
+        {
+        Json::Value enumeratorObj = Json::Value(Json::ValueType::objectValue);
+        if (enumerator->GetIsDisplayLabelDefined())
+            enumeratorObj[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = enumerator->GetInvariantDisplayLabel();
+        if (GetTypeName() == ECXML_TYPENAME_INTEGER)
+            enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetInteger());
+        else if (GetTypeName() == ECXML_TYPENAME_STRING)
+            enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetString());
+        else
+            return SchemaWriteStatus::FailedToCreateJson;
+        enumeratorArr.append(enumeratorObj);
+        }
+    outValue[ECJSON_ENUMERATOR_ELEMENT] = enumeratorArr;
+
+    return SchemaWriteStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context)

@@ -75,6 +75,7 @@ public:
 struct ECTestUtility
     {
     static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
+    static bool JsonDeepEqual(Json::Value const& a, Json::Value const& b);
     static bool CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInstanceCR actual);
     };
 

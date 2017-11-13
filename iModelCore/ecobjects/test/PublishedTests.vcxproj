@@ -86,6 +86,7 @@
     <ClCompile Include="Published\SchemaDeserializationTests.cpp" />
     <ClCompile Include="Published\SchemaElementIdTests.cpp" />
     <ClCompile Include="Published\SchemaLocalizationTests.cpp" />
+    <ClCompile Include="Published\SchemaSerializationTests.cpp" />
     <ClCompile Include="Published\SchemaValidationTests.cpp" />
     <ClCompile Include="Published\SchemaVersionConversionTests.cpp" />
     <ClCompile Include="Published\StrictSchemaTests.cpp" />

@@ -78,6 +78,7 @@
     <ClCompile Include="PresentationMetadataHelper.cpp" />
     <ClCompile Include="PropertyCategory.cpp" />
     <ClCompile Include="SchemaComparer.cpp" />
+    <ClCompile Include="SchemaJson.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
     <ClCompile Include="SchemaResourceKeyHelper.cpp" />
     <ClCompile Include="SchemaXml.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
     <ClInclude Include="ecxml.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="SchemaJson.h" />
     <ClInclude Include="SchemaXml.h" />
     <ClInclude Include="StronglyConnectedGraph.h" />
   </ItemGroup>

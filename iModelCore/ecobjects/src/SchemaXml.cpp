@@ -11,7 +11,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef bvector<bpair<ECClassP, BeXmlNodeP> >  ClassDeserializationVector;
+typedef bvector<bpair<ECClassP, BeXmlNodeP>>  ClassDeserializationVector;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
@@ -1094,10 +1094,8 @@ SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, EC
 SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
-    bmap<ECSchemaP, Utf8String>::const_iterator iterator;
-    for (iterator = m_ecSchema.m_referencedSchemaAliasMap.begin(); iterator != m_ecSchema.m_referencedSchemaAliasMap.end(); iterator++)
+    for (auto const& mapPair : m_ecSchema.m_referencedSchemaAliasMap)
         {
-        bpair<ECSchemaP, const Utf8String> mapPair = *(iterator);
         ECSchemaP   refSchema = mapPair.first;
         m_xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
@@ -1162,7 +1160,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
         m_context.m_alreadyWrittenClasses.insert(ecClass.GetName().c_str());
 
     // If schema element order shouldn't be preserved, baseclasses and contraints will be written
-    //  before the actual class to write. Else the order given by the WriteClass calls is used.
+    // before the actual class to write. Else the order given by the WriteClass calls is used.
     if (!ecClass.GetSchema().m_serializationOrder.GetPreserveElementOrder())
         {
         // write the base classes first.
@@ -1286,7 +1284,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
         m_xmlWriter.WriteAttribute(ALIAS_ATTRIBUTE, m_ecSchema.GetAlias().c_str());
         m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetVersionString().c_str());
         }
-    
+
     m_xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, m_ecSchema.GetInvariantDescription().c_str());
     if (m_ecSchema.GetIsDisplayLabelDefined())
         m_xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, m_ecSchema.GetInvariantDisplayLabel().c_str());
@@ -1311,7 +1309,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
         if (elementType == ECSchemaElementType::ECClass)
             {
             ECClassCP ecClass = m_ecSchema.GetClassCP(elementName);
-            if (ecClass != nullptr)
+            if (nullptr != ecClass)
                 {
                 WriteClass(*ecClass);
                 }
@@ -1319,7 +1317,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
         else if (elementType == ECSchemaElementType::ECEnumeration)
             {
             ECEnumerationCP ecEnumeration = m_ecSchema.GetEnumerationCP(elementName);
-            if (ecEnumeration != nullptr)
+            if (nullptr != ecEnumeration)
                 {
                 WriteEnumeration(*ecEnumeration);
                 }
@@ -1327,7 +1325,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
         else if (elementType == ECSchemaElementType::KindOfQuantity)
             {
             KindOfQuantityCP kindOfQuantity = m_ecSchema.GetKindOfQuantityCP(elementName);
-            if (kindOfQuantity != nullptr)
+            if (nullptr != kindOfQuantity)
                 {
                 WriteKindOfQuantity(*kindOfQuantity);
                 }
@@ -1343,5 +1341,5 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     m_xmlWriter.WriteElementEnd();
     return SchemaWriteStatus::Success;
     }
-END_BENTLEY_ECOBJECT_NAMESPACE
 
+END_BENTLEY_ECOBJECT_NAMESPACE
