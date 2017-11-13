@@ -765,7 +765,23 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
     {
     // The source multiplicity will be set after a base class is determined
     if (!isSource)
-        constraint.SetMultiplicity(BECN::RelationshipMultiplicity::ZeroMany());
+        {
+        IECInstancePtr overwriteCA = constraint.GetCustomAttribute("OverwriteCardinality");
+        if (overwriteCA.IsValid())
+            {
+            ECValue cardinality;
+            if (ECObjectsStatus::Success == overwriteCA->GetValue(cardinality, "Cardinality"))
+                {
+                constraint.SetCardinality(cardinality.GetUtf8CP());
+                }
+            else
+                constraint.SetMultiplicity(BECN::RelationshipMultiplicity::ZeroMany());
+            }
+        else if (relClass.GetSchema().GetName().EqualsIAscii("CivilSchema_iModel"))
+            constraint.SetMultiplicity(BECN::RelationshipMultiplicity::ZeroOne());
+        else
+            constraint.SetMultiplicity(BECN::RelationshipMultiplicity::ZeroMany());
+        }
 
     if (ContainsAnyClass(constraint.GetConstraintClasses()))
         {
@@ -1438,7 +1454,9 @@ BisClassConverter::SchemaConversionContext::ElementAspectDefinition const* BisCl
 bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(ECN::ECSchemaCR schema)
     {
     return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.IsSupplementalSchema() ||
-        schema.GetName().EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schema.GetName().EqualsI(BIS_ECSCHEMA_NAME) || schema.GetName().StartsWithI("ecdb_");
+        schema.GetName().EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schema.GetName().EqualsI(BIS_ECSCHEMA_NAME) || 
+        schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") || 
+        schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
     }
 
 //---------------------------------------------------------------------------------------
