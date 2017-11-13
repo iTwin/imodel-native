@@ -36,6 +36,9 @@
 
 #if defined (__APPLE__)
     #include <sys/sysctl.h>
+    // *** NEEDS WORK: work around "_assert", referenced from: _Curl_rand in libiModelJsNodeAddon.inputs.a(rand.o)
+    #undef assert
+    extern "C" void assert(char* msg, char* f, int l) {}    
 #elif defined (ANDROID) || defined (__linux)
     #undef __unused
     #include <linux/sysctl.h>
