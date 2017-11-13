@@ -1111,7 +1111,6 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
             return SchemaWriteStatus::FailedToCreateJson;
         attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MAXIMUM_VALUE_ATTRIBUTE, tmpJson));
         }
-
     if (primProp ? primProp->IsMinimumLengthDefined() : primArrProp->IsMinimumLengthDefined())
         attributes.push_back(bpair<Utf8String, Json::Value>(
             ECJSON_MINIMUM_LENGTH_ATTRIBUTE,
