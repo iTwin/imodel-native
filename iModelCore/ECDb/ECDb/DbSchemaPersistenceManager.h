@@ -99,6 +99,80 @@ public:
 
         return TId((uint64_t) id);
         }
+
+    //!Safe method to cast an integer value to the MapStrategy enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<MapStrategy> ToMapStrategy(int val)
+        {
+        if (val == Enum::ToInt(MapStrategy::NotMapped) || val == Enum::ToInt(MapStrategy::OwnTable) || val == Enum::ToInt(MapStrategy::TablePerHierarchy) ||
+            val == Enum::ToInt(MapStrategy::ExistingTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
+            return Enum::FromInt<MapStrategy>(val);
+
+        return Nullable<MapStrategy>();
+        };
+
+    //!Safe method to cast an integer value to the ShareColumnsMode enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<TablePerHierarchyInfo::ShareColumnsMode> ToShareColumnsMode(int val)
+        {
+        if (val == Enum::ToInt(TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly) || val == Enum::ToInt(TablePerHierarchyInfo::ShareColumnsMode::No) || val == Enum::ToInt(TablePerHierarchyInfo::ShareColumnsMode::Yes))
+            return Enum::FromInt<TablePerHierarchyInfo::ShareColumnsMode>(val);
+
+        return Nullable<TablePerHierarchyInfo::ShareColumnsMode>();
+        };
+
+    //!Safe method to cast an integer value to the JoinedTableInfo enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<JoinedTableInfo> ToJoinedTableInfo(int val)
+        {
+        if (val == Enum::ToInt(JoinedTableInfo::None) || val == Enum::ToInt(JoinedTableInfo::JoinedTable) || val == Enum::ToInt(JoinedTableInfo::ParentOfJoinedTable))
+            return Enum::FromInt<JoinedTableInfo>(val);
+
+        return Nullable<JoinedTableInfo>();
+        };
+
+    //!Safe method to cast an integer value to the DbTable::Type enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbTable::Type> ToDbTableType(int val)
+        {
+        if (val == Enum::ToInt(DbTable::Type::Existing) || val == Enum::ToInt(DbTable::Type::Joined) || val == Enum::ToInt(DbTable::Type::Overflow) ||
+            val == Enum::ToInt(DbTable::Type::Primary) || val == Enum::ToInt(DbTable::Type::Virtual))
+            return Enum::FromInt<DbTable::Type>(val);
+
+        return Nullable<DbTable::Type>();
+        };
+
+    //!Safe method to cast an integer value to the DbColumn::Kind enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbColumn::Kind> ToDbColumnKind(int val)
+        {
+        if (val == Enum::ToInt(DbColumn::Kind::Default) || val == Enum::ToInt(DbColumn::Kind::ECClassId) || val == Enum::ToInt(DbColumn::Kind::ECInstanceId) || val == Enum::ToInt(DbColumn::Kind::SharedData))
+            return Enum::FromInt<DbColumn::Kind>(val);
+
+        return Nullable<DbColumn::Kind>();
+        };
+
+    //!Safe method to cast an integer value to the DbColumn::Type enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbColumn::Type> ToDbColumnType(int val)
+        {
+        if (val == Enum::ToInt(DbColumn::Type::Any) || val == Enum::ToInt(DbColumn::Type::Blob) || val == Enum::ToInt(DbColumn::Type::Boolean) || val == Enum::ToInt(DbColumn::Type::Integer) ||
+            val == Enum::ToInt(DbColumn::Type::Real) || val == Enum::ToInt(DbColumn::Type::Text) || val == Enum::ToInt(DbColumn::Type::TimeStamp))
+            return Enum::FromInt<DbColumn::Type>(val);
+
+        return Nullable<DbColumn::Type>();
+        };
+
+    //!Safe method to cast an integer value to the DbColumn::Constraints::Collation enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<DbColumn::Constraints::Collation> ToDbColumnCollation(int val)
+        {
+        if (val == Enum::ToInt(DbColumn::Constraints::Collation::Binary) || val == Enum::ToInt(DbColumn::Constraints::Collation::NoCase) ||
+            val == Enum::ToInt(DbColumn::Constraints::Collation::RTrim) || val == Enum::ToInt(DbColumn::Constraints::Collation::Unset))
+            return Enum::FromInt<DbColumn::Constraints::Collation>(val);
+
+        return Nullable<DbColumn::Constraints::Collation>();
+        };
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

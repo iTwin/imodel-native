@@ -2939,7 +2939,7 @@ TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
 TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("InsertWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     ECClassCP pStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
     ASSERT_TRUE(pStructClass != nullptr && pStructClass->IsStructClass());
@@ -2949,14 +2949,14 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     Json::Value expectedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
          { "b" : true,
-         "d" : 3.1415,
-         "dt" : "2014-03-27T13:14:00.000",
-         "dtUtc" : "2014-03-27T13:14:00.000Z",
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
          "i" : 44444,
          "l" : 444444444,
          "s" : "Hello, world",
-         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
-        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : -6.666}
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
         })json"));
 
     ECSqlStatement insertStmt;
@@ -2983,14 +2983,14 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
         { "PStructProp" :
         { "b" : true,
-         "d" : 3.1415,
-         "dt" : "2014-03-27T13:14:00.000",
-         "dtUtc" : "2014-03-27T13:14:00.000Z",
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
          "i" : 44444,
          "l" : 444444444,
          "s" : "Hello, world",
-         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
-        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : -6.666}
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
         }})json"));
     ECClassCP saStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "SAStruct");
     ASSERT_TRUE(saStructClass != nullptr && saStructClass->IsStructClass());
@@ -3111,14 +3111,14 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     Json::Value initialJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(initialJson, R"json(
        { "PStructProp" : { "b" : true,
-         "d" : 3.1415,
-         "dt" : "2014-03-27T13:14:00.000",
-         "dtUtc" : "2014-03-27T13:14:00.000Z",
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
          "i" : 44444,
          "l" : 444444444,
          "s" : "Hello, world",
-         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
-        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : -6.666}
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
         }})json"));
 
     ECInstanceKey key;
@@ -3127,14 +3127,14 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     Json::Value expectedUpdatedJson;
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedUpdatedJson, R"json(
        { "b" : false,
-         "d" : 6.1415,
-         "dt" : "2014-03-27T13:14:00.000",
-         "dtUtc" : "2017-03-27T13:14:00.000Z",
+         "d" : 6.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2017-03-27T12:00:00.000Z",
          "i" : 8888,
          "l" : 444444444,
          "s" : "Hello, world!",
-         "p2d" : { "x" : 3.1415, "y" : 5.5555 },
-        "p3d" : { "x" : 3.1415, "y" : 5.5555, "z" : 6.666}
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : 6.0}
         })json"));
 
     ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(updateStmt.GetBinder(1), expectedUpdatedJson, *pStructClass->GetStructClassCP())) << expectedUpdatedJson.ToString();

@@ -2042,12 +2042,12 @@ TEST_F(RelationshipMappingTestFixture, FKConstraintsOnLinkTables)
                        </ECRelationshipClass>
                  </ECSchema>)xml")));
 
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk1", "SourceId"));
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk1", "TargetId"));
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk2", "SourceId"));
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk2", "TargetId"));
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk3", "SourceId"));
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk3", "TargetId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk1", "SourceId", "CASCADE", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_LinkTableWithFk1", "SourceId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk1", "TargetId", "CASCADE", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_LinkTableWithFk1", "TargetId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk2", "SourceId", "CASCADE", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_LinkTableWithFk2", "SourceId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk2", "TargetId", "CASCADE", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_LinkTableWithFk2", "TargetId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk3", "SourceId", "CASCADE", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_LinkTableWithFk3", "SourceId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk3", "TargetId", "CASCADE", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_LinkTableWithFk3", "TargetId");
     ASSERT_FALSE(GetHelper().GetDdl("ts_LinkTableWithoutFk").ContainsI("foreign key"));
     }
 
@@ -2542,7 +2542,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav Prop as first prop";
 
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId", "CASCADE", nullptr));
     //Subsubclasses come before sibling classes, therefore parent id is after AAProp1
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", 4, "Nav Prop as first prop");
 
@@ -2591,7 +2591,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav prop as last property";
 
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId", "CASCADE", nullptr));
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", 5, "Nav prop as last property");
 
 
@@ -2652,8 +2652,8 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Two Nav props in a row";
 
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "Parent1Id"));
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "Parent2Id"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "Parent1Id", "CASCADE", nullptr));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "Parent2Id", "CASCADE", nullptr));
     //WIP: Column order for two nav props in a row is not correct yet. Once fixed, flip positions in the below calls.
     assertColumnPosition(m_ecdb, "ts_Base", "Parent1Id", 5, "Two Nav props in a row");
     assertColumnPosition(m_ecdb, "ts_Base", "Parent2Id", 6, "Two Nav props in a row");
@@ -2702,7 +2702,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav prop is only prop";
 
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId", "CASCADE", nullptr));
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", 4, "Nav prop is only prop");
 
 
@@ -2752,7 +2752,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav Prop in class with shared columns";
 
-    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId", "CASCADE", nullptr));
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", -1, "Nav Prop in class with shared columns");
     }
 
@@ -3111,15 +3111,15 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
         {
         ASSERT_EQ(SUCCESS, SetupECDb("onetoonerelationshipmappings.ecdb", testSchema));
 
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A1Id"));
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A2Id"));
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A3Id"));
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A4Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A1Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_b","A1Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A2Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_b", "A2Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A3Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_b", "A3Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A4Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_b", "A4Id");
 
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B1Id"));
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B2Id"));
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B3Id"));
-        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B4Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B1Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_a", "B1Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B2Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_a", "B2Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B3Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_a", "B3Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B4Id")) << GetHelper().GetForeignKeyConstraintDdl("ts_a", "B4Id");
 
         ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_a", "A1Id"));
         ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_a", "A2Id"));
@@ -4186,6 +4186,8 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKey)
     EXPECT_EQ(ExpectedColumns({{"ts_B", "AId"},{"ts_B","ARelECClassId", Virtual::Yes}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
     EXPECT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
     EXPECT_EQ(ExpectedColumn("ts_B", "ARelECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
+
+    EXPECT_TRUE(GetHelper().IsForeignKeyColumn("ts_B", "AId", "SET NULL", nullptr)) << GetHelper().GetForeignKeyConstraintDdl("ts_B", "AId");
 
     EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB"));
     EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Price FROM ts.A"));

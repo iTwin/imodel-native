@@ -324,16 +324,24 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     Utf8CP className = stmt->GetValueText(nameColIx);
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
-    ECClassType classType = Enum::FromInt<ECClassType>(stmt->GetValueInt(typeColIx));
-    ECClassModifier classModifier = Enum::FromInt<ECClassModifier>(stmt->GetValueInt(modifierColIx));
+    Nullable<ECClassType> classType = SchemaPersistenceHelper::ToClassType(stmt->GetValueInt(typeColIx));
+    Nullable<ECClassModifier> classModifier = SchemaPersistenceHelper::ToClassModifier(stmt->GetValueInt(modifierColIx));
 
     SchemaDbEntry* schemaKey = nullptr;
     if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
         return nullptr;
 
     ECSchemaR schema = *schemaKey->m_cachedSchema;
+
+    if (classType.IsNull() || classModifier.IsNull())
+        {
+        LOG.errorv("Failed to load ECClass %s.%s. Its ECClassType or ECClassModifier is unsupported. The file might have been used with newer versions of the software.", 
+                   schema.GetName().c_str(), className);
+        return nullptr;
+        }
+
     ECClassP ecClass = nullptr;
-    switch (classType)
+    switch (classType.Value())
         {
             case ECClassType::CustomAttribute:
             {
@@ -377,8 +385,18 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
                 return nullptr;
 
             BeAssert(!stmt->IsColumnNull(relStrengthColIx) && !stmt->IsColumnNull(relStrengthDirColIx));
-            newClass->SetStrength(Enum::FromInt<StrengthType>(stmt->GetValueInt(relStrengthColIx)));
-            newClass->SetStrengthDirection(Enum::FromInt<ECRelatedInstanceDirection>(stmt->GetValueInt(relStrengthDirColIx)));
+
+            Nullable<StrengthType> strengthType = SchemaPersistenceHelper::ToStrengthType(stmt->GetValueInt(relStrengthColIx));
+            Nullable<ECRelatedInstanceDirection> strengthDir = SchemaPersistenceHelper::ToECRelatedInstanceDirection(stmt->GetValueInt(relStrengthDirColIx));
+            if (strengthType.IsNull() || strengthDir.IsNull())
+                {
+                LOG.errorv("Failed to load ECRelationshipClass %s.%s. Its StrengthType or ECRelatedInstanceDirection is unsupported. The file might have been used with newer versions of the software.",
+                           schema.GetName().c_str(), className);
+                return nullptr;
+                }
+
+            newClass->SetStrength(strengthType.Value());
+            newClass->SetStrengthDirection(strengthDir.Value());
             ecClass = newClass;
             break;
             }
@@ -389,7 +407,7 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
         }
 
     ecClass->SetId(ecClassId);
-    ecClass->SetClassModifier(classModifier);
+    ecClass->SetClassModifier(classModifier.Value());
 
     if (!Utf8String::IsNullOrEmpty(displayLabel))
         ecClass->SetDisplayLabel(displayLabel);
@@ -410,10 +428,10 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     if (SUCCESS != LoadMixinAppliesToClass(ctx, *ecClass))
         return nullptr;
 
-    if (SUCCESS != LoadBaseClassesFromDb(ecClass, ctx, ecClassId))
+    if (SUCCESS != LoadBaseClassesFromDb(ctx, *ecClass))
         return nullptr;
 
-    if (SUCCESS != LoadPropertiesFromDb(ecClass, ctx, ecClassId))
+    if (SUCCESS != LoadPropertiesFromDb(ctx, *ecClass))
         return nullptr;
 
     ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
@@ -948,7 +966,7 @@ BentleyStatus SchemaReader::LoadMixinAppliesToClass(Context& ctx, ECN::ECClassCR
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
+BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass) const
     {
     struct PropReaderHelper
         {
@@ -977,7 +995,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             Nullable<int> m_navPropDirection;
             };
 
-        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, ECClassId classId)
+        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, ECClassCR ecClass)
             {
             const int idIx = 0;
             const int kindIx = 1;
@@ -1009,16 +1027,24 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             if (stmt == nullptr)
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindId(1, classId))
+            if (BE_SQLITE_OK != stmt->BindId(1, ecClass.GetId()))
                 return ERROR;
 
             while (BE_SQLITE_ROW == stmt->Step())
                 {
                 RowInfo rowInfo;
                 rowInfo.m_id = stmt->GetValueId<ECPropertyId>(idIx);
-                const PropertyKind kind = Enum::FromInt<PropertyKind>(stmt->GetValueInt(kindIx));
-                rowInfo.m_kind = kind;
                 rowInfo.m_name.assign(stmt->GetValueText(nameIx));
+
+                Nullable<PropertyKind> kind = SchemaPersistenceHelper::ToPropertyKind(stmt->GetValueInt(kindIx));
+                if (kind.IsNull())
+                    {
+                    LOG.errorv("Failed to load ECProperty %s.%s. It is an unsupported type of ECProperty. The file might have been used with newer versions of the software.",
+                               ecClass.GetFullName(), rowInfo.m_name.c_str());
+                    return ERROR;
+                    }
+
+                rowInfo.m_kind = kind.Value();
 
                 if (!stmt->IsColumnNull(displayLabelIx))
                     rowInfo.m_displayLabel.assign(stmt->GetValueText(displayLabelIx));
@@ -1034,7 +1060,15 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     rowInfo.m_priority = stmt->GetValueInt64(priorityIx);
 
                 if (!stmt->IsColumnNull(primTypeIx))
+                    {
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
+                    if (SchemaPersistenceHelper::ToPrimitiveType(rowInfo.m_primType.Value()).IsNull())
+                        {
+                        LOG.errorv("Failed to load ECProperty %s.%s. It has an unsupported primitive data type. The file might have been used with newer versions of the software.",
+                                   ecClass.GetFullName(), rowInfo.m_name.c_str());
+                        return ERROR;
+                        }
+                    }
 
                 //MinLength/MaxLength is persisted as int64 to not lose unsigned-ness
                 if (!stmt->IsColumnNull(primTypeMinLengthIx))
@@ -1116,7 +1150,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     }
                 else
                     rowInfo.m_navPropDirection = stmt->GetValueInt(navPropDirectionIx);
-
+ 
 
                 rows.push_back(rowInfo);
                 }
@@ -1168,29 +1202,29 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             return SUCCESS;
             }
 
-            static BentleyStatus AssignArrayBounds(ArrayECProperty& prop, RowInfo const& rowInfo)
+        static BentleyStatus AssignArrayBounds(ArrayECProperty& prop, RowInfo const& rowInfo)
+            {
+            //uint32_t was persisted as int64 to not lose unsigned-ness
+            if (ECObjectsStatus::Success != prop.SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs))
+                return ERROR;
+
+            if (!rowInfo.m_arrayMaxOccurs.IsNull())
                 {
-                //uint32_t was persisted as int64 to not lose unsigned-ness
-                if (ECObjectsStatus::Success != prop.SetMinOccurs((uint32_t) rowInfo.m_arrayMinOccurs))
+                //if maxoccurs is DB NULL, it means unbound. This is the default in ArrayECProperty
+                if (ECObjectsStatus::Success != prop.SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs.Value()))
                     return ERROR;
-
-                if (!rowInfo.m_arrayMaxOccurs.IsNull())
-                    {
-                    //if maxoccurs is DB NULL, it means unbound. This is the default in ArrayECProperty
-                    if (ECObjectsStatus::Success != prop.SetMaxOccurs((uint32_t) rowInfo.m_arrayMaxOccurs.Value()))
-                        return ERROR;
-                    }
-                else
-                    {
-                    BeAssert(prop.IsStoredMaxOccursUnbounded());
-                    }
-
-                return SUCCESS;
                 }
+            else
+                {
+                BeAssert(prop.IsStoredMaxOccursUnbounded());
+                }
+
+            return SUCCESS;
+            }
         };
 
     std::vector<PropReaderHelper::RowInfo> rowInfos;
-    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, m_ecdb, ecClassId))
+    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, m_ecdb, ecClass))
         return ERROR;
 
     for (PropReaderHelper::RowInfo const& rowInfo : rowInfos)
@@ -1210,12 +1244,12 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
                         return ERROR;
 
-                    if (ECObjectsStatus::Success != ecClass->CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
+                    if (ECObjectsStatus::Success != ecClass.CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
                         return ERROR;
                     }
                 else
                     {
-                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
+                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
                         return ERROR;
                     }
 
@@ -1245,7 +1279,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     }
 
                 StructECPropertyP structProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateStructProperty(structProp, rowInfo.m_name, *structClass))
+                if (ECObjectsStatus::Success != ecClass.CreateStructProperty(structProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
                 prop = structProp;
@@ -1264,13 +1298,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
                         return ERROR;
 
-                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, *ecenum))
+                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, *ecenum))
                         return ERROR;
                     }
                 else
                     {
                     BeAssert(!rowInfo.m_primType.IsNull());
-                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
+                    if (ECObjectsStatus::Success != ecClass.CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
                         return ERROR;
                     }
 
@@ -1302,7 +1336,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     }
 
                 StructArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
+                if (ECObjectsStatus::Success != ecClass.CreateStructArrayProperty(arrayProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
                 if (SUCCESS != PropReaderHelper::AssignArrayBounds(*arrayProp, rowInfo))
@@ -1314,29 +1348,36 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
                 case PropertyKind::Navigation:
                 {
-                BeAssert(ecClass->IsEntityClass() || ecClass->IsRelationshipClass());
-
+                BeAssert(ecClass.IsEntityClass() || ecClass.IsRelationshipClass());
                 BeAssert(rowInfo.m_navPropRelClassId.IsValid() && !rowInfo.m_navPropDirection.IsNull());
+
+                Nullable<ECRelatedInstanceDirection> direction = SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value());
+                if (direction.IsNull())
+                    {
+                    LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported. The file might have been used with newer versions of the software.",
+                               ecClass.GetFullName(), rowInfo.m_name.c_str());
+                    return ERROR;
+                    }
+
                 ECClassCP relClassRaw = GetClass(ctx, rowInfo.m_navPropRelClassId);
                 if (relClassRaw == nullptr)
                     return ERROR;
 
                 BeAssert(relClassRaw->IsRelationshipClass());
-                ECRelatedInstanceDirection direction = (ECRelatedInstanceDirection) rowInfo.m_navPropDirection.Value();
                 NavigationECPropertyP navProp = nullptr;
-                if (ecClass->IsEntityClass())
+                if (ecClass.IsEntityClass())
                     {
-                    if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
+                    if (ECObjectsStatus::Success != ecClass.GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), PrimitiveType::PRIMITIVETYPE_Long, false))
                         return ERROR;
                     }
-                else if (ecClass->IsRelationshipClass())
+                else if (ecClass.IsRelationshipClass())
                     {
-                    if (ECObjectsStatus::Success != ecClass->GetRelationshipClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
+                    if (ECObjectsStatus::Success != ecClass.GetRelationshipClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), PrimitiveType::PRIMITIVETYPE_Long, false))
                         return ERROR;
                     }
                 else
                     {
-                    BeAssert(false && "Can only create nav props for entity and relationshpi classes. Should have been caught at import time");
+                    BeAssert(false && "Can only create nav props for entity and relationship classes. Should have been caught at import time");
                     return ERROR;
                     }
 
@@ -1410,13 +1451,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
+BentleyStatus SchemaReader::LoadBaseClassesFromDb(Context& ctx, ECClassR ecClass) const
     {
     CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT BaseClassId FROM ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal");
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
+    if (BE_SQLITE_OK != stmt->BindId(1, ecClass.GetId()))
         return ERROR;
 
     //cache base class ids before loading base classes so that statement can be reused for fetching base class ids
@@ -1437,7 +1478,7 @@ BentleyStatus SchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ct
         if (baseClass == nullptr)
             return ERROR;
 
-        if (ECObjectsStatus::Success != ecClass->AddBaseClass(*baseClass, false, false, false))
+        if (ECObjectsStatus::Success != ecClass.AddBaseClass(*baseClass, false, false, false))
             return ERROR;
         }
 

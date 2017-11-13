@@ -2720,7 +2720,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
 
     if (resolvedClass == nullptr)
         {
-        Issues().Report("ECClass '%s.%s' does not exist.", schemaNameOrAlias.c_str(), className.c_str());
+        Issues().Report("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
         return ERROR;
         }
 
@@ -2732,6 +2732,9 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
         }
 
     ClassMap const* map = m_ecdb.Schemas().GetDbMap().GetClassMap(*resolvedClass);
+    if (map == nullptr)
+        return ERROR;
+
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*map, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
@@ -2739,15 +2742,8 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
         return ERROR;
         }
 
-    if (map == nullptr)
-        {
-        Issues().Report("Inconsistent database mapping information found for ECClass '%s'. This might be an indication that the import of the containing ECSchema had failed.", className.c_str());
-        return ERROR;
-        }
-
     classNameExpInfo = ClassNameExp::Info::Create(*map);
     m_classNameExpInfoList[resolvedClass->GetECSqlName().c_str()] = classNameExpInfo;
-
     return SUCCESS;
     }
 
