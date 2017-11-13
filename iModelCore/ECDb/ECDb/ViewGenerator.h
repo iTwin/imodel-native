@@ -49,6 +49,7 @@ struct ViewGenerator final
 
                 return true;
                 }
+            bool IsChangeSummaryFunction() const { return GetName().EqualsIAscii("changesummary"); }
             bool Valid() const { return !m_name.empty(); }
         };
 

@@ -26,7 +26,10 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
         return GenerateViewSql(viewSql, ctx, classMap);
         }
 
-    return GenerateChangeSummaryView(viewSql, classMap, ctx);
+    if (memberInfo->IsChangeSummaryFunction())
+        return GenerateChangeSummaryView(viewSql, classMap, ctx);
+
+    return ERROR;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -40,9 +43,9 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
 
     internalView.Append(" ").AppendEscaped(classMap.GetClass().GetName().c_str());
     NativeSqlBuilder columnSql;
+
     //Template is not applied to following system properties but it would be applied to Source/Target ECinstanceId/ECClassId
     columnSql.Append("CI.ChangedInstanceId ECInstanceId, CI.ChangedClassId ECClassId");
-
     SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::ConstraintECClassId | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::SingleColumnData);
     classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor);
     Utf8String stageSql;
@@ -56,8 +59,13 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
         if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(basePropertyMap->GetAccessString()))
             continue;
         if (basePropertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || basePropertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
-            {
-
+            {            
+            columnSql.AppendFormatted(",ChangedValue([CI].[Id],'%s',[CI].[Operation],[%s].[%s] %s) [%s]",
+                                      basePropertyMap->GetAccessString().c_str(),
+                                      classMap.GetClass().GetName().c_str(),
+                                      basePropertyMap->GetAccessString().c_str(),
+                                      stageSql.c_str(),
+                                      basePropertyMap->GetAccessString().c_str());
             }
         else
             {
@@ -80,13 +88,21 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
             }
         }
 
-    viewSql.AppendFormatted("(SELECT %s FROM [change_Instance] CI LEFT JOIN %s ON [%s].[ECInstanceId]=[CI].[ChangedInstanceId] WHERE [CI].[Operation]=%s AND [CI].[SummaryId]=%s)",
+    Utf8String polyExp, whereExp;
+    if (ctx.IsPolymorphicQuery())
+        polyExp = "INNER JOIN " TABLE_ClassHierarchyCache " CHC ON CI.ChangedClassId=CHC.ClassId AND CHC.BaseClassId=" + classMap.GetClass().GetId().ToHexStr();
+    else
+        whereExp = "AND CI.ChangedClassId=" + classMap.GetClass().GetId().ToHexStr();
+
+    viewSql.AppendFormatted("(SELECT %s FROM [change_Instance] CI %s LEFT JOIN %s ON [%s].[ECInstanceId]=[CI].[ChangedInstanceId] WHERE [CI].[Operation]=%s AND [CI].[SummaryId]=%s %s)",
                             columnSql.GetSql().c_str(),
+                            polyExp.c_str(),
                             internalView.GetSql().c_str(),
                             classMap.GetClass().GetName().c_str(),
                             ctx.GetMemberInfo()->GetArg("operation"),
-                            ctx.GetMemberInfo()->GetArg("summary_id"));
-
+                            ctx.GetMemberInfo()->GetArg("summary_id"),
+                            whereExp.c_str());
+    
     return SUCCESS;
 
     }
