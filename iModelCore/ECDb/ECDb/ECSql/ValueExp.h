@@ -84,6 +84,7 @@ struct FuntionSigature : NonCopyableClass
         std::vector<Arg const*> Args() const;
         Utf8String ToString() const;
         BentleyStatus Verify(Utf8StringR err, Exp::Collection const& argExps) const;
+        BentleyStatus SetParameterType(Exp::Collection& argExps) const;
         ~FuntionSigature() {}
         // signarture = [::]<funtion-name>(<arg1>, arg2, ...)[:<return-type>]
         // arg        = [optional] arg-name:<type > | ...

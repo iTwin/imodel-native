@@ -354,6 +354,12 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
             ctx.Issues().Report("Unknow member funtion '%s'", m_functionName.c_str());
             return Exp::FinalizeParseStatus::Error;
             }
+        
+        if (funcSig->SetParameterType(GetChildrenR()) != SUCCESS)
+            {
+            ctx.Issues().Report("Error in funtion call '%s' - Varying argument cannot be parameterize.", m_functionName.c_str());
+            return Exp::FinalizeParseStatus::Error;
+            }
 
         Utf8String err;
         if (funcSig->Verify(err, GetChildren()) != SUCCESS)
@@ -1206,7 +1212,7 @@ FuntionSigatureSet& FuntionSigatureSet::GetInstance()
 void FuntionSigatureSet::LoadDefinitions()
     {
     //scoped funtion
-    Declare("::changes(changesetId:integer, operation:integer):resultset");
+    Declare("::ChangeSummary(changesetId:integer, operation:integer, optional stage:integer):resultset");
     //SELECT * FROM stco.Foo.Changes(changsetId?
     ////global funtion
     Declare("abs(value:numeric):numeric");
@@ -1347,8 +1353,6 @@ Utf8CP FuntionSigature::ValueTypeToString(ValueType type)
 //static  
 BentleyStatus FuntionSigature::Parse(std::unique_ptr<FuntionSigature>& funcSig, Utf8CP signature, Utf8CP description)
     {
-    printf("Parsing: %s\n", signature);
-
     Utf8String temp = Utf8String(signature).Trim();   
     bool member = temp.StartsWith("::");
     if (member)
@@ -1444,7 +1448,6 @@ BentleyStatus FuntionSigature::Parse(std::unique_ptr<FuntionSigature>& funcSig, 
             }
         }
 
-    printf("Pared: %s\n", funcSig->ToString().c_str());
     return SUCCESS;
     }
 
@@ -1531,7 +1534,47 @@ bool FuntionSigature::ParseValueType(ValueType& type, Utf8CP str)
 
     return false;
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus FuntionSigature::SetParameterType(Exp::Collection& argExps) const
+    {
+    const std::vector<Arg const*> args = Args();
+    int i = 0;
+    int j = 0;
+    do
+        {
+        Arg const* arg = args[i];
+        ValueExp& test = const_cast<ValueExp&>(argExps[j]->GetAs<ValueExp>());          
+        if (test.GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Unset && test.IsParameterExp())
+            {
+            if (arg->Varying())
+                {
+                BeAssert(false);
+                return ERROR;
+                }
 
+            if (arg->Type() == FuntionSigature::ValueType::String)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
+            else if (arg->Type() == FuntionSigature::ValueType::Blob)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
+            else if (arg->Type() == FuntionSigature::ValueType::Float ||
+                     arg->Type() == FuntionSigature::ValueType::Numeric)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+            else if (arg->Type() == FuntionSigature::ValueType::Integer)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+            else if (arg->Type() == FuntionSigature::ValueType::Any)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+            else
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
+            }
+
+        j++;
+        i++;
+        } while (j < argExps.size() && i < args.size());
+
+        return SUCCESS;
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
