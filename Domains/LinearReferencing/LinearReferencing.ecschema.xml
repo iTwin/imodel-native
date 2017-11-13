@@ -5,7 +5,7 @@
     
     <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />
 
-    <ECEntityClass typeName="ILinearElement" description="Interface to be mixed-in by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
+    <ECEntityClass typeName="ILinearElement" description="Mix-in to be supported by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
@@ -13,7 +13,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ILinearElementSource" relationshipName="ILinearElementSourceProvidesILinearElements" direction="backward"/>
     </ECEntityClass>
-    <ECEntityClass typeName="ILinearElementSource" description="Interface to be mixed-in by Element-subclasses meant to provide Linear-Elements." modifier="Abstract">
+    <ECEntityClass typeName="ILinearElementSource" description="Mix-in to be supported by Element-subclasses meant to provide Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
@@ -29,7 +29,7 @@
         </Target>
     </ECRelationshipClass>
     
-    <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract">
+    <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract" description="Base mix-in for Elements to be linearly-referenced along Linear-Elements.">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
@@ -44,7 +44,7 @@
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None" description="Relationship indicating the Linear-Element along which concrete instances mixing-in ILInearlyLocated are located.">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is the axis for N linearly-located entities">
             <Class class="ILinearlyLocated"/>
         </Source>
@@ -52,7 +52,7 @@
             <Class class="ILinearElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="ILinearlyLocatedAttribution" description="Interface to be mixed-in by Element-subclasses representing properties that apply to only a portion of a Linear-Element-Source." modifier="Abstract">
+    <ECEntityClass typeName="ILinearlyLocatedAttribution" description="Mix-in to be supported by Element-subclasses representing properties whose value is located along a Linear-Element and only applies to a portion of a Linear-Element-Source." modifier="Abstract">
         <BaseClass>ILinearlyLocated</BaseClass>
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
@@ -60,7 +60,7 @@
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ILinearlyLocatedElement" description="Interface to be mixed-in by Element-subclasses located along a Linear-Element-Source." modifier="Abstract">
+    <ECEntityClass typeName="ILinearlyLocatedElement" description="Mix-in to be supported by Element-subclasses located along a Linear-Element provided by a Linear-Element-Source." modifier="Abstract">
         <BaseClass>ILinearlyLocated</BaseClass>
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
@@ -68,17 +68,17 @@
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="IReferent" description="Interface to be mixed-in by Element-subclasses that can play the role of a Referent (known location along a Linear-Element)." modifier="Abstract">
+    <ECEntityClass typeName="IReferent" description="Mix-in to be supported by Element-subclasses that can play the role of a Referent (known location along a Linear-Element)." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
+    <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract" description="Base class for multi-aspects carrying linearly-referenced locations.">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ILinearlyLocatedOwnsAtLocations" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="ILinearlyLocatedOwnsAtLocations" strength="embedding" modifier="None" description="Relationship documenting multi-aspect ownership by concrete instances of ILinearlyLocated.">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
             <Class class="ILinearlyLocated"/>
@@ -87,7 +87,7 @@
             <Class class="LinearlyReferencedAtLocation"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ILinearlyLocatedOwnsFromToLocations" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="ILinearlyLocatedOwnsFromToLocations" strength="embedding" modifier="None" description="Relationship documenting multi-aspect ownership by concrete instances of ILinearlyLocated.">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
             <Class class="ILinearlyLocated"/>
@@ -96,13 +96,13 @@
             <Class class="LinearlyReferencedFromToLocation"/>
         </Target>
     </ECRelationshipClass>
-    <ECStructClass typeName="DistanceExpression">
+    <ECStructClass typeName="DistanceExpression" description="Core structure carrying linearly-referenced information.">
         <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="VerticalOffsetFromILinearElement" typeName="double" kindOfQuantity="LENGTH"/>
         <ECProperty propertyName="DistanceAlongFromReferent" typeName="double" kindOfQuantity="LENGTH"/>
     </ECStructClass>
-    <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed">
+    <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed" description="Concrete multi-aspect class carrying 'at' linearly-referenced positions along a Linear-Element.">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -110,7 +110,7 @@
         <ECStructProperty propertyName="AtPosition" typeName="DistanceExpression"/>
         <ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyReferencedAtPositionRefersToReferent" direction="Forward"/>
     </ECEntityClass>
-    <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
+    <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed" description="Concrete multi-aspect class carrying 'from/to' linearly-referenced positions along a Linear-Element.">
         <BaseClass>LinearlyReferencedLocation</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -120,7 +120,7 @@
         <ECStructProperty propertyName="ToPosition" typeName="DistanceExpression"/>
         <ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedToPositionRefersToReferent" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LinearlyReferencedAtPositionRefersToReferent" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="LinearlyReferencedAtPositionRefersToReferent" strength="referencing" modifier="None" description="Relationship indicating the referent used by a particular linearly-referenced position.">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
             <Class class="LinearlyReferencedAtLocation"/>
         </Source>
@@ -128,7 +128,7 @@
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="LinearlyReferencedFromPositionRefersToReferent" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="LinearlyReferencedFromPositionRefersToReferent" strength="referencing" modifier="None" description="Relationship indicating the referent used by a particular linearly-referenced position.">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
@@ -136,7 +136,7 @@
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="LinearlyReferencedToPositionRefersToReferent" strength="referencing" modifier="None">
+    <ECRelationshipClass typeName="LinearlyReferencedToPositionRefersToReferent" strength="referencing" modifier="None" description="Relationship indicating the referent used by a particular linearly-referenced position.">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
