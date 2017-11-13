@@ -359,82 +359,82 @@ public:
     //! @return the current WorldToNpc map for this DgnViewport.
     DMap4dCP GetWorldToNpcMap() const {return &m_rootToNpc;}
 
-    //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
+    //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] npcPts Input array in DgnCoordSystem::Npc
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
-    DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
+    DPoint3d NpcToView(DPoint3dCR npcPt) const {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
 
-    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
-    DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
+    //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
+    DPoint3d ViewToNpc(DPoint3dCR viewPt) const {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
 
-    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Screen.
     //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const;
 
-    //! Transfrom an array of points in DgnCoordSystem::Screen into DgnCoordSystem::View.
+    //! Transform an array of points in DgnCoordSystem::Screen into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] screenPts Input array in DgnCoordSystem::Screen
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const;
 
-    //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
+    //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in] npcPts Input array in DgnCoordSystem::Npc
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
-    DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
+    //! Transform a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
+    DPoint3d NpcToWorld(DPoint3dCR npcPt) const {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
 
-    //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::Npc.
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts  Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
-    DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
+    //! Transform a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
+    DPoint3d WorldToNpc(DPoint3dCR worldPt) const {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
 
-    //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array of DPoint4d coordinates in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
 
-    //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
-    DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
+    //! Transform a point from DgnCoordSystem::World into DgnCoordSystem::View.
+    DPoint3d WorldToView(DPoint3dCR worldPt) const {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
 
-    //! Transfrom an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
+    //! Transform an array of points in DgnCoordSystem::World into an array of 2D points in DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView2d(DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-    //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.

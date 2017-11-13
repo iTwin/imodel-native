@@ -987,10 +987,12 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 protected:
     SpatialModelCP _ToSpatialModel() const override final {return this;}
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
+    virtual BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 
 public:
     DGNPLATFORM_EXPORT void AddLights(Render::SceneLightsR, Render::TargetR) const;
 
+    BentleyStatus GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return _GetSpatialClassifiers(classifiers); }
     void OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents);
 };
 

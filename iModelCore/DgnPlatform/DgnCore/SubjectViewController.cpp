@@ -35,6 +35,20 @@ SubjectViewController::~SubjectViewController()
     }
 
 //-------------------------------------------------------------------------------------------
+// @bsimethod 												Diego.Pinate 	11/17
+//-------------------------------------------------------------------------------------------
+void    SubjectViewController::SetModelsAndCategoriesVisibility(bool visible)
+    {
+    CachedECSqlStatementPtr modelStmt = m_db->GetPreparedECSqlStatement("SELECT m.ECInstanceId FROM Bis.SpatialModel m");
+    while (modelStmt->Step() == BE_SQLITE_ROW)
+        ChangeModelDisplay(modelStmt->GetValueId<DgnModelId>(0), visible);
+
+    CachedECSqlStatementPtr categoryStmt = m_db->GetPreparedECSqlStatement("SELECT c.ECInstanceId FROM Bis.Category c");
+    while (categoryStmt->Step() == BE_SQLITE_ROW)
+        ChangeCategoryDisplay(categoryStmt->GetValueId<DgnCategoryId>(0), visible);
+    }
+
+//-------------------------------------------------------------------------------------------
 // @bsimethod 												Diego.Pinate 	10/17
 //-------------------------------------------------------------------------------------------
 SubjectCPtr GetParentJobSubjectRecursive(DgnDbP db, ECClassCP subjectClass, DgnElementCPtr element)
@@ -112,8 +126,27 @@ void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOver
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::ToggleVisibility(DgnElementId subjectId, bool isVisible)
     {
-    m_subjectColors[subjectId].SetLineTransparency(isVisible ? 255 : 0);
-    m_subjectColors[subjectId].SetFillTransparency(isVisible ? 255 : 0);
+    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+        return;
+    
+    m_subjectColors[subjectId].SetLineTransparency(isVisible ? 0 : 255);
+    m_subjectColors[subjectId].SetFillTransparency(isVisible ? 0 : 255);
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod 												Diego.Pinate 	11/17
+//-------------------------------------------------------------------------------------------
+bool     SubjectViewController::IsVisible(DgnElementId subjectId) const
+    {
+    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+        {
+        BeAssert(false && "Subject not found in View Controller.");
+        return false;
+        }
+    
+    SubjectColorMap::const_iterator iter = m_subjectColors.find(subjectId);
+    Byte alpha = iter->second.GetFillColor().GetAlpha();
+    return alpha == 0;
     }
 
 //-------------------------------------------------------------------------------------------

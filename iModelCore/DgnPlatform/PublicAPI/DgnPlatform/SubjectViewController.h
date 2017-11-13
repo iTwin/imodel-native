@@ -39,15 +39,25 @@ private:
     DgnDbP              m_db;
     ECSqlStatement*     m_elementToSubjectStmt;
 
+
 protected:
     void _AddFeatureOverrides(Render::FeatureSymbologyOverrides&) const override;
     SubjectCPtr GetParentJobSubject(DgnElementCP element);
 
 public:
+    //! Turns on/off all models and categories
+    //! @param[in] visible true if visible
+    DGNPLATFORM_EXPORT void     SetModelsAndCategoriesVisibility(bool visible);
+
     //! Toggles visibility of a specific subject
     //! @param[in] subjectId
     //! @param[in] isVisible
     DGNPLATFORM_EXPORT void     ToggleVisibility(DgnElementId subjectId, bool isVisible);
+
+    //! Returns true if a subject is visible
+    //! @param[in] subjectId ID of the job subject
+    //! @return true if job subject is visible
+    DGNPLATFORM_EXPORT bool     IsVisible(DgnElementId subjectId) const;
 
     //! Sets overrides for a subject
     //! @param[in] subjectId

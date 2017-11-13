@@ -8,6 +8,7 @@
 #include <TilePublisher/CesiumPublisher.h>
 #include <VersionCompare/VersionCompare.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
+#include <WebServices/iModelHub/Client/iModelConnection.h>
 #include <ECPresentation/IECPresentationManager.h>
 #include "Constants.h"
 
@@ -46,45 +47,7 @@ struct CompareChangeSet : BentleyApi::BeSQLite::ChangeSet
     };  // CompareChangeSet
 
 
-#ifdef NOTNOW
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getChangedGeometricElements(bvector<DgnElementId>& elementIds, bvector<DbOpcode>& opcodes, DgnDbPtr db, DgnRevisionPtr changeset)
-    {
-    ChangeSummary summary(*db);
-    ChangeGroup changeGrp;
-    BeFileNameCR changesFile = changeset->GetRevisionChangesFile();
-    RevisionChangesFileReader stream(changesFile, *db);
-    stream.ToChangeGroup(changeGrp);
-    CompareChangeSet set;
-    set.FromChangeGroup(changeGrp);
-    summary.FromChangeSet(set);
 
-    ECClassCP geomClass = db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricElement);
-    bmap<ECInstanceId, ChangeSummary::Instance> changedElements;
-    summary.QueryByClass(changedElements, geomClass->GetId());
-
-    for (auto changedElement : changedElements)
-        {
-        DgnElementId elementId (changedElement.first.GetValue());
-        DbOpcode opcode = changedElement.second.GetDbOpcode();
-        elementIds.push_back(elementId);
-        opcodes.push_back(opcode);
-        }
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt getAllChangeSets(bvector<DgnRevisionPtr>& changesets, DgnDbR db, ClientPtr client)
-    {
-    bool isBackwardsRoll;
-    Utf8String filename(db.GetFileName().GetFileNameWithoutExtension());
-
-    return VersionSelector::GetChangeSetsToApply(changesets, isBackwardsRoll, client, &db, "MasterFile", filename);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2016
@@ -255,34 +218,6 @@ DgnDbPtr copyToTemporaryBriefcase (BeFileNameR tempDbName, BeFileNameCR inputDbN
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
 
-#define FABRICATE_FAKE_REVISION_DATA
-#ifdef FABRICATE_FAKE_REVISION_DATA
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void fabricateFakeRevisionData(Json::Value& revisionJson)
-    {
-    static double   s_time = 0.0;
-    static double   s_fakeTimeIntervals[] = { 2.15, 3.41, 1.8, 0.5123};     
-    static int      s_fakeIndex;
-    static char*    s_fakeUsers[] = {"John Braun", "Charles Johnson", "Sharon Kowalski" };
-    static char*    s_fakeDescriptions[] = {"Add HVAC", "Modify roof", "Add plumbing", "Rework HVAC" };
-    DateTime::Info  info;
-
-    if (0.0 == s_time)
-        DateTime::GetCurrentTime().ToJulianDay(s_time);
-
-    if (!revisionJson.isMember("Date"))
-        revisionJson["Date"] = s_time;
-
-    if (0 == revisionJson["User"].asString().size())
-        revisionJson["User"] = s_fakeUsers[s_fakeIndex % (sizeof(s_fakeUsers) / sizeof(s_fakeUsers[0]))];
-
-    s_time -= s_fakeTimeIntervals[s_fakeIndex % (sizeof(s_fakeTimeIntervals) / sizeof(s_fakeTimeIntervals[0]))];
-
-    s_fakeIndex++;
-    }
-#endif
 
 
 //=======================================================================================
@@ -301,8 +236,8 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index, bool preview) : m_preview(preview), m_index(index),
-    TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
+TilesetRevisionPublisher(DgnDbR db, PublisherParamsCR params, AxisAlignedBox3dCR projectExtents, int index, bool preview) : m_preview(preview), m_index(index),
+    TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) 
     { 
     m_revisionName = WPrintfString(L"Revision_%d", index);
@@ -315,7 +250,7 @@ TilesetRevisionPublisher(DgnDbR db, PublisherParamsR params, int index, bool pre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnElementIdSet const& elementIds, PublisherParamsR params)
+PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnElementIdSet const& elementIds, PublisherParamsCR params)
     {
     struct RevisionCollectionFilter : ITileCollectionFilter
         {
@@ -359,111 +294,37 @@ virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR
    
 };  // TilesetRevisionPublisher
 
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     09/2017
 //=======================================================================================
-struct BaselinePublisher : TilesetPublisher
+struct     HistoryPublisher
 {
-    Json::Value             m_json;
-    DgnElementIdSet         m_allModelSelectors;
-    T_CategorySelectorMap   m_allCategorySelectors;
-    DgnElementIdSet         m_allDisplayStyles;
-    DgnModelIdSet           m_all2dModelIds;
 
+    ClientPtr                   m_client;
+    iModelConnectionPtr         m_connection;
+    DgnDbPtr                    m_tempDb;
+    BeFileName                  m_tempDbName;                                                                                                                                                                                  
+    bvector<DgnRevisionPtr>     m_changeSets;
+    bvector<ChangeSetInfoPtr>   m_changeSetInfos;
+    PublisherParamsCR           m_params;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BaselinePublisher(DgnDbR db, PublisherParamsR params,  DgnViewIdSet const& viewIds, DgnViewId defaultViewId) : 
-    TilesetPublisher(db, viewIds, defaultViewId, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) { }
+    HistoryPublisher(PublisherParamsCR params) : m_params(params) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status Initialize()
-    {
-    Status          status;
-
-    Utf8String rootNameUtf8(m_rootName.c_str());
-    m_json["name"] = rootNameUtf8;
-
-    // TODO - Set ground point.
-    ExtractViewSelectors (m_defaultViewId, m_allModelSelectors, m_allCategorySelectors, m_allDisplayStyles, m_all2dModelIds);
-
-    if (!m_defaultViewId.IsValid())
-        return Status::NoGeometry;
-
-    m_json["views"] = GetViewDefinitionsJson();
-    m_json["defaultView"] = m_defaultViewId.ToString();
-
-    WriteCategoriesJson(m_json, m_allCategorySelectors, false);
-    m_json["displayStyles"] = GetDisplayStylesJson(m_allDisplayStyles);
-
-    AxisAlignedBox3d projectExtents = m_projectExtents;
-    Transform::FromProduct(m_spatialToEcef, m_dbToTile).Multiply(projectExtents, projectExtents);
-    m_json["projectExtents"] = RangeToJson(projectExtents);
-    m_json["projectTransform"] = TransformToJson(m_spatialToEcef);
-    m_json["projectOrigin"] = PointToJson(m_projectExtents.GetCenter());
-    
-    return InitializeDirectories(GetDataDirectory());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status Publish(PublisherParamsR params, Json::Value&& revisions)
-    {
-    DRange3d      range;
-    ProgressMeter progressMeter(*this);
-    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
-
-    m_generator = &generator;
-    auto status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
-    m_generator = nullptr;
-
-    if (Status::Success != status)
-        {
-        CleanDirectories(GetDataDirectory());
-        return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
-        }
-
-    OutputStatistics(generator.GetStatistics());
-    WriteModelsJson(m_json, m_allModelSelectors, m_all2dModelIds);
-
-    Json::Value viewerOptions = params.GetViewerOptions();
-
-    // If we are displaying "in place" but don't have a real geographic location - default to natural earth.
-    if (!IsGeolocated() && viewerOptions["imageryProvider"].isNull())
-        viewerOptions["imageryProvider"] = "NaturalEarth";
-
-    m_json["viewerOptions"] = viewerOptions;
-    m_json["revisions"] = std::move(revisions);
-
-    if (Status::Success != (status = WriteAppJson (m_json)) ||
-        Status::Success != (status = WriteHtmlFile()))
-        return  status;
-
-    return WriteScripts ();
-
-    }
-
-};  // Baseline Publisher
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnModelIdSet   getElementModelIds(DgnElementIdSet const& elementIds, DgnDbR db)
+DgnModelIdSet   GetElementModelIds(DgnElementIdSet const& elementIds)
     {
     DgnModelIdSet       modelIds;
 
     for (auto& elementId : elementIds)
         {
-        auto modelId = db.Elements().Get<DgnElement>(elementId)->GetModelId();
+        auto modelId = m_tempDb->Elements().Get<DgnElement>(elementId)->GetModelId();
 
         if (modelIds.find(modelId) == modelIds.end())
             {
-            auto model = db.Models().GetModel(modelId);
+            auto model = m_tempDb->Models().GetModel(modelId);
 
             if (nullptr != model->ToGeometricModelP())
                 modelIds.insert(modelId);
@@ -473,51 +334,84 @@ static DgnModelIdSet   getElementModelIds(DgnElementIdSet const& elementIds, Dgn
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
+* @bsimethod                                                    Ray.Bentley     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(PublisherParamsR params)
+TilesetPublisher::Status Initialize()
     {
     auto presentationManager = registerPresentationManager();
-    auto client = doSignIn(params);
+
+    m_client = doSignIn(m_params);
     
-    if (!client.IsValid())
-        return Status::CantConnectToIModelHub;
+    if (!m_client.IsValid())
+        return TilesetPublisher::Status::CantConnectToIModelHub;
 
-    BeFileName  tempDbName;
-    DgnDbPtr    tempDb;
-
-    if (!params.GetInputFileName().empty())
-        tempDb = copyToTemporaryBriefcase(tempDbName, params.GetInputFileName());
+    if (!m_params.GetInputFileName().empty())
+        m_tempDb = copyToTemporaryBriefcase(m_tempDbName, m_params.GetInputFileName());
     else
-        tempDb = acquireTemporaryBriefcase (tempDbName, client, params.GetProject(), params.GetRepository());
+        m_tempDb = acquireTemporaryBriefcase (m_tempDbName, m_client, m_params.GetProject(), m_params.GetRepository());
 
-    if (!tempDb.IsValid())
-        return Status::CantAcquireBriefcase;
+    if (!m_tempDb.IsValid())
+        return TilesetPublisher::Status::CantAcquireBriefcase;
 
-    DgnViewIdSet    viewsToPublish;
-    DgnViewId       defaultView = params.GetViewIds(viewsToPublish, *tempDb);
+    m_connection = VersionCompareUtilities::GetiModelConnection(m_tempDb.get(), m_client);
 
-    if (!defaultView.IsValid())
-        return Status::CantFindDefaultView;
+    if (!m_connection.IsValid())
+        return TilesetPublisher::Status::CantConnectToIModelHub;
 
-    bvector<DgnRevisionPtr> changeSets;
-    Json::Value             revisionsJson = Json::objectValue;
 
-    getAllChangeSets(changeSets, *tempDb, client);
+    GetAllChangeSets();
 
-    printf ("Publishing History with %d Revisions\n", (int) changeSets.size());
-    BaselinePublisher  baselinePublisher(*tempDb, params, viewsToPublish, defaultView);
+    return m_changeSets.empty() ? TilesetPublisher::Status::NoHistoryFound : TilesetPublisher::Status::Success;
+    }
 
-    PublisherContext::Status    status;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetAllChangeSets()
+    {
+    bool        isBackwardsRoll;
+    Utf8String  filename(m_tempDb->GetFileName().GetFileNameWithoutExtension());
 
-    if (Status::Success != (status = baselinePublisher.Initialize()))
-        return status;
+    return VersionSelector::GetChangeSetsToApply(m_changeSets, m_changeSetInfos, isBackwardsRoll, m_client, m_tempDb.get(), "MasterFile", filename);
+    }
 
-    for (int i = 0; i<changeSets.size(); i++)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void  WriteChangeSetInfoJson(Json::Value& revisionJson, ChangeSetInfoCR changeSetInfo)
+    {
+    double      julianDay;
+
+    if (SUCCESS == changeSetInfo.GetPushDate().ToJulianDay(julianDay))
+        revisionJson["Date"] = julianDay;
+
+    UserInfoTaskPtr task = m_connection->GetUserInfoManager().QueryUserInfoById(changeSetInfo.GetUserCreated());
+
+    if (task->GetResult().IsSuccess())
         {
-        bvector<DgnRevisionPtr>             thisRevisions(1, changeSets.at(i));
-        int                                 revisionIndex = changeSets.size() - i - 1;
-        VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*tempDb, thisRevisions, true);
+        auto            userInfo = task->GetResult().GetValue();
+        Utf8String      userName = userInfo->GetName() + Utf8String(" ") + userInfo->GetSurname();
+
+        revisionJson["User"] = userName;
+        }
+
+    revisionJson["Description"] = changeSetInfo.GetDescription();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, AxisAlignedBox3dCR projectExtents)
+    {                                                                
+    LOG.infov ("Publishing History with %d Revisions\n", (int) m_changeSets.size());
+
+    revisionsJson = Json::objectValue;
+
+    for (int i = 0; i<m_changeSets.size(); i++)
+        {
+        bvector<DgnRevisionPtr>             thisRevisions(1, m_changeSets.at(i));
+        int                                 revisionIndex = m_changeSets.size() - i - 1;
+        VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
 
         bvector<BentleyApi::ECN::ECClassId> ecClassIds;
         bvector<DgnElementId>               elementIds;
@@ -525,7 +419,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
              
         changeSummary->GetChangedElements(elementIds, ecClassIds, opCodes);
 
-        printf ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
+        LOG.infov ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
         Json::Value         revisionElementsJson = Json::objectValue;
         DgnElementIdSet     addedOrModifiedIds, deletedOrModifiedIds;
 
@@ -533,7 +427,7 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
             {
             auto                elementId = elementIds.at(j);
             Json::Value         elementJson = Json::objectValue;
-            auto const&         element = tempDb->Elements().Get<DgnElement>(elementId);
+            auto const&         element = m_tempDb->Elements().Get<DgnElement>(elementId);
 
             elementJson["op"] = (int) opCodes.at(j);
 
@@ -579,11 +473,11 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
                 }
             revisionElementsJson[elementId.ToString()] = std::move(elementJson);
             }
-
-        Json::Value         revisionJson = VersionSelector::WriteRevisionToJson(*changeSets.at(i));
+                     
+        Json::Value         revisionJson = VersionSelector::WriteRevisionToJson(*m_changeSets.at(i));
         DgnModelIdSet       prevModelIds, postModelIds;
         auto                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
-        auto                postModelIterator = tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+        auto                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
 
         for (auto& model : prevModelIterator)
             prevModelIds.insert(model.GetModelId());
@@ -594,36 +488,34 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         if (elementIds.empty() && prevModelIds == postModelIds)
             continue;           // Skip empty revisions.
 
-#ifdef FABRICATE_FAKE_REVISION_DATA
-        fabricateFakeRevisionData(revisionJson);
-#endif
+        WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
 
         if (!addedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, revisionIndex, false);
-            DgnModelIdSet               modelIds = getElementModelIds(addedOrModifiedIds, *tempDb);
+            TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionIndex, false);
+            DgnModelIdSet               modelIds = GetElementModelIds(addedOrModifiedIds);
 
             for (auto& modelId : postModelIds)
                 if (prevModelIds.find(modelId) == prevModelIds.end())
                     modelIds.insert(modelId);
 
             if (!modelIds.empty())
-                revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, params);
+                revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, m_params);
                     
             revisionJson["postModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
 
         // Roll to previous revision.
-        Utf8String          rollTo = (i == changeSets.size() - 1) ? "MasterFile" : changeSets.at(i+1)->GetId();
-        VersionSelector::RollTemporaryDb(client, tempDb.get(), tempDb.get(), rollTo, Utf8String(tempDbName));
+        Utf8String          rollTo = (i == m_changeSets.size() - 1) ? "MasterFile" : m_changeSets.at(i+1)->GetId();
+        VersionSelector::RollTemporaryDb(m_client, m_tempDb.get(), m_tempDb.get(), rollTo, Utf8String(m_tempDbName));
 
         if (!deletedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(*tempDb, params, revisionIndex, true);
-            DgnModelIdSet               modelIds = getElementModelIds(deletedOrModifiedIds, *tempDb);
+            TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionIndex, true);
+            DgnModelIdSet               modelIds = GetElementModelIds(deletedOrModifiedIds);
 
             if (!modelIds.empty())
-                revisionPublisher.PublishRevision(modelIds, deletedOrModifiedIds, params);
+                revisionPublisher.PublishRevision(modelIds, deletedOrModifiedIds, m_params);
 
             revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
@@ -634,6 +526,21 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishTilesetWithHistory(Publ
         revisionJson["elements"] = std::move(revisionElementsJson);
         revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
         }
-    return baselinePublisher.Publish(params, std::move(revisionsJson));
+    return TilesetPublisher::Status::Success;
+    }
+};  // HistoryPublisher
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TilesetPublisher::Status TilesetHistoryPublisher::PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params, TilesetPublisher& tipPublisher)
+    {
+    TilesetPublisher::Status    status;
+    HistoryPublisher            publisher(params);
+
+    if (Status::Success != (status = publisher.Initialize()))
+        return status;
+
+    return publisher.PublishChangeSets(revisionsJson, tipPublisher.GetProjectExtents());
     }
 

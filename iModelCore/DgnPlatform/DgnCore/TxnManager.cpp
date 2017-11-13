@@ -2136,6 +2136,13 @@ struct TxnCommitCaller
     void operator()(TxnMonitorR monitor) const {monitor._OnCommit(m_mgr);}
 };
 
+//=======================================================================================
+// @bsiclass                                                Karolis.Zukauskas   11/17
+//=======================================================================================
+struct PrepareForUndoRedoCaller
+    {
+    void operator() (TxnMonitorR handler) const {handler._OnPrepareForUndoRedo();}
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/13
@@ -2162,6 +2169,14 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
 void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR summary)
     {
     CallMonitors(TxnAppliedCaller(summary));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Karolis.Zukauskas               11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
+    {
+    CallMonitors (PrepareForUndoRedoCaller());
     }
 
 /*---------------------------------------------------------------------------------**//**

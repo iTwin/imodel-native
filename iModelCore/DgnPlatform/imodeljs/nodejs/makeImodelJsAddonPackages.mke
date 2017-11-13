@@ -16,6 +16,9 @@ o = $(OutputRootDir)packages/
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
     Platform=Linux
     PlatformAndArch=LinuxX64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
+    Platform=MacOS
+    PlatformAndArch=DarwinX64
 %else
     %error iModelJsNodeAddon is not available for this platform
 %endif
@@ -26,8 +29,3 @@ always:
     -$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)
 
-%iffile $(ProductDir)iModelJsNodeAddon-$(Platform)-New
-always:
-    | $(ProductDir)iModelJsNodeAddon-$(Platform)-New ...
-    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform)-New $(o)new $(PlatformAndArch)
-%endif

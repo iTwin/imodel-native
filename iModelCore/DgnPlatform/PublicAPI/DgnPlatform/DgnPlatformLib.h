@@ -183,7 +183,7 @@ public:
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool() {}
             virtual void _OnNothingToUndo() {}
-            virtual void _OnPrepareForUndoRedo() {}
+            DGNPLATFORM_EXPORT virtual void _OnPrepareForUndoRedo();
             virtual void _OnNothingToRedo() {}
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);

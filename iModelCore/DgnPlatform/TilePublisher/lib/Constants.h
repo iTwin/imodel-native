@@ -7,7 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/WString.h>
+#include <Logging/bentleylogging.h>
 #include <DgnPlatform/TileIO.h>
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_TILETREE_IO

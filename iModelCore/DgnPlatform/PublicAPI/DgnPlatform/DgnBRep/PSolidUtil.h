@@ -154,7 +154,7 @@ DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(PK_BODY_t& bodyTag, 
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(PK_BODY_t& bodyTag, PolyfaceQueryCR polyface, TransformCR dgnToSolid);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromMSBsplineSurface(PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromCone(PK_BODY_t& bodyTag, RotMatrixCR rMatrix, DPoint3dCR topCenter, DPoint3dCR bottomCenter, double topRadius, double bottomRadius, bool capped, uint32_t nodeId);
-DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(PK_BODY_t& bodyTag, PK_BODY_t* profiles, PK_VERTEX_t* startVertices, size_t nProfiles, PK_BODY_t* guides, size_t nGuides);
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(PK_BODY_t& bodyTag, PK_BODY_t* profiles, PK_VERTEX_t* startVertices, size_t nProfiles, PK_BODY_t* guides, size_t nGuides, bool periodic);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(PK_BODY_t& bodyTag, PK_BODY_t profileTag, PK_BODY_t pathTag, PK_VERTEX_t pathVertex, bool alignParallel, bool selfRepair, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint);
 
 DGNPLATFORM_EXPORT static CurveVectorPtr FaceToUVCurveVector(PK_FACE_t faceTag, PK_UVBOX_t* uvBox, bool splineParameterization);
@@ -172,7 +172,7 @@ DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(IBRepEntityPtr& enti
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive(IBRepEntityPtr& out, ISolidPrimitiveCR primitive, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromBSurface(IBRepEntityPtr& out, MSBsplineSurfaceCR surface, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(IBRepEntityPtr& out, PolyfaceQueryCR meshData, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
-DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
+DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* profiles, size_t nProfiles, CurveVectorPtr* guides, size_t nGuides, bool periodic, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet,DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId = 0L); //!< Calls PSolidKernelManager::StartSession.
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusionToBody(IBRepEntityPtr& target, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId = 0L);
 
