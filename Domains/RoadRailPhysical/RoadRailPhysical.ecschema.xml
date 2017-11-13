@@ -12,7 +12,6 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <!-- BEGIN PathwayElement Class Hierarchy -->
     <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>lr:ILinearElementSource</BaseClass>
@@ -41,5 +40,4 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <!-- END PathwayElement Class Hierarchy -->  
 </ECSchema>
