@@ -2227,9 +2227,6 @@ private:
     ECObjectsStatus             SetAbstractConstraint(ECClassCR abstractConstraint);
     ECObjectsStatus             SetAbstractConstraint(Utf8CP value, bool validate);
 
-    // Legacy: Only used for version 3.0 and previous
-    ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
-
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
@@ -2292,6 +2289,11 @@ public:
     //! @param[in] multiplicity The string representation of a multiplicity
     //! @return An error if it fails to parse the multiplicity string into a valid RelationshipMultiplicity.
     ECOBJECTS_EXPORT ECObjectsStatus SetMultiplicity(Utf8CP multiplicity);
+
+    //! Set the multiplicity of the constraint using the string format of Cardinality. Multiplicity is not set if input string cannot be parsed.
+    //! Legacy: Only used for version 3.0 and previous
+    //! @param[in] cardinality The multiplicity in the form of the legacy cardinality string
+    ECOBJECTS_EXPORT ECObjectsStatus SetCardinality(Utf8CP cardinality);
 
     //! Get the RelationshipMultiplicity of the constraint in the relationship
     RelationshipMultiplicityCR GetMultiplicity() const {return *m_multiplicity;}
