@@ -1063,8 +1063,14 @@ struct IGenerateMeshTiles
 
 };  // IPublishModelMeshTiles
 
-
 //=======================================================================================
+// Interface for TileTree based models to expose their tree for publishing.
+// @bsistruct                                                   Ray.Bentley     08/2016
+//=======================================================================================
+struct IGetTileTreeForPublishing
+{
+    // ###TODO: remove this interface when TileGenerator::GenerateTilesFromTileTree can process everything.
+};  // IGetTileTreeForPublishing
 
 //=======================================================================================                                                                                                                                              bb
 // Describes a published ready-to-use 3D tileset associated with a SpatialModel.

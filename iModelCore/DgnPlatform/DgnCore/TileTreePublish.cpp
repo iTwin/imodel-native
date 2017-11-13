@@ -31,11 +31,27 @@ struct Texture : Render::Texture
     Image::BottomUp     m_bottomUp;
 
     Texture(ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(image, Image::Format::Rgba == image.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg), m_bottomUp(Image::BottomUp::No)  { }
-    Texture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
+    Texture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
 
     Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_imageSource), !m_createParams.m_isTileSection); }
 };  // Texture
-    
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/15
++===============+===============+===============+===============+===============+======*/
+struct Clipper : PolyfaceQuery::IClipToPlaneSetOutput
+{
+bool m_unclipped;
+bvector<PolyfaceHeaderPtr> m_output;
+
+Clipper() : m_unclipped(false) {}
+StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
+StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
+bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
+bool IsUnclipped() {return m_unclipped;}
+
+}; // Clipper
+ 
 //=======================================================================================
 // @bsiclass                                                     Ray.Bentley     04/2017
 //=======================================================================================
@@ -66,11 +82,10 @@ static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR
     return new Tile(model, inputTile.GetRange(), transformFromDgn, depth, siblingIndex, parent, tileTolerance);
     }
 
-                                  
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddTriMesh(TriMeshArgsCR triMesh, SimplifyGraphic& simplifyGraphic)
+void AddTriMesh(TransformCR transformFromDgn, TriMeshArgsCR triMesh)
     {
     TextureP                texture = dynamic_cast <TextureP> (triMesh.m_texture.get());
     TileDisplayParamsCPtr   displayParams;
@@ -91,38 +106,24 @@ void AddTriMesh(TriMeshArgsCR triMesh, SimplifyGraphic& simplifyGraphic)
     
     auto                            mesh = TileMesh::Create(*displayParams);
 
-    mesh->AddTriMesh(triMesh, Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform()), nullptr != texture && Image::BottomUp::Yes == texture->m_bottomUp);
+    mesh->AddTriMesh(triMesh, transformFromDgn, nullptr != texture && Image::BottomUp::Yes == texture->m_bottomUp);
 
     m_geometry.Meshes().push_back(mesh);
     }
 
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Mark.Schlosser  11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddPointCloud(TransformCR transformFromDgn, PointCloudArgsCR pointCloudArgs)
+    {
+    //TileDisplayParamsCPtr displayParams = TileDisplayParams::Create();
+    //auto pointCloud = TileMeshPointCloud::Create(*displayParams, pPoints, colorCP, nullptr, nPoints, sceneToTile, clusterTolerance))
+
+    //m_geometry.PointClouds().push_back(pointCloud);
+    exit(1);
+    }
+
 };  // Tile
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     04/2017
-+===============+===============+===============+===============+===============+======*/
-struct GeometryProcessor : Dgn::IGeometryProcessor
-{
-    TileP                   m_tile;
-    IFacetOptionsPtr        m_facetOptions;
-
-    GeometryProcessor(TileP tile) : m_tile(tile) { if (nullptr != tile) m_facetOptions = TileGenerator::CreateTileFacetOptions(tile->GetTolerance()); }
-
-    // We don't expect the higher order primitives (or anything but Tiles and TriMeshes) to ever exist within a tile..
-    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override         { return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override     { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override    { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override       { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override         { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override          { BeAssert(false); return UnhandledPreference::Facet;}
-    virtual UnhandledPreference _GetUnhandledPreference(TriMeshArgsCR, SimplifyGraphic&) const override         { return UnhandledPreference::Auto;}
-    virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
-    virtual bool _DoClipping() const override {return true;}
-
-    virtual bool _ProcessTriMesh(Render::TriMeshArgsCR args, SimplifyGraphic& simplifyGraphic) override         { m_tile->AddTriMesh (args, simplifyGraphic); return true;     }
-
-};  // GeometryProcessor
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
@@ -151,15 +152,15 @@ struct Context
 +===============+===============+===============+===============+===============+======*/
 struct RenderSystem : Render::System
 {
-    mutable TileTreePublish::GeometryProcessor  m_processor;
-    ContextR                                    m_context;
+    Context                                     m_context;
 
     struct Graphic : SimplifyGraphic
         {
         Graphic(ClipVectorPtr& clip, Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR processor, ViewContextR viewContext) : SimplifyGraphic(params, processor, viewContext) {  }
         }; 
 
-    RenderSystem(ContextR context) :m_context(context), m_processor(context.m_outputTile.get()) {  }
+
+    RenderSystem(ContextR context) : m_context(context) {  }
     ~RenderSystem() { }
 
     virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
@@ -168,8 +169,6 @@ struct RenderSystem : Render::System
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { BeAssert(false); return nullptr; }
-//  virtual TexturePtr _CreateTexture(ImageCR image, Render::Texture::CreateParams const& params) const override {return new Texture(image, params);}
-//  virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override {return new Texture(source, targetFormat, bottomUp, params); }
 
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
     virtual LightPtr   _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const override { BeAssert(false); return nullptr; }
@@ -183,8 +182,8 @@ struct RenderSystem : Render::System
     virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return 0xffffffff; }
 
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams())  const override {return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams())  const override {return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams())  const override {return new Texture(image, params); }
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams())  const override {return new Texture(source, bottomUp, params); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017 
@@ -207,6 +206,7 @@ virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const override 
     {
+    m_context.m_outputTile->AddTriMesh(m_context.m_transformFromDgn, args);
     return  nullptr;
     }
 
@@ -215,7 +215,7 @@ virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const overri
 * @bsimethod                                                    Ray.Bentley     05/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override 
-    { 
+    {
     BeAssert(false);
     return nullptr;
     }
@@ -314,11 +314,15 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
     Context                     context(unusedOutputTilePtr, unusedInputTilePtr, Transform::FromIdentity(), nullptr, collector, leafTolerance, model, requestTileQueue);
     RenderSystem                renderSys(context);
     TileTree::RootCPtr          tileRoot = model->GetTileTree(&renderSys);
-    ClipVectorPtr               clip;
+    ClipVectorPtr               clip; // = tileRoot->_GetClipVector();
+#if 0
+    // ###TODO: clips need to be processed
+    if (tileTreePublisher)
+        clip = tileTreePublisher->_GetPublishingClip();
+#endif
 
     if (!tileRoot.IsValid())
         return folly::makeFuture(TileGeneratorStatus::NoGeometry);
-
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
         return collector->_BeginProcessModel(*model);
@@ -340,12 +344,5 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
         m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
         return collector->_EndProcessModel(*model, result.m_tile.get(), result.m_status);   
         });
-    }                               
+    }
 
-
-
-
-
-
-
-                                                        

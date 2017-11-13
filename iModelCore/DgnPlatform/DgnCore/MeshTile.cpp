@@ -343,27 +343,6 @@ bool TileMesh::HasNonPlanarNormals() const
     return false;
     }
 
-#if defined(WIP_TILETREE_PUBLISH)
-// Nobody calls this function...
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tileCorners, TransformCR transform)
-    {
-    for (size_t i=0; i<4; i++)
-        m_points.push_back(tileCorners.m_pts[i]);
-
-    transform.Multiply (m_points, m_points);                                                                                                                                                                                                                      
-    m_uvParams.push_back(DPoint2d::From(0.0, 0.0));
-    m_uvParams.push_back(DPoint2d::From(1.0, 0.0));
-    m_uvParams.push_back(DPoint2d::From(0.0, 1.0));
-    m_uvParams.push_back(DPoint2d::From(1.0, 1.0));
-
-    AddTriangle(TileTriangle(0, 1, 2, false));
-    AddTriangle(TileTriangle(1, 3, 2, false));
-    }
-#endif
-
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -379,7 +358,9 @@ void TileMesh::AddTriMesh(Render::TriMeshArgs const& triMesh, TransformCR transf
 
     for (uint32_t i=0; i<triMesh.m_numPoints; i++)
         {
-        transform.Multiply (m_points[i], DPoint3d::From((double) triMesh.m_points[i].x, (double) triMesh.m_points[i].y, (double) triMesh.m_points[i].z));
+        DPoint3d unquantizedPoint = triMesh.m_points[i].Unquantize(triMesh.m_pointParams);
+        transform.Multiply (m_points.at(i), unquantizedPoint.x, unquantizedPoint.y, unquantizedPoint.z);
+
         if (nullptr != triMesh.m_normals)
             m_normals[i] = triMesh.m_normals[i].Decode();
 
@@ -1572,8 +1553,8 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-//  auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
-    GeometricModelCP    geometricModel = model.ToGeometricModel();
+    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model); // ###TODO: empty interface; remove this once no longer needed
+    GeometricModelP     geometricModel = model.ToGeometricModelP();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
     if (!isModel3d)
@@ -1588,22 +1569,19 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-#ifdef FROM_TILE_TREE
+#if 0 
     if (nullptr != getPublishedURL)
         {
         return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
         }
-    else if (nullptr != getTileTree)
+#endif
+
+    if (nullptr != getTileTree)
         {
-#ifndef SKIP_3MX
-        return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
-#else
-        return folly::makeFuture(TileGeneratorStatus::Success);
-#endif
+        // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
+        return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
         }
-    else
-#endif
-    if (nullptr != generateMeshTiles)
+    else if (nullptr != generateMeshTiles)
         {
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
