@@ -1595,6 +1595,7 @@ StatusTaskPtr iModelConnection::SetEventSubscription(EventTypeSet* eventTypes, I
         if (!subscriptionResult.IsSuccess())
             {
             finalResult->SetError(subscriptionResult.GetError());
+            return;
             }
 
         m_eventSubscription = subscriptionResult.GetValue();
