@@ -1153,6 +1153,12 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
 
     testBridge.m_expect.assignmentCheck = true;
 
+    Json::Value transform_offset1;
+    iModelBridge::Params::SetOffsetJson(transform_offset1, DPoint3d::From(1,0,0), AngleInDegrees::FromDegrees(0.0));
+    WPrintfString transform_offset1_str(L"--fwk-argsJson=\"%s\"", WString(transform_offset1.ToString().c_str(), true).c_str());
+    Json::Value transform_offset1_45;
+    iModelBridge::Params::SetOffsetJson(transform_offset1_45, DPoint3d::From(1,0,0), AngleInDegrees::FromDegrees(45.0));
+
     if (true)
         {
         testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
@@ -1201,7 +1207,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
-        args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
@@ -1224,7 +1230,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
-        args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
@@ -1246,8 +1252,8 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
         auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
-        fooDocProps.m_spatialRootTransformJSON = "{\"transform\" : \"(1,0,0)0\"}";
-        //args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        fooDocProps.m_spatialRootTransformJSON = transform_offset1.ToString();
+        //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
@@ -1268,8 +1274,8 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
         auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
-        fooDocProps.m_spatialRootTransformJSON = "{\"transform\" : \"(1,0,0)45\"}";
-        //args.push_back(L"--fwk-transform=\"(1,0,0)0\"");
+        fooDocProps.m_spatialRootTransformJSON = transform_offset1_45.ToString();
+        //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));

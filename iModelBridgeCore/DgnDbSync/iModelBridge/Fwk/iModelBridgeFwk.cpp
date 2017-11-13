@@ -233,7 +233,6 @@ static BeFileName  GetDefaultAssetsDirectory()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::JobDefArgs::JobDefArgs()
     {
-    m_spatialDataTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -378,7 +377,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
 
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-argsJson="))
             {
-            m_argsJson.From(getArgValue(argv[iArg]));
+            m_argsJson = Json::Value::From(getArgValue(argv[iArg]));
             continue;
             }
                 
@@ -469,7 +468,9 @@ BentleyStatus iModelBridgeFwk::ParseDocProps()
         return BSIERROR;
         }
 
-    return m_jobEnvArgs.m_argsJson = jsonValue;
+    m_jobEnvArgs.m_argsJson = jsonValue;
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
