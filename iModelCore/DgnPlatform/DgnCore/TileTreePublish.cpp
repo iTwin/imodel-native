@@ -116,11 +116,6 @@ void AddTriMesh(TransformCR transformFromDgn, TriMeshArgsCR triMesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddPointCloud(TransformCR transformFromDgn, PointCloudArgsCR pointCloudArgs)
     {
-    //TileDisplayParamsCPtr displayParams = TileDisplayParams::Create();
-    //auto pointCloud = TileMeshPointCloud::Create(*displayParams, pPoints, colorCP, nullptr, nPoints, sceneToTile, clusterTolerance))
-
-    //m_geometry.PointClouds().push_back(pointCloud);
-    exit(1);
     }
 
 };  // Tile
