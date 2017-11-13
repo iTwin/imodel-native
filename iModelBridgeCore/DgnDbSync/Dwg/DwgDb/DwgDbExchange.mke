@@ -17,6 +17,7 @@
 
 DeliveryNamespace   = OpenDwgImporter
 OutBuildNamespace   = OpenDwgDb
+VendorNoticeName    = teigha-notice.txt
 
 #----------------------------------------------------------------------
 #   Build OpenDWG's grip points module from Examples
@@ -28,6 +29,7 @@ always:
 
 DeliveryNamespace   = RealDwg$(VendorVersion)Importer
 OutBuildNamespace   = RealDwg$(VendorVersion)Db
+VendorNoticeName    = realdwg-notice.txt
 
 %endif      # Open/RealDwg
 
@@ -35,6 +37,7 @@ OutBuildNamespace   = RealDwg$(VendorVersion)Db
 appName             = $(DWGTOOLKIT)DbExchange
 baseDir             = $(_MakeFilePath)
 pubApiDir           = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/Dwg/DwgDb/
+VendorNoticeDir     = $(baseDir)Notices/
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DeliveryNamespace)/
 
 o                   = $(OutputRootDir)Build/$(OutBuildNamespace)/
@@ -197,3 +200,8 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 %endif  // OpenDwg or RealDwg
 
 %include $(sharedMki)linkLibrary.mki
+
+# Symblink Copyright notices
+#
+$(ContextDeliveryDir)$(VendorNoticeName) : $(VendorNoticeDir)$(VendorNoticeName)
+    $(LinkFirstDepToFirstTarget)

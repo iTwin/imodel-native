@@ -80,6 +80,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbSpatialFilter::rxInit ();
     DwgDbSpatialIndex::rxInit ();
     DwgDbSortentsTable::rxInit ();
+    DwgDbXrecord::rxInit ();
 
     DwgRxObject::rxInit ();
 
@@ -178,6 +179,7 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbSpatialFilter::rxUninit ();
     DwgDbSpatialIndex::rxUninit ();
     DwgDbSortentsTable::rxUninit ();
+    DwgDbXrecord::rxUninit ();
 
     DwgResBuf::rxUninit ();
 

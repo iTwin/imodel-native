@@ -324,6 +324,7 @@ struct iModelBridge
         BeFileNameCR GetInputFileName() const {return m_inputFileName;} //!< The name of the input file that is to be read and converted and/or scanned for changes.
         void SetInputFileName(BeFileNameCR fn) {m_inputFileName=fn;} //!< Set the name of the input file that is to be read and converted and/or scanned for changes.
         BeFileNameCR GetAssetsDir() const {return m_assetsDir;} //!< The bridge library's assets directory
+        void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
         BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
         bvector<BeFileName> const& GetDrawingAndSheetFiles() const {return m_drawingAndSheetFiles;} //!< The list of files to search for drawings and sheets

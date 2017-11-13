@@ -172,23 +172,210 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
     return  status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ImportXData::DumpXrecord (DwgDbXrecordCR xRecord)
+    {
+    DwgResBufIterator   rbIter = xRecord.GetRbChain ();
+    if (!rbIter.IsValid())
+        return  BentleyStatus::ERROR;
+
+    // Dump xRecord data into the importer's issue file as an Unsupported category:
+    _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Dictionary Entry Xrecord", m_xRecordName.c_str());
+    for (DwgResBufP curr = rbIter->Start(); curr != rbIter->End(); curr = curr->Next())
+        {
+        switch (curr->GetDataType())
+            {
+            case DwgResBuf::DataType::Integer8:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tInt8= %d", curr->GetInteger8()).c_str());
+                break;
+            case DwgResBuf::DataType::Integer16:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tInt16= %d", curr->GetInteger16()).c_str());
+                break;
+            case DwgResBuf::DataType::Integer32:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tInt32= %d", curr->GetInteger32()).c_str());
+                break;
+            case DwgResBuf::DataType::Integer64:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tInt64= %I64d", curr->GetInteger64()).c_str());
+                break;
+            case DwgResBuf::DataType::Double:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tDouble= %g", curr->GetDouble()).c_str());
+                break;
+            case DwgResBuf::DataType::Text:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tString= %ls", curr->GetString().c_str()).c_str());
+                break;
+            case DwgResBuf::DataType::BinaryChunk:
+                {
+                DwgBinaryData   data;
+                if (DwgDbStatus::Success == curr->GetBinaryData(data))
+                    _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tBinary data size = %lld", data.GetSize()).c_str());
+                else
+                    BeDataAssert(false && "failed extracting binary xdata!");
+                break;
+                }
+            case DwgResBuf::DataType::Handle:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tEntity Handle= %ls", curr->GetHandle().AsAscii().c_str()).c_str());
+                break;
+            case DwgResBuf::DataType::HardOwnershipId:
+            case DwgResBuf::DataType::SoftOwnershipId:
+            case DwgResBuf::DataType::HardPointerId:
+            case DwgResBuf::DataType::SoftPointerId:
+                _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tObjectId= %ls", curr->GetObjectId().ToAscii().c_str()).c_str());
+                break;
+            case DwgResBuf::DataType::Point3d:
+                {
+                DPoint3d    point;
+                if (DwgDbStatus::Success == curr->GetPoint3d(point))
+                    _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Xrecord", Utf8PrintfString("\tPoint3d= %g, %g, %g", point.x, point.y, point.z).c_str());
+                else
+                    BeDataAssert (false && "failed extracting Point3d xdata!");
+                break;
+                }
+            case DwgResBuf::DataType::None:
+            case DwgResBuf::DataType::NotRecognized:
+            default:
+                ReportIssue (IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::Message(), "\tUnexpected XDATA type!!!");
+            }
+        }
+
+    m_dumpCount++;
+
+    return  BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ImportXData::DumpDictionaryXrecords (DwgDbDictionaryCR dictionary)
+    {
+    DwgDbDictionaryIterator iter = dictionary.GetIterator ();
+    if (!iter.IsValid())
+        return  BentleyStatus::ERROR;
+
+    // Check all entries of the dictionary:
+    for (; !iter.Done(); iter.Next())
+        {
+        DwgDbDictionaryP    child = nullptr;
+        DwgDbXrecordP       xRecord = nullptr;
+        DwgDbObjectPtr      entry(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+
+        // Only care about either a child dictionary or an xRecord object:
+        if (!entry.IsNull() && (nullptr != (child = DwgDbDictionary::Cast(entry.get())) || nullptr != (xRecord = DwgDbXrecord::Cast(entry.get()))))
+            {
+            // Push current dictionary name into the xRecord name:
+            Utf8String  previousName = m_xRecordName;
+            size_t      previousSize = previousName.size ();
+            DwgString   entryName = iter.GetName ();
+            if (!entryName.IsEmpty())
+                {
+                if (m_xRecordName.empty())
+                    m_xRecordName = Utf8String(entryName);
+                else
+                    m_xRecordName = m_xRecordName + ":" + Utf8String(entryName);
+                }
+
+            if (nullptr != xRecord)
+                DumpXrecord (*xRecord);
+            else if (nullptr != child)
+                DumpDictionaryXrecords (*child);
+            else
+                BeAssert (false);
+
+            // Pop current dictinary name out from the xRecord name:
+            if (!entryName.IsEmpty())
+                m_xRecordName = m_xRecordName.substr (0, previousSize);
+            }
+        }
+    return  BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ImportXData::_BeginImport ()
+    {
+    // Let parent process begin
+    T_Super::_BeginImport ();
+
+    m_xRecordName.clear ();
+    m_dumpCount = 0;
+
+    // If our bridge option wants to dump dictionary xRecords, do it now
+    if (m_dumpXrecords)
+        {
+        DwgDbDictionaryPtr  mainDictionary (GetDwgDb().GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
+        if (mainDictionary.IsNull())
+            ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), "the named/main dictionary of the DWG file!");
+        else
+            DumpDictionaryXrecords (*mainDictionary.get());
+        
+        _ReportIssue (IssueSeverity::Info, IssueCategory::Unsupported(), "Total dictionary xRecords dumped", Utf8PrintfString("\t%d", m_dumpCount).c_str());
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DwgImporter* ImportXDataSample::_CreateDwgImporter ()
     {
-    // Create our sample importer, using DwgBridge options:
-    DwgImporter::Options* opts = static_cast<DwgImporter::Options*> (&_GetParams());
-    if (nullptr == opts)
+    // Create our sample importer
+    return  new ImportXData (GetImportOptions(), m_dumpXrecords);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+iModelBridge::CmdLineArgStatus ImportXDataSample::_ParseCommandLineArg (int iArg, int argc, WCharCP argv[])
+    {
+    if (0 == wcscmp(argv[iArg], L"--dumpxrecords"))
         {
-        BeAssert (false && "This sample is not a sub-class of DwgBridge!!");
-        return  nullptr;
+        // Will dump dictionary xRecords.
+        m_dumpXrecords = true;
+        return CmdLineArgStatus::Success;
         }
-    return new ImportXData (*opts);
+    // Not our sample option.
+    return CmdLineArgStatus::NotRecognized;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ImportXDataSample::_PrintUsage ()
+    {
+    // Print out our sample options, along with all inherited iModelBridge options:
+    fwprintf (stderr,
+L"\
+--dumpxrecords\t\t(optional; logging only) An option to read and print out dictionary xRecords.\n\
+");
     }
 
 END_DGNDBSYNC_DWG_NAMESPACE
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
+    {
+    // Supply a our sample Bridge
+    return  new ImportXDataSample();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
+    {
+    // Want our sample Bridge to precede the generic DwgBridge, i.e. set to a higher level.
+    BeFileName  filename(dwgdxfName);
+    if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"ImportXDataSample");
+        }
+    }
 
 
 //---------------------------------------------------------------------------------------
@@ -198,16 +385,17 @@ int wmain (int argc, wchar_t const* argv[])
     {
     /*-----------------------------------------------------------------------------------
     Minimal command line arguments:
-
     ImportXData -i=<input DWG full file name> -o=<output DgnDb folder name>
-    -----------------------------------------------------------------------------------*/
-    if (argc < 3)
-        return  1;
 
-    ImportXDataSample     sampleImporter;
+    No arguments will print usage.
+    -----------------------------------------------------------------------------------*/
+    ImportXDataSample     sampleBridge;
+
+    // Register this sample as an iModelBridge:
+    sampleBridge.GetImportOptions().SetBridgeRegSubKey (L"XDataSampleBridge");
 
     // Begin importing DWG file into DgnDb
-    BentleyStatus   status = sampleImporter.RunAsStandaloneExe (argc, argv);
+    BentleyStatus   status = sampleBridge.RunAsStandaloneExe (argc, argv);
 
     return (int)status;
     }

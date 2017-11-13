@@ -69,6 +69,8 @@ The name of the bridge's subkey must be unique among all bridges. This subkey mu
 <tr><td>BridgeLibraryPath<td>String<td>Optional. The full path to the bridge DLL, that is, the DLL that implements @ref iModelBridge_getInstance.
 <tr><td>BridgeAssetsDir<td>String<td>Optional. The full path to the directory that contains the bridge's assets. If not specified, the framework looks for a subdirectory named "assets" either in the bridge's library directory or two levels above.
 <tr><td>AffinityLibraryPath<td>String<td>Optional. The full path to a DLL that implements @ref iModelBridge_getAffinity, if that function is not implemented by the bridge.
+<tr><td>iModelFrameWorkExe<td>String<td>Optional. For standalone bridges only. The full path to the iModelBridgeFwk.exe program.
+
 </table>
 
 The bridge libray may implement both iModelBridge_getInstance and iModelBridge_getAffinity. Or, the bridge subkey may identify only an affinity library.

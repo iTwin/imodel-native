@@ -59,6 +59,7 @@ protected:
 
 public:
     DGNDBSYNC_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);
+    DGNDBSYNC_EXPORT DwgImporter::Options&  GetImportOptions () { return m_options; }
 
 private:
     // local class methods
@@ -66,7 +67,14 @@ private:
     BentleyStatus   GetEnv (BeFileName& fn, WCharCP envname);
     void    GetImportConfiguration (BeFileNameR instanceFilePath, BeFileNameCR configurationPath, WCharCP argv0);
     void    CreateSyncInfoIfAbsent ();
-    DwgImporter::Options&   GetImportOptions () { return m_options; }
 };  // DwgBridge
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+// Supply DwgBridge to and register it for iModelBridge Framework
+extern "C"
+    {
+    EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
+    EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    }
