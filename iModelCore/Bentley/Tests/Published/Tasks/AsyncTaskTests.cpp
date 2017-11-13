@@ -307,3 +307,39 @@ TEST_F(AsyncTaskTests, Push_GetCount_Pop)
     ASSERT_TRUE(task2->IsCompleted());
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    julius.cepukenas               11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AsyncTaskTests, Performance_MultipleTasks_AllExecuted)
+    {
+    BeTimePoint start, end;
+    BeDuration::Seconds seconds(2);
+    start = BeTimePoint::Now();
+    end = BeTimePoint::FromNow(BeDuration(seconds));
+    int terminate = 1;
+    while(start < end)
+        {
+        bool taskExecuted = false;
+        bool thenExecuted = false;
+
+        auto task = std::make_shared<PackagedAsyncTask<void>>([&]
+            {
+            taskExecuted = true;
+            });
+
+        auto task2 = task->Then([&]
+            {
+            thenExecuted = true;
+            });
+
+        task->Execute();
+
+        task2->Wait();
+
+        ASSERT_TRUE(taskExecuted);
+        ASSERT_TRUE(thenExecuted);
+
+        start = BeTimePoint::Now();
+        }
+    }
