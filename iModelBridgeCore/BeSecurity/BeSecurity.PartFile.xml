@@ -14,29 +14,12 @@
       </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
-        <SubPart PartName="BeOpenSSLPublicAPI-UWP"/>
-        <SubPart PartName="BeOpenSSLPublicAPI-NonUWP"/>
+        <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"            PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="BeSecurity" />
         </Bindings>
-    </Part>
-
-    <Part Name="BeOpenSSLPublicAPI-UWP" OnlyPlatforms="WinRT*">
-        <SubPart PartName="PublicAPI" PartFile="BeOpenSSLUWP" Repository="Libsrc-OpenSSL-UWP"/>
-    </Part>
-
-    <Part Name="BeOpenSSLPublicAPI-NonUWP" ExcludePlatforms="WinRT*">
-        <SubPart PartName="PublicAPI" PartFile="BeOpenSSL" Repository="Libsrc-OpenSSL"/>
-    </Part>
-
-    <Part Name="BeOpenSSL-UWP" OnlyPlatforms="WinRT*">
-        <SubPart PartName="Library" PartFile="BeOpenSSLUWP" Repository="Libsrc-OpenSSL-UWP"/>
-    </Part>
-
-    <Part Name="BeOpenSSL-NonUWP" ExcludePlatforms="WinRT*">
-        <SubPart PartName="Library" PartFile="BeOpenSSL" Repository="Libsrc-OpenSSL"/>
     </Part>
 
     <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
@@ -50,8 +33,7 @@
     <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"                 PartFile="Bentley"          Repository="Bentley" />
-        <SubPart PartName="BeOpenSSL-UWP"/>
-        <SubPart PartName="BeOpenSSL-NonUWP"/>
+        <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSecurity$(libext)</Libs>
