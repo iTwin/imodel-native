@@ -70,7 +70,7 @@ private:
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<SchemaManager> m_schemaManager;
-
+    mutable std::unique_ptr<DbFunction> m_changeValueSqlFunc;
     SettingsManager m_settingsManager;
 
     StatementCache m_sqliteStatementCache;

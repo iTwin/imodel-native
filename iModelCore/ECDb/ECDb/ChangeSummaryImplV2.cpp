@@ -17,6 +17,35 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan           11/2017
+//---------------------------------------------------------------------------------------
+static ChangeSummaryV2::Operation FomOpCode(DbOpcode code)
+    {
+    static std::map<DbOpcode, ChangeSummaryV2::Operation> map = 
+        {
+            {DbOpcode::Insert, ChangeSummaryV2::Operation::Inserted},
+            {DbOpcode::Update, ChangeSummaryV2::Operation::Updated},
+            {DbOpcode::Delete, ChangeSummaryV2::Operation::Deleted}
+        };
+
+    return map[code];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Affan.Khan          11/2017
+//---------------------------------------------------------------------------------------
+static DbOpcode ToOpCode(ChangeSummaryV2::Operation code)
+    {
+    static std::map<ChangeSummaryV2::Operation, DbOpcode> map =
+        {
+                {ChangeSummaryV2::Operation::Inserted, DbOpcode::Insert},
+                {ChangeSummaryV2::Operation::Updated, DbOpcode::Update},
+                {ChangeSummaryV2::Operation::Deleted, DbOpcode::Delete}
+        };
+
+    return map[code];
+    }
 //***********************************************************************************
 // ChangeSummary
 //***********************************************************************************
@@ -614,7 +643,7 @@ BentleyStatus ChangeExtractorV2::RecordRelInstance(ChangeSummaryV2::Instance con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractorV2::RecordInstance(ChangeSummaryV2::Instance const& instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties)
+void ChangeExtractorV2::RecordInstance(ChangeSummaryV2::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties)
     {
     bool removeIfNotUpdatedProperties = false;
     if (recordOnlyIfUpdatedProperties)

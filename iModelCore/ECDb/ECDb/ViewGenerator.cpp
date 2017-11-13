@@ -18,12 +18,78 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static 
-BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery)
+BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, const MemberInfo* memberInfo)
     {
-    SelectFromViewContext ctx(prepareContext, isPolymorphicQuery);
-    return GenerateViewSql(viewSql, ctx, classMap);
+    SelectFromViewContext ctx(prepareContext, isPolymorphicQuery, memberInfo);
+    if (ctx.GetMemberInfo() == nullptr)
+        {
+        return GenerateViewSql(viewSql, ctx, classMap);
+        }
+
+    return GenerateChangeSummaryView(viewSql, classMap, ctx);
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql, ClassMap const& classMap, SelectFromViewContext& ctx)
+    {
+    NativeSqlBuilder internalView;
+    if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
+        return ERROR;
+
+    internalView.Append(" ").AppendEscaped(classMap.GetClass().GetName().c_str());
+    NativeSqlBuilder columnSql;
+    //Template is not applied to following system properties but it would be applied to Source/Target ECinstanceId/ECClassId
+    columnSql.Append("CI.ChangedInstanceId ECInstanceId, CI.ChangedClassId ECClassId");
+
+    SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::ConstraintECClassId | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::SingleColumnData);
+    classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor);
+    Utf8String stageSql;
+    if (Utf8CP stageArg = ctx.GetMemberInfo()->GetArg("stage"))
+        {
+        stageSql.append(",").append(stageArg);
+        }
+
+    for (PropertyMap const* basePropertyMap : propertyVisitor.Results())
+        {
+        if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(basePropertyMap->GetAccessString()))
+            continue;
+        if (basePropertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || basePropertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
+            {
+
+            }
+        else
+            {
+            const SingleColumnDataPropertyMap& dataProperty = basePropertyMap->GetAs<SingleColumnDataPropertyMap>();
+            if (dataProperty.GetType() == PropertyMap::Type::NavigationRelECClassId)
+                {
+                if (dataProperty.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn().IsVirtual())
+                    {
+                    columnSql.AppendFormatted(",[%s].[%s]", classMap.GetClass().GetName().c_str(), dataProperty.GetColumn().GetName().c_str());
+                    continue;
+                    }
+                }
+
+            columnSql.AppendFormatted(",ChangedValue([CI].[Id],'%s',[CI].[Operation],[%s].[%s] %s) [%s]",
+                                      dataProperty.GetAccessString().c_str(),
+                                      classMap.GetClass().GetName().c_str(),
+                                      dataProperty.GetColumn().GetName().c_str(),
+                                      stageSql.c_str(),
+                                      dataProperty.GetColumn().GetName().c_str());
+            }
+        }
+
+    viewSql.AppendFormatted("(SELECT %s FROM [change_Instance] CI LEFT JOIN %s ON [%s].[ECInstanceId]=[CI].[ChangedInstanceId] WHERE [CI].[Operation]=%s AND [CI].[SummaryId]=%s)",
+                            columnSql.GetSql().c_str(),
+                            internalView.GetSql().c_str(),
+                            classMap.GetClass().GetName().c_str(),
+                            ctx.GetMemberInfo()->GetArg("operation"),
+                            ctx.GetMemberInfo()->GetArg("summary_id"));
+
+    return SUCCESS;
+
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -1329,8 +1395,8 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                     12/2016
 //---------------------------------------------------------------------------------------
-ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, bool isPolymorphicQuery) 
-    : Context(ViewType::SelectFromView, prepareCtx.GetECDb()), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery)
+ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, bool isPolymorphicQuery, MemberInfo const* memberInfo)
+    : Context(ViewType::SelectFromView, prepareCtx.GetECDb()), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery), m_memberInfo(memberInfo)
     {}
 
 //---------------------------------------------------------------------------------------
