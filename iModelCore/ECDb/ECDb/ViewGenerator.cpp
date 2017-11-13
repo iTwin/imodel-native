@@ -42,9 +42,10 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
-                                     "SELECT c.Id FROM " TABLE_Class " c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND "
+                                     "SELECT c.Id FROM " TABLE_Class " c, " TABLE_ClassMap " cm WHERE c.Id = cm.ClassId AND "
                                      "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
-                                     "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_TemporaryTablePerHierarchy ")"))
+                                     "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_TemporaryTablePerHierarchy ","
+                                     SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"))
         return ERROR;
 
     bvector<ECClassId> classIds;
