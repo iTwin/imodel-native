@@ -956,6 +956,12 @@ ICancellationTokenPtr ct
     auto finalBackgroundSyncResult = std::make_shared <SyncResult>();
     auto backgroundSyncTask = m_cacheAccessThread->ExecuteAsyncWithoutAttachingToCurrentTask([=]
         {
+        if (ct->IsCanceled())
+            {
+            finalBackgroundSyncResult->SetError(Status::Canceled);
+            return;
+            }
+
         CacheObjects(responseKey, query, DataOrigin::RemoteData, GetInitialSkipToken(), 0, ct)
             ->Then(m_cacheAccessThread, [=] (DataOriginResult& result)
             {

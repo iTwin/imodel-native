@@ -547,8 +547,25 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInva
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-// FAIL:
-// ERROR    ECDb                 ECClass 'PW_WSG:Set' has invalid base class: An abstract class must not have a non-abstract base class.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository_Succeedsd)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://mobilevm6.bentley.com/ws";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
+    Credentials creds("admin", "admin");
+    BeFileName cachePath = GetTestCachePath();
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
