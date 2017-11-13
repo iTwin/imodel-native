@@ -62,7 +62,7 @@ size_t BeDebugUtilities::GetMemoryUsed()
     kern_return_t status = task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&info, &size);
     if (status != KERN_SUCCESS)
         {
-        BeDebugLog(Utf8PrintfString("BeDebugUtilities::GetMemoryUsed() error: %s", mach_error_string(status)));
+        BeDebugLog(Utf8PrintfString("BeDebugUtilities::GetMemoryUsed() error: %s", mach_error_string(status)).c_str());
         return 0;
         }
     return info.resident_size;
