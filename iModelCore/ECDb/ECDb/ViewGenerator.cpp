@@ -41,28 +41,28 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
         return ERROR;
 
     SchemaManager const& sm = ctx.GetECDb().Schemas();
-    ECClassCP changeInstanceClass = sm.GetClass(CHANGESUMMARY_SCHEMA_Name, CHANGESUMMARY_CLASS_Instance);
-    if (changeInstanceClass == nullptr)
+    ECClassCP instanceClass = sm.GetClass(CHANGESUMMARY_SCHEMA_Name, CHANGESUMMARY_CLASS_Instance);
+    if (instanceClass == nullptr)
         {
         ctx.GetECDb().GetImpl().Issues().Report("ChangeSummary extension require " CHANGESUMMARY_SCHEMA_Name " schema.");
         return ERROR;
         }
 
-    ClassMap const* changeInstanceClassMap = sm.GetDbMap().GetClassMap(*changeInstanceClass);
-    if (changeInstanceClassMap == nullptr)
+    ClassMap const* instanceClassMap = sm.GetDbMap().GetClassMap(*instanceClass);
+    if (instanceClassMap == nullptr)
         return ERROR;
 
-    Utf8CP tableName = changeInstanceClassMap->GetPrimaryTable().GetName().c_str();
-    Utf8CP changeInstanceIdColumn = changeInstanceClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName().c_str();
-    Utf8CP opeartionColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_Operation)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
-    Utf8CP changedInstanceIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_IdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
-    Utf8CP changedClassIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_ClassIdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
-    Utf8CP summaryIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_SummaryId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP instanceTableName = instanceClassMap->GetPrimaryTable().GetName().c_str();
+    Utf8CP instanceIdColumn = instanceClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName().c_str();
+    Utf8CP operationColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_Operation)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP classIdOfChangedInstanceColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_IdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP classIdOfChangedInstanceColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_ClassIdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP summaryIdColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_SummaryId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
     Utf8CP viewName = classMap.GetClass().GetName().c_str();
 
-    internalView.Append(" ").AppendEscaped(classMap.GetClass().GetName().c_str());
+    internalView.AppendSpace().AppendEscaped(viewName);
     NativeSqlBuilder columnSql;
-    columnSql.AppendFormatted("[CI].[%s] " ECDBSYS_PROP_ECInstanceId ", [CI].[%s] " ECDBSYS_PROP_ECClassId , changedInstanceIdColumn, changedClassIdColumn);
+    columnSql.AppendFormatted("[CI].[%s] " ECDBSYS_PROP_ECInstanceId ", [CI].[%s] " ECDBSYS_PROP_ECClassId, classIdOfChangedInstanceColumn, classIdOfChangedInstanceColumn);
 
     SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::ConstraintECClassId | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::SingleColumnData);
     classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor);
@@ -75,15 +75,15 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
             {
             Utf8CP acessString = basePropertyMap->GetAccessString().c_str();
             columnSql
-                .AppendComma().Append(CHANGESUMMARY_ChangedValue "([CI].").AppendEscaped(changeInstanceIdColumn)
+                .AppendComma().Append(CHANGESUMMARY_ChangedValue "([CI].").AppendEscaped(instanceIdColumn)
                 .AppendComma().Append("'").Append(acessString).Append("'")
-                .AppendComma().Append("[CI].").AppendEscaped(opeartionColumn)
+                .AppendComma().Append("[CI].").AppendEscaped(operationColumn)
                 .AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(acessString);
 
             if (ctx.GetMemberInfo()->HasArg(CHANGESUMMARY_FUNC_ARG_Stage))
                 columnSql.AppendComma().Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_Stage));
 
-            columnSql.Append(") ").AppendEscaped(acessString);
+            columnSql.AppendParenRight().AppendSpace().AppendEscaped(acessString);
             }
         else
             {
@@ -98,39 +98,36 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
             else
                 {
                 columnSql
-                    .AppendComma().Append(CHANGESUMMARY_ChangedValue "([CI].").AppendEscaped(changeInstanceIdColumn)
-                    .AppendComma().Append("'").Append(dataProperty.GetAccessString().c_str()).Append("'")
-                    .AppendComma().Append("[CI].").AppendEscaped(opeartionColumn)
+                    .AppendComma().Append(CHANGESUMMARY_ChangedValue "([CI].").AppendEscaped(instanceIdColumn)
+                    .AppendComma().AppendQuoted(dataProperty.GetAccessString().c_str())
+                    .AppendComma().Append("[CI].").AppendEscaped(operationColumn)
                     .AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
 
                 if (ctx.GetMemberInfo()->HasArg(CHANGESUMMARY_FUNC_ARG_Stage))
                     columnSql.AppendComma().Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_Stage));
 
-                columnSql.Append(") ").AppendEscaped(columnName);
+                columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
                 }
             }
         }
-    
 
     viewSql.AppendParenLeft();
     viewSql.Append("SELECT ").Append(columnSql.GetSql().c_str())
-        .Append(" FROM ").AppendEscaped(tableName).Append(" [CI] ");
+        .Append(" FROM ").AppendEscaped(instanceTableName).Append(" [CI] ");
 
     if (ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted("INNER JOIN [" TABLE_ClassHierarchyCache "] [CHC] ON [CI].[%s]=[CHC].[ClassId] AND [CHC].[BaseClassId]=%s", changedClassIdColumn, classMap.GetClass().GetId().ToHexStr().c_str());
-    
-    viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append(".[" ECDBSYS_PROP_ECInstanceId "]=[CI].").AppendEscaped(changedInstanceIdColumn)
-        .Append(" WHERE [CI].").AppendEscaped(opeartionColumn).Append("=").Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_Operation))
+        viewSql.AppendFormatted("INNER JOIN [" TABLE_ClassHierarchyCache "] [CHC] ON [CI].[%s]=[CHC].[ClassId] AND [CHC].[BaseClassId]=%s", classIdOfChangedInstanceColumn, classMap.GetClass().GetId().ToHexStr().c_str());
+
+    viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append(".[" ECDBSYS_PROP_ECInstanceId "]=[CI].").AppendEscaped(classIdOfChangedInstanceColumn)
+        .Append(" WHERE [CI].").AppendEscaped(operationColumn).Append("=").Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_Operation))
         .Append(" AND [CI].").AppendEscaped(summaryIdColumn).Append("=").Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_SummaryId));
 
     if (!ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted(" AND [CI].[%s]=%s", changedClassIdColumn, classMap.GetClass().GetId().ToHexStr().c_str());
+        viewSql.AppendFormatted(" AND [CI].[%s]=%s", classIdOfChangedInstanceColumn, classMap.GetClass().GetId().ToHexStr().c_str());
 
     viewSql.AppendParenRight();
     return SUCCESS;
     }
-
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
