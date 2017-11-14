@@ -18,26 +18,38 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-ChangeIterator::TableMap const* ChangeIterator::GetTableMap(Utf8StringCR tableName) const
-    {
-    if (m_tableMap.find(tableName) == m_tableMap.end())
-        {
-        AddTableToMap(tableName);
-        BeAssert(m_tableMap.find(tableName.c_str()) != m_tableMap.end());
-        }
-
-    return m_tableMap[tableName].get();
-    }
+ChangeIterator::ChangeIterator(ECDbCR ecdb, Changes const& changes) : m_ecdb(ecdb), m_changes(changes), m_tableMaps(std::make_unique<TableMapCollection>())
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-void ChangeIterator::AddTableToMap(Utf8StringCR tableName) const
+ChangeIterator::~ChangeIterator() {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::const_iterator ChangeIterator::begin() const { return RowEntry(*this, m_changes.begin()); }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::const_iterator ChangeIterator::end() const { return RowEntry(*this, m_changes.end()); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::TableMap const* ChangeIterator::GetTableMap(Utf8StringCR tableName) const
     {
-    RefCountedPtr<TableMap> tableMap = TableMap::Create(m_ecdb, tableName);
-    BeAssert(tableMap.IsValid());
-    m_tableMap[tableName] = tableMap;
+    ChangeIterator::TableMap const* map = m_tableMaps->Get(tableName);
+    if (map != nullptr)
+        return map;
+
+    std::unique_ptr<ChangeIterator::TableMap> newMap = std::make_unique<ChangeIterator::TableMap>(m_ecdb, tableName);
+    ChangeIterator::TableMap const* newMapP = newMap.get();
+    m_tableMaps->Add(std::move(newMap));
+    return newMapP;
     }
+
 
 //******************************************************************************
 // ChangeIterator::RowEntry
@@ -172,6 +184,16 @@ void ChangeIterator::RowEntry::FreeSqlChange()
     delete m_sqlChange;
     m_sqlChange = nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::ColumnIterator ChangeIterator::RowEntry::MakeColumnIterator(ECN::ECClassCR ecClass) const { return ChangeIterator::ColumnIterator(*this, &ecClass); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::ColumnIterator ChangeIterator::RowEntry::MakePrimaryColumnIterator() const { return ChangeIterator::ColumnIterator(*this, GetPrimaryClass()); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
@@ -673,9 +695,11 @@ ChangeIterator::TableClassMap const* ChangeIterator::TableMap::GetTableClassMap(
     if (iter != m_tableClassMaps.end())
         return iter->second.get();
 
-    RefCountedPtr<TableClassMap> classMap = TableClassMap::Create(m_ecdb, *this, ecClass);
-    m_tableClassMaps[ecClass.GetId()] = classMap;
-    return classMap.get();
+    std::unique_ptr<TableClassMap> classMap = std::make_unique<TableClassMap>(m_ecdb, *this, ecClass);
+    TableClassMap* classMapP = classMap.get();
+
+    m_tableClassMaps[ecClass.GetId()] = std::move(classMap);
+    return classMapP;
     }
 
 //******************************************************************************

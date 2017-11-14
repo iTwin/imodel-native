@@ -41,9 +41,8 @@ struct ChangeIterator::ColumnMap final
 //! Information on mappings to a table
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ChangeIterator::TableMap : RefCounted<NonCopyableClass>
+struct ChangeIterator::TableMap final
     {
-    friend struct ChangeSummary;
     private:
         ECDbCR m_ecdb;
         bool m_isMapped = false;
@@ -51,12 +50,11 @@ struct ChangeIterator::TableMap : RefCounted<NonCopyableClass>
         Utf8String m_tableName;
         bmap<Utf8String, int> m_columnIndexByName;
         ECN::ECClassId m_primaryClassId;
-        mutable bmap<ECN::ECClassId, RefCountedPtr<ChangeIterator::TableClassMap>> m_tableClassMaps;
+        mutable std::map<ECN::ECClassId, std::unique_ptr<ChangeIterator::TableClassMap>> m_tableClassMaps;
 
         ColumnMap m_classIdColumnMap;
         ColumnMap m_instanceIdColumnMap;
 
-        TableMap(ECDbCR ecdb, Utf8StringCR tableName) : m_ecdb(ecdb) { Initialize(tableName); }
 
         void Initialize(Utf8StringCR tableName);
         void InitColumnIndexByName();
@@ -65,10 +63,7 @@ struct ChangeIterator::TableMap : RefCounted<NonCopyableClass>
         ECN::ECClassId QueryClassId() const;
 
     public:
-        //! @private
-        //! Create the table map for a table with the specified name
-        static RefCountedPtr<TableMap> Create(ECDbCR ecdb, Utf8StringCR tableName) { return new TableMap(ecdb, tableName); }
-
+        TableMap(ECDbCR ecdb, Utf8StringCR tableName) : m_ecdb(ecdb) { Initialize(tableName); }
         ~TableMap() {}
 
         //! Returns true if the table is mapped to a ECClass. false otherwise. 
@@ -78,6 +73,7 @@ struct ChangeIterator::TableMap : RefCounted<NonCopyableClass>
 
         //! Gets the name of the table
         Utf8StringCR GetTableName() const { return m_tableName; }
+
 
         //! Returns true if the table contains a column storing ECClassId (if the table stores multiple classes)
         bool ContainsECClassIdColumn() const { return m_classIdColumnMap.IsValid(); }
@@ -91,6 +87,9 @@ struct ChangeIterator::TableMap : RefCounted<NonCopyableClass>
 
         //! Gets the primary Id column
         ColumnMap const& GetIdColumn() const { return m_instanceIdColumnMap; }
+
+
+        ChangeIterator::TableClassMap const* GetTableClassMap(ECN::ECClassCR ecClass) const;
 
         //! @private
         //! Queries the value stored in the table at the specified column, for the specified instanceId
@@ -109,16 +108,36 @@ struct ChangeIterator::TableMap : RefCounted<NonCopyableClass>
         int GetColumnIndexByName(Utf8StringCR columnName) const;
 
         bool QueryInstance(ECInstanceId instanceId) const;
-
-        ChangeIterator::TableClassMap const* GetTableClassMap(ECN::ECClassCR ecClass) const;
     };
 
+//=======================================================================================
+//! Information on mappings to a table
+// @bsiclass                                           Krischan.Eberle  11/2017
+//=======================================================================================
+struct ChangeIterator::TableMapCollection final
+    {
+private:
+    std::map<Utf8String, std::unique_ptr<ChangeIterator::TableMap>> m_maps;
 
+public:
+    TableMapCollection() {}
+
+    ChangeIterator::TableMap const* Get(Utf8StringCR tableName) const
+        {
+        auto it = m_maps.find(tableName);
+        if (it != m_maps.end())
+            return it->second.get();
+
+        return nullptr;
+        }
+
+    void Add(std::unique_ptr<ChangeIterator::TableMap> map) { m_maps[map->GetTableName()] = std::move(map); }
+    };
 //=======================================================================================
 //! Information on mappings to a specific class within a table
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ChangeIterator::TableClassMap : RefCounted<NonCopyableClass>
+struct ChangeIterator::TableClassMap final
     {
     struct EndTableRelationshipMap final
         {
@@ -139,7 +158,6 @@ struct ChangeIterator::TableClassMap : RefCounted<NonCopyableClass>
         bmap<Utf8String, ColumnMap*> m_columnMapByAccessString;
         bvector<EndTableRelationshipMap*> m_endTableRelMaps;
 
-        TableClassMap(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass) : m_ecdb(ecdb), m_tableMap(tableMap), m_class(ecClass) { Initialize(); }
         void Initialize();
         void InitPropertyColumnMaps();
         void FreeColumnMaps();
@@ -147,11 +165,8 @@ struct ChangeIterator::TableClassMap : RefCounted<NonCopyableClass>
         void FreeEndTableRelationshipMaps();
 
     public:
+        TableClassMap(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass) : m_ecdb(ecdb), m_tableMap(tableMap), m_class(ecClass) { Initialize(); }
         ~TableClassMap();
-
-        //! @private
-        //! Create the table map for the primary table of the specified class
-        static RefCountedPtr<TableClassMap> Create(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass) { return new TableClassMap(ecdb, tableMap, ecClass); }
 
         //! Returns true if the class is really mapped
         bool IsMapped() const { return m_classMap != nullptr; }

@@ -46,9 +46,6 @@
     <Filter Include="ECSchemas">
       <UniqueIdentifier>{48af7464-6331-4c7d-9e22-c4bb3bead7ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ChangeSummary">
-      <UniqueIdentifier>{ab551814-340e-4afa-abd0-bc5b227d4c11}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SchemaManager">
       <UniqueIdentifier>{b512b729-dbde-4f4d-a0f4-00d306962fc8}</UniqueIdentifier>
     </Filter>
@@ -58,7 +55,10 @@
     <Filter Include="Profile">
       <UniqueIdentifier>{40e9ef85-b8b8-468a-ad73-fb807d2d3f09}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ChangeSummaryV2">
+    <Filter Include="ChangeSummary_deprecated">
+      <UniqueIdentifier>{ab551814-340e-4afa-abd0-bc5b227d4c11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChangeSummary">
       <UniqueIdentifier>{9778f9f9-eca7-4301-9580-fd4a67e200b8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -353,7 +353,7 @@
       <Filter>SchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ChangeSummaryImpl.h">
-      <Filter>ChangeSummary</Filter>
+      <Filter>ChangeSummary_deprecated</Filter>
     </ClInclude>
     <ClInclude Include="ECDbMapSchemaHelper.h">
       <Filter>SchemaManager</Filter>
@@ -402,13 +402,13 @@
       <Filter>SchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ChangeSummaryExtractor.h">
-      <Filter>ChangeSummaryV2</Filter>
+      <Filter>ChangeSummary</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ChangeIterator.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ChangeIteratorImpl.h">
-      <Filter>ChangeSummaryV2</Filter>
+      <Filter>ChangeSummary</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -693,7 +693,7 @@
       <Filter>SchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="ChangeSummaryImpl.cpp">
-      <Filter>ChangeSummary</Filter>
+      <Filter>ChangeSummary_deprecated</Filter>
     </ClCompile>
     <ClCompile Include="ECDbMapSchemaHelper.cpp">
       <Filter>SchemaManager</Filter>
@@ -748,10 +748,10 @@
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
     <ClCompile Include="ChangeSummaryExtractor.cpp">
-      <Filter>ChangeSummaryV2</Filter>
+      <Filter>ChangeSummary</Filter>
     </ClCompile>
     <ClCompile Include="ChangeIteratorImpl.cpp">
-      <Filter>ChangeSummaryV2</Filter>
+      <Filter>ChangeSummary</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

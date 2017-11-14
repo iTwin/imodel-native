@@ -33,15 +33,80 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!
 //! @see ChangeSet, ChangeSummary
 //! @ingroup ECDbGroup
-//! @bsiclass                                               Ramanujam.Raman      12/2016
+// @bsiclass                                               12/2016
 //=======================================================================================
 struct ChangeIterator final : NonCopyableClass
     {
     struct ColumnIterator;
     struct TableMap;
+    struct TableMapCollection;
     struct TableClassMap;
     struct ColumnMap;
     struct SqlChange;
+
+    struct RowEntry;
+
+    //! An entry in the ColumnInterator
+    struct ColumnEntry final
+        {
+        friend ColumnIterator;
+
+        private:
+            ECDbCR m_ecdb;
+            SqlChange const* m_sqlChange;
+            ColumnIterator const& m_columnIterator;
+            bmap<Utf8String, ColumnMap*>::const_iterator m_columnMapIterator;
+            bool m_isValid = false;
+
+            explicit ColumnEntry(ColumnIterator const&);
+            ColumnEntry(ColumnIterator const&, bmap<Utf8String, ColumnMap*>::const_iterator columnMapIterator);
+
+        public:
+            //! Get the access string for the EC property corresponding to this column
+            ECDB_EXPORT Utf8StringCR GetPropertyAccessString() const;
+
+            //! Get the old or new value from the change
+            ECDB_EXPORT DbDupValue GetValue(Changes::Change::Stage stage) const;
+
+            //! Query the current value from the Db
+            ECDB_EXPORT DbDupValue QueryValueFromDb() const;
+
+            //! Returns true if the column stores the primary key
+            ECDB_EXPORT bool IsPrimaryKeyColumn() const;
+
+            ECDB_EXPORT ColumnEntry& operator++();
+
+            ColumnEntry const& operator*() const { return *this; }
+            ECDB_EXPORT bool operator!=(ColumnEntry const& rhs) const;
+            ECDB_EXPORT bool operator==(ColumnEntry const& rhs) const;
+        };
+
+    //! Iterator to go over changed columns
+    struct ColumnIterator final
+        {
+        friend ColumnEntry;
+        private:
+            RowEntry const& m_rowEntry;
+            ECDbCR m_ecdb;
+            SqlChange const* m_sqlChange = nullptr;
+            TableClassMap const* m_tableClassMap = nullptr;
+
+
+        public:
+            //! @private
+            ColumnIterator(RowEntry const&, ECN::ECClassCP);
+
+            //! Get the column for the specified property access string
+            ECDB_EXPORT ColumnEntry GetColumn(Utf8CP propertyAccessString) const;
+
+            typedef ColumnEntry const_iterator;
+            typedef ColumnEntry iterator;
+            ECDB_EXPORT const_iterator begin() const;
+            ECDB_EXPORT const_iterator end() const;
+
+            //! @private
+            RowEntry const& GetRowEntry() const { return m_rowEntry; }
+        };
 
     //! An entry in the ChangeIterator.
     struct RowEntry final
@@ -95,16 +160,15 @@ struct ChangeIterator final : NonCopyableClass
             ECInstanceId GetPrimaryInstanceId() const { return m_primaryInstanceId; }
 
             //! Make an iterator over the changed columns of the specified class
-            ColumnIterator MakeColumnIterator(ECN::ECClassCR ecClass) const { return ChangeIterator::ColumnIterator(*this, &ecClass); }
-
+            ECDB_EXPORT ColumnIterator MakeColumnIterator(ECN::ECClassCR ecClass) const;
             //! Make an iterator over the changed columns of the primary class mapped to the table
-            ColumnIterator MakePrimaryColumnIterator() const { return ChangeIterator::ColumnIterator(*this, GetPrimaryClass()); }
+            ECDB_EXPORT ColumnIterator MakePrimaryColumnIterator() const;
 
             ECDB_EXPORT RowEntry& operator++();
 
             RowEntry const& operator* () const { return *this; }
-            bool operator!=(RowEntry const& rhs) const { return m_change != rhs.m_change; }
             bool operator==(RowEntry const& rhs) const { return m_change == rhs.m_change; }
+            bool operator!=(RowEntry const& rhs) const { return !(this == &rhs); }
 
             ECDbCR GetDb() const { return m_ecdb; } //!< @private
             SqlChange const* GetSqlChange() const { return m_sqlChange; } //!< @private
@@ -114,81 +178,24 @@ struct ChangeIterator final : NonCopyableClass
             ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
         };
 
-    //! An entry in the ColumnInterator
-    struct ColumnEntry final
-        {
-        friend ColumnIterator;
-
-        private:
-            ECDbCR m_ecdb;
-            SqlChange const* m_sqlChange;
-            ColumnIterator const& m_columnIterator;
-            bmap<Utf8String, ColumnMap*>::const_iterator m_columnMapIterator;
-            bool m_isValid = false;
-
-            explicit ColumnEntry(ColumnIterator const&);
-            ColumnEntry(ColumnIterator const&, bmap<Utf8String, ColumnMap*>::const_iterator columnMapIterator);
-
-        public:
-            //! Get the access string for the EC property corresponding to this column
-            ECDB_EXPORT Utf8StringCR GetPropertyAccessString() const;
-
-            //! Get the old or new value from the change
-            ECDB_EXPORT DbDupValue GetValue(Changes::Change::Stage stage) const;
-
-            //! Query the current value from the Db
-            ECDB_EXPORT DbDupValue QueryValueFromDb() const;
-
-            //! Returns true if the column stores the primary key
-            ECDB_EXPORT bool IsPrimaryKeyColumn() const;
-
-            ECDB_EXPORT ColumnEntry& operator++();
-
-            ColumnEntry const& operator*() const { return *this; }
-            ECDB_EXPORT bool operator!=(ColumnEntry const& rhs) const;
-            ECDB_EXPORT bool operator==(ColumnEntry const& rhs) const;
-        };
-
-    //! Iterator to go over changed columns
-    struct ColumnIterator final
-        {
-        friend RowEntry;
-        friend ColumnEntry;
-        private:
-            RowEntry const& m_rowEntry;
-            ECDbCR m_ecdb;
-            SqlChange const* m_sqlChange = nullptr;
-            TableClassMap const* m_tableClassMap = nullptr;
-
-            ColumnIterator(RowEntry const&, ECN::ECClassCP);
-
-        public:
-            //! Get the column for the specified property access string
-            ECDB_EXPORT ColumnEntry GetColumn(Utf8CP propertyAccessString) const;
-
-            typedef ColumnEntry const_iterator;
-            typedef ColumnEntry iterator;
-            ECDB_EXPORT ColumnEntry begin() const;
-            ECDB_EXPORT ColumnEntry end() const;
-        };
-
+  
     private:
         ECDbCR m_ecdb;
         Changes m_changes;
-        mutable bmap<Utf8String, RefCountedPtr<TableMap>> m_tableMap;
-
-        void AddTableToMap(Utf8StringCR tableName) const;
+        mutable std::unique_ptr<TableMapCollection> m_tableMaps;
 
     public:
-        ChangeIterator(ECDbCR ecdb, Changes const& changes) : m_ecdb(ecdb), m_changes(changes) {}
+        ECDB_EXPORT ChangeIterator(ECDbCR ecdb, Changes const& changes);
         ChangeIterator(ECDbCR ecdb, IChangeSet& changeSet) : ChangeIterator(ecdb, changeSet.GetChanges()) {}
+        ECDB_EXPORT ~ChangeIterator();
 
         typedef RowEntry const_iterator;
         typedef RowEntry iterator;
-        RowEntry begin() const { return RowEntry(*this, m_changes.begin()); }
-        RowEntry end() const { return ChangeIterator::RowEntry(*this, m_changes.end()); }
+        ECDB_EXPORT const_iterator begin() const;
+        ECDB_EXPORT const_iterator end() const;
 
-        TableMap const* GetTableMap(Utf8StringCR tableName) const;  //!< @private
+        //! @private
+        TableMap const* GetTableMap(Utf8StringCR tableName) const; 
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

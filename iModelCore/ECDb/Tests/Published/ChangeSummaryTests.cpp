@@ -1121,17 +1121,16 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumnsV2)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummaryV2 changeSummary(m_ecdb, false);
-    BentleyStatus status = changeSummary.FromChangeSet(changeset);
-    ASSERT_TRUE(SUCCESS == status);
+    ECInstanceId changeSummaryId;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
     m_ecdb.SaveChanges();
     {
     ECSqlStatement stmt;
     //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2 FROM ts.Element.ChangeSummary(?1, ?2)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT S, P2D FROM ts.Element.ChangeSummary(?1, ?2)" ));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT S, P2D FROM ts.Element.ChangeSummary(?, ?)" ));
 
-    stmt.BindId(1, changeSummary.GetId());
-    stmt.BindInt(2, (int)ChangeSummaryV2::Operation::Inserted);
+    stmt.BindId(1, changeSummaryId);
+    stmt.BindInt(2, 1); //1: Insert TODO: Replace by OpCode enum
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
     //ChangeSummary::InstanceIterator instIter = changeSummary.MakeInstanceIterator();
@@ -1208,16 +1207,15 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumnsV2)
         auto rc = changeset.FromChangeTrack(tracker);
         ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-        ChangeSummaryV2 changeSummary(m_ecdb, false /*auto delete summary*/);
-        BentleyStatus status = changeSummary.FromChangeSet(changeset);
-        ASSERT_TRUE(SUCCESS == status);
+        ECInstanceId changeSummaryId;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
         m_ecdb.SaveChanges();
 
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
-        stmt.BindId(1, changeSummary.GetId());
-        stmt.BindInt(2, (int) ChangeSummaryV2::Operation::Inserted);
+        stmt.BindId(1, changeSummaryId);
+        stmt.BindInt(2, 1); //TODO: replace by OpCode enum
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         }
 

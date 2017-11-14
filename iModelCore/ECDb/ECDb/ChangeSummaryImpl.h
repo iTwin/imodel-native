@@ -102,13 +102,10 @@ struct ChangeExtractor final : NonCopyableClass
         RelationshipInstancesOnly = 2
         };
 
-    typedef bmap<Utf8String, RefCountedPtr<ChangeIterator::TableMap>> TableMapByName; // TODO: Remove tochange iterator
-
     private:
         ChangeSummaryCR m_changeSummary;
 
         ECDbCR m_ecdb;
-        mutable TableMapByName m_tableMapByName; // TODO: REmove to ChangeIterator
         InstancesTable& m_instancesTable;
         ValuesTable& m_valuesTable;
 
