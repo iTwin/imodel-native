@@ -503,7 +503,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         ViewGenerator::MemberInfo memberInfo;
         if (memberFunc != nullptr)
             {
-            if (!memberFunc->GetFunctionName().EqualsIAscii("changesummary"))
+            if (!memberFunc->GetFunctionName().EqualsIAscii(CHANGESUMMARY_FUNC_Name))
                 {
                 ctx.GetECDb().GetImpl().Issues().Report("Unknown member funtion: %s", memberFunc->GetFunctionName().c_str());
                 return ECSqlStatus::InvalidECSql;
@@ -527,8 +527,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 return ECSqlStatus::Error;
 
             memberInfo.SetName(memberFunc->GetFunctionName().c_str());
-            memberInfo.SetArg("summary_id", summaryIdSql.front().GetSql().c_str());
-            memberInfo.SetArg("operation", operationSql.front().GetSql().c_str());
+            memberInfo.SetArg(CHANGESUMMARY_FUNC_ARG_SummaryId, summaryIdSql.front().GetSql().c_str());
+            memberInfo.SetArg(CHANGESUMMARY_FUNC_ARG_Operation, operationSql.front().GetSql().c_str());
 
             //optional parameter
             if (memberFunc->GetChildrenCount() == 3)
@@ -538,7 +538,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 if (PrepareValueExp(stageSql, ctx, *stage) != ECSqlStatus::Success)
                     return ECSqlStatus::Error;
 
-                memberInfo.SetArg("stage", stageSql.front().GetSql().c_str());
+                memberInfo.SetArg(CHANGESUMMARY_FUNC_ARG_Stage, stageSql.front().GetSql().c_str());
                 }
             }
 
