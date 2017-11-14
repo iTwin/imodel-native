@@ -314,6 +314,10 @@
         <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="static" />
         <ProductDirectory Name="LoggingManagedAssemblies"  Deliver="false"/>
         <ProductDirectory Name="LoggingNativeAssemblies"   Deliver="false"/>
+        
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
     </ProductDirectoryList>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -370,12 +374,8 @@
     <!-- // CCApi binding                                                          // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     
-    <Part Name="BentleyDesktopClient" BentleyBuildMakeFile="BentleyDesktopClientCCApi.prewire.mke" OnlyPlatforms="x64,x86">
-        <SdkSource>Vancouver-BentleyDesktopClient</SdkSource>
-        <Bindings>
-            <Libs>SubParts/Libs/$(libprefix)CCApi$(libext)</Libs>
-            <Assemblies>SubParts/Assemblies/$(libprefix)CCApi$(shlibext)</Assemblies>
-        </Bindings>
+    <Part Name="BentleyDesktopClient" OnlyPlatforms="x64,x86">
+        <SubPart PartName="CCApi" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -610,6 +610,10 @@
     <ProductDirectoryList ListName="WSClient-Tests-Dirs">
         <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="sqlang" LibType="static" Deliver="false"/>
+
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="Assemblies"/>
     </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests"
@@ -755,6 +759,10 @@
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
     </ProductDirectoryList>
 
     <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
@@ -809,6 +817,10 @@
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
 
         <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
         <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
@@ -899,13 +911,11 @@
         <SubPart PartName="CWSCC-Android-Sample-GetProjects" LibType="Static"/>
     </Part>
 
-
     <Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
         <Bindings>
             <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
         </Bindings>
     </Part>
-
 
     <Part Name="CWSCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Tools-AndroidShared" />

@@ -55,13 +55,6 @@ $(o)CachingTestsHelper$(oext)       : $(wsClientUnitTestsDir)WebServices/Cache/C
 %include MultiCppCompileGo.mki
 
 #---------------------------------------------------------------------------------------+
-#   Deliver Assemblies
-#---------------------------------------------------------------------------------------+
-
-$(o)CCApi.dll : $(BuildContext)SubParts/Assemblies/CCApi.dll
-    $(LinkFirstDepToFirstTarget)
-
-#---------------------------------------------------------------------------------------+
 #   Link test executable
 #---------------------------------------------------------------------------------------+
 

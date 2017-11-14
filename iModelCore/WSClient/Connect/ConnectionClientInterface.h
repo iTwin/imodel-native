@@ -10,7 +10,7 @@
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/IConnectionClientInterface.h>
 
-#include <BentleyDesktopClient/CCApi/CCPublic.h>
+#include <CCApi/CCPublic.h>
 #include <Bentley/Base64Utilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE

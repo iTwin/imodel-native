@@ -497,7 +497,6 @@
   <ItemGroup>
     <None Include=".hgignore" />
     <None Include="Azure\Azure.mki" />
-    <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />
     <None Include="CachePrewire.mke" />
     <None Include="Cache\Cache.mki" />
