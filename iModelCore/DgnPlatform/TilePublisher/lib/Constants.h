@@ -205,11 +205,15 @@ static std::string s_computeLighting = R"RAW_STRING(
         specular += lightIntensity * pow(specularDot, specularExponent);
         }
 
-    vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor)
+    vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor, mat4 proj)
         {
         vec3 normal = normalize(normalIn);
         vec3 toEye = normalize (position);
-        normal = faceforward(normal, toEye, normal);
+
+        if (proj[3][3] != 1.0) // perspective
+            normal = faceforward(normal, toEye, -normal);
+        else
+            normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);
 
         float ambient = 0.2;
         vec3 lightPos1 = vec3(-500, -200.0, 0.0);
@@ -238,11 +242,13 @@ static std::string s_untexturedFragShader = R"RAW_STRING(
     varying vec3 v_pos;
     uniform float u_specularExponent;
     uniform vec3 u_specularColor;
+    uniform mat4 u_proj;
+
 )RAW_STRING"
 + s_computeLighting + R"RAW_STRING(
     void main(void)
         {
-        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, v_color);
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, v_color, u_proj);
         }
 )RAW_STRING";
 
@@ -253,13 +259,15 @@ static std::string s_texturedFragShader = R"RAW_STRING(
     varying vec3 v_pos;
     uniform float u_specularExponent;
     uniform vec3 u_specularColor;
+    uniform mat4 u_proj;
+
 )RAW_STRING"
 + s_computeLighting + R"RAW_STRING(
     void main(void)
         {
         vec4 textureColor = texture2D(u_tex, v_texc);
         if (0.0 == textureColor.a) discard;
-        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor);
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor, u_proj);
         }
 )RAW_STRING";
 
