@@ -16,6 +16,16 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 using namespace BeSQLite::EC;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool anyTxnsInFile(DgnDbR db)
+    {
+    Statement stmt;
+    stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
+    return (BE_SQLITE_ROW == stmt.Step());
+    }
+
 //****************************************************************************************
 // ECClassName
 //****************************************************************************************
@@ -1919,8 +1929,11 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
     // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
     if (GetConfig().GetOptionValueBool("CreateECClassViews", true))
         {
-        SetStepName(Converter::ProgressMessage::STEP_CREATE_CLASS_VIEWS());
-        GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
+        if (!_GetParamsR().IsUpdating() || anyTxnsInFile(GetDgnDb()))   // don't regenerate class views unless we know that there are new or modified schemas
+            {
+            SetStepName(Converter::ProgressMessage::STEP_CREATE_CLASS_VIEWS());
+            GetDgnDb().Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
+            }
         }
 
     GetDgnDb().SaveChanges();

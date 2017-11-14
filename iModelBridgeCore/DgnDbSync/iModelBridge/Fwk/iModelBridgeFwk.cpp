@@ -943,7 +943,12 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     params.m_libraryDir = m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName();
     params.m_repoAdmin = ra;
     params.m_inputFileName = m_jobEnvArgs.m_inputFileName;
-    params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
+    if (!m_jobEnvArgs.m_drawingAndSheetFiles.empty())
+        params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
+    else
+        {
+        // *** TBD: include every document assigned to this bridge.
+        }
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
@@ -1269,6 +1274,13 @@ int iModelBridgeFwk::UpdateExistingBim()
         m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
                                         // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
 
+        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+            {
+            if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))
+                return RETURN_STATUS_SERVER_ERROR;
+            Briefcase_ReleaseSharedLocks();
+            }
+
         //  Let the bridge generate schema changes
         if (BSISUCCESS != m_bridge->_MakeSchemaChanges())
             {
@@ -1278,7 +1290,7 @@ int iModelBridgeFwk::UpdateExistingBim()
             return BentleyStatus::ERROR;
             }
 
-        madeSchemaChanges == m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb); // see if bridge actually made any changes
+        madeSchemaChanges = m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb); // see if bridge actually made any changes
         if (madeSchemaChanges)
             {
             callCloseOnReturn.CallCloseFunctions();

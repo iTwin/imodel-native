@@ -606,7 +606,6 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         return ImportJobCreateStatus::FailedExistingRoot;
         }
 
-    BeAssert(!GetRepositoryLinkFromAppData(*GetRootV8File()).IsValid());
     WriteRepositoryLink(*GetRootV8File());  // Write the RepositoryLink element for the root file now. This is the order in which the older converter did it.
 
     Utf8String jobName = _GetParams().GetBridgeJobName();
