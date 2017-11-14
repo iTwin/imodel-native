@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="LinearReferencing" alias="lr" version="01.00.00" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <!--ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/-->
+    <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
     
-    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />
-
     <ECEntityClass typeName="ILinearElement" description="Mix-in to be supported by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
@@ -97,10 +95,10 @@
         </Target>
     </ECRelationshipClass>
     <ECStructClass typeName="DistanceExpression" description="Core structure carrying linearly-referenced information.">
-        <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="VerticalOffsetFromILinearElement" typeName="double" kindOfQuantity="LENGTH"/>
-        <ECProperty propertyName="DistanceAlongFromReferent" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="VerticalOffsetFromILinearElement" typeName="double" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="DistanceAlongFromReferent" typeName="double" kindOfQuantity="aecu:LENGTH"/>
     </ECStructClass>
     <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed" description="Concrete multi-aspect class carrying 'at' linearly-referenced positions along a Linear-Element.">
         <BaseClass>LinearlyReferencedLocation</BaseClass>

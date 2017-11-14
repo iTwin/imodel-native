@@ -5,7 +5,7 @@
     <Part Name="LinearReferencing" BentleyBuildMakeFile="LinearReferencing.mke">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="DgnPlatformLib"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <!--SubPart PartName="AecUnitsDomain"  PartFile="AecUnits"  Repository="dgndomains-designmodelingunits" /-->
+        <SubPart PartName="AecUnitsDomain"  PartFile="AecUnits"  Repository="dgndomains-designmodelingunits" />
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)LinearReferencing$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)LinearReferencing$(shlibext)</Assemblies>
