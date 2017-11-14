@@ -10,6 +10,25 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+std::map<DbOpcode, int> ChangeSummaryExtractor::s_fromOpCodeMap =
+    {
+            {DbOpcode::Insert, Enum::ToInt(Operation::Inserted)},
+            {DbOpcode::Delete, Enum::ToInt(Operation::Deleted)},
+            {DbOpcode::Update, Enum::ToInt(Operation::Updated)},
+    };
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+std::map<int, DbOpcode> ChangeSummaryExtractor::s_toOpCodeMap =
+    {
+            {Enum::ToInt(Operation::Inserted), DbOpcode::Insert},
+            {Enum::ToInt(Operation::Deleted), DbOpcode::Delete},
+            {Enum::ToInt(Operation::Updated), DbOpcode::Update},
+    };
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
@@ -325,7 +344,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
     stmt->BindId(3, summaryId);
 
     if (BE_SQLITE_ROW == stmt->Step())
-        return InstanceChange(summaryId, keyOfChangedInstance, (DbOpcode) stmt->GetValueInt(0), stmt->GetValueBoolean(1), Utf8String(stmt->GetValueText(2)));
+        return InstanceChange(summaryId, keyOfChangedInstance, s_toOpCodeMap[stmt->GetValueInt(0)], stmt->GetValueBoolean(1), Utf8String(stmt->GetValueText(2)));
 
     return instanceChange;
     }
@@ -424,7 +443,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 
         stmt->BindId(1, instance.GetKeyOfChangedInstance().GetClassId());
         stmt->BindId(2, instance.GetKeyOfChangedInstance().GetInstanceId());
-        stmt->BindInt(3, Enum::ToInt(dbOpcode));
+        stmt->BindInt(3, s_fromOpCodeMap[dbOpcode]);
         stmt->BindBoolean(4, instance.IsIndirect());
         stmt->BindText(5, instance.GetPrimaryTableName().c_str(), IECSqlBinder::MakeCopy::No);
         stmt->BindId(6, instance.GetSummaryId());
@@ -440,7 +459,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
             return BE_SQLITE_ERROR;
             }
 
-        stmt->BindInt(1, Enum::ToInt(dbOpcode));
+        stmt->BindInt(1, s_fromOpCodeMap[dbOpcode]);
         stmt->BindBoolean(2, instance.IsIndirect());
         stmt->BindId(3, instance.GetKeyOfChangedInstance().GetClassId());
         stmt->BindId(4, instance.GetKeyOfChangedInstance().GetInstanceId());

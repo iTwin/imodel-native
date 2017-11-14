@@ -63,11 +63,21 @@ struct InstanceChange final
 //=======================================================================================
 struct ChangeSummaryExtractor final : NonCopyableClass
     {
+    enum class Operation
+        {
+        Inserted = 1,
+        Deleted = 2,
+        Updated = 4
+        };
+
     private:
         enum class ExtractMode { InstancesOnly, RelationshipInstancesOnly };
 
         ECDbCR m_ecdb;
         ECSqlStatementCache m_stmtCache;
+
+        static std::map<int, DbOpcode> s_toOpCodeMap;
+        static std::map<DbOpcode, int> s_fromOpCodeMap;
 
         BentleyStatus Extract(ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
         BentleyStatus ExtractInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
