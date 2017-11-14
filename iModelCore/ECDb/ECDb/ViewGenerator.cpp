@@ -55,39 +55,40 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
     Utf8CP instanceTableName = instanceClassMap->GetPrimaryTable().GetName().c_str();
     Utf8CP instanceIdColumn = instanceClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName().c_str();
     Utf8CP operationColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_Operation)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
-    Utf8CP classIdOfChangedInstanceColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_IdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP IdOfChangedInstanceColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_IdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
     Utf8CP classIdOfChangedInstanceColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_ClassIdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
     Utf8CP summaryIdColumn = instanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_SummaryId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
     Utf8CP viewName = classMap.GetClass().GetName().c_str();
 
     internalView.AppendSpace().AppendEscaped(viewName);
+
     NativeSqlBuilder columnSql;
-    columnSql.AppendFormatted("[CI].[%s] " ECDBSYS_PROP_ECInstanceId ", [CI].[%s] " ECDBSYS_PROP_ECClassId, classIdOfChangedInstanceColumn, classIdOfChangedInstanceColumn);
+    columnSql.AppendFormatted("[CI].[%s] " ECDBSYS_PROP_ECInstanceId ", [CI].[%s] " ECDBSYS_PROP_ECClassId, IdOfChangedInstanceColumn, classIdOfChangedInstanceColumn);
 
     SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::ConstraintECClassId | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::SingleColumnData);
     classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor);
-    for (PropertyMap const* basePropertyMap : propertyVisitor.Results())
+    for (PropertyMap const* propertyMap : propertyVisitor.Results())
         {
-        if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(basePropertyMap->GetAccessString()))
+        if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(propertyMap->GetAccessString()))
             continue;
 
-        if (basePropertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || basePropertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
+        if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || propertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
             {
-            Utf8CP acessString = basePropertyMap->GetAccessString().c_str();
+            Utf8CP accessString = propertyMap->GetAccessString().c_str();
             columnSql
                 .AppendComma().Append(CHANGESUMMARY_ChangedValue "([CI].").AppendEscaped(instanceIdColumn)
-                .AppendComma().Append("'").Append(acessString).Append("'")
+                .AppendComma().Append("'").Append(accessString).Append("'")
                 .AppendComma().Append("[CI].").AppendEscaped(operationColumn)
-                .AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(acessString);
+                .AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
 
             if (ctx.GetMemberInfo()->HasArg(CHANGESUMMARY_FUNC_ARG_Stage))
                 columnSql.AppendComma().Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_Stage));
 
-            columnSql.AppendParenRight().AppendSpace().AppendEscaped(acessString);
+            columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
             }
         else
             {
-            const SingleColumnDataPropertyMap& dataProperty = basePropertyMap->GetAs<SingleColumnDataPropertyMap>();
+            const SingleColumnDataPropertyMap& dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
             Utf8CP columnName = dataProperty.GetColumn().GetName().c_str();
             if (dataProperty.GetType() == PropertyMap::Type::NavigationRelECClassId &&
                 dataProperty.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn().IsVirtual())
@@ -116,7 +117,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
         .Append(" FROM ").AppendEscaped(instanceTableName).Append(" [CI] ");
 
     if (ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted("INNER JOIN [" TABLE_ClassHierarchyCache "] [CHC] ON [CI].[%s]=[CHC].[ClassId] AND [CHC].[BaseClassId]=%s", classIdOfChangedInstanceColumn, classMap.GetClass().GetId().ToHexStr().c_str());
+        viewSql.AppendFormatted(" INNER JOIN [" TABLE_ClassHierarchyCache "] [CHC] ON [CI].[%s]=[CHC].[ClassId] AND [CHC].[BaseClassId]=%s", classIdOfChangedInstanceColumn, classMap.GetClass().GetId().ToHexStr().c_str());
 
     viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append(".[" ECDBSYS_PROP_ECInstanceId "]=[CI].").AppendEscaped(classIdOfChangedInstanceColumn)
         .Append(" WHERE [CI].").AppendEscaped(operationColumn).Append("=").Append(ctx.GetMemberInfo()->GetArg(CHANGESUMMARY_FUNC_ARG_Operation))
