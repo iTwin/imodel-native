@@ -238,7 +238,7 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
 
     Utf8CP ecsql = nullptr;
     if (stage == Stage::Old)
-        ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=1 AND AccessString=?";
+        ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=? AND AccessString=?";
     else
         ecsql = "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=? AND AccessString=?";
 

@@ -24,8 +24,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define CHANGESUMMARY_SCHEMA_Name "ECDbChangeSummaries"
 
 #define CHANGESUMMARY_PROP_Operation "Operation"
-#define CHANGESUMMARY_PROP_ChangedInstanceId "ChangedInstanceId"
-#define CHANGESUMMARY_PROP_ChangedClassId "ChangedClassId"
+#define CHANGESUMMARY_PROP_IdOfChangedInstance "IdOfChangedInstance"
+#define CHANGESUMMARY_PROP_ClassIdOfChangedInstance "ClassIdOfChangedInstance"
 #define CHANGESUMMARY_PROP_SummaryId "Summary.Id"
 
 #define CHANGESUMMARY_FUNC_Name "changesummary"

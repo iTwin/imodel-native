@@ -55,8 +55,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
     Utf8CP tableName = changeInstanceClassMap->GetPrimaryTable().GetName().c_str();
     Utf8CP changeInstanceIdColumn = changeInstanceClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName().c_str();
     Utf8CP opeartionColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_Operation)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
-    Utf8CP changedInstanceIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_ChangedInstanceId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
-    Utf8CP changedClassIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_ChangedClassId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP changedInstanceIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_IdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
+    Utf8CP changedClassIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_ClassIdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
     Utf8CP summaryIdColumn = changeInstanceClassMap->GetPropertyMaps().Find(CHANGESUMMARY_PROP_SummaryId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str();
     Utf8CP viewName = classMap.GetClass().GetName().c_str();
 
