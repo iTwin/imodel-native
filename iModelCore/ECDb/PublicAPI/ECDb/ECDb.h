@@ -7,8 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <ECDb/ECDbTypes.h>
+#include <ECDb/ECInstanceId.h>
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -77,6 +78,20 @@ public:
         ECCrudWriteToken const* GetCrudWriteToken() const { return m_crudWriteToken; }
         //! Consumers can only import ECSchemas with the token
         SchemaImportToken const* GetSchemaImportToken() const { return m_schemaImportToken; }
+        };
+
+    //=======================================================================================
+    //! Modes for the ECDb::Purge method.
+    // @bsiclass                                                Krischan.Eberle      11/2015
+    //+===============+===============+===============+===============+===============+======
+    struct ChangeSummaryExtractOptions final
+        {
+        private:
+            bool m_includeRelationshipInstances = true;
+
+        public:
+            explicit ChangeSummaryExtractOptions(bool includeRelationshipInstances = true) : m_includeRelationshipInstances(includeRelationshipInstances) {}
+            bool IncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
         };
 
     //=======================================================================================
@@ -208,6 +223,7 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
+    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
     //! Deletes orphaned ECInstances left over from operations specified by @p mode.
     //! @param[in] mode Purge mode
     //! @return SUCCESS or ERROR

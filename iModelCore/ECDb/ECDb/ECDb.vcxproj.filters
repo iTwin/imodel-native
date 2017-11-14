@@ -401,11 +401,14 @@
     <ClInclude Include="JsonPersistenceHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="ChangeSummaryImplV2.h">
+    <ClInclude Include="ChangeSummaryExtractor.h">
       <Filter>ChangeSummaryV2</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ChangeSummaryV2.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ChangeIterator.h">
       <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="ChangeIteratorImpl.h">
+      <Filter>ChangeSummaryV2</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -744,7 +747,10 @@
     <ClCompile Include="ECSql\Parser\SqlParse.cpp">
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
-    <ClCompile Include="ChangeSummaryImplV2.cpp">
+    <ClCompile Include="ChangeSummaryExtractor.cpp">
+      <Filter>ChangeSummaryV2</Filter>
+    </ClCompile>
+    <ClCompile Include="ChangeIteratorImpl.cpp">
       <Filter>ChangeSummaryV2</Filter>
     </ClCompile>
   </ItemGroup>

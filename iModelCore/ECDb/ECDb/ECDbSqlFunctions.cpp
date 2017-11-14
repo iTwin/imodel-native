@@ -97,37 +97,46 @@ void Base64ToBlobSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
     ctx.SetResultBlob(blob.data(), (int) blob.size(), DbFunction::Context::CopyData::Yes);
     }
 
+//************************************************************************************
+// ChangedValueFunction
+//************************************************************************************
 
-std::map<Utf8CP, std::function<void(ChangedValue::Context&, ECSqlStatement&)>, CompareIUtf8Ascii> ChangedValue::s_setValueMap;
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/17
+// @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangedValue::SetValue(Context& ctx, ECSqlStatement& stmt)
-    {
-    if (stmt.IsValueNull(0))
-        {
-        ctx.SetResultNull();
-        return;
-        }
+std::map<Utf8CP, std::function<void(ChangedValueFunction::Context&, ECSqlStatement&)>, CompareIUtf8Ascii> ChangedValueFunction::s_setValueMap;
 
-    Utf8CP typeOf = stmt.GetValueText(1);
-    s_setValueMap[typeOf](ctx, stmt);
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ChangedValueFunction::ChangedValueFunction(ECDbR ecdb) : ScalarFunction("ChangedValue", -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(10)
+    {
+    if (s_setValueMap.empty())
+        {
+        s_setValueMap.insert(std::make_pair("null", [] (Context& ctx, ECSqlStatement& stmt) { ctx.SetResultNull(); }));
+        s_setValueMap.insert(std::make_pair("integer", [] (Context& ctx, ECSqlStatement& stmt) { ctx.SetResultInt64(stmt.GetValueInt64(0)); }));
+        s_setValueMap.insert(std::make_pair("real", [] (Context& ctx, ECSqlStatement& stmt) { ctx.SetResultDouble(stmt.GetValueDouble(0)); }));
+        s_setValueMap.insert(std::make_pair("text", [] (Context& ctx, ECSqlStatement& stmt)
+            {
+            int len = (int) strlen(stmt.GetValueText(0));
+            ctx.SetResultText(stmt.GetValueText(0), len, Context::CopyData::Yes);
+            }));
+        s_setValueMap.insert(std::make_pair("blob", [] (Context& ctx, ECSqlStatement& stmt)
+            {
+            int len;
+            const void* blob = stmt.GetValueBlob(0, &len);
+            ctx.SetResultBlob(blob, len, Context::CopyData::Yes);
+            }));
+        }
     }
-
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/17
+// @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void ChangedValue::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) 
+void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
-    if (nArgs < 4)
+    if (nArgs != 4 && nArgs != 5)
         {
-        ctx.SetResultError("Not enough parameters");
-        return;
-        }
-
-    if (nArgs > 5)
-        {
-        ctx.SetResultError("Too many parameters");
+        ctx.SetResultError("Function ChangedValue expects 4 or 5 parameters.");
         return;
         }
 
@@ -140,71 +149,103 @@ void ChangedValue::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     //Decode and verify parameters
     if (args[kInstanceId].GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("Parameter one expect to be of integer type and cannot be null");
+        ctx.SetResultError("Parameter 1 is expected to be of integer type and cannot be null");
         return;
         }
 
     if (args[kAccessString].GetValueType() != DbValueType::TextVal)
         {
-        ctx.SetResultError("Parameter two expect to be of text type and cannot be null");
+        ctx.SetResultError("Parameter 2 is expected to be of text type and cannot be null");
         return;
         }
 
     if (args[kOperation].GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("Parameter three expect to be of integer type and cannot be null");
-        return;
-        }
-
-
-    if (nArgs == 5 && args[kStage].GetValueType() != DbValueType::IntegerVal)
-        {
-        ctx.SetResultError("Parameter three expect to be of integer type and cannot be null");
+        ctx.SetResultError("Parameter 3 is expected to be of integer type and cannot be null");
         return;
         }
 
     const ECInstanceId csInstanceId = args[kInstanceId].GetValueId<ECInstanceId>();
     Utf8CP accessString = args[kAccessString].GetValueText();
-    const ChangeSummaryV2::Operation operation = (ChangeSummaryV2::Operation) args[kOperation].GetValueInt();
-    const DbValue& fallbackValue = args[kFallBackValue];
-
-    ChangeSummaryV2::Stage stage;
-    if (operation == ChangeSummaryV2::Operation::Inserted)
-        stage = ChangeSummaryV2::Stage::New;
-    else if (operation == ChangeSummaryV2::Operation::Deleted)
-        stage = ChangeSummaryV2::Stage::Old;
-    else if (operation == ChangeSummaryV2::Operation::Updated)
-        stage = ChangeSummaryV2::Stage::Unset;
-    else
+    int operationVal = args[kOperation].GetValueInt();
+    if (operationVal != Enum::ToInt(Operation::Inserted) && operationVal != Enum::ToInt(Operation::Updated) &&
+        operationVal != Enum::ToInt(Operation::Deleted))
         {
-        ctx.SetResultError("'Opeartion' parameter has a invalid value.");
+        Utf8String msg;
+        msg.Sprintf("Invalid value for argument Operation", operationVal);
+        ctx.SetResultError(msg.c_str());
         return;
         }
 
-    if (nArgs == 5)
+    const Operation operation = Enum::FromInt<Operation>(operationVal);
+    DbValue const& fallbackValue = args[kFallBackValue];
+
+    Stage stage;
+    switch (operation)
         {
-        stage = (ChangeSummaryV2::Stage) args[kStage].GetValueInt();        
-        if (operation == ChangeSummaryV2::Operation::Inserted && stage != ChangeSummaryV2::Stage::New)
+            case Operation::Inserted:
             {
-            ctx.SetResultError("'Stage' arumgent for 'Insert' operation must must be set to 'New'");
-            return;
+            if (nArgs == 5)
+                {
+                Utf8String msg;
+                msg.Sprintf("When passing %d (Inserted) as Operation the fifth parameter must not be specified.", operationVal);
+                ctx.SetResultError(msg.c_str());
+                return;
+                }
+
+            stage = Stage::New;
+            break;
             }
-        else if (operation == ChangeSummaryV2::Operation::Deleted && stage != ChangeSummaryV2::Stage::Old)
+            case Operation::Deleted:
             {
-            ctx.SetResultError("'Stage' arumgent for 'Delete' operation must must be set to 'Old'");
-            return;
-            }            
+            if (nArgs == 5)
+                {
+                Utf8String msg;
+                msg.Sprintf("When passing %d (Deleted) as Operation the fifth parameter must not be specified.", operationVal);
+                ctx.SetResultError(msg.c_str());
+                return;
+                }
+            stage = Stage::Old;
+            break;
+            }
+            case Operation::Updated:
+            {
+            if (nArgs != 5 || args[kStage].GetValueType() != DbValueType::IntegerVal)
+                {
+                Utf8String msg;
+                msg.Sprintf("When passing %d (Updated) as Operation the fifth parameter must be specified and it must be of type Integer.", operationVal);
+                ctx.SetResultError(msg.c_str());
+                return;
+                }
+
+            const int stageVal = args[kStage].GetValueInt();
+            if (stageVal != Enum::ToInt(Stage::Old) && stageVal != Enum::ToInt(Stage::New))
+                {
+                Utf8String msg;
+                msg.Sprintf("Invalid value for argument Stage", stageVal);
+                ctx.SetResultError(msg.c_str());
+                return;
+                }
+
+            stage = Enum::FromInt<Stage>(stageVal);
+            break;
+            }
+
+            default:
+                BeAssert(false && "Should have been caught already");
+                return;
         }
 
-    CachedECSqlStatementPtr stmt;
-    if (stage== ChangeSummaryV2::Stage::Old)
-        stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM change.PropertyValue PV WHERE  PV.Instance.Id = ?1 AND PV.AccessString = ?2 ");
-    else if (stage == ChangeSummaryV2::Stage::New)
-        stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM change.PropertyValue PV WHERE  PV.Instance.Id = ?1 AND PV.AccessString = ?2 ");
+    Utf8CP ecsql = nullptr;
+    if (stage == Stage::Old)
+        ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=1 AND AccessString=?";
+    else
+        ecsql = "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=? AND AccessString=?";
 
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, ecsql);
     if (stmt == nullptr)
         {
-        ctx.SetResultError("Failed to prepare ECSql statement necessary for ChangedValue()");
+        ctx.SetResultError("Failed to prepare ECSQL statement necessary for ChangedValue()");
         return;
         }
 
@@ -217,28 +258,20 @@ void ChangedValue::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         ctx.SetResultValue(fallbackValue);
     }
 
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/17
+// @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangedValue::ChangedValue(ECDbR ecdb)
-    :ScalarFunction("ChangedValue", -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(20) //it will never have 20 infact just one statement at any given time.
+void ChangedValueFunction::SetValue(Context& ctx, ECSqlStatement& stmt)
     {
-    if (s_setValueMap.empty())
+    if (stmt.IsValueNull(0))
         {
-        s_setValueMap.insert(std::make_pair("null", [] (Context& ctx, ECSqlStatement& stmt) { ctx.SetResultNull(); }));
-        s_setValueMap.insert(std::make_pair("integer", [] (Context& ctx, ECSqlStatement& stmt) { ctx.SetResultInt64(stmt.GetValueInt64(0)); }));
-        s_setValueMap.insert(std::make_pair("real", [] (Context& ctx, ECSqlStatement& stmt) { ctx.SetResultDouble(stmt.GetValueDouble(0)); }));
-        s_setValueMap.insert(std::make_pair("text", [] (Context& ctx, ECSqlStatement& stmt)
-            {
-            int len = (int)strlen(stmt.GetValueText(0));
-            ctx.SetResultText(stmt.GetValueText(0), len, Context::CopyData::Yes);
-            }));
-        s_setValueMap.insert(std::make_pair("blob", [] (Context& ctx, ECSqlStatement& stmt)
-            {
-            int len;
-            const void* blob = stmt.GetValueBlob(0, &len);
-            ctx.SetResultBlob(blob, len, Context::CopyData::Yes);
-            }));
+        ctx.SetResultNull();
+        return;
         }
+
+    Utf8CP typeOf = stmt.GetValueText(1);
+    s_setValueMap[typeOf](ctx, stmt);
     }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

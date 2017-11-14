@@ -9,6 +9,7 @@
 #include <ECDb/ECDb.h>
 #include <ECDb/SchemaManager.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
+#include "ChangeSummaryExtractor.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
 
@@ -70,6 +71,7 @@ private:
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<SchemaManager> m_schemaManager;
+    ChangeSummaryExtractor m_changeSummaryExtractor;
     mutable std::unique_ptr<DbFunction> m_changeValueSqlFunc;
     SettingsManager m_settingsManager;
 
@@ -83,7 +85,8 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
+        m_changeSummaryExtractor(ecdb)
         { 
         m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); 
         }
@@ -94,8 +97,11 @@ private:
     ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }
     ECN::IECClassLocaterR GetClassLocater() const { return *m_schemaManager; }
 
+    BentleyStatus ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet&, ECDb::ChangeSummaryExtractOptions const&) const;
+
     BentleyStatus OnAddFunction(DbFunction&) const;
     void OnRemoveFunction(DbFunction&) const;
+
 
     BentleyStatus Purge(ECDb::PurgeMode) const;
     BentleyStatus PurgeFileInfos() const;

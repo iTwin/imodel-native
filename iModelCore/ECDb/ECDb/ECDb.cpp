@@ -151,6 +151,11 @@ ECN::IECSchemaLocater& ECDb::GetSchemaLocater() const { return m_pimpl->GetSchem
 ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLocater(); }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options) const { return m_pimpl->ExtractChangeSummary(changeSummaryId, changeSet, options); }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2015
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Purge(PurgeMode mode) const { return m_pimpl->Purge(mode); }

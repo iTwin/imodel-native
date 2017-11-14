@@ -70,6 +70,15 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeset, ECDb::ChangeSummaryExtractOptions const& options) const
+    {
+    return m_changeSummaryExtractor.Extract(changeSummaryId, changeset, options);
+    }
+
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
@@ -300,7 +309,7 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_ecdb.AddFunction(Base64ToBlobSqlFunction::GetSingleton());
     m_ecdb.AddFunction(BlobToBase64SqlFunction::GetSingleton());
 
-    m_changeValueSqlFunc = std::unique_ptr<ChangedValue>(new ChangedValue(m_ecdb));
+    m_changeValueSqlFunc = std::unique_ptr<ChangedValueFunction>(new ChangedValueFunction(m_ecdb));
     m_ecdb.AddFunction(*m_changeValueSqlFunc);
 
     }

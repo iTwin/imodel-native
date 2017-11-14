@@ -17,6 +17,5 @@
 #include <ECDb/ECInstanceFinder.h>
 
 #include <ECDb/ChangeSummary.h>
-#include <ECDb/ChangeSummaryV2.h>
 
 #include <ECDb/ECDbExpressionSymbolContext.h>

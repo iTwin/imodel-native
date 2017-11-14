@@ -46,12 +46,25 @@ struct Base64ToBlobSqlFunction final : ScalarFunction
 
 
 //=======================================================================================
-// Helper funtion for changeSummary not intented for public use
+// Helper SQL function for ChangeSummary not intended for public use
 // @bsiclass                                                   Affan.Khan         11/17
 //=======================================================================================
-struct ChangedValue final : ScalarFunction
+struct ChangedValueFunction final : ScalarFunction
     {
     private:
+        enum class Operation
+            {
+            Inserted = 1,
+            Deleted = 2,
+            Updated = 4
+            };
+
+        enum class Stage
+            {
+            Old = 1,
+            New = 2
+            };
+
         ECDbR m_ecdb;
         ECSqlStatementCache m_stmtCache;
         static std::map<Utf8CP, std::function<void(Context&, ECSqlStatement&)>, CompareIUtf8Ascii> s_setValueMap;
@@ -60,7 +73,7 @@ struct ChangedValue final : ScalarFunction
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        ChangedValue(ECDbR ecdb);
-        ~ChangedValue() {}
+        explicit ChangedValueFunction(ECDbR ecdb);
+        ~ChangedValueFunction() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
