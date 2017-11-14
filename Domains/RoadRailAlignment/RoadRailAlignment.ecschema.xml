@@ -2,7 +2,7 @@
 <ECSchema schemaName="RoadRailAlignment" alias="rralign" version="01.00.00" description="Base schema for the Alignment domain in light of Road and Rail applications." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
-    <!--ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/-->
+    <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
     <ECEntityClass typeName="AlignmentCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
@@ -16,7 +16,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="lr:LENGTH"/>
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="aecu:LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignmentsPortion" description="Horizontal/Top portions of Alignments in an AlignmentModel that will be broken down in more detail in a separate HorizontalAlignmentModel.">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
@@ -29,14 +29,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
+        <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="aecu:LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="VerticalAlignment" description="Detailing of a Alignment or a portion of it, vertically along its path.">
         <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH" description="Geometry primitives accurately describing the vertical alignment. X-values mean distance-along the HorizontalAlignment; Y-values are always zero; Z-values provide elevation information."/>
+        <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="aecu:LENGTH" description="Geometry primitives accurately describing the vertical alignment. X-values mean distance-along the HorizontalAlignment; Y-values are always zero; Z-values provide elevation information."/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentModel" description="Container for related Alignments, uniquely scoping their Codes.">
         <BaseClass>bis:SpatialLocationModel</BaseClass>
@@ -105,7 +105,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="lr:LENGTH"/>
+        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="aecu:LENGTH"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsStations" strength="embedding" modifier="Sealed" description="Relationship definitiong ownership from an Alignment to its child Stations.">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
