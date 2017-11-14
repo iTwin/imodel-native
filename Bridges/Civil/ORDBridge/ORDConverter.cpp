@@ -316,18 +316,27 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     auto linearEntity3dPtr = cifAlignment.GetActiveLinearEntity3d();
     if (linearEntity3dPtr.IsValid())
         {
-        auto cifAlignment3dGeomPtr = linearEntity3dPtr->GetGeometry();
+        linearGeomPtr = linearEntity3dPtr->GetLinearGeometry();
+        if (linearGeomPtr.IsValid())
+            {
+            Bentley::CurveVectorPtr cifAlignment3dGeomPtr;
+            linearGeomPtr->GetCurveVector(cifAlignment3dGeomPtr);
 
-        CurveVectorPtr bimAlignment3dGeomPtr;
-        if (BentleyStatus::SUCCESS != Marshal(bimAlignment3dGeomPtr, *cifAlignment3dGeomPtr))
-            return BentleyStatus::ERROR;
+            CurveVectorPtr bimAlignment3dGeomPtr;
+            if (BentleyStatus::SUCCESS != Marshal(bimAlignment3dGeomPtr, *cifAlignment3dGeomPtr))
+                return BentleyStatus::ERROR;
 
-        auto geomBuilder = GeometryBuilder::Create(*bimAlignmentPtr);
-        if (!geomBuilder->Append(*bimAlignment3dGeomPtr, GeometryBuilder::CoordSystem::World))
-            return BentleyStatus::ERROR;
+            auto geomBuilder = GeometryBuilder::Create(*bimAlignmentPtr);
+            if (!geomBuilder->Append(*bimAlignment3dGeomPtr, GeometryBuilder::CoordSystem::World))
+                return BentleyStatus::ERROR;
 
-        if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
-            return BentleyStatus::ERROR;
+            if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
+                return BentleyStatus::ERROR;
+            }
+        else
+            {
+            bimAlignmentPtr->GenerateAprox3dGeom();
+            }
         }
     else
         bimAlignmentPtr->GenerateAprox3dGeom();
@@ -819,7 +828,7 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
     auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
     if (cifModelPtr.IsValid())
         {        
-        converterLib.ComputeCoordinateSystemTransform(*rootSpatialModelP, subject);
+        converterLib.SetRootModelAndSubject(*rootSpatialModelP, subject);
         converterLib.ConvertModelMaterials(*rootSpatialModelP);
 
         // Mapping the root-model to the Physical Model on the BIM side.
