@@ -1,102 +1,97 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CS06Bridge/ChangeDetectorFacade.cpp $
+|     $Source: CS06Bridge/RecordFacade.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "CS06BridgeInternal.h"
-#include "ChangeDetectorFacade.h"
+#include "RecordFacade.h"
 #include "SourceIdentityFacade.h"
 #include "SourceStateFacade.h"
-#include "RecordFacade.h"
-#include "SourceItemProxy.h"
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeDetectorFacade::ResultsFacade::ResultsFacade(iModelBridgeSyncInfoFile::ChangeDetector::Results const& results) 
-    : m_results(results), Teleporter::IChangeDetector::IResults()
-    {
-    m_sourceIdentity = new SourceIdentityFacade(m_results.GetSourceIdentity());
-    m_currentState = new SourceStateFacade(m_results.GetCurrentState());
-    m_record = new RecordFacade(m_results.GetSyncInfoRecord());
-    m_changeType = static_cast<Teleporter::IChangeDetector::ChangeType>(static_cast<int>(m_results.GetChangeType()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-ChangeDetectorFacade::ResultsFacade::~ResultsFacade()
-    {
-    delete m_sourceIdentity;
-    m_sourceIdentity = nullptr;
-    delete m_currentState;
-    m_currentState = nullptr;
-    delete m_record;
-    m_record = nullptr;
-    m_changeType = Teleporter::IChangeDetector::ChangeType::New;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Teleporter::ISourceIdentity const* ChangeDetectorFacade::ResultsFacade::GetSourceIdentity() const
-    {
-    return m_sourceIdentity;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Teleporter::IChangeDetector::ChangeType ChangeDetectorFacade::ResultsFacade::GetChangeType() const
-    {
-    return m_changeType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Teleporter::IRecord const* ChangeDetectorFacade::ResultsFacade::GetSyncInfoRecord() const
-    {
-    return m_record;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Teleporter::ISourceState const* ChangeDetectorFacade::ResultsFacade::GetCurrentState() const
-    {
-    return m_currentState;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Jonathan.DeCarlo                    11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-ChangeDetectorFacade::ChangeDetectorFacade(Dgn::iModelBridgeSyncInfoFile::ChangeDetector* changeDetector, 
-    Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId) : m_changeDetectorPtr(changeDetector), 
-    m_fileScopeId(fileScopeId), Teleporter::IChangeDetector()
+RecordFacade::RecordFacade(Dgn::iModelBridgeSyncInfoFile::Record record) 
+    : m_record(record), Teleporter::IRecord(), RefCountedBase()
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Teleporter::IChangeDetector::IResults* ChangeDetectorFacade::DetectChange(Utf8CP kind, Teleporter::ISourceItem* item)
+void RecordFacade::PopulateWith(Teleporter::ROWID rid, Dgn::DgnElementId eid,
+    Teleporter::ISourceIdentity const* sourceId, Teleporter::ISourceState const* sourceState)
     {
-    SourceItemProxy sourceItemProxy(item);
-    return new ResultsFacade(m_changeDetectorPtr->_DetectChange(m_fileScopeId, kind, sourceItemProxy));
+    // Normally we would accept references for parameters, but they can't be because they are abstract classes.
+    BeAssert(sourceId != nullptr);
+    BeAssert(sourceState != nullptr);
+
+    m_record = Dgn::iModelBridgeSyncInfoFile::Record(
+        rid, 
+        eid, 
+        iModelBridgeSyncInfoFile::SourceIdentity(sourceId->GetScopeROWID(), sourceId->GetKind(), sourceId->GetId()),
+        iModelBridgeSyncInfoFile::SourceState(sourceState->GetLastModifiedTime(), sourceState->GetHash()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeDetectorFacade::FreeResults(Teleporter::IChangeDetector::IResults* results) const
+bool RecordFacade::IsValid() const
     {
-    delete results;
+    return m_record.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Teleporter::ROWID RecordFacade::GetROWID() const
+    {
+    return m_record.GetROWID();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnElementId RecordFacade::GetDgnElementId() const
+    {
+    return m_record.GetDgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Teleporter::ISourceIdentity const* RecordFacade::AllocateSourceIdentity() const
+    {
+    return new SourceIdentityFacade(m_record.GetSourceIdentity());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RecordFacade::FreeSourceIdentity(Teleporter::ISourceIdentity const* sourceIdentity) const
+    {
+    delete sourceIdentity;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Teleporter::ISourceState const* RecordFacade::AllocateSourceState() const
+    {
+    return new SourceStateFacade(m_record.GetSourceState());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Jonathan.DeCarlo                    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RecordFacade::FreeSourceState(Teleporter::ISourceState const* sourceState) const
+    {
+    delete sourceState;
     }
 
 END_CS06BRIDGE_NAMESPACE
