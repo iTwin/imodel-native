@@ -1367,12 +1367,12 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 NavigationECPropertyP navProp = nullptr;
                 if (ecClass.IsEntityClass())
                     {
-                    if (ECObjectsStatus::Success != ecClass.GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), PrimitiveType::PRIMITIVETYPE_Long, false))
+                    if (ECObjectsStatus::Success != ecClass.GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), false))
                         return ERROR;
                     }
                 else if (ecClass.IsRelationshipClass())
                     {
-                    if (ECObjectsStatus::Success != ecClass.GetRelationshipClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), PrimitiveType::PRIMITIVETYPE_Long, false))
+                    if (ECObjectsStatus::Success != ecClass.GetRelationshipClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), false))
                         return ERROR;
                     }
                 else

@@ -719,7 +719,7 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
     colInfos.clear();
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, Utf8PrintfString("PRAGMA [%s].table_info('%s')", dbSchemaName, tableName).c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, Utf8PrintfString("PRAGMA [%s].table_info('%s')", dbSchemaName, tableName.c_str()).c_str()))
         return ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)

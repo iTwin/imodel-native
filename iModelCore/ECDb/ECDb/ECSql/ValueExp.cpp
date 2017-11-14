@@ -1307,7 +1307,7 @@ BentleyStatus FuntionSigature::Append(Utf8CP name, ValueType type, bool optional
     if (Enum::Contains(type, ValueType::Resultset))
         return ERROR;
 
-    std::unique_ptr<Arg> arg(new Arg((int) m_args.size(), name, type, optional));
+    std::unique_ptr<Arg> arg(new Arg(name, type, optional));
     Arg* last = !m_args.empty() ? m_args.back().get() : nullptr;
     if (last != nullptr && last->Optional() && !optional)
         return ERROR;

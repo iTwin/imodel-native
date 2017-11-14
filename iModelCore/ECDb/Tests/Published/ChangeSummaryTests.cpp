@@ -1265,7 +1265,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
     ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, rev1));
     m_ecdb.SaveChanges();
 
     {

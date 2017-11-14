@@ -43,11 +43,10 @@ struct FuntionSigature : NonCopyableClass
             Utf8String m_name;
             ValueType m_type;
             bool m_optional;
-            int m_index;
 
         public:
-            Arg(int index, Utf8CP name, ValueType type, bool optional)
-                :m_name(name), m_type(type), m_index(index), m_optional(optional)
+            Arg(Utf8CP name, ValueType type, bool optional)
+                :m_name(name), m_type(type), m_optional(optional)
                 {}
             ~Arg() {}
             Utf8StringCR Name() const { return m_name; }
