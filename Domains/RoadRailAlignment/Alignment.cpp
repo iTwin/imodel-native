@@ -25,30 +25,6 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentCPtr Alignment::InsertAndShareHorizontalMainVerticalFromParent(DgnDbStatus* stat)
-    {
-    if (!GetParentId().IsValid())
-        {
-        if (stat)
-            *stat = DgnDbStatus::WrongElement;
-        return nullptr;
-        }
-
-    auto retVal = Insert(stat);
-
-    auto parentAlignmentCPtr = Alignment::Get(GetDgnDb(), GetParentId());
-    SetHorizontal(*retVal, *parentAlignmentCPtr->QueryHorizontal());
-
-    auto vertAlignCPtr = parentAlignmentCPtr->QueryMainVertical();
-    if (vertAlignCPtr.IsValid())
-        SetMainVertical(*retVal, *vertAlignCPtr);
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Alignment::_GetLength() const
