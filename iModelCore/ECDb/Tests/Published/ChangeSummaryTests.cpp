@@ -1275,8 +1275,13 @@ TEST_F(ChangeSummaryTestFixture, Crud)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
     stmt.BindId(1, changeSummary.GetId());
     stmt.BindInt(2, (int) ChangeSummaryV2::Operation::Inserted);
+    
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
     }
+
+   
+
     }
         
 END_ECDBUNITTESTS_NAMESPACE

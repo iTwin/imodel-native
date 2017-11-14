@@ -235,7 +235,7 @@ ECClassId InstancesTableV2::QueryChangedClassId(Utf8StringCR tableName, ECInstan
     {
     //TODO use cache statement
     ECSqlStatement stmt;
-    stmt.Prepare(m_ecdb, "SELECT ClassIdOfChangedInstance FROM change.Instance WHERE TableName=?1 AND IdOfChangedInstance=?2 AND Summary.Id=?3");
+    stmt.Prepare(m_ecdb, "SELECT ChangedClassId FROM change.Instance WHERE TableName=?1 AND ChangedInstanceId=?2 AND Summary.Id=?3");
     stmt.BindText(1, tableName.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(2, instanceId);
     stmt.BindId(3, m_changeSummary.GetId());
@@ -273,7 +273,7 @@ void ValuesTableV2::PrepareStatements()
     BeAssert(result == ECSqlStatus::Success);
 
 
-    //"SELECT ECInstanceId FROM change.Instance WHERE IdOfChangedInstance=?1 AND ClassIdOfChangedInstance=?2 AND Changeset.Id=?3"
+    //"SELECT ECInstanceId FROM change.Instance WHERE ChangedInstanceId=?1 AND ChangedClassId=?2 AND Changeset.Id=?3"
 
     }
 

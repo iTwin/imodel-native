@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlPrepareContext;
 struct ConstraintECClassIdJoinInfo;
-
+ 
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013
 +===============+===============+===============+===============+===============+======*/
@@ -49,7 +49,7 @@ struct ViewGenerator final
 
                 return true;
                 }
-            bool IsChangeSummaryFunction() const { return GetName().EqualsIAscii("changesummary"); }
+            bool IsChangeSummaryFunction() const { return GetName().EqualsIAscii(CHANGESUMMARY_FUNC_Name); }
             bool Valid() const { return !m_name.empty(); }
         };
 
