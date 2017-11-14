@@ -1263,7 +1263,6 @@
     <None Include="CacheSchemasDelivery.mke" />
     <None Include="UnZip.py" />
     <None Include="ClientLibCompileOptions.mki" />
-    <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="Azure\Azure.mki" />
     <None Include="Ims\Ims.mki" />
     <None Include="ConnectC\ConnectC.mki" />
