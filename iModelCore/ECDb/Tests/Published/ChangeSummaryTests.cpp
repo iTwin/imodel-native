@@ -11,6 +11,7 @@
 // #define DUMP_CHANGE_SUMMARY 1
 
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
@@ -1143,88 +1144,137 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumnsV2)
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Maha.Nasir                    1/17
     //---------------------------------------------------------------------------------------
-    TEST_F(ChangeSummaryTestFixture, Crud)
-        {
-        ASSERT_EQ(SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(
-            "<?xml version='1.0' encoding='utf-8'?> "
-            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-            "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-            "    <ECEntityClass typeName='Foo' modifier='None'>"
-            "        <ECProperty propertyName='S' typeName='string'/>"
-            "        <ECProperty propertyName='I' typeName='int'/>"
-            "        <ECProperty propertyName='P2D' typeName='point2d'/>"
-            "    </ECEntityClass>"
-            "</ECSchema>")));
+TEST_F(ChangeSummaryTestFixture, Crud)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(
+        R"(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+                <ECEntityClass typeName='Foo' modifier='None'>
+                    <ECCustomAttributes>
+                        <ClassMap xmlns='ECDbMap.02.00'>
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns='ECDbMap.02.00'>
+                            <MaxSharedColumnsBeforeOverflow>1</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName='S' typeName='string'/>
+                    <ECProperty propertyName='I' typeName='int'/>
+                    <ECProperty propertyName='P2D' typeName='point2d'/>
+                </ECEntityClass>
+                <ECEntityClass typeName='Goo' modifier='None'>
+                    <ECProperty propertyName='S' typeName='string'/>
+                    <ECProperty propertyName='I' typeName='int'/>
+                    <ECProperty propertyName='P2D' typeName='point2d'/>
+                    <ECNavigationProperty propertyName='Foo' relationshipName='Rel' direction='Backward'/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>
+                    <Source cardinality='(0,1)' polymorphic='True'>
+                        <Class class='Foo'/>
+                    </Source>
+                    <Target cardinality='(0,N)' polymorphic='True'>
+                        <Class class='Goo' />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)")));
 
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Night',100,10.33,30.34)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
+    ECInstanceKey i1, i2, i3, i4, i5, i6;
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Night',100,10.33,30.34)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i1));
+    }//---------------------------------------------------->>>
 
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Dawn',200,30.42, -3.44)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
-
-
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Lion',300,-66.23, 12.33)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
-
-        m_ecdb.SaveChanges();
-        TestChangeTracker tracker(m_ecdb);
-        tracker.EnableTracking(true);
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Cat',400,-10.12,-23.56)"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
-
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Foo WHERE S='Dawn'"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Dawn',200,30.42, -3.44)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i2));
+    }//---------------------------------------------------->>>
 
 
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET S='Zoo', P2D.X=1000 WHERE S='Night'"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Lion',300,-66.23, 12.33)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i3));
+    }//---------------------------------------------------->>>
 
-        {//---------------------------------------------------->>>
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET P2D.Y=2000, I=666 WHERE S='Lion'"));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-        }//---------------------------------------------------->>>
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Ten',123,-32.23, 45.22, %s)", i1.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
+    }//---------------------------------------------------->>>
 
-        TestChangeSet changeset;
-        auto rc = changeset.FromChangeTrack(tracker);
-        ASSERT_TRUE(BE_SQLITE_OK == rc);
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Zen',223,-12.23, 45.22, %s)", i2.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
+    }//---------------------------------------------------->>>
 
-        ECInstanceId changeSummaryId;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
-        m_ecdb.SaveChanges();
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y)VALUES('Tree',1213,-2332.23, 245.22)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
+    }//---------------------------------------------------->>>
 
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
+
+    m_ecdb.SaveChanges();
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(S,I,P2D.X,P2D.Y)VALUES('Cat',400,-10.12,-23.56)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i5));
+    }//---------------------------------------------------->>>
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Blue',2233,-212.23, -215.44, %s)", i3.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i6));
+    }//---------------------------------------------------->>>
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts.Foo WHERE S='Dawn'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
+
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET S='Zoo', P2D.X=1000 WHERE S='Night'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
+
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("UPDATE ts.Goo SET S='Plant',I=10000,P2D.X=0, P2D.Y=0, Foo.Id=%s WHERE S='Tree'", i5.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
+
+    {//---------------------------------------------------->>>
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Foo SET P2D.Y=2000, I=666 WHERE S='Lion'"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }//---------------------------------------------------->>>
+
+    TestChangeSet rev1;
+    auto rc = rev1.FromChangeTrack(tracker);
+    ASSERT_TRUE(BE_SQLITE_OK == rc);
+
+    ECInstanceId changeSummaryId;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    m_ecdb.SaveChanges();
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
         stmt.BindId(1, changeSummaryId);
         stmt.BindInt(2, 1); //TODO: replace by OpCode enum
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        }
-
-
-
-        //ChangeSummary::InstanceIterator instIter = changeSummary.MakeInstanceIterator();
-        //EXPECT_EQ(1, instIter.QueryCount());
-
-        //ChangeSummary::ValueIterator valIter = instIter.begin().GetInstance().MakeValueIterator();
-        //EXPECT_EQ(19, valIter.QueryCount());
-        }
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    }
+        
 END_ECDBUNITTESTS_NAMESPACE
