@@ -228,7 +228,6 @@ struct TilesetRevisionPublisher : TilesetPublisher
     DEFINE_T_SUPER(TilesetPublisher);
     
 private:
-    WString     m_revisionName;
     bool        m_preview;
     int         m_index;
 
@@ -236,15 +235,13 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetRevisionPublisher(DgnDbR db, PublisherParamsCR params, AxisAlignedBox3dCR projectExtents, int index, bool preview) : m_preview(preview), m_index(index),
+TilesetRevisionPublisher(DgnDbR db, PublisherParamsCR params, AxisAlignedBox3dCR projectExtents, WStringCR revisionName, int index, bool preview) : m_preview(preview), m_index(index),
     TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
             params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) 
     { 
-    m_revisionName = WPrintfString(L"Revision_%d", index);
-    if (preview)
-        m_revisionName += L"_Preview";
-
-    m_dataDir.AppendToPath(m_revisionName.c_str()).AppendSeparator();
+    m_dataDir.AppendToPath(L"History").AppendSeparator();
+    m_dataDir.AppendToPath(revisionName.c_str()).AppendSeparator();
+    m_dataDir.AppendToPath(preview ? L"Pre" : L"Post").AppendSeparator();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,8 +398,77 @@ void  WriteChangeSetInfoJson(Json::Value& revisionJson, ChangeSetInfoCR changeSe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, AxisAlignedBox3dCR projectExtents)
+Json::Value     GetChanges(DgnElementIdSet& addedOrModifiedIds, DgnElementIdSet& deletedOrModifiedIds, VersionCompareChangeSummary& changeSummary)
+    {
+    bvector<DgnElementId>               elementIds;
+    bvector<BentleyApi::ECN::ECClassId> ecClassIds;
+    bvector<DbOpcode>                   opCodes;
+
+
+    changeSummary.GetChangedElements(elementIds, ecClassIds, opCodes);
+
+    Json::Value         revisionElementsJson = Json::objectValue;
+
+    for (size_t j=0; j<elementIds.size(); j++)
+        {
+        auto                elementId = elementIds.at(j);
+        Json::Value         elementJson = Json::objectValue;
+        auto const&         element = m_tempDb->Elements().Get<DgnElement>(elementId);
+
+        elementJson["op"] = (int) opCodes.at(j);
+
+        switch(opCodes.at(j))
+            {
+            case DbOpcode::Delete:
+                deletedOrModifiedIds.insert(elementId);
+                break;
+
+            case DbOpcode::Insert:
+                addedOrModifiedIds.insert(elementId);
+                break;
+
+            case DbOpcode::Update:
+                {
+                deletedOrModifiedIds.insert(elementId);
+                addedOrModifiedIds.insert(elementId);
+
+                Json::Value propertyData;
+                changeSummary.GetPropertyContentComparison(elementId, ecClassIds.at(j), true, propertyData);
+
+                Json::Value displayValues = propertyData["ContentSet"][0]["DisplayValues"];
+                bvector<Utf8String> propertyNames = displayValues.getMemberNames();
+                static Utf8String s_opCodeCompare("__ver_compare___Opcode");
+
+                for (auto const& propertyName : propertyNames)
+                    {
+                    if (propertyName != s_opCodeCompare)
+                        {
+                        Json::Value     propertyChangeJson;
+
+                        propertyChangeJson["name"] = propertyName;
+#ifdef PROPERTY_CHANGE_VALUES
+                        propertyChangeJson["pre"]  =  displayValues[propertyName]["Target"].asString();
+                        propertyChangeJson["post"] =  displayValues[propertyName]["Current"].asString();
+#endif
+
+                        elementJson["prop"] = propertyChangeJson;
+                        }
+                    }
+                break;
+                }
+            }
+        revisionElementsJson[elementId.ToString()] = std::move(elementJson);
+        }
+    return revisionElementsJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPublisher& tipPublisher)
     {                                                                
+    AxisAlignedBox3d        projectExtents = tipPublisher.GetProjectExtents();
+
     LOG.infov ("Publishing History with %d Revisions\n", (int) m_changeSets.size());
 
     revisionsJson = Json::objectValue;
@@ -412,87 +478,39 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, AxisAlign
         bvector<DgnRevisionPtr>             thisRevisions(1, m_changeSets.at(i));
         int                                 revisionIndex = m_changeSets.size() - i - 1;
         VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
+        WString                             revisionName = WPrintfString(L"Revision_%d", revisionIndex);
+        DgnElementIdSet                     addedOrModifiedIds, deletedOrModifiedIds;
+        Json::Value                         revisionElementsJson = GetChanges (addedOrModifiedIds, deletedOrModifiedIds, *changeSummary);
+        WString                             outputFileName = tipPublisher.GetDataDirectory() + L"History\\" + revisionName + L"\\Revision_Appdata.json";
+        Json::Value                         revisionJson = VersionSelector::WriteRevisionToJson(*m_changeSets.at(i));
+        DgnModelIdSet                       prevModelIds, postModelIds;
+        auto                                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+        auto                                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+        Utf8String                          outputRelativePath = Utf8String(outputFileName).c_str() + tipPublisher.GetOutputDirectory().size();
 
-        bvector<BentleyApi::ECN::ECClassId> ecClassIds;
-        bvector<DgnElementId>               elementIds;
-        bvector<DbOpcode>                   opCodes;
-             
-        changeSummary->GetChangedElements(elementIds, ecClassIds, opCodes);
+        // Don't recreate revision if it already exists.
+        if (BeFileName::DoesPathExist(outputFileName.c_str()))
+            continue;
 
-        LOG.infov ("Revision: %d Contains %d changed elements\n", i, (int) elementIds.size());
-        Json::Value         revisionElementsJson = Json::objectValue;
-        DgnElementIdSet     addedOrModifiedIds, deletedOrModifiedIds;
+        outputRelativePath.ReplaceAll("\\", "//");
+        revisionJson["url"] = outputRelativePath;
 
-        for (size_t j=0; j<elementIds.size(); j++)
-            {
-            auto                elementId = elementIds.at(j);
-            Json::Value         elementJson = Json::objectValue;
-            auto const&         element = m_tempDb->Elements().Get<DgnElement>(elementId);
-
-            elementJson["op"] = (int) opCodes.at(j);
-
-            switch(opCodes.at(j))
-                {
-                case DbOpcode::Delete:
-                    deletedOrModifiedIds.insert(elementId);
-                    break;
-
-                case DbOpcode::Insert:
-                    addedOrModifiedIds.insert(elementId);
-                    break;
-
-                case DbOpcode::Update:
-                    {
-                    deletedOrModifiedIds.insert(elementId);
-                    addedOrModifiedIds.insert(elementId);
-
-                    Json::Value propertyData;
-                    changeSummary->GetPropertyContentComparison(elementId, ecClassIds.at(j), true, propertyData);
-
-                    Json::Value displayValues = propertyData["ContentSet"][0]["DisplayValues"];
-                    bvector<Utf8String> propertyNames = displayValues.getMemberNames();
-                    static Utf8String s_opCodeCompare("__ver_compare___Opcode");
-
-                    for (auto const& propertyName : propertyNames)
-                        {
-                        if (propertyName != s_opCodeCompare)
-                            {
-                            Json::Value     propertyChangeJson;
-
-                            propertyChangeJson["name"] = propertyName;
-#ifdef PROPERTY_CHANGE_VALUES
-                            propertyChangeJson["pre"]  =  displayValues[propertyName]["Target"].asString();
-                            propertyChangeJson["post"] =  displayValues[propertyName]["Current"].asString();
-#endif
-
-                            elementJson["prop"] = propertyChangeJson;
-                            }
-                        }
-                    break;
-                    }
-                }
-            revisionElementsJson[elementId.ToString()] = std::move(elementJson);
-            }
-                     
-        Json::Value         revisionJson = VersionSelector::WriteRevisionToJson(*m_changeSets.at(i));
-        DgnModelIdSet       prevModelIds, postModelIds;
-        auto                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
-        auto                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
-
+        WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
+        revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
+ 
         for (auto& model : prevModelIterator)
             prevModelIds.insert(model.GetModelId());
 
         for (auto& model :postModelIterator)
             postModelIds.insert(model.GetModelId());
 
-        if (elementIds.empty() && prevModelIds == postModelIds)
+        if (addedOrModifiedIds.empty() && deletedOrModifiedIds.empty() && prevModelIds == postModelIds)
             continue;           // Skip empty revisions.
 
-        WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
-
+                
         if (!addedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionIndex, false);
+            TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionName, revisionIndex, false);
             DgnModelIdSet               modelIds = GetElementModelIds(addedOrModifiedIds);
 
             for (auto& modelId : postModelIds)
@@ -511,7 +529,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, AxisAlign
 
         if (!deletedOrModifiedIds.empty())
             {
-            TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionIndex, true);
+            TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionName, revisionIndex, true);
             DgnModelIdSet               modelIds = GetElementModelIds(deletedOrModifiedIds);
 
             if (!modelIds.empty())
@@ -520,14 +538,15 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, AxisAlign
             revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
             
-        Utf8String  revisionName = Utf8PrintfString("1.%d", revisionIndex + 1);        // Needs work - Get real string from for name - they seem to be empty or nonsense now.
-
-        revisionJson["name"] = revisionName;
+        revisionJson["name"] = Utf8PrintfString("1.%d", revisionIndex + 1);
         revisionJson["elements"] = std::move(revisionElementsJson);
-        revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
+        revisionJson.removeMember("url");
+
+        TileUtil::WriteJsonToFile (outputFileName.c_str(), revisionJson);
         }
     return TilesetPublisher::Status::Success;
-    }
+    }                                                                                                                                                                                         
+
 };  // HistoryPublisher
 
 /*---------------------------------------------------------------------------------**//**
@@ -541,6 +560,6 @@ TilesetPublisher::Status TilesetHistoryPublisher::PublishHistory(Json::Value& re
     if (Status::Success != (status = publisher.Initialize()))
         return status;
 
-    return publisher.PublishChangeSets(revisionsJson, tipPublisher.GetProjectExtents());
+    return publisher.PublishChangeSets(revisionsJson, tipPublisher);
     }
 
