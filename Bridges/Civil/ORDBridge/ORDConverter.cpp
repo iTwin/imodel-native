@@ -827,7 +827,7 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
     auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
     if (cifModelPtr.IsValid())
         {        
-        converterLib.ComputeCoordinateSystemTransform(*rootSpatialModelP, subject);
+        converterLib.SetRootModelAndSubject(*rootSpatialModelP, subject);
         converterLib.ConvertModelMaterials(*rootSpatialModelP);
 
         // Mapping the root-model to the Physical Model on the BIM side.
