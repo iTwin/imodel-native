@@ -1202,13 +1202,13 @@ TEST_F(ChangeSummaryTestFixture, Crud)
 
     {//---------------------------------------------------->>>
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Ten',123,-32.23, 45.22, %s)", i1.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Ten',123,-32.23, 45.22, %s)", i1.GetInstanceId().ToHexStr()).c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
     }//---------------------------------------------------->>>
 
     {//---------------------------------------------------->>>
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Zen',223,-12.23, 45.22, %s)", i2.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Zen',223,-12.23, 45.22, %s)", i2.GetInstanceId().ToHexStr()).c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i4));
     }//---------------------------------------------------->>>
 
@@ -1230,7 +1230,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
 
     {//---------------------------------------------------->>>
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Blue',2233,-212.23, -215.44, %s)", i3.GetInstanceId().ToHexStr())));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Goo(S,I,P2D.X,P2D.Y,Foo.Id)VALUES('Blue',2233,-212.23, -215.44, %s)", i3.GetInstanceId().ToHexStr()).c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(i6));
     }//---------------------------------------------------->>>
 
