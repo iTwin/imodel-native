@@ -494,6 +494,8 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
 
         outputRelativePath.ReplaceAll("\\", "//");
         revisionJson["url"] = outputRelativePath;
+
+        WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
         revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
  
         for (auto& model : prevModelIterator)
@@ -505,7 +507,6 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
         if (addedOrModifiedIds.empty() && deletedOrModifiedIds.empty() && prevModelIds == postModelIds)
             continue;           // Skip empty revisions.
 
-        WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
                 
         if (!addedOrModifiedIds.empty())
             {
