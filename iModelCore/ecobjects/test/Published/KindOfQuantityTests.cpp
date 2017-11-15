@@ -163,6 +163,34 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(KindOfQuantityTest, SerializeStandaloneChildKindOfQuantity)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "ExampleKoQ");
+    koq->SetPersistenceUnit("MM");
+    koq->SetDefaultPresentationUnit("IN");
+    koq->AddPresentationUnit("MM");
+    koq->AddPresentationUnit("CM");
+    koq->SetRelativeError(3);
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, koq->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneKindOfQuantity.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingName)

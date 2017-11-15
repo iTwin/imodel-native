@@ -1,0 +1,8 @@
+﻿{
+   "$schema" : "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+   "schema" : "ExampleSchema",
+   "schemaChildType" : "EntityClass",
+   "schemaVersion" : "03.01.00",
+   "name" : "DerivedEntityClass",
+   "baseClass" : "ExampleSchema.BaseEntityClass"
+}

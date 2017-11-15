@@ -956,6 +956,221 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions)
     ASSERT_TRUE(!refingSchema.IsValid());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, SerializeStandaloneEntityClass)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECEntityClassP baseEntityClass;
+    schema->CreateEntityClass(baseEntityClass, "ExampleBaseEntity");
+
+    ECEntityClassP mixinA;
+    ECEntityClassP mixinB;
+
+    ECCustomAttributeClassP customAttrClass;
+    schema->CreateCustomAttributeClass(customAttrClass, "ExampleCustomAttribute");
+    IECInstancePtr customAttr = customAttrClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECEntityClassP entityClass;
+    schema->CreateEntityClass(entityClass, "ExampleEntity");
+    entityClass->SetClassModifier(ECClassModifier::Sealed);
+    entityClass->SetDisplayLabel("ExampleEntity");
+    entityClass->SetDescription("An example entity class.");
+    entityClass->AddBaseClass(*baseEntityClass);
+    schema->CreateMixinClass(mixinA, "ExampleMixinA", *entityClass);
+    schema->CreateMixinClass(mixinB, "ExampleMixinB", *entityClass);
+    entityClass->AddBaseClass(*mixinA);
+    entityClass->AddBaseClass(*mixinB);
+    entityClass->SetCustomAttribute(*customAttr);
+
+    Json::Value schemaChildJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaChildJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEntityClass.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaChildJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaChildJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, SerializeStandaloneStructClass)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECStructClassP structClass;
+    schema->CreateStructClass(structClass, "ExampleStruct");
+    structClass->SetClassModifier(ECClassModifier::Sealed);
+    PrimitiveArrayECPropertyP primArrProp;
+    structClass->CreatePrimitiveArrayProperty(primArrProp, "ExamplePrimitiveArray");
+    primArrProp->SetPrimitiveElementType(ECN::PRIMITIVETYPE_Integer);
+    primArrProp->SetMinimumValue(ECValue((int32_t)7));
+    primArrProp->SetMaximumValue(ECValue((int32_t)20));
+    primArrProp->SetMinOccurs(10);
+    primArrProp->SetMaxOccurs(25);
+    primArrProp->SetExtendedTypeName("FooBar");
+    primArrProp->SetDisplayLabel("ExPrimitiveArray");
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, structClass->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECStructClass.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, SerializeStandaloneCustomAttributeClass)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECCustomAttributeClassP customAttrClass;
+    schema->CreateCustomAttributeClass(customAttrClass, "ExampleCustomAttribute");
+    customAttrClass->SetClassModifier(ECClassModifier::Sealed);
+    customAttrClass->SetContainerType(ECN::CustomAttributeContainerType::Schema | ECN::CustomAttributeContainerType::AnyProperty);
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, customAttrClass->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECCustomAttributeClass.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, SerializeClassWithProperties)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECEntityClassP entityClass;
+    schema->CreateEntityClass(entityClass, "ExampleEntityClass");
+
+    PropertyCategoryP propertyCategory;
+    schema->CreatePropertyCategory(propertyCategory, "ExamplePropertyCategory");
+
+    ECStructClassP structClass;
+    schema->CreateStructClass(structClass, "ExampleStructClass");
+
+    ECRelationshipClassP relationshipClass;
+    schema->CreateRelationshipClass(relationshipClass, "ExampleRelationshipClass");
+    relationshipClass->GetSource().SetRoleLabel("SourceRoleLabel");
+    relationshipClass->GetSource().AddClass(*entityClass);
+    relationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
+    relationshipClass->GetTarget().AddClass(*entityClass);
+
+    PrimitiveECPropertyP primProp;
+    entityClass->CreatePrimitiveProperty(primProp, "ExamplePrimitiveProperty", PrimitiveType::PRIMITIVETYPE_Integer);
+    primProp->SetDescription("An example primitive property.");
+    primProp->SetDisplayLabel("PrimitivePropertyDisplayLabel");
+    primProp->SetExtendedTypeName("Example Primitive Property");
+    primProp->SetIsReadOnly(true);
+    primProp->SetCategory(propertyCategory);
+    primProp->SetMinimumValue(ECValue(42));
+    primProp->SetMaximumValue(ECValue(1999));
+
+    StructECPropertyP structProp;
+    entityClass->CreateStructProperty(structProp, "ExampleStructProperty", *structClass);
+
+    PrimitiveArrayECPropertyP primArrProp;
+    entityClass->CreatePrimitiveArrayProperty(primArrProp, "ExamplePrimitiveArrayProperty", PrimitiveType::PRIMITIVETYPE_String);
+    primArrProp->SetMinimumLength(3);
+    primArrProp->SetMaximumLength(50);
+    primArrProp->SetMinOccurs(7);
+
+    StructArrayECPropertyP structArrProp;
+    entityClass->CreateStructArrayProperty(structArrProp, "ExampleStructArrayProperty", *structClass);
+    structArrProp->SetMinOccurs(867);
+    structArrProp->SetMaxOccurs(5309);
+
+    NavigationECPropertyP navProp;
+    entityClass->CreateNavigationProperty(navProp, "ExampleNavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Backward, false);
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaJson, true)); Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithClassProperties.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerialized)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    PropertyCategoryP propertyCategory;
+    schema->CreatePropertyCategory(propertyCategory, "ExamplePropertyCategory");
+
+    KindOfQuantityP kindOfQuantity;
+    schema->CreateKindOfQuantity(kindOfQuantity, "ExampleKoQ");
+
+    PrimitiveECPropertyP primProp;
+
+    ECCustomAttributeClassP customAttrClassBP;
+    schema->CreateCustomAttributeClass(customAttrClassBP, "CustomAttributeOnBaseProperty");
+    IECInstancePtr customAttrBP = customAttrClassBP->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECCustomAttributeClassP customAttrClassBC;
+    schema->CreateCustomAttributeClass(customAttrClassBC, "CustomAttributeOnBaseClass");
+    IECInstancePtr customAttrBC = customAttrClassBC->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECEntityClassP sourceClass;
+    schema->CreateEntityClass(sourceClass, "ExampleSource");
+
+    ECEntityClassP targetClass;
+    schema->CreateEntityClass(targetClass, "ExampleTarget");
+
+    ECCustomAttributeClassP customAttrClassRelCon;
+    schema->CreateCustomAttributeClass(customAttrClassRelCon, "CustomAttributeOnRelationshipConstraint");
+    IECInstancePtr customAttrRelCon = customAttrClassRelCon->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECEntityClassP baseEntityClass;
+    schema->CreateEntityClass(baseEntityClass, "BaseEntityClass");
+    baseEntityClass->SetCustomAttribute(*customAttrBC);
+    baseEntityClass->CreatePrimitiveProperty(primProp, "ExamplePrimitiveProperty", PrimitiveType::PRIMITIVETYPE_Integer);
+    primProp->SetExtendedTypeName("FooBar");
+    primProp->SetKindOfQuantity(kindOfQuantity);
+    primProp->SetPriority(5);
+    primProp->SetCategory(propertyCategory);
+    primProp->SetCustomAttribute(*customAttrBP);
+
+    ECEntityClassP derivedEntityClass;
+    schema->CreateEntityClass(derivedEntityClass, "DerivedEntityClass");
+    derivedEntityClass->AddBaseClass(*baseEntityClass);
+
+    Json::Value entityClassJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, derivedEntityClass->WriteJson(entityClassJson, true));
+
+    Json::Value testDataJson;
+    BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/ClassInheritedCustomAttributesAndProperties.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
+    }
+
 //=======================================================================================
 //! PropertyCopyTest
 //=======================================================================================

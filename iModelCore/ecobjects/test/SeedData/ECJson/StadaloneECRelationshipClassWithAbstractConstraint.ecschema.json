@@ -3,29 +3,27 @@
   "schema": "ExampleSchema",
   "schemaVersion": "03.01.00",
   "schemaChildType": "RelationshipClass",
-  "name": "ExampleRelationship",
-  "modifier": "sealed",
-  "strength": "embedding",
+  "name": "ExampleRelationshipClass",
+  "modifier": "none",
+  "baseClass": "ExampleSchema.RelationshipClassBase",
+  "strength": "referencing",
   "strengthDirection": "forward",
   "source": {
     "multiplicity": "(0..1)",
-    "roleLabel": "source roleLabel",
+    "roleLabel": "SourceRoleLabel",
     "polymorphic": true,
+    "abstractConstraint": "ExampleSchema.ClassB",
     "constraintClasses": [
-      "ExampleSchema.ExampleSource"
-    ],
-    "customAttributes": [
-      {
-        "className" : "ExampleSchema.ExampleCustomAttribute"
-      }
+      "ExampleSchema.ClassB",
+      "ExampleSchema.ClassC"
     ]
   },
   "target": {
     "multiplicity": "(0..1)",
-    "roleLabel": "target roleLabel",
+    "roleLabel": "TargetRoleLabel",
     "polymorphic": true,
     "constraintClasses": [
-      "ExampleSchema.ExampleTarget"
+      "ExampleSchema.ClassA"
     ]
   }
 }

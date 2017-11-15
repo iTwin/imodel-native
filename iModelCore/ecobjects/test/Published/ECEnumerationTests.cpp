@@ -342,4 +342,35 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInR
     ASSERT_TRUE(ecEnum->GetSchema().GetVersionWrite() == 12);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECEnumerationP enumeration;
+    schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    enumeration->SetIsStrict(true);
+    ECEnumeratorP enumeratorA;
+    enumeration->CreateEnumerator(enumeratorA, 1);
+    enumeratorA->SetDisplayLabel("None");
+    ECEnumeratorP enumeratorB;
+    enumeration->CreateEnumerator(enumeratorB, 2);
+    enumeratorB->SetDisplayLabel("SomeVal");
+    ECEnumeratorP enumeratorC;
+    enumeration->CreateEnumerator(enumeratorC, 3);
+    enumeratorC->SetDisplayLabel("AnotherVal");
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, enumeration->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEnumeration.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

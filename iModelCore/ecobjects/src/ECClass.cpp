@@ -3663,6 +3663,13 @@ SchemaWriteStatus ECRelationshipConstraint::WriteJson(Json::Value& outValue)
     if (nullptr != m_abstractConstraint)
         outValue[ABSTRACTCONSTRAINT_ATTRIBUTE] = ECJsonUtilities::FormatClassName(*GetAbstractConstraint());
 
+    Json::Value customAttributesArr;
+    SchemaWriteStatus status;
+    if (SchemaWriteStatus::Success != (status = WriteCustomAttributes(customAttributesArr)))
+        return status;
+    if (!customAttributesArr.empty())
+        outValue[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
+
     auto const& constraintClasses = GetConstraintClasses();
     if (constraintClasses.size() != 0)
         {
