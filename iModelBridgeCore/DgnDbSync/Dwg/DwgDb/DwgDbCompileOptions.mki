@@ -90,10 +90,10 @@ ToolkitAecInc       = $(ToolkitRoot)Architecture/
 ToolkitDrawingInc   = $(ToolkitRoot)$(Drawing)/Include/
 ToolkitHostServices = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
 ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
-ToolkitLibs         = $(BuildContext)SubParts/Teigha/Libs/
+ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
 
 %if $(TARGET_PLATFORM)=="Windows"
-ToolkitCryptInc     = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
+    ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
 %endif
 
 %elif $(DWGTOOLKIT) == "RealDwg"

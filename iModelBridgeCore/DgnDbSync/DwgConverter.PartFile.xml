@@ -57,17 +57,17 @@
         <SubPart PartName="OpenDwgBridge" />
         <SubPart PartName="OpenDwgImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/OpenDwgImporter/DwgImporter.exe</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\OpenDwg">Delivery/OpenDwgImporter/DwgImporter.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="OpenDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg" ApiNumber="431b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="OpenDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=OpenDwg" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
         <SubPart PartName="OpenDwgImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/OpenDwgImporter/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\OpenDwg">Delivery/OpenDwgImporter/$(shlibprefix)DwgBridge$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -80,7 +80,7 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="OpenDwgDb" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/OpenDwgImporter/DwgImporter$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\OpenDwg">Delivery/OpenDwgImporter/DwgImporter$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -122,17 +122,17 @@
         <SubPart PartName="RealDwgBridge" />
         <SubPart PartName="RealDwgImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2018Importer/DwgImporter.exe</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\RealDwg2018">Delivery/RealDwg2018Importer/DwgImporter.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="RealDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" ApiNumber="2018b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwgBridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
         <SubPart PartName="RealDwgImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2018Importer/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\RealDwg2018">Delivery/RealDwg2018Importer/$(shlibprefix)DwgBridge$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -145,7 +145,7 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="RealDwgDb" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2018Importer/DwgImporter$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\RealDwg2018">Delivery/RealDwg2018Importer/DwgImporter$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -198,17 +198,17 @@
         <SubPart PartName="RealDwg2017Bridge" />
         <SubPart PartName="RealDwg2017ImportDLL" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2017Importer/DwgImporter.exe</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\RealDwg2017">Delivery/RealDwg2017Importer/DwgImporter.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="RealDwg2017Bridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017" ApiNumber="2017b4" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="RealDwg2017Bridge" BentleyBuildMakeFile="Dwg/Apps/DwgBridge.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2017" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridge"/>
         <SubPart PartName="RealDwg2017ImportDll" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2017Importer/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\RealDwg2017">Delivery/RealDwg2017Importer/$(shlibprefix)DwgBridge$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -221,7 +221,7 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="RealDwg2017Db" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/RealDwg2017Importer/DwgImporter$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot" SubPartDirectory="Files\RealDwg2017">Delivery/RealDwg2017Importer/DwgImporter$(ApiNumber)$(shlibext)</Files>
         </Bindings>
     </Part>
 

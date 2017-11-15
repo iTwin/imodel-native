@@ -25,7 +25,7 @@
 appName             = OdGripPoints
 OpenDwgCore         = $(BuildContext)VendorAPI/Teigha/$(Kernel)/
 OpenDwgDrawing      = $(BuildContext)VendorAPI/Teigha/$(Drawing)/
-OpenDwgLibsDir      = $(BuildContext)SubParts/Teigha/Libs/
+OpenDwgLibsDir      = $(BuildContext)SubParts/Libs/Teigha/
 OdGripPointsDir     = $(OpenDwgDrawing)Examples/GripPoints/
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
