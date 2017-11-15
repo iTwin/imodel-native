@@ -210,7 +210,7 @@ ILinearlyLocatedSingleAt::ILinearlyLocatedSingleAt(double atDistanceAlong)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ILinearlyLocatedSingleAt::GetAtDistanceAlong() const
+double ILinearlyLocatedSingleAt::GetAtDistanceAlongFromStart() const
     {
     if (!ToElement().GetElementId().IsValid())
         return m_unpersistedAtLocationPtr->GetAtPosition().GetDistanceAlongFromStart();
@@ -232,7 +232,7 @@ double ILinearlyLocatedSingleAt::GetAtDistanceAlong() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocatedSingleAt::SetAtDistanceAlong(double newAt)
+void ILinearlyLocatedSingleAt::SetAtDistanceAlongFromStart(double newAt)
     {
     if (!ToElement().GetElementId().IsValid())
         {
@@ -265,7 +265,7 @@ ILinearlyLocatedSingleFromTo::ILinearlyLocatedSingleFromTo(double fromDistanceAl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ILinearlyLocatedSingleFromTo::GetFromDistanceAlong() const
+double ILinearlyLocatedSingleFromTo::GetFromDistanceAlongFromStart() const
     {
     if (!ToElement().GetElementId().IsValid())
         return m_unpersistedFromToLocationPtr->GetFromPosition().GetDistanceAlongFromStart();
@@ -287,7 +287,7 @@ double ILinearlyLocatedSingleFromTo::GetFromDistanceAlong() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocatedSingleFromTo::SetFromDistanceAlong(double newFrom)
+void ILinearlyLocatedSingleFromTo::SetFromDistanceAlongFromStart(double newFrom)
     {
     if (!ToElement().GetElementId().IsValid())
         {
@@ -312,7 +312,7 @@ void ILinearlyLocatedSingleFromTo::SetFromDistanceAlong(double newFrom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ILinearlyLocatedSingleFromTo::GetToDistanceAlong() const
+double ILinearlyLocatedSingleFromTo::GetToDistanceAlongFromStart() const
     {
     if (!ToElement().GetElementId().IsValid())
         return m_unpersistedFromToLocationPtr->GetToPosition().GetDistanceAlongFromStart();
@@ -334,7 +334,7 @@ double ILinearlyLocatedSingleFromTo::GetToDistanceAlong() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocatedSingleFromTo::SetToDistanceAlong(double newFrom)
+void ILinearlyLocatedSingleFromTo::SetToDistanceAlongFromStart(double newFrom)
     {
     if (!ToElement().GetElementId().IsValid())
         {

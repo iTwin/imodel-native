@@ -9,6 +9,7 @@
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
+        <ECProperty propertyName="StartValue" typeName="double" kindOfQuantity="aecu:LENGTH" description="Distance along value at the start of the Linear-Element, measured from an absolute zero."/>
         <ECNavigationProperty propertyName="ILinearElementSource" relationshipName="ILinearElementSourceProvidesILinearElements" direction="backward"/>
     </ECEntityClass>
     <ECEntityClass typeName="ILinearElementSource" description="Mix-in to be supported by Element-subclasses meant to provide Linear-Elements." modifier="Abstract">

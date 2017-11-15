@@ -24,7 +24,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ILinearElement
 {
 protected:
     virtual double _GetLength() const = 0;
-    virtual double _GetStartValue() const = 0;
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const = 0;
 
 public:
@@ -36,7 +35,8 @@ public:
     LINEARREFERENCING_EXPORT void SetILinearElementSource(ILinearElementSourceCP);
 
     LINEARREFERENCING_EXPORT double GetLength() const { return _GetLength(); }
-    LINEARREFERENCING_EXPORT double GetStartValue() const { return _GetStartValue(); }
+    double GetStartValue() const { return ToElement().GetPropertyValueDouble("StartValue"); }
+    void SetStartValue(double newStartVal) { ToElementR().SetPropertyValue("StartValue", newStartVal); }
 }; // ILinearElement
 
 //=======================================================================================
@@ -201,8 +201,8 @@ protected:
     LinearReferencing::LinearlyReferencedAtLocationPtr _GetUnpersistedAtLocation() const { return m_unpersistedAtLocationPtr; }
 
 public:
-    LINEARREFERENCING_EXPORT double GetAtDistanceAlong() const;
-    LINEARREFERENCING_EXPORT void SetAtDistanceAlong(double newAt);
+    LINEARREFERENCING_EXPORT double GetAtDistanceAlongFromStart() const;
+    LINEARREFERENCING_EXPORT void SetAtDistanceAlongFromStart(double newAt);
 }; // ILinearlyLocatedSingleAt
 
 
@@ -233,11 +233,11 @@ protected:
     LinearReferencing::LinearlyReferencedFromToLocationPtr _GetUnpersistedFromToLocation() const { return m_unpersistedFromToLocationPtr; }
 
 public:
-    LINEARREFERENCING_EXPORT double GetFromDistanceAlong() const;
-    LINEARREFERENCING_EXPORT void SetFromDistanceAlong(double newFrom);
+    LINEARREFERENCING_EXPORT double GetFromDistanceAlongFromStart() const;
+    LINEARREFERENCING_EXPORT void SetFromDistanceAlongFromStart(double newFrom);
 
-    LINEARREFERENCING_EXPORT double GetToDistanceAlong() const;
-    LINEARREFERENCING_EXPORT void SetToDistanceAlong(double newFrom);
+    LINEARREFERENCING_EXPORT double GetToDistanceAlongFromStart() const;
+    LINEARREFERENCING_EXPORT void SetToDistanceAlongFromStart(double newFrom);
 }; // ILinearlyLocatedSingleFromTo
 
 //=======================================================================================
