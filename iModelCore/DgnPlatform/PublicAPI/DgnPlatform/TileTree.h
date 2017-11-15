@@ -385,6 +385,7 @@ public:
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
     Dgn::Render::SystemP GetRenderSystemP() const {return m_renderSystem;}
     DrawArgs CreateDrawArgs(SceneContextR context);
+    ClipVectorCP GetClipVector() const { return _GetClipVector(); }
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
     virtual Utf8String _ConstructTileResource(TileCR tile) const {return m_rootResource + tile._GetTileCacheKey();}
