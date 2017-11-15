@@ -341,8 +341,29 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     else
         bimAlignmentPtr->GenerateAprox3dGeom();
 
+    auto cifStationingPtr = cifAlignment.GetStationing();
+    if (cifStationingPtr.IsValid())
+        bimAlignmentPtr->SetStartStation(cifStationingPtr->GetStartStation());
+
     if (bimAlignmentPtr->Update().IsNull())
         return BentleyStatus::ERROR;
+
+    if (cifStationingPtr.IsValid())
+        {
+        auto stationEquationsPtr = cifStationingPtr->GetStationEquations();
+        while (stationEquationsPtr.IsValid() && stationEquationsPtr->MoveNext())
+            {
+            auto stationEqPtr = stationEquationsPtr->GetCurrent();
+            if (stationEqPtr.IsNull())
+                continue;
+
+            auto bimStationPtr = AlignmentBim::AlignmentStation::Create(*bimAlignmentPtr, stationEqPtr->GetDistanceAlong(), stationEqPtr->GetEquivalentStation());
+            if (!Bentley::WString::IsNullOrEmpty(stationEqPtr->GetName().c_str()))
+                bimStationPtr->SetUserLabel(Utf8String(stationEqPtr->GetName().c_str()).c_str());
+
+            bimStationPtr->Insert();
+            }
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -660,6 +681,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
     if (!WString::IsNullOrEmpty(cifCorridor.GetName().c_str()))
         roadwayPtr->SetUserLabel(Utf8String(cifCorridor.GetName().c_str()).c_str());
     
+    AlignmentBim::AlignmentPtr bimMainAlignmentPtr;
     auto cifAlignmentPtr = cifCorridor.GetCorridorAlignment();
     if (cifAlignmentPtr.IsValid () && cifAlignmentPtr->IsFinalElement())
         {
@@ -669,9 +691,14 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
         auto iterEntry = iterator.begin();
         if (iterEntry != iterator.end())
             {
-            auto bimAlignmentCPtr = AlignmentBim::Alignment::Get(m_bimPhysicalModelPtr->GetDgnDb(), iterEntry.GetDgnElementId());
-            if (bimAlignmentCPtr.IsValid())
-                roadwayPtr->SetMainAlignment(bimAlignmentCPtr.get());
+            bimMainAlignmentPtr = AlignmentBim::Alignment::GetForEdit(m_bimPhysicalModelPtr->GetDgnDb(), iterEntry.GetDgnElementId());
+            if (bimMainAlignmentPtr.IsValid())
+                {
+                if (bimMainAlignmentPtr->GetILinearElementSource().IsValid())
+                    return BentleyStatus::ERROR; // Alignment already associated with another Roadway
+
+                roadwayPtr->SetMainAlignment(bimMainAlignmentPtr.get());
+                }
             }
         }
 
@@ -682,6 +709,12 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
     results.m_element = roadwayPtr;
     if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(results, change))
         return BentleyStatus::ERROR;
+
+    if (bimMainAlignmentPtr.IsValid())
+        {
+        bimMainAlignmentPtr->SetILinearElementSource(roadwayPtr.get());
+        bimMainAlignmentPtr->Update();
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -836,6 +869,7 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
         converterLib.RecordModelMapping(*rootSpatialModelP,
             *RoadRailBim::RoadRailPhysicalDomain::GetDomain().QueryPhysicalModel(subject, ORDBRIDGE_PhysicalModelName));
 
+        // Making sure all alignments are processed before processing corridors
         auto geomModelsPtr = cifModelPtr->GetActiveGeometricModels();
         while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())
             {
@@ -851,8 +885,18 @@ void ORDConverter::ConvertORDData(BeFileNameCR dgnFileName, SubjectCR subject, i
                     dgnFileSet.insert(currentDgnFileP);
                     }
 
-                ConvertAlignments(*geomModelPtr, converterLib, changeDetector, fileScopeId);
-                ConvertCorridors(*geomModelPtr, converterLib, changeDetector, fileScopeId);
+                ConvertAlignments(*geomModelPtr, converterLib, changeDetector, fileScopeId);                
+                }
+            }
+
+        if (geomModelsPtr.IsValid())
+            {
+            geomModelsPtr->Reset();
+            while (geomModelsPtr->MoveNext())
+                {
+                auto geomModelPtr = geomModelsPtr->GetCurrent();
+                if (geomModelPtr.IsValid())
+                    ConvertCorridors(*geomModelPtr, converterLib, changeDetector, fileScopeId);
                 }
             }
 
