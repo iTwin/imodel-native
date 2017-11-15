@@ -409,7 +409,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInva
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetWSError().GetId());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository_Succeedsd)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
