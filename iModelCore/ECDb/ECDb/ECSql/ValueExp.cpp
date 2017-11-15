@@ -1212,7 +1212,7 @@ FunctionSignatureSet& FunctionSignatureSet::GetInstance()
 void FunctionSignatureSet::LoadDefinitions()
     {
     //scoped funtion
-    Declare("::ChangeSummary(changesetId:integer, operation:integer, optional stage:integer):resultset");
+    Declare("::ChangeSummary(changesetId:integer, operation:any):resultset");
     //SELECT * FROM stco.Foo.Changes(changsetId?
     ////global funtion
     Declare("abs(value:numeric):numeric");

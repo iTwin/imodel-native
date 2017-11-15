@@ -109,7 +109,7 @@ std::map<Utf8CP, std::function<void(ChangedValueFunction::Context&, ECSqlStateme
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangedValueFunction::ChangedValueFunction(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ChangedValue, -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(10)
+ChangedValueFunction::ChangedValueFunction(ECDbCR ecdb) : ECDbSystemScalarFunction(ecdb, SQLFUNC_ChangedValue, 4, DbValueType::BlobVal)
     {
     if (s_setValueMap.empty())
         {
@@ -132,19 +132,38 @@ ChangedValueFunction::ChangedValueFunction(ECDbCR ecdb) : ScalarFunction(SQLFUNC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
+std::set<int> ChangedValueFunction::s_operationValidValues = 
+    {
+    Enum::ToInt(Operation::Inserted),
+    Enum::ToInt(Operation::Deleted),
+    Enum::ToInt(Operation::UpdatedOld),
+    Enum::ToInt(Operation::UpdatedNew)
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//WARNING: following should not be changd as it as part of public api
+//+---------------+---------------+---------------+---------------+---------------+------
+std::map<Utf8CP, int, CompareIUtf8Ascii> ChangedValueFunction::s_operationStrValues =
+    {
+        {"inserted",  Enum::ToInt(Operation::Inserted)},
+        {"deleted",  Enum::ToInt(Operation::Deleted)},
+        {"updated.new",  Enum::ToInt(Operation::UpdatedNew)},
+        {"updated.old",  Enum::ToInt(Operation::UpdatedOld)},
+        {"1",  Enum::ToInt(Operation::Inserted)},
+        {"2",  Enum::ToInt(Operation::Deleted)},
+        {"3",  Enum::ToInt(Operation::UpdatedNew)},
+        {"4",  Enum::ToInt(Operation::UpdatedOld)},
+    };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
 void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
-    if (nArgs != 4 && nArgs != 5)
-        {
-        ctx.SetResultError("Function " SQLFUNC_ChangedValue " expects 4 or 5 arguments.");
-        return;
-        }
-
-    const int kInstanceId = 0;      // [Required]
+    const int kInstanceId = 0;  // [Required]
     const int kAccessString = 1;    // [Required]
     const int kOperation = 2;       // [Required]
     const int kFallBackValue = 3;   // [Required]
-    const int kStage = 4;           // [Optional]
 
     //Decode and verify parameters
     DbValue const& instanceChangeIdValue = args[0];
@@ -166,88 +185,49 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
     Utf8CP accessString = accessStringValue.GetValueText();
 
     DbValue const& operationValue = args[2];
-    if (operationValue.GetValueType() != DbValueType::IntegerVal)
+    if (operationValue.GetValueType() != DbValueType::IntegerVal && operationValue.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultError("Argument 3 of function " SQLFUNC_ChangedValue " is expected to be the operation and must be of integer type and cannot be null");
         return;
         }
 
-    int operationVal = operationValue.GetValueInt();
-    if (operationVal != Enum::ToInt(Operation::Insert) && operationVal != Enum::ToInt(Operation::Update) &&
-        operationVal != Enum::ToInt(Operation::Delete))
+    Operation operation;
+    if (operationValue.GetValueType() == DbValueType::IntegerVal)
         {
-        Utf8String msg;
-        msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%d)", operationVal);
-        ctx.SetResultError(msg.c_str());
-        return;
+        int operationVal = operationValue.GetValueInt();
+        if (s_operationValidValues.find(operationVal) == s_operationValidValues.end())
+            {
+            Utf8String msg;
+            msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%d)", operationVal);
+            ctx.SetResultError(msg.c_str());
+            return;
+            }
+
+        operation = Enum::FromInt<Operation>(operationVal);
+        }
+    else
+        {
+        Utf8CP operationVal = operationValue.GetValueText();
+        auto itor = s_operationStrValues.find(operationVal);
+        if (itor == s_operationStrValues.end())
+            {
+            Utf8String msg;
+            msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%s)", operationVal);
+            ctx.SetResultError(msg.c_str());
+            return;
+            }
+
+        operation = Enum::FromInt<Operation>(itor->second);
         }
 
-    const Operation operation = Enum::FromInt<Operation>(operationVal);
     DbValue const& fallbackValue = args[3];
-
-    Stage stage;
-    switch (operation)
-        {
-            case Operation::Insert:
-            {
-            if (nArgs == 5)
-                {
-                Utf8String msg;
-                msg.Sprintf("When passing %d (Inserted) as Operation the fifth parameter must not be specified.", operationVal);
-                ctx.SetResultError(msg.c_str());
-                return;
-                }
-
-            stage = Stage::New;
-            break;
-            }
-            case Operation::Delete:
-            {
-            if (nArgs == 5)
-                {
-                Utf8String msg;
-                msg.Sprintf("When passing %d (Deleted) as Operation the fifth parameter must not be specified.", operationVal);
-                ctx.SetResultError(msg.c_str());
-                return;
-                }
-            stage = Stage::Old;
-            break;
-            }
-            case Operation::Update:
-            {
-            DbValue const* stageValue = nArgs == 5 ? &args[4] : nullptr;
-
-            if (stageValue == nullptr || stageValue->GetValueType() != DbValueType::IntegerVal)
-                {
-                ctx.SetResultError("Argument 5 of function " SQLFUNC_ChangedValue " is expected to be specified when 'Update' was specified as operation (4th argument).");
-                return;
-                }
-
-            const int stageVal = stageValue->GetValueInt();
-            if (stageVal != Enum::ToInt(Stage::Old) && stageVal != Enum::ToInt(Stage::New))
-                {
-                Utf8String msg;
-                msg.Sprintf("Argument 5 of function " SQLFUNC_ChangedValue " has an invalid value for Stage (%d)", stageVal);
-                ctx.SetResultError(msg.c_str());
-                return;
-                }
-
-            stage = Enum::FromInt<Stage>(stageVal);
-            break;
-            }
-
-            default:
-                BeAssert(false && "Should have been caught already");
-                return;
-        }
-
     Utf8CP ecsql = nullptr;
-    if (stage == Stage::Old)
+    if (operation == Operation::Deleted || operation == Operation::UpdatedOld)
         ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM " ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
     else
         ecsql = "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM " ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, ecsql);
+    CachedECSqlStatementPtr stmt = GetPreparedStatement(ecsql);
     if (stmt == nullptr)
         {
         ctx.SetResultError("Failed to prepare ECSQL statement in SQL function ChangedValue().");
@@ -280,4 +260,22 @@ void ChangedValueFunction::SetValue(Context& ctx, ECSqlStatement& stmt)
     }
 
 
+//************************************************************************************
+// ECDbSystemScalarFunction
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+CachedECSqlStatementPtr ECDbSystemScalarFunction::GetPreparedStatement(Utf8CP ecsql) const
+    {
+    return m_stmtCache.GetPreparedStatement(m_ecdb, ecsql);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbSystemScalarFunction::ECDbSystemScalarFunction(ECDbCR ecdb, Utf8CP name, int nArgs, DbValueType returnType)
+    : ScalarFunction(name, nArgs, returnType), m_ecdb(ecdb), m_stmtCache(10)
+    {}
 END_BENTLEY_SQLITE_EC_NAMESPACE
