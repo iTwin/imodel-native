@@ -75,7 +75,7 @@ struct ChangedValueFunction final : ECDbSystemScalarFunction
         enum class Operation
             {
             Inserted = 1,     //'inserted'
-            Delete = 3
+            Deleted = 2,
             UpdatedOld = 3,   //'updated.old'
             UpdatedNew = 4,   //'updated.new'
             };

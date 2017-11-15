@@ -207,7 +207,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     BeAssert(ctx.GetMemberFunctionCallExp() != nullptr);
     MemberFunctionCallExp const& memberFuncCallExp = *ctx.GetMemberFunctionCallExp();
 
-    if (memberFuncCallExp.GetChildrenCount() < 2 || memberFuncCallExp.GetChildrenCount() > 3)
+    if (memberFuncCallExp.GetChildrenCount() != 2 )
         {
         ctx.GetECDb().GetImpl().Issues().Report("Class exp's member function '%s' is called with invalid number of arguments.", memberFuncCallExp.GetFunctionName().c_str());
         return ERROR;
@@ -217,11 +217,10 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     if (ECSqlExpPreparer::PrepareFunctionArgList(argSqlSnippets, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), memberFuncCallExp) != ECSqlStatus::Success)
         return ERROR;
 
-    BeAssert(argSqlSnippets.size() == 2 || argSqlSnippets.size() == 3);
+    BeAssert(argSqlSnippets.size() == 2);
     NativeSqlBuilder const& summaryIdArgSql = argSqlSnippets[0];
     NativeSqlBuilder const& operationArgSql = argSqlSnippets[1];
-    NativeSqlBuilder const* stageArgSql = argSqlSnippets.size() == 3 ? &argSqlSnippets[2] : nullptr;
-
+    
     NativeSqlBuilder internalView;
     if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
         return ERROR;
@@ -266,11 +265,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
             Utf8StringCR accessString = propertyMap->GetAccessString();
             columnSql.AppendComma().Append(SQLFUNC_ChangedValue).Append("(ic.").Append(changeIdColumnName).AppendComma();
             columnSql.Append("'").Append(accessString).Append("'").AppendComma();
-            columnSql.Append("ic.").Append(operationColumnName).AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
-
-            if (stageArgSql != nullptr)
-                columnSql.AppendComma().Append(*stageArgSql);
-
+            columnSql.Append(operationArgSql).AppendComma();
+            columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
             columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
             }
         else
@@ -286,11 +282,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                 {
                 columnSql.AppendComma().Append(SQLFUNC_ChangedValue).Append("(ic.").Append(changeIdColumnName).AppendComma();
                 columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("',");
-                columnSql.Append("ic.").Append(operationColumnName).AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
-
-                if (stageArgSql != nullptr)
-                    columnSql.AppendComma().Append(*stageArgSql);
-
+                columnSql.Append(operationArgSql).AppendComma();
+                columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
                 columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
                 }
             }
