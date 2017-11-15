@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define ECSQLFUNC_ChangeSummary "ChangeSummary"
 #define SQLFUNC_ChangedValue "ChangedValue"
-
+#define SQLFUNC_ToInstanceOp "ToInstanceOp"
 //=======================================================================================
 // TEXT BlobToBase64(BLOB blob)
 // @bsiclass                                                   Krischan.Eberle   11/16
@@ -47,6 +47,55 @@ struct Base64ToBlobSqlFunction final : ScalarFunction
     };
 
 //=======================================================================================
+// @bsiclass                                                   Affan.Khan         11/17
+//=======================================================================================
+struct ChangeSummaryHelper final
+    {
+    enum class InstanceOp
+        {
+        Inserted = 1,
+        Deleted = 2,
+        Updated = 4
+        };
+
+    enum class PropertyValueOp
+        {
+        Inserted = 1,     //'inserted'
+        Deleted = 2,      //'deleted'
+        UpdatedOld = 3,   //'updated.old'
+        UpdatedNew = 4,   //'updated.new'
+        };
+
+    public:
+        static std::set<PropertyValueOp> s_validPropertyValueOp;
+        static std::set<InstanceOp> s_validInstanceOp;
+        static std::map<Utf8CP, PropertyValueOp, CompareIUtf8Ascii> s_stringToPropertyValueOp;
+        static std::map<PropertyValueOp, InstanceOp> s_propertyValueToInstanceOp;
+
+    public:
+        static bool IsValidInstanceOp(int i);
+        static bool IsValidPropertyValueOp(int i);
+        static bool TryParsePropertyValueOp(PropertyValueOp& op, Utf8CP v);
+        static bool OpReferToOldValue(PropertyValueOp op);
+        static InstanceOp ToInstanceOp(PropertyValueOp op);
+    };
+
+//=======================================================================================
+// INT ToInstanceOpFuntion(TEXT|INT)
+// @bsiclass                                                   Affan.Khan        11/17
+//=======================================================================================
+struct ToInstanceOpFuntion final : ScalarFunction
+    {
+    private:
+        static ToInstanceOpFuntion* s_singleton;
+        ToInstanceOpFuntion() : ScalarFunction("ExtractChangeOp", 1, DbValueType::IntegerVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        static ToInstanceOpFuntion& GetSingleton();
+    };
+
+//=======================================================================================
 // BaseClass for scalar system funtion that require ECDb as context and use cache stmts
 // @bsiclass                                                   Affan.Khan         11/17
 //=======================================================================================
@@ -64,6 +113,7 @@ struct ECDbSystemScalarFunction : ScalarFunction
         ECDbSystemScalarFunction(ECDbCR, Utf8CP, int, DbValueType);
         ~ECDbSystemScalarFunction() {}
     };
+
 //=======================================================================================
 // Helper SQL function for ChangeSummary not intended for public use
 // @bsiclass                                                   Affan.Khan         11/17
@@ -72,27 +122,9 @@ struct ChangedValueFunction final : ECDbSystemScalarFunction
     {
     private:
         //Note: This must have the exact same definition as the respective ECEnumeration in the ECDbChangeSummaries schema
-        enum class Operation
-            {
-            Inserted = 1,     //'inserted'
-            Deleted = 2,
-            UpdatedOld = 3,   //'updated.old'
-            UpdatedNew = 4,   //'updated.new'
-            };
-
-        //inserted=1,deleted=2, updated.old=3, updated.new=4
-
         static std::map<Utf8CP, std::function<void(Context&, ECSqlStatement&)>, CompareIUtf8Ascii> s_setValueMap;
-        static std::set<int> s_operationValidValues;
-        static std::map<Utf8CP, int, CompareIUtf8Ascii> s_operationStrValues;
         void SetValue(Context& ctx, ECSqlStatement& stmt);
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
-
-        //This is part of public API therefore following must not change else it would break user code
-        static_assert((int) Operation::Inserted == 1, "Expecting Inserted==1");
-        static_assert((int) Operation::Deleted == 2, "Expecting Deleted==2");
-        static_assert((int) Operation::UpdatedOld == 3, "Expecting UpdatedOld==3");
-        static_assert((int) Operation::UpdatedNew == 4, "Expecting UpdatedNew==4");
 
     public:
         explicit ChangedValueFunction(ECDbCR);

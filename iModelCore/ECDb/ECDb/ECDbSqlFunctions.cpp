@@ -98,6 +98,69 @@ void Base64ToBlobSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
     }
 
 //************************************************************************************
+// ToInstanceOpFuntion
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ToInstanceOpFuntion* ToInstanceOpFuntion::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ToInstanceOpFuntion& ToInstanceOpFuntion::GetSingleton()
+    {
+    if (s_singleton == nullptr)
+        s_singleton = new ToInstanceOpFuntion();
+
+    return *s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void ToInstanceOpFuntion::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& operationValue = args[0];
+    if (operationValue.GetValueType() != DbValueType::IntegerVal && operationValue.GetValueType() != DbValueType::TextVal)
+        {
+        ctx.SetResultError("Argument 1 of function " SQLFUNC_ToInstanceOp " is expected to be the operation and must be of integer or text type and cannot be null");
+        return;
+        }
+
+    ChangeSummaryHelper::PropertyValueOp propValOp;
+    if (operationValue.GetValueType() == DbValueType::IntegerVal)
+        {
+        int operationVal = operationValue.GetValueInt();
+        if (ChangeSummaryHelper::IsValidPropertyValueOp(operationVal))
+            {
+            Utf8String msg;
+            msg.Sprintf("Argument 1 of function " SQLFUNC_ToInstanceOp " has an invalid operation value (%d)", operationVal);
+            ctx.SetResultError(msg.c_str());
+            return;
+            }
+
+        propValOp = Enum::FromInt<ChangeSummaryHelper::PropertyValueOp>(operationVal);
+        }
+    else
+        {
+        Utf8CP operationVal = operationValue.GetValueText();
+        if (!ChangeSummaryHelper::TryParsePropertyValueOp(propValOp, operationVal))
+            {
+            Utf8String msg;
+            msg.Sprintf("Argument 3 of function " SQLFUNC_ToInstanceOp " has an invalid operation value (%s)", operationVal);
+            ctx.SetResultError(msg.c_str());
+            return;
+            }
+        }
+
+    ctx.SetResultInt(Enum::ToInt(ChangeSummaryHelper::ToInstanceOp(propValOp)));
+    }
+
+//************************************************************************************
 // ChangedValueFunction
 //************************************************************************************
 
@@ -132,32 +195,6 @@ ChangedValueFunction::ChangedValueFunction(ECDbCR ecdb) : ECDbSystemScalarFuncti
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<int> ChangedValueFunction::s_operationValidValues = 
-    {
-    Enum::ToInt(Operation::Inserted),
-    Enum::ToInt(Operation::Deleted),
-    Enum::ToInt(Operation::UpdatedOld),
-    Enum::ToInt(Operation::UpdatedNew)
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan              11/17
-//WARNING: following should not be changd as it as part of public api
-//+---------------+---------------+---------------+---------------+---------------+------
-std::map<Utf8CP, int, CompareIUtf8Ascii> ChangedValueFunction::s_operationStrValues =
-    {
-        {"inserted",  Enum::ToInt(Operation::Inserted)},
-        {"deleted",  Enum::ToInt(Operation::Deleted)},
-        {"updated.new",  Enum::ToInt(Operation::UpdatedNew)},
-        {"updated.old",  Enum::ToInt(Operation::UpdatedOld)},
-        {"1",  Enum::ToInt(Operation::Inserted)},
-        {"2",  Enum::ToInt(Operation::Deleted)},
-        {"3",  Enum::ToInt(Operation::UpdatedNew)},
-        {"4",  Enum::ToInt(Operation::UpdatedOld)},
-    };
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan              11/17
-//+---------------+---------------+---------------+---------------+---------------+------
 void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     const int kInstanceId = 0;  // [Required]
@@ -187,15 +224,15 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
     DbValue const& operationValue = args[2];
     if (operationValue.GetValueType() != DbValueType::IntegerVal && operationValue.GetValueType() != DbValueType::TextVal)
         {
-        ctx.SetResultError("Argument 3 of function " SQLFUNC_ChangedValue " is expected to be the operation and must be of integer type and cannot be null");
+        ctx.SetResultError("Argument 3 of function " SQLFUNC_ChangedValue " is expected to be the operation and must be of integer or text type and cannot be null");
         return;
         }
 
-    Operation operation;
+    ChangeSummaryHelper::PropertyValueOp propValOp;
     if (operationValue.GetValueType() == DbValueType::IntegerVal)
         {
         int operationVal = operationValue.GetValueInt();
-        if (s_operationValidValues.find(operationVal) == s_operationValidValues.end())
+        if (ChangeSummaryHelper::IsValidPropertyValueOp(operationVal))
             {
             Utf8String msg;
             msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%d)", operationVal);
@@ -203,26 +240,23 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
             return;
             }
 
-        operation = Enum::FromInt<Operation>(operationVal);
+        propValOp = Enum::FromInt<ChangeSummaryHelper::PropertyValueOp>(operationVal);
         }
     else
         {
         Utf8CP operationVal = operationValue.GetValueText();
-        auto itor = s_operationStrValues.find(operationVal);
-        if (itor == s_operationStrValues.end())
+        if (!ChangeSummaryHelper::TryParsePropertyValueOp(propValOp, operationVal))
             {
             Utf8String msg;
             msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%s)", operationVal);
             ctx.SetResultError(msg.c_str());
             return;
             }
-
-        operation = Enum::FromInt<Operation>(itor->second);
         }
 
     DbValue const& fallbackValue = args[3];
     Utf8CP ecsql = nullptr;
-    if (operation == Operation::Deleted || operation == Operation::UpdatedOld)
+    if (ChangeSummaryHelper::OpReferToOldValue(propValOp))
         ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM " ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
     else
         ecsql = "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM " ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
@@ -278,4 +312,96 @@ CachedECSqlStatementPtr ECDbSystemScalarFunction::GetPreparedStatement(Utf8CP ec
 ECDbSystemScalarFunction::ECDbSystemScalarFunction(ECDbCR ecdb, Utf8CP name, int nArgs, DbValueType returnType)
     : ScalarFunction(name, nArgs, returnType), m_ecdb(ecdb), m_stmtCache(10)
     {}
+
+
+//************************************************************************************
+// ChangeSummaryHelper
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::set<ChangeSummaryHelper::PropertyValueOp> ChangeSummaryHelper::s_validPropertyValueOp =
+    {
+    PropertyValueOp::Inserted,
+    PropertyValueOp::Deleted,
+    PropertyValueOp::UpdatedOld,
+    PropertyValueOp::UpdatedNew
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::set<ChangeSummaryHelper::InstanceOp> ChangeSummaryHelper::s_validInstanceOp =
+    {
+    InstanceOp::Inserted,
+    InstanceOp::Deleted,
+    InstanceOp::Updated,
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::map<Utf8CP, ChangeSummaryHelper::PropertyValueOp, CompareIUtf8Ascii> ChangeSummaryHelper::s_stringToPropertyValueOp =
+    {
+            {"inserted",  PropertyValueOp::Inserted},
+            {"deleted",  PropertyValueOp::Deleted},
+            {"updated.new",  PropertyValueOp::UpdatedNew},
+            {"updated.old",  PropertyValueOp::UpdatedOld},
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+std::map<ChangeSummaryHelper::PropertyValueOp, ChangeSummaryHelper::InstanceOp> ChangeSummaryHelper::s_propertyValueToInstanceOp =
+    {
+            {PropertyValueOp::Inserted,InstanceOp::Inserted},
+            {PropertyValueOp::Deleted,InstanceOp::Deleted},
+            {PropertyValueOp::UpdatedNew,InstanceOp::Updated},
+            {PropertyValueOp::UpdatedOld,InstanceOp::Updated},
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ChangeSummaryHelper::IsValidInstanceOp(int i)
+    {
+    return s_validInstanceOp.find(Enum::FromInt<InstanceOp>(i)) != s_validInstanceOp.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ChangeSummaryHelper::IsValidPropertyValueOp(int i)
+    {
+    return s_validPropertyValueOp.find(Enum::FromInt<PropertyValueOp>(i)) != s_validPropertyValueOp.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ChangeSummaryHelper::TryParsePropertyValueOp(PropertyValueOp& op, Utf8CP v)
+    {
+    auto itor = s_stringToPropertyValueOp.find(v);
+    if (itor == s_stringToPropertyValueOp.end())
+        return false;
+
+    op = itor->second;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ChangeSummaryHelper::OpReferToOldValue(PropertyValueOp op)
+    {
+    return op == PropertyValueOp::Deleted || op == PropertyValueOp::UpdatedOld;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ChangeSummaryHelper::InstanceOp ChangeSummaryHelper::ToInstanceOp(PropertyValueOp op)
+    {
+    return s_propertyValueToInstanceOp[op];
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
