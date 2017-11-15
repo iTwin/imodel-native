@@ -37,7 +37,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(9, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     V8FileEditor v8editor;
@@ -61,7 +61,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
@@ -78,7 +78,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(9, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
@@ -98,7 +98,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(9, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size()) << "The converter does NOT delete the attached model.";
+        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size()) << "The converter does NOT delete the attached model.";
         }
     }
 

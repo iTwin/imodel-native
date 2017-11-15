@@ -9,7 +9,7 @@
 #include "DgnV8/DynamicSchemaGenerator/ECConversion.h"
 
 #undef LOG
-#define LOG (*LoggingManager::GetLogger(L"DgnDbSync"))
+#define LOG (*LoggingManager::GetLogger(L"DgnV8Converter.SyncInfo"))
 
 #define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {SetLastError(rc); return BSIERROR;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
@@ -102,7 +102,8 @@ BentleyStatus SyncInfo::CreateTables()
                          "V8FileSyncInfoId INTEGER REFERENCES " SYNC_TABLE_File "(Id) ON DELETE CASCADE,"
                          "V8Id INT,"
                          "V8Name CHAR NOT NULL,"
-                         "Transform BLOB");
+                         "Transform BLOB,"
+                         "CONSTRAINT FileModelId UNIQUE(V8FileSyncInfoId,V8Id)");
 
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "NativeIdx ON "  SYNC_TABLE_Model "(ModelId)");
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "FileAndModel ON "  SYNC_TABLE_Model "(V8FileSyncInfoId,V8Id)");

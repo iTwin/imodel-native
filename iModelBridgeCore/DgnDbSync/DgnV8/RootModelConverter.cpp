@@ -1517,6 +1517,8 @@ void RootModelConverter::_FinishConversion()
         }
     else
         {
+#ifdef WIP_NEEDS_WORK // This is not right when we call the converter more than once, each time targettting a different root, 
+                      // and all going to the same briefcase. In that case, the second root will not "see" the first root or its attachments.
         // Detect deletions in the V8 files that we processed. (Don't assume we saw all V8 files.)
         for (DgnV8FileP v8File : m_v8Files)
             {
@@ -1525,6 +1527,7 @@ void RootModelConverter::_FinishConversion()
             }
         GetChangeDetector()._DetectDeletedElementsEnd(*this);
         GetChangeDetector()._DetectDeletedModelsEnd(*this);
+#endif
 
         // Update syncinfo for all V8 files *** WIP_UPDATER - really only need to update syncinfo for changed files, but we don't keep track of that.
         for (DgnFileP v8File : m_v8Files)

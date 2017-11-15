@@ -761,7 +761,8 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
     auto refTrans = ComputeAttachmentTransform(transformToParent, v8DgnAttachment);
 
     SyncInfo::V8ModelMapping refSyncInfoMapping;
-    GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans);
+    if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans))
+        GetSyncInfo().FindModel(&refSyncInfoMapping, *attachedV8model, &refTrans, _GetIdPolicy(referenceFile)); // model was first seen and mapped in as a normal model.
 
     ResolvedModelMapping mergedModelMapping(targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
 

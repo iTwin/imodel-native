@@ -295,6 +295,7 @@ static ChangeSetsResult tryPullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db, iModel
     auto downloadedChangeSets = downloadChangeSetsResult.GetValue();
 
     // Close briefcase, dgndb,…
+    briefcase = nullptr;
     db->CloseDb();
 
     // Reopen dgndb with changesets that should be applied
@@ -320,10 +321,15 @@ StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
     do {
         auto result = tryPullAndMergeSchemaRevisions(db, m_briefcase);
         if (result.IsSuccess())
+            {
+            OpenBriefcase(*db);
             return SUCCESS;
+            }
         m_lastServerError = result.GetError();
         }
     while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
+    CloseBriefcase();
+    db = nullptr;
     return BSIERROR;
     }
 

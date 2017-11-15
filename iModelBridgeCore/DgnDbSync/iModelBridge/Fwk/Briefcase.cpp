@@ -311,7 +311,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (needsSchemaMerge)
         {
-        status = m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb);
+        GetLogger().infov("PullAndMergeSchemaRevisions %s", m_serverArgs.m_repositoryName.c_str());
+        status = m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb); // *** TRICKY: PullAndMergeSchemaRevisions closes and re-opens the briefcase, so m_briefcaseDgnDb is re-assigned!
         if (SUCCESS == status)
             status = m_clientUtils->PullMergeAndPush(desc);
         }

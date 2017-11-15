@@ -666,36 +666,6 @@ BeSQLite::BeGuid iModelBridge::Params::QueryDocumentGuid(BeFileNameCR localFileN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinkModelPtr iModelBridge::GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary)
-    {
-    Utf8String partitionName = "RepositoryLinksPartition"; //iModelBridge::L10N.GetString(iModelBridge::L10N::??::RepositoryLinksPartitionName());    TODO
-    DgnCode partitionCode = LinkPartition::CreateCode(*db.Elements().GetRootSubject(), partitionName.c_str());
-    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
-    if (partitionId.IsValid())
-        return LinkModel::Get(db, DgnModelId(partitionId.GetValue()));
-
-    if (!createIfNecessary)
-        return nullptr;
-
-    LinkPartitionPtr ed = LinkPartition::Create(*db.Elements().GetRootSubject(), partitionName.c_str());
-    LinkPartitionCPtr partition = ed->InsertT<LinkPartition>();
-    if (!partition.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    auto lm = LinkModel::Create(LinkModel::CreateParams(db, partition->GetElementId()));
-    if (lm->Insert() != DgnDbStatus::Success)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    return lm;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
     {
     SHA1 sha1;
@@ -710,7 +680,7 @@ SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
-                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, LinkModelR lmodel)
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel)
     {
     Utf8String codeStr(defaultCode);
     docProps.m_desktopURN = defaultURN;
@@ -736,7 +706,7 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN)
     {
-    auto lmodel = GetRepositoryLinkModel(db, true);
+    auto lmodel = db.GetRepositoryModel();
     if (!lmodel.IsValid())
         return nullptr;
 

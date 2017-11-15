@@ -947,8 +947,11 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
     else
         {
-        // *** TBD: include every document assigned to this bridge.
+#ifdef WIP_NEEDS_MORE_THOUGHT // Must prevent the drawing converter from mapping in models that are actually meant to be root models (in a later run).
+        GetRegistry()._QueryAllFilesAssignedToBridge(params.m_drawingAndSheetFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+#endif
         }
+
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
