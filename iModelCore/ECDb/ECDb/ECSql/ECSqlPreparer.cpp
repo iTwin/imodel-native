@@ -1306,13 +1306,30 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& nativeSql, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
-    bool isFirstItem = true;
-    for (Exp const* childExp : exp.GetChildren())
+    NativeSqlBuilder::List argSqlSnippets;
+    ECSqlStatus stat = PrepareFunctionArgList(argSqlSnippets, ctx, exp);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    nativeSql.Append(argSqlSnippets, ",");
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    01/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgList(NativeSqlBuilder::List& argSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const& functionCallExp)
+    {
+    if (functionCallExp.GetType() != Exp::Type::FunctionCall && functionCallExp.GetType() != Exp::Type::MemberFunctionCall)
+        {
+        BeAssert(false && "May not call PrepareFunctionArgList on an expression which is neither a FunctionCallExp nor a MemberFunctionCallExp");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    for (Exp const* childExp : functionCallExp.GetChildren())
         {
         ValueExp const& argExp = childExp->GetAs<ValueExp>();
-
-        if (!isFirstItem)
-            nativeSql.AppendComma();
 
         NativeSqlBuilder::List nativeSqlArgumentList;
         ECSqlStatus status;
@@ -1328,8 +1345,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& native
         if (!status.IsSuccess())
             return status;
 
-        nativeSql.Append(nativeSqlArgumentList);
-        isFirstItem = false;
+        if (nativeSqlArgumentList.size() != 1)
+            {
+            BeAssert(false && "For function call args, only expressions are supported that translate into a single SQL snippet");
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        argSqlSnippets.push_back(nativeSqlArgumentList[0]);
         }
 
     return ECSqlStatus::Success;

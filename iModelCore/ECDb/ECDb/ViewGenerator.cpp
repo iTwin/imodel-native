@@ -213,26 +213,14 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
         }
 
-    NativeSqlBuilder::List summaryIdArgSql;
-    NativeSqlBuilder::List operationArgSql;
-    NativeSqlBuilder::List stageArgSql;
-
-    //non-optional parameter
-    ValueExp const& summaryIdArgExp = memberFuncCallExp.GetChildren()[0]->GetAs<ValueExp>();
-    if (ECSqlExpPreparer::PrepareValueExp(summaryIdArgSql, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), summaryIdArgExp) != ECSqlStatus::Success)
+    NativeSqlBuilder::List argSqlSnippets;
+    if (ECSqlExpPreparer::PrepareFunctionArgList(argSqlSnippets, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), memberFuncCallExp) != ECSqlStatus::Success)
         return ERROR;
 
-    ValueExp const& operationArgExp = memberFuncCallExp.GetChildren()[1]->GetAs<ValueExp>();
-    if (ECSqlExpPreparer::PrepareValueExp(operationArgSql, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), operationArgExp) != ECSqlStatus::Success)
-        return ERROR;
-
-    //optional parameter
-    if (memberFuncCallExp.GetChildrenCount() == 3)
-        {
-        ValueExp const& stageArgExp = memberFuncCallExp.GetChildren()[2]->GetAs<ValueExp>();
-        if (ECSqlExpPreparer::PrepareValueExp(stageArgSql, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), stageArgExp) != ECSqlStatus::Success)
-            return ERROR;
-        }
+    BeAssert(argSqlSnippets.size() == 2 || argSqlSnippets.size() == 3);
+    NativeSqlBuilder const& summaryIdArgSql = argSqlSnippets[0];
+    NativeSqlBuilder const& operationArgSql = argSqlSnippets[1];
+    NativeSqlBuilder const* stageArgSql = argSqlSnippets.size() == 3 ? &argSqlSnippets[2] : nullptr;
 
     NativeSqlBuilder internalView;
     if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
@@ -280,8 +268,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
             columnSql.Append("'").Append(accessString).Append("'").AppendComma();
             columnSql.Append("ic.").Append(operationColumnName).AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
 
-            if (!stageArgSql.empty())
-                columnSql.AppendComma().Append(stageArgSql[0]);
+            if (stageArgSql != nullptr)
+                columnSql.AppendComma().Append(*stageArgSql);
 
             columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
             }
@@ -300,8 +288,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                 columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("',");
                 columnSql.Append("ic.").Append(operationColumnName).AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
 
-                if (!stageArgSql.empty())
-                    columnSql.AppendComma().Append(stageArgSql[0]);
+                if (stageArgSql != nullptr)
+                    columnSql.AppendComma().Append(*stageArgSql);
 
                 columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
                 }
@@ -315,8 +303,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         viewSql.AppendFormatted(" INNER JOIN " TABLE_ClassHierarchyCache " ch ON ic.%s=ch.ClassId AND ch.BaseClassId=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
 
     viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append("." ECDBSYS_PROP_ECInstanceId "=ic.").Append(classIdOfChangedInstanceColumnName);
-    viewSql.Append(" WHERE ic.").Append(operationColumnName).Append("=").Append(operationArgSql[0]);
-    viewSql.Append(" AND ic.").Append(summaryIdColumnName).Append("=").Append(summaryIdArgSql[0]);
+    viewSql.Append(" WHERE ic.").Append(operationColumnName).Append("=").Append(operationArgSql);
+    viewSql.Append(" AND ic.").Append(summaryIdColumnName).Append("=").Append(summaryIdArgSql);
 
     if (!ctx.IsPolymorphicQuery())
         viewSql.AppendFormatted(" AND ic.%s=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
