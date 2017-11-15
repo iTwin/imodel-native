@@ -20,7 +20,7 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
     ToolkitDrawInc  = $(ToolkitRoot)Drawing/Include/
     ToolkitSub1Inc  = $(ToolkitRoot)Architecture/
     ToolkitSub2Inc  = $(ToolkitRoot)Kernel/Extensions/ExServices/
-    ToolkitLibs     = $(BuildContext)SubParts/teigha/Libs/
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/Teigha/
 
     ## Output dir & DwgDb .lib
     ContextDeliveryDir  = $(BuildContext)Delivery/OpenDwgImporter/
