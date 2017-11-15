@@ -106,6 +106,10 @@
     <ClInclude Include="MarshalHelper.h" />
     <ClInclude Include="PublicAPI\CS06Bridge\CS06Bridge.h" />
     <ClInclude Include="PublicAPI\CS06Bridge\CS06BridgeApi.h" />
+    <ClInclude Include="RecordFacade.h" />
+    <ClInclude Include="SourceIdentityFacade.h" />
+    <ClInclude Include="SourceItemProxy.h" />
+    <ClInclude Include="SourceStateFacade.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChangeDetectorFacade.cpp" />
@@ -113,6 +117,10 @@
     <ClCompile Include="CS06BridgeInternal.cpp" />
     <ClCompile Include="iModelBridgeAffinity.cpp" />
     <ClCompile Include="MarshalHelper.cpp" />
+    <ClCompile Include="RecordFacade.cpp" />
+    <ClCompile Include="SourceIdentityFacade.cpp" />
+    <ClCompile Include="SourceItemProxy.cpp" />
+    <ClCompile Include="SourceStateFacade.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
