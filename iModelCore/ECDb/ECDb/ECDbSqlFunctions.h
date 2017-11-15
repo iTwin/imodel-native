@@ -57,9 +57,9 @@ struct ChangedValueFunction final : ScalarFunction
     private:
         enum class Operation
             {
-            Inserted = 1,
-            Deleted = 2,
-            Updated = 4
+            Insert = 1,
+            Update = 2,
+            Delete = 3
             };
 
         enum class Stage
@@ -68,7 +68,7 @@ struct ChangedValueFunction final : ScalarFunction
             New = 2
             };
 
-        ECDbR m_ecdb;
+        ECDbCR m_ecdb;
         ECSqlStatementCache m_stmtCache;
         static std::map<Utf8CP, std::function<void(Context&, ECSqlStatement&)>, CompareIUtf8Ascii> s_setValueMap;
 
@@ -76,7 +76,7 @@ struct ChangedValueFunction final : ScalarFunction
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        explicit ChangedValueFunction(ECDbR ecdb);
+        explicit ChangedValueFunction(ECDbCR);
         ~ChangedValueFunction() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

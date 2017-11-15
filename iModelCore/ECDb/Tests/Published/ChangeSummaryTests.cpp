@@ -1119,8 +1119,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumnsV2)
     ASSERT_TRUE(tracker.HasChanges());
 
     TestChangeSet changeset;
-    auto rc = changeset.FromChangeTrack(tracker);
-    ASSERT_TRUE(BE_SQLITE_OK == rc);
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceId changeSummaryId;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
@@ -1128,7 +1127,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumnsV2)
     {
     ECSqlStatement stmt;
     //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2 FROM ts.Element.ChangeSummary(?1, ?2)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT S, P2D FROM ts.Element.ChangeSummary(?, ?)" ));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT S, P2D FROM ts.Element.ChangeSummary(?,?)" ));
 
     stmt.BindId(1, changeSummaryId);
     stmt.BindInt(2, 1); //1: Insert TODO: Replace by OpCode enum

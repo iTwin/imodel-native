@@ -109,7 +109,7 @@ std::map<Utf8CP, std::function<void(ChangedValueFunction::Context&, ECSqlStateme
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangedValueFunction::ChangedValueFunction(ECDbR ecdb) : ScalarFunction(SQLFUNC_ChangedValue, -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(10)
+ChangedValueFunction::ChangedValueFunction(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ChangedValue, -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(10)
     {
     if (s_setValueMap.empty())
         {
@@ -136,7 +136,7 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
     {
     if (nArgs != 4 && nArgs != 5)
         {
-        ctx.SetResultError("Function ChangedValue expects 4 or 5 parameters.");
+        ctx.SetResultError("Function " SQLFUNC_ChangedValue " expects 4 or 5 arguments.");
         return;
         }
 
@@ -147,43 +147,48 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
     const int kStage = 4;           // [Optional]
 
     //Decode and verify parameters
-    if (args[kInstanceId].GetValueType() != DbValueType::IntegerVal)
+    DbValue const& instanceChangeIdValue = args[0];
+    if (instanceChangeIdValue.GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("Parameter 1 is expected to be of integer type and cannot be null");
+        ctx.SetResultError("Argument 1 of function " SQLFUNC_ChangedValue " is expected to be the InstanceChange ECInstanceId and must be of integer type and cannot be null");
         return;
         }
 
-    if (args[kAccessString].GetValueType() != DbValueType::TextVal)
+    const ECInstanceId instanceChangeId = instanceChangeIdValue.GetValueId<ECInstanceId>();
+
+    DbValue const& accessStringValue = args[1];
+    if (accessStringValue.GetValueType() != DbValueType::TextVal)
         {
-        ctx.SetResultError("Parameter 2 is expected to be of text type and cannot be null");
+        ctx.SetResultError("Argument 2 of function " SQLFUNC_ChangedValue " is expected to be the property access string and must be of text type and cannot be null");
         return;
         }
 
-    if (args[kOperation].GetValueType() != DbValueType::IntegerVal)
+    Utf8CP accessString = accessStringValue.GetValueText();
+
+    DbValue const& operationValue = args[2];
+    if (operationValue.GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("Parameter 3 is expected to be of integer type and cannot be null");
+        ctx.SetResultError("Argument 3 of function " SQLFUNC_ChangedValue " is expected to be the operation and must be of integer type and cannot be null");
         return;
         }
 
-    const ECInstanceId csInstanceId = args[kInstanceId].GetValueId<ECInstanceId>();
-    Utf8CP accessString = args[kAccessString].GetValueText();
-    int operationVal = args[kOperation].GetValueInt();
-    if (operationVal != Enum::ToInt(Operation::Inserted) && operationVal != Enum::ToInt(Operation::Updated) &&
-        operationVal != Enum::ToInt(Operation::Deleted))
+    int operationVal = operationValue.GetValueInt();
+    if (operationVal != Enum::ToInt(Operation::Insert) && operationVal != Enum::ToInt(Operation::Update) &&
+        operationVal != Enum::ToInt(Operation::Delete))
         {
         Utf8String msg;
-        msg.Sprintf("Invalid value for argument Operation", operationVal);
+        msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%d)", operationVal);
         ctx.SetResultError(msg.c_str());
         return;
         }
 
     const Operation operation = Enum::FromInt<Operation>(operationVal);
-    DbValue const& fallbackValue = args[kFallBackValue];
+    DbValue const& fallbackValue = args[3];
 
     Stage stage;
     switch (operation)
         {
-            case Operation::Inserted:
+            case Operation::Insert:
             {
             if (nArgs == 5)
                 {
@@ -196,7 +201,7 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
             stage = Stage::New;
             break;
             }
-            case Operation::Deleted:
+            case Operation::Delete:
             {
             if (nArgs == 5)
                 {
@@ -208,21 +213,21 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
             stage = Stage::Old;
             break;
             }
-            case Operation::Updated:
+            case Operation::Update:
             {
-            if (nArgs != 5 || args[kStage].GetValueType() != DbValueType::IntegerVal)
+            DbValue const* stageValue = nArgs == 5 ? &args[4] : nullptr;
+
+            if (stageValue == nullptr || stageValue->GetValueType() != DbValueType::IntegerVal)
                 {
-                Utf8String msg;
-                msg.Sprintf("When passing %d (Updated) as Operation the fifth parameter must be specified and it must be of type Integer.", operationVal);
-                ctx.SetResultError(msg.c_str());
+                ctx.SetResultError("Argument 5 of function " SQLFUNC_ChangedValue " is expected to be specified when 'Update' was specified as operation (4th argument).");
                 return;
                 }
 
-            const int stageVal = args[kStage].GetValueInt();
+            const int stageVal = stageValue->GetValueInt();
             if (stageVal != Enum::ToInt(Stage::Old) && stageVal != Enum::ToInt(Stage::New))
                 {
                 Utf8String msg;
-                msg.Sprintf("Invalid value for argument Stage", stageVal);
+                msg.Sprintf("Argument 5 of function " SQLFUNC_ChangedValue " has an invalid value for Stage (%d)", stageVal);
                 ctx.SetResultError(msg.c_str());
                 return;
                 }
@@ -249,7 +254,7 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
         return;
         }
 
-    stmt->BindId(1, csInstanceId);
+    stmt->BindId(1, instanceChangeId);
     stmt->BindText(2, accessString, IECSqlBinder::MakeCopy::No);
 
     if (stmt->Step() == BE_SQLITE_ROW)
