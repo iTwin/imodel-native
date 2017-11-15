@@ -30,9 +30,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define CHANGESUMMARY_FUNC_Name "changesummary"
 #define CHANGESUMMARY_FUNC_ARG_Operation "operation"
-#define CHANGESUMMARY_FUNC_ARG_SummaryId "summary_id"
+#define CHANGESUMMARY_FUNC_ARG_SummaryId "summaryid"
 #define CHANGESUMMARY_FUNC_ARG_Stage "stage"
-#define CHANGESUMMARY_ChangedValue "ChangedValue"
+
+
 //=======================================================================================
 //! ECSQL statement types
 // @bsienum                                                Krischan.Eberle      12/2013

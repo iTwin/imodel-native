@@ -75,5 +75,7 @@ struct ChangedValueFunction final : ScalarFunction
     public:
         explicit ChangedValueFunction(ECDbR ecdb);
         ~ChangedValueFunction() {}
+
+        static Utf8CP Name() { return "ChangedValue"; }
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

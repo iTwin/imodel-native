@@ -20,7 +20,7 @@ struct ConstraintECClassIdJoinInfo;
 +===============+===============+===============+===============+===============+======*/
 struct ViewGenerator final
     {
-    struct MemberInfo
+    struct MemberInfo final
         {
         private:
             Utf8String m_name;
@@ -29,10 +29,7 @@ struct ViewGenerator final
         public:
             Utf8StringCR GetName() const { return m_name; }
             void SetName(Utf8CP name) { m_name = name; }
-            void SetArg(Utf8CP name, Utf8CP value)
-                {
-                m_args[name] = value;
-                }
+            void SetArg(Utf8CP name, Utf8CP value) { m_args[name] = value; }
             Utf8CP GetArg(Utf8CP name) const
                 {
                 auto itor = m_args.find(Utf8String(name));
@@ -41,6 +38,7 @@ struct ViewGenerator final
 
                 return itor->second.c_str();
                 }
+
             bool HasArg(Utf8CP name) const
                 {
                 auto itor = m_args.find(Utf8String(name));
@@ -49,7 +47,8 @@ struct ViewGenerator final
 
                 return true;
                 }
-            bool IsChangeSummaryFunction() const { return GetName().EqualsIAscii(CHANGESUMMARY_FUNC_Name); }
+
+            bool IsChangeSummaryFunction() const { return m_name.EqualsIAscii(CHANGESUMMARY_FUNC_Name); }
             bool Valid() const { return !m_name.empty(); }
         };
 

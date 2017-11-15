@@ -81,17 +81,15 @@ ChangeIterator::RowEntry& ChangeIterator::RowEntry::operator=(ChangeIterator::Ro
     m_tableMap = other.m_tableMap;
     m_primaryInstanceId = other.m_primaryInstanceId;
     m_primaryClass = other.m_primaryClass;
-    InitSqlChange();
+    FreeSqlChange();
+    m_sqlChange = new SqlChange(m_change);
     return *this;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-ChangeIterator::RowEntry::~RowEntry()
-    {
-    FreeSqlChange();
-    }
+ChangeIterator::RowEntry::~RowEntry() { FreeSqlChange(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
@@ -102,7 +100,7 @@ void ChangeIterator::RowEntry::Initialize()
     if (!m_change.IsValid())
         return;
 
-    InitSqlChange();
+    m_sqlChange = new SqlChange(m_change);
 
     m_tableMap = m_iterator.GetTableMap(m_sqlChange->GetTableName());
     BeAssert(m_tableMap != nullptr);
@@ -121,7 +119,17 @@ void ChangeIterator::RowEntry::Reset()
     m_primaryClass = nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+void ChangeIterator::RowEntry::FreeSqlChange()
+    {
+    if (m_sqlChange == nullptr)
+        return;
 
+    delete m_sqlChange;
+    m_sqlChange = nullptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
@@ -164,26 +172,7 @@ ECN::ECClassId ChangeIterator::RowEntry::GetClassIdFromChangeOrTable(Utf8CP clas
     return m_tableMap->QueryValueId<ECClassId>(classIdColumnName, instanceId);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     12/2016
-//---------------------------------------------------------------------------------------
-void ChangeIterator::RowEntry::InitSqlChange()
-    {
-    FreeSqlChange();
-    m_sqlChange = new SqlChange(m_change);
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     12/2016
-//---------------------------------------------------------------------------------------
-void ChangeIterator::RowEntry::FreeSqlChange()
-    {
-    if (!m_sqlChange)
-        return;
-
-    delete m_sqlChange;
-    m_sqlChange = nullptr;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016

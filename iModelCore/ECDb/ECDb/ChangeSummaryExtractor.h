@@ -34,6 +34,7 @@ struct InstanceChange final
             m_summaryId(summaryId), m_keyOfChangedInstance(keyOfChangedInstance), m_dbOpcode(dbOpcode), m_isIndirect(isIndirect), m_primaryTableName(tableName)
             {}
 
+        bool IsValid() const { return m_keyOfChangedInstance.GetInstanceId().IsValid(); }
 
         ECInstanceId GetSummaryId() const { return m_summaryId; }
         ECInstanceKey GetKeyOfChangedInstance() const { return m_keyOfChangedInstance; }
@@ -44,18 +45,6 @@ struct InstanceChange final
 
         //! Get the name of the primary table containing the instance
         Utf8StringCR GetPrimaryTableName() const { return m_primaryTableName; }
-
-        //! Returns true if the instance is valid. 
-        bool IsValid() const { return m_keyOfChangedInstance.GetInstanceId().IsValid(); }
-
-        //! Returns true if the value specified by the accessString exists
-        bool ContainsValue(Utf8CP accessString) const;
-
-        //! Gets a property value before the change
-        DbDupValue GetOldValue(Utf8CP accessString) const;
-
-        //! Gets a property value after the change
-        DbDupValue GetNewValue(Utf8CP accessString) const;
     };
 
 //=======================================================================================
@@ -63,15 +52,16 @@ struct InstanceChange final
 //=======================================================================================
 struct ChangeSummaryExtractor final : NonCopyableClass
     {
-    enum class Operation
-        {
-        Inserted = 1,
-        Deleted = 2,
-        Updated = 4
-        };
-
     private:
         enum class ExtractMode { InstancesOnly, RelationshipInstancesOnly };
+
+        //! Matches the ECEnumeration Operation defined in the ECDbChangeSummaries ECSchema
+        enum class Operation
+            {
+            Insert = 1,
+            Update = 2,
+            Delete = 3
+            };
 
         ECDbCR m_ecdb;
         ECSqlStatementCache m_stmtCache;
@@ -114,8 +104,40 @@ struct ChangeSummaryExtractor final : NonCopyableClass
 
         static bool RawIndirectToBool(int indirect) { return indirect != 0; }
 
+        static Nullable<Operation> DbOpCodeToOperation(DbOpcode opCode)
+            {
+            switch (opCode)
+                {
+                    case DbOpcode::Delete:
+                        return Operation::Delete;
+                    case DbOpcode::Insert:
+                        return Operation::Insert;
+                    case DbOpcode::Update:
+                        return Operation::Update;
+                    default:
+                        BeAssert(false && "DbCode enum was changed. This code has to be adjusted.");
+                        return Nullable<Operation>();
+                }
+            }
+
+        static Nullable<DbOpcode> OperationToDbOpCode(Operation op)
+            {
+            switch (op)
+                {
+                    case Operation::Delete:
+                        return DbOpcode::Delete;
+                    case Operation::Insert:
+                        return DbOpcode::Insert;
+                    case Operation::Update:
+                        return DbOpcode::Update;
+                    default:
+                        BeAssert(false && "Operation enum was changed. This code has to be adjusted.");
+                        return Nullable<DbOpcode>();
+                }
+            }
+
     public:
-        explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(10) {}
+        explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(15) {}
 
         BentleyStatus Extract(ECInstanceId& changeSummaryId, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
     };

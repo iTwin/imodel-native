@@ -109,7 +109,7 @@ std::map<Utf8CP, std::function<void(ChangedValueFunction::Context&, ECSqlStateme
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan              11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-ChangedValueFunction::ChangedValueFunction(ECDbR ecdb) : ScalarFunction("ChangedValue", -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(10)
+ChangedValueFunction::ChangedValueFunction(ECDbR ecdb) : ScalarFunction(Name(), -1, DbValueType::BlobVal), m_ecdb(ecdb), m_stmtCache(10)
     {
     if (s_setValueMap.empty())
         {

@@ -44,7 +44,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
     ECClassCP instanceClass = sm.GetClass(CHANGESUMMARY_SCHEMA_Name, CHANGESUMMARY_CLASS_Instance);
     if (instanceClass == nullptr)
         {
-        ctx.GetECDb().GetImpl().Issues().Report("ChangeSummary extension require " CHANGESUMMARY_SCHEMA_Name " schema.");
+        ctx.GetECDb().GetImpl().Issues().Report("ChangeSummary extension requires " CHANGESUMMARY_SCHEMA_Name " schema.");
         return ERROR;
         }
 
@@ -76,7 +76,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryView(NativeSqlBuilder& viewSql
             {
             Utf8CP accessString = propertyMap->GetAccessString().c_str();
             columnSql
-                .AppendComma().Append(CHANGESUMMARY_ChangedValue "([CI].").AppendEscaped(instanceIdColumn)
+                .AppendComma().Append(ChangedValueFunction::Name()).Append("([CI].").AppendEscaped(instanceIdColumn)
                 .AppendComma().Append("'").Append(accessString).Append("'")
                 .AppendComma().Append("[CI].").AppendEscaped(operationColumn)
                 .AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);

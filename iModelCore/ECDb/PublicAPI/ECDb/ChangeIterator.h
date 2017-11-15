@@ -127,7 +127,6 @@ struct ChangeIterator final : NonCopyableClass
 
             void Initialize();
             void InitPrimaryInstance();
-            void InitSqlChange();
             void FreeSqlChange();
             void Reset();
 
@@ -166,9 +165,9 @@ struct ChangeIterator final : NonCopyableClass
 
             ECDB_EXPORT RowEntry& operator++();
 
-            RowEntry const& operator* () const { return *this; }
+            RowEntry const& operator*() const { return *this; }
             bool operator==(RowEntry const& rhs) const { return m_change == rhs.m_change; }
-            bool operator!=(RowEntry const& rhs) const { return !(this == &rhs); }
+            bool operator!=(RowEntry const& rhs) const { return !(*this == rhs); }
 
             ECDbCR GetDb() const { return m_ecdb; } //!< @private
             SqlChange const* GetSqlChange() const { return m_sqlChange; } //!< @private
