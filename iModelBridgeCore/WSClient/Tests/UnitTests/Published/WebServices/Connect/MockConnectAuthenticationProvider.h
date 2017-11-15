@@ -16,8 +16,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MockConnectAuthenticationProvider : public IConnectAuthenticationProvider
     {
-    public:
-        MOCK_CONST_METHOD2(GetAuthenticationHandler, AuthenticationHandlerPtr(Utf8StringCR, IHttpHandlerPtr));
+    MOCK_CONST_METHOD3(GetAuthenticationHandler, AuthenticationHandlerPtr(Utf8StringCR, IHttpHandlerPtr, HeaderPrefix));
     };
 #endif
 
