@@ -88,7 +88,7 @@ struct ToInstanceOpFuntion final : ScalarFunction
     {
     private:
         static ToInstanceOpFuntion* s_singleton;
-        ToInstanceOpFuntion() : ScalarFunction("ExtractChangeOp", 1, DbValueType::IntegerVal) {}
+        ToInstanceOpFuntion() : ScalarFunction("ToInstanceOp", 1, DbValueType::IntegerVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:

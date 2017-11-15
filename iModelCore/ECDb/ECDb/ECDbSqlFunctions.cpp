@@ -135,7 +135,7 @@ void ToInstanceOpFuntion::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     if (operationValue.GetValueType() == DbValueType::IntegerVal)
         {
         int operationVal = operationValue.GetValueInt();
-        if (ChangeSummaryHelper::IsValidPropertyValueOp(operationVal))
+        if (!ChangeSummaryHelper::IsValidPropertyValueOp(operationVal))
             {
             Utf8String msg;
             msg.Sprintf("Argument 1 of function " SQLFUNC_ToInstanceOp " has an invalid operation value (%d)", operationVal);
@@ -232,7 +232,7 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
     if (operationValue.GetValueType() == DbValueType::IntegerVal)
         {
         int operationVal = operationValue.GetValueInt();
-        if (ChangeSummaryHelper::IsValidPropertyValueOp(operationVal))
+        if (!ChangeSummaryHelper::IsValidPropertyValueOp(operationVal))
             {
             Utf8String msg;
             msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid operation value (%d)", operationVal);
