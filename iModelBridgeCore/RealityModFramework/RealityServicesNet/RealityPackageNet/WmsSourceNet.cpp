@@ -2,14 +2,14 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/WmsSourceNet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 // Package.
 #include "WmsSourceNet.h"
 
-using namespace RealityPackage;
+using namespace RealityPlatform;
 using namespace RealityPackageNet;
 
 // System.

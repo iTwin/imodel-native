@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityAdmin/DataHandlerTester.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,7 +10,7 @@
 
 
 #include <Bentley/BeTest.h>
-#include <RealityPlatform/RealityDataHandler.h>
+#include <RealityPlatformTools/RealityDataHandler.h>
 
 
 #define THUMBNAIL_WIDTH     512

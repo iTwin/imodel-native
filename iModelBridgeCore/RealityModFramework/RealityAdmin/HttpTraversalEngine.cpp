@@ -11,7 +11,7 @@
 #include <regex>
 
 #include <RealityAdmin/HttpTraversalEngine.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 #include <RealityAdmin/RealityDataHandler.h>
 #include <RealityAdmin/RealityPlatformUtil.h>
 

@@ -10,7 +10,6 @@
 #include <BeXml/BeXml.h>
 
 #include <RealityPlatform/SpatialEntity.h>
-#include <RealityPlatform/RealityDataDownload.h>
 
 
 #define THUMBNAIL_WIDTH     512
@@ -93,8 +92,8 @@ void SpatialEntityDataSource::SetGreenBandSize(uint64_t size) { m_greenSize = si
 uint64_t SpatialEntityDataSource::GetPanchromaticBandSize() const { return m_panchromaticSize; }
 void SpatialEntityDataSource::SetPanchromaticBandSize(uint64_t size) { m_panchromaticSize = size; }
 
-SQLINTEGER SpatialEntityDataSource::GetServerId() const { return m_serverId; }
-void SpatialEntityDataSource::SetServerId(SQLINTEGER id) const { m_serverId = id; }
+long int SpatialEntityDataSource::GetServerId() const { return m_serverId; }
+void SpatialEntityDataSource::SetServerId(long int id) const { m_serverId = id; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016

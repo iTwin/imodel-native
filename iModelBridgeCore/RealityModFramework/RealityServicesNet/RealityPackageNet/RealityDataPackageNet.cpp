@@ -13,7 +13,7 @@
 #include <Bentley/BeFileName.h>
 
 
-using namespace RealityPackage;
+using namespace RealityPlatform;
 using namespace RealityPackageNet;
 
 // System.
@@ -38,79 +38,8 @@ UriPtr ManagedToNativeUri2(UriNet^ managedUri)
     Utf8String uriUtf8;
     BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedUri->ToStr()).ToPointer()));
 
-    return RealityPackage::Uri::Create(uriUtf8.c_str());
+    return RealityPlatform::Uri::Create(uriUtf8.c_str());
     }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2016
-//-------------------------------------------------------------------------------------
-//RealityDataSourcePtr ManagedToNativeRealityDataSource2(RealityDataSourceNet^ managedSource)
-//    {
-//    RealityPackage::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
-//
-//    Utf8String nativeType;
-//    BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
-//
-//    // Create source with required parameters.
-//    RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
-//
-//    // Id.
-//    Utf8String nativeId;
-//    BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
-//    nativeSource->SetId(nativeId.c_str());
-//
-//    // Copyright.
-//    Utf8String nativeCopyright;
-//    BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
-//    nativeSource->SetCopyright(nativeCopyright.c_str());
-//
-//    // Term of use.
-//    Utf8String nativeTermOfUse;
-//    BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
-//    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
-//
-//    // Provider.
-//    Utf8String nativeProvider;
-//    BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
-//    nativeSource->SetProvider(nativeProvider.c_str());
-//
-//    // Size.
-//    nativeSource->SetSize(managedSource->GetSize());
-//
-//    // Metadata.
-//    Utf8String nativeMetadata;
-//    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
-//    nativeSource->SetMetadata(nativeMetadata.c_str());
-//
-//    // Metadata type.
-//    Utf8String nativeMetadataType;
-//    BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
-//    nativeSource->SetMetadataType(nativeMetadataType.c_str());
-//
-//    // GeoCS.
-//    Utf8String nativeGeoCS;
-//    BeStringUtilities::WCharToUtf8(nativeGeoCS, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetGeoCS()).ToPointer()));
-//    nativeSource->SetGeoCS(nativeGeoCS.c_str());
-//
-//    // No data value.
-//    Utf8String nativeNoDataValue;
-//    BeStringUtilities::WCharToUtf8(nativeNoDataValue, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetNoDataValue()).ToPointer()));
-//    nativeSource->SetNoDataValue(nativeNoDataValue.c_str());
-//
-//    // Streamed
-//    nativeSource->SetStreamed(managedSource->IsStreamed());
-//
-//    // Sister files.
-//    List<UriNet^>^ managedSisterFiles = managedSource->GetSisterFiles();
-//    bvector<UriPtr> nativeSisterFiles;
-//    for each (UriNet^ managedSisterFile in managedSisterFiles)
-//    {
-//        nativeSisterFiles.push_back(ManagedToNativeUri2(managedSisterFile));
-//    }
-//    nativeSource->SetSisterFiles(nativeSisterFiles);
-//
-//    return nativeSource;
-//    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Christian.Tye-gingras         	02/2017
@@ -125,7 +54,7 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource3(RealityDataSourceNet^ man
 //-------------------------------------------------------------------------------------
 MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSource)
     {
-    RealityPackage::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
+    RealityPlatform::UriPtr nativeUri = ManagedToNativeUri2(managedSource->GetUri());
 
     Utf8String nativeType;
     BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
@@ -197,29 +126,29 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
+PackageRealityDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     {
-    ImageryDataPtr pData;
+    PackageRealityDataPtr pData;
 
     // Create with main source.
     MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
     if (nullptr != pMultiBandSource)
         {
-        pData = ImageryData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource), NULL);
+        pData = PackageRealityData::CreateImagery(*ManagedToNativeMultiBandSource(pMultiBandSource), bvector<GeoPoint2d>());
         }
     else
         {
-        pData = ImageryData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), NULL);
+        pData = PackageRealityData::CreateImagery(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), bvector<GeoPoint2d>());
         }
 
     // Set basic members.
     Utf8String id;
     BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
-    pData->SetDataId(id.c_str());
+    pData->SetIdentifier(id.c_str());
 
     Utf8String name;
     BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
-    pData->SetDataName(name.c_str());
+    pData->SetName(name.c_str());
 
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
@@ -229,7 +158,7 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     List<double>^ corners = managedData->GetCornersCP();
     if (0 != corners->Count)
         {
-        GeoPoint2d cornerPts[4];
+        bvector<GeoPoint2d> cornerPts = bvector<GeoPoint2d>(4);
 
         int j = 0;
         for (int i = 0; i < 4; ++i)
@@ -238,7 +167,7 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
             cornerPts[i].latitude = corners[j++];
             }
 
-        pData->SetCorners(cornerPts);
+        pData->SetFootprint(cornerPts);
         }
 
     // Add alternate sources.
@@ -261,29 +190,29 @@ ImageryDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
+PackageRealityDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
     {
-    ModelDataPtr pData;
+    PackageRealityDataPtr pData;
 
     // Create with main source.
     MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
     if (nullptr != pMultiBandSource)
         {
-        pData = ModelData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource));
+        pData = PackageRealityData::CreateModel(*ManagedToNativeMultiBandSource(pMultiBandSource));
         }
     else
         {
-        pData = ModelData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        pData = PackageRealityData::CreateModel(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
     Utf8String id;
     BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
-    pData->SetDataId(id.c_str());
+    pData->SetIdentifier(id.c_str());
 
     Utf8String name;
     BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
-    pData->SetDataName(name.c_str());
+    pData->SetName(name.c_str());
 
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
@@ -309,29 +238,29 @@ ModelDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
+PackageRealityDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
     {
-    PinnedDataPtr pData;
+    PackageRealityDataPtr pData;
 
     // Create with main source.
     MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
     if (nullptr != pMultiBandSource)
         {
-        pData = PinnedData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource), 0, 0);
+        pData = PackageRealityData::CreatePinned(*ManagedToNativeMultiBandSource(pMultiBandSource), 0, 0);
         }
     else
         {
-        pData = PinnedData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), 0, 0);
+        pData = PackageRealityData::CreatePinned(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), 0, 0);
         }
 
     // Set basic members.
     Utf8String id;
     BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
-    pData->SetDataId(id.c_str());
+    pData->SetIdentifier(id.c_str());
 
     Utf8String name;
     BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
-    pData->SetDataName(name.c_str());
+    pData->SetName(name.c_str());
 
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
@@ -346,14 +275,14 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
 
     // Set area.
     List<double>^ polygonPts = managedData->GetAreaCP();
-    GeoPoint2d pts[4];
+    bvector<GeoPoint2d> pts = bvector<GeoPoint2d>(4);
     int j = 0;
     for (int i = 0; i < polygonPts->Count; ++i)
         {
         pts[i].longitude = polygonPts[j++];
         pts[i].latitude = polygonPts[j++];
         }
-    pData->SetArea(*BoundingPolygon::Create(pts, polygonPts->Count));
+    pData->SetFootprint(pts);
 
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
@@ -375,29 +304,29 @@ PinnedDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
+PackageRealityDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
     {
-    TerrainDataPtr pData;
+    PackageRealityDataPtr pData;
 
     // Create with main source.
     MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
     if (nullptr != pMultiBandSource)
         {
-        pData = TerrainData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource));
+        pData = PackageRealityData::CreateTerrain(*ManagedToNativeMultiBandSource(pMultiBandSource));
         }
     else
         {
-        pData = TerrainData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        pData = PackageRealityData::CreateTerrain(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
     Utf8String id;
     BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
-    pData->SetDataId(id.c_str());
+    pData->SetIdentifier(id.c_str());
 
     Utf8String name;
     BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
-    pData->SetDataName(name.c_str());
+    pData->SetName(name.c_str());
 
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
@@ -423,30 +352,30 @@ TerrainDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-UndefinedDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData)
+PackageRealityDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData)
     {
-    UndefinedDataPtr pData;
+    PackageRealityDataPtr pData;
 
     // Create with main source.
     // In theory multiband is only useable for terrain and imagery but not forbidden for any type
     MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(0));
     if (nullptr != pMultiBandSource)
         {
-        pData = UndefinedData::Create(*ManagedToNativeMultiBandSource(pMultiBandSource));
+        pData = PackageRealityData::CreateUndefined(*ManagedToNativeMultiBandSource(pMultiBandSource));
         }
     else
         {
-        pData = UndefinedData::Create(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        pData = PackageRealityData::CreateUndefined(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
     Utf8String id;
     BeStringUtilities::WCharToUtf8(id, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataId()).ToPointer()));
-    pData->SetDataId(id.c_str());
+    pData->SetIdentifier(id.c_str());
 
     Utf8String name;
     BeStringUtilities::WCharToUtf8(name, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataName()).ToPointer()));
-    pData->SetDataName(name.c_str());
+    pData->SetName(name.c_str());
 
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
@@ -881,8 +810,8 @@ List<double>^ ImageryDataNet::GetCornersCP()
     {
     List<double>^ managedCorners = gcnew List<double>();
 
-    GeoPoint2dCP pNativeCorners = (*m_pImageryData)->GetCornersCP();
-    if (pNativeCorners != NULL)
+    bvector<GeoPoint2d> pNativeCorners = (*m_pImageryData)->GetFootprint();
+    if (!pNativeCorners.empty())
         {
         for (size_t i = 0; i < 4; ++i)
             {
@@ -901,7 +830,7 @@ void ImageryDataNet::SetCorners(List<double>^ corners)
     {
     BeAssert(8 == corners->Count);
 
-    GeoPoint2d cornerPts[4];
+    bvector<GeoPoint2d> cornerPts = bvector<GeoPoint2d>(4);
 
     int j = 0;
     for (int i = 0; i < 4; ++i)
@@ -910,7 +839,7 @@ void ImageryDataNet::SetCorners(List<double>^ corners)
         cornerPts[i].latitude = corners[j++];
         }
 
-    (*m_pImageryData)->SetCorners(cornerPts);
+    (*m_pImageryData)->SetFootprint(cornerPts);
     }
 
 //-------------------------------------------------------------------------------------
@@ -924,7 +853,7 @@ ImageryDataNet::ImageryDataNet(RealityDataSourceNet^ dataSource, List<double>^ c
 
 
     // Managed to native corners.
-    GeoPoint2d cornerPts[4];
+    bvector<GeoPoint2d> cornerPts = bvector<GeoPoint2d>(4);
     if (0 != corners->Count)
         {
         BeAssert(8 == corners->Count);        
@@ -937,7 +866,7 @@ ImageryDataNet::ImageryDataNet(RealityDataSourceNet^ dataSource, List<double>^ c
             }
         }
 
-    m_pImageryData = new ImageryDataPtr(ImageryData::Create(*pNativeSource, cornerPts));
+    m_pImageryData = new PackageRealityDataPtr(PackageRealityData::CreateImagery(*pNativeSource, cornerPts));
     }
 
 //-------------------------------------------------------------------------------------
@@ -980,7 +909,7 @@ ModelDataNet::ModelDataNet(RealityDataSourceNet^ dataSource)
     // Managed to native reality data source.
     RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
 
-    m_pModelData = new ModelDataPtr(ModelData::Create(*pNativeSource));
+    m_pModelData = new PackageRealityDataPtr(PackageRealityData::CreateModel(*pNativeSource));
     }
 
 //-------------------------------------------------------------------------------------
@@ -1057,11 +986,11 @@ List<double>^ PinnedDataNet::GetAreaCP()
     {
     List<double>^ polygonPts = gcnew List<double>();
 
-    BoundingPolygonCP polygon = (*m_pPinnedData)->GetAreaCP();
-    for (int i = 0; i < polygon->GetPointCount(); ++i)
+    bvector<GeoPoint2d> polygon = (*m_pPinnedData)->GetFootprint();
+    for (int i = 0; i < polygon.size(); ++i)
         {
-        polygonPts->Add(polygon->GetPointCP()[i].longitude);
-        polygonPts->Add(polygon->GetPointCP()[i].latitude);
+        polygonPts->Add(polygon[i].longitude);
+        polygonPts->Add(polygon[i].latitude);
         }
 
     return polygonPts;
@@ -1072,7 +1001,7 @@ List<double>^ PinnedDataNet::GetAreaCP()
 //-------------------------------------------------------------------------------------
 bool PinnedDataNet::SetArea(List<double>^ polygonPts)
     {
-    GeoPoint2d pts[4];
+    bvector<GeoPoint2d> pts = bvector<GeoPoint2d>(4);
 
     int j = 0;
     for (int i = 0; i < polygonPts->Count; ++i)
@@ -1081,8 +1010,8 @@ bool PinnedDataNet::SetArea(List<double>^ polygonPts)
         pts[i].latitude = polygonPts[j++];
         }
 
-    BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(pts, polygonPts->Count);
-    return (*m_pPinnedData)->SetArea(*pBoundingPolygon);
+    (*m_pPinnedData)->SetFootprint(pts);
+    return pts.size() > 3;
     }
 
 //-------------------------------------------------------------------------------------
@@ -1094,7 +1023,7 @@ PinnedDataNet::PinnedDataNet(RealityDataSourceNet^ dataSource, double longitude,
     // Managed to native reality data source.
     RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
 
-    m_pPinnedData = new PinnedDataPtr(PinnedData::Create(*pNativeSource, longitude, latitude));
+    m_pPinnedData = new PackageRealityDataPtr(PackageRealityData::CreatePinned(*pNativeSource, longitude, latitude));
     }
 
 //-------------------------------------------------------------------------------------
@@ -1138,7 +1067,7 @@ TerrainDataNet::TerrainDataNet(RealityDataSourceNet^ dataSource)
     // Managed to native reality data source.
     RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
 
-    m_pTerrainData = new TerrainDataPtr(TerrainData::Create(*pNativeSource));
+    m_pTerrainData = new PackageRealityDataPtr(PackageRealityData::CreateTerrain(*pNativeSource));
     }
 
 //-------------------------------------------------------------------------------------
@@ -1181,7 +1110,7 @@ UndefinedDataNet::UndefinedDataNet(RealityDataSourceNet^ dataSource)
     // Managed to native reality data source.
     RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
 
-    m_pUndefinedData = new UndefinedDataPtr(UndefinedData::Create(*pNativeSource));
+    m_pUndefinedData = new PackageRealityDataPtr(PackageRealityData::CreateUndefined(*pNativeSource));
     }
 
 //-------------------------------------------------------------------------------------

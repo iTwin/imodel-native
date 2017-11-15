@@ -9,8 +9,8 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <RealityPlatform/RealityConversionTools.h>
-#include <RealityPlatform/RealityDataDownload.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
 #include <CCApi/CCPublic.h>
 
 #include "GCSLoadTest.h"
@@ -629,7 +629,7 @@ CURL* GCSUser::SetupCurl(Utf8StringCR url, Utf8StringCP retString, FILE* fp, Utf
         m_start = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         }
     else
-        m_correspondance.response.curlCode = CURLcode::CURLE_FAILED_INIT;
+        m_correspondance.response.toolCode = CURLcode::CURLE_FAILED_INIT;
 
     return pCurl;
     }

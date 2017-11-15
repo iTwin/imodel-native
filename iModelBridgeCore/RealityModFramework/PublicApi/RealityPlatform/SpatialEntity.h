@@ -13,9 +13,6 @@
 #include <RealityPlatform/RealityDataObjects.h>
 
 #include <Bentley/DateTime.h>
-#include <curl/curl.h>
-#include <sql.h>
-#include <sqlext.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -505,9 +502,9 @@ public:
     REALITYDATAPLATFORM_EXPORT uint64_t GetPanchromaticBandSize() const;
     REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize( uint64_t size );
 
-    REALITYDATAPLATFORM_EXPORT SQLINTEGER GetServerId() const;
+    REALITYDATAPLATFORM_EXPORT 	long int GetServerId() const;
     //serverId is a mutable value so that it can be set on a const ref, before performing a Save()
-    REALITYDATAPLATFORM_EXPORT void SetServerId( SQLINTEGER id ) const;
+    REALITYDATAPLATFORM_EXPORT void SetServerId(long int id ) const;
 
     //! Get/Set
     //! Since the server is an optional field of the data source it is expressed as a pointer
@@ -540,7 +537,7 @@ protected:
     uint64_t m_greenSize;
     uint64_t m_panchromaticSize;
 
-    mutable SQLINTEGER m_serverId = -1;
+    mutable long int m_serverId = -1; //SQLINTEGER long int
 }; 
 
 //=====================================================================================

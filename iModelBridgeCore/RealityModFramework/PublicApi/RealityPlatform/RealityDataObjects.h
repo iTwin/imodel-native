@@ -13,9 +13,6 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include <Bentley/DateTime.h>
-#include <curl/curl.h>
-#include <sql.h>
-#include <sqlext.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -299,7 +296,7 @@ public:
     //! The path defined by the given polygon must not autocross, contains segments that overlap.
     //! The final clossing point is mandatory.
     REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys = "4326");
+    REALITYDATAPLATFORM_EXPORT virtual void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys = "4326");
     REALITYDATAPLATFORM_EXPORT virtual Utf8String GetFootprintString() const;
     REALITYDATAPLATFORM_EXPORT void SetFootprintString(Utf8CP footprint);
 
@@ -491,7 +488,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const override;
 
 protected:
-    RealityData();
+    REALITYDATAPLATFORM_EXPORT RealityData();
 
     Utf8String m_realityDataType;
     bool     m_streamed;

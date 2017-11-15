@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/Example/ConversionToolsTester.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,17 +11,17 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/RefCounted.h>
 
-#include <RealityPlatform/RealityDataDownload.h>
-#include <RealityPackage/RealityDataPackage.h>
-#include <RealityPlatform/md5.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityDataDownload.h>
+#include <RealityPlatform/RealityDataPackage.h>
+#include <RealityPlatformTools/md5.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include <stdio.h>
 #include <conio.h>
 #include <iostream>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-USING_NAMESPACE_BENTLEY_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be override by parameter at the execution.
 

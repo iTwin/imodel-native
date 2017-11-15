@@ -42,6 +42,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatformTools$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)LoadTestBase$(libext) \

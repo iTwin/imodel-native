@@ -2,13 +2,13 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/OsmSourceNet.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPackage/RealityPackage.h>
-#include <RealityPackage/OsmSource.h>
+#include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/OsmSource.h>
 
 namespace RealityPackageNet
     {
@@ -34,6 +34,6 @@ namespace RealityPackageNet
             !OsmResourceNet();
 
         private:
-            RealityPackage::OsmResourcePtr* m_pOsmResource;
+            RealityPlatform::OsmResourcePtr* m_pOsmResource;
         };
     }

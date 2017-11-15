@@ -11,7 +11,7 @@
 #include <CCApi/CCPublic.h>
 
 #include <Bentley/BeFile.h>
-#include <RealityPlatform/RealityConversionTools.h>
+#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include "LoadTestBase.h"
 
@@ -40,7 +40,7 @@ static int s_sleepBiasMilliseconds = 0;
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String FullInfo::LogError() const
     {
-    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s\n+----------------------------------------------------------------+\n", id, req.url, req.headers, req.payload, response.responseCode, response.curlCode, response.body);
+    return Utf8PrintfString("Request %d :\n%s\n%s\n%s\nReponse:\n%lu\t%d\n%s\n+----------------------------------------------------------------+\n", id, req.url, req.headers, req.payload, response.responseCode, response.toolCode, response.body);
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -436,7 +436,7 @@ void UserManager::Perform()
             curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
             struct User *user = (struct User *)pClient;
 
-            user->m_correspondance.response.curlCode = msg->data.result;
+            user->m_correspondance.response.toolCode = msg->data.result;
             curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &(user->m_correspondance.response.responseCode));
 
 

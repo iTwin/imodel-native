@@ -13,7 +13,7 @@
 #include <Bentley/bset.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatformTools/RealityDataService.h>
 #include <RealityAdmin/RealityDataHandler.h>
 #include <CCApi/CCPublic.h>
 
