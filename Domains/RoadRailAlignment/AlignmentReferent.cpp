@@ -30,8 +30,8 @@ AlignmentStation::AlignmentStation(CreateParams const& params) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentStation::AlignmentStation(CreateParams const& params, double distanceAlong, double station) :
-    T_Super(params, distanceAlong)
+AlignmentStation::AlignmentStation(CreateParams const& params, double distanceAlongFromStart, double station) :
+    T_Super(params, distanceAlongFromStart)
     {
     _AddLinearlyReferencedLocation(*_GetUnpersistedAtLocation());
     SetStation(station);
@@ -40,7 +40,7 @@ AlignmentStation::AlignmentStation(CreateParams const& params, double distanceAl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, double distanceAlong, double restartValue)
+AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, double distanceAlongFromStart, double station)
     {
     if (!alignment.GetModelId().IsValid() || !alignment.GetElementId().IsValid())
         return nullptr;
@@ -48,7 +48,7 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, double dista
     CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
     params.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsStations)));
 
-    AlignmentStationPtr retVal(new AlignmentStation(params, distanceAlong, restartValue));
+    AlignmentStationPtr retVal(new AlignmentStation(params, distanceAlongFromStart, station));
     retVal->_SetLinearElement(alignment.GetElementId());
     return retVal;
     }

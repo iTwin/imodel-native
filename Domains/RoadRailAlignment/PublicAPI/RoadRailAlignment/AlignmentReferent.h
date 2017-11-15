@@ -66,7 +66,7 @@ public:
     double GetStation() const { return GetRestartValue().Value(); }
     void SetStation(double newStation) { SetPropertyValue("Station", newStation); }
 
-    ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(AlignmentCR alignment, double distanceAlongFromStart, double restartValue = 0.0);
+    ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(AlignmentCR alignment, double distanceAlongFromStart, double station = 0.0);
 }; // AlignmentStation
 
 //=======================================================================================

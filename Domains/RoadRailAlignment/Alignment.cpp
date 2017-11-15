@@ -31,6 +31,7 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
 
     AlignmentPtr retVal(new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::Get(model.GetDgnDb()))));
     retVal->SetStartValue(0.0);
+    retVal->SetStartStation(0.0);
     return retVal;
     }
 
