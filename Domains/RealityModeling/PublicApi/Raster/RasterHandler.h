@@ -70,7 +70,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel // WIP_TILETREE_PUBLISH, Dgn::Render::IGetTileTreeForPublishing
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel, Dgn::Render::IGetTileTreeForPublishing
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
     BE_JSON_NAME(depthBias)
