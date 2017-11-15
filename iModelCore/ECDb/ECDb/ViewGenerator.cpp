@@ -226,7 +226,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
         return ERROR;
 
-    ECClassCP instanceChangeClass = ctx.GetECDb().Schemas().GetClass(ECSCHEMA_ECDbChangeSummaries, ECDBCHANGE_CLASS_Instance);
+    ECClassCP instanceChangeClass = ctx.GetECDb().Schemas().GetClass(ECSCHEMA_ECDbChangeSummaries, ECDBCHANGE_CLASS_InstanceChange);
     if (instanceChangeClass == nullptr)
         {
         ctx.GetECDb().GetImpl().Issues().Report("ChangeSummary extension requires the " ECSCHEMA_ECDbChangeSummaries " schema.");
@@ -239,11 +239,11 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
 
     Utf8StringCR instanceChangeTableName = instanceChangeClassMap->GetPrimaryTable().GetName();
-    Utf8StringCR summaryIdColumnName = instanceChangeClassMap->GetPropertyMaps().Find(ECDBCHANGE_PROP_SummaryId)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
+    Utf8StringCR summaryIdColumnName = instanceChangeClassMap->GetPropertyMaps().Find("Summary.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
     Utf8StringCR changeIdColumnName = instanceChangeClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName();
-    Utf8StringCR operationColumnName = instanceChangeClassMap->GetPropertyMaps().Find(ECDBCHANGE_PROP_Operation)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
-    Utf8StringCR idOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find(ECDBCHANGE_PROP_IdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
-    Utf8StringCR classIdOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find(ECDBCHANGE_PROP_ClassIdOfChangedInstance)->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
+    Utf8StringCR operationColumnName = instanceChangeClassMap->GetPropertyMaps().Find("Operation")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
+    Utf8StringCR idOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find("ChangedInstance.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
+    Utf8StringCR classIdOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find("ChangedInstance.ClassId")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
 
     Utf8StringCR viewName = classMap.GetClass().GetName();
 
@@ -297,7 +297,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         }
 
     viewSql.AppendParenLeft();
-    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM ").AppendEscaped(instanceChangeTableName).Append(" ic ");
+    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM ").Append(instanceChangeTableName).Append(" ic ");
 
     if (ctx.IsPolymorphicQuery())
         viewSql.AppendFormatted(" INNER JOIN " TABLE_ClassHierarchyCache " ch ON ic.%s=ch.ClassId AND ch.BaseClassId=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());

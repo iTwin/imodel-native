@@ -12,10 +12,15 @@
     <ECEnumeration typeName="Operation" backingTypeName="int" isStrict="true">
         <ECEnumerator value="1" displayLabel="Insert"/>
         <ECEnumerator value="2" displayLabel="Update"/>
-        <ECEnumerator value="3" displayLabel="Delete"/>
+        <ECEnumerator value="4" displayLabel="Delete"/>
     </ECEnumeration>
 
-    <ECEntityClass typeName="Instance" displayLabel="Instance Change" modifier="Sealed" description="Represents an instance change in a change summary">
+    <ECStructClass typeName="InstanceKey" displayLabel="InstanceKey" modifier="Sealed">
+        <ECProperty propertyName="Id" typeName="long" />
+        <ECProperty propertyName="ClassId" typeName="long" />
+    </ECStructClass>
+    
+    <ECEntityClass typeName="InstanceChange" displayLabel="Instance Change" modifier="Sealed" description="Represents an instance change in a change summary">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TemporaryTable</MapStrategy>
@@ -23,25 +28,24 @@
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>uix_change_Instance_IdOfChangedInstance_ClassIdOfChangedInstance</Name>
+                        <Name>uix_change_InstanceChange_ChangedInstance</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>IdOfChangedInstance</string>
-                            <string>ClassIdOfChangedInstance</string>
+                            <string>ChangedInstance.Id</string>
+                            <string>ChangedInstance.ClassId</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <ECProperty propertyName="IdOfChangedInstance" typeName="long" />
-        <ECProperty propertyName="ClassIdOfChangedInstance" typeName="long" />
+        <ECStructProperty propertyName="ChangedInstance" typeName="InstanceKey" description="Key of the change instance"/>
         <ECProperty propertyName="Operation" typeName="Operation"/>
         <ECProperty propertyName="IsIndirect" typeName="bool" description="Change happened due to a foreign key action or trigger"/>
         <ECProperty propertyName="TableName" typeName="string"/>
         <ECNavigationProperty propertyName="Summary" relationshipName="SummaryContainsInstanceChanges" direction="backward" />
     </ECEntityClass>
     
-    <ECEntityClass typeName="PropertyValue" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">
+    <ECEntityClass typeName="PropertyValueChange" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TemporaryTable</MapStrategy>
@@ -49,10 +53,10 @@
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>uix_change_PropertyValue_InstanceId_AccessString</Name>
+                        <Name>uix_change_PropertyValueChange_InstanceChangeId_AccessString</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>Instance.Id</string>
+                            <string>InstanceChange.Id</string>
                             <string>AccessString</string>
                         </Properties>
                     </DbIndex>		
@@ -62,7 +66,7 @@
         <ECProperty propertyName="AccessString" typeName="string"/>
         <ECProperty propertyName="RawOldValue" typeName="binary" description="Untyped old value"/>
         <ECProperty propertyName="RawNewValue" typeName="binary" description="Untyped new value"/>
-        <ECNavigationProperty propertyName="Instance" relationshipName="InstanceChangeOwnsPropertyValueChanges" direction="backward"/>
+        <ECNavigationProperty propertyName="InstanceChange" relationshipName="InstanceChangeOwnsPropertyValueChanges" direction="backward"/>
     </ECEntityClass>
     
     <ECRelationshipClass typeName="SummaryContainsInstanceChanges" modifier="Sealed" strength="embedding">
@@ -70,16 +74,16 @@
             <Class class="Summary"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
-            <Class class="Instance"/>
+            <Class class="InstanceChange"/>
         </Target>
     </ECRelationshipClass>
     
     <ECRelationshipClass typeName="InstanceChangeOwnsPropertyValueChanges" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="Instance"/>
+            <Class class="InstanceChange"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
-            <Class class="PropertyValue"/>
+            <Class class="PropertyValueChange"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>

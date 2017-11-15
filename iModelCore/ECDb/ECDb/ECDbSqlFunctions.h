@@ -55,11 +55,12 @@ struct Base64ToBlobSqlFunction final : ScalarFunction
 struct ChangedValueFunction final : ScalarFunction
     {
     private:
+        //Note: This must have the exact same definition as the respective ECEnumeration in the ECDbChangeSummaries schema
         enum class Operation
             {
             Insert = 1,
             Update = 2,
-            Delete = 3
+            Delete = 4
             };
 
         enum class Stage
@@ -70,6 +71,7 @@ struct ChangedValueFunction final : ScalarFunction
 
         ECDbCR m_ecdb;
         ECSqlStatementCache m_stmtCache;
+
         static std::map<Utf8CP, std::function<void(Context&, ECSqlStatement&)>, CompareIUtf8Ascii> s_setValueMap;
 
         void SetValue(Context& ctx, ECSqlStatement& stmt);

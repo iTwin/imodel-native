@@ -203,11 +203,14 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueReporter cons
     Utf8StringCR propName = prop.GetName();
 
     bool isCollision = false;
-    if (propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
-        propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id) ||
-        propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+    if (ecClass.GetClassType() != ECClassType::Struct)
         {
-        isCollision = true;
+        if (propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
+            propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id) ||
+            propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+            {
+            isCollision = true;
+            }
         }
 
     if (!isCollision && ecClass.GetClassType() == ECClassType::Relationship)

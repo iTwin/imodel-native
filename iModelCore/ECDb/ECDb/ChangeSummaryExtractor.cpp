@@ -313,7 +313,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
     {
     InstanceChange instanceChange;
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT Operation,IsIndirect,TableName FROM change.Instance WHERE " ECDBCHANGE_PROP_ClassIdOfChangedInstance "=? AND " ECDBCHANGE_PROP_IdOfChangedInstance "=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT Operation,IsIndirect,TableName FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -340,15 +340,15 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
 //---------------------------------------------------------------------------------------
 ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ECInstanceId FROM change.Instance WHERE " ECDBCHANGE_PROP_ClassIdOfChangedInstance "=? AND " ECDBCHANGE_PROP_IdOfChangedInstance "=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ECInstanceId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
         return ECInstanceId();
         }
 
-    stmt->BindId(1, keyOfChangedInstance.GetClassId());
-    stmt->BindId(2, keyOfChangedInstance.GetInstanceId());
+    stmt->BindId(1, keyOfChangedInstance.GetInstanceId());
+    stmt->BindId(2, keyOfChangedInstance.GetClassId());
     stmt->BindId(3, summaryId);
 
     if (stmt->Step() == BE_SQLITE_ROW)
@@ -361,7 +361,7 @@ ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInst
 //---------------------------------------------------------------------------------------
 ECClassId ChangeSummaryExtractor::QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR tableName, ECInstanceId instanceId) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT " ECDBCHANGE_PROP_ClassIdOfChangedInstance " FROM change.Instance WHERE " ECDBCHANGE_PROP_IdOfChangedInstance "=? AND Summary.Id=? AND TableName=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ChangedInstance.ClassId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND Summary.Id=? AND TableName=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -424,7 +424,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
     InstanceChange foundInstanceChange = QueryInstanceChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
     if (!foundInstanceChange.IsValid())
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO change.Instance(" ECDBCHANGE_PROP_ClassIdOfChangedInstance ", " ECDBCHANGE_PROP_IdOfChangedInstance ", Operation, IsIndirect, TableName, Summary.Id) VALUES (?,?,?,?,?,?)");
+        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, Operation, IsIndirect, TableName, Summary.Id) VALUES (?,?,?,?,?,?)");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -442,7 +442,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 
     if (foundInstanceChange.GetDbOpcode() == DbOpcode::Update && dbOpcode != DbOpcode::Update)
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "UPDATE change.Instance SET Operation=?, IsIndirect=? WHERE " ECDBCHANGE_PROP_ClassIdOfChangedInstance "=? AND " ECDBCHANGE_PROP_IdOfChangedInstance "=? AND Summary.Id=?");
+        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "UPDATE " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " SET Operation=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -465,7 +465,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryExtractor::Delete(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "DELETE FROM change.Instance WHERE " ECDBCHANGE_PROP_ClassIdOfChangedInstance "=? AND " ECDBCHANGE_PROP_IdOfChangedInstance "=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "DELETE FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -486,7 +486,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryI
     {
     ECInstanceId changeId = FindChangeId(summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO change.PropertyValue(Instance.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -508,7 +508,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryI
     {
     ECInstanceId changeId = FindChangeId(summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO change.PropertyValue(Instance.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -534,7 +534,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryI
     {
     ECInstanceId changeId = FindChangeId(summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO change.PropertyValue(Instance.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);

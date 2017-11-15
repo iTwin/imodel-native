@@ -243,14 +243,14 @@ void ChangedValueFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args
 
     Utf8CP ecsql = nullptr;
     if (stage == Stage::Old)
-        ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=? AND AccessString=?";
+        ecsql = "SELECT RawOldValue, CAST(TYPEOF(RawOldValue) AS TEXT) FROM " ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
     else
-        ecsql = "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM change.PropertyValue WHERE Instance.Id=? AND AccessString=?";
+        ecsql = "SELECT RawNewValue, CAST(TYPEOF(RawNewValue) AS TEXT) FROM " ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
 
     CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, ecsql);
     if (stmt == nullptr)
         {
-        ctx.SetResultError("Failed to prepare ECSQL statement necessary for ChangedValue()");
+        ctx.SetResultError("Failed to prepare ECSQL statement in SQL function ChangedValue().");
         return;
         }
 
@@ -278,5 +278,6 @@ void ChangedValueFunction::SetValue(Context& ctx, ECSqlStatement& stmt)
     Utf8CP typeOf = stmt.GetValueText(1);
     s_setValueMap[typeOf](ctx, stmt);
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

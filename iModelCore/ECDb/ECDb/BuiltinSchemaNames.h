@@ -39,12 +39,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECSCHEMA_ALIAS_ECDbChangeSummaries "change"
 
 #define ECDBCHANGE_CLASS_Summary "Summary"
-#define ECDBCHANGE_CLASS_Instance "Instance"
-#define ECDBCHANGE_CLASS_PropertyValue "PropertyValue"
-
-#define ECDBCHANGE_PROP_Operation "Operation"
-#define ECDBCHANGE_PROP_IdOfChangedInstance "IdOfChangedInstance"
-#define ECDBCHANGE_PROP_ClassIdOfChangedInstance "ClassIdOfChangedInstance"
-#define ECDBCHANGE_PROP_SummaryId "Summary.Id"
+#define ECDBCHANGE_CLASS_InstanceChange "InstanceChange"
+#define ECDBCHANGE_CLASS_PropertyValueChange "PropertyValueChange"
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
