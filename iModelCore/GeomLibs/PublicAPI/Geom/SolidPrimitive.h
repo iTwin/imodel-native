@@ -257,6 +257,8 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
 //! Return all intersection points of a curve with the pipe body
 //! Returned data is the detailed local coordinates, with additional data to relate it back to world.
 GEOMDLLIMPEXP void IntersectCurveLocal
@@ -525,6 +527,9 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
                               
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
+
 //! Return all intersection points of an arc with the cone
 //! Returned data is the detailed local coordinates, with additional data to relate it back to world.
 GEOMDLLIMPEXP void IntersectBoundedArc
@@ -766,6 +771,9 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
+
 //! Test if the DgnBox is really a box (aka slab).  Return orientation and size data, using caller-specifed fractional coordinates to indicate position of origin in reference system.
 //! @param [out] origin local coordinates origin
 //! @param [out] unitAxes transform (with orthogonal axes)
@@ -1006,6 +1014,9 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
+
 //! Return all intersection points of an (unbounded) arc with the sphere.
 //! Returned data is the detailed local coordinates, with additional data to relate it back to world.
 GEOMDLLIMPEXP void IntersectBoundedArc
@@ -1187,6 +1198,9 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
                               
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
+
 };
 
 
@@ -1364,6 +1378,9 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @param [out] localProducts integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
+
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
 
 //! Return true if capped and incomplete sweep.
 GEOMDLLIMPEXP bool HasRealCaps () const;
@@ -1580,6 +1597,9 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
+//! Return curves which are silhoutte curves OTHER than hard edges
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
+
 };
 
 
@@ -1661,6 +1681,7 @@ protected:
     GEOMAPI_VIRTUAL bool _ComputeSecondMomentAreaProducts (TransformR localToWorld, DMatrix4dR localProducts) const = 0;
     GEOMAPI_VIRTUAL bool _ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const = 0;
     
+    GEOMAPI_VIRTUAL CurveVectorPtr _SilhouetteCurves(DPoint4dCR eyePoint) const = 0;
 
 public:
     //! Query the primitive type.
@@ -1968,6 +1989,10 @@ GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, D
 //! @param [out] worldProducts integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (DMatrix4dR worldProducts) const;
+
+//! Return curves which are silhoutte curves OTHER than hard edges
+//! @param [in] eyePoint For flat view, the view direction with weight=0.  For perspective, the eye point with weight=1.
+GEOMDLLIMPEXP CurveVectorPtr SilhouetteCurves(DPoint4dCR eyePoint) const;
 
 //! Return the various integrated products for moment calculations.  The primitive is treated as a volume
 //! @param [out] worldProducts integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA

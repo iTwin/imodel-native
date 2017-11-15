@@ -770,6 +770,8 @@ $(OUT_DIR)sp_ExtractFace$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_ExtractFace.cpp
 
 $(OUT_DIR)sp_getSection$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_getSection.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)sp_silhouette$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_silhouette.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)sp_ConstructiveFrame$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_ConstructiveFrame.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)sp_UVToXYZ$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_UVToXYZ.cpp  $(geomSrcCurvePrimitive)CurveIntersectRotatedRay.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
