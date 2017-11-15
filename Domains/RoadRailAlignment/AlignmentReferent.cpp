@@ -74,8 +74,8 @@ AlignmentStationingTranslatorPtr AlignmentStationingTranslator::Create(Alignment
 +---------------+---------------+---------------+---------------+---------------+------*/
 NullableDouble AlignmentStationingTranslator::ToStation(double distanceAlongFromStart) const
     {
-    if (distanceAlongFromStart < m_stations.front().GetDistanceAlong() ||
-        distanceAlongFromStart > m_stations.back().GetDistanceAlong())
+    if (distanceAlongFromStart < m_stations.front().GetDistanceAlongFromStart() ||
+        distanceAlongFromStart > m_stations.back().GetDistanceAlongFromStart())
         return NullableDouble();
 
     size_t index = (m_stations.size() / 2) - 1;
@@ -84,10 +84,10 @@ NullableDouble AlignmentStationingTranslator::ToStation(double distanceAlongFrom
     do
         {
         scope = MAX(scope / 2, 1);
-        if (m_stations[index].GetDistanceAlong() <= distanceAlongFromStart &&
-            (index + 1 == m_stations.size() || m_stations[index + 1].GetDistanceAlong() > distanceAlongFromStart))
-            return m_stations[index].GetStation() + (distanceAlongFromStart - m_stations[index].GetDistanceAlong());
-        else if (m_stations[index].GetDistanceAlong() > distanceAlongFromStart)
+        if (m_stations[index].GetDistanceAlongFromStart() <= distanceAlongFromStart &&
+            (index + 1 == m_stations.size() || m_stations[index + 1].GetDistanceAlongFromStart() > distanceAlongFromStart))
+            return m_stations[index].GetStation() + (distanceAlongFromStart - m_stations[index].GetDistanceAlongFromStart());
+        else if (m_stations[index].GetDistanceAlongFromStart() > distanceAlongFromStart)
             index -= scope;
         else
             index += scope;

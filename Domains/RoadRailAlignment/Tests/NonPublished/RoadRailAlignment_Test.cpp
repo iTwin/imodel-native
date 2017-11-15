@@ -69,7 +69,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     auto stationPtr = AlignmentStation::Create(*alignmentPtr, 30, 10);
     auto stationCPtr = stationPtr->Insert();
     ASSERT_TRUE(stationCPtr.IsValid());
-    ASSERT_DOUBLE_EQ(30.0, stationCPtr->GetAtDistanceAlong());
+    ASSERT_DOUBLE_EQ(30.0, stationCPtr->GetAtDistanceAlongFromStart());
     ASSERT_DOUBLE_EQ(10.0, stationCPtr->GetStation());
 
     stationPtr = AlignmentStation::Create(*alignmentPtr, 70, 10000);

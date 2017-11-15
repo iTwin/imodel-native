@@ -26,11 +26,10 @@ struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISpatialLinea
 
 protected:
     //! @private
-    explicit Alignment(CreateParams const& params) : T_Super(params) {}
+    explicit Alignment(CreateParams const& params);
 
     // ILinearElement
     virtual double _GetLength() const override;
-    virtual double _GetStartValue() const override { return GetPropertyValueDouble("StartStation"); }
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *this; }
 
     // ISpatialLinearElement
@@ -46,7 +45,7 @@ public:
 
         DistanceAlongStationPair(double distanceAlong, double station): m_distanceAlong(distanceAlong), m_station(station) {}
 
-        double GetDistanceAlong() const { return m_distanceAlong; }
+        double GetDistanceAlongFromStart() const { return m_distanceAlong; }
         double GetStation() const { return m_station; }
         }; // DistanceAlongStationPair
 
@@ -66,7 +65,7 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom();
 
-    double GetStartStation() const { return GetStartValue(); }
+    double GetStartStation() const { return GetPropertyValueDouble("StartStation"); }
     void SetStartStation(double station) { SetPropertyValue("StartStation", station); }
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetHorizontal(AlignmentCR alignment, HorizontalAlignmentCR vertical);

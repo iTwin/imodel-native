@@ -14,6 +14,14 @@ HANDLER_DEFINE_MEMBERS(HorizontalAlignmentHandler)
 HANDLER_DEFINE_MEMBERS(VerticalAlignmentHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Alignment::Alignment(CreateParams const& params) : 
+    T_Super(params) 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPtr Alignment::Create(AlignmentModelCR model)
@@ -21,7 +29,9 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    return new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::Get(model.GetDgnDb())));
+    AlignmentPtr retVal(new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::Get(model.GetDgnDb()))));
+    retVal->SetStartValue(0.0);
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
