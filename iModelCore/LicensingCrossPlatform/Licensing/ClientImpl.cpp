@@ -122,7 +122,7 @@ BentleyStatus ClientImpl::StopApplication()
 folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageSCV, Utf8StringCR ultId)
     {
     auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
-    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(), m_clientInfo->GetLanguage());
+    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(), m_clientInfo->GetLanguage().c_str());
 
     HttpClient client(nullptr, m_httpHandler);
     return client.CreateGetRequest(url).Perform().then(

@@ -12,7 +12,7 @@
 
 #include <Licensing/Utils/JWToken.h>
 
-#include <json\json.h>
+#include <json/json.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
