@@ -271,7 +271,7 @@ BentleyStatus ChangeSummaryExtractor::RecordInstance(InstanceChange const& insta
         updatedProperties = true;
         }
 
-    if (removeIfNotUpdatedProperties && !updatedProperties)
+    if (!(removeIfNotUpdatedProperties && !updatedProperties))
         return SUCCESS;
 
     // If recording an update for the first time, and none of the properties have really been updated, remove record of the updated instance
