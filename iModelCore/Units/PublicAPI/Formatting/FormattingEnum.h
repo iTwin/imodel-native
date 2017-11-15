@@ -246,7 +246,8 @@ enum class FormatProblemCode
     FUS_InvalidSyntax = 20151,
     NFS_InvalidSpecName = 20161,
     NFS_DuplicateSpecName = 20162,
-    NFS_InvalidJsonObject = 20163,
+    NFS_DuplicateSpecNameOrAlias = 20163,
+    NFS_InvalidJsonObject = 20164,
     DIV_UnknownDivider = 25001,
     NA_InvalidSign = 25101,             // Numeric Accumulator problems
     NA_InvalidPoint = 25102,
@@ -366,6 +367,7 @@ struct FormatProblemDetail
         FormatProblemCode GetProblemCode() const { return m_code; }
         UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
         UNITS_EXPORT Utf8String GetProblemDescription() const;
+        UNITS_EXPORT void Reset() { m_code = FormatProblemCode::NoProblems; }
     };
 
 struct Utils

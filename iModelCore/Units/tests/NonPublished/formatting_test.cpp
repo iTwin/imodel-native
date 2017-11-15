@@ -115,6 +115,12 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::ShowQuantity(98765.4321, "FT", "FT", "stop100-2u", nullptr);
     FormattingTestFixture::ShowQuantity(98765.4321, "FT", "FT", "stop100-2-4u", nullptr);
     FormattingTestFixture::ShowQuantity(98765.4321, "FT", "M", "stop1000-2-4u", nullptr);
+    Utf8CP custJ = "{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"StationFt\", \"SpecName\" : \"StationFt\", \"SpecType\" : \"numeric\"}";
+
+    FormattingTestFixture::CustomFormatAnalyzer(98765.4321, "FT", custJ);
+    custJ = "{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\", \"statSeparator\":\"#\"}, \"SpecAlias\" : \"Station#Ft\", \"SpecName\" : \"Station#Ft\", \"SpecType\" : \"numeric\"}";
+    FormattingTestFixture::CustomFormatAnalyzer(98765.4321, "FT", custJ);
+
 
     FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_MM");
     if (nacc.HasProblem())
@@ -486,6 +492,8 @@ TEST(FormattingTest, PhysValues)
 
     EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang).c_str());
     EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("dms8", ang).c_str());
+    EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("cdms8", ang).c_str());
+
     EXPECT_STREQ (u8"135° 11 1/2'", NumericFormatSpec::StdFormatQuantity("dm8", ang).c_str());
     BEU::Quantity distM = BEU::Quantity(3560.5, *metrUOM);
     EXPECT_STREQ ("2mile(s)373yrd(s) 2' 5 1/4\"", NumericFormatSpec::StdFormatQuantity("myfi4", distM).c_str());

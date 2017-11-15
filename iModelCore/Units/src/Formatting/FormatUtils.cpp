@@ -1448,7 +1448,7 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
 bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
     {
     int cod = 0;
-    while (cod = 0)
+    while (0 == cod)
         {
         if (!m_name.Equals(other.m_name)) { cod = 1; break; }
         if (!m_alias.Equals(other.m_alias)) { cod = 2; break; }
@@ -1458,11 +1458,24 @@ bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
         if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) { cod = 6; break; }
         break;
         }
-    if(cod ==0)
+    if(0 == cod)
        return true;
     return false;
     }
 
+bool NamedFormatSpec::HasName(Utf8CP name) const 
+    {
+    if (Utils::IsNameNullOrEmpty(name))
+        return false;
+    return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str())); 
+    }
+
+bool NamedFormatSpec::HasAlias(Utf8CP name) const
+    {
+    if (Utils::IsNameNullOrEmpty(name))
+        return false;
+    return (0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()));
+    }
 
 //===================================================
 //

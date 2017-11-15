@@ -44,10 +44,9 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //    
 //    }
 
-
 //===================================================
 //
-// NumericFormatMethods
+// NumericFormatSpec Methods
 //
 //===================================================
 
@@ -1235,6 +1234,25 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
      return true;
      }
 
+
+ //---------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 12/16
+ //---------------------------------------------------------------------------------------
+ NumericFormatSpecCP StdFormatSet::DefaultDecimal()
+     {
+     NamedFormatSpecCP fmtP;
+
+     for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
+         {
+         fmtP = *itr;
+         if (PresentationType::Decimal == fmtP->GetPresentationType())
+             return fmtP->GetNumericSpec();
+         }
+     return nullptr;
+     }
+
+
+
  // Json Formatting
  
 //---------------------------------------------------------------------------------------
@@ -1364,6 +1382,11 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFo
 //---------------------------------------------------------------------------------------
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias)
     {
+    if (IsFormatDefined(name, alias))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        return nullptr;
+        }
     NamedFormatSpecCP nfs = new NamedFormatSpec(name, fmtP, compS, alias);
     if (nullptr == nfs || nfs->IsProblem())
         {
@@ -1377,6 +1400,11 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
 
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias)
     {
+    if (IsFormatDefined(name, alias))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        return nullptr;
+        }
     NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias);
     if (nullptr == nfs || nfs->IsProblem())
         {
@@ -1388,7 +1416,32 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
     return nfs->GetNumericSpec();
     }
 
-NumericFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
+    {
+    Json::Value jval (Json::objectValue);
+    Json::Reader::Parse(jsonString, jval);
+    NamedFormatSpecP nfs = new NamedFormatSpec(jval);
+    if (nullptr == nfs)
+        return nullptr;
+    Utf8String tval = jval.ToString();
+    tval.empty();
+
+    if (nfs->IsProblem())
+        {
+        delete nfs;
+        return nullptr;
+        }
+    if (IsFormatDefined(nfs->GetName(), nfs->GetAlias()))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        delete nfs;
+        return nullptr;
+        }
+    m_formatSet.push_back(nfs);
+    return nfs->GetNumericSpec();
+    }
+
+NamedFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
     {
     //Json::Value* jval = new Json::Value();
     Json::Value jval (Json::objectValue);
@@ -1399,13 +1452,33 @@ NumericFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
     NamedFormatSpecP nfs = new NamedFormatSpec(jval);
     if (nullptr == nfs)
         return nullptr;
+
     if(nfs->IsProblem())
         {
         delete nfs;
         return nullptr;
         }
+   /* if (IsFormatDefined(nfs->GetName(), nfs->GetAlias()))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        delete nfs;
+        return nullptr;
+        }*/
     m_customSet.push_back(nfs);
-    return nfs->GetNumericSpec();
+    return nfs;// ->GetNumericSpec();
+    }
+
+NamedFormatSpecCP StdFormatSet::AppendCustomFormat(Utf8CP jsonString, FormatProblemDetailR problem)
+    {
+    StdFormatSetP sp = Set();
+    sp->ResetProblemCode();
+    NamedFormatSpecCP nfs = sp->AddCustomFormat(jsonString);
+    problem.Reset();
+    if (sp->HasProblem())
+        {
+        problem.UpdateProblemCode(sp->GetProblemCode());
+        }
+    return nfs;
     }
 
 bool StdFormatSet::AreSetsIdentical()
@@ -1425,21 +1498,8 @@ bool StdFormatSet::AreSetsIdentical()
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::DefaultDecimal()
-    {
-    NamedFormatSpecCP fmtP;
 
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        if (PresentationType::Decimal == fmtP->GetPresentationType())
-            return fmtP->GetNumericSpec();
-        }
-    return nullptr;
-    }
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1458,20 +1518,61 @@ NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
     return nullptr;
     }
 
-NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
+NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name, bool IncludeCustom)
     {
     NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
-
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
+    if (Set()->m_formatSet.size() > 0)
         {
-        fmtP = *itr;
-        if (fmtP->HasName(name) || fmtP->HasAlias(name))
+        for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
             {
-            return fmtP;
+            fmtP = *itr;
+            if (fmtP->HasName(name) || fmtP->HasAlias(name))
+                {
+                return fmtP;
+                }
+            }
+        }
+
+    if (IncludeCustom && (Set()->m_customSet.size() > 0))
+        {
+        for (auto itr = Set()->m_customSet.begin(); itr != Set()->m_customSet.end(); ++itr)
+            {
+            fmtP = *itr;
+            if (fmtP->HasName(name) || fmtP->HasAlias(name))
+                {
+                return fmtP;
+                }
             }
         }
     return nullptr;
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/17
+//----------------------------------------------------------------------------------------
+bool StdFormatSet::IsFormatDefined(Utf8CP name, Utf8CP alias)
+    {
+    NamedFormatSpecCP fmtP;
+    if (Set()->m_formatSet.size() == 0)
+        return false;
+    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
+        {
+        fmtP = *itr;
+        if (fmtP->HasName(name) || fmtP->HasAlias(name) || fmtP->HasName(alias) || fmtP->HasAlias(alias))
+            return true;
+        }
+    if (Set()->m_customSet.size() == 0)
+        return false;
+    for (auto itr = Set()->m_customSet.begin(); itr != Set()->m_customSet.end(); ++itr)
+        {
+        fmtP = *itr;
+        if (fmtP->HasName(name) || fmtP->HasAlias(name) || fmtP->HasName(alias) || fmtP->HasAlias(alias))
+            return true;
+        }
+
+    return false;
+    }
+
 
 bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
     {
