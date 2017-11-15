@@ -13,4 +13,7 @@ MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negat
 
 #CurvePrimitive.SizeSampler # Fails after merge - notified Earlir
 
+# These are really slow ... other MultiMeshVisibility cases cover critical issues.
 Polyface.MultiMeshVisibilityCS4
+Polyface.MultiMeshVisibilityF
+Polyface.MultiMeshVisibilityE
