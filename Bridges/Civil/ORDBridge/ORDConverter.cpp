@@ -341,8 +341,29 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     else
         bimAlignmentPtr->GenerateAprox3dGeom();
 
+    auto cifStationingPtr = cifAlignment.GetStationing();
+    if (cifStationingPtr.IsValid())
+        bimAlignmentPtr->SetStartStation(cifStationingPtr->GetStartStation());
+
     if (bimAlignmentPtr->Update().IsNull())
         return BentleyStatus::ERROR;
+
+    if (cifStationingPtr.IsValid())
+        {
+        auto stationEquationsPtr = cifStationingPtr->GetStationEquations();
+        while (stationEquationsPtr.IsValid() && stationEquationsPtr->MoveNext())
+            {
+            auto stationEqPtr = stationEquationsPtr->GetCurrent();
+            if (stationEqPtr.IsNull())
+                continue;
+
+            auto bimStationPtr = AlignmentBim::AlignmentStation::Create(*bimAlignmentPtr, stationEqPtr->GetDistanceAlong(), stationEqPtr->GetEquivalentStation());
+            if (!Bentley::WString::IsNullOrEmpty(stationEqPtr->GetName().c_str()))
+                bimStationPtr->SetUserLabel(Utf8String(stationEqPtr->GetName().c_str()).c_str());
+
+            bimStationPtr->Insert();
+            }
+        }
 
     return BentleyStatus::SUCCESS;
     }
