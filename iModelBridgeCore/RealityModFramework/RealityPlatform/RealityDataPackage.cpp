@@ -13,12 +13,6 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 #define XML_TOSTRING_OPTIONS ((BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent))
 
-Utf8CP ImageryData::ElementName = PACKAGE_ELEMENT_ImageryData;
-Utf8CP ModelData::ElementName = PACKAGE_ELEMENT_ModelData;
-Utf8CP PinnedData::ElementName = PACKAGE_ELEMENT_PinnedData;
-Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
-Utf8CP UndefinedData::ElementName = PACKAGE_ELEMENT_UndefinedData;
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                Alain.Robert      12/2016
 * Indicates if two long/lat location are alsmost equal (within given tolerance in meter)
@@ -123,6 +117,14 @@ WString BoundingPolygon::ToString() const
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason           	   11/2017
+//-------------------------------------------------------------------------------------
+bvector<GeoPoint2d> BoundingPolygon::GetFootprint() const
+    {
+    return m_points;
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
 BoundingPolygonPtr BoundingPolygon::FromString(Utf8StringCR polygonStr)
@@ -202,16 +204,16 @@ void RealityDataPackage::SetMinorVersion(uint32_t minor) { m_minorVersion = mino
 bool RealityDataPackage::HasUnknownElements() const {return m_hasUnknownElements;}
 void RealityDataPackage::SetUnknownElements(bool hasUnknownElements) { m_hasUnknownElements = hasUnknownElements; }
 
-RealityDataPackage::ImageryGroup const&   RealityDataPackage::GetImageryGroup() const   {return m_imagery;}    
-RealityDataPackage::ImageryGroup&         RealityDataPackage::GetImageryGroupR()        {return m_imagery;}   
-RealityDataPackage::ModelGroup const&     RealityDataPackage::GetModelGroup() const     {return m_model;}    
-RealityDataPackage::ModelGroup&           RealityDataPackage::GetModelGroupR()          {return m_model;}    
-RealityDataPackage::PinnedGroup const&    RealityDataPackage::GetPinnedGroup() const    {return m_pinned;}    
-RealityDataPackage::PinnedGroup&          RealityDataPackage::GetPinnedGroupR()         {return m_pinned;}    
-RealityDataPackage::TerrainGroup const&   RealityDataPackage::GetTerrainGroup() const   {return m_terrain;}    
-RealityDataPackage::TerrainGroup&         RealityDataPackage::GetTerrainGroupR()        {return m_terrain;}   
-RealityDataPackage::UndefinedGroup const& RealityDataPackage::GetUndefinedGroup() const {return m_undefined;}    
-RealityDataPackage::UndefinedGroup&       RealityDataPackage::GetUndefinedGroupR()      {return m_undefined;}   
+bvector<PackageRealityDataPtr> const&  RealityDataPackage::GetImageryGroup() const   {return (m_entities.find(RealityDataBase::Classification::IMAGERY))->second;}
+bvector<PackageRealityDataPtr>&        RealityDataPackage::GetImageryGroupR()        {return (m_entities.find(RealityDataBase::Classification::IMAGERY))->second;}
+bvector<PackageRealityDataPtr> const&  RealityDataPackage::GetModelGroup() const     {return (m_entities.find(RealityDataBase::Classification::MODEL))->second;}
+bvector<PackageRealityDataPtr>&        RealityDataPackage::GetModelGroupR()          {return (m_entities.find(RealityDataBase::Classification::MODEL))->second;}
+bvector<PackageRealityDataPtr> const&  RealityDataPackage::GetPinnedGroup() const    {return (m_entities.find(RealityDataBase::Classification::PINNED))->second;}
+bvector<PackageRealityDataPtr>&        RealityDataPackage::GetPinnedGroupR()         {return (m_entities.find(RealityDataBase::Classification::PINNED))->second;}
+bvector<PackageRealityDataPtr> const&  RealityDataPackage::GetTerrainGroup() const   {return (m_entities.find(RealityDataBase::Classification::TERRAIN))->second;}
+bvector<PackageRealityDataPtr>&        RealityDataPackage::GetTerrainGroupR()        {return (m_entities.find(RealityDataBase::Classification::TERRAIN))->second;}
+bvector<PackageRealityDataPtr> const&  RealityDataPackage::GetUndefinedGroup() const {return (m_entities.find(RealityDataBase::Classification::UNDEFINED_CLASSIF))->second;}
+bvector<PackageRealityDataPtr>&        RealityDataPackage::GetUndefinedGroupR()      {return (m_entities.find(RealityDataBase::Classification::UNDEFINED_CLASSIF))->second;}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -224,7 +226,13 @@ RealityDataPackage::RealityDataPackage(Utf8CP name)
  m_hasUnknownElements(false)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(name));
-    m_name = name;    
+    m_name = name;
+    m_entities = bmap<RealityDataBase::Classification, bvector<PackageRealityDataPtr>>();
+    m_entities.Insert(RealityDataBase::Classification::UNDEFINED_CLASSIF, bvector<PackageRealityDataPtr>());
+    m_entities.Insert(RealityDataBase::Classification::IMAGERY, bvector<PackageRealityDataPtr>());
+    m_entities.Insert(RealityDataBase::Classification::TERRAIN, bvector<PackageRealityDataPtr>());
+    m_entities.Insert(RealityDataBase::Classification::MODEL, bvector<PackageRealityDataPtr>());
+    m_entities.Insert(RealityDataBase::Classification::PINNED, bvector<PackageRealityDataPtr>());
     }
 
 //----------------------------------------------------------------------------------------
@@ -371,12 +379,6 @@ void PackageRealityData::AddSource(RealityDataSourceR dataSource)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Alain.Robert  3/2016
 //----------------------------------------------------------------------------------------
-Utf8StringCR PackageRealityData::GetDataId() const {return m_id;}
-void PackageRealityData::SetDataId(Utf8CP dataId) {m_id = dataId;}
-Utf8StringCR PackageRealityData::GetDataName() const {return m_name;}
-void PackageRealityData::SetDataName(Utf8CP dataName) {m_name = dataName;}
-Utf8StringCR PackageRealityData::GetDataset() const {return m_dataset;}
-void PackageRealityData::SetDataset(Utf8CP dataset) {m_dataset = dataset;}
 size_t PackageRealityData::GetNumSources() const {return m_Sources.size();}
 
 //----------------------------------------------------------------------------------------
@@ -393,105 +395,63 @@ PackageRealityData::~PackageRealityData(){}
 //=======================================================================================
 //                              ImageryData
 //=======================================================================================
-ImageryData::ImageryData(RealityDataSourceR dataSource, GeoPoint2dCP pCorners):PackageRealityData(dataSource){SetCorners(pCorners);}
+PackageRealityData::PackageRealityData(RealityDataSourceR dataSource, bvector<GeoPoint2d> pCorners):
+    PackageRealityData(dataSource)
+    {
+    SetFootprint(pCorners);
+    SetClassification(Classification::IMAGERY);
+    }
 
-ImageryData::~ImageryData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, GeoPoint2dCP pCorners)
+PackageRealityDataPtr PackageRealityData::CreateImagery(RealityDataSourceR dataSource, bvector<GeoPoint2d> pCorners)
     {
     // If corners are given they must be valid.
-    if(NULL != pCorners && !HasValidCorners(pCorners))
+    if (!pCorners.empty() && !HasValidCorners(pCorners))
         return NULL;
 
-    return new ImageryData(dataSource, pCorners);
+    return new PackageRealityData(dataSource, pCorners);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-bool ImageryData::HasValidCorners(GeoPoint2dCP pCorners)
+PackageRealityDataPtr PackageRealityData::CreateModel(RealityDataSourceR dataSource)
     {
-    if(NULL == pCorners)
-        return false;
-
-    for(size_t i=0; i < 4; ++i)
-        {
-        if(!RealityDataSerializer::IsValidLongLat(pCorners[i].longitude, pCorners[i].latitude))
-            {
-            BeDataAssert(!"Invalid long/lat");
-            return false;
-            }
-        }
-
-    // &&AR TO DO ... Make sure the path defined by corners does not autocross.
-    return true;
-    } 
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-GeoPoint2dCP ImageryData::GetCornersCP() const
-    {
-    if(!HasValidCorners(m_corners))
-        return NULL;
-
-    return m_corners;
+    PackageRealityDataPtr ptr = new PackageRealityData(dataSource);
+    ptr->SetClassification(Classification::MODEL);
+    return ptr;
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-void ImageryData::SetCorners(GeoPoint2dCP pCorners)
-    {
-    if(NULL == pCorners || !HasValidCorners(pCorners))
-        {
-        InvalidateCorners();
-        return;
-        }
-
-    memcpy(m_corners, pCorners, sizeof(m_corners));
-    }
-
-//=======================================================================================
-//                              ModelData
-//=======================================================================================
-ModelData::ModelData(RealityDataSourceR dataSource):PackageRealityData(dataSource){}
-ModelData::~ModelData(){}
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-ModelDataPtr ModelData::Create(RealityDataSourceR dataSource)
-    {
-    return new ModelData(dataSource);
-    }
-
 
 //=======================================================================================
 //                              PinnedData
 //=======================================================================================
-PinnedData::PinnedData(RealityDataSourceR dataSource, double longitude, double latitude):PackageRealityData(dataSource){m_location.Init(longitude, latitude);}
-PinnedData::~PinnedData(){}
+PackageRealityData::PackageRealityData(RealityDataSourceR dataSource, double longitude, double latitude):PackageRealityData(dataSource)
+    {
+    m_location.Init(longitude, latitude);
+    SetClassification(Classification::PINNED);
+    }
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double longitude, double latitude)
+PackageRealityDataPtr PackageRealityData::CreatePinned(RealityDataSourceR dataSource, double longitude, double latitude)
     {
-    if(!RealityDataSerializer::IsValidLongLat(longitude, latitude))
+    if (!RealityDataSerializer::IsValidLongLat(longitude, latitude))
         return NULL;
-    
-    return new PinnedData(dataSource, longitude, latitude);
+
+    return new PackageRealityData(dataSource, longitude, latitude);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-GeoPoint2dCR PinnedData::GetLocation() const{return m_location;}
-bool PinnedData::SetLocation(GeoPoint2dCR location)
+GeoPoint2dCR PackageRealityData::GetLocation() const{return m_location;}
+
+bool PackageRealityData::SetLocation(GeoPoint2dCR location)
     {
     if(!RealityDataSerializer::IsValidLongLat(location.longitude, location.latitude))
         return false;
@@ -501,40 +461,86 @@ bool PinnedData::SetLocation(GeoPoint2dCR location)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Alain.Robert  5/2016
-//----------------------------------------------------------------------------------------
-bool PinnedData::HasArea() const {return !m_area.IsNull();}
-BoundingPolygonCP PinnedData::GetAreaCP() const{return m_area.get();}
-bool PinnedData::SetArea(BoundingPolygonR area)
-    {
-    m_area = &area;
-    return true;
-    }
-
-//=======================================================================================
-//                              TerrainData
-//=======================================================================================
-TerrainData::TerrainData(RealityDataSourceR dataSource):PackageRealityData(dataSource){}
-TerrainData::~TerrainData(){}
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-TerrainDataPtr TerrainData::Create(RealityDataSourceR dataSource)
+PackageRealityDataPtr PackageRealityData::CreateTerrain(RealityDataSourceR dataSource)
     {
-    return new TerrainData(dataSource);
+    PackageRealityDataPtr ptr = new PackageRealityData(dataSource);
+    ptr->SetClassification(Classification::TERRAIN);
+    return ptr;
     }
-
-//=======================================================================================
-//                              UndefinedData
-//=======================================================================================
-UndefinedData::UndefinedData(RealityDataSourceR dataSource):PackageRealityData(dataSource){}
-UndefinedData::~UndefinedData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Alain.Robert  04/2017
 //----------------------------------------------------------------------------------------
-UndefinedDataPtr UndefinedData::Create(RealityDataSourceR dataSource)
+PackageRealityDataPtr PackageRealityData::CreateUndefined(RealityDataSourceR dataSource)
     {
-    return new UndefinedData(dataSource);
+    PackageRealityDataPtr ptr = new PackageRealityData(dataSource);
+    ptr->SetClassification(Classification::UNDEFINED_CLASSIF);
+    return ptr;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Spencer.Mason  11/2017
+//----------------------------------------------------------------------------------------
+void PackageRealityData::SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys)
+    {
+    m_footprint = footprint;
+    m_footprintString = "";
+    m_footprintExtentComputed = false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Spencer.Mason  11/2017
+//----------------------------------------------------------------------------------------
+Utf8String PackageRealityData::GetFootprintString() const
+    {
+    if(m_footprintExtentComputed)
+        return m_footprintString;
+
+    // convert to a space separated string.
+    WString result;
+    for (auto point : m_footprint)
+        {
+        WPrintfString pointStr(LATLONG_PRINT_FORMAT L" ", point.longitude, point.latitude);
+        result.append(pointStr);
+        }
+
+    // Remove extra whitespace
+    if (result.size() > 1)
+        result.resize(result.size() - 1);
+
+    m_footprintString = Utf8String(result.c_str());
+    m_footprintExtentComputed = true;
+
+    return m_footprintString;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Spencer.Mason  11/2017
+//----------------------------------------------------------------------------------------
+bool PackageRealityData::HasArea() const
+    {
+    return !m_footprint.empty();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+bool PackageRealityData::HasValidCorners(const bvector<GeoPoint2d>& pCorners)
+    {
+    if (pCorners.empty())
+        return false;
+
+    for (size_t i = 0; i < 4; ++i)
+        {
+        if (!RealityDataSerializer::IsValidLongLat(pCorners[i].longitude, pCorners[i].latitude))
+            {
+            BeDataAssert(!"Invalid long/lat");
+            return false;
+            }
+        }
+
+    // &&AR TO DO ... Make sure the path defined by corners does not autocross.
+    return true;
     }

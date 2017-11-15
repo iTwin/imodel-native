@@ -1016,9 +1016,9 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityDataDownload::Link_File_wMirrors_wSisters();
     
-    RealityPlatform::RealityDataPackage::ImageryGroup imageFiles = package->GetImageryGroup();
+    bvector<PackageRealityDataPtr> imageFiles = package->GetImageryGroup();
 
-    for (RealityPlatform::ImageryDataPtr file : imageFiles)
+    for (PackageRealityDataPtr file : imageFiles)
         {
         RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
 
@@ -1057,24 +1057,24 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
         downloadOrder.push_back(mVector);
         }
 
-    RealityPlatform::RealityDataPackage::TerrainGroup terrainFiles = package->GetTerrainGroup();
+    bvector<PackageRealityDataPtr> terrainFiles = package->GetTerrainGroup();
 
-    for (RealityPlatform::TerrainDataPtr file : terrainFiles)
+    for (PackageRealityDataPtr file : terrainFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
-    RealityPlatform::RealityDataPackage::ModelGroup modelFiles = package->GetModelGroup();
+    bvector<PackageRealityDataPtr> modelFiles = package->GetModelGroup();
 
-    for (RealityPlatform::ModelDataPtr file : modelFiles)
+    for (PackageRealityDataPtr file : modelFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
-    RealityPlatform::RealityDataPackage::PinnedGroup pinnedFiles = package->GetPinnedGroup();
+    bvector<PackageRealityDataPtr> pinnedFiles = package->GetPinnedGroup();
 
-    for (RealityPlatform::PinnedDataPtr file : pinnedFiles)
+    for (PackageRealityDataPtr file : pinnedFiles)
         downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
-    RealityPlatform::RealityDataPackage::UndefinedGroup undefinedfiles = package->GetUndefinedGroup();
+    bvector<PackageRealityDataPtr> undefinedfiles = package->GetUndefinedGroup();
 
-	for (RealityPlatform::UndefinedDataPtr file : undefinedfiles)
+	for (PackageRealityDataPtr file : undefinedfiles)
 		downloadOrder.push_back(RealityDataToMirrorVector(*file));
 
     return downloadOrder;

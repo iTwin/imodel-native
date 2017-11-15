@@ -94,7 +94,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
     if (NULL == pGroupNode)
         return RealityPackageStatus::Success; // Source groups are optional.
 
-    RealityDataPackage::ImageryGroup& imgGroup = package.GetImageryGroupR();
+    bvector<PackageRealityDataPtr>& imgGroup = package.GetImageryGroupR();
     for (BeXmlNodeP pDataNode = pGroupNode->GetFirstChild(); NULL != pDataNode; pDataNode = pDataNode->GetNextSibling())
         {
         // Read base first.        
@@ -152,28 +152,30 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
         }
 
         // Read ImageryData specific.
-        GeoPoint2dP corners = NULL;
+        bvector<GeoPoint2d> corners;
         BeXmlNodeP pCornerNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Corners);
         if (NULL != pCornerNode)
             {
-            corners = new GeoPoint2d[4];
+            corners = bvector<GeoPoint2d>(4);
             RealityPackageStatus status2 = RealityPackageStatus::Success;
-            if (RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerLeft].longitude, corners[ImageryData::Corners::LowerLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
-                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerRight].longitude, corners[ImageryData::Corners::LowerRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
-                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperLeft].longitude, corners[ImageryData::Corners::UpperLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
-                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperRight].longitude, corners[ImageryData::Corners::UpperRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
+            if (RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[PackageRealityData::Corners::LowerLeft].longitude, corners[PackageRealityData::Corners::LowerLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
+                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[PackageRealityData::Corners::LowerRight].longitude, corners[PackageRealityData::Corners::LowerRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
+                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[PackageRealityData::Corners::UpperLeft].longitude, corners[PackageRealityData::Corners::UpperLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
+                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[PackageRealityData::Corners::UpperRight].longitude, corners[PackageRealityData::Corners::UpperRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
                 {
                 return status2;
                 }
             }
+        else
+            corners = bvector<GeoPoint2d>();
 
         // Create imagery data and add alternate sources.
-        ImageryDataPtr pImgData;
+        PackageRealityDataPtr pImgData;
         if (!pSources.empty())
             {
-            pImgData = ImageryData::Create(*pSources[0], corners);
-            pImgData->SetDataId(id.c_str());
-            pImgData->SetDataName(name.c_str());
+            pImgData = PackageRealityData::CreateImagery(*pSources[0], corners);
+            pImgData->SetIdentifier(id.c_str());
+            pImgData->SetName(name.c_str());
             pImgData->SetDataset(dataset.c_str());
             for (size_t i = 1; i < pSources.size(); ++i)
                 {
@@ -185,9 +187,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
             size_t start = 0;
             if (pImgData.IsNull())
                 {
-                pImgData = ImageryData::Create(*pMultiBandSources[0], corners);
-                pImgData->SetDataId(id.c_str());
-                pImgData->SetDataName(name.c_str());
+                pImgData = PackageRealityData::CreateImagery(*pMultiBandSources[0], corners);
+                pImgData->SetIdentifier(id.c_str());
+                pImgData->SetName(name.c_str());
                 pImgData->SetDataset(dataset.c_str());
                 start = 1;
                 }
@@ -224,7 +226,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
     if (NULL == pGroupNode)
         return RealityPackageStatus::Success; // Source groups are optional.
 
-    RealityDataPackage::ModelGroup& modelGroup = package.GetModelGroupR();
+    bvector<PackageRealityDataPtr>& modelGroup = package.GetModelGroupR();
     for (BeXmlNodeP pDataNode = pGroupNode->GetFirstChild(); NULL != pDataNode; pDataNode = pDataNode->GetNextSibling())
         {
         // Read base first.
@@ -266,9 +268,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
             }
 
         // Create model data and add alternate sources.
-        ModelDataPtr pModelData = ModelData::Create(*pSources[0]);
-        pModelData->SetDataId(id.c_str());
-        pModelData->SetDataName(name.c_str());
+        PackageRealityDataPtr pModelData = PackageRealityData::CreateModel(*pSources[0]);
+        pModelData->SetIdentifier(id.c_str());
+        pModelData->SetName(name.c_str());
         pModelData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
@@ -302,7 +304,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
     if (NULL == pGroupNode)
         return RealityPackageStatus::Success; // Source groups are optional.
 
-    RealityDataPackage::PinnedGroup& pinnedGroup = package.GetPinnedGroupR();
+    bvector<PackageRealityDataPtr>& pinnedGroup = package.GetPinnedGroupR();
     for (BeXmlNodeP pDataNode = pGroupNode->GetFirstChild(); NULL != pDataNode; pDataNode = pDataNode->GetNextSibling())
         {
         // Read base first.
@@ -364,15 +366,15 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
             }
 
         // Create pinned data and add alternate sources.
-        PinnedDataPtr pPinnedData = PinnedData::Create(*pSources[0], location.longitude, location.latitude);
-        pPinnedData->SetDataId(id.c_str());
-        pPinnedData->SetDataName(name.c_str());
+        PackageRealityDataPtr pPinnedData = PackageRealityData::CreatePinned(*pSources[0], location.longitude, location.latitude);
+        pPinnedData->SetIdentifier(id.c_str());
+        pPinnedData->SetName(name.c_str());
         pPinnedData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pPinnedData->AddSource(*pSources[i]);
             }
-        pPinnedData->SetArea(*pPolygon);
+        pPinnedData->SetFootprint(pPolygon->GetFootprint());
 
         // Add data to group.
         pinnedGroup.push_back(pPinnedData);
@@ -401,7 +403,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
     if (NULL == pGroupNode)
         return RealityPackageStatus::Success; // Source groups are optional.
 
-    RealityDataPackage::TerrainGroup& terrainGroup = package.GetTerrainGroupR();
+    bvector<PackageRealityDataPtr>& terrainGroup = package.GetTerrainGroupR();
     for (BeXmlNodeP pDataNode = pGroupNode->GetFirstChild(); NULL != pDataNode; pDataNode = pDataNode->GetNextSibling())
         {
         // Read base first.
@@ -442,9 +444,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
             }
         
         // Create terrain data and add alternate sources.
-        TerrainDataPtr pTerrainData = TerrainData::Create(*pSources[0]);
-        pTerrainData->SetDataId(id.c_str());
-        pTerrainData->SetDataName(name.c_str());
+        PackageRealityDataPtr pTerrainData = PackageRealityData::CreateTerrain(*pSources[0]);
+        pTerrainData->SetIdentifier(id.c_str());
+        pTerrainData->SetName(name.c_str());
         pTerrainData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
@@ -478,7 +480,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPac
     if (NULL == pGroupNode)
         return RealityPackageStatus::Success; // Source groups are optional.
 
-    RealityDataPackage::UndefinedGroup& undefinedGroup = package.GetUndefinedGroupR();
+    bvector<PackageRealityDataPtr>& undefinedGroup = package.GetUndefinedGroupR();
     for (BeXmlNodeP pDataNode = pGroupNode->GetFirstChild(); NULL != pDataNode; pDataNode = pDataNode->GetNextSibling())
         {
         // Read base first.
@@ -519,9 +521,9 @@ RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPac
             }
         
         // Create undefined data and add alternate sources.
-        UndefinedDataPtr pUndefinedData = UndefinedData::Create(*pSources[0]);
-        pUndefinedData->SetDataId(id.c_str());
-        pUndefinedData->SetDataName(name.c_str());
+        PackageRealityDataPtr pUndefinedData = PackageRealityData::CreateUndefined(*pSources[0]);
+        pUndefinedData->SetIdentifier(id.c_str());
+        pUndefinedData->SetName(name.c_str());
         pUndefinedData->SetDataset(dataset.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
@@ -604,8 +606,8 @@ RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node
         return RealityPackageStatus::UnknownError;
 
     // Add data to group.
-    RealityDataPackage::ImageryGroup imgGroup = package.GetImageryGroup();
-    for(ImageryDataPtr pImgData : imgGroup)
+    bvector<PackageRealityDataPtr> imgGroup = package.GetImageryGroup();
+    for(PackageRealityDataPtr pImgData : imgGroup)
         {
         if (!pImgData.IsValid())
             continue;
@@ -614,12 +616,12 @@ RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_ImageryData);
 
         // Id.
-        if (!pImgData->GetDataId().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pImgData->GetDataId().c_str());
+        if (!pImgData->GetIdentifier().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pImgData->GetIdentifier().c_str());
 
         // Name.
-        if (!pImgData->GetDataName().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pImgData->GetDataName().c_str());
+        if (!pImgData->GetName().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pImgData->GetName().c_str());
 
         // Dataset.
         if (!pImgData->GetDataset().empty())
@@ -641,15 +643,15 @@ RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node
             }
 
         // Write ImageryData specific.
-        GeoPoint2dCP pCorners = pImgData->GetCornersCP();
-        if (NULL == pCorners)
+        const bvector<GeoPoint2d>& pCorners = pImgData->GetFootprint();
+        if (pCorners.empty())
             continue;  // Corners are optional.
 
         BeXmlNodeP pCornerNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Corners);
-        if (RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerLeft, pCorners[ImageryData::Corners::LowerLeft].longitude, pCorners[ImageryData::Corners::LowerLeft].latitude)) ||
-            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerRight, pCorners[ImageryData::Corners::LowerRight].longitude, pCorners[ImageryData::Corners::LowerRight].latitude)) ||
-            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperLeft, pCorners[ImageryData::Corners::UpperLeft].longitude, pCorners[ImageryData::Corners::UpperLeft].latitude)) ||
-            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperRight, pCorners[ImageryData::Corners::UpperRight].longitude, pCorners[ImageryData::Corners::UpperRight].latitude)))
+        if (RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerLeft, pCorners[PackageRealityData::Corners::LowerLeft].longitude, pCorners[PackageRealityData::Corners::LowerLeft].latitude)) ||
+            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerRight, pCorners[PackageRealityData::Corners::LowerRight].longitude, pCorners[PackageRealityData::Corners::LowerRight].latitude)) ||
+            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperLeft, pCorners[PackageRealityData::Corners::UpperLeft].longitude, pCorners[PackageRealityData::Corners::UpperLeft].latitude)) ||
+            RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperRight, pCorners[PackageRealityData::Corners::UpperRight].longitude, pCorners[PackageRealityData::Corners::UpperRight].latitude)))
             {
             pDataNode->RemoveChildNode(pCornerNode);
             continue;
@@ -673,8 +675,8 @@ RealityPackageStatus RealityDataSerializerV2::_WriteModelGroup(BeXmlNodeR node, 
         return RealityPackageStatus::UnknownError;
 
     // Add data to group.
-    RealityDataPackage::ModelGroup modelGroup = package.GetModelGroup();
-    for (ModelDataPtr pModelData : modelGroup)
+    bvector<PackageRealityDataPtr> modelGroup = package.GetModelGroup();
+    for (PackageRealityDataPtr pModelData : modelGroup)
         {
         if (!pModelData.IsValid())
             continue;
@@ -683,12 +685,12 @@ RealityPackageStatus RealityDataSerializerV2::_WriteModelGroup(BeXmlNodeR node, 
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_ModelData);
 
         // Id.
-        if (!pModelData->GetDataId().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pModelData->GetDataId().c_str());
+        if (!pModelData->GetIdentifier().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pModelData->GetIdentifier().c_str());
 
         // Name.
-        if (!pModelData->GetDataName().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pModelData->GetDataName().c_str());
+        if (!pModelData->GetName().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pModelData->GetName().c_str());
 
         // Dataset.
         if (!pModelData->GetDataset().empty())
@@ -727,8 +729,8 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
         return RealityPackageStatus::UnknownError;
 
     // Add data to group.
-    RealityDataPackage::PinnedGroup pinnedGroup = package.GetPinnedGroup();
-    for (PinnedDataPtr pPinnedData : pinnedGroup)
+    bvector<PackageRealityDataPtr> pinnedGroup = package.GetPinnedGroup();
+    for (PackageRealityDataPtr pPinnedData : pinnedGroup)
         {
         if (!pPinnedData.IsValid())
             continue;
@@ -737,12 +739,12 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_PinnedData);
         
         // Id.
-        if (!pPinnedData->GetDataId().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pPinnedData->GetDataId().c_str());
+        if (!pPinnedData->GetIdentifier().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pPinnedData->GetIdentifier().c_str());
 
         // Name.
-        if (!pPinnedData->GetDataName().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pPinnedData->GetDataName().c_str());
+        if (!pPinnedData->GetName().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pPinnedData->GetName().c_str());
 
         // Dataset.
         if (!pPinnedData->GetDataset().empty())
@@ -770,7 +772,7 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
 
         // Area
         if (pPinnedData->HasArea())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Area, pPinnedData->GetAreaCP()->ToString().c_str());
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Area, pPinnedData->GetFootprintString().c_str());
 
         }
 
@@ -791,8 +793,8 @@ RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node
         return RealityPackageStatus::UnknownError;
 
     // Add data to group.
-    RealityDataPackage::TerrainGroup terrainGroup = package.GetTerrainGroup();
-    for (TerrainDataPtr pTerrainData : terrainGroup)
+    bvector<PackageRealityDataPtr> terrainGroup = package.GetTerrainGroup();
+    for (PackageRealityDataPtr pTerrainData : terrainGroup)
         {
         if (!pTerrainData.IsValid())
             continue;
@@ -801,12 +803,12 @@ RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_TerrainData);
         
         // Id.
-        if (!pTerrainData->GetDataId().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pTerrainData->GetDataId().c_str());
+        if (!pTerrainData->GetIdentifier().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pTerrainData->GetIdentifier().c_str());
 
         // Name.
-        if (!pTerrainData->GetDataName().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pTerrainData->GetDataName().c_str());
+        if (!pTerrainData->GetName().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pTerrainData->GetName().c_str());
 
         // Dataset.
         if (!pTerrainData->GetDataset().empty())
@@ -846,8 +848,8 @@ RealityPackageStatus RealityDataSerializerV2::_WriteUndefinedGroup(BeXmlNodeR no
         return RealityPackageStatus::UnknownError;
 
     // Add data to group.
-    RealityDataPackage::UndefinedGroup undefinedGroup = package.GetUndefinedGroup();
-    for (UndefinedDataPtr pUndefinedData : undefinedGroup)
+    bvector<PackageRealityDataPtr> undefinedGroup = package.GetUndefinedGroup();
+    for (PackageRealityDataPtr pUndefinedData : undefinedGroup)
         {
         if (!pUndefinedData.IsValid())
             continue;
@@ -856,12 +858,12 @@ RealityPackageStatus RealityDataSerializerV2::_WriteUndefinedGroup(BeXmlNodeR no
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_UndefinedData);
         
         // Id.
-        if (!pUndefinedData->GetDataId().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pUndefinedData->GetDataId().c_str());
+        if (!pUndefinedData->GetIdentifier().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Id, pUndefinedData->GetIdentifier().c_str());
 
         // Name.
-        if (!pUndefinedData->GetDataName().empty())
-            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pUndefinedData->GetDataName().c_str());
+        if (!pUndefinedData->GetName().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Name, pUndefinedData->GetName().c_str());
 
         // Dataset.
         if (!pUndefinedData->GetDataset().empty())

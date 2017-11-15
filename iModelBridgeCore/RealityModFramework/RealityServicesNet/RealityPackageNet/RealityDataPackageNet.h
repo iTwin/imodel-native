@@ -151,7 +151,7 @@ namespace RealityPackageNet
             ~ImageryDataNet();
             !ImageryDataNet();
 
-            RealityPlatform::ImageryDataPtr* m_pImageryData;
+            RealityPlatform::PackageRealityDataPtr* m_pImageryData;
         };
 
     //=====================================================================================
@@ -171,7 +171,7 @@ namespace RealityPackageNet
             ~ModelDataNet();
             !ModelDataNet();
 
-            RealityPlatform::ModelDataPtr* m_pModelData;
+            RealityPlatform::PackageRealityDataPtr* m_pModelData;
         };
 
     //=====================================================================================
@@ -212,7 +212,7 @@ namespace RealityPackageNet
             ~PinnedDataNet();
             !PinnedDataNet();
 
-            RealityPlatform::PinnedDataPtr* m_pPinnedData;
+            RealityPlatform::PackageRealityDataPtr* m_pPinnedData;
         };    
 
     //=====================================================================================
@@ -231,7 +231,7 @@ namespace RealityPackageNet
             ~TerrainDataNet();
             !TerrainDataNet();
 
-            RealityPlatform::TerrainDataPtr* m_pTerrainData;
+            RealityPlatform::PackageRealityDataPtr* m_pTerrainData;
         };
 
     //=====================================================================================
@@ -250,6 +250,6 @@ namespace RealityPackageNet
             ~UndefinedDataNet();
             !UndefinedDataNet();
 
-            RealityPlatform::UndefinedDataPtr* m_pUndefinedData;
+            RealityPlatform::PackageRealityDataPtr* m_pUndefinedData;
         };
     }
