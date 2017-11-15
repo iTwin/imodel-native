@@ -343,7 +343,10 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     auto cifStationingPtr = cifAlignment.GetStationing();
     if (cifStationingPtr.IsValid())
+        {
         bimAlignmentPtr->SetStartStation(cifStationingPtr->GetStartStation());
+        bimAlignmentPtr->SetStartValue(cifStationingPtr->GetDistanceAlong());
+        }
 
     if (bimAlignmentPtr->Update().IsNull())
         return BentleyStatus::ERROR;
