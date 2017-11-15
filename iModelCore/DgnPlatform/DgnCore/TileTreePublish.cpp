@@ -383,6 +383,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
 
     if (!tileRoot.IsValid())
         return folly::makeFuture(TileGeneratorStatus::NoGeometry);
+
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
         return collector->_BeginProcessModel(*model);
@@ -401,7 +402,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
         })
     .then([=](GenerateTileResult result)
         {
-        RenderSystemP renderSystemP = renderSystem.get(); // Must ensure renderSystem persists throughout execution of lambdas
+        std::shared_ptr<RenderSystem>(renderSystem); // Must ensure renderSystem persists throughout execution of lambdas
         m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
         return collector->_EndProcessModel(*model, result.m_tile.get(), result.m_status);   
         });
