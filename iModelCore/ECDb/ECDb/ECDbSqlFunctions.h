@@ -46,37 +46,57 @@ struct Base64ToBlobSqlFunction final : ScalarFunction
         static Base64ToBlobSqlFunction& GetSingleton();
     };
 
+//=======================================================================================
+// BaseClass for scalar system funtion that require ECDb as context and use cache stmts
+// @bsiclass                                                   Affan.Khan         11/17
+//=======================================================================================
+struct ECDbSystemScalarFunction : ScalarFunction
+    {
+    private:
+        ECDbCR m_ecdb;
+        ECSqlStatementCache m_stmtCache;
 
+    protected:
+        CachedECSqlStatementPtr GetPreparedStatement(Utf8CP ecsql) const;
+        ECDbCR GetECDb() const { return m_ecdb; }
 
+    public:
+        ECDbSystemScalarFunction(ECDbCR, Utf8CP, int, DbValueType);
+        ~ECDbSystemScalarFunction() {}
+    };
 //=======================================================================================
 // Helper SQL function for ChangeSummary not intended for public use
 // @bsiclass                                                   Affan.Khan         11/17
 //=======================================================================================
-struct ChangedValueFunction final : ScalarFunction
+struct ChangedValueFunction final : ECDbSystemScalarFunction
     {
     private:
         enum class Operation
             {
-            Insert = 1,
-            Update = 2,
-            Delete = 3
+            Inserted = 1,     //'inserted'
+            Deleted = 2,      //'deleted'
+            UpdatedOld = 3,   //'updated.old'
+            UpdatedNew = 4,   //'updated.new'
             };
 
-        enum class Stage
-            {
-            Old = 1,
-            New = 2
-            };
-
-        ECDbCR m_ecdb;
-        ECSqlStatementCache m_stmtCache;
+        //inserted=1,deleted=2, updated.old=3, updated.new=4
         static std::map<Utf8CP, std::function<void(Context&, ECSqlStatement&)>, CompareIUtf8Ascii> s_setValueMap;
-
+        static std::set<int> s_operationValidValues;
+        static std::map<Utf8CP, int, CompareIUtf8Ascii> s_operationStrValues;
         void SetValue(Context& ctx, ECSqlStatement& stmt);
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+        //This is part of public API therefore following must not change else it would break user code
+        static_assert((int) Operation::Inserted == 1, "Expecting Inserted==1");
+        static_assert((int) Operation::Deleted == 2, "Expecting Deleted==2");
+        static_assert((int) Operation::UpdatedOld == 3, "Expecting UpdatedOld==3");
+        static_assert((int) Operation::UpdatedNew == 4, "Expecting UpdatedNew==4");
 
     public:
         explicit ChangedValueFunction(ECDbCR);
         ~ChangedValueFunction() {}
     };
+
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
