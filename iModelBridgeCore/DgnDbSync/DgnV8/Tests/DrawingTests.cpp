@@ -1048,9 +1048,9 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
         ASSERT_TRUE(ele.IsValid());
         auto eleModel = ele->GetSub<DrawingModel>();
         ASSERT_TRUE(eleModel.IsValid());
-        countElements(*eleModel, 3);
+        countElements(*eleModel, 6);
         //There should be three DrawingGrapic in total maps on on root2dmodel
-        countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 3);
+        countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 6);
       }
     }
 /*---------------------------------------------------------------------------------**//**

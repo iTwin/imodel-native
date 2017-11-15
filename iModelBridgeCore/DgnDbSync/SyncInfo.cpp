@@ -103,7 +103,7 @@ BentleyStatus SyncInfo::CreateTables()
                          "V8Id INT,"
                          "V8Name CHAR NOT NULL,"
                          "Transform BLOB,"
-                         "CONSTRAINT FileModelId UNIQUE(V8FileSyncInfoId,V8Id)");
+                         "CONSTRAINT FileModelId UNIQUE(V8FileSyncInfoId,V8Id,Transform)");
 
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "NativeIdx ON "  SYNC_TABLE_Model "(ModelId)");
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "FileAndModel ON "  SYNC_TABLE_Model "(V8FileSyncInfoId,V8Id)");
