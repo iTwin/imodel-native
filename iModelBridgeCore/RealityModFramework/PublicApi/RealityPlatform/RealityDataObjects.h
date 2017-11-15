@@ -72,7 +72,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelatedId() const;
     REALITYDATAPLATFORM_EXPORT void SetRelatedId(Utf8StringCR relatedId);
 
-    //! The project id that is linked with reality data.
+    //! The relation type. The type of relationship is a string key that can be in the reserved list or not (user defined type).
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelationType() const;
     REALITYDATAPLATFORM_EXPORT void SetRelationType(Utf8StringCR relationType);
     
