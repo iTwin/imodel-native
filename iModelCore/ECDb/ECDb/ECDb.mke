@@ -55,6 +55,7 @@ ECDbAllHeaders = \
                 $(baseDir)SchemaWriter.h \
                 $(baseDir)SchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
+                $(baseDir)BuiltinSchemaNames.h \
                 $(baseDir)ClassMappingInfo.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ProfileManager.h \

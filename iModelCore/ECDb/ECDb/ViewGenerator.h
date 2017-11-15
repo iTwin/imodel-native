@@ -9,56 +9,25 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
 #include "DbSchema.h"
+#include "ECDbSqlFunctions.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlPrepareContext;
 struct ConstraintECClassIdJoinInfo;
- 
+struct MemberFunctionCallExp;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013
 +===============+===============+===============+===============+===============+======*/
 struct ViewGenerator final
     {
-    struct MemberInfo final
-        {
-        private:
-            Utf8String m_name;
-            std::map<Utf8String, Utf8String, CompareIUtf8Ascii> m_args;
-
-        public:
-            Utf8StringCR GetName() const { return m_name; }
-            void SetName(Utf8CP name) { m_name = name; }
-            void SetArg(Utf8CP name, Utf8CP value) { m_args[name] = value; }
-            Utf8CP GetArg(Utf8CP name) const
-                {
-                auto itor = m_args.find(Utf8String(name));
-                if (itor == m_args.end())
-                    return nullptr;
-
-                return itor->second.c_str();
-                }
-
-            bool HasArg(Utf8CP name) const
-                {
-                auto itor = m_args.find(Utf8String(name));
-                if (itor == m_args.end())
-                    return false;
-
-                return true;
-                }
-
-            bool IsChangeSummaryFunction() const { return m_name.EqualsIAscii(CHANGESUMMARY_FUNC_Name); }
-            bool Valid() const { return !m_name.empty(); }
-        };
-
     private:
         enum class ViewType
             {
             SelectFromView,
             ECClassView
             };
-
 
         //=======================================================================================
         // @bsiclass                                                 Krischan.Eberle    12/2016
@@ -89,18 +58,18 @@ struct ViewGenerator final
             {
         private:
             ECSqlPrepareContext const& m_prepareCtx;
-            bool m_isPolymorphicQuery;
-            MemberInfo const* m_memberInfo;
+            bool m_isPolymorphicQuery = false;
+            MemberFunctionCallExp const* m_memberFunctionCallExp = nullptr;
         public:
-            SelectFromViewContext(ECSqlPrepareContext const&, bool isPolymorphicQuery, MemberInfo const* memberInfo);
+            SelectFromViewContext(ECSqlPrepareContext const&, bool isPolymorphicQuery, MemberFunctionCallExp const*);
             ~SelectFromViewContext() {}
 
             ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
             bool IsPolymorphicQuery() const { return m_isPolymorphicQuery; }
-            void SetPolymorphicQuery(bool isPolymorphic) { m_isPolymorphicQuery = isPolymorphic; }
+            MemberFunctionCallExp const* GetMemberFunctionCallExp() const { return m_memberFunctionCallExp; }
+
             bool IsECClassIdFilterEnabled() const;
             bool IsInSelectClause(Utf8StringCR exp) const;
-            MemberInfo const* GetMemberInfo() const { return m_memberInfo; }
             };
 
         //=======================================================================================
@@ -185,9 +154,10 @@ struct ViewGenerator final
         ViewGenerator();
         ~ViewGenerator();
 
-        static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
-
         static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);
+        static BentleyStatus GenerateChangeSummaryViewSql(NativeSqlBuilder&, SelectFromViewContext&, ClassMap const&);
+
+        static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
 
         static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin = false);
         static BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassEndTableMap const& relationMap);
@@ -199,15 +169,8 @@ struct ViewGenerator final
         static BentleyStatus RenderMixinClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, bool polymorphic);
-        static BentleyStatus GenerateChangeSummaryView(NativeSqlBuilder&, ClassMap const&, SelectFromViewContext&);
     public:
-        //! Generates a SQLite polymorphic SELECT query for a given classMap
-        //! @param viewSql [out] Output SQL for view
-        //! @param prepareContext [in] prepareContext from ECSQL
-        //! @param classMap [in] Source classMap for which to generate view
-        //! @param isPolymorphicQuery [in] if true return a polymorphic view of ECClass else return a non-polymorphic view. Intend to be use by ECSQL "ONLY <ecClass>"
-        //! @remarks Only work work normal ECClasses but not relationship. It also support query over ecdb.Instances
-        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, const MemberInfo* memberInfo = nullptr);
+        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, MemberFunctionCallExp const* memberFunctionCallExp = nullptr);
         static BentleyStatus CreateECClassViews(ECDbCR, bvector<ECN::ECClassId> const&);
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);

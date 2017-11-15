@@ -410,6 +410,9 @@
     <ClInclude Include="ChangeIteratorImpl.h">
       <Filter>ChangeSummary</Filter>
     </ClInclude>
+    <ClInclude Include="BuiltinSchemaNames.h">
+      <Filter>SchemaManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

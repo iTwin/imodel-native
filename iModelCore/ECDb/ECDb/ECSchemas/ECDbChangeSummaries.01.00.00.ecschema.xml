@@ -4,7 +4,7 @@
     <ECEntityClass typeName="Summary" displayLabel="Summary" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>OwnTable</MapStrategy>
+                <MapStrategy>TemporaryTable</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -18,7 +18,7 @@
     <ECEntityClass typeName="Instance" displayLabel="Instance Change" modifier="Sealed" description="Represents an instance change in a change summary">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>OwnTable</MapStrategy>
+                <MapStrategy>TemporaryTable</MapStrategy>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
@@ -44,7 +44,7 @@
     <ECEntityClass typeName="PropertyValue" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>OwnTable</MapStrategy>
+                <MapStrategy>TemporaryTable</MapStrategy>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>

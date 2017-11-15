@@ -348,7 +348,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     {
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
         {
-        FuntionSigature const* funcSig = FuntionSigatureSet::GetInstance().Find(m_functionName.c_str());
+        FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
         if (!funcSig)
             {
             ctx.Issues().Report("Unknow member funtion '%s'", m_functionName.c_str());
@@ -1160,9 +1160,9 @@ Utf8String UnaryValueExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-void FuntionSigatureSet::Declare(Utf8CP signature, Utf8CP description)
+void FunctionSignatureSet::Declare(Utf8CP signature, Utf8CP description)
     {
-    std::unique_ptr<FuntionSigature> sig = FuntionSigature::Parse(signature, description);
+    std::unique_ptr<FunctionSignature> sig = FunctionSignature::Parse(signature, description);
     if (sig == nullptr)
         {
         BeAssert(false && "Fail to parse funtion signature");
@@ -1181,7 +1181,7 @@ void FuntionSigatureSet::Declare(Utf8CP signature, Utf8CP description)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-FuntionSigature const* FuntionSigatureSet::Find(Utf8CP name) const
+FunctionSignature const* FunctionSignatureSet::Find(Utf8CP name) const
     {
     auto itor = m_funtionSigs.find(name);
     if (itor != m_funtionSigs.end())
@@ -1194,10 +1194,10 @@ FuntionSigature const* FuntionSigatureSet::Find(Utf8CP name) const
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-FuntionSigatureSet& FuntionSigatureSet::GetInstance()
+FunctionSignatureSet& FunctionSignatureSet::GetInstance()
     {
 
-    static FuntionSigatureSet funtionSet;
+    static FunctionSignatureSet funtionSet;
     if (funtionSet.m_funtionSigs.empty())
         {
         funtionSet.LoadDefinitions();
@@ -1209,7 +1209,7 @@ FuntionSigatureSet& FuntionSigatureSet::GetInstance()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-void FuntionSigatureSet::LoadDefinitions()
+void FunctionSignatureSet::LoadDefinitions()
     {
     //scoped funtion
     Declare("::ChangeSummary(changesetId:integer, operation:integer, optional stage:integer):resultset");
@@ -1237,7 +1237,7 @@ void FuntionSigatureSet::LoadDefinitions()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-FuntionSigature::Arg const* FuntionSigature::FindArg(Utf8CP name) const
+FunctionSignature::Arg const* FunctionSignature::FindArg(Utf8CP name) const
     {
     for (std::unique_ptr<Arg>const & existingArg : m_args)
         if (existingArg->Name().EqualsI(name))
@@ -1249,7 +1249,7 @@ FuntionSigature::Arg const* FuntionSigature::FindArg(Utf8CP name) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus FuntionSigature::SetName(Utf8CP name)
+BentleyStatus FunctionSignature::SetName(Utf8CP name)
     {
     if (Utf8String::IsNullOrEmpty(name))
         return ERROR;
@@ -1261,7 +1261,7 @@ BentleyStatus FuntionSigature::SetName(Utf8CP name)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-void FuntionSigature::SetDescription(Utf8CP name)
+void FunctionSignature::SetDescription(Utf8CP name)
     {
     m_description = name;
     }
@@ -1269,7 +1269,7 @@ void FuntionSigature::SetDescription(Utf8CP name)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<FuntionSigature::Arg const*> FuntionSigature::Args() const
+std::vector<FunctionSignature::Arg const*> FunctionSignature::Args() const
     {
     std::vector<Arg const*> args;
     for (std::unique_ptr<Arg> const& arg : m_args)
@@ -1280,17 +1280,17 @@ std::vector<FuntionSigature::Arg const*> FuntionSigature::Args() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus FuntionSigature::SetReturnType(ValueType type, bool member)
+BentleyStatus FunctionSignature::SetReturnType(ValueType type, bool member)
     {
     if (type == ValueType::Resultset && !member)
         return ERROR;
 
     if(member && type == ValueType::Resultset)
-       m_scope = FuntionScope::Class;
+       m_scope = FunctionScope::Class;
     else if (member && type != ValueType::Resultset)
-        m_scope = FuntionScope::Property;
+        m_scope = FunctionScope::Property;
     else 
-        m_scope = FuntionScope::Global;
+        m_scope = FunctionScope::Global;
 
     m_returnType = type;
     return SUCCESS;
@@ -1299,7 +1299,7 @@ BentleyStatus FuntionSigature::SetReturnType(ValueType type, bool member)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus FuntionSigature::Append(Utf8CP name, ValueType type, bool optional)
+BentleyStatus FunctionSignature::Append(Utf8CP name, ValueType type, bool optional)
     {
     if (Utf8String::IsNullOrEmpty(name))
         return ERROR;
@@ -1309,13 +1309,13 @@ BentleyStatus FuntionSigature::Append(Utf8CP name, ValueType type, bool optional
 
     std::unique_ptr<Arg> arg(new Arg(name, type, optional));
     Arg* last = !m_args.empty() ? m_args.back().get() : nullptr;
-    if (last != nullptr && last->Optional() && !optional)
+    if (last != nullptr && last->IsOptional() && !optional)
         return ERROR;
 
-    if (last != nullptr && last->Varying())
+    if (last != nullptr && last->IsVariadic())
         return ERROR;
     
-    if (arg->Varying() && optional)
+    if (arg->IsVariadic() && optional)
         return ERROR;
 
     //arg with same name should not exist
@@ -1323,7 +1323,7 @@ BentleyStatus FuntionSigature::Append(Utf8CP name, ValueType type, bool optional
         return ERROR;
 
     //optional and varying cannot be together
-    if (OptionalArgs() > 0 && arg->Varying())
+    if (OptionalArgCount() > 0 && arg->IsVariadic())
         return ERROR;
 
     m_args.push_back(std::move(arg));
@@ -1334,7 +1334,7 @@ BentleyStatus FuntionSigature::Append(Utf8CP name, ValueType type, bool optional
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-Utf8CP FuntionSigature::ValueTypeToString(ValueType type)
+Utf8CP FunctionSignature::ValueTypeToString(ValueType type)
     {
     if (type == ValueType::String) return "string";
     if (type == ValueType::Integer) return "integer";
@@ -1351,7 +1351,7 @@ Utf8CP FuntionSigature::ValueTypeToString(ValueType type)
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static  
-BentleyStatus FuntionSigature::Parse(std::unique_ptr<FuntionSigature>& funcSig, Utf8CP signature, Utf8CP description)
+BentleyStatus FunctionSignature::Parse(std::unique_ptr<FunctionSignature>& funcSig, Utf8CP signature, Utf8CP description)
     {
     Utf8String temp = Utf8String(signature).Trim();   
     bool member = temp.StartsWith("::");
@@ -1370,7 +1370,7 @@ BentleyStatus FuntionSigature::Parse(std::unique_ptr<FuntionSigature>& funcSig, 
         return ERROR;
 
     Utf8String functionName = temp.substr(0, posOpenParenthesis);
-    funcSig = std::unique_ptr<FuntionSigature>(new FuntionSigature());
+    funcSig = std::unique_ptr<FunctionSignature>(new FunctionSignature());
     if (funcSig->SetName(functionName.c_str()) != SUCCESS)
         return ERROR;
 
@@ -1454,10 +1454,10 @@ BentleyStatus FuntionSigature::Parse(std::unique_ptr<FuntionSigature>& funcSig, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String FuntionSigature::ToString() const
+Utf8String FunctionSignature::ToString() const
     {
     Utf8String str;
-    if (m_scope != FuntionScope::Global)
+    if (m_scope != FunctionScope::Global)
         str.append("::");
 
     str.append(m_name);
@@ -1470,11 +1470,11 @@ Utf8String FuntionSigature::ToString() const
         else
             first = false;
 
-        if (arg->Optional())
+        if (arg->IsOptional())
             str.append("optional ");
 
         str.append(arg->Name());
-        if (!arg->Varying())
+        if (!arg->IsVariadic())
             {
             str.append(":");
             str.append(ValueTypeToString(arg->Type()));
@@ -1490,7 +1490,7 @@ Utf8String FuntionSigature::ToString() const
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-bool FuntionSigature::ParseValueType(ValueType& type, Utf8CP str)
+bool FunctionSignature::ParseValueType(ValueType& type, Utf8CP str)
     {
     if (BeStringUtilities::StricmpAscii("string", str) == 0)
         {
@@ -1537,7 +1537,7 @@ bool FuntionSigature::ParseValueType(ValueType& type, Utf8CP str)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus FuntionSigature::SetParameterType(Exp::Collection& argExps) const
+BentleyStatus FunctionSignature::SetParameterType(Exp::Collection& argExps) const
     {
     const std::vector<Arg const*> args = Args();
     int i = 0;
@@ -1548,22 +1548,22 @@ BentleyStatus FuntionSigature::SetParameterType(Exp::Collection& argExps) const
         ValueExp& test = const_cast<ValueExp&>(argExps[j]->GetAs<ValueExp>());          
         if (test.GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Unset && test.IsParameterExp())
             {
-            if (arg->Varying())
+            if (arg->IsVariadic())
                 {
                 BeAssert(false);
                 return ERROR;
                 }
 
-            if (arg->Type() == FuntionSigature::ValueType::String)
+            if (arg->Type() == FunctionSignature::ValueType::String)
                 test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
-            else if (arg->Type() == FuntionSigature::ValueType::Blob)
+            else if (arg->Type() == FunctionSignature::ValueType::Blob)
                 test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
-            else if (arg->Type() == FuntionSigature::ValueType::Float ||
-                     arg->Type() == FuntionSigature::ValueType::Numeric)
+            else if (arg->Type() == FunctionSignature::ValueType::Float ||
+                     arg->Type() == FunctionSignature::ValueType::Numeric)
                 test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
-            else if (arg->Type() == FuntionSigature::ValueType::Integer)
+            else if (arg->Type() == FunctionSignature::ValueType::Integer)
                 test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
-            else if (arg->Type() == FuntionSigature::ValueType::Any)
+            else if (arg->Type() == FunctionSignature::ValueType::Any)
                 test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
             else
                 test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
@@ -1578,12 +1578,12 @@ BentleyStatus FuntionSigature::SetParameterType(Exp::Collection& argExps) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus FuntionSigature::Verify(Utf8StringR err, Exp::Collection const& argExps) const
+BentleyStatus FunctionSignature::Verify(Utf8StringR err, Exp::Collection const& argExps) const
     {
     const std::vector<Arg const*> args = Args();
-    const int required = RequiredArgs();
-    const int optional = OptionalArgs();
-    const bool varying = VaryingArg();
+    const int required = RequiredArgCount();
+    const int optional = OptionalArgCount();
+    const bool varying = HasVariadicArg();
 
     if (args.empty() && !argExps.empty())
         {
@@ -1634,7 +1634,7 @@ BentleyStatus FuntionSigature::Verify(Utf8StringR err, Exp::Collection const& ar
             return ERROR;
             }
 
-        if (arg->Varying())
+        if (arg->IsVariadic())
             {
             j++;
             continue;
@@ -1685,11 +1685,11 @@ BentleyStatus FuntionSigature::Verify(Utf8StringR err, Exp::Collection const& ar
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-int FuntionSigature::RequiredArgs() const
+int FunctionSignature::RequiredArgCount() const
     {
     int i = 0;
     for (std::unique_ptr<Arg> const& arg : m_args)
-        if (arg->Optional() || arg->Varying())
+        if (arg->IsOptional() || arg->IsVariadic())
             return i;
         else
             i++;
@@ -1700,11 +1700,11 @@ int FuntionSigature::RequiredArgs() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-int FuntionSigature::OptionalArgs() const
+int FunctionSignature::OptionalArgCount() const
     {
     int i = 0;
     for (std::unique_ptr<Arg> const& arg : m_args)
-        if (arg->Optional())
+        if (arg->IsOptional())
             i++;
 
     return i;
@@ -1713,10 +1713,10 @@ int FuntionSigature::OptionalArgs() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-bool FuntionSigature::VaryingArg() const
+bool FunctionSignature::HasVariadicArg() const
     {
     for (std::unique_ptr<Arg> const& arg : m_args)
-        if (arg->Varying())
+        if (arg->IsVariadic())
             return true;
 
     return false;
@@ -1726,9 +1726,9 @@ bool FuntionSigature::VaryingArg() const
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-std::unique_ptr<FuntionSigature> FuntionSigature::Parse(Utf8CP signature, Utf8CP description)
+std::unique_ptr<FunctionSignature> FunctionSignature::Parse(Utf8CP signature, Utf8CP description)
     {
-    std::unique_ptr<FuntionSigature> sig;
+    std::unique_ptr<FunctionSignature> sig;
     BentleyStatus bs = Parse(sig, signature, description);
     BeAssert(bs == SUCCESS);
     if (bs != SUCCESS)

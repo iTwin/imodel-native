@@ -18,22 +18,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())
 
-#define CHANGESUMMARY_CLASS_Instance "Instance"
-#define CHANGESUMMARY_CLASS_PropertyValue "PropertyValue"
-#define CHANGESUMMARY_CLASS_Summary "Summary"
-#define CHANGESUMMARY_SCHEMA_Name "ECDbChangeSummaries"
-
-#define CHANGESUMMARY_PROP_Operation "Operation"
-#define CHANGESUMMARY_PROP_IdOfChangedInstance "IdOfChangedInstance"
-#define CHANGESUMMARY_PROP_ClassIdOfChangedInstance "ClassIdOfChangedInstance"
-#define CHANGESUMMARY_PROP_SummaryId "Summary.Id"
-
-#define CHANGESUMMARY_FUNC_Name "changesummary"
-#define CHANGESUMMARY_FUNC_ARG_Operation "operation"
-#define CHANGESUMMARY_FUNC_ARG_SummaryId "summaryid"
-#define CHANGESUMMARY_FUNC_ARG_Stage "stage"
-
-
 //=======================================================================================
 //! ECSQL statement types
 // @bsienum                                                Krischan.Eberle      12/2013

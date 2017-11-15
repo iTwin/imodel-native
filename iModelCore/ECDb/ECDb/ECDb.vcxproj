@@ -142,6 +142,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\SchemaManager.h" />
+    <ClInclude Include="BuiltinSchemaNames.h" />
     <ClInclude Include="ChangeIteratorImpl.h" />
     <ClInclude Include="ChangeSummaryExtractor.h" />
     <ClInclude Include="ChangeSummaryImpl.h" />

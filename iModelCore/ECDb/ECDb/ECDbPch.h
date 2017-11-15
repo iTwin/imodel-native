@@ -32,6 +32,7 @@
 #include "ECDbSystemSchemaHelper.h"
 #include "ECDbMapSchemaHelper.h"
 #include "PolicyManager.h"
+#include "BuiltinSchemaNames.h"
 
 #include "ECDbSqlFunctions.h"
 

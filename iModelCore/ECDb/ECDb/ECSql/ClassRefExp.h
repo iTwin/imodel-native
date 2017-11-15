@@ -125,10 +125,21 @@ public:
     ClassNameExp::Info const& GetInfo() const { return *m_info;}
 
     Utf8String GetFullName() const;
-    MemberFunctionCallExp const* GetMemberFunctionCall() const { if (GetChildrenCount() == 1) return GetChildren()[0]->GetAsCP<MemberFunctionCallExp>(); return nullptr; }
     Utf8StringCR GetClassName() const { return m_className;}
     Utf8StringCR GetSchemaName() const { return m_schemaAlias;}
     Utf8StringCR GetCatalogName() const { return m_catalogName;}
+
+    MemberFunctionCallExp const* GetMemberFunctionCallExp() const
+        {
+        if (GetChildren().empty())
+            return nullptr;
+
+        Exp const* childExp = GetChildren()[0];
+        if (childExp->GetType() != Exp::Type::MemberFunctionCall)
+            return nullptr;
+
+        return childExp->GetAsCP<MemberFunctionCallExp>();
+        }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

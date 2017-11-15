@@ -10,6 +10,9 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#define ECSQLFUNC_ChangeSummary "ChangeSummary"
+#define SQLFUNC_ChangedValue "ChangedValue"
+
 //=======================================================================================
 // TEXT BlobToBase64(BLOB blob)
 // @bsiclass                                                   Krischan.Eberle   11/16
@@ -75,7 +78,5 @@ struct ChangedValueFunction final : ScalarFunction
     public:
         explicit ChangedValueFunction(ECDbR ecdb);
         ~ChangedValueFunction() {}
-
-        static Utf8CP Name() { return "ChangedValue"; }
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
