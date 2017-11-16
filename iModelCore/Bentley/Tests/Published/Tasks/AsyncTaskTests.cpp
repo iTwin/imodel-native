@@ -317,7 +317,7 @@ TEST_F(AsyncTaskTests, Performance_MultipleTasks_AllExecuted)
     BeDuration::Seconds seconds(2);
     start = BeTimePoint::Now();
     end = BeTimePoint::FromNow(BeDuration(seconds));
-    int terminate = 1;
+    // int terminate = 1;
     while(start < end)
         {
         bool taskExecuted = false;
