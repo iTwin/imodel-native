@@ -2694,3 +2694,46 @@ TEST(SolidPrimitive,EdgeChains)
     Check::ClearGeometry ("SolidPrimitive.EdgeChains");
 
     }
+
+void showEyePoint (DPoint4dCR eyePoint)
+    {
+    static double s_vectorScale = 20.0;
+    auto w = eyePoint.w;
+    if (w == 0.0)
+        Check::SaveTransformed (DSegment3d::From (0,0,0, s_vectorScale * eyePoint.x, s_vectorScale * eyePoint.y, s_vectorScale * eyePoint.z));
+    else
+        {
+
+        Check::SaveTransformed (DSegment3d::From (0,0,0, eyePoint.x / w, eyePoint.y / w , eyePoint.z / w));
+        }
+    }
+
+void testSilhouette (IGeometryPtr &g, DPoint4dCR eyePoint)
+    {
+    ISolidPrimitivePtr s = g->GetAsISolidPrimitive ();
+    if (s.IsValid ())
+        {
+        Check::SaveTransformed (*s);
+        showEyePoint (eyePoint);
+        auto silhouettes = s->SilhouetteCurves (eyePoint);
+        if (silhouettes.IsValid ())
+            Check::SaveTransformed (*silhouettes);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive,Silhouette)
+    {
+    Check::QuietFailureScope scoper;
+    DPoint4d eyePoint = DPoint4d::From (0,-20,20, 1);
+    bvector<IGeometryPtr> geometry;
+    SampleGeometryCreator::AddSimplestSolidPrimitives (geometry, true);
+    SampleGeometryCreator::AddAllSolidTypes (geometry);
+    for (size_t i = 0; i < geometry.size (); i++)
+        {
+        SaveAndRestoreCheckTransform shifter (20,0,0);
+        testSilhouette (geometry[i], eyePoint);
+        }
+    Check::ClearGeometry ("SolidPrimitive.Silhouette");
+    }

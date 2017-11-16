@@ -93,12 +93,17 @@ bool _ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR pro
     {return m_data.ComputeSecondMomentVolumeProducts (localToWorld, products);}\
 bool _IsSameStructure (ISolidPrimitiveCR other) const override {return m_data.IsSameStructure (other);}\
 bool _IsSameStructureAndGeometry (ISolidPrimitiveCR other, double tolerance) const  override { return m_data.IsSameStructureAndGeometry (other, tolerance);}\
-bool _IsClosedVolume () const  override { return m_data.IsClosedVolume ();}
+bool _IsClosedVolume () const  override { return m_data.IsClosedVolume ();}\
+CurveVectorPtr _SilhouetteCurves(DPoint4dCR eyePoint) const override \
+    {\
+    return m_data.SilhouetteCurves (eyePoint);\
+    }
 
-
-
-
-
+//! Return curves which are silhoutte curves OTHER than hard edges
+CurveVectorPtr ISolidPrimitive::SilhouetteCurves(DPoint4dCR eyePoint) const
+    {
+    return _SilhouetteCurves (eyePoint);
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      01/2015
