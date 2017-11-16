@@ -72,8 +72,6 @@ public:
     static bool Intersects(TEnum lhs, TEnum rhs) { return (ToInt<TEnum>(lhs) & ToInt<TEnum>(rhs)) != 0; }
     };
 
-#define ENUM_TOSTRING(value) #value
-
 //=======================================================================================
 // For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
 // strings

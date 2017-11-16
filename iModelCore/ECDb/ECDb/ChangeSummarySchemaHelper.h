@@ -96,16 +96,16 @@ struct ChangeSummaryHelper final
 
         static Nullable<ChangedValueState> ToChangedValueState(Utf8CP strVal)
             {
-            if (BeStringUtilities::StricmpAscii(ENUM_TOSTRING(ChangedValueState::AfterInsert), strVal) == 0)
+            if (BeStringUtilities::StricmpAscii("AfterInsert", strVal) == 0)
                 return ChangedValueState::AfterInsert;
 
-            if (BeStringUtilities::StricmpAscii(ENUM_TOSTRING(ChangedValueState::BeforeUpdate), strVal) == 0)
+            if (BeStringUtilities::StricmpAscii("BeforeUpdate", strVal) == 0)
                 return ChangedValueState::BeforeUpdate;
 
-            if (BeStringUtilities::StricmpAscii(ENUM_TOSTRING(ChangedValueState::AfterUpdate), strVal) == 0)
+            if (BeStringUtilities::StricmpAscii("AfterUpdate", strVal) == 0)
                 return ChangedValueState::AfterUpdate;
 
-            if (BeStringUtilities::StricmpAscii(ENUM_TOSTRING(ChangedValueState::BeforeDelete), strVal) == 0)
+            if (BeStringUtilities::StricmpAscii("BeforeDelete", strVal) == 0)
                 return ChangedValueState::BeforeDelete;
 
             return Nullable<ChangedValueState>();
