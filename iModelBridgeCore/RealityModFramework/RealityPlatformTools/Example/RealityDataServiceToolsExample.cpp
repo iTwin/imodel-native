@@ -240,13 +240,13 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
         }
     }
 
-bool FilterByProject(Utf8StringCR RealityId, bvector<RealityDataProjectRelationshipPtr>& ProjectRelation)
+bool FilterByProject(Utf8StringCR RealityId, bvector<RealityDataRelationshipPtr>& ProjectRelation)
     {
     // Option not set
     if (!(s_option & OptFilterProject))
         return true;
 
-    for (RealityDataProjectRelationshipPtr pData : ProjectRelation)
+    for (RealityDataRelationshipPtr pData : ProjectRelation)
     {
         if (pData->GetRealityDataId() == RealityId)
             return true;
@@ -285,10 +285,10 @@ void ListCmd()
         RawServerResponse enterpriseResponse = RawServerResponse();
         bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse);
 
-        bvector<RealityDataProjectRelationshipPtr> relationships;
+        bvector<RealityDataRelationshipPtr> relationships;
         if (s_option & (OptFilterProject))
             {
-            RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(s_filterProject);
+            RealityDataRelationshipByProjectIdRequest* relationReq = new RealityDataRelationshipByProjectIdRequest(s_filterProject);
             RawServerResponse relationResponse = RawServerResponse();
             relationships = RealityDataService::Request(*relationReq, relationResponse);
             }

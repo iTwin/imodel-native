@@ -99,7 +99,7 @@ private:
 //! The present classes provide three levels of simplification of accessing the service
 //!  and interpreting the results.
 //! Before continuing it is recommended to be familiar of the basic classes part of the
-//!  model definition (RealityData, RealityDataProjectRelationship, Folder, and Document).
+//!  model definition (RealityData, RealityDataRelationship, Folder, and Document).
 //! 
 //! The RealityData service API is based on equivalent EC Classes that represent mainly the
 //!  same concepts and the same fields.
@@ -133,36 +133,36 @@ private:
 	
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
-//! RealityDataProjectRelationshipByProjectIdRequest
+//! RealityDataRelationshipByProjectIdRequest
 //! Requests all relationships for a given ProjectId
 //=====================================================================================
-struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
+struct RealityDataRelationshipByProjectIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataProjectRelationshipByProjectIdRequest() {}
+    RealityDataRelationshipByProjectIdRequest() {}
     };
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
-//! RealityDataProjectRelationshipByRealityDataIdRequest
+//! RealityDataRelationshipByRealityDataIdRequest
 //! Requests all relationships for a give Reality Data
 //=====================================================================================
-struct RealityDataProjectRelationshipByRealityDataIdRequest : public RealityDataUrl
+struct RealityDataRelationshipByRealityDataIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByRealityDataIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByRealityDataIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataProjectRelationshipByRealityDataIdRequest() {}
+    RealityDataRelationshipByRealityDataIdRequest() {}
     };
 
 
@@ -486,16 +486,16 @@ protected:
 //! explicitly linked to a specific CONNECT Project through the Reality Data Service
 //! RealityData/Project registry it maintains. 
 //=====================================================================================
-struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
+struct RealityDataRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataProjectRelationshipByProjectIdPagedRequest() {}
+    RealityDataRelationshipByProjectIdPagedRequest() {}
     };
 
 //=====================================================================================
@@ -504,16 +504,16 @@ private:
 //! explicitly linked to a specific CONNECT Project through the Reality Data Service
 //! RealityData/Project registry it maintains. 
 //=====================================================================================
-struct RealityDataProjectRelationshipByRealityDataIdPagedRequest : public RealityDataPagedRequest
+struct RealityDataRelationshipByRealityDataIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByRealityDataIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByRealityDataIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataProjectRelationshipByRealityDataIdPagedRequest() {}
+    RealityDataRelationshipByRealityDataIdPagedRequest() {}
     };
 
 //=====================================================================================
@@ -965,20 +965,20 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataListByUltimateIdPagedRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific RealityData.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific RealityData.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(const RealityDataRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a serverResponse or null if an error occured
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataChangeRequest& request, RawServerResponse& rawResponse);
@@ -1001,8 +1001,8 @@ public:
     REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const RealityDataUrl* request, Utf8StringCR keyword = "instances");
 
 private:
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse);
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestPagedRelationships(const RealityDataPagedRequest* request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> _RequestPagedRelationships(const RealityDataPagedRequest* request, RawServerResponse& rawResponse);
 
     };
 

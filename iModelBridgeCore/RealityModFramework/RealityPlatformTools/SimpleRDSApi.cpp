@@ -179,7 +179,7 @@ void ConnectedRealityDataEnterpriseStat::Clone(const RealityDataEnterpriseStat& 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedRealityDataProjectRelationship::ConnectedRealityDataProjectRelationship(RealityDataProjectRelationshipPtr relationship)
+ConnectedRealityDataRelationship::ConnectedRealityDataRelationship(RealityDataRelationshipPtr relationship)
     {
     Clone(relationship);
     }
@@ -187,7 +187,7 @@ ConnectedRealityDataProjectRelationship::ConnectedRealityDataProjectRelationship
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-void ConnectedRealityDataProjectRelationship::Clone(RealityDataProjectRelationshipPtr relationship)
+void ConnectedRealityDataRelationship::Clone(RealityDataRelationshipPtr relationship)
     {
     m_realityDataId = relationship->GetRealityDataId();
     m_relatedId = relationship->GetRelatedId();
@@ -197,7 +197,7 @@ void ConnectedRealityDataProjectRelationship::Clone(RealityDataProjectRelationsh
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector)
+ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForRDId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector)
     {
     ConnectedResponse response = ConnectedResponse();
     if(m_realityDataId.empty())
@@ -213,17 +213,17 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForRDId(bv
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String rdId)
+ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForRDId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector, Utf8String rdId)
     {
     ConnectedResponse response = ConnectedResponse();
 
     RawServerResponse rawResponse = RawServerResponse();
-    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(rdId);
+    RealityDataRelationshipByRealityDataIdRequest idReq = RealityDataRelationshipByRealityDataIdRequest(rdId);
 
-    bvector<RealityDataProjectRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
+    bvector<RealityDataRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
 
     for (int i = 0; i < tmpVector.size(); i++)
-        relationshipVector.push_back(new ConnectedRealityDataProjectRelationship(tmpVector[i]));
+        relationshipVector.push_back(new ConnectedRealityDataRelationship(tmpVector[i]));
 
     response.Clone(rawResponse);
 
@@ -233,7 +233,7 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForRDId(bv
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector)
+ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForProjectId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector)
     {
     ConnectedResponse response = ConnectedResponse();
     if (m_relatedId.empty())
@@ -249,17 +249,17 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForProject
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String projectId)
+ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForProjectId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector, Utf8String projectId)
     {
     ConnectedResponse response = ConnectedResponse();
 
     RawServerResponse rawResponse = RawServerResponse();
-    RealityDataProjectRelationshipByProjectIdRequest idReq = RealityDataProjectRelationshipByProjectIdRequest(projectId);
+    RealityDataRelationshipByProjectIdRequest idReq = RealityDataRelationshipByProjectIdRequest(projectId);
 
-    bvector<RealityDataProjectRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
+    bvector<RealityDataRelationshipPtr> tmpVector = RealityDataService::Request(idReq, rawResponse);
 
     for (int i = 0; i < tmpVector.size(); i++)
-        relationshipVector.push_back(new ConnectedRealityDataProjectRelationship(tmpVector[i]));
+        relationshipVector.push_back(new ConnectedRealityDataRelationship(tmpVector[i]));
 
     response.Clone(rawResponse);
 
@@ -269,7 +269,7 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::RetrieveAllForProject
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataProjectRelationship::Create()
+ConnectedResponse ConnectedRealityDataRelationship::Create()
     {
     ConnectedResponse response = ConnectedResponse();
     if (m_realityDataId.empty() || m_relatedId.empty())
@@ -293,7 +293,7 @@ ConnectedResponse ConnectedRealityDataProjectRelationship::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataProjectRelationship::Delete()
+ConnectedResponse ConnectedRealityDataRelationship::Delete()
     {
     ConnectedResponse response = ConnectedResponse();
     if (m_realityDataId.empty() || m_relatedId.empty())

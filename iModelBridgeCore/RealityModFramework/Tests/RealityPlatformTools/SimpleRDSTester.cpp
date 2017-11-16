@@ -78,7 +78,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
-TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipIdRequestTest)
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipIdRequestTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
@@ -89,9 +89,9 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipIdRequestTest)
         response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataRelationship.json");
         }));
 
-    ConnectedRealityDataProjectRelationship rel = ConnectedRealityDataProjectRelationship();
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
     rel.SetRealityDataId("72adad30-c07c-465d-a1fe-2f2dfac950a6");
-    bvector<ConnectedRealityDataProjectRelationshipPtr> results;
+    bvector<ConnectedRealityDataRelationshipPtr> results;
     ConnectedResponse response = rel.RetrieveAllForRDId(results);
 
     EXPECT_TRUE(response.simpleSuccess);
@@ -102,7 +102,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipIdRequestTest)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
-TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipCreateRequestTest)
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipCreateRequestTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
@@ -120,7 +120,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataProjectRelationshipCreateRequestTes
         response.toolCode = CURLE_OK;
         }));
 
-    ConnectedRealityDataProjectRelationship rel = ConnectedRealityDataProjectRelationship();
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
     rel.SetRealityDataId("MyIdentifier");
     ConnectedResponse response = rel.Create();
 
