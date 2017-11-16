@@ -1096,6 +1096,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::InitCrt(false);
 
+    Briefcase_MakeBriefcaseName();
+    BeFileName::BeDeleteFile(ComputeReportFileName(m_briefcaseName));  // delete any old issues file hanging round from the previous run
+
     //  Open our state db.
     dbres = OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
@@ -1397,7 +1400,7 @@ void iModelBridgeFwk::LogStderr()
         {
         // Write contents of the issues file to the log
         wstr.clear();
-        BeFileName issuesFileName = iModelBridge::ComputeReportFileName(m_briefcaseName);
+        BeFileName issuesFileName = ComputeReportFileName(m_briefcaseName);
         readEntireFile(wstr, issuesFileName);
         if (!wstr.empty())
             GetLogger().errorv(L"%ls", wstr.c_str());
@@ -1425,6 +1428,16 @@ iModelBridgeFwk::~iModelBridgeFwk()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridgeFwk::ComputeReportFileName(BeFileNameCR bcName)
+    {
+    BeFileName reportFileName(bcName);
+    reportFileName.append(L"-fwk-issues");
+    return reportFileName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::ReportIssue(WStringCR msg)
@@ -1435,7 +1448,7 @@ void iModelBridgeFwk::ReportIssue(WStringCR msg)
         return;
         }
 
-    auto issuesFileName = iModelBridge::ComputeReportFileName(m_briefcaseName);
+    auto issuesFileName = ComputeReportFileName(m_briefcaseName);
     BeFileStatus _status;
     auto tf = BeTextFile::Open(_status, issuesFileName.c_str(), TextFileOpenType::Append, TextFileOptions::None);
     if (!tf.IsValid())

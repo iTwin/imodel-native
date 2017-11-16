@@ -250,6 +250,8 @@ public:
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
 
     //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
+    //! @private
     IMODEL_BRIDGE_FWK_EXPORT void ReportIssue(WStringCR);
     //! @private
     void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
