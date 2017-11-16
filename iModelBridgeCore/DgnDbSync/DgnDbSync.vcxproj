@@ -12,11 +12,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\ConverterInternal.h" />
-    <ClInclude Include="DgnV8\ECConversion.h" />
-    <ClInclude Include="DgnV8\ECDiff.h" />
-    <ClInclude Include="DgnV8\EntityConverter.h" />
-    <ClInclude Include="DgnV8\Extensions.h" />
     <ClInclude Include="DgnV8\LinkConverter.h" />
+    <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h" />
     <ClInclude Include="ImportConfig.h">
       <DependentUpon>DgnV8\ImportConfig\ImportConfig.xsd</DependentUpon>
     </ClInclude>
@@ -27,20 +24,26 @@
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\SyncInfo.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\DgnV8Tags.cpp" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.cpp" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.cpp" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.h" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\EntityConverter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="DgnV8\Converter.cpp" />
     <ClCompile Include="DgnV8\ConverterInternal.cpp" />
+    <ClCompile Include="DgnV8\ConvertLights.cpp" />
+    <ClCompile Include="DgnV8\ConvertProxyGraphics.cpp" />
     <ClCompile Include="DgnV8\ConvertView.cpp" />
+    <ClCompile Include="DgnV8\ConvertViewAttachments.cpp" />
     <ClCompile Include="DgnV8\DgnV8Font.cpp" />
     <ClCompile Include="DgnV8\DgnV8GeoCoord.cpp" />
     <ClCompile Include="DgnV8\DgnV8SyncInfo.cpp" />
-    <ClCompile Include="DgnV8\DgnV8Tags.cpp" />
     <ClCompile Include="DgnV8\DgnV8Text.cpp" />
-    <ClCompile Include="DgnV8\DgnV8TextTable.cpp" />
-    <ClCompile Include="DgnV8\ECConversion.cpp" />
-    <ClCompile Include="DgnV8\ECDiff.cpp" />
-    <ClCompile Include="DgnV8\EntityConverter.cpp" />
-    <ClCompile Include="DgnV8\Extensions.cpp" />
-    <ClCompile Include="DgnV8\Extensions2.cpp" />
+    <ClCompile Include="DgnV8\DrawingConverter.cpp" />
+    <ClCompile Include="DgnV8\ECElementConverter.cpp" />
     <ClCompile Include="DgnV8\GeometryConversion.cpp" />
     <ClCompile Include="DgnV8\ImportConfig\ImportConfig.cpp" />
     <ClCompile Include="DgnV8\includesPublishedApi.cpp" />
@@ -50,8 +53,13 @@
     <ClCompile Include="DgnV8\LineStyleConverter.cpp" />
     <ClCompile Include="DgnV8\LinkConverter.cpp" />
     <ClCompile Include="DgnV8\MaterialConverter.cpp" />
+    <ClCompile Include="DgnV8\PointCloudConversion.cpp" />
+    <ClCompile Include="DgnV8\RasterConversion.cpp" />
     <ClCompile Include="DgnV8\RootModelConverter.cpp" />
     <ClCompile Include="DgnV8\ScalableMeshConversion.cpp" />
+    <ClCompile Include="DgnV8\SheetAttachmentViewHelper.cpp" />
+    <ClCompile Include="DgnV8\SheetConverter.cpp" />
+    <ClCompile Include="DgnV8\ThreeMxConversion.cpp" />
     <ClCompile Include="DgnV8\Thumbnails.cpp" />
     <ClCompile Include="DgnV8\TiledFileConverter.cpp" />
     <ClCompile Include="DgnV8\Updater.cpp" />

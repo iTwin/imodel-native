@@ -16,6 +16,9 @@
     <Filter Include="mke">
       <UniqueIdentifier>{b79fe9c3-f8d9-43b1-9bbc-e2efb9c75d30}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DgnV8\DynamicSchemaGenerator">
+      <UniqueIdentifier>{134fb5e0-92af-4306-87b7-d04b2c30e33b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\DgnDbSync\DgnDbSync.h">
@@ -30,37 +33,42 @@
     <ClInclude Include="DgnV8\ConverterInternal.h">
       <Filter>DgnV8</Filter>
     </ClInclude>
-    <ClInclude Include="DgnV8\Extensions.h">
-      <Filter>DgnV8</Filter>
-    </ClInclude>
     <ClInclude Include="ImportConfig.h" />
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\SyncInfo.h">
       <Filter>PublicAPI\DgnV8</Filter>
     </ClInclude>
-    <ClInclude Include="DgnV8\ECConversion.h">
-      <Filter>DgnV8</Filter>
-    </ClInclude>
-    <ClInclude Include="DgnV8\EntityConverter.h">
-      <Filter>DgnV8</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8Font.h">
       <Filter>PublicAPI\DgnV8</Filter>
-    </ClInclude>
-    <ClInclude Include="DgnV8\ECDiff.h">
-      <Filter>DgnV8</Filter>
     </ClInclude>
     <ClInclude Include="DgnV8\LinkConverter.h">
       <Filter>DgnV8</Filter>
     </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\DgnV8Tags.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\EntityConverter.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DgnV8\Converter.cpp">
-      <Filter>DgnV8</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnV8\Extensions.cpp">
-      <Filter>DgnV8</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnV8\Extensions2.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\ImportConfig\ImportConfig.cpp">
@@ -86,12 +94,6 @@
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\Thumbnails.cpp">
-      <Filter>DgnV8</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnV8\ECConversion.cpp">
-      <Filter>DgnV8</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnV8\EntityConverter.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\GeometryConversion.cpp">
@@ -121,22 +123,43 @@
     <ClCompile Include="DgnV8\DgnV8Text.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
-    <ClCompile Include="DgnV8\DgnV8TextTable.cpp">
-      <Filter>DgnV8</Filter>
-    </ClCompile>
     <ClCompile Include="DgnV8\MaterialConverter.cpp">
-      <Filter>DgnV8</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnV8\DgnV8Tags.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\ScalableMeshConversion.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
-    <ClCompile Include="DgnV8\ECDiff.cpp">
+    <ClCompile Include="DgnV8\LinkConverter.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
-    <ClCompile Include="DgnV8\LinkConverter.cpp">
+    <ClCompile Include="DgnV8\ConvertLights.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConvertProxyGraphics.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConvertViewAttachments.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\DrawingConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ECElementConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\PointCloudConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\RasterConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\SheetAttachmentViewHelper.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\SheetConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ThreeMxConversion.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
   </ItemGroup>
