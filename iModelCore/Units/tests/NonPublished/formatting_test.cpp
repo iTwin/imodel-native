@@ -137,6 +137,9 @@ TEST(FormattingTest, Preliminary)
     }
 
 //#ifdef _WIN32
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST(FormattingTest, SchemaValidation)
 //    {
 //    LOG.infov("================  Schema Validation ===========================");
