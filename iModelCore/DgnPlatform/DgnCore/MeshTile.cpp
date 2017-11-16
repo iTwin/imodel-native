@@ -2721,13 +2721,14 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
 * @bsimethod                                                    Brien.Bastings 09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if defined (BENTLEYCONFIG_PARASOLID) 
-static bool hasBRep(GeometrySourceCR source)
+static bool hasPartOrBRep(GeometrySourceCR source)
     {
     GeometryCollection collection(source);
 
     for (auto iter : collection)
         {
-        if (GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
+        if (GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType() ||
+            GeometryCollection::Iterator::EntryType::GeometryPart == iter.GetEntryType())      
             return true;
         }
 
@@ -2741,10 +2742,10 @@ static bool hasBRep(GeometrySourceCR source)
 template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    // If the geometry has a parasolid BRep then create a mark so that work is done in this threads lightweight partition and
+    // If the geometry has a parasolid BRep (or a part that may contain a BREP (TFS# 775181)) then create a mark so that work is done in this threads lightweight partition and
     // error handling works properly..
     PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
-    if (hasBRep(source))
+    if (hasPartOrBRep(source))
         innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
 
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
