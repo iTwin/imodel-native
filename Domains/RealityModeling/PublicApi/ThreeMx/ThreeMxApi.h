@@ -171,12 +171,13 @@ private:
     Transform                               m_location;
 
     mutable Dgn::ClipVectorCPtr             m_clip;
-    mutable Dgn::ModelSpatialClassifiers    m_classifiers;;
+    mutable Dgn::ModelSpatialClassifiers    m_classifiers;
 
     DRange3d GetSceneRange();
     SceneP Load(Dgn::Render::SystemP) const;
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
+    BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { classifiers = m_classifiers; return SUCCESS; }
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
