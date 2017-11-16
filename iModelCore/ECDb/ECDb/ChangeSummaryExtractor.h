@@ -55,19 +55,8 @@ struct ChangeSummaryExtractor final : NonCopyableClass
     private:
         enum class ExtractMode { InstancesOnly, RelationshipInstancesOnly };
 
-        //! Matches the ECEnumeration Operation defined in the ECDbChangeSummaries ECSchema
-        enum class Operation
-            {
-            Insert = 1,
-            Update = 2,
-            Delete = 3
-            };
-
         ECDbCR m_ecdb;
         ECSqlStatementCache m_stmtCache;
-
-        static std::map<int, DbOpcode> s_toOpCodeMap;
-        static std::map<DbOpcode, int> s_fromOpCodeMap;
 
         BentleyStatus Extract(ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
         BentleyStatus ExtractInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
@@ -104,38 +93,7 @@ struct ChangeSummaryExtractor final : NonCopyableClass
 
         static bool RawIndirectToBool(int indirect) { return indirect != 0; }
 
-        static Nullable<Operation> DbOpCodeToOperation(DbOpcode opCode)
-            {
-            switch (opCode)
-                {
-                    case DbOpcode::Delete:
-                        return Operation::Delete;
-                    case DbOpcode::Insert:
-                        return Operation::Insert;
-                    case DbOpcode::Update:
-                        return Operation::Update;
-                    default:
-                        BeAssert(false && "DbCode enum was changed. This code has to be adjusted.");
-                        return Nullable<Operation>();
-                }
-            }
-
-        static Nullable<DbOpcode> OperationToDbOpCode(Operation op)
-            {
-            switch (op)
-                {
-                    case Operation::Delete:
-                        return DbOpcode::Delete;
-                    case Operation::Insert:
-                        return DbOpcode::Insert;
-                    case Operation::Update:
-                        return DbOpcode::Update;
-                    default:
-                        BeAssert(false && "Operation enum was changed. This code has to be adjusted.");
-                        return Nullable<DbOpcode>();
-                }
-            }
-
+        
     public:
         explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(15) {}
 

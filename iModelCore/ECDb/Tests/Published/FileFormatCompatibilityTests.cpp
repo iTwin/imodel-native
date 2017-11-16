@@ -53,7 +53,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
                                     "JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId " \
                                     "JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId " \
                                     "ORDER BY s.Name,c.Name,rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name"
-#define PROFILETABLE_SELECT_Table "SELECT parentT.Name, t.Name, t.Type, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t " \
+#define PROFILETABLE_SELECT_Table "SELECT parentT.Name, t.Name, t.Type, t.IsTemporary, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t " \
                                     "JOIN ec_Table parentT ON parentT.Id=t.ParentTableId JOIN ec_Class exclusiveRootClass ON exclusiveRootClass.Id=t.ExclusiveRootClassId JOIN ec_Schema exclusiveRootClassS ON exclusiveRootClassS.Id=exclusiveRootClass.SchemaId " \
                                     "ORDER BY t.Name"
 #define PROFILETABLE_SELECT_Column "SELECT t.Name, c.Name,c.Type,c.IsVirtual,c.Ordinal,c.NotNullConstraint,c.UniqueConstraint,c.CheckConstraint,c.DefaultConstraint,c.CollationConstraint,c.OrdinalInPrimaryKey,c.ColumnKind FROM ec_Column c " \

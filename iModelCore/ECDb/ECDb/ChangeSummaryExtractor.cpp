@@ -313,7 +313,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
     {
     InstanceChange instanceChange;
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT Operation,IsIndirect,TableName FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT OpCode,IsIndirect,TableName FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -327,12 +327,19 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
     if (BE_SQLITE_ROW != stmt->Step())
         return instanceChange;
 
-    Operation op = Enum::FromInt<Operation>(stmt->GetValueInt(0));
-    Nullable<DbOpcode> opCode = OperationToDbOpCode(op);
-    if (opCode.IsNull()) // enum has changed -> fatal error
+    int opCodeVal = stmt->GetValueInt(0);
+    Nullable<ChangeOpCode> opCode = ChangeSummaryHelper::ToChangeOpCode(opCodeVal);
+    if (opCode.IsNull())
+        {
+        BeAssert(false);
+        return instanceChange;
+        }
+
+    Nullable<DbOpcode> dbOpCode = ChangeSummaryHelper::ToDbOpCode(opCode.Value());
+    if (dbOpCode.IsNull()) // enum has changed -> fatal error
         return instanceChange;
 
-    return InstanceChange(summaryId, keyOfChangedInstance, opCode.Value(), stmt->GetValueBoolean(1), Utf8String(stmt->GetValueText(2)));
+    return InstanceChange(summaryId, keyOfChangedInstance, dbOpCode.Value(), stmt->GetValueBoolean(1), Utf8String(stmt->GetValueText(2)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -417,14 +424,14 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 
     DbOpcode dbOpcode = instance.GetDbOpcode();
 
-    Nullable<Operation> op = DbOpCodeToOperation(dbOpcode);
+    Nullable<ChangeOpCode> op = ChangeSummaryHelper::ToChangeOpCode(dbOpcode);
     if (op.IsNull()) // DbOpCode enum has changed -> fatal error code needs to be adjusted
         return BE_SQLITE_ERROR;
 
     InstanceChange foundInstanceChange = QueryInstanceChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
     if (!foundInstanceChange.IsValid())
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, Operation, IsIndirect, TableName, Summary.Id) VALUES (?,?,?,?,?,?)");
+        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, TableName, Summary.Id) VALUES (?,?,?,?,?,?)");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -442,7 +449,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 
     if (foundInstanceChange.GetDbOpcode() == DbOpcode::Update && dbOpcode != DbOpcode::Update)
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "UPDATE " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " SET Operation=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "UPDATE " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " SET OpCode=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
         if (stmt == nullptr)
             {
             BeAssert(false);

@@ -240,7 +240,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     Utf8StringCR instanceChangeTableName = instanceChangeClassMap->GetPrimaryTable().GetName();
     Utf8StringCR summaryIdColumnName = instanceChangeClassMap->GetPropertyMaps().Find("Summary.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
     Utf8StringCR changeIdColumnName = instanceChangeClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName();
-    Utf8StringCR operationColumnName = instanceChangeClassMap->GetPropertyMaps().Find("Operation")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
+    Utf8StringCR opCodeColumnName = instanceChangeClassMap->GetPropertyMaps().Find("OpCode")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
     Utf8StringCR idOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find("ChangedInstance.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
     Utf8StringCR classIdOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find("ChangedInstance.ClassId")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
 
@@ -296,7 +296,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         viewSql.AppendFormatted(" INNER JOIN " TABLE_ClassHierarchyCache " ch ON ic.%s=ch.ClassId AND ch.BaseClassId=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
 
     viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append("." ECDBSYS_PROP_ECInstanceId "=ic.").Append(classIdOfChangedInstanceColumnName);
-    viewSql.Append(" WHERE ic.").Append(operationColumnName).Append("=ToInstanceOp(").Append(operationArgSql).Append(")");
+    viewSql.Append(" WHERE ic.").Append(opCodeColumnName).Append("=ToInstanceOp(").Append(operationArgSql).Append(")");
     viewSql.Append(" AND ic.").Append(summaryIdColumnName).Append("=").Append(summaryIdArgSql);
 
     if (!ctx.IsPolymorphicQuery())

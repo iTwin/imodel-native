@@ -20,19 +20,44 @@ struct ECCrudWriteToken;
 struct SchemaImportToken;
 
 //=======================================================================================
+//! Enum which mirrors the ECEnumeration OpCode in the ECDbChangeSummaries ECSchema.
+//! The enum can be used when programmatically binding values to the OpCode in an ECSQL
+//! against the ECDbChangeSummaries ECSchema.
+// @bsienum                                              Krischan.Eberle      11/2017
+//+===============+===============+===============+===============+===============+======
+enum class ChangeOpCode
+    {
+    //Its values must always match the ECEnumeration
+    Insert = 1,
+    Update = 2,
+    Delete = 4
+    };
+
+//=======================================================================================
+//! The enum represents the values for the ChangedValueState argument of the ECSQL function
+//! @b ChangeSummary.
+//! The enum can be used when programmatically binding values to the ChangedValueState argument
+//! in an ECSQL using the ChangeSummary ECSQL function.
+// @bsienum                                                             11/2017
+//+===============+===============+===============+===============+===============+======
+enum class ChangedValueState
+    {
+    AfterInsert = 1,
+    AfterUpdate = 2,
+    BeforeUpdate = 3,
+    BeforeDelete = 4
+    };
+
+//=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
 //! 
 //! It is used to create, open, close @ref ECDbFile "ECDb files" (see ECDb::CreateNewDb, ECDb::OpenBeSQLiteDb,
 //! ECDb::CloseDb) and gives access to the %EC data.
 //!
-//! The following SQLite functions are built into ECDb (and can be used in SQL and ECSQL):
-//!     * TEXT BlobToBase64(BLOB blob) Encodes a BLOB as its Base64 string representation
-//!     * BLOB Base64ToBlob(TEXT base64Str) Decodes a Base64 string to a BLOB
-//!
 //! An ECDb object is generally thread-safe. However an ECDb connection must be closed in the same thread in which is was opened.
 //! @see @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
-// @bsiclass                                                Ramanujam.Raman      03/2012
+// @bsiclass                                                            03/2012
 //+===============+===============+===============+===============+===============+======
 struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
@@ -223,7 +248,20 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
+    //! Extracts and generates the change summary from the specified change set.
+    //! @remarks The change summary is persisted as as instance of the ECClass @b ECDbChangeSummaries.ChangeSummary and its related classes
+    //! @b ECDbChangeSummaries.InstanceChange and @b ECDbChangeSummaries.PropertyValueChange.
+    //! The method returns the ECInstanceId of the generated ChangeSummary which serves as input to any query into the changes
+    //! using the @b ECDbChangeSummary ECClasses or using the ECSQL function @b ChangeSummary.
+    //!
+    //! @note the Change summaries are only available for the lifetime of this ECDb connection. Closing the connection deletes any change summaries.
+    //!
+    //! @param[out] changeSummaryId ECInstanceId of the generated change summary (of the ECClass @b ECDbChangeSummaries.ChangeSummary)
+    //! @param[in] changeSet Change set to generate the summary from
+    //! @param[in] options Extraction options
+    //! @return SUCCESS or ERROR
     ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+    
     //! Deletes orphaned ECInstances left over from operations specified by @p mode.
     //! @param[in] mode Purge mode
     //! @return SUCCESS or ERROR

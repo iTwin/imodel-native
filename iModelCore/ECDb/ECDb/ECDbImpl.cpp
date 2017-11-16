@@ -306,13 +306,10 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::RegisterBuiltinFunctions() const
     {
-    m_ecdb.AddFunction(Base64ToBlobSqlFunction::GetSingleton());
-    m_ecdb.AddFunction(BlobToBase64SqlFunction::GetSingleton());
-    m_ecdb.AddFunction(ToInstanceOpFuntion::GetSingleton());
+    m_ecdb.AddFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
     
-    m_changeValueSqlFunc = std::unique_ptr<ChangedValueFunction>(new ChangedValueFunction(m_ecdb));
+    m_changeValueSqlFunc = std::make_unique<ChangedValueSqlFunction>(m_ecdb);
     m_ecdb.AddFunction(*m_changeValueSqlFunc);
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -323,9 +320,7 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (!m_ecdb.IsDbOpen())
         return;
 
-    m_ecdb.RemoveFunction(Base64ToBlobSqlFunction::GetSingleton());
-    m_ecdb.RemoveFunction(BlobToBase64SqlFunction::GetSingleton());
-    m_ecdb.RemoveFunction(ToInstanceOpFuntion::GetSingleton());
+    m_ecdb.RemoveFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
 
     m_ecdb.RemoveFunction(*m_changeValueSqlFunc);
     m_changeValueSqlFunc = nullptr;

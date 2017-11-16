@@ -61,6 +61,7 @@
     - <b>ECSchema management</b> capabilities (e.g. importing or updating ECSchemas into an @ref ECDbFile "ECDb file",
     retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::SchemaManager and @ref ECDbECSchemaRules))
     - Internally maps %EC data to SQLite tables and columns
+    - Accessing the history of changes to the EC data (see @ref ECDbChangeSummaries)
 
     @section ECDbMapping ECSQL hides away the database mapping of EC data
     A key feature of @ref ECSQLOverview "ECSQL" is that it <b>targets the
@@ -96,6 +97,7 @@
     - @ref ECSQLSamples
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
     data in the @ref ECDbFile "ECDb file".
+    - @ref ECDbChangeSummaries
     - @ref ECDbECSchemaRules
     - @ref ECDbSchemaMappingCustomization
     - @ref ECDbCreatingECDbFromScratch
@@ -113,7 +115,7 @@
     @li @subpage ECSQLOverview
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
-    @li @subpage ECDbTransactions
+    @li @subpage ECDbChangeSummaries
     @li @subpage ECDbSchemas
     @li @subpage ECDbECSchemaImportAndUpgrade
     @li @subpage ECDbECSchemaRules
@@ -122,6 +124,7 @@
     @li @subpage ECDbNavigationProperties
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
+    @li @subpage ECDbTransactions
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
     @see @ref ECDbOverview
@@ -188,6 +191,7 @@
     @section ECDbBuiltInSchemas Built-in schemas
     Every ECDb file comes with the following ECSchemas already included. That means you don't have to import them anymore:
     
+    - %ECDbChangeSummaries (see also @ref ECDbChangeSummaries)
     - %ECDbFileInfo (see also @ref ECDbFileInfo)
     - %ECDbMeta
     - %ECDbMap
@@ -793,6 +797,13 @@
     @see @ref ECDbOverview
     */
 
+    /**
+    @page ECDbChangeSummaries Change Summaries
+    
+    TBD
+
+    @see @ref ECDbOverview
+    */
 
 
     /**

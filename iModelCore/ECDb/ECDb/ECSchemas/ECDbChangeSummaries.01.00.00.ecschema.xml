@@ -1,7 +1,7 @@
 <ECSchema schemaName="ECDbChangeSummaries" alias="change" version="01.00.00" description="ECDb Change Summaries" displayLabel="ECDb Change Summaries" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
       
-    <ECEntityClass typeName="Summary" displayLabel="Summary" modifier="Sealed">
+    <ECEntityClass typeName="ChangeSummary" displayLabel="Summary" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TemporaryTable</MapStrategy>
@@ -9,7 +9,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEnumeration typeName="Operation" backingTypeName="int" isStrict="true">
+    <ECEnumeration typeName="OpCode" backingTypeName="int" isStrict="true">
         <ECEnumerator value="1" displayLabel="Insert"/>
         <ECEnumerator value="2" displayLabel="Update"/>
         <ECEnumerator value="4" displayLabel="Delete"/>
@@ -38,11 +38,11 @@
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryContainsInstanceChanges" direction="backward" />
         <ECStructProperty propertyName="ChangedInstance" typeName="InstanceKey" description="Key of the change instance"/>
-        <ECProperty propertyName="Operation" typeName="Operation"/>
+        <ECProperty propertyName="OpCode" typeName="OpCode"/>
         <ECProperty propertyName="IsIndirect" typeName="bool" description="Change happened due to a foreign key action or trigger"/>
         <ECProperty propertyName="TableName" typeName="string"/>
-        <ECNavigationProperty propertyName="Summary" relationshipName="SummaryContainsInstanceChanges" direction="backward" />
     </ECEntityClass>
     
     <ECEntityClass typeName="PropertyValueChange" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">
@@ -69,9 +69,9 @@
         <ECNavigationProperty propertyName="InstanceChange" relationshipName="InstanceChangeOwnsPropertyValueChanges" direction="backward"/>
     </ECEntityClass>
     
-    <ECRelationshipClass typeName="SummaryContainsInstanceChanges" modifier="Sealed" strength="embedding">
+    <ECRelationshipClass typeName="ChangeSummaryContainsInstanceChanges" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
-            <Class class="Summary"/>
+            <Class class="ChangeSummary"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
             <Class class="InstanceChange"/>

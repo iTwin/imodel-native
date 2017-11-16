@@ -55,7 +55,6 @@ ECDbAllHeaders = \
                 $(baseDir)SchemaWriter.h \
                 $(baseDir)SchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
-                $(baseDir)BuiltinSchemaNames.h \
                 $(baseDir)ClassMappingInfo.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ProfileManager.h \
@@ -64,6 +63,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbMapSchemaHelper.h \
                 $(baseDir)PolicyManager.h \
                 $(baseDir)ChangeIteratorImpl.h \
+                $(baseDir)ChangeSummarySchemaHelper.h \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
