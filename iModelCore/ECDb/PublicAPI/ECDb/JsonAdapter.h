@@ -180,9 +180,10 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
         //! 
-        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL select clause is what exclusively determines which property name value pairs
         //! the JSON will contain.
+        //!
+        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL system properties are converted to the respective EC JSON format system members:
         //! ECSQL  | JSON Format | JSON Format Data Type
         //! ------ | ------------| ---------------------
@@ -229,7 +230,13 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, bool appendToJson = false) const;
 
-        //! Gets only the columns from the current row that refer to the specified ECClass
+        //! Gets the current row as JSON object with pairs of property name value for each
+        //! item in the ECSQL select clause that refer to the specified ECClass.
+        //!
+        //! The ECSQL select clause is what exclusively determines which property name value pairs
+        //! the JSON will contain.
+        //!
+        //! @see JsonECSqlSelectAdapter::GetRow for details on the ECJSON format.
         //!
         //! Example:
         //! Assume the ECSQL <c>SELECT Employee.ECInstanceId, Employee.Name, Employee.Age, Company.ECInstanceId, Company.Name FROM myschema.Employee JOIN myschema.Company USING myschema.CompanyEmploysEmployee</c>.

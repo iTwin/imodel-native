@@ -296,7 +296,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         viewSql.AppendFormatted(" INNER JOIN " TABLE_ClassHierarchyCache " ch ON ic.%s=ch.ClassId AND ch.BaseClassId=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
 
     viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append("." ECDBSYS_PROP_ECInstanceId "=ic.").Append(classIdOfChangedInstanceColumnName);
-    viewSql.Append(" WHERE ic.").Append(opCodeColumnName).Append("=ToInstanceOp(").Append(operationArgSql).Append(")");
+    viewSql.Append(" WHERE ic.").Append(opCodeColumnName).Append("=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
     viewSql.Append(" AND ic.").Append(summaryIdColumnName).Append("=").Append(summaryIdArgSql);
 
     if (!ctx.IsPolymorphicQuery())

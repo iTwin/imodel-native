@@ -133,8 +133,8 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        GetECDb().GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", GetECSql(), nativeSql.c_str(),
-                                                        ECDb::InterpretDbResult(nativeSqlStat), m_ecdb.GetLastError().c_str());
+        GetECDb().GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
+                                                        ECDb::InterpretDbResult(nativeSqlStat), m_ecdb.GetLastError().c_str(), nativeSql.c_str());
 
         //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
         //is a wrong ECSQL provided by the user.

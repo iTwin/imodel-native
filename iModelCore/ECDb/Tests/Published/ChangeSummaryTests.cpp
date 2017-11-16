@@ -115,6 +115,8 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
 
             while (BE_SQLITE_ROW == propValueChangeStmt.Step())
                 {
+                Utf8CP accessString = propValueChangeStmt.GetValueText(0);
+
                 IECSqlValue const& oldVal = propValueChangeStmt.GetValue(1);
                 IECSqlValue const& newVal = propValueChangeStmt.GetValue(2);
                 Utf8CP oldValueType = propValueChangeStmt.GetValueText(3);
@@ -123,7 +125,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
                 Utf8String oldValStr = valueToString(oldVal, oldValueType);
                 Utf8String newValStr = valueToString(newVal, newValueType);
 
-                printf("\t%s|%s|%s\r\n", propValueChangeStmt.GetValueText(0), oldValStr.c_str(), newValStr.c_str());
+                printf("\t%s|%s|%s\r\n", accessString, oldValStr.c_str(), newValStr.c_str());
                 }
 
             propValueChangeStmt.Reset();
@@ -416,8 +418,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
     }//---------------------------------------------------->>>
 
     TestChangeSet rev1;
-    auto rc = rev1.FromChangeTrack(tracker);
-    ASSERT_TRUE(BE_SQLITE_OK == rc);
+    ASSERT_EQ(BE_SQLITE_OK, rev1.FromChangeTrack(tracker));
 
     ECInstanceId changeSummaryId;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, rev1));
@@ -427,7 +428,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
     stmt.BindId(1, changeSummaryId);
-    stmt.BindInt(2, 1); //TODO: replace by OpCode enum
+    stmt.BindInt(2, (int) ChangedValueState::BeforeUpdate);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
     }
