@@ -389,7 +389,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
     ASSERT_EQ(BE_SQLITE_OK, testDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
     //force loading of temp tables
-    ASSERT_EQ(ECSqlStatus::Success, TestHelper(testDb).PrepareECSql("SELECT * FROM change.Summary"));
+    ASSERT_EQ(ECSqlStatus::Success, TestHelper(testDb).PrepareECSql("SELECT * FROM change.ChangeSummary"));
 
     ASSERT_EQ(sequenceValuesPerBriefcase[testDb.GetBriefcaseId().GetValue()], testDb.GetInstanceIdSequenceValue().GetLocalId()) << "Briefcase Id: " << testDb.GetBriefcaseId().GetValue();
 

@@ -2437,7 +2437,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
 TEST_F(SchemaManagerTests, CreateECClassViewsForTempTableStrategy)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("CreateECClassViewsForTempTableStrategy.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ECClassId changeSummaryClassId = m_ecdb.Schemas().GetClassId("ECDbChangeSummaries", "Summary");
+    ECClassId changeSummaryClassId = m_ecdb.Schemas().GetClassId("ECDbChangeSummaries", "ChangeSummary");
     ASSERT_TRUE(changeSummaryClassId.IsValid());
 
     bvector<ECClassId> classIds;
