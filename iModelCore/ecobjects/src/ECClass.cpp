@@ -1107,10 +1107,11 @@ static const Utf8CP s_schemasThatAllowOverridingArrays[] =
     "ams.01",
     "ams_user.01",
     "Bentley_JSpace_CustomAttributes.02",
-    "Bentley_Plant.06"
+    "Bentley_Plant.06",
+    "speedikon.01"
     };
 
-static const size_t s_numSchemasThatAllowOverridingArrays = 9;
+static const size_t s_numSchemasThatAllowOverridingArrays = 10;
 
 /*---------------------------------------------------------------------------------**//**
 From .NET implementation:

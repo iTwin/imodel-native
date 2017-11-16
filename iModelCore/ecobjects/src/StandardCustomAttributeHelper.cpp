@@ -388,6 +388,9 @@ typedef RefCountedPtr<ConversionCustomAttributesSchemaHolder> ConversionCustomAt
 static Utf8CP s_convSchemaName = "ECv3ConversionAttributes";
 static Utf8CP s_renamedAccessor = "RenamedPropertiesMapping";
 static Utf8CP s_oldUnitAccessor = "OldPersistenceUnit";
+static Utf8CP s_oldDerivedClasses = "OldDerivedClasses";
+static Utf8CP s_isFlattened = "IsFlattened";
+
 static const uint32_t s_convVersionRead = 1;
 static const uint32_t s_convVersionMinor = 0;
 
@@ -443,6 +446,19 @@ void ConversionCustomAttributesSchemaHolder::Initialize()
     if (nullptr != oldUnitClass)
         oldUnitEnabler = oldUnitClass->GetDefaultStandaloneEnabler();
     m_enablers.Insert(s_oldUnitAccessor, oldUnitEnabler);
+
+    ECClassP oldDerivedClass = m_schema->GetClassP(s_oldDerivedClasses);
+    StandaloneECEnablerPtr oldDerivedEnabler;
+    if (nullptr != oldDerivedClass)
+        oldDerivedEnabler = oldDerivedClass->GetDefaultStandaloneEnabler();
+    m_enablers.Insert(s_oldDerivedClasses, oldDerivedEnabler);
+
+    ECClassP isFlattened = m_schema->GetClassP(s_isFlattened);
+    StandaloneECEnablerPtr isFlattenedEnabler;
+    if (nullptr != isFlattened)
+        isFlattenedEnabler = isFlattened->GetDefaultStandaloneEnabler();
+    m_enablers.Insert(s_isFlattened, isFlattenedEnabler);
+
     }
 
 //---------------------------------------------------------------------------------------
