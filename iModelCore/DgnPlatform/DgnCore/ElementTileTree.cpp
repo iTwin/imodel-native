@@ -1367,7 +1367,6 @@ BentleyStatus Loader::DoGetFromSource()
         // (it can be refined to higher zoom level - those tiles are not cached).
         BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor());
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-        BeAssert(!tile.IsPartial());
         if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
             return ERROR;
 
