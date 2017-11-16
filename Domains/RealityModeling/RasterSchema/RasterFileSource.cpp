@@ -99,8 +99,7 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
 
     auto const& root = rasterTile.GetRoot();
     auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
-    rasterTile.m_graphic = GetRenderSystem()->_CreateTile(*texture, rasterTile.GetCorners(), root.GetDgnDb(), gfParams);
-    BeAssert(rasterTile.m_graphic.IsValid());
+    GetRenderSystem()->_CreateTile(*texture, rasterTile.GetCorners(), root.GetDgnDb(), gfParams);
     m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
     return SUCCESS;
