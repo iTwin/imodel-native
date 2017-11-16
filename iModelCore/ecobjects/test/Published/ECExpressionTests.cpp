@@ -288,6 +288,18 @@ TEST_F (LiteralExpressionTests, FloatComparisons)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LiteralExpressionTests, GetBoolOperation)
+    {
+    NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree ("false");
+    EXPECT_EQ(TOKEN_False, node->GetOperation());
+
+    node = ECEvaluator::ParseValueExpressionAndCreateTree ("true");
+    EXPECT_EQ(TOKEN_True, node->GetOperation());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LiteralExpressionTests, Utf8Expressions)
