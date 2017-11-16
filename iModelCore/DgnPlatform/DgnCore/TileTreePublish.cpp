@@ -402,7 +402,8 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
         })
     .then([=](GenerateTileResult result)
         {
-        std::shared_ptr<RenderSystem>(renderSystem); // Must ensure renderSystem persists throughout execution of lambdas
+        auto pRenderSys = renderSystem.get();
+        UNUSED_VARIABLE(pRenderSys);
         m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
         return collector->_EndProcessModel(*model, result.m_tile.get(), result.m_status);   
         });
