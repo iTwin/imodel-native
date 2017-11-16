@@ -86,7 +86,7 @@ SchemaReadStatus PropertyCategory::ReadXml(BeXmlNodeR propertyCategoryNode, ECSc
     {
     Utf8String value;
     READ_REQUIRED_XML_ATTRIBUTE(propertyCategoryNode, TYPE_NAME_ATTRIBUTE, this, Name, propertyCategoryNode.GetName())
-    READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
     READ_OPTIONAL_XML_ATTRIBUTE(propertyCategoryNode, DESCRIPTION_ATTRIBUTE, this, Description)
     
     uint32_t priority = 0;
@@ -112,7 +112,7 @@ SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion e
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
     xmlWriter.WriteAttribute(PRIORITY_ATTRIBUTE, GetPriority());
 
     xmlWriter.WriteElementEnd();
@@ -128,9 +128,9 @@ SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standa
     if (standalone)
         {
         outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
-        outValue[ECJSON_SCHEMA_NAME_ATTRIBUTE] = GetSchema().GetName();
+        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
-            outValue[ECJSON_SCHEMA_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
         }
 

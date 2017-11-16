@@ -71,13 +71,13 @@
     <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />
     <ClCompile Include="ECValue.cpp" />
-    <ClCompile Include="ecxml.cpp" />
     <ClCompile Include="ExpressionContext.cpp" />
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="PresentationMetadataHelper.cpp" />
     <ClCompile Include="PropertyCategory.cpp" />
     <ClCompile Include="SchemaComparer.cpp" />
+    <ClCompile Include="SchemaConversionUtils.cpp" />
     <ClCompile Include="SchemaJson.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
     <ClCompile Include="SchemaResourceKeyHelper.cpp" />
@@ -91,6 +91,7 @@
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PrivateApi\ECObjects\SchemaConversionUtils.h" />
     <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
@@ -123,7 +124,6 @@
     <ClInclude Include="ecobjectsnativelog.h" />
     <ClInclude Include="ECObjectsPch.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
-    <ClInclude Include="ecxml.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
     <ClInclude Include="SchemaJson.h" />
     <ClInclude Include="SchemaXml.h" />

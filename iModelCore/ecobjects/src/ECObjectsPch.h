@@ -11,7 +11,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>
 #include <Bentley/BeStringUtilities.h>
-#include "ecxml.h"
+#include "../PrivateApi/ECObjects/SchemaParseUtils.h"
 #include "DateTimeInfoAccessor.h"
 #include "ECObjectsNativeLog.h"
 #include <Bentley/BeTimeUtilities.h>

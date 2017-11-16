@@ -39,7 +39,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
+ECObjectsHeaders =              $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECSchema.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaConverter.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaValidator.h \
@@ -50,7 +50,6 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECDBuffer.h \
                                 $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                                 $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
-                                $(baseDir)ecxml.h \
                                 $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                                 $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                                 $(baseDir)DateTimeInfoAccessor.h \
@@ -59,14 +58,15 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
                                 $(ecobjectsPublicAPISrc)ECRelationshipPath.h \
                                 $(ecobjectsPublicAPISrc)ECQuantityFormatting.h \
-                                $(ecobjectsPublicAPISrc)SchemaComparer.h
+                                $(ecobjectsPublicAPISrc)SchemaComparer.h \
+                                $(ecobjectsPrivateAPISrc)SchemaParseUtils.h
 
 ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
                                 $(ecunitsPublicAPISrc)ECUnitsClassLocater.h
 
 # ECObjects
 
-$(o)ecxml$(oext)                                           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)SchemaParseUtils$(oext)                                : $(baseDir)SchemaParseUtils.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchema$(oext)                                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 

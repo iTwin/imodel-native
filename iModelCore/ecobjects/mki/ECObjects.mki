@@ -31,7 +31,9 @@ always:
 #       Source directories
 #-----------------------------------------------------------------------
 ecPublicAPISrc          = $(SrcRoot)ecobjects/PublicApi/
+ecPrivateAPISrc         = $(SrcRoot)ecobjects/PrivateApi/
 ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/
+ecobjectsPrivateAPISrc  = $(ecPrivateAPISrc)ECObjects/
 ecobjectsSrc            = $(SrcRoot)ecobjects/
 ecunitsPublicAPISrc     = $(ecPublicAPISrc)ECUnits/
 
@@ -40,5 +42,3 @@ ecunitsPublicAPISrc     = $(ecPublicAPISrc)ECUnits/
 #-----------------------------------------------------------------------
 #The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
 GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
-
-

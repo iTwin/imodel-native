@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/ecxml.cpp $
+|     $Source: src/SchemaParseUtils.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,7 +13,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, Utf8CP booleanString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseBooleanString(bool& booleanValue, Utf8CP booleanString)
     {
     if (0 == BeStringUtilities::StricmpAscii(booleanString, ECXML_TRUE))
         booleanValue = true;
@@ -28,30 +29,31 @@ ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, Utf8CP booleanSt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
+// static
+Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Binary:
-            return ECXML_TYPENAME_BINARY;
+            return EC_PRIMITIVE_TYPENAME_BINARY;
         case PRIMITIVETYPE_Boolean:
-            return ECXML_TYPENAME_BOOLEAN;
+            return EC_PRIMITIVE_TYPENAME_BOOLEAN;
         case PRIMITIVETYPE_DateTime:
-            return ECXML_TYPENAME_DATETIME;
+            return EC_PRIMITIVE_TYPENAME_DATETIME;
         case PRIMITIVETYPE_Double:
-            return ECXML_TYPENAME_DOUBLE;
+            return EC_PRIMITIVE_TYPENAME_DOUBLE;
         case PRIMITIVETYPE_Integer:
-            return ECXML_TYPENAME_INTEGER;
+            return EC_PRIMITIVE_TYPENAME_INTEGER;
         case PRIMITIVETYPE_Long:
-            return ECXML_TYPENAME_LONG;
+            return EC_PRIMITIVE_TYPENAME_LONG;
         case PRIMITIVETYPE_Point2d:
-            return ECXML_TYPENAME_POINT2D;
+            return EC_PRIMITIVE_TYPENAME_POINT2D;
         case PRIMITIVETYPE_Point3d:
-            return ECXML_TYPENAME_POINT3D;
+            return EC_PRIMITIVE_TYPENAME_POINT3D;
         case PRIMITIVETYPE_String:
-            return ECXML_TYPENAME_STRING;
+            return EC_PRIMITIVE_TYPENAME_STRING;
         case PRIMITIVETYPE_IGeometry:
-            return ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC;
+            return EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY_GENERIC;
         default:
             return EMPTY_STRING;
         }
@@ -60,34 +62,35 @@ Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8StringCR typeName)
+// static
+ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
     {
     if (typeName.empty())
         return ECObjectsStatus::ParseError;
 
-    if (typeName.EqualsIAscii (ECXML_TYPENAME_STRING))
+    if (typeName.EqualsIAscii (EC_PRIMITIVE_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_INTEGER))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_INTEGER))
         primitiveType = PRIMITIVETYPE_Integer;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_LONG))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_LONG))
         primitiveType = PRIMITIVETYPE_Long;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_BOOLEAN))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOLEAN))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_BOOL))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOL))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_DOUBLE))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DOUBLE))
         primitiveType = PRIMITIVETYPE_Double;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT2D))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT2D))
         primitiveType = PRIMITIVETYPE_Point2d;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT3D))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT3D))
         primitiveType = PRIMITIVETYPE_Point3d;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_DATETIME))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DATETIME))
         primitiveType = PRIMITIVETYPE_DateTime;
-    else if (typeName.EqualsIAscii(ECXML_TYPENAME_BINARY))
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (typeName.StartsWithIAscii(ECXML_TYPENAME_IGEOMETRY_GENERIC))
+    else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_GENERIC))
         primitiveType = PRIMITIVETYPE_IGeometry; 
-    else if (typeName.StartsWithIAscii(ECXML_TYPENAME_IGEOMETRY_LEGACY))
+    else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY))
         primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECObjectsStatus::ParseError;
@@ -98,48 +101,35 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ECXml::StrengthToString (StrengthType strength)
+// static
+Utf8CP SchemaParseUtils::StrengthToString(StrengthType strength)
     {
     switch (strength)
         {
         case StrengthType::Referencing :
-            return ECXML_STRENGTH_REFERENCING;
+            return STRENGTH_REFERENCING;
         case StrengthType::Holding:
-            return ECXML_STRENGTH_HOLDING;
+            return STRENGTH_HOLDING;
         case StrengthType::Embedding:
-            return ECXML_STRENGTH_EMBEDDING;
+            return STRENGTH_EMBEDDING;
         default:
             return EMPTY_STRING;
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman            11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ECXml::StrengthToJsonString(StrengthType strength)
-    {
-    if (StrengthType::Embedding == strength)
-        return ECXML_STRENGTH_EMBEDDING;
-    else if (StrengthType::Referencing == strength)
-        return ECXML_STRENGTH_REFERENCING;
-    else if (StrengthType::Holding == strength)
-        return ECXML_STRENGTH_HOLDING;
-    else
-        return EMPTY_STRING;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, Utf8StringCR strengthString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString)
     {
     if (0 == strengthString.length())
         return ECObjectsStatus::ParseError;
-    if (0 == strengthString.CompareToI(ECXML_STRENGTH_EMBEDDING))
+    if (0 == strengthString.CompareToI(STRENGTH_EMBEDDING))
         strength = StrengthType::Embedding;
-    else if (0 == strengthString.CompareToI(ECXML_STRENGTH_HOLDING))
+    else if (0 == strengthString.CompareToI(STRENGTH_HOLDING))
         strength = StrengthType::Holding;
-    else if (0 == strengthString.CompareToI(ECXML_STRENGTH_REFERENCING))
+    else if (0 == strengthString.CompareToI(STRENGTH_REFERENCING))
         strength = StrengthType::Referencing;
     else
         return ECObjectsStatus::ParseError;
@@ -150,42 +140,31 @@ ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, Utf8StringCR s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
+// static
+Utf8CP SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
-        case ECRelatedInstanceDirection::Forward :
-            return ECXML_DIRECTION_FORWARD;
+        case ECRelatedInstanceDirection::Forward:
+            return DIRECTION_FORWARD;
         case ECRelatedInstanceDirection::Backward:
-            return ECXML_DIRECTION_BACKWARD;
+            return DIRECTION_BACKWARD;
         default:
             return EMPTY_STRING;
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman            11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ECXml::DirectionToJsonString(ECRelatedInstanceDirection direction)
-    {
-    if (ECRelatedInstanceDirection::Forward == direction)
-        return ECJSON_DIRECTION_FORWARD;
-    else if (ECN::ECRelatedInstanceDirection::Backward == direction)
-        return ECJSON_DIRECTION_BACKWARD;
-    else
-        return EMPTY_STRING;
     }
  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
     {
     if (0 == directionString.length())
         return ECObjectsStatus::ParseError;
-    if (0 == directionString.CompareToI(ECXML_DIRECTION_BACKWARD))
+    if (0 == directionString.CompareToI(DIRECTION_BACKWARD))
         direction = ECRelatedInstanceDirection::Backward;
-    else if (0 == directionString.CompareToI(ECXML_DIRECTION_FORWARD))
+    else if (0 == directionString.CompareToI(DIRECTION_FORWARD))
         direction = ECRelatedInstanceDirection::Forward;
     else
         return ECObjectsStatus::ParseError;
@@ -196,7 +175,8 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &upperLimit, const Utf8String &cardinalityString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR cardinalityString)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     if (0 == cardinalityString.compare("1"))
@@ -253,7 +233,8 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Caleb.Shafer                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, const Utf8String &multiplicityString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
@@ -286,7 +267,8 @@ ECObjectsStatus ECXml::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &u
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ECXml::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity)
+// static
+Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity)
     {
     Utf8Char legacyString[32];
 
@@ -301,7 +283,8 @@ Utf8String ECXml::MultiplicityToLegacyString(RelationshipMultiplicity multiplici
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ECXml::ModifierToString(ECClassModifier modifier)
+// static
+Utf8CP SchemaParseUtils::ModifierToXmlString(ECClassModifier modifier)
     {
     if (ECClassModifier::Abstract == modifier)
         return ECXML_MODIFIER_ABSTRACT;
@@ -313,7 +296,8 @@ Utf8CP ECXml::ModifierToString(ECClassModifier modifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ECXml::ModifierToJsonString(ECClassModifier modifier)
+// static
+Utf8CP SchemaParseUtils::ModifierToJsonString(ECClassModifier modifier)
     {
     if (ECClassModifier::Abstract == modifier)
         return ECJSON_MODIFIER_ABSTRACT;
@@ -325,7 +309,8 @@ Utf8CP ECXml::ModifierToJsonString(ECClassModifier modifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
     {
     if (0 == modifierString.CompareToI(ECXML_MODIFIER_ABSTRACT))
         modifier = ECClassModifier::Abstract;
@@ -341,7 +326,7 @@ ECObjectsStatus ECXml::ParseModifierString(ECClassModifier& modifier, Utf8String
     return ECObjectsStatus::Success;
     }
 
-void SetOrAppendValue(Utf8StringR str, Utf8CP val)
+static void SetOrAppendValue(Utf8StringR str, Utf8CP val)
     {
     if (Utf8String::IsNullOrEmpty(str.c_str()))
         str = val;
@@ -352,16 +337,18 @@ void SetOrAppendValue(Utf8StringR str, Utf8CP val)
         }
     }
 
-bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType& myType)
+static bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType& myType)
     {
     if (compareType == (compareType & myType))
         return true;
     return false;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerType)
+// static
+Utf8String SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType containerType)
     {
     Utf8String str;
 
@@ -420,7 +407,8 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
+// static
+ECObjectsStatus SchemaParseUtils::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
     {
     if (Utf8String::IsNullOrEmpty(typeString.c_str()))
         {
@@ -476,14 +464,15 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
             return ECObjectsStatus::ParseError;
             }
         }
+
     return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-//static 
-ECObjectsStatus ECXml::ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse)
+// static
+ECObjectsStatus SchemaParseUtils::ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse)
     {
     if (0 == stringToParse.length())
         {
@@ -512,12 +501,5 @@ ECObjectsStatus ECXml::ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR ty
 
     return ECObjectsStatus::Success;
     }
-
-void ECXml::FormatXml (BeXmlDomR pXmlDoc)
-    {
-    // For now, do nothing. I think this can be controlled using xmlSaveCtxt
-    // FormatXmlNode(pXmlDoc->documentElement, 0);
-    }
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE

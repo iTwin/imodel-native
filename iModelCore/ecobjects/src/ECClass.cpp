@@ -1964,13 +1964,13 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE (classNode, DESCRIPTION_ATTRIBUTE, this, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE (classNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE (classNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
 
     Utf8String     modifierString;
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
     if (BEXML_Success == modifierStatus)
         {
-        if (ECObjectsStatus::Success != ECXml::ParseModifierString(m_modifier, modifierString))
+        if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierString(m_modifier, modifierString))
             {
             LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -2041,7 +2041,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
-        else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
+        else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, ECXML_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema);
             if (SchemaReadStatus::Success != status)
@@ -2050,7 +2050,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (context.GetPreserveXmlComments())
                 {
                 _ReadCommentsInSameLine(*childNode, comments);
-                Utf8String contentIdentifier = EC_BASE_CLASS_ELEMENT;
+                Utf8String contentIdentifier = ECXML_BASE_CLASS_ELEMENT;
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
@@ -2136,11 +2136,11 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
-        else if (0 == strcmp(childNodeName, EC_CUSTOM_ATTRIBUTES_ELEMENT))
+        else if (0 == strcmp(childNodeName, ECXML_CUSTOM_ATTRIBUTES_ELEMENT))
             {
             if (context.GetPreserveXmlComments())
                 {
-                Utf8String contentIdentifier = EC_CUSTOM_ATTRIBUTES_ELEMENT;
+                Utf8String contentIdentifier = ECXML_CUSTOM_ATTRIBUTES_ELEMENT;
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
@@ -2172,7 +2172,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     if (ECObjectsStatus::Success != ECClass::ParseClassName (alias, className, qualifiedClassName))
         {
         LOG.errorv ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be parsed.",  
-            GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
+            GetName().c_str(), ECXML_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
 
         return SchemaReadStatus::InvalidECSchemaXml;
         }
@@ -2181,7 +2181,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     if (NULL == resolvedSchema)
         {
         LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the alias '%s' that can not be resolved to a referenced schema.",
-            GetName().c_str(), EC_BASE_CLASS_ELEMENT, alias.c_str());
+            GetName().c_str(), ECXML_BASE_CLASS_ELEMENT, alias.c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -2190,7 +2190,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     if (NULL == baseClass)
         {
         LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
-            GetName ().c_str (), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str (), className.c_str (), resolvedSchema->GetName ().c_str ());
+            GetName ().c_str (), ECXML_BASE_CLASS_ELEMENT, qualifiedClassName.c_str (), className.c_str (), resolvedSchema->GetName ().c_str ());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -2315,7 +2315,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
     if (ECVersion::V2_0 == ecXmlVersion)
         {
@@ -2325,7 +2325,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
     else if (m_modifier != ECClassModifier::None || IsRelationshipClass())
-        xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
+        xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, SchemaParseUtils::ModifierToXmlString(m_modifier));
 
     if (nullptr != additionalAttributes)
         {
@@ -2335,19 +2335,19 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
     
     for (const ECClassP& baseClass: m_baseClasses)
         {
-        auto comments = m_contentXmlComments.find(EC_BASE_CLASS_ELEMENT);
+        auto comments = m_contentXmlComments.find(ECXML_BASE_CLASS_ELEMENT);
         if (comments != m_contentXmlComments.end())
             {
             for (auto comment : comments->second)
                 xmlWriter.WriteComment(comment.c_str());
             }
 
-        xmlWriter.WriteElementStart(EC_BASE_CLASS_ELEMENT);
+        xmlWriter.WriteElementStart(ECXML_BASE_CLASS_ELEMENT);
         xmlWriter.WriteText((ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str());
         xmlWriter.WriteElementEnd();
         }
 
-    auto comments = m_contentXmlComments.find(EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    auto comments = m_contentXmlComments.find(ECXML_CUSTOM_ATTRIBUTES_ELEMENT);
     if (comments != m_contentXmlComments.end())
         {
         for (auto comment : comments->second)
@@ -2391,9 +2391,9 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
     if (standalone)
         {
         outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
-        outValue[ECJSON_SCHEMA_NAME_ATTRIBUTE] = GetSchema().GetName();
+        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
-            outValue[ECJSON_SCHEMA_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
         }
 
@@ -2427,7 +2427,7 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
     // Common ECClass properties
     ECClassModifier const modifier = GetClassModifier();
     if (!isMixin && (ECClassModifier::None != modifier || IsRelationshipClass()))
-        outValue[MODIFIER_ATTRIBUTE] = ECXml::ModifierToJsonString(modifier);
+        outValue[MODIFIER_ATTRIBUTE] = SchemaParseUtils::ModifierToJsonString(modifier);
 
     if (HasBaseClasses() && !IsEntityClass()) // Entity class assigns base class in its _WriteJson method
         {
@@ -2633,7 +2633,7 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
     else
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_ENTITYCLASS_ELEMENT, nullptr, true);
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, ECXML_ENTITYCLASS_ELEMENT, nullptr, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2647,7 +2647,7 @@ SchemaWriteStatus ECEntityClass::_WriteJson(Json::Value& outValue, bool standalo
         {
         ECEntityClassCP appliesTo = GetAppliesToClass();
         BeAssert(nullptr != appliesTo);
-        attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO, ECJsonUtilities::FormatClassName(*appliesTo)));
+        attributes.push_back(bpair<Utf8String, Json::Value>(MIXIN_APPLIES_TO_ATTRIBUTE, ECJsonUtilities::FormatClassName(*appliesTo)));
         if (HasBaseClasses())
             attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_BASE_CLASS_ELEMENT, ECJsonUtilities::FormatClassName(*(GetBaseClasses()[0]))));
         }
@@ -2673,7 +2673,7 @@ SchemaWriteStatus ECEntityClass::_WriteJson(Json::Value& outValue, bool standalo
                     }
                 }
             if (0 != mixinArr.size())
-                attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MIXIN_ATTRIBUTE, mixinArr));
+                attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MIXIN_REFERENCES_ATTRIBUTE, mixinArr));
             }
         }
 
@@ -2892,10 +2892,10 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVe
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
     else
         {
-        Utf8String appliesToAttributeValue = ECXml::ContainerTypeToString(m_containerType);
+        Utf8String appliesToAttributeValue = SchemaParseUtils::ContainerTypeToString(m_containerType);
         bmap<Utf8CP, Utf8CP> additionalAttributes;
-        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = appliesToAttributeValue.c_str();
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
+        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE] = appliesToAttributeValue.c_str();
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, ECXML_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
         }
     }
 
@@ -2905,7 +2905,7 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVe
 SchemaWriteStatus ECCustomAttributeClass::_WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
-    attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO, ECXml::ContainerTypeToString(m_containerType)));
+    attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE, SchemaParseUtils::ContainerTypeToString(m_containerType)));
     return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
     }
 
@@ -2919,9 +2919,9 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode
         return status;
 
     Utf8String appliesTo;
-    if (BEXML_Success == classNode.GetAttributeStringValue(appliesTo, CUSTOM_ATTRIBUTE_APPLIES_TO))
+    if (BEXML_Success == classNode.GetAttributeStringValue(appliesTo, CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE))
         {
-        if (ECObjectsStatus::Success != ECXml::ParseContainerString(this->m_containerType, appliesTo))
+        if (ECObjectsStatus::Success != SchemaParseUtils::ParseContainerString(this->m_containerType, appliesTo))
             {
             LOG.errorv("appliesTo attribute value '%s' invalid on ECCustomAttributeClass %s:%s.  ", appliesTo.c_str(), this->GetSchema().GetName().c_str(), this->GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -2941,7 +2941,7 @@ SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
     if (ECVersion::V2_0 == ecXmlVersion)
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion);
     else
-        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_STRUCTCLASS_ELEMENT, nullptr, true);
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersion, ECXML_STRUCTCLASS_ELEMENT, nullptr, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3139,7 +3139,7 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
         {
         LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_0)? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
             "Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
-                (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
 
         valid = false;
         }
@@ -3147,19 +3147,19 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     if (ECObjectsStatus::Success != ValidateRoleLabel(resolveIssues))
         {
         LOG.errorv("Relationship Class Constraint Violation: Role Label validation failed for the '%s' constraint of relationship '%s'",
-            m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+            m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
     if (ECObjectsStatus::Success != ValidateMultiplicityConstraint(resolveIssues))
         {
         LOG.errorv("Relationship Class Constraint Violation: Multiplicity validation failed for the '%s' constraint of relationship '%s'",
-                   m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                   m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
     if (ECObjectsStatus::Success != ValidateAbstractConstraint(resolveIssues))
         {
         LOG.errorv("Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the '%s' constraint of relationship '%s'",
-                   m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                   m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         // Need to stop validation if abstract constraint fails, since it will change the error messages from the class constraint validation.
         m_verified = false;
         return m_verified;
@@ -3167,7 +3167,7 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
     if (ECObjectsStatus::Success != ValidateClassConstraint())
         {
         LOG.errorv("Relationship Class Constraint Violation: Class Constraint validation failed for the '%s' constraint of relationship '%s'",
-                   m_isSource ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                   m_isSource ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
         valid = false;
         }
 
@@ -3184,7 +3184,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
     if (nullptr != m_abstractConstraint && !baseConstraint.SupportsClass(*m_abstractConstraint))
         {
         LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
-                    GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                    GetAbstractConstraint()->GetFullName(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                     nullptr == baseConstraint.GetAbstractConstraint() ? "(unknown)" : baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
@@ -3196,7 +3196,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
             if (!baseConstraint.SupportsClass(*constraintClass))
                 {
                 LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not compatible with the constraint specified in Class '%s'",
-                           constraintClass->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                           constraintClass->GetFullName(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                            baseConstraint.GetRelationshipClass().GetFullName());
                 return ECObjectsStatus::BaseClassUnacceptable;
                 }
@@ -3206,7 +3206,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
     if (RelationshipMultiplicity::Compare(GetMultiplicity(), baseConstraint.GetMultiplicity()) == -1)
         {
         LOG.errorv("Multiplicity Violation: The Multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-                   GetMultiplicity().GetLowerLimit(), GetMultiplicity().GetUpperLimit(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                   GetMultiplicity().GetLowerLimit(), GetMultiplicity().GetUpperLimit(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                    baseConstraint.GetRelationshipClass().GetFullName(), baseConstraint.GetMultiplicity().GetLowerLimit(), baseConstraint.GetMultiplicity().GetUpperLimit());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
@@ -3260,7 +3260,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
 
         LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_INFO : NativeLogging::SEVERITY::LOG_ERROR,
             "Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
-                (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
+                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
 
         if (resolveIssues)
             {
@@ -3277,14 +3277,14 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     if (ECObjectsStatus::Success == SetAbstractConstraint(*commonClass))
                         {
                         LOG.infov("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
-                                     ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, 
+                                     ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, 
                                      m_relClass->GetFullName(), m_abstractConstraint->GetFullName());
                         return ECObjectsStatus::Success;
                         }
                     }
                 else
                     LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'", 
-                                (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
         
@@ -3323,7 +3323,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     if (!valid)
                         {
                         LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'.  An attempt to resolve this issue failed.",
-                            abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                            abstractConstraint->GetFullName(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                             baseConstraint.GetRelationshipClass().GetFullName());
 
                         }
@@ -3332,7 +3332,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
             else
                 {
                 LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'",
-                           abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                           abstractConstraint->GetFullName(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                            baseConstraint.GetRelationshipClass().GetFullName());
 
                 valid = false;
@@ -3350,14 +3350,14 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     if (ECObjectsStatus::Success == baseConstraint.SetAbstractConstraint(*commonClass))
                         {
                         LOG.infov("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
-                                  ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+                                  ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT,
                                   baseRelClass->GetFullName(), commonClass->GetFullName());
                         return ECObjectsStatus::Success;
                         }
                     }
                 else
                     LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'",
-                               (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                               (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
         }
@@ -3370,7 +3370,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
             LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
                 "Abstract Constraint Violation: The constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s'. "
                 "All constraint classes must be derived from the abstract constraint in EC3.1 or higher.",
-                constraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                constraint->GetFullName(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                 abstractConstraint->GetFullName());
 
             valid = false;
@@ -3407,7 +3407,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECClassCR cons
         {
         LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1) ? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
             "Class Constraint Violation: The Class '%s' on %s-Constraint of '%s' is not derived from the Abstract Constraint Class '%s'.",
-            constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
+            constraintClass.GetFullName(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
 
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
@@ -3463,7 +3463,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_
             resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0);
             LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
                 "Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-                    lowerLimit, upperLimit, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                    lowerLimit, upperLimit, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                     relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
             if (!resolveIssues)
@@ -3510,7 +3510,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
             return ECObjectsStatus::Success;
             }
 
-        LOG.errorv("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
+        LOG.errorv("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT,
                     m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
         return ECObjectsStatus::Error;
         }
@@ -3634,13 +3634,13 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
                 if (m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
                     {
                     LOG.warningv("Key properties are no longer supported on constraint classes. All key properties have been dropped from the constraint class '%s' on the %s-Constraint of relationship '%s'.",
-                                 constraintClass->GetName().c_str(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                                 constraintClass->GetName().c_str(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                     break;
                     }
                 else
                     {
                     LOG.errorv("Invalid ECSchemaXML: The constraint class '%s' on the %s-Constraint of relationship '%s' has key properties. Key properties are no longer supported.",
-                               constraintClass->GetName().c_str(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                               constraintClass->GetName().c_str(), (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                     return SchemaReadStatus::InvalidECSchemaXml;
                     } 
                 }
@@ -3694,7 +3694,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     if (ecXmlVersion >= ECVersion::V3_1)
         xmlWriter.WriteAttribute(MULTIPLICITY_ATTRIBUTE, m_multiplicity->ToString().c_str());
     else
-        xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
+        xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, SchemaParseUtils::MultiplicityToLegacyString(*m_multiplicity).c_str());
     
     xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, GetInvariantRoleLabel().c_str());
 
@@ -3921,7 +3921,7 @@ ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (Utf8CP isPolymorphic
     {
     PRECONDITION (nullptr != isPolymorphic, ECObjectsStatus::PreconditionViolated);
 
-    ECObjectsStatus status = ECXml::ParseBooleanString (m_isPolymorphic, isPolymorphic);
+    ECObjectsStatus status = SchemaParseUtils::ParseBooleanString (m_isPolymorphic, isPolymorphic);
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint. Expected values are True or False", isPolymorphic);
         
@@ -3980,7 +3980,7 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, b
     PRECONDITION (nullptr != multiplicity, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
     uint32_t upperLimit;
-    ECObjectsStatus status = ECXml::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity);
+    ECObjectsStatus status = SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity);
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv ("Failed to parse the RelationshipMultiplicity string '%s'.", multiplicity);
@@ -4005,7 +4005,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
     PRECONDITION (nullptr != cardinality, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
     uint32_t upperLimit;
-    ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
+    ECObjectsStatus status = SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv ("Failed to parse the RelationshipCardinality string '%s'.", cardinality);
@@ -4189,7 +4189,7 @@ ECObjectsStatus ECRelationshipClass::SetStrength (Utf8CP strength)
     PRECONDITION (nullptr != strength, ECObjectsStatus::PreconditionViolated);
 
     StrengthType strengthType;
-    ECObjectsStatus status = ECXml::ParseStrengthType(strengthType, strength);
+    ECObjectsStatus status = SchemaParseUtils::ParseStrengthType(strengthType, strength);
     if (ECObjectsStatus::Success != status)
         LOG.errorv ("Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->GetName().c_str());
     else
@@ -4218,7 +4218,7 @@ ECObjectsStatus ECRelationshipClass::SetStrengthDirection (Utf8CP directionStrin
     PRECONDITION (nullptr != directionString, ECObjectsStatus::PreconditionViolated);
 
     ECRelatedInstanceDirection direction;
-    ECObjectsStatus status = ECXml::ParseDirectionString(direction, directionString);
+    ECObjectsStatus status = SchemaParseUtils::ParseDirectionString(direction, directionString);
     if (ECObjectsStatus::Success != status)
         LOG.errorv ("Failed to parse the ECRelatedInstanceDirection string '%s' for ECRelationshipClass '%s'.", directionString, this->GetName().c_str());
     else
@@ -4272,13 +4272,13 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
     {
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
-    additionalAttributes[STRENGTH_ATTRIBUTE] = ECXml::StrengthToString(m_strength);
+    additionalAttributes[STRENGTH_ATTRIBUTE] = SchemaParseUtils::StrengthToString(m_strength);
     if (m_strengthDirection != ECRelatedInstanceDirection::Forward)
         { //skip the attribute for "forward" as it is the default value.
-        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToString(m_strengthDirection);
         }
 
-    if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersion, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
+    if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersion, ECXML_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         
     // verify that this really is the current relationship class element // CGM 07/15 - Can't do this with an XmlWriter
@@ -4288,8 +4288,8 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
     //    return SchemaWriteStatus::FailedToCreateXml;
     //    }
         
-    m_source->WriteXml (xmlWriter, EC_SOURCECONSTRAINT_ELEMENT, ecXmlVersion);
-    m_target->WriteXml (xmlWriter, EC_TARGETCONSTRAINT_ELEMENT, ecXmlVersion);
+    m_source->WriteXml (xmlWriter, ECXML_SOURCECONSTRAINT_ELEMENT, ecXmlVersion);
+    m_target->WriteXml (xmlWriter, ECXML_TARGETCONSTRAINT_ELEMENT, ecXmlVersion);
     xmlWriter.WriteElementEnd();
 
     return status;
@@ -4302,8 +4302,8 @@ SchemaWriteStatus ECRelationshipClass::_WriteJson(Json::Value& outValue, bool st
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, ECXml::StrengthToJsonString(GetStrength())));
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToJsonString(GetStrengthDirection())));
+    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, SchemaParseUtils::StrengthToString(GetStrength())));
+    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(GetStrengthDirection())));
 
     SchemaWriteStatus status;
 
@@ -4345,13 +4345,13 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
     if (status != SchemaReadStatus::Success)
         return status;
 
-    BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
+    BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" ECXML_SOURCECONSTRAINT_ELEMENT);
     if (nullptr != sourceNode)
         status = m_source->ReadXml (*sourceNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
     
-    BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
+    BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" ECXML_TARGETCONSTRAINT_ELEMENT);
     if (nullptr != targetNode)
         status = m_target->ReadXml (*targetNode, context);
     if (status != SchemaReadStatus::Success)
@@ -4476,7 +4476,7 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
                 LOG.errorv("Strength Constraint Violation: ECRelationshipClass '%s' has different Strength, %s, than its base class '%s', %s.",
-                            GetFullName(), ECXml::StrengthToString(value), relationshipBaseClass->GetFullName(), ECXml::StrengthToString(relationshipBaseClass->GetStrength()));
+                            GetFullName(), SchemaParseUtils::StrengthToString(value), relationshipBaseClass->GetFullName(), SchemaParseUtils::StrengthToString(relationshipBaseClass->GetStrength()));
                 return false;
                 }
             }
@@ -4498,7 +4498,7 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
                 {
                 LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction, %s, than it's base class '%s', %s.",
-                            GetFullName(), ECXml::DirectionToString(value), relationshipBaseClass->GetFullName(), ECXml::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
+                            GetFullName(), SchemaParseUtils::DirectionToString(value), relationshipBaseClass->GetFullName(), SchemaParseUtils::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
                 return false;
                 }
             }

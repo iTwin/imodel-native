@@ -131,7 +131,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
     SchemaReadStatus status = SchemaReadStatus::Success;
 
     BeXmlDom::IterableNodeSet schemaReferenceNodes;
-    schemaNode.SelectChildNodes(schemaReferenceNodes, EC_NAMESPACE_PREFIX ":" EC_SCHEMAREFERENCE_ELEMENT);
+    schemaNode.SelectChildNodes(schemaReferenceNodes, EC_NAMESPACE_PREFIX ":" ECXML_SCHEMAREFERENCE_ELEMENT);
     for (BeXmlNodeP& schemaReferenceNode : schemaReferenceNodes)
         {
         SchemaKey key;
@@ -328,7 +328,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             {
             LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max multiplicity is greater than 1.",
                         navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
-                        navProp->GetRelationshipClass()->GetName().c_str(), ECXml::DirectionToString(navProp->GetDirection()));
+                        navProp->GetRelationshipClass()->GetName().c_str(), SchemaParseUtils::DirectionToString(navProp->GetDirection()));
                 
             return SchemaReadStatus::InvalidECSchemaXml;
             }
@@ -377,7 +377,7 @@ ECRelationshipClassP SchemaXmlReaderImpl::CreateRelationshipClass(ECSchemaPtr& s
 //---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaXmlReaderImpl::IsECEnumerationElementNode(BeXmlNodeR elementNode)
     {
-    return 0 == strcmp(EC_ENUMERATION_ELEMENT, elementNode.GetName());
+    return 0 == strcmp(ECXML_ENUMERATION_ELEMENT, elementNode.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -402,7 +402,7 @@ bool SchemaXmlReaderImpl::IsPropertyCategoryElementNode(BeXmlNodeR elementNode)
 bool SchemaXmlReaderImpl::IsECClassElementNode(BeXmlNodeR elementNode)
     {
     return 0 == strcmp(EC_CLASS_ELEMENT, elementNode.GetName()) || 
-           0 == strcmp(EC_RELATIONSHIP_CLASS_ELEMENT, elementNode.GetName());
+           0 == strcmp(ECXML_RELATIONSHIP_CLASS_ELEMENT, elementNode.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -429,7 +429,7 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     Utf8String boolStr;
     bool isDomain = true; // defaults to true
     if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE))
-        ECXml::ParseBooleanString(isDomain, boolStr.c_str());
+        SchemaParseUtils::ParseBooleanString(isDomain, boolStr.c_str());
 
     if (0 == strcmp(nodeName, EC_CLASS_ELEMENT))
         {
@@ -438,11 +438,11 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
         bool isStruct = false;
         bool isSealed = false;
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_CUSTOMATTRIBUTE_ATTRIBUTE))
-            ECXml::ParseBooleanString(isCA, boolStr.c_str());
+            SchemaParseUtils::ParseBooleanString(isCA, boolStr.c_str());
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_STRUCT_ATTRIBUTE))
-            ECXml::ParseBooleanString(isStruct, boolStr.c_str());
+            SchemaParseUtils::ParseBooleanString(isStruct, boolStr.c_str());
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_FINAL_ATTRIBUTE))
-            ECXml::ParseBooleanString(isSealed, boolStr.c_str());
+            SchemaParseUtils::ParseBooleanString(isSealed, boolStr.c_str());
 
         ECClassType classType;
         ECClassModifier modifier;
@@ -457,7 +457,7 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
 
         ecClass->SetClassModifier(modifier);
         }
-    else if (0 == strcmp(nodeName, EC_RELATIONSHIP_CLASS_ELEMENT))
+    else if (0 == strcmp(nodeName, ECXML_RELATIONSHIP_CLASS_ELEMENT))
         {
         ecClass = CreateRelationshipClass(schemaOut);
         ecClass->SetClassModifier(DetermineRelationshipClassModifier(className, isDomain));
@@ -615,9 +615,9 @@ bool SchemaXmlReader3::IsECClassElementNode(BeXmlNodeR elementNode)
     {
     Utf8CP nodeName = elementNode.GetName();
     return SchemaXmlReaderImpl::IsECClassElementNode(elementNode) ||
-           0 == strcmp(EC_STRUCTCLASS_ELEMENT, nodeName) ||
-           0 == strcmp(EC_CUSTOMATTRIBUTECLASS_ELEMENT, nodeName) ||
-           0 == strcmp(EC_ENTITYCLASS_ELEMENT, nodeName);
+           0 == strcmp(ECXML_STRUCTCLASS_ELEMENT, nodeName) ||
+           0 == strcmp(ECXML_CUSTOMATTRIBUTECLASS_ELEMENT, nodeName) ||
+           0 == strcmp(ECXML_ENTITYCLASS_ELEMENT, nodeName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -635,22 +635,22 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
 
     if (0 == strcmp(EC_CLASS_ELEMENT, nodeName))
         {}
-    else if (0 == strcmp(EC_STRUCTCLASS_ELEMENT, nodeName))
+    else if (0 == strcmp(ECXML_STRUCTCLASS_ELEMENT, nodeName))
         {
         structClass = CreateStructClass(schemaOut);
         ecClass = structClass;
         }
-    else if (0 == strcmp(EC_CUSTOMATTRIBUTECLASS_ELEMENT, nodeName))
+    else if (0 == strcmp(ECXML_CUSTOMATTRIBUTECLASS_ELEMENT, nodeName))
         {
         caClass = CreateCustomAttributeClass(schemaOut);
         ecClass = caClass;
         }
-    else if (0 == strcmp(EC_ENTITYCLASS_ELEMENT, nodeName))
+    else if (0 == strcmp(ECXML_ENTITYCLASS_ELEMENT, nodeName))
         {
         entityClass = CreateEntityClass(schemaOut);
         ecClass = entityClass;
         }
-    else if (0 == strcmp(EC_RELATIONSHIP_CLASS_ELEMENT, nodeName))
+    else if (0 == strcmp(ECXML_RELATIONSHIP_CLASS_ELEMENT, nodeName))
         {
         relationshipClass = CreateRelationshipClass(schemaOut);
         ecClass = relationshipClass;
@@ -885,7 +885,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
 
     // schemaName is a REQUIRED attribute in order to create the schema
     Utf8String schemaName;
-    if (BEXML_Success != schemaNode->GetAttributeStringValue(schemaName, SCHEMA_NAME_ATTRIBUTE))
+    if (BEXML_Success != schemaNode->GetAttributeStringValue(schemaName, ECXML_SCHEMA_NAME_ATTRIBUTE))
         {
         BeAssert(s_noAssert);
         LOG.errorv("Invalid ECSchemaXML: %s element must contain a schemaName attribute", EC_SCHEMA_ELEMENT);
@@ -962,7 +962,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     // OPTIONAL attributes - If these attributes exist they MUST be valid
     Utf8String value;  // used by macro.
     READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DESCRIPTION_ATTRIBUTE, schemaOut, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DISPLAY_LABEL_ATTRIBUTE, schemaOut, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), ECXML_DISPLAY_LABEL_ATTRIBUTE, schemaOut, DisplayLabel)
 
     StopWatch readingSchemaReferences("Reading Schema References", true);
     SchemaXmlReaderImpl* reader = nullptr;
@@ -1097,7 +1097,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
     for (auto const& mapPair : m_ecSchema.m_referencedSchemaAliasMap)
         {
         ECSchemaP   refSchema = mapPair.first;
-        m_xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
+        m_xmlWriter.WriteElementStart(ECXML_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
         if (ECVersion::V2_0 == m_ecXmlVersion)
@@ -1272,7 +1272,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     Utf8PrintfString ns("%s.%s", ECXML_URI, ECSchema::GetECVersionString(m_ecXmlVersion));
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 
-    m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
+    m_xmlWriter.WriteAttribute(ECXML_SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
 
     if (m_ecXmlVersion <= ECVersion::V3_0)
         {
@@ -1287,7 +1287,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
 
     m_xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, m_ecSchema.GetInvariantDescription().c_str());
     if (m_ecSchema.GetIsDisplayLabelDefined())
-        m_xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, m_ecSchema.GetInvariantDisplayLabel().c_str());
+        m_xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, m_ecSchema.GetInvariantDisplayLabel().c_str());
 
     WriteSchemaReferences();
 

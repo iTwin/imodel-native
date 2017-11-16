@@ -2745,7 +2745,7 @@ struct  InstanceXmlReader
             ecInstance = m_context.CreateStandaloneInstance(*foundClass).get();
 
             Utf8String instanceId;
-            if (BEXML_Success == m_xmlNode.GetAttributeStringValue(instanceId, ECINSTANCE_INSTANCEID_XML_ATTRIBUTE))
+            if (BEXML_Success == m_xmlNode.GetAttributeStringValue(instanceId, ECXML_ECINSTANCE_INSTANCEID_ATTRIBUTE))
                 {
                 ecInstance->SetInstanceId(instanceId.c_str());
                 }
@@ -2902,7 +2902,7 @@ struct  InstanceXmlReader
                 if (memberType == serializedMemberType && !ValidateArrayPrimitiveType(arrayValueNode->GetName(), memberType))
                     {
                     LOG.warningv("Incorrectly formatted array element found in array %s.  Expected: %s  Found: %s",
-                                 accessString.c_str(), ECXml::GetPrimitiveTypeName(memberType), arrayValueNode->GetName());
+                                 accessString.c_str(), SchemaParseUtils::PrimitiveTypeToString(memberType), arrayValueNode->GetName());
                     continue;
                     }
 
@@ -3479,7 +3479,7 @@ struct  InstanceXmlReader
         +---------------+---------------+---------------+---------------+---------------+------*/
         bool                            ValidateArrayPrimitiveType(Utf8CP typeFound, PrimitiveType expectedType)
             {
-            return (0 == strcmp(typeFound, ECXml::GetPrimitiveTypeName(expectedType)));
+            return (0 == strcmp(typeFound, SchemaParseUtils::PrimitiveTypeToString(expectedType)));
             }
 
         /*---------------------------------------------------------------------------------**//**
@@ -3713,7 +3713,7 @@ struct  InstanceXmlWriter
                 }
 
             if (writeInstanceId)
-                m_xmlWriter->WriteAttribute(ECINSTANCE_INSTANCEID_XML_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
+                m_xmlWriter->WriteAttribute(ECXML_ECINSTANCE_INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
 
             InstanceWriteStatus status = WritePropertyValuesOfClassOrStructArrayMember(ecClass, ecInstance, NULL);
             if (status != InstanceWriteStatus::Success)
@@ -3805,7 +3805,7 @@ struct  InstanceXmlWriter
             {
             ECValue         ecValue;
             InstanceWriteStatus     status;
-            Utf8CP          typeString = ECXml::GetPrimitiveTypeName(memberType);
+            Utf8CP          typeString = SchemaParseUtils::PrimitiveTypeToString(memberType);
             for (uint32_t index = 0; index < nElements; index++)
                 {
                 if (ECObjectsStatus::Success != ecInstance.GetValue(ecValue, accessString.c_str(), index))
@@ -3852,7 +3852,7 @@ struct  InstanceXmlWriter
 
                 Utf8String typeString (ECINSTANCE_ID_ATTRIBUTE);
                 typeString = typeString.append(":");
-                typeString = typeString.append(ECXml::GetPrimitiveTypeName(navigationProperty.GetType()));
+                typeString = typeString.append(SchemaParseUtils::PrimitiveTypeToString(navigationProperty.GetType()));
 
                 if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
                     return InstanceWriteStatus::XmlWriteError;
