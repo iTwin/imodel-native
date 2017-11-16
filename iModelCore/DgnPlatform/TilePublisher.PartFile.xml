@@ -27,7 +27,7 @@
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="DgnPlatformDll"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
-        <SubPart PartName="CrunchLib"           PartFile="Crunch"               Repository="libsrc-crunch"/>
+        <SubPart PartName="Crunch"              PartFile="Libsrc-Nugets"        Repository="bsicommon"/>
         <SubPart PartName="Planning"            PartFile="Planning"             Repository="DgnDomains-Planning"/>
         <SubPart PartName="PlanningView"        PartFile="Planning"             Repository="DgnDomains-Planning"/>
         <SubPart PartName="VersionCompareDll"   PartFile="SharedComponents/VersionCompare/VersionCompare" Repository="DgnClientFx"/>

@@ -494,6 +494,7 @@ private:
     DomainList    m_domains;
     Handlers      m_handlers;
     SchemaUpgradeOptions m_schemaUpgradeOptions;
+    bool          m_allowSchemaImport;
  
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
@@ -523,7 +524,7 @@ private:
     static Utf8CP ConvertDevelopmentPhaseToString(DevelopmentPhase developmentPhase);
     BeSQLite::DbResult SaveDevelopmentPhase();
 
-    explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_allowSchemaImport(true) {}
 
 public:
     //! Look up a handler for a given DgnClassId. Does not check base classes.
@@ -575,6 +576,11 @@ public:
     //! of handlerId towards baseClassId until it finds a registered handler.
     //! @note The DgnClassId @b is a ECClassId.
     DGNPLATFORM_EXPORT DgnDomain::Handler* FindHandler(DgnClassId handlerId, DgnClassId baseClassId);
+
+    //! @private
+    void DisableSchemaImport() {m_allowSchemaImport = false;}
+    //! @private
+    void EnableSchemaImport() {m_allowSchemaImport = true;}
 
 };
 

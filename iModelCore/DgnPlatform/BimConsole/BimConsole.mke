@@ -53,8 +53,6 @@ EXE_LOPT1   = -entry:wmainCRTStartup
 
 EXE_OBJS + $(THIN_ARCHIVE_PATH)
 
-LINKER_LIBRARIES = -framework CoreFoundation
-
 %else
 
 LINKER_LIBRARIES = $(SubpartLibs)$(libprefix)Bentley$(libext)\
