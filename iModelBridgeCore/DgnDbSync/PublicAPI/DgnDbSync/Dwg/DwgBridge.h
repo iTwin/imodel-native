@@ -56,6 +56,7 @@ protected:
     DGNDBSYNC_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&           _GetParams () override { return m_options; }
     DGNDBSYNC_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
+    DGNDBSYNC_EXPORT void           _Terminate (BentleyStatus convertStatus) override;
 
 public:
     DGNDBSYNC_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);

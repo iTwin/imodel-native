@@ -707,7 +707,7 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
                     {
                     ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
                     NavigationECPropertyP navProp = nullptr;
-                    target->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Backward, ECN::PRIMITIVETYPE_Long, false);
+                    target->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Backward, false);
                     }
                 }
             }
@@ -719,7 +719,7 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
                     {
                     ECEntityClassP source = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
                     NavigationECPropertyP navProp = nullptr;
-                    source->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Forward, ECN::PRIMITIVETYPE_Long, false);
+                    source->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Forward, false);
                     }
                 }
             }

@@ -250,8 +250,11 @@ public:
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
 
     //! @private
+    IMODEL_BRIDGE_FWK_EXPORT void ReportIssue(WStringCR);
+    //! @private
+    void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+    //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
-
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetiModelHubFXForTesting(iModelHubFX&);
     //! @private

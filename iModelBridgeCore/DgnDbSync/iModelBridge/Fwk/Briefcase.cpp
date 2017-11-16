@@ -274,6 +274,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_CreateRepository()
         return BSISUCCESS;
         }
 
+    ReportIssue(m_clientUtils->GetLastError().GetMessage());
     GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
     return BSIERROR;
     }
@@ -296,6 +297,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (BSISUCCESS != m_clientUtils->OpenBriefcase(*m_briefcaseDgnDb))
         {
+        ReportIssue(m_clientUtils->GetLastError().GetMessage());
         GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
@@ -311,7 +313,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (needsSchemaMerge)
         {
-        status = m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb);
+        GetLogger().infov("PullAndMergeSchemaRevisions %s", m_serverArgs.m_repositoryName.c_str());
+        status = m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb); // *** TRICKY: PullAndMergeSchemaRevisions closes and re-opens the briefcase, so m_briefcaseDgnDb is re-assigned!
         if (SUCCESS == status)
             status = m_clientUtils->PullMergeAndPush(desc);
         }
@@ -320,6 +323,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (BSISUCCESS != status)
         {
+        ReportIssue(m_clientUtils->GetLastError().GetMessage());
         GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
@@ -367,6 +371,19 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullAndMerge()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool isLockExclusiveToJob(DgnLockCR lock)
+    {
+    // Only looking for exclusive locks
+    if (lock.GetLevel() != LockLevel::Exclusive)
+        return false;
+
+    // A job can only "own" models and elements.
+    return lock.GetType() == LockableType::Model || lock.GetType() == LockableType::Element;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_ReleaseSharedLocks()
     {
     GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
@@ -379,10 +396,11 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseSharedLocks()
         for (auto& iter = *pIter; iter.IsValid(); ++iter)
             {
             DgnLockCR lock = *iter;
-            if (LockLevel::Exclusive == lock.GetLevel())    // I only keep locks on the things that I created
+            if (isLockExclusiveToJob(lock))    // I only keep locks on the things that I created
                 continue;
             if (LockableType::Db == lock.GetType())
                 continue;                                   // Don't demote/relinquish the shared lock on the Db. That would have the side effect of relinquishing *all* my locks.
+            GetLogger().infov("Releasing lock: type=%d level=%d", lock.GetType(), lock.GetLevel());
             DgnLock lockReq(lock);
             lockReq.SetLevel(LockLevel::None);
             toRelease.insert(lockReq);

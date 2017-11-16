@@ -51,7 +51,7 @@
     <category name="DgnV8Converter">
         <priority value="info"/>
     </category>
-    <category name="DgnDbServer">
+    <category name="iModelHub">
         <priority value="info"/>
     </category>
     <category name="DgnV8Converter.Performance">

@@ -171,8 +171,6 @@ void DwgBridge::_OnCloseBim (BentleyStatus status)
     {
     // remove the importer
     m_importer.reset (nullptr);
-    // terminate the toolkit after DwgDbDatabase is released (i.e. via above ~DwgImporter call):
-    DwgImporter::TerminateDwgHost ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,6 +180,15 @@ DwgImporter*    DwgBridge::_CreateDwgImporter ()
     {
     // provide the default DWG importer
     return  new DwgImporter (m_options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgBridge::_Terminate (BentleyStatus convertStatus)
+    {
+    // terminate the toolkit after DwgDbDatabase is released
+    DwgImporter::TerminateDwgHost ();
     }
 
 /*---------------------------------------------------------------------------------**//**
