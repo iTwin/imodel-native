@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -40,16 +32,6 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Makefile</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -64,12 +46,6 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -86,14 +62,6 @@
     <NMakeReBuildCommandLine>bb -ax64 -p Gtest-CS06-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForCS06BridgeUnitTests CS06-CiviliModelBridges-Tests PrewireForCS06BridgeUnitTests CiviliModelBridgesCS06Bridge-UnitTests-NonPublished CiviliModelBridgesCS06Bridge-UnitTests-Published Gtest-CS06-CiviliModelBridges-Tests CiviliModelBridges:Gtest-CS06</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p Gtest-CS06-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForCS06BridgeUnitTests CS06-CiviliModelBridges-Tests PrewireForDomainUnitTests CiviliModelBridgesCS06Bridge-UnitTests-NonPublished CiviliModelBridgesCS06Bridge-UnitTests-Published Gtest-CS06-CiviliModelBridges-Tests CiviliModelBridges:Gtest-CS06 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\CS06Bridge\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\Delivery\PublishedApi\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(ProjectName).exe</NMakeOutput>
-    <NMakePreprocessorDefinitions>WIN32_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeOutput>$(ProjectName).exe</NMakeOutput>
-    <NMakePreprocessorDefinitions>WIN32NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeOutput>
