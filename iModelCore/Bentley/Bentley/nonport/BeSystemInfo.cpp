@@ -37,8 +37,10 @@
 #if defined (__APPLE__)
     #include <sys/sysctl.h>
     // *** NEEDS WORK: work around "_assert", referenced from: _Curl_rand in libiModelJsNodeAddon.inputs.a(rand.o)
-    #undef assert
-    extern "C" void assert(char* msg, char* f, int l) {}    
+    #if defined (BENTLEYCONFIG_OS_APPLE_MACOS)
+        #undef assert
+        extern "C" void assert(char* msg, char* f, int l) {}
+    #endif
 #elif defined (ANDROID) || defined (__linux)
     #undef __unused
     #include <linux/sysctl.h>
@@ -214,7 +216,7 @@ uint32_t BeSystemInfo::GetNumberOfCpus()
     }
 
 // iOS implementations are located in BeSystemInfo.mm file
-#if !defined (__APPLE__)
+#if !defined (BENTLEYCONFIG_OS_APPLE_IOS)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Grigas.Petraitis                12/14
