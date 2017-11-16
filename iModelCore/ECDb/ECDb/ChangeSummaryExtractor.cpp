@@ -390,7 +390,7 @@ ECClassId ChangeSummaryExtractor::QueryClassIdOfChangedInstance(ECInstanceId sum
 //---------------------------------------------------------------------------------------
 BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceId& summaryId) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO change.Summary(ECInstanceId) VALUES(NULL)");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_ChangeSummary "(ECInstanceId) VALUES(NULL)");
     if (stmt == nullptr)
         {
         BeAssert(false);
