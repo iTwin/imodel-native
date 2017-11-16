@@ -155,7 +155,7 @@ protected:
     RotMatrix m_rotMatrix;              // rotation matrix (from ViewController)
     ViewDefinition3d::Camera m_camera;
     Render::TargetPtr m_renderTarget;
-    ColorDef m_hiliteColor = ColorDef::Magenta();
+    Render::HiliteSettings m_hilite;
     DMap4d m_rootToView;
     DMap4d m_rootToNpc;
     double m_frustFraction;
@@ -222,6 +222,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
     void InvalidateDecorations() const {m_sync.InvalidateDecorations();}
     void InvalidateController() const {m_sync.InvalidateController();}
+    void InvalidateRenderPlan() const {m_sync.InvalidateRenderPlan();}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
@@ -303,11 +304,14 @@ public:
 
     //! Get the current hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
-    ColorDef GetHiliteColor() const {return m_hiliteColor;}
+    ColorDef GetHiliteColor() const {return m_hilite.GetColor();}
 
     //! Set the current TGBR color value of the user-selected hilite color for this DgnViewport.
     //! @param color The new TBGR hilite color
-    void SetHiliteColor(ColorDef color) {m_hiliteColor=color;}
+    void SetHiliteColor(ColorDef color) {m_hilite.SetColor(color);}
+
+    void SetHilite(Render::HiliteSettings const& hilite) {m_hilite=hilite;}
+    Render::HiliteSettings GetHilite() const {return m_hilite;}
 
 /** @} */
 
