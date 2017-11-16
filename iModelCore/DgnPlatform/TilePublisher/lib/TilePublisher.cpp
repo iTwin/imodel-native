@@ -3568,7 +3568,6 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
     uint32_t    index = 0;
     Status      status = Status::Success;
 
-#if defined(TODO_TILE_PUBLISH)
     for (auto& modelId : viewedModels)
         {
         auto const&                 foundRange = m_modelRanges.find(modelId);
@@ -3600,7 +3599,6 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
             m_classifierMap[modelId] = classifierInfos;
             }
         }
-#endif
     return status;
     }
 
