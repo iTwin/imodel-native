@@ -2372,3 +2372,477 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     ASSERT_NE(BentleyStatus::SUCCESS, validSplineSurface->SetGeometry(ISolidPrimitive::CreateDgnExtrusion(arcExtDetail))) << "Setting invalid dgn extrusion should not be allowed";
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+ElementIterator GetCurvesFromFloorPlane(GridPlaneSurfacePtr floorPlane)
+    {
+    Dgn::ElementIterator iterator = floorPlane->GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridCurve), "WHERE ECInstanceId IN"
+                                                                                 "(SELECT TargetECInstanceId"
+                                                                                 " FROM " GRIDS_SCHEMA(GRIDS_REL_GridSurfaceCreatesGridCurve)
+                                                                                 " WHERE SourceECInstanceId = ?)");
+
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindId(1, floorPlane->GetElementId());
+        }
+    return iterator;
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+struct GridPlaneSurfacePtrCmp 
+    { 
+    bool operator() (GridPlaneSurfacePtr const& lhs, GridPlaneSurfacePtr const& rhs) const
+        {
+        return lhs->GetElementId() < rhs->GetElementId();
+        };
+    };
+    
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid surfaces representing floors
+    /////////////////////////////////////////////////////////////
+    double heightInterval = 10;
+    int gridIteration = 0;
+    bvector<DPoint3d> baseShape = { {0, 0, 0}, {10, 0, 0}, {10, 10, 0}, {0, 10, 0}, {0, 0, 0} };
+    bvector<CurveVectorPtr> floorPlaneCurves = bvector<CurveVectorPtr>(3); // 3 surfaces will be created
+    for (CurveVectorPtr& curveShape : floorPlaneCurves)
+        {
+        bvector<DPoint3d> thisShape = baseShape;
+        std::transform(thisShape.begin(), thisShape.end(), thisShape.begin(), [&](DPoint3d point) -> DPoint3d {point.z = heightInterval * gridIteration; return point; });
+        curveShape = CurveVector::CreateLinear(thisShape, CurveVector::BOUNDARY_TYPE_Outer);
+        ++gridIteration;
+        }
+    
+    OrthogonalGridPortionCPtr floorGrid = OrthogonalGridPortion::CreateAndInsertBySurfaces(floorPlaneCurves, 
+                                                                                           bvector<CurveVectorPtr>(),
+                                                                                           OrthogonalGridPortion::CreateParams(m_model.get(),
+                                                                                                                               db.Elements().GetRootSubject()->GetElementId(),
+                                                                                                                               DVec3d::From(0.0, 0.0, 1.0),
+                                                                                                                               true,
+                                                                                                                               "Floor-Grid"));
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check validity of grid plane surfaces
+    /////////////////////////////////////////////////////////////
+    ASSERT_TRUE(floorGrid.IsValid()) << "Failed to create floor grid";
+    ASSERT_TRUE(floorGrid->GetSurfacesModel().IsValid()) << "Failed to get floor grid surfaces model";
+
+    int numSurfaces = floorGrid->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_EQ(3, numSurfaces) << "incorrect number of gridPlaneSurfaces in floorGrid";
+
+    ElementIterator axesIterator = floorGrid->MakeAxesIterator();
+    bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
+    int numAxes = axesIds.size();
+    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in floorGrid";
+
+    GridAxisCPtr horizontalAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    ASSERT_TRUE(horizontalAxis.IsValid()) << "horizontal axis is not present";
+
+    GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+    ASSERT_TRUE(verticalAxis.IsValid()) << "vertical axis is not present";
+
+    int numHorizontal = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    int numVertical = verticalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
+
+    GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
+    bvector<GridPlaneSurfacePtr> floorGridPlanes;
+    for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
+        {
+        GridPlaneSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlaneSurface>(planeId);
+        ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
+        floorGridPlanes.push_back(floorSurface);
+        }
+
+    /////////////////////////////////////////////////////////////
+    // Create orthogonal grid
+    /////////////////////////////////////////////////////////////
+    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
+    DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
+    DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
+    OrthogonalGridPortion::StandardCreateParams orthogonalParams = OrthogonalGridPortion::StandardCreateParams(m_model.get(),
+                                                                                                               db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                                                                               2, /*horizontal count*/
+                                                                                                               1, /*vertical count*/
+                                                                                                               15, /*horizontal interval*/
+                                                                                                               10, /*vertical interval*/
+                                                                                                               50, /*length*/
+                                                                                                               30, /*height*/
+                                                                                                               normal,
+                                                                                                               horizExtTrans,
+                                                                                                               vertExtTrans,
+                                                                                                               true, /*create dimensions*/
+                                                                                                               true, /*extend height*/
+                                                                                                               "Orthogonal Grid");
+
+    OrthogonalGridPortionPtr orthogonalGrid = OrthogonalGridPortion::CreateAndInsert(orthogonalParams);
+    ASSERT_TRUE(orthogonalGrid.IsValid()) << "Failed to create orthogonal grid";
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check intersection curves with orthogonal grid
+    /////////////////////////////////////////////////////////////
+    // Check intersection success
+    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+        {
+        BentleyStatus status = orthogonalGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
+        ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
+        }
+
+    db.SaveChanges();
+
+    // Check if grid curves are all created and valid
+    bmap < GridPlaneSurfacePtr, bvector<GridCurveCPtr>, GridPlaneSurfacePtrCmp > orthogonalCurves;
+    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+        {
+        ElementIterator floorGridCurvesIterator = GetCurvesFromFloorPlane(floorGridSurface);
+        ASSERT_EQ(3, floorGridCurvesIterator.BuildIdList<DgnElementId>().size());
+        
+        bvector<GridCurveCPtr> floorGridCurves;
+        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
+            {
+            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
+
+            floorGridCurves.push_back(curve);
+            }
+
+        orthogonalCurves[floorGridSurface] = floorGridCurves;
+        }
+
+    // Check grid curves geometry
+    for (auto floorCurvesPair : orthogonalCurves)
+        {
+        GridPlaneSurfacePtr floorGrid = floorCurvesPair.first;
+        bvector<GridCurveCPtr> floorGridCurves = floorCurvesPair.second;
+
+        double elevation = floorGrid->GetPlane().origin.z;
+        bvector<ICurvePrimitiveCPtr> expectedGeometries =
+            {
+            ICurvePrimitive::CreateLineString({{0, 0, elevation }, {50, 0, elevation}}),
+            ICurvePrimitive::CreateLineString({{0, 15, elevation}, {50, 15, elevation}}),
+            ICurvePrimitive::CreateLineString({{0, 0, elevation}, {0, 50, elevation}})
+            };
+
+        for (GridCurveCPtr gridCurve : floorGridCurves)
+            {
+            ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
+                                                             expectedGeometries.end(),
+                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*gridCurve->GetCurve(), 0.1); }))
+                << "Grid curve geometry is not as expected";
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid surfaces representing floors
+    /////////////////////////////////////////////////////////////
+    double heightInterval = 10;
+    int gridIteration = 0;
+    bvector<DPoint3d> baseShape = { {0, 0, 0}, {10, 0, 0}, {10, 10, 0}, {0, 10, 0}, {0, 0, 0} };
+    bvector<CurveVectorPtr> floorPlaneCurves = bvector<CurveVectorPtr>(3); // 3 surfaces will be created
+    for (CurveVectorPtr& curveShape : floorPlaneCurves)
+        {
+        bvector<DPoint3d> thisShape = baseShape;
+        std::transform(thisShape.begin(), thisShape.end(), thisShape.begin(), [&](DPoint3d point) -> DPoint3d {point.z = heightInterval * gridIteration; return point; });
+        curveShape = CurveVector::CreateLinear(thisShape, CurveVector::BOUNDARY_TYPE_Outer);
+        ++gridIteration;
+        }
+    
+    OrthogonalGridPortionCPtr floorGrid = OrthogonalGridPortion::CreateAndInsertBySurfaces(floorPlaneCurves, 
+                                                                                           bvector<CurveVectorPtr>(),
+                                                                                           OrthogonalGridPortion::CreateParams(m_model.get(),
+                                                                                                                               db.Elements().GetRootSubject()->GetElementId(),
+                                                                                                                               DVec3d::From(0.0, 0.0, 1.0),
+                                                                                                                               true,
+                                                                                                                               "Floor-Grid"));
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check validity of grid plane surfaces
+    /////////////////////////////////////////////////////////////
+    ASSERT_TRUE(floorGrid.IsValid()) << "Failed to create floor grid";
+    ASSERT_TRUE(floorGrid->GetSurfacesModel().IsValid()) << "Failed to get floor grid surfaces model";
+
+    int numSurfaces = floorGrid->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_EQ(3, numSurfaces) << "incorrect number of gridPlaneSurfaces in floorGrid";
+
+    ElementIterator axesIterator = floorGrid->MakeAxesIterator();
+    bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
+    int numAxes = axesIds.size();
+    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in floorGrid";
+
+    GridAxisCPtr horizontalAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    ASSERT_TRUE(horizontalAxis.IsValid()) << "horizontal axis is not present";
+
+    GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+    ASSERT_TRUE(verticalAxis.IsValid()) << "vertical axis is not present";
+
+    int numHorizontal = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    int numVertical = verticalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
+
+    GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
+    bvector<GridPlaneSurfacePtr> floorGridPlanes;
+    for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
+        {
+        GridPlaneSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlaneSurface>(planeId);
+        ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
+        floorGridPlanes.push_back(floorSurface);
+        }
+
+    /////////////////////////////////////////////////////////////
+    // Create radial grid
+    /////////////////////////////////////////////////////////////
+    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
+    RadialGridPortion::CreateParams radialParams = RadialGridPortion::CreateParams(m_model.get(),
+                                                                                   db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                                                   2, /*plane count*/
+                                                                                   2, /*arc count*/
+                                                                                   30 * msGeomConst_pi / 180, /*plane iteration angle*/
+                                                                                   10, /*circular interval*/
+                                                                                   50, /*length*/
+                                                                                   30, /*height*/
+                                                                                   "Radial Grid",
+                                                                                   true, /*extend height*/
+                                                                                   normal);
+
+    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(radialParams);
+    ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check intersection curves with radial grid
+    /////////////////////////////////////////////////////////////
+    // Check intersection success
+    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+        {
+        BentleyStatus status = radialGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
+        ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
+        }
+
+    db.SaveChanges();
+
+    // Check if grid curves are all created and valid
+    bmap < GridPlaneSurfacePtr, bvector<GridCurveCPtr>, GridPlaneSurfacePtrCmp > radialCurves;
+    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+        {
+        ElementIterator floorGridCurvesIterator = GetCurvesFromFloorPlane(floorGridSurface);
+        ASSERT_EQ(2, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 4 after arced grid curves can be created
+        
+        bvector<GridCurveCPtr> floorGridCurves;
+        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
+            {
+            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
+
+            floorGridCurves.push_back(curve);
+            }
+
+        radialCurves[floorGridSurface] = floorGridCurves;
+        }
+
+    // Check grid curves geometry
+    for (auto floorCurvesPair : radialCurves)
+        {
+        GridPlaneSurfacePtr floorGrid = floorCurvesPair.first;
+        bvector<GridCurveCPtr> floorGridCurves = floorCurvesPair.second;
+
+        double elevation = floorGrid->GetPlane().origin.z;
+        bvector<ICurvePrimitiveCPtr> expectedGeometries =
+            {
+            ICurvePrimitive::CreateLineString({{0, 0, elevation }, 
+                                               {50, 0, elevation}}),
+            ICurvePrimitive::CreateLineString({{0, 0, elevation}, 
+                                               {50 * std::cos(30.0 * msGeomConst_pi / 180.0), 50 * std::sin(30.0 * msGeomConst_pi / 180.0), elevation}}),
+            ICurvePrimitive::CreateArc(DEllipse3d::FromArcCenterStartEnd({0, 0, elevation }, 
+                                                                         {10 * std::cos(0 - UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 20), 10 * std::sin(0 - UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 20), elevation },
+                                                                         {10 * std::cos(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 20), 10 * std::sin(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 20), elevation })),
+            ICurvePrimitive::CreateArc(DEllipse3d::FromArcCenterStartEnd({0, 0, elevation }, 
+                                                                         {20 * std::cos(0 - UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), 20 * std::sin(0 - UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), elevation },
+                                                                         {20 * std::cos(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), 20 * std::sin(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), elevation }))
+            };
+
+        for (GridCurveCPtr gridCurve : floorGridCurves)
+            {
+            ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
+                                                             expectedGeometries.end(),
+                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*gridCurve->GetCurve(), 0.1); }))
+                << "Grid curve geometry is not as expected";
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              11/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid surfaces representing floors
+    /////////////////////////////////////////////////////////////
+    double heightInterval = 10;
+    int gridIteration = 0;
+    bvector<DPoint3d> baseShape = { {0, 0, 0}, {10, 0, 0}, {10, 10, 0}, {0, 10, 0}, {0, 0, 0} };
+    bvector<CurveVectorPtr> floorPlaneCurves = bvector<CurveVectorPtr>(3); // 3 surfaces will be created
+    for (CurveVectorPtr& curveShape : floorPlaneCurves)
+        {
+        bvector<DPoint3d> thisShape = baseShape;
+        std::transform(thisShape.begin(), thisShape.end(), thisShape.begin(), [&](DPoint3d point) -> DPoint3d {point.z = heightInterval * gridIteration; return point; });
+        curveShape = CurveVector::CreateLinear(thisShape, CurveVector::BOUNDARY_TYPE_Outer);
+        ++gridIteration;
+        }
+    
+    OrthogonalGridPortionCPtr floorGrid = OrthogonalGridPortion::CreateAndInsertBySurfaces(floorPlaneCurves, 
+                                                                                           bvector<CurveVectorPtr>(),
+                                                                                           OrthogonalGridPortion::CreateParams(m_model.get(),
+                                                                                                                               db.Elements().GetRootSubject()->GetElementId(),
+                                                                                                                               DVec3d::From(0.0, 0.0, 1.0),
+                                                                                                                               true,
+                                                                                                                               "Floor-Grid"));
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check validity of grid plane surfaces
+    /////////////////////////////////////////////////////////////
+    ASSERT_TRUE(floorGrid.IsValid()) << "Failed to create floor grid";
+    ASSERT_TRUE(floorGrid->GetSurfacesModel().IsValid()) << "Failed to get floor grid surfaces model";
+
+    int numSurfaces = floorGrid->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_EQ(3, numSurfaces) << "incorrect number of gridPlaneSurfaces in floorGrid";
+
+    ElementIterator axesIterator = floorGrid->MakeAxesIterator();
+    bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
+    int numAxes = axesIds.size();
+    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in floorGrid";
+
+    GridAxisCPtr horizontalAxis = db.Elements().Get<GridAxis>(axesIds[0]);
+    ASSERT_TRUE(horizontalAxis.IsValid()) << "horizontal axis is not present";
+
+    GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
+    ASSERT_TRUE(verticalAxis.IsValid()) << "vertical axis is not present";
+
+    int numHorizontal = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    int numVertical = verticalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
+    ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
+
+    GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
+    bvector<GridPlaneSurfacePtr> floorGridPlanes;
+    for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
+        {
+        GridPlaneSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlaneSurface>(planeId);
+        ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
+        floorGridPlanes.push_back(floorSurface);
+        }
+
+    /////////////////////////////////////////////////////////////
+    // Create sketch grid
+    /////////////////////////////////////////////////////////////
+    SketchGridPortionPtr sketchGrid = SketchGridPortion::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
+    ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
+    ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
+    db.SaveChanges();
+
+    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Grids::GridAxisPtr gridAxis = GridAxis::CreateAndInsert(defModel, *sketchGrid);
+
+    ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
+    db.SaveChanges();
+
+    DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, -BUILDING_TOLERANCE }, { 25, 25, -BUILDING_TOLERANCE }, 30 + 2*BUILDING_TOLERANCE);
+    GridPlaneSurfacePtr plane = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
+    plane->Insert();
+
+    DgnExtrusionDetail arcExtDetail = GeometryUtils::CreateArcExtrusionDetail(10 /*radius*/, 30 * msGeomConst_pi / 180 /*base angle*/, 30 + 2 *BUILDING_TOLERANCE /*height*/, 0 /*extend length*/);
+    GridArcSurfacePtr arc = GridArcSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, arcExtDetail);
+    ASSERT_TRUE(arc.IsValid()) << "Failed to create grid plane surface";
+    arc->Insert();
+
+    DgnExtrusionDetail splineExtDetail = GeometryUtils::CreateSplineExtrusionDetail({ { 0, 0, -BUILDING_TOLERANCE },{ 10, 0, -BUILDING_TOLERANCE },{ 0, 10, -BUILDING_TOLERANCE } } /*poles*/, 30 + 2 * BUILDING_TOLERANCE /*height*/);
+    GridSplineSurfacePtr spline = GridSplineSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, splineExtDetail);
+    ASSERT_TRUE(spline.IsValid()) << "Failed to create grid spline surface";
+    spline->Insert();
+
+    /////////////////////////////////////////////////////////////
+    // Check intersection curves with sketch grid
+    /////////////////////////////////////////////////////////////
+    // Check intersection success
+    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+        {
+        BentleyStatus status = sketchGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
+        ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
+        }
+
+    db.SaveChanges();
+
+    // Check if grid curves are all created and valid
+    bmap < GridPlaneSurfacePtr, bvector<GridCurveCPtr>, GridPlaneSurfacePtrCmp > sketchCurves;
+    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+        {
+        ElementIterator floorGridCurvesIterator = GetCurvesFromFloorPlane(floorGridSurface);
+        ASSERT_EQ(1, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 3 after arced and splined grid curves can be created
+        
+        bvector<GridCurveCPtr> floorGridCurves;
+        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
+            {
+            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
+
+            floorGridCurves.push_back(curve);
+            }
+
+        sketchCurves[floorGridSurface] = floorGridCurves;
+        }
+
+    // Check grid curves geometry
+    for (auto floorCurvesPair : sketchCurves)
+        {
+        GridPlaneSurfacePtr floorGrid = floorCurvesPair.first;
+        bvector<GridCurveCPtr> floorGridCurves = floorCurvesPair.second;
+
+        double elevation = floorGrid->GetPlane().origin.z;
+
+        bvector<double> splineWeights = { 1.0, 1.0, 1.0 };
+        bvector<double> splineKnots = { 0, 1, 2, 3, 4, 5 };
+
+        bvector<ICurvePrimitiveCPtr> expectedGeometries =
+            {
+            ICurvePrimitive::CreateLineString({{0, 0, elevation }, 
+                                               {25, 25, elevation}}),
+            ICurvePrimitive::CreateArc(DEllipse3d::FromArcCenterStartEnd({0, 0, elevation }, 
+                                                                         {10 * std::cos(0), 10 * std::sin(0), elevation },
+                                                                         {10 * std::cos(30.0 * msGeomConst_pi / 180.0), 10 * std::sin(30.0 * msGeomConst_pi / 180.0), elevation })),
+            ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } }, &splineWeights, &splineKnots, 3, false, false))
+            };
+
+        for (GridCurveCPtr gridCurve : floorGridCurves)
+            {
+            ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
+                                                             expectedGeometries.end(),
+                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*gridCurve->GetCurve(), 0.1); }))
+                << "Grid curve geometry is not as expected";
+            }
+        }
+    }
