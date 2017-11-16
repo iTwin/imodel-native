@@ -201,7 +201,7 @@ void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP
         }
     LOG.infov("Created custom format spec %s (%s)", nfs->GetName(), nfs->GetAlias());
     Utf8String str = NumericFormatSpec::StdFormatQuantity(*nfs, qty);
-    LOG.infov("===CustomFormatAnalyzer: %f of %s = %s", dval, uom, str);
+    LOG.infov("===CustomFormatAnalyzer: %f of %s = %s", dval, uom, str.c_str());
 }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
