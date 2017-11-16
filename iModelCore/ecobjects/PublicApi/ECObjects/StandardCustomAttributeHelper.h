@@ -123,7 +123,7 @@ struct ConversionCustomAttributeHelper final
         //! @remarks The only supported custom attribute at this time is PropertyRenamed. 
         //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
         //! @return An IECInstance of the given custom attribute name, if it is a supported custom attribute. Otherwise, nullptr will be returned.
-        static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+        ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
 
         ECOBJECTS_EXPORT static void Reset();
     };
