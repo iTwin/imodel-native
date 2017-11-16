@@ -345,6 +345,8 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         }
 
     m_allRootsLoaded = false;
+    if (nullptr != m_vp)
+        m_vp->InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**
