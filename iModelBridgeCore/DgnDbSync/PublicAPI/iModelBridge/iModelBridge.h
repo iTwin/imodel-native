@@ -462,6 +462,7 @@ struct iModelBridge
         bool m_isCreatingNewDb = false;
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
+        bool m_doDetectDeletedModelsAndElements =  true;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
         bvector<BeFileName> m_drawingAndSheetFiles;
@@ -573,6 +574,8 @@ struct iModelBridge
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
         void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
         DgnElementId GetJobSubjectId() const {return m_jobSubjectId;} //!< Identifies the job Subject element
+        bool DoDetectDeletedModelsAndElements() const {return m_doDetectDeletedModelsAndElements;}
+        void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
 
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
@@ -802,9 +805,6 @@ public:
     BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const {return GetParamsCR().QueryDocumentGuid(localFileName);}
 
     // @private
-    IMODEL_BRIDGE_EXPORT static LinkModelPtr GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary = true);
-
-    // @private
     //! Make a RepositoryLink Element that refers to a specified source file. 
     //! This function will attempt to set the properties of the RepositoryLink element from the DMS document properties of the source file. 
     //! This function will call Params::IDocumentPropertiesAccessor to get the document properties. If found, 
@@ -820,7 +820,7 @@ public:
 
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
-                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, LinkModelR lmodel);
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
     // @private
     IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);
 

@@ -208,7 +208,7 @@ void Converter::_DeleteModel(SyncInfo::V8ModelMapping const& mm)
     {
     auto mid = mm.GetModelId();
     auto msid = mm.GetV8ModelSyncInfoId();
-    LOG.tracev("Delete model %lld", mid.GetValue());
+    LOG.infov("Delete model %llx", mid.GetValue());
     auto model = GetDgnDb().Models().GetModel(mid);
     GetMonitor()._OnModelDelete(*model, mm);
     model->Delete();

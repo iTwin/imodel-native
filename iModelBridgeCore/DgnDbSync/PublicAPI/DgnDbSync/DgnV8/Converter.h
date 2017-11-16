@@ -858,7 +858,6 @@ struct Converter
         L10N_STRING(V8StyleNone) // =="V8 Default Style"==
         L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
-        L10N_STRING(RepositoryLinksPartitionName) // =="Repository Links"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues

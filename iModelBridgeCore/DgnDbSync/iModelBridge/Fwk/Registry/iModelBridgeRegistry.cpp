@@ -323,6 +323,17 @@ bool iModelBridgeRegistry::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistry::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
+    {
+    auto stmt = m_stateDb.GetCachedStatement("SELECT a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (b.Name=?)");
+    stmt->BindText(1, Utf8String(bridgeRegSubKey), Statement::MakeCopy::Yes);
+    while (BE_SQLITE_ROW == stmt->Step())
+        fns.push_back(BeFileName(stmt->GetValueText(0), true));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistry::SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR topDirIn)

@@ -725,6 +725,15 @@ struct TestRegistry : RefCounted<IModelBridgeRegistry>
         {
         return m_bridgeRegSubKey == bridgeRegSubKey;
         }
+
+    void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
+        {
+        if (m_bridgeRegSubKey != bridgeRegSubKey)
+            return;
+        for (auto const& r : m_docPropsByFilename)
+            fns.push_back(r.first);
+        }
+
     BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override
         {
         if (m_docPropsByFilename.find(bridgeLibraryPath) == m_docPropsByFilename.end())
