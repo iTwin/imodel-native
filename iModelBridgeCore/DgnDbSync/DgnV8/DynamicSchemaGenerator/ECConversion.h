@@ -101,6 +101,7 @@ struct DynamicSchemaGenerator
     Converter& m_converter;
     ECN::ECSchemaReadContextPtr m_schemaReadContext;
     ECN::ECSchemaReadContextPtr m_syncReadContext;
+    bmap<Utf8String, ECN::ECSchemaPtr> m_flattenedRefs;
 
     void CheckECSchemasForModel(DgnV8ModelR, bmap<Utf8String, uint32_t>& syncInfoChecksums);
     BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel);
@@ -108,6 +109,15 @@ struct DynamicSchemaGenerator
     static bool IsDynamicSchema(ECObjectsV8::ECSchemaCR schema);
     static bool IsWellKnownDynamicSchema(Bentley::Utf8StringCR schemaName);
     static bool IsDynamicSchema(Bentley::Utf8StringCR schemaName, Bentley::Utf8StringCR schemaXml);
+    void ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject);
+    BentleyStatus CopyFlatConstraint(ECN::ECRelationshipConstraintR toRelationshipConstraint, ECN::ECRelationshipConstraintCR fromRelationshipConstraint);
+    BentleyStatus CopyFlatCustomAttributes(ECN::IECCustomAttributeContainerR targetContainer, ECN::IECCustomAttributeContainerCR sourceContainer);
+    BentleyStatus CreateFlatClass(ECN::ECClassP& targetClass, ECN::ECSchemaP flatSchema, ECN::ECClassCP sourceClass);
+    BentleyStatus CopyFlatClass(ECN::ECClassP& targetClass, ECN::ECSchemaP flatSchema, ECN::ECClassCP sourceClass);
+    BentleyStatus CopyFlattenedProperty(ECN::ECClassP targetClass, ECN::ECPropertyCP sourceProperty);
+    BentleyStatus FlattenSchemas(ECN::ECSchemaP ecSchema);
+    //BentleyStatus LastResortSchemaImport();
+
     BentleyStatus ConsolidateV8ECSchemas();
     BentleyStatus MergeV8ECSchemas(struct ECSchemaXmlDeserializer& deserializer, bmap<Utf8String, bvector<bpair<ECN::SchemaKey, Utf8String>>> const& schemaXmlMap) const;
     BentleyStatus SupplementV8ECSchemas();

@@ -246,7 +246,7 @@ bool Converter::DoesRelationshipExist(Utf8StringCR relName, BeSQLite::EC::ECInst
     if (!stmt.IsValid())
         {
         ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::CorruptData(), Converter::Issue::Message(),
-            Utf8PrintfString("%s - failed to prepare", ecsql.c_str()).c_str());
+                    Utf8PrintfString("%s - failed to prepare", ecsql.c_str()).c_str());
         return false;
         }
 
@@ -324,7 +324,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     //          Only schema changes are allowed in this phase.
 
     // don't bother to convert a DWG master file - let DwgImporter do the job.
-    BeFileNameCR rootFileName = GetRootFileName ();
+    BeFileNameCR rootFileName = GetRootFileName();
     if (Converter::IsDwgOrDxfFile(rootFileName))
         {
         ReportError (IssueCategory::Unsupported(), Converter::Issue::DwgFileIgnored(), Utf8String(rootFileName.c_str()).c_str());
@@ -405,7 +405,7 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
 
     if (!m_importJob.IsValid())
         return ImportJobLoadStatus::FailedNotFound;
-    
+
     // *** TRICKY: If this is called by the framework as a check *after* it calls _IntializeJob, then don't change the change detector!
     if (!_HaveChangeDetector() || IsUpdating())
         _SetChangeDetector(true);
@@ -472,7 +472,7 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
     m_rootTrans = BentleyApi::Transform::FromProduct(jobTrans, m_rootTrans); // NB: pre-multiply!
 
     auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10*BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
+    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
 
     if (!jobTrans.IsEqual(m_importJob.GetImportJob().GetTransform(), matrixTolerance, pointTolerance))
         {
@@ -487,10 +487,10 @@ void SpatialConverterBase::ApplyJobTransformToRootTrans()
 void SpatialConverterBase::DetectRootTransformChange()
     {
     auto matrixTolerance = Angle::TinyAngle();
-    auto pointTolerance = 10*BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
+    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(m_rootTrans.ColumnXMagnitude());
 
     //  Detect if anything about the root GCS/units transform has changed (including the computed root trans and the job trans).
-    m_rootTransHasChanged  = !m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance);
+    m_rootTransHasChanged = !m_rootModelMapping.GetTransform().IsEqual(m_rootTrans, matrixTolerance, pointTolerance);
 
     if (!m_rootTransHasChanged)
         return;
@@ -578,7 +578,7 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
     jobName.append(Utf8String(GetRootModelP()->GetModelName()));
 
     DgnCode code = Subject::CreateCode(*GetDgnDb().Elements().GetRootSubject(), jobName.c_str());
-    int i=0;
+    int i = 0;
     while (GetDgnDb().Elements().QueryElementIdByCode(code).IsValid())
         {
         Utf8String uniqueJobName(jobName);
@@ -703,7 +703,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR modelName, ModelSubjectType stype)
     {
     Json::Value modelProps(Json::nullValue);
-    modelProps["Type"] = (ModelSubjectType::Hierarchy==stype)? "Hierarchy": "References";
+    modelProps["Type"] = (ModelSubjectType::Hierarchy == stype) ? "Hierarchy" : "References";
 
     for (auto childid : parent.QueryChildren())
         {
@@ -726,8 +726,8 @@ SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ConvertModels()
     {
-    SetStepName(IsUpdating() ? Converter::ProgressMessage::STEP_UPDATING() : 
-                               Converter::ProgressMessage::STEP_CREATING(), Utf8String(GetDgnDb().GetFileName()).c_str());
+    SetStepName(IsUpdating() ? Converter::ProgressMessage::STEP_UPDATING() :
+                Converter::ProgressMessage::STEP_CREATING(), Utf8String(GetDgnDb().GetFileName()).c_str());
 
     if (nullptr != m_rootModelRef && m_isRootModelSpatial)
         {
@@ -746,7 +746,7 @@ void RootModelConverter::_ConvertModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const 
+bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     {
     BeFileName fn(v8File.GetFileName().c_str());
     return _GetParams().IsFileAssignedToBridge(fn);
@@ -830,7 +830,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
     ResolvedModelMapping v8mm = GetModelForDgnV8Model(thisModelRef, trans);
 
     if (nullptr == thisModelRef.GetDgnAttachmentsP())
-        return; 
+        return;
 
 	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
@@ -838,7 +838,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
     bool hasPushedReferencesSubject = false;
     for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
-        {                  
+        {
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
 
@@ -906,7 +906,7 @@ void RootModelConverter::_ConvertLineStyles()
 DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
     {
     // try to find a spatial view in the viewgroup
-    for (uint32_t iView=0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+    for (uint32_t iView = 0; iView < DgnV8Api::MAX_VIEWS; ++iView)
         {
         ViewInfoR viewInfo = m_viewGroup->GetViewInfoR(iView);
         Bentley::ViewPortInfoCR viewPortInfo = m_viewGroup->GetViewPortInfo(iView);
@@ -915,7 +915,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
             continue;
 
         auto modelId = viewInfo.GetRootModelId();
-        Bentley::StatusInt openStatus;    
+        Bentley::StatusInt openStatus;
         auto model = m_rootFile->LoadRootModelById(&openStatus, modelId);
         if (nullptr == model)
             continue;
@@ -950,7 +950,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
         return m_rootFile->GetDefaultModelId();
 
     if (RootModelChoice::Method::ByName == m_params.GetRootModelChoice().m_method)
-        return m_rootFile->FindModelIdByName(WString(m_params.GetRootModelChoice().m_name.c_str(),BentleyCharEncoding::Utf8).c_str());
+        return m_rootFile->FindModelIdByName(WString(m_params.GetRootModelChoice().m_name.c_str(), BentleyCharEncoding::Utf8).c_str());
 
     BeAssert(RootModelChoice::Method::FromActiveViewGroup == m_params.GetRootModelChoice().m_method);
 
@@ -983,7 +983,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
             m_viewGroup = vg;
             if (INVALID_MODELID != (rootModelId = _GetRootModelIdFromViewGroup()))
                 break;
-            }    
+            }
         }
 
     if (INVALID_MODELID != rootModelId)
@@ -995,7 +995,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootModelConverter::RootModelConverter(RootModelSpatialParams& params) 
+RootModelConverter::RootModelConverter(RootModelSpatialParams& params)
     : T_Super(params), m_params(params)
     {
     // We do the Config map lookup here and save the result to this variable.
@@ -1039,7 +1039,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
     ConvertElementList(v8Model.GetControlElementsP(), v8mm);
     ConvertElementList(v8Model.GetGraphicElementsP(), v8mm);
 
-    GetDgnDb().Memory().PurgeUntil(1024*1024);
+    GetDgnDb().Memory().PurgeUntil(1024 * 1024);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1057,7 +1057,7 @@ void RootModelConverter::DoConvertSpatialElements()
     if (spatialModels.empty())
         return;
 
-    AddTasks((int32_t)(spatialModels.size()));
+    AddTasks((int32_t) (spatialModels.size()));
     for (auto& modelMapping : spatialModels)
         {
         if (WasAborted())
@@ -1071,7 +1071,7 @@ void RootModelConverter::DoConvertSpatialElements()
         ConvertElementsInModel(modelMapping);
 
         uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
-        ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))", 
+        ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))",
                                          modelMapping.GetDgnModel().GetName().c_str(),
                                          convertedElementCount);
         }
@@ -1085,7 +1085,7 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     StopWatch timer(true);
     uint32_t start = GetElementsConverted();
 
-    AddTasks((int32_t)(m_v8Files.size()));
+    AddTasks((int32_t) (m_v8Files.size()));
     //convert dictionary model named groups
     for (DgnV8FileP v8File : m_v8Files)
         {
@@ -1284,7 +1284,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
         DgnV8Api::DgnModel* ngRootModel = &v8Model;
         if (ngRootModel->IsDictionaryModel()) // *** TBD: Check that file was orginally DWG
             {
-            DgnV8Api::DgnModel* defaultModel = v8Model.GetDgnFileP()->FindLoadedModelById (v8Model.GetDgnFileP()->GetDefaultModelId());
+            DgnV8Api::DgnModel* defaultModel = v8Model.GetDgnFileP()->FindLoadedModelById(v8Model.GetDgnFileP()->GetDefaultModelId());
             if (nullptr != defaultModel)
                 ngRootModel = defaultModel;
             }
@@ -1350,7 +1350,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             }
         }
 
-    GetDgnDb().Memory().PurgeUntil(1024*1024);
+    GetDgnDb().Memory().PurgeUntil(1024 * 1024);
     return BentleyApi::SUCCESS;
     }
 
@@ -1504,10 +1504,10 @@ void RootModelConverter::_FinishConversion()
     _RemoveUnusedMaterials();
 
     m_linkConverter->PurgeOrphanedLinks();
-    
+
     EmbedSpecifiedFiles();
 
-    for (auto f: m_finishers)
+    for (auto f : m_finishers)
         {
         f->_OnFinishConversion(*this);
         }
@@ -1544,73 +1544,73 @@ void RootModelConverter::_FinishConversion()
 * @bsiclass                                     Brien.Bastings                  03/17
 +===============+===============+===============+===============+===============+======*/
 struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
-{
-ResolvedModelMapping    m_v8mm;
-double                  m_toMeters;
-
-ConvertModelACSTraverser(ResolvedModelMapping const& v8mm, double toMeters) : m_v8mm(v8mm), m_toMeters(toMeters) {}
-UInt32 _GetACSTraversalOptions () override {return 0;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _HandleACSTraversal(DgnV8Api::IAuxCoordSys& v8acs) override
     {
-    if (DgnV8Api::ACSType::Extended == v8acs.GetType())
-        return false; // Entering lat/long will not be handled by requiring a special ACS in Bim002...
-        
-    Bentley::WString acsNameV8 = v8acs.GetName();
+    ResolvedModelMapping    m_v8mm;
+    double                  m_toMeters;
 
-    if (Bentley::WString::IsNullOrEmpty(acsNameV8.c_str()))
-        return false;
+    ConvertModelACSTraverser(ResolvedModelMapping const& v8mm, double toMeters) : m_v8mm(v8mm), m_toMeters(toMeters) {}
+    UInt32 _GetACSTraversalOptions() override { return 0; }
 
-    // See if this ACS already exists...if same name from different models, just keep first one...
-    Utf8String    acsName(acsNameV8.c_str());
-    DgnCode       acsCode = AuxCoordSystem::CreateCode(m_v8mm.GetDgnModel(), nullptr, acsName);
-    DgnElementId  acsId = m_v8mm.GetDgnModel().GetDgnDb().Elements().QueryElementIdByCode(acsCode);
-
-    if (acsId.IsValid()) // Do we need to do something here for update???
-        return false;
-
-    AuxCoordSystemPtr   acsElm = AuxCoordSystem::CreateNew(m_v8mm.GetDgnModel(), nullptr, acsName);
-    Bentley::DPoint3d   acsOrigin;
-    Bentley::RotMatrix  acsRMatrix;
-
-    v8acs.GetRotation(acsRMatrix);
-    v8acs.GetOrigin(acsOrigin);
-    acsOrigin.Scale(acsOrigin, m_toMeters); // Account for uor->meter scale...
-
-    acsElm->SetType((ACSType) v8acs.GetType());
-    acsElm->SetOrigin((DPoint3dCR) acsOrigin);
-    acsElm->SetRotation((RotMatrixCR) acsRMatrix);
-
-    Bentley::WString acsDescrV8 = v8acs.GetDescription();
-
-    if (!Bentley::WString::IsNullOrEmpty(acsDescrV8.c_str()))
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Brien.Bastings                  03/17
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool _HandleACSTraversal(DgnV8Api::IAuxCoordSys& v8acs) override
         {
-        Utf8String acsDescr;
+        if (DgnV8Api::ACSType::Extended == v8acs.GetType())
+            return false; // Entering lat/long will not be handled by requiring a special ACS in Bim002...
 
-        acsDescr.Assign(acsDescrV8.c_str());
-        acsElm->SetDescription(acsDescr.c_str());
+        Bentley::WString acsNameV8 = v8acs.GetName();
+
+        if (Bentley::WString::IsNullOrEmpty(acsNameV8.c_str()))
+            return false;
+
+        // See if this ACS already exists...if same name from different models, just keep first one...
+        Utf8String    acsName(acsNameV8.c_str());
+        DgnCode       acsCode = AuxCoordSystem::CreateCode(m_v8mm.GetDgnModel(), nullptr, acsName);
+        DgnElementId  acsId = m_v8mm.GetDgnModel().GetDgnDb().Elements().QueryElementIdByCode(acsCode);
+
+        if (acsId.IsValid()) // Do we need to do something here for update???
+            return false;
+
+        AuxCoordSystemPtr   acsElm = AuxCoordSystem::CreateNew(m_v8mm.GetDgnModel(), nullptr, acsName);
+        Bentley::DPoint3d   acsOrigin;
+        Bentley::RotMatrix  acsRMatrix;
+
+        v8acs.GetRotation(acsRMatrix);
+        v8acs.GetOrigin(acsOrigin);
+        acsOrigin.Scale(acsOrigin, m_toMeters); // Account for uor->meter scale...
+
+        acsElm->SetType((ACSType) v8acs.GetType());
+        acsElm->SetOrigin((DPoint3dCR) acsOrigin);
+        acsElm->SetRotation((RotMatrixCR) acsRMatrix);
+
+        Bentley::WString acsDescrV8 = v8acs.GetDescription();
+
+        if (!Bentley::WString::IsNullOrEmpty(acsDescrV8.c_str()))
+            {
+            Utf8String acsDescr;
+
+            acsDescr.Assign(acsDescrV8.c_str());
+            acsElm->SetDescription(acsDescr.c_str());
+            }
+
+        DgnDbStatus acsStatus;
+        acsElm->Insert(&acsStatus);
+
+        return false;
         }
 
-    DgnDbStatus acsStatus;
-    acsElm->Insert(&acsStatus);
+    }; // ConvertModelACSTraverser
 
-    return false;
-    }
-
-}; // ConvertModelACSTraverser
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Keith.Bentley                   02/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus  RootModelConverter::Process()
     {
     AddSteps(9);
 
     StopWatch totalTimer(true);
-   
+
     StopWatch timer(true);
 
     _OnConversionStart();
@@ -1622,30 +1622,31 @@ BentleyStatus  RootModelConverter::Process()
     ConverterLogging::LogPerformance(timer, "Begin Conversion");
 
     timer.Start();
-    
+
     _ConvertModels();       // This is where we discover just about all of the V8 files and models that we'll need to mine for data in the subsequent steps
     if (WasAborted())
         return ERROR;
-    
+
     ConverterLogging::LogPerformance(timer, "Convert Models");
 
+    
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
 
     timer.Start();
     _ConvertLineStyles();
     if (WasAborted())
         return ERROR;
-    
+
     ConverterLogging::LogPerformance(timer, "Convert Line Styles");
 
-    AddTasks((int32_t)(m_v8ModelMappings.size()));
+    AddTasks((int32_t) (m_v8ModelMappings.size()));
     for (auto& modelMapping : m_v8ModelMappings)
         {
         if (WasAborted())
             return ERROR;
 
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MATERIALS(), modelMapping.GetDgnModel().GetName().c_str());
-        ConvertModelMaterials (modelMapping.GetV8Model());
+        ConvertModelMaterials(modelMapping.GetV8Model());
 
         ConvertModelACSTraverser acsTraverser(modelMapping, ComputeUnitsScaleFactor(modelMapping.GetV8Model()));
         DgnV8Api::IACSManager::GetManager().Traverse(acsTraverser, &modelMapping.GetV8Model());
@@ -1715,7 +1716,7 @@ void SpatialConverterBase::_OnUpdateLevel(DgnV8Api::LevelHandle const& v8Level, 
         return;
         }
 
-    CheckNoLevelChange(v8Level,cat,v8File);
+    CheckNoLevelChange(v8Level, cat, v8File);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1729,7 +1730,7 @@ void RootModelConverter::_SetChangeDetector(bool isUpdating)
         m_changeDetector.reset(new CreatorChangeDetector);
     else
         {
-        m_changeDetector.reset(new ChangeDetector); 
+        m_changeDetector.reset(new ChangeDetector);
         m_skipECContent = false;
         }
     }
