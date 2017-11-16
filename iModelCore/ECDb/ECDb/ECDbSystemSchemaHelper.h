@@ -11,6 +11,31 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#define ECSCHEMA_ECDbSystem "ECDbSystem"
+#define ECSCHEMA_ALIAS_ECDbSystem "ecdbsys"
+
+#define ECDBSYS_CLASS_ClassECSqlSystemProperties "ClassECSqlSystemProperties"
+#define ECDBSYS_CLASS_RelationshipECSqlSystemProperties "RelationshipECSqlSystemProperties"
+#define ECDBSYS_CLASS_PointECSqlSystemProperties "PointECSqlSystemProperties"
+#define ECDBSYS_CLASS_NavigationECSqlSystemProperties "NavigationECSqlSystemProperties"
+
+#define ECDBSYS_PROP_ECInstanceId "ECInstanceId"
+#define ECDBSYS_PROPALIAS_Id "Id"
+
+#define ECDBSYS_PROP_ECClassId "ECClassId"
+#define ECDBSYS_PROP_SourceECInstanceId "SourceECInstanceId"
+#define ECDBSYS_PROPALIAS_SourceId "SourceId"
+#define ECDBSYS_PROP_SourceECClassId "SourceECClassId"
+#define ECDBSYS_PROP_TargetECInstanceId "TargetECInstanceId"
+#define ECDBSYS_PROPALIAS_TargetId "TargetId"
+#define ECDBSYS_PROP_TargetECClassId "TargetECClassId"
+#define ECDBSYS_PROP_NavPropId "Id"
+#define ECDBSYS_PROP_NavPropRelECClassId "RelECClassId"
+#define ECDBSYS_PROP_PointX "X"
+#define ECDBSYS_PROP_PointY "Y"
+#define ECDBSYS_PROP_PointZ "Z"
+
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
