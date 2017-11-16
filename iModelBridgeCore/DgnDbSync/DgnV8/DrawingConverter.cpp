@@ -762,7 +762,11 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
 
     SyncInfo::V8ModelMapping refSyncInfoMapping;
     if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans))
-        GetSyncInfo().FindModel(&refSyncInfoMapping, *attachedV8model, &refTrans, _GetIdPolicy(referenceFile)); // model was first seen and mapped in as a normal model.
+        {
+        BeAssert(false);
+        LOG.infov("DrawingRegisterModelToBeMerged %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
+        return;
+        }
 
     ResolvedModelMapping mergedModelMapping(targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
 

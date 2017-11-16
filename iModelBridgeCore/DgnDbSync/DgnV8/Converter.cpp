@@ -3058,17 +3058,10 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
     auto rc = m_syncInfo.InsertModel(mapping, modelId, v8Model, trans);
     if (SUCCESS != rc)
         {
-        // This happens in the unusual case where a drawing model is encountered first by DrawingRegisterModelToBeMerged
-        // and then later by Import2dModel. Just pick up the existing syncinfo record.
-        rc = m_syncInfo.FindModel(&mapping, v8Model, &trans, _GetIdPolicy(*v8Model.GetDgnFileP()));
-
-        if (SUCCESS != rc)
-            {
-            BeAssert(false);
-            ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
-            OnFatalError();
-            return ResolvedModelMapping();
-            }
+        BeAssert(false);
+        ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
+        OnFatalError();
+        return ResolvedModelMapping();
         }
 
     if (_WantProvenanceInBim())
@@ -3142,8 +3135,6 @@ ResolvedModelMapping RootModelConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
     // This is the first time we've seen this (attachment of) this V8 model. Create a new mapping for it.
     SyncInfo::V8ModelMapping mapping;
     auto rc = m_syncInfo.InsertModel(mapping, targetModelId, v8Model, trans);
-    if (SUCCESS != rc)
-        rc = m_syncInfo.FindModel(&mapping, v8Model, &trans, _GetIdPolicy(*v8Model.GetDgnFileP())); // model was first seen and mapped in by DrawingRegisterModelToBeMerged as a 2d reference to be merged.
     BeAssert(SUCCESS == rc);
 
     auto model = m_dgndb->Models().GetModel(targetModelId);

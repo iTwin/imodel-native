@@ -103,7 +103,9 @@ BentleyStatus SyncInfo::CreateTables()
                          "V8Id INT,"
                          "V8Name CHAR NOT NULL,"
                          "Transform BLOB,"
-                         "CONSTRAINT FileModelId UNIQUE(V8FileSyncInfoId,V8Id,Transform)");
+                         "CONSTRAINT FileModelId UNIQUE(ModelId,V8FileSyncInfoId,V8Id,Transform)"); // we can map the same v8 model to two different BIM models. 
+                                                                                                    // for example, we may import a drawing to its own BIM DrawingModel, and we may 
+                                                                                                    // merge that same drawing into the DrawingModel of its V8 parent.
 
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "NativeIdx ON "  SYNC_TABLE_Model "(ModelId)");
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Model) "FileAndModel ON "  SYNC_TABLE_Model "(V8FileSyncInfoId,V8Id)");
