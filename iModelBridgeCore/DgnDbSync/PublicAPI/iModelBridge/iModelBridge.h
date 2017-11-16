@@ -849,7 +849,10 @@ public:
     IMODEL_BRIDGE_EXPORT void ReportIssue(WStringCR);
 
     //! Write a message to the issues file. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    IMODEL_BRIDGE_EXPORT void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+    void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+
+    //! Compute the filename of the "issues" file.
+    IMODEL_BRIDGE_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
 
     //! @}
 

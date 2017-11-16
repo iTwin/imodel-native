@@ -274,6 +274,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_CreateRepository()
         return BSISUCCESS;
         }
 
+    ReportIssue(m_clientUtils->GetLastError().GetMessage());
     GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
     return BSIERROR;
     }
@@ -296,6 +297,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (BSISUCCESS != m_clientUtils->OpenBriefcase(*m_briefcaseDgnDb))
         {
+        ReportIssue(m_clientUtils->GetLastError().GetMessage());
         GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
@@ -321,6 +323,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (BSISUCCESS != status)
         {
+        ReportIssue(m_clientUtils->GetLastError().GetMessage());
         GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }

@@ -733,6 +733,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     //  Repository does not exist
     if (!m_jobEnvArgs.m_createRepositoryIfNecessary)
         {
+        ReportIssue("iModel not found"); // *** WIP translate
         GetLogger().fatalv("%s - repository not found in project. Create option was not specified.\n", m_serverArgs.m_repositoryName.c_str());
         return BSIERROR;
         }
@@ -837,6 +838,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedRepository()
             SetState(BootstrappingState::Initial);
             return BSISUCCESS;
             }
+        ReportIssue("iModel create failed"); // *** WIP translate
         GetLogger().fatalv("CreateRepository failed or acquireBriefcase failed for repositoryname=%s, stagingdir=%s",
                             m_serverArgs.m_repositoryName.c_str(), Utf8String(m_jobEnvArgs.m_stagingDir).c_str());
         return BSIERROR;
@@ -1192,7 +1194,8 @@ int iModelBridgeFwk::ProcessSchemaChange()
     m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
     if (!m_briefcaseDgnDb.IsValid())
         {
-        GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
+        ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
+        GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
         return BentleyStatus::ERROR;
         }
 
@@ -1252,7 +1255,8 @@ int iModelBridgeFwk::UpdateExistingBim()
         m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
         if (!m_briefcaseDgnDb.IsValid())
             {
-            GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
+            ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
+            GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
             return BentleyStatus::ERROR;
             }
 
@@ -1383,17 +1387,21 @@ void iModelBridgeFwk::LogStderr()
     fflush(stdout);
     fflush(stderr);
 
+    // Write contents of "stderr" capture file to the log
     WString wstr;
     readEntireFile(wstr, m_stderrFileName);
     if (!wstr.empty())
         GetLogger().errorv(L"%ls", wstr.c_str());
 
-    wstr.clear();
-    BeFileName issuesFileName(m_briefcaseName);
-    issuesFileName.append(L"-issues");
-    readEntireFile(wstr, issuesFileName);
-    if (!wstr.empty())
-        GetLogger().errorv(L"%ls", wstr.c_str());
+    if (!m_briefcaseName.empty())
+        {
+        // Write contents of the issues file to the log
+        wstr.clear();
+        BeFileName issuesFileName = iModelBridge::ComputeReportFileName(m_briefcaseName);
+        readEntireFile(wstr, issuesFileName);
+        if (!wstr.empty())
+            GetLogger().errorv(L"%ls", wstr.c_str());
+        }
 
 //    BeFileName::BeDeleteFile(m_stdoutFileName.c_str());
     BeFileName::BeDeleteFile(m_stderrFileName.c_str());
@@ -1417,6 +1425,29 @@ iModelBridgeFwk::~iModelBridgeFwk()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::ReportIssue(WStringCR msg)
+    {
+    if (m_briefcaseName.empty()) // too early in the initialization process?
+        {
+        fputws(msg.c_str(), stderr);
+        return;
+        }
+
+    auto issuesFileName = iModelBridge::ComputeReportFileName(m_briefcaseName);
+    BeFileStatus _status;
+    auto tf = BeTextFile::Open(_status, issuesFileName.c_str(), TextFileOpenType::Append, TextFileOptions::None);
+    if (!tf.IsValid())
+        {
+        BeAssert(false);
+        fputws(msg.c_str(), stderr);
+        return;
+        }
+    tf->PutLine(msg.c_str(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString iModelBridgeFwk::GetMutexName()
@@ -1437,16 +1468,16 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
     auto mutex = ::CreateMutexW(nullptr, false, GetMutexName().c_str());
     if (nullptr == mutex)
         {
-        GetLogger().fatalv(L"%ls - cannot create mutex", GetMutexName().c_str());
+        fprintf(stderr, "%ls - cannot create mutex", GetMutexName().c_str());
         return -1;
         }
     HRESULT hr = ::WaitForSingleObject(mutex, s_maxWaitForMutex);
     if (WAIT_OBJECT_0 != hr)
         {
         if (WAIT_TIMEOUT == hr)
-            GetLogger().fatalv(L"%ls - Another job is taking a long time. Try again later", GetMutexName().c_str());
+            fprintf(stderr, "%ls - Another job is taking a long time. Try again later", GetMutexName().c_str());
         else
-            GetLogger().fatalv(L"%ls - Error getting named mutex. Try again later", GetMutexName().c_str());
+            fprintf(stderr, "%ls - Error getting named mutex. Try again later", GetMutexName().c_str());
         return -1;
         }
 #endif

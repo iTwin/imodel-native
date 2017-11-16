@@ -539,13 +539,13 @@ static void unSupportedFwkArg(WCharCP arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iModelBridge::Params& bparams, int iArg, int argc, WCharCP argv[])
     {
-    if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o="))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o=") || argv[iArg] == wcsstr(argv[iArg], L"-o"))
         {
         bparams.m_briefcaseName.SetName(iModelBridge::GetArgValueW(argv[iArg]));
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
-    if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i="))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i=") || argv[iArg] == wcsstr(argv[iArg], L"-i"))
         {
         BeFileName::FixPathName (bparams.m_inputFileName, iModelBridge::GetArgValueW(argv[iArg]).c_str());
         return BeFileName::IsDirectory(bparams.m_inputFileName.c_str())? iModelBridge::CmdLineArgStatus::Error: iModelBridge::CmdLineArgStatus::Success;

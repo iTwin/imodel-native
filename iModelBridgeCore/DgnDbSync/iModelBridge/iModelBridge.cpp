@@ -66,10 +66,19 @@ iModelBridge::Params::Params()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName iModelBridge::ComputeReportFileName(BeFileNameCR bcName)
+    {
+    BeFileName reportFileName(bcName);
+    reportFileName.append(L"-issues");
+    return reportFileName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridge::Params::SetReportFileName()
     {
-    m_reportFileName = GetBriefcaseName();
-    m_reportFileName.append(L"-issues");
+    m_reportFileName = ComputeReportFileName(GetBriefcaseName());
     }
 
 /*---------------------------------------------------------------------------------**//**
