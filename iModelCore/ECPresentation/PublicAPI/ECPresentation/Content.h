@@ -204,14 +204,15 @@ struct ContentFieldEditor
         virtual Utf8CP _GetName() const = 0;
         virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const = 0;
         virtual Params* _Clone() const = 0;
-        virtual bool _Equals(Params const& other) const {return 0 == strcmp(GetName(), other.GetName());}
+        virtual int _CompareTo(Params const& other) const {return strcmp(GetName(), other.GetName());}
     public:
         virtual ~Params() {}
         Utf8CP GetName() const {return _GetName();}
         rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
         Params* Clone() const {return _Clone();}
-        bool Equals(Params const& other) const {return _Equals(other);}
+        bool Equals(Params const& other) const {return _CompareTo(other) == 0;}
         bool operator==(Params const& other) const {return Equals(other);}
+        bool operator<(Params const& other) const {return _CompareTo(other) < 0;}
     };
 
 private:
@@ -234,6 +235,7 @@ public:
     ECPRESENTATION_EXPORT ~ContentFieldEditor();
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
     ECPRESENTATION_EXPORT bool Equals(ContentFieldEditor const&) const;
+    ECPRESENTATION_EXPORT bool operator<(ContentFieldEditor const&) const;
     bvector<Params const*> const& GetParams() const {return m_params;}
     bvector<Params const*>& GetParams() {return m_params;}
     Utf8StringCR GetName() const {return m_name;}
@@ -427,6 +429,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         virtual int _GetPriority() const = 0;
         virtual void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) {}
         virtual bool _OnFieldRemoved(Field const&) {return false;}
+        virtual Utf8StringCR _GetName() const {return m_name;}
+        virtual void _SetName(Utf8String name) {m_name = name;}
 
     public:
         //! Constructor.
@@ -507,9 +511,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetCategory(Category category) {m_category = category;}
 
         //! Get the name of this field.
-        Utf8StringCR GetName() const {return m_name;}
+        Utf8StringCR GetName() const {return _GetName();}
         //! Set the name for this field.
-        void SetName(Utf8String name) {m_name = name;}
+        void SetName(Utf8String name) {_SetName(name);}
 
         //! Get the label of this field.
         Utf8StringCR GetLabel() const {return m_label;}
@@ -616,6 +620,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         bvector<Property> m_properties;
+        bool m_isValidName;
 
     private:
         ECPRESENTATION_EXPORT void InitFromProperty(ECN::ECClassCR, Property const&, IPropertyCategorySupplierP);
@@ -629,6 +634,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         ECPRESENTATION_EXPORT int _GetPriority() const override;
+        ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
+        void _SetName(Utf8String name) override {m_isValidName = true; Field::_SetName(name);}
     public:
         //! Constructor.
         //! @param[in] category The category of this field.
@@ -636,7 +643,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] label The label of this field.
         //! @param[in] editor The custom editor for this field.
         ECPropertiesField(Category category, Utf8String name, Utf8String label, ContentFieldEditor const* editor = nullptr) 
-            : Field(category, name, label, editor) 
+            : Field(category, name, label, editor), m_isValidName(true)
             {}
 
         //! Constructor. Creates a field with a single @ref Property.
@@ -654,10 +661,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPropertiesField(ECN::ECClassCR primaryClass, Property const& prop) {InitFromProperty(primaryClass, prop, nullptr);}
 
         //! Copy constructor.
-        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties) {}
+        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isValidName(other.m_isValidName) {}
 
         //! Move constructor.
-        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)) {}
+        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)), m_isValidName(other.m_isValidName) {}
 
         //! Is this field equal to the supplied one.
         bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties;}
@@ -665,8 +672,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Does this field contain composite properties (structs or arrays)
         ECPRESENTATION_EXPORT bool IsCompositePropertiesField() const;
 
-        //! Get the properties that this field is based on.
-        bvector<Property>& GetProperties() {return m_properties;}
+        //! Add property to this field.
+        void AddProperty(Property prop) {m_isValidName = false; m_properties.push_back(prop);}
         //! Get the properties that this field is based on.
         bvector<Property> const& GetProperties() const {return m_properties;}
         //! Find properties that match the supplied class. If nullptr is supplied, 
@@ -780,6 +787,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         bvector<ContentDescriptor::ECPropertiesField const*> m_keyFields;
+        bool m_isValidName;
     protected:
         ECInstanceKeyField* _AsECInstanceKeyField() override {return this;}
         ECInstanceKeyField const* _AsECInstanceKeyField() const override {return this;}
@@ -787,11 +795,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) override;
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
+        ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
+        void _SetName(Utf8String name) override {m_isValidName = true; Field::_SetName(name);}
     public:
-        ECInstanceKeyField() : SystemField("Invalid") {}
+        ECInstanceKeyField() : SystemField("Invalid"), m_isValidName(false) {}
         ECPRESENTATION_EXPORT void RecalculateName();
         bvector<ContentDescriptor::ECPropertiesField const*> const& GetKeyFields() const {return m_keyFields;}
-        void AddKeyField(ContentDescriptor::ECPropertiesField const& field) {m_keyFields.push_back(&field); RecalculateName();}
+        void AddKeyField(ContentDescriptor::ECPropertiesField const& field) {m_keyFields.push_back(&field); m_isValidName = false;}
     };
 
     //===================================================================================
@@ -819,10 +829,44 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPropertiesField const& GetPropertiesField() const {return *m_propertyField;}       
     };
 
+    //===================================================================================
+    // @bsiclass                                    Saulius.Skliutas            11/2017
+    //===================================================================================
+    struct ECPropertiesFieldKey
+    {
+    private:
+        ECPropertyCP m_property;
+        ECClassCP m_propertyClass;
+        RelatedClassPath m_relatedClassPath;
+        Utf8String m_type;
+        ContentFieldEditor const* m_fieldEditor;
+        KindOfQuantityCP m_koq;
+    public:
+        ECPropertiesFieldKey() : m_property(nullptr), m_propertyClass(nullptr), m_fieldEditor(nullptr) {}
+        ECPropertiesFieldKey(ECPropertyCR property, ECClassCR propertyClass, RelatedClassPathCR path, ContentFieldEditor const* editor)
+            : m_property(&property), m_propertyClass(&propertyClass), m_relatedClassPath(path), m_fieldEditor(editor)
+            {
+            m_type = m_property->GetTypeName();
+            m_koq = m_property->GetKindOfQuantity();
+            }
+        ECPropertiesFieldKey(Property const& prop, ContentFieldEditor const* editor) 
+            : ECPropertiesFieldKey(prop.GetProperty(), prop.GetPropertyClass(), prop.GetRelatedClassPath(), editor) 
+            {}
+        bool operator<(ECPropertiesFieldKey const& rhs) const;
+        Utf8CP GetName() const {return m_property->GetName().c_str();}
+        Utf8CP GetType() const {return m_type.c_str();}
+        KindOfQuantityCP GetKoq() const {return m_koq;}
+        bool IsRelated() const {return !m_relatedClassPath.empty();}
+        ECClassCP GetClass() const {return m_propertyClass;}
+        ContentFieldEditor const* GetEditor() const {return m_fieldEditor;}
+    };
+
 private:
     Utf8String m_preferredDisplayType;
     bvector<SelectClassInfo> m_classes;
     bvector<Field*> m_fields;
+    bmap<ECPropertiesFieldKey, ECPropertiesField*> m_fieldsMap;
+    bvector<ECInstanceKeyField*> m_keyFields;
     int m_sortingFieldIndex;
     SortDirection m_sortDirection;
     int m_contentFlags;
@@ -836,6 +880,8 @@ private:
     ECPRESENTATION_EXPORT int GetFieldIndex(Utf8CP name) const;
     void OnFlagAdded(ContentFlags flag);
     void OnFlagRemoved(ContentFlags flag);
+    void OnECPropertiesFieldRemoved(ECPropertiesField const& field);
+    void OnECPropertiesFieldAdded(ECPropertiesField& field);
 
 protected:
     ECPRESENTATION_EXPORT ~ContentDescriptor();
@@ -874,8 +920,14 @@ public:
     ECPRESENTATION_EXPORT bvector<Field*> GetVisibleFields() const;
     //! Get the fields in this descriptor (including system ones).
     bvector<Field*> const& GetAllFields() const {return m_fields;}
-    //! Get the fields in this descriptor.
-    bvector<Field*>& GetAllFields() {return m_fields;}
+    //! Get the ECInstance key fields in this descriptor.
+    bvector<ECInstanceKeyField*> const& GetECInstanceKeyFields() const { return m_keyFields; }
+    //! Add field to this descriptor.
+    ECPRESENTATION_EXPORT void AddField(Field* field);
+    //! Find ECProperties field in this descriptor by property.
+    ECPropertiesField* FindECPropertiesField(Property const& prop, ContentFieldEditor const* editor) {return FindECPropertiesField(prop.GetProperty(), prop.GetPropertyClass(), prop.GetRelatedClassPath(), editor);}
+    //! Find ECProperties field in this descriptor by property.
+    ECPropertiesField* FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass, RelatedClassPathCR relatedPath, ContentFieldEditor const* editor);
 
     //! Remove a field from this descriptor.
     ECPRESENTATION_EXPORT void RemoveField(Field const& field);
@@ -964,8 +1016,9 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
             {}
         bool operator<(FieldProperty const& other) const
             {
-            int fieldNameCmp = m_field->GetName().CompareTo(other.m_field->GetName());
-            return fieldNameCmp < 0 || fieldNameCmp == 0 && m_propertyIndex < other.m_propertyIndex;
+            if (m_propertyIndex != other.m_propertyIndex)
+                return m_propertyIndex < other.m_propertyIndex;
+            return m_field->GetName().CompareTo(other.m_field->GetName()) < 0;
             }
         ContentDescriptor::ECPropertiesField const& GetField() const {return *m_field;}
         ContentDescriptor::Property const& GetProperty() const {return m_field->GetProperties()[m_propertyIndex];}

@@ -237,7 +237,12 @@ private:
 protected:
     Utf8CP _GetName() const override {return m_name.c_str();}
     Params* _Clone() const override {return new TestEditorParams(m_name);}
-    bool _Equals(Params const& other) const override {return Params::_Equals(other) && m_name == static_cast<TestEditorParams const&>(other).m_name;}
+    int _CompareTo(Params const& other) const override 
+        {
+        if (0 != Params::_CompareTo(other))
+            return Params::_CompareTo(other);
+        return strcmp(m_name.c_str(), static_cast<TestEditorParams const&>(other).m_name.c_str());
+        }
     rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override
         {
         rapidjson::Document json(allocator);
