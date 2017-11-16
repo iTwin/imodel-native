@@ -198,7 +198,6 @@
         <SubPart PartName="iModelHubClient-Library-Android-Shim"/>
         <SubPart PartName="WSClient-Xliffs" />
         <SubPart PartName="iModelHubClient-Xliffs" />
-        <SubProduct ProductName="iModelHubNativeTests" />
     </Part>
 
     <Part Name="iModelHubClient-PublicAPI" BentleyBuildMakeFile="iModelHubClientPrewire.mke">
