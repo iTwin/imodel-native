@@ -97,10 +97,9 @@ DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el)
 //---------------------------------------------------------------------------------------
 DgnDbStatus LinkElement::_OnInsert()
     {
-    LinkModelP linkModel = dynamic_cast<LinkModelP> (GetModel().get());
-    if (nullptr == linkModel)
+    if (nullptr == GetModel()->ToInformationModel())
         {
-        BeAssert(false && "Can insert LinkElement only in a LinkModel");
+        BeAssert(false && "Can insert LinkElement only in an InformationModel");
         return DgnDbStatus::WrongModel;
         }
 
@@ -239,9 +238,9 @@ DgnElementIdSet LinkElement::QuerySources()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-UrlLink::CreateParams::CreateParams(LinkModelR linkModel, Utf8CP url /*= nullptr*/, Utf8CP label /*= nullptr*/, Utf8CP description /*= nullptr*/) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), UrlLink::QueryClassId(linkModel.GetDgnDb()), DgnCode(), label), url, description)
+UrlLink::CreateParams::CreateParams(InformationModelR linkModel, Utf8CP url /*= nullptr*/, Utf8CP label /*= nullptr*/, Utf8CP description /*= nullptr*/) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), UrlLink::QueryClassId(linkModel.GetDgnDb()), DgnCode(), label), url, description)
     {
-    BeAssert(linkModel.GetModelId().IsValid() && "Creating a link requires a persisted link model");
+    BeAssert(linkModel.GetModelId().IsValid() && "Creating a link requires a persisted InformationModel");
     }
 
 //---------------------------------------------------------------------------------------
@@ -378,7 +377,7 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Shaun.Sewall                       11/2016
 //---------------------------------------------------------------------------------------
-DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8StringCR name)
+DgnCode RepositoryLink::CreateCode(InformationModelCR model, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *model.GetModeledElement(), name);
     }
@@ -386,7 +385,7 @@ DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode RepositoryLink::CreateUniqueCode(LinkModelCR model, Utf8CP baseName)
+DgnCode RepositoryLink::CreateUniqueCode(InformationModelCR model, Utf8CP baseName)
     {
     DgnDbR db = model.GetDgnDb();
     DgnCode code = CreateCode(model, baseName);
@@ -406,7 +405,7 @@ DgnCode RepositoryLink::CreateUniqueCode(LinkModelCR model, Utf8CP baseName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Shaun.Sewall                       09/2016
 //---------------------------------------------------------------------------------------
-RepositoryLinkPtr RepositoryLink::Create(LinkModelR model, Utf8CP url, Utf8CP name, Utf8CP description)
+RepositoryLinkPtr RepositoryLink::Create(InformationModelR model, Utf8CP url, Utf8CP name, Utf8CP description)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());

@@ -83,6 +83,7 @@ struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
     friend struct SheetAttachmentPicker;
+    friend struct BRepSilhouetteProcessor;
 
 private:
     bool m_doneSearching;
