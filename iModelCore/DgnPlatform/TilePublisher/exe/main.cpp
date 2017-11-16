@@ -56,6 +56,8 @@ enum class ParamId
     Repository,
     GlobeOn,
     GlobeOff,
+    OnlyHistory,
+    AddHistory,
     Invalid,
 };
 
@@ -99,6 +101,8 @@ static CommandParam s_paramTable[] =
         { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
         { L"gl1", L"globeOn", L"Force globe on in all views", false, true },
         { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
+        { L"hi",  L"historyOnly", L"Publish only history", false, true },
+        { L"h+",  L"history", L"Publish history and TIP", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -290,10 +294,6 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
                 }
 
-            case ParamId::History:
-                m_wantHistory = true;
-                break;
-
             case ParamId::UserName:
                 m_userName = Utf8String(arg.m_value.c_str());
                 break;
@@ -323,6 +323,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_globeMode = PublisherContext::GlobeMode::Off;
                 break;
 
+            case ParamId::OnlyHistory:
+                m_historyMode = HistoryMode::OnlyHistory;
+                break;
+
+            case ParamId::AddHistory:
+                m_historyMode = HistoryMode::AddHistory;
+
             default:
                 LOG.errorv("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -330,7 +337,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         }
 
 
-    if (m_wantHistory)
+    if (HistoryMode::OmitHistory != m_historyMode)
         {
         if (m_userName.empty() || m_password.empty())
             {

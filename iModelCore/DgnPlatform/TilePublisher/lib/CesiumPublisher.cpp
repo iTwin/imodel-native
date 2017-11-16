@@ -149,8 +149,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     json["viewerOptions"] = viewerOptions;
 
     Json::Value     revisionsJson;
-    if (params.WantHistory() &&
-        TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
+    if (TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
         json["revisions"] = std::move(revisionsJson);
 
     if (Status::Success != (status = WriteAppJson (json)) ||
@@ -269,6 +268,13 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
+    if (HistoryMode::OnlyHistory == params.GetHistoryMode())
+        {
+        Json::Value     revisionsJson;
+
+        return TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this);
+        }
+
     auto status = InitializeDirectories(GetDataDirectory());
     if (Status::Success != status)
         return status;

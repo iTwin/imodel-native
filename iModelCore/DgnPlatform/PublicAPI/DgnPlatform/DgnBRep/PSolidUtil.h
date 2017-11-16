@@ -30,6 +30,35 @@ enum PKIBooleanOptionEnum
 
 struct EdgeToCurveIdMap : bmap <uint32_t, CurvePrimitiveIdCP> {};
 
+struct IParasolidWireOutput
+{
+virtual BentleyStatus _ProcessGoOutput(ICurvePrimitiveCR curve, PK_ENTITY_t entity) = 0;
+};
+
+struct IParasolidHLineOutput
+{
+virtual bool _ReturnHidden() = 0;
+virtual bool _IncludeTraceEdges() = 0;
+virtual BentleyStatus _ProcessGoOutput(ICurvePrimitiveCR curve, PK_ENTITY_t entity, bool isHidden, bool isSmooth, int type) = 0;
+};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  11/17
++===============+===============+===============+===============+===============+======*/
+struct PSolidGoOutput
+{
+//! Output silhouette curves for the supplied entity and view information.
+//! @param[in] output IParasolidWireOutput to process each silhouette curve.
+//! @param[in] eyePoint The eye point (nullptr if parallel).
+//! @param[in] direction The direction toward the view (positive Z)
+//! @param[in] entityTag The input entity to compute silhouettes for.
+//! @param[in] entityTransform The entity transform (or nullptr).
+//! @param[in] tolerance The curve chord tolerance.
+//! @remarks This method outputs silhouette curves through GO and is NOT thread safe.
+DGNPLATFORM_EXPORT static void ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, TransformCP entityTransform = nullptr, double tolerance = 0.0);
+
+}; // PSolidGoOutput
+
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  01/01
 +===============+===============+===============+===============+===============+======*/
@@ -304,7 +333,6 @@ DGNPLATFORM_EXPORT static bool SetExternalFrustrum(bool isActive); // Frustrum r
 
 }; // PSolidKernelManager
 
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      09/2017
 *
@@ -358,7 +386,6 @@ struct WorkerThreadOuterMark : RefCountedBase
     DGNPLATFORM_EXPORT ~WorkerThreadOuterMark ();
     };
 
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      09/2017
 *
@@ -382,9 +409,6 @@ typedef  RefCountedPtr<MainThreadMark>          MainThreadMarkPtr;
 typedef  RefCountedPtr<WorkerThreadOuterMark>   WorkerThreadOuterMarkPtr;
 typedef  RefCountedPtr<WorkerThreadInnerMark>   WorkerThreadInnerMarkPtr;
 };
-
-
-
 
 END_BENTLEY_DGN_NAMESPACE
 
