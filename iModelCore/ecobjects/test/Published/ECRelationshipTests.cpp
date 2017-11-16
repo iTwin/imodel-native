@@ -915,6 +915,143 @@ TEST_F(ECRelationshipClassTest, TestRelationshipSerialization)
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(roundTripSchema, serializedSchemaXml.c_str(), *context)) << "Schema should fail deserialization because it is an invalid 3.1 schema.";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECCustomAttributeClassP customAttrClass;
+    schema->CreateCustomAttributeClass(customAttrClass, "ExampleCustomAttribute");
+    IECInstancePtr customAttr = customAttrClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECEntityClassP sourceClass;
+    schema->CreateEntityClass(sourceClass, "ExampleSource");
+
+    ECEntityClassP targetClass;
+    schema->CreateEntityClass(targetClass, "ExampleTarget");
+
+    ECRelationshipClassP relationshipClass;
+    schema->CreateRelationshipClass(relationshipClass, "ExampleRelationship");
+    relationshipClass->SetClassModifier(ECClassModifier::Sealed);
+    relationshipClass->SetStrength(StrengthType::Embedding);
+    relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationshipClass->GetSource().AddClass(*sourceClass);
+    relationshipClass->GetSource().SetRoleLabel("source roleLabel");
+    relationshipClass->GetSource().SetIsPolymorphic(true);
+    relationshipClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relationshipClass->GetSource().SetCustomAttribute(*customAttr);
+    relationshipClass->GetTarget().AddClass(*targetClass);
+    relationshipClass->GetTarget().SetRoleLabel("target roleLabel");
+    relationshipClass->GetSource().SetIsPolymorphic(true);
+    relationshipClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, relationshipClass->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECRelationshipClass.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstractConstraint)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECEntityClassP classA;
+    schema->CreateEntityClass(classA, "ClassA");
+    ECEntityClassP classB;
+    schema->CreateEntityClass(classB, "ClassB");
+    classB->AddBaseClass(*classA);
+    ECEntityClassP classC;
+    schema->CreateEntityClass(classC, "ClassC");
+    classC->AddBaseClass(*classB);
+
+    ECRelationshipClassP relationshipClassBase;
+    schema->CreateRelationshipClass(relationshipClassBase, "RelationshipClassBase");
+    relationshipClassBase->SetStrength(StrengthType::Referencing);
+    relationshipClassBase->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationshipClassBase->GetSource().SetRoleLabel("SourceRoleLabel");
+    relationshipClassBase->GetSource().AddClass(*classB);
+    relationshipClassBase->GetTarget().SetRoleLabel("TargetRoleLabel");
+    relationshipClassBase->GetTarget().AddClass(*classA);
+
+    ECRelationshipClassP relationshipClass;
+    schema->CreateRelationshipClass(relationshipClass, "ExampleRelationshipClass");
+    relationshipClass->SetStrength(StrengthType::Referencing);
+    relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationshipClass->AddBaseClass(*relationshipClassBase);
+    relationshipClass->GetSource().SetRoleLabel("SourceRoleLabel");
+    relationshipClass->GetSource().AddClass(*classB);
+    relationshipClass->GetSource().SetAbstractConstraint(*classB);
+    relationshipClass->GetSource().AddClass(*classC);
+    relationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
+    relationshipClass->GetTarget().AddClass(*classA);
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, relationshipClass->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StadaloneECRelationshipClassWithAbstractConstraint.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSerialized)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECEntityClassP sourceClass;
+    schema->CreateEntityClass(sourceClass, "ExampleSource");
+
+    ECEntityClassP targetClass;
+    schema->CreateEntityClass(targetClass, "ExampleTarget");
+
+    ECCustomAttributeClassP customAttrClassRelCon;
+    schema->CreateCustomAttributeClass(customAttrClassRelCon, "CustomAttributeOnRelationshipConstraint");
+    IECInstancePtr customAttrRelCon = customAttrClassRelCon->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECRelationshipClassP baseRelationshipClass;
+    schema->CreateRelationshipClass(baseRelationshipClass, "BaseRelationshipClass");
+    baseRelationshipClass->GetSource().AddClass(*sourceClass);
+    baseRelationshipClass->GetSource().SetCustomAttribute(*customAttrRelCon);
+    baseRelationshipClass->GetTarget().AddClass(*targetClass);
+
+    ECRelationshipClassP derivedRelationshipClass;
+    schema->CreateRelationshipClass(derivedRelationshipClass, "DerivedRelationshipClass");
+    derivedRelationshipClass->AddBaseClass(*baseRelationshipClass);
+    derivedRelationshipClass->SetStrength(StrengthType::Referencing);
+    derivedRelationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    derivedRelationshipClass->GetSource().AddClass(*sourceClass);
+    derivedRelationshipClass->GetSource().SetRoleLabel("SourceRoleLabel");
+    derivedRelationshipClass->GetTarget().AddClass(*targetClass);
+    derivedRelationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
+
+    Json::Value relationshipClassJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, derivedRelationshipClass->WriteJson(relationshipClassJson, true));
+
+    Json::Value testDataJson;
+    BeFileName relClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/RelationshipConstraintInheritedCustomAttributes.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, relClassTestDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(relationshipClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(relationshipClassJson, testDataJson);
+    }
+
 //************************************************************************************
 // ECRelationshipDeserializationTest
 //************************************************************************************

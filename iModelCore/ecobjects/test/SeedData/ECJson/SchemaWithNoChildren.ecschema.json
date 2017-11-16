@@ -17,10 +17,10 @@
   ],
   "customAttributes": [
     {
-    "className" : "refSchemaA.SomeCustomAttributeClass"
+      "className" : "refSchemaA.SomeCustomAttributeClass"
     },
     {
-    "className" : "refSchemaB.AnotherCustomAttributeClass"
+      "className" : "refSchemaB.AnotherCustomAttributeClass"
     }
   ]
 }

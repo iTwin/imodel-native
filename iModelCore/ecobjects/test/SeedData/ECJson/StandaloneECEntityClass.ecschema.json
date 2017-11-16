@@ -8,6 +8,11 @@
   "label": "ExampleEntity",
   "description": "An example entity class.",
   "baseClass": "ExampleSchema.ExampleBaseEntity",
+  "customAttributes": [
+    {
+      "className" : "ExampleSchema.ExampleCustomAttribute"
+    }
+  ],
   "mixins": [
     "ExampleSchema.ExampleMixinA",
     "ExampleSchema.ExampleMixinB"

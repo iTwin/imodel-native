@@ -25,6 +25,8 @@
     {
       "name" : "ExamplePrimitiveArrayProperty",
       "propertyType" : "PrimitiveArrayProperty",
+      "minLength" : 3,
+      "maxLength" : 50,
       "minOccurs" : 7,
       "typeName" : "string"
     },

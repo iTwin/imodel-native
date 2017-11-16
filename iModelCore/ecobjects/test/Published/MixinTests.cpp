@@ -668,5 +668,30 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlD
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed because 'Mixin0' applies to 'Entity1' but is used on a constraint which must narrow 'Entity0', 'Entity1' derives from 'Entity0'";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MixinTest, SerializeStandaloneMixin)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    ECEntityClassP entityClass;
+    schema->CreateEntityClass(entityClass, "ExampleEntity");
+    ECEntityClassP mixin;
+    schema->CreateMixinClass(mixin, "ExampleMixin", *entityClass);
+    mixin->SetClassModifier(ECClassModifier::Abstract);
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, mixin->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneMixin.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 

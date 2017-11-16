@@ -942,8 +942,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             }
         else
             destNav->SetRelationshipClass(*sourceRelClass, sourceNav->GetDirection());
-        
-        destNav->SetType(sourceNav->GetType());
+
         destProperty = destNav;
         }
 
@@ -2792,10 +2791,9 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ecProperty->SetType(type);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);
@@ -3666,6 +3664,13 @@ SchemaWriteStatus ECRelationshipConstraint::WriteJson(Json::Value& outValue)
     if (nullptr != m_abstractConstraint)
         outValue[ABSTRACTCONSTRAINT_ATTRIBUTE] = ECJsonUtilities::FormatClassName(*GetAbstractConstraint());
 
+    Json::Value customAttributesArr;
+    SchemaWriteStatus status;
+    if (SchemaWriteStatus::Success != (status = WriteCustomAttributes(customAttributesArr)))
+        return status;
+    if (!customAttributesArr.empty())
+        outValue[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
+
     auto const& constraintClasses = GetConstraintClasses();
     if (constraintClasses.size() != 0)
         {
@@ -4506,10 +4511,9 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
+ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ecProperty->SetType(type);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);

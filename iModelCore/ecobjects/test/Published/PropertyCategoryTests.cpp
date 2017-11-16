@@ -116,6 +116,29 @@ TEST_F(PropertyCategoryTest, PropertyCategoryContainer)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyCategoryTest, StandaloneSchemaChildPropertyCategory)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    PropertyCategoryP prop;
+    schema->CreatePropertyCategory(prop, "ExamplePropertyCategory");
+    prop->SetPriority(5);
+
+    Json::Value schemaJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, prop->WriteJson(schemaJson, true));
+
+    Json::Value testDataJson;
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandalonePropertyCategory.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest)

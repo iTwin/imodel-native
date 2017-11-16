@@ -1287,9 +1287,7 @@ public:
     bool                        IsVerified() const { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
     // !Returns true if the navigation property points to an endpoint which can have more than one related instance
     bool                        IsMultiple() const { return ValueKind::VALUEKIND_Array == m_valueKind; }
-    
-    //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
-    ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType type);
+
     //! Gets the PrimitiveType of this ECProperty
     PrimitiveType GetType() const { return m_type; }
 };
@@ -2093,9 +2091,8 @@ public:
     // @param[in]   name                The name for the navigation property.  Must be a valid ECName
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
-    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is long.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
     
     //! Returns true if this class has the CoreCustomAttributes:IsMixin custom attribute applied.
     bool IsMixin() const {return IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
@@ -2497,9 +2494,8 @@ public:
     // @param[in]   name                The name for the navigation property.  Must be a valid ECName
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
-    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
 
     //! Returns true if successfully verifies the relationship, otherwise false.
     ECOBJECTS_EXPORT bool Verify() const;
