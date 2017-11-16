@@ -9,6 +9,22 @@
 #include <ScalableMeshPCH.h>
 #include "SMSQLiteSisterFile.h"
 
+BeFileName GetTempPathFromProjectPath(const BeFileName& path)
+{
+	BeFileName extraFileDir;
+	BeFileName::BeGetTempPath(extraFileDir);
+
+	WString substrFile = path.c_str();
+	substrFile.ReplaceAll(L"/", L"_");
+	substrFile.ReplaceAll(L"\\", L"_");
+	substrFile.ReplaceAll(L":", L"_");
+	substrFile.ReplaceAll(L"\"", L"_");
+	substrFile.ReplaceAll(L"'", L"_");
+
+	extraFileDir.AppendToPath(substrFile.c_str());
+	return extraFileDir;
+}
+
 bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType) const
     {
     switch (dataType)
@@ -29,7 +45,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
 
         case SMStoreDataType::DiffSet:
-            sqlFileName = m_projectFilesPath;
+            sqlFileName = GetTempPathFromProjectPath(m_projectFilesPath);
             sqlFileName.append(L"_clips");
             return true;
             break;
@@ -37,7 +53,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
         case SMStoreDataType::Skirt:
         case SMStoreDataType::CoveragePolygon:
         case SMStoreDataType::CoverageName:
-            sqlFileName = m_projectFilesPath;
+            sqlFileName = GetTempPathFromProjectPath(m_projectFilesPath);
             sqlFileName.append(L"_clipDefinitions");
             return true;
             break;
