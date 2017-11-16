@@ -55,13 +55,17 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId summaryId, IChangeSet
 
         if (mode == ExtractMode::InstancesOnly && !primaryClass->IsRelationshipClass())
             {
-            ExtractInstance(summaryId, rowEntry);
+            if (SUCCESS != ExtractInstance(summaryId, rowEntry))
+                return ERROR;
+
             continue;
             }
 
         if (mode == ExtractMode::RelationshipInstancesOnly)
             {
-            ExtractRelInstance(summaryId, rowEntry);
+            if (SUCCESS != ExtractRelInstance(summaryId, rowEntry))
+                return ERROR;
+
             continue;
             }
         }
