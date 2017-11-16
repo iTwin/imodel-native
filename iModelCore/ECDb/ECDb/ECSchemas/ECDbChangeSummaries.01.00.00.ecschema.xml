@@ -28,9 +28,10 @@
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>uix_change_InstanceChange_ChangedInstance</Name>
+                        <Name>uix_change_InstanceChange_SummaryId_ChangedInstance</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
+                            <string>Summary.Id</string>
                             <string>ChangedInstance.Id</string>
                             <string>ChangedInstance.ClassId</string>
                         </Properties>
