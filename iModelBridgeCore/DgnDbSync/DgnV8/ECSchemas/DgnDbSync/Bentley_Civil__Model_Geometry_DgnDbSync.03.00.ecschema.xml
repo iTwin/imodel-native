@@ -97,12 +97,6 @@
         </ECCustomAttributes>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GeometricContainer__GeometricComponentNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
-        </ECCustomAttributes>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="GeometricContainer__LinearEntityNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />

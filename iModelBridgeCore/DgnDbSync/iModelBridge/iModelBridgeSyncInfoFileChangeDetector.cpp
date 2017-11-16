@@ -299,7 +299,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
             continue;
 
         double lmt = item._GetLastModifiedTime();
-        if (!forceChange && (0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() != lmt))
+        if (!forceChange && (0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() == lmt))
             return Results(ChangeType::Unchanged, rec, SourceState(lmt,""));
 
         SourceState currentState(lmt, item._GetHash());

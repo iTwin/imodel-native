@@ -795,7 +795,13 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
     
     if (0 == constraint.GetConstraintClasses().size())
         {
-        if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
+        if (relClass.HasBaseClasses())
+            {
+            ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
+            ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
+            constraint.AddClass(*(baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP()));
+            }
+        else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
             {
             relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
             constraint.AddClass(*defaultConstraintClass);

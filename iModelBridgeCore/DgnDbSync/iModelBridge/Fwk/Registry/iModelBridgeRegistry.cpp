@@ -285,7 +285,7 @@ BentleyStatus iModelBridgeRegistry::SearchForBridgeToAssignToDocument(BeFileName
 
     if ((bestBridge.m_bridgeRegSubKey.empty()) || (bestBridge.m_affinity == iModelBridgeAffinityLevel::None))
         {
-        LOG.infov(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        LOG.warningv(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
         return BSIERROR;
         }
 
