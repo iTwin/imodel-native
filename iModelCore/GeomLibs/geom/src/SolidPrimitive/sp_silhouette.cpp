@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include <Geom/MstnOnly/GeomPrivateApi.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
@@ -59,6 +60,22 @@ CurveVectorPtr DgnConeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
 +--------------------------------------------------------------------------------------*/
 CurveVectorPtr DgnSphereDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
     {
+    Transform localToWorld = this->m_localToWorld;
+    Transform worldToLocal;
+    if (worldToLocal.InverseOf (localToWorld))
+        {
+        DMap4d hMap;
+        hMap.InitFromTransform (localToWorld, false);
+        DEllipse4d hEllipse;
+        DEllipse3d ellipse;
+        bsiGeom_ellipsoidSilhouette (&hEllipse, nullptr, &hMap, &eyePoint);
+        if (bsiDEllipse3d_initFromDEllipse4d (&ellipse, &hEllipse, -1))
+            {
+            CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            cv->push_back (ICurvePrimitive::CreateArc (ellipse));
+            return cv;
+            }
+        }
     return nullptr;
     }
 
