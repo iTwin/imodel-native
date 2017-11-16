@@ -39,6 +39,36 @@ struct TestChangeTracker : BeSQLite::ChangeTracker
 struct ChangeSummaryTestFixture : public ECDbTestFixture
     {
     protected:
+        int GetInstanceChangeCount(ECInstanceId changeSummaryId) const
+            {
+            ECSqlStatement stmt;
+            if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT count(*) FROM change.InstanceChange WHERE Summary.Id=?"))
+                return -1;
+
+            stmt.BindId(1, changeSummaryId);
+
+            if (stmt.Step() != BE_SQLITE_ROW)
+                return -1;
+
+            return stmt.GetValueInt(0);
+            }
+
+        int GetPropertyValueChangeCount(ECInstanceId instanceChangeId = ECInstanceId()) const
+            {
+            Utf8CP ecsql = instanceChangeId.IsValid() ? "SELECT count(*) FROM change.PropertyValueChange WHERE InstanceChange.Id=?" :
+                                                        "SELECT count(*) FROM change.PropertyValueChange";
+            ECSqlStatement stmt;
+            if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
+                return -1;
+
+            stmt.BindId(1, instanceChangeId);
+
+            if (stmt.Step() != BE_SQLITE_ROW)
+                return -1;
+
+            return stmt.GetValueInt(0);
+            }
+
         bool ContainsChange(ECInstanceId changeSummaryId, ECInstanceId changedInstanceId, Utf8CP changedInstanceSchemaName, Utf8CP changedInstanceClassName, ChangeOpCode opCode) const
             {
             ECClassId classIdOfChangedInstance = m_ecdb.Schemas().GetClassId(changedInstanceSchemaName, changedInstanceClassName);
@@ -93,7 +123,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
         ECSqlStatement propValueChangeStmt;
         ASSERT_EQ(ECSqlStatus::Success, propValueChangeStmt.Prepare(m_ecdb, "SELECT AccessString,RawOldValue,RawNewValue,TYPEOF(RawOldValue),TYPEOF(RawNewValue) FROM change.PropertyValueChange WHERE InstanceChange.Id=?"));
 
-        printf("ChangedInstance Id|ChangedInstance Class|OpCode|IsIndirect\r\n");
+        printf("ChangedInstance Id|ChangedInstance Class|ChangedInstance ClassId|OpCode|IsIndirect\r\n");
 
         while (BE_SQLITE_ROW == instanceChangeStmt.Step())
             {
@@ -624,6 +654,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     S;NULL;"Str"
     */
     DumpChangeSummary(changeSummaryId, "Overflow_PrimitiveProperties");
+
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(7, GetPropertyValueChangeCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -683,6 +716,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
         SP.S:"TestVal"
         SP.I:123
         */
+
+        EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+        EXPECT_EQ(3, GetPropertyValueChangeCount());
         }
 
 //---------------------------------------------------------------------------------------
@@ -739,6 +775,8 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
     Code:"C1"
     ArrayProp: { 123.3434, 345.223,-532.123 }
     */
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(2, GetPropertyValueChangeCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -807,7 +845,10 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     P3D.Y: 21.76
     P3D.Z: -32.22
     Bin: { 'H', 'e', 'l','l', 'o' }
+    Geom: null
     */
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(8, GetPropertyValueChangeCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -872,6 +913,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
 
     ECInstanceId changeSummaryId;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(3, GetPropertyValueChangeCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -945,6 +989,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
 
     ECInstanceId changeSummaryId;
     ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(2, GetPropertyValueChangeCount());
     }
 
 
@@ -1019,6 +1066,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     Make;NULL;"Toyota"
     Model;NULL;"Prius"
     */
+    EXPECT_EQ(5, GetInstanceChangeCount(changeSummaryId));
     EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", ChangeOpCode::Insert));
     EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(companyKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", ChangeOpCode::Insert));
     EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(companyKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", ChangeOpCode::Insert));
@@ -1056,6 +1104,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     TargetECClassId;NULL;StartupCompany:Hardware:75
     TargetECInstanceId;NULL;0:4
     */
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
     EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
 
     m_ecdb.SaveChanges();
@@ -1102,6 +1151,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     TargetECClassId;NULL;StartupCompany:Hardware:75
     TargetECInstanceId;NULL;0:5
     */
+    EXPECT_EQ(2, GetInstanceChangeCount(changeSummaryId));
     EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Delete));
     EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
     }
@@ -1206,6 +1256,8 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
     T;NULL;"T"
     */
     DumpChangeSummary(changeSummaryId, "OverflowTables");
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(20, GetPropertyValueChangeCount());
     }
 
 
