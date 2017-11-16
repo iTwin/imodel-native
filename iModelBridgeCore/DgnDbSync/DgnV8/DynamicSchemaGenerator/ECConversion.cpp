@@ -1406,12 +1406,12 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
                 if (BSISUCCESS != status)
                     return BSIERROR;
                 }
-            targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *destClass->GetRelationshipClassCP(), sourceNav->GetDirection(), sourceNav->GetType(), false);
+            targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *destClass->GetRelationshipClassCP(), sourceNav->GetDirection(), false);
             }
         else
             {
             ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceRelClass->GetSchema().GetName()];
-            targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceRelClass->GetName().c_str())->GetRelationshipClassP(), sourceNav->GetDirection(), sourceNav->GetType(), false);
+            targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceRelClass->GetName().c_str())->GetRelationshipClassP(), sourceNav->GetDirection(), false);
             }
         destProperty = destNav;
         }
