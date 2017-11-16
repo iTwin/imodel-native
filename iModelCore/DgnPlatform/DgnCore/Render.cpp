@@ -280,7 +280,7 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    m_hiliteColor = vp.GetHiliteColor();
+    m_hiliteSettings = vp.GetHilite();
 
     auto& controller = vp.GetViewControllerR();
     m_activeVolume = controller.GetActiveVolume();

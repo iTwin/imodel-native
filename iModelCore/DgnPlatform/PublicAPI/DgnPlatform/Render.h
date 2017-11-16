@@ -2477,6 +2477,46 @@ struct SceneLights : RefCounted<NonCopyableClass>
 DEFINE_REF_COUNTED_PTR(SceneLights)
 
 //=======================================================================================
+//! Describes the effect applied to hilited elements within a view.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct HiliteSettings
+{
+    //! Describes the width of the outline applied to hilited geometry.
+    enum class Silhouette
+    {
+        None, //!< No silhouette
+        Thin, //!< A thin silhouette
+        Thick //!< A thick silhouette
+    };
+private:
+    ColorDef    m_color;
+    double      m_visibleRatio = 0.5;
+    double      m_hiddenRatio = 0.25;
+    Silhouette  m_silhouette = Silhouette::Thick;
+
+    static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
+public:
+    explicit HiliteSettings(ColorDef color=ColorDef::Magenta(), double visibleRatio=0.5, double hiddenRatio=0.25, Silhouette silhouette=Silhouette::Thick)
+        : m_color(color), m_visibleRatio(visibleRatio), m_hiddenRatio(hiddenRatio), m_silhouette(silhouette)
+        {
+        Clamp(m_visibleRatio);
+        Clamp(m_hiddenRatio);
+        }
+
+    //! The hilite color
+    ColorDef GetColor() const { return m_color; }
+    //! The ratio to which the hilite color is mixed with the element color for visible portions of the element. 1.0 = all hilite color; 0.0 = all element color.
+    double GetVisibleRatio() const { return m_visibleRatio; }
+    //! The ratio to which the hilite color is mixed with the color of geometry which occludes hilited geometry.
+    double GetHiddenRatio() const { return m_hiddenRatio; }
+    //! The silhouette effect.
+    Silhouette GetSilhouette() const { return m_silhouette; }
+    //! Change the color, preserving all other settings
+    void SetColor(ColorDef color) { m_color = color; }
+};
+
+//=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying a Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
@@ -2490,7 +2530,7 @@ struct Plan
     double m_fraction;
     ColorDef m_bgColor;
     ColorDef m_monoColor;
-    ColorDef m_hiliteColor;
+    HiliteSettings m_hiliteSettings;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
