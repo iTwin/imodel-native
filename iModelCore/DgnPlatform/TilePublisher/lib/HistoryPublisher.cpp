@@ -298,15 +298,16 @@ virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR
 struct     HistoryPublisher
 {
 
-    ClientPtr                   m_client;
-    iModelConnectionPtr         m_connection;
-    DgnDbPtr                    m_tempDb;
-    BeFileName                  m_tempDbName;                                                                                                                                                                                  
-    bvector<DgnRevisionPtr>     m_changeSets;
-    bvector<ChangeSetInfoPtr>   m_changeSetInfos;
-    PublisherParamsCR           m_params;
+    ClientPtr                               m_client;
+    iModelConnectionPtr                     m_connection;
+    DgnDbPtr                                m_tempDb;
+    BeFileName                              m_tempDbName;                                                                                                                                                                                  
+    bvector<DgnRevisionPtr>                 m_changeSets;
+    bvector<ChangeSetInfoPtr>               m_changeSetInfos;
+    PublisherParamsCR                       m_params;
+    TilesetPublisher&                       m_tipPublisher;
 
-    HistoryPublisher(PublisherParamsCR params) : m_params(params) { }
+    HistoryPublisher(PublisherParamsCR params, TilesetPublisher& tipPublisher) : m_params(params), m_tipPublisher(tipPublisher) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
@@ -342,35 +343,38 @@ TilesetPublisher::Status Initialize()
     if (!m_client.IsValid())
         return TilesetPublisher::Status::CantConnectToIModelHub;
 
-    if (!m_params.GetInputFileName().empty())
-        m_tempDb = copyToTemporaryBriefcase(m_tempDbName, m_params.GetInputFileName());
+    DgnDbPtr    db;
+
+    if (HistoryMode::OmitHistory == m_params.GetHistoryMode())
+        {
+        db = &m_tipPublisher.GetDgnDb();
+        }
     else
-        m_tempDb = acquireTemporaryBriefcase (m_tempDbName, m_client, m_params.GetProject(), m_params.GetRepository());
+        {
+        if (!m_params.GetInputFileName().empty())
+            m_tempDb = copyToTemporaryBriefcase(m_tempDbName, m_params.GetInputFileName());
+        else
+            m_tempDb = acquireTemporaryBriefcase (m_tempDbName, m_client, m_params.GetProject(), m_params.GetRepository());
 
-    if (!m_tempDb.IsValid())
-        return TilesetPublisher::Status::CantAcquireBriefcase;
+        if (!m_tempDb.IsValid())
+            return TilesetPublisher::Status::CantAcquireBriefcase;
 
-    m_connection = VersionCompareUtilities::GetiModelConnection(m_tempDb.get(), m_client);
+        db = m_tempDb;
+        }
+
+    m_connection = VersionCompareUtilities::GetiModelConnection(db.get(), m_client);
 
     if (!m_connection.IsValid())
         return TilesetPublisher::Status::CantConnectToIModelHub;
 
+    bool        isBackwardsRoll;
+    Utf8String  filename(db->GetFileName().GetFileNameWithoutExtension());
 
-    GetAllChangeSets();
+    VersionSelector::GetChangeSetsToApply(m_changeSets, m_changeSetInfos, isBackwardsRoll, m_client, db.get(), "MasterFile", filename);
 
     return m_changeSets.empty() ? TilesetPublisher::Status::NoHistoryFound : TilesetPublisher::Status::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetAllChangeSets()
-    {
-    bool        isBackwardsRoll;
-    Utf8String  filename(m_tempDb->GetFileName().GetFileNameWithoutExtension());
-
-    return VersionSelector::GetChangeSetsToApply(m_changeSets, m_changeSetInfos, isBackwardsRoll, m_client, m_tempDb.get(), "MasterFile", filename);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
@@ -477,26 +481,29 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
         {
         bvector<DgnRevisionPtr>             thisRevisions(1, m_changeSets.at(i));
         int                                 revisionIndex = m_changeSets.size() - i - 1;
-        VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
         WString                             revisionName = WPrintfString(L"Revision_%d", revisionIndex);
-        DgnElementIdSet                     addedOrModifiedIds, deletedOrModifiedIds;
-        Json::Value                         revisionElementsJson = GetChanges (addedOrModifiedIds, deletedOrModifiedIds, *changeSummary);
         WString                             outputFileName = tipPublisher.GetDataDirectory() + L"History\\" + revisionName + L"\\Revision_Appdata.json";
-        Json::Value                         revisionJson = VersionSelector::WriteRevisionToJson(*m_changeSets.at(i));
-        DgnModelIdSet                       prevModelIds, postModelIds;
-        auto                                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
-        auto                                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
         Utf8String                          outputRelativePath = Utf8String(outputFileName).c_str() + tipPublisher.GetOutputDirectory().size();
-
-        // Don't recreate revision if it already exists.
-        if (BeFileName::DoesPathExist(outputFileName.c_str()))
-            continue;
+        Json::Value                         revisionJson = VersionSelector::WriteRevisionToJson(*m_changeSets.at(i));
 
         outputRelativePath.ReplaceAll("\\", "//");
         revisionJson["url"] = outputRelativePath;
 
         WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
         revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
+ 
+
+        // Don't recreate revision if it already exists.
+        if (BeFileName::DoesPathExist(outputFileName.c_str()) ||
+            HistoryMode::OmitHistory == m_params.GetHistoryMode())
+            continue;
+
+        VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
+        DgnElementIdSet                     addedOrModifiedIds, deletedOrModifiedIds;
+        Json::Value                         revisionElementsJson = GetChanges (addedOrModifiedIds, deletedOrModifiedIds, *changeSummary);
+        DgnModelIdSet                       prevModelIds, postModelIds;
+        auto                                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+        auto                                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
  
         for (auto& model : prevModelIterator)
             prevModelIds.insert(model.GetModelId());
@@ -555,7 +562,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
 TilesetPublisher::Status TilesetHistoryPublisher::PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params, TilesetPublisher& tipPublisher)
     {
     TilesetPublisher::Status    status;
-    HistoryPublisher            publisher(params);
+    HistoryPublisher            publisher(params, tipPublisher);
 
     if (Status::Success != (status = publisher.Initialize()))
         return status;
