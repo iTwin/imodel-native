@@ -875,10 +875,20 @@ protected:
 
         BoundQueryValuesList whereClauseBindings;
         Utf8String whereClause;
-        if (ecProperty->GetIsPrimitive() && (PRIMITIVETYPE_Point3d == ecProperty->GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_Point2d == ecProperty->GetAsPrimitiveProperty()->GetType()))
-            whereClause.Sprintf("%s([%s].[%s])", FUNCTION_NAME_GetPointAsJsonString, prefix, extendedData.GetPropertyName());
+        if (ecProperty->GetIsPrimitive() && PRIMITIVETYPE_Point3d == ecProperty->GetAsPrimitiveProperty()->GetType())
+            {
+            whereClause.Sprintf("%s([%s].[%s].x, [%s].[%s].y, [%s].[%s].z)", FUNCTION_NAME_GetPointAsJsonString, 
+                prefix, extendedData.GetPropertyName(), prefix, extendedData.GetPropertyName(), prefix, extendedData.GetPropertyName());
+            }
+        else if (ecProperty->GetIsPrimitive() && PRIMITIVETYPE_Point2d == ecProperty->GetAsPrimitiveProperty()->GetType())
+            {
+            whereClause.Sprintf("%s([%s].[%s].x, [%s].[%s].y)", FUNCTION_NAME_GetPointAsJsonString, 
+                prefix, extendedData.GetPropertyName(), prefix, extendedData.GetPropertyName());
+            }
         else
+            {
             whereClause.Sprintf("[%s].[%s]", prefix, extendedData.GetPropertyName());
+            }
 
         if (ecProperty->GetIsNavigation())
             whereClause.append(".[Id]");
