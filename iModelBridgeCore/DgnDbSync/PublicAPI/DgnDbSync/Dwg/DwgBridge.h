@@ -47,8 +47,8 @@ protected:
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _FindJob () override;
     DGNDBSYNC_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
-    DGNDBSYNC_EXPORT BentleyStatus  _OnConvertToBim (DgnDbR db) override;
-    DGNDBSYNC_EXPORT void           _OnConvertedToBim (BentleyStatus) override;
+    DGNDBSYNC_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
+    DGNDBSYNC_EXPORT void           _OnCloseBim (BentleyStatus) override;
     DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;
     DGNDBSYNC_EXPORT void           _CloseSource (BentleyStatus) override;
     DGNDBSYNC_EXPORT void           _DeleteSyncInfo () override;
@@ -56,9 +56,11 @@ protected:
     DGNDBSYNC_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&           _GetParams () override { return m_options; }
     DGNDBSYNC_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
+    DGNDBSYNC_EXPORT void           _Terminate (BentleyStatus convertStatus) override;
 
 public:
     DGNDBSYNC_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);
+    DGNDBSYNC_EXPORT DwgImporter::Options&  GetImportOptions () { return m_options; }
 
 private:
     // local class methods
@@ -66,7 +68,14 @@ private:
     BentleyStatus   GetEnv (BeFileName& fn, WCharCP envname);
     void    GetImportConfiguration (BeFileNameR instanceFilePath, BeFileNameCR configurationPath, WCharCP argv0);
     void    CreateSyncInfoIfAbsent ();
-    DwgImporter::Options&   GetImportOptions () { return m_options; }
 };  // DwgBridge
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+// Supply DwgBridge to and register it for iModelBridge Framework
+extern "C"
+    {
+    EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
+    EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    }

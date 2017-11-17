@@ -73,6 +73,8 @@ TEST_F(ProgressMeterTests, ProgressOnAbort)
     creator.SetIsUpdating(false);
     creator.AttachSyncInfo();
     ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+    creator.MakeSchemaChanges();
+    ASSERT_TRUE( creator.WasAborted() );
     ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
     creator.Process();
     ASSERT_TRUE( creator.WasAborted() );

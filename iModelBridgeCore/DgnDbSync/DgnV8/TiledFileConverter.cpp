@@ -54,6 +54,9 @@ DgnV8Api::ModelId TiledFileConverter::GetDefaultModelId(DgnV8FileR v8File)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
     {
+    // *** NB: Do not create elements (or models) in here. This is running as part of the initialization phase.
+    //          Only schema changes are allowed in this phase.
+
     //  Open the root V8File
     DgnV8Api::DgnFileStatus openStatus;    
     m_rootFile = OpenDgnV8File(openStatus, GetRootFileName());
@@ -64,7 +67,7 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
     DgnV8Api::ModelId id = GetDefaultModelId(*m_rootFile);
 
     //  Load the root model
-    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, id);
+    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, id, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
     if (NULL == m_rootModelRef)
         return openStatus;
 
@@ -79,6 +82,9 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
         }
 
     SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
+
+    CreateProvenanceTables(); // TRICKY: Call this before anyone calls GetV8FileSyncInfoId
+    GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
@@ -102,15 +108,13 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
 
     DgnV8ModelR v8Model = *v8ModelRef.GetDgnModelP();
 
-    ResolvedModelMapping unresolvedMapping(v8Model);
-
     Utf8String newModelName = _ComputeModelName(v8Model).c_str();
 
     // Map in the DgnV8 model.
     DgnModelId modelId = _MapModelIntoProject(v8Model, newModelName.c_str(), v8ModelRef.AsDgnAttachmentCP());
     if (!modelId.IsValid())
         {
-        return unresolvedMapping;
+        return ResolvedModelMapping();
         }
 
     SyncInfo::V8ModelMapping mapping;
@@ -120,7 +124,7 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         BeAssert(false);
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
         OnFatalError();
-        return unresolvedMapping;
+        return ResolvedModelMapping();
         }
 
     if (_WantProvenanceInBim())
@@ -131,15 +135,15 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         {
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(v8Model).c_str());
         OnFatalError();
-        return unresolvedMapping;
+        return ResolvedModelMapping();
         }
     BeAssert(model->GetRefCount() > 0); // DgnModels holds references to all models that it loads
 
-    auto v8mm = ResolvedModelMapping(*model, v8Model, mapping);
+    auto v8mm = ResolvedModelMapping(*model, v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, v8ModelRef.AsDgnAttachmentCP());
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
-    m_monitor->_OnModelInserted(v8mm, v8ModelRef.AsDgnAttachmentCP());
+    m_monitor->_OnModelInserted(v8mm);
 
     return v8mm;
     }
@@ -165,19 +169,17 @@ ResolvedModelMapping TiledFileConverter::MapDgnV8ModelToDgnDbModel(DgnV8ModelR v
 
     _GetV8FileIntoSyncInfo(*v8Model.GetDgnFileP(), _GetIdPolicy(*v8Model.GetDgnFileP()));
 
-    ResolvedModelMapping unresolved(v8Model);
-
     SyncInfo::V8ModelMapping mapping;
     auto rc = m_syncInfo.InsertModel(mapping, targetModelId, v8Model, m_rootTrans);
     BeAssert(SUCCESS == rc);
 
     auto model = m_dgndb->Models().GetModel(targetModelId);
     if (!model.IsValid())
-        return unresolved;
+        return ResolvedModelMapping();
 
-    ResolvedModelMapping v8mm(*model, v8Model, mapping);
+    ResolvedModelMapping v8mm(*model, v8Model, mapping, nullptr);
 
-    GetChangeDetector()._OnModelInserted(*this, v8mm, nullptr);
+    GetChangeDetector()._OnModelInserted(*this, v8mm);
     GetChangeDetector()._OnModelSeen(*this, v8mm);
 
     return v8mm;

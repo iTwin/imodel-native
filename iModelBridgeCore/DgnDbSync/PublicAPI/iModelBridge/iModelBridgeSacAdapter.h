@@ -80,6 +80,7 @@ struct iModelBridgeSacAdapter
         Utf8String m_attributesJSON;
         BeSQLite::BeGuid m_docGuid;
         DateTime m_expirationDate;
+        BeFileName m_bridgeAssetsDir;
 
       public:
         //! Helper function to parse a command-line argument for a stand-alone converter.
@@ -112,6 +113,7 @@ struct iModelBridgeSacAdapter
         uint32_t GetCompressChunkSize() const {return m_compressChunkSize;}
         void SetDocumentGuid(BeSQLite::BeGuid const& g) {m_docGuid=g;}
         BeSQLite::BeGuid GetDocumentGuid() const {return m_docGuid;}
+        BeFileNameCR GetBridgeAssetsDir() const {return m_bridgeAssetsDir;}
 
         IMODEL_BRIDGE_EXPORT void GetDocumentProperties(iModelBridgeDocumentProperties&);
         IMODEL_BRIDGE_EXPORT bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;

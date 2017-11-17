@@ -74,19 +74,18 @@ struct DgnV8ClassificationFlags
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
+* @bsimethod                                                    Ray.Bentleyh    10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElement(DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm)
+StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8StringR rootUrl, BentleyApi::Transform& location, BentleyApi::Dgn::ClipVectorPtr& clipVector, ModelSpatialClassifiers& classifiers, uint32_t& activeClassifierId, DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm, uint16_t majorXAttributeId)
     {
-    DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0), 0);
+    DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(majorXAttributeId, 0), 0);
     if (!xai.IsValid())
-        return Result::SkipElement;
+        return ERROR;
 
     Bentley::DataInternalizer source((byte*)xai.PeekData(), xai.GetSize());
     UInt32 version;
     source.get(&version);
 
-    Transform location;
     for (size_t i=0; i<3; i++)
         {
         for (size_t j=0; j<4; j++)
@@ -95,11 +94,11 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 
     location = Transform::FromProduct(v8mm.GetTransform(), location);
     
-    ClipVectorPtr clipVector = ClipVector::Create();
+    clipVector = ClipVector::Create();
 
     for (UInt32 index=0; true; index++)
         {
-        DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int) MRMeshMinorXAttributeId_Clip), index);
+        DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(majorXAttributeId, (int) MRMeshMinorXAttributeId_Clip), index);
 
         if (!xai.IsValid())
             break;
@@ -142,7 +141,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 
     for (UInt32 index=0; true; index++)
         {
-        DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_ClipElement), index);
+        DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(majorXAttributeId, (int)MRMeshMinorXAttributeId_ClipElement), index);
 
         if (!xai.IsValid())
             break;
@@ -169,7 +168,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 
     // Classifiers.
     uint32_t                                    activeLinkId = 0xffff;
-    DgnV8Api::ElementHandle::XAttributeIter     activeClassifierXai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_ClassifierId), 0);
+    DgnV8Api::ElementHandle::XAttributeIter     activeClassifierXai(v8el, DgnV8Api::XAttributeHandlerId(majorXAttributeId, (int)MRMeshMinorXAttributeId_Link_ClassifierId), 0);
 
 
     if (activeClassifierXai.IsValid())
@@ -179,8 +178,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         source.get (&activeLinkId);
         }
 
-    ModelSpatialClassifiers                 classifiers;
-    DgnV8Api::ElementHandle::XAttributeIter classifierXai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_Classifier), DgnV8Api::XAttributeHandle::MATCH_ANY_ID);
+    DgnV8Api::ElementHandle::XAttributeIter classifierXai(v8el, DgnV8Api::XAttributeHandlerId(majorXAttributeId, (int)MRMeshMinorXAttributeId_Link_Classifier), DgnV8Api::XAttributeHandle::MATCH_ANY_ID);
 
     for (; classifierXai.IsValid(); classifierXai.ToNext())
         {
@@ -277,7 +275,27 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 
     moniker->SetParentSearchPath(v8el.GetDgnFileP()->GetFileName().c_str());
 
-    Utf8String rootUrl = attachNameFromMoniker(*moniker);
+    rootUrl = attachNameFromMoniker(*moniker);
+
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElement(DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm)
+    {
+    Transform               location;
+    ClipVectorPtr           clipVector;
+    uint32_t                activeClassifierId = 0xffff;
+    ModelSpatialClassifiers classifiers;
+    Utf8String              rootUrl;
+
+
+    if (SUCCESS != RealityMeshAttachmentConversion::ExtractAttachment (rootUrl, location, clipVector, classifiers, activeClassifierId, v8el, converter, v8mm, ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment))
+        return Result::SkipElement;
+
     Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
 
     if (true)
@@ -326,5 +344,6 @@ void ConvertThreeMxAttachment::Register()
 	
     RegisterExtension(*elHandler, *instance);
     }
+
 
 

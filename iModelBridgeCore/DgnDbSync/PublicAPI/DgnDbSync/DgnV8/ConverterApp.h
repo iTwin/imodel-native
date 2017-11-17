@@ -39,7 +39,7 @@ struct ConverterApp : iModelBridge
     struct Monitor : Converter::Monitor
         {
         bvector<DgnModelId> m_modelsInserted, m_modelsDeleted;
-        void _OnModelInserted(ResolvedModelMapping const& m, DgnV8Api::DgnAttachment const*) {m_modelsInserted.push_back(m.GetDgnModel().GetModelId());}
+        void _OnModelInserted(ResolvedModelMapping const& m) {m_modelsInserted.push_back(m.GetDgnModel().GetModelId());}
         void _OnModelDelete(DgnModelR, SyncInfo::V8ModelMapping const& m) {m_modelsDeleted.push_back(m.GetModelId());}
         };
 
@@ -92,12 +92,13 @@ protected:
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
     Dgn::SubjectCPtr _InitializeJob() override;
-    BentleyStatus _OnConvertToBim(DgnDbR db) override;
-    void _OnConvertedToBim(BentleyStatus) override;
+    BentleyStatus _OnOpenBim(DgnDbR db) override;
+    void _OnCloseBim(BentleyStatus) override;
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
     BentleyStatus _DetectDeletedDocuments() override;
+    BentleyStatus _MakeSchemaChanges() override;
 
 public:
     RootModelConverterApp()

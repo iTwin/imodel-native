@@ -31,12 +31,3 @@ int wmain (int argc, wchar_t const* argv[])
     return  (int)bridgeApp.RunAsStandaloneExe(argc, argv);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-extern "C" EXPORT_ATTRIBUTE iModelBridge* iModelBridge_getInstance()
-    {
-    // Create a DWG bridge for other apps
-    return new DwgBridge();
-    }
-

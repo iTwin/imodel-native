@@ -27,10 +27,11 @@ private:
     iModelBridge::Params& _GetParams() override {return m_params;}
     CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]);
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
+    BentleyStatus _MakeSchemaChanges() {m_converter->MakeSchemaChanges(); return m_converter->WasAborted()? BSIERROR: BSISUCCESS;}
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     Dgn::SubjectCPtr _InitializeJob() override;
-    BentleyStatus _OnConvertToBim(DgnDbR db) override;
-    void _OnConvertedToBim(BentleyStatus) override;
+    BentleyStatus _OnOpenBim(DgnDbR db) override;
+    void _OnCloseBim(BentleyStatus) override;
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
@@ -102,7 +103,7 @@ void TiledConverterApp::_CloseSource(BentleyStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledConverterApp::_OnConvertToBim(DgnDbR db)
+BentleyStatus TiledConverterApp::_OnOpenBim(DgnDbR db)
     {
     m_converter.reset(new TiledFileConverter(m_params));
     m_converter->SetDgnDb(db);
@@ -112,7 +113,7 @@ BentleyStatus TiledConverterApp::_OnConvertToBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TiledConverterApp::_OnConvertedToBim(BentleyStatus)
+void TiledConverterApp::_OnCloseBim(BentleyStatus)
     {
     m_converter.reset(nullptr);
     }

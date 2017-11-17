@@ -10,6 +10,7 @@
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
 #include <DgnPlatform/JsonUtils.h>
+#include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -20,32 +21,38 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 static L10NLookup* s_bridgeL10NLookup = NULL;
 
-// Helper class to ensure that bridge book mark functions are called
-struct CallBookmarkFunctions
+// Helper class to ensure that bridge _CloseSource function is called
+struct CallCloseSource
     {
-    BentleyStatus m_bstatus;
-    BentleyStatus m_sstatus = BSIERROR;
     iModelBridge& m_bridge;
-    BentleyStatus m_updateStatus = BSIERROR;
-    bool m_doOpenSource;
+    BentleyStatus m_status = BSIERROR;
+    bool m_closeOnErrorOnly;
 
-    CallBookmarkFunctions(iModelBridge& bridge, DgnDbR db, bool doOpenSource) : m_bridge(bridge), m_doOpenSource(doOpenSource)
-        {
-        m_bstatus = m_bridge._OnConvertToBim(db);
-        if (m_doOpenSource && (BSISUCCESS == m_bstatus))
-            m_sstatus = m_bridge._OpenSource();
-        }
-    ~CallBookmarkFunctions()
-        {
-        if (BSISUCCESS == m_bstatus)
-            {
-            if (m_doOpenSource && (BSISUCCESS == m_sstatus))
-                m_bridge._CloseSource(m_updateStatus);
-            m_bridge._OnConvertedToBim(m_updateStatus);
-            }
-        }
+    CallCloseSource(iModelBridge& bridge, bool closeOnErrorOnly) : m_bridge(bridge), m_closeOnErrorOnly(closeOnErrorOnly) {}
 
-    bool IsBridgeReady() const {return (BSISUCCESS==m_bstatus) && (!m_doOpenSource || (BSISUCCESS==m_sstatus));}
+    ~CallCloseSource()
+        {
+        if (m_closeOnErrorOnly && (BSISUCCESS == m_status)) // if we should only close in case of error and there is no error
+            return;                                         //  don't close
+        m_bridge._CloseSource(m_status);
+        }
+    };
+
+// Helper class to ensure that bridge _Converted function is called
+struct CallOnBimClose
+    {
+    iModelBridge& m_bridge;
+    BentleyStatus m_status = BSIERROR;
+    bool m_closeOnErrorOnly;
+
+    CallOnBimClose(iModelBridge& bridge, bool closeOnErrorOnly) : m_bridge(bridge), m_closeOnErrorOnly(closeOnErrorOnly) {}
+
+    ~CallOnBimClose() 
+        {
+        if (m_closeOnErrorOnly && (BSISUCCESS == m_status)) // if we should only close in case of error and there is no error
+            return;                                         //  don't close
+        m_bridge._OnCloseBim(m_status);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,15 +127,18 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     _GetParams().SetIsCreatingNewDgnDb(true);
     _GetParams().SetIsUpdating(false);
 
-    _DeleteSyncInfo(); // Make sure that there is no old syncinfo file hanging around
-
-    // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, *db, true);
-    if (!bookMarkFunctions.IsBridgeReady())
+    iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*this, *db);
+    if (!callCloseOnReturn.IsReady())
         {
-        LOG.fatalv("Bridge not ready to populate new repository");
+        LOG.fatalv("Bridge is not ready or could not open source file");
         return nullptr;
         }
+
+    db->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                       // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+
+    // Tell the bridge to generate schemas
+    _MakeSchemaChanges();
 
     auto jobsubj = _InitializeJob();
     if (!jobsubj.IsValid())
@@ -139,13 +149,15 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
+    iModelBridgeLockOutTxnMonitor prohibitTxnSave(*db);
+
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
         return nullptr;
         }
 
-    bookMarkFunctions.m_updateStatus = BSISUCCESS;
+    callCloseOnReturn.m_status = BSISUCCESS;
 
     bvector<DgnModelId> models;
     queryAllModels(models, *db);
@@ -162,49 +174,40 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, bool& hasDynamicSchemaChange)
+DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges)
     {
+    // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
+    // of detecting the case where we do have domain schema changes (by looking for an error result).
+
+    // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
+
     madeSchemaChanges = false;
-
-    //  Common case: Just open the BIM
     auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    if (db.IsValid())
-        {
-        hasDynamicSchemaChange = _UpgradeDynamicSchema(*db);
-        if (!hasDynamicSchemaChange)
-            return db;// Common case
-
-        db->SaveChanges();
-        db->CloseDb();
-        db = nullptr;
-        return DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        }
-
-    if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
-        return nullptr;
-
-    // We must do a schema upgrade.
-    // Probably, the bridge registered some required domains, and they must be imported
-    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
-    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
-    db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
     if (!db.IsValid())
-        return nullptr;
-    dbres = db->SaveChanges();
-    if (BeSQLite::BE_SQLITE_OK != dbres)
         {
-        BeAssert(false);
-        LOG.fatalv("Failed to save results of importing domain schemas");
-        return nullptr;
+        if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
+            return nullptr;
+
+        // We must do a schema upgrade.
+        // Probably, the bridge registered some required domains, and they must be imported
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
+        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
+        if (!db.IsValid())
+            return nullptr;
+
+        dbres = db->SaveChanges();
+        if (BeSQLite::BE_SQLITE_OK != dbres)
+            {
+            BeAssert(false);
+            LOG.fatalv("Failed to save results of importing domain schemas");
+            return nullptr;
+            }
+
+        madeSchemaChanges = true;
         }
 
-    madeSchemaChanges = true;
-
-    // ... close and re-open, so that the side-effects of the schema changes are reflected in the open DgnDb.
-    db->CloseDb();
-    db = nullptr;
-
-    return DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    return db;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -217,26 +220,6 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
     _GetParams().SetIsCreatingNewDgnDb(false);
     _GetParams().SetIsUpdating(true);
 
-    // ***
-    // ***
-    // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
-    // *** Talk to Sam Wilson if you need to make a change.
-    // ***
-    // ***
-
-    // NB: _OnConvertBim must be called before we start "bulk insert" mode.
-    //      That is because it often does things like Db::AttachDb and create temp table,
-    //		which need to commit the txn. We cannot commit while in bulk insert mode.
-
-    // Call bridge _OnConvertToBim and _OpenSource
-    CallBookmarkFunctions bookMarkFunctions(*this, db, haveInputFile);
-    if (!bookMarkFunctions.IsBridgeReady())
-        {
-        LOG.fatalv("Bridge not ready to update briefcase");
-        return BSIERROR;
-        }
-
-    //  go into bulk import mode. (Note that any locks and codes required by _OnConvertToBim would have to have been acquired immediately, the normal way.)
     db.BriefcaseManager().StartBulkOperation();
 
     if (haveInputFile)
@@ -255,10 +238,12 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
 
         _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
+        iModelBridgeLockOutTxnMonitor prohibitTxnSave(db);
+
         if (BSISUCCESS != _ConvertToBim(*jobsubj))
             {
             LOG.fatalv("_ConvertToBim failed");
-            return BSIERROR;
+            return BSIERROR; // caller must call abandon changes
             }
         }
 
@@ -273,60 +258,17 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
         return BSIERROR;
         }
 
-    bookMarkFunctions.m_updateStatus = BSISUCCESS;
-
     return BSISUCCESS;
-    // Call bridge's _CloseSource and _OnConvertedToBim
     }
 
 // *******************
 /// Command-line parsing utilities
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus parseGeoPointAndAzimuth(iModelBridge::GCSDefinition& gcs, Utf8StringCR u)
-    {
-    auto parser = AngleParser::Create();
-    parser->SetAngleMode(AngleMode::DegMinSec);
-
-    size_t start=0, end;
-
-    if ((end = u.find(',')) == Utf8String::npos)
-        return BSIERROR;
-
-    if (BSISUCCESS != parser->ToValue(gcs.m_geoPoint.latitude, u.substr(start, end-start).c_str()))
-        return BSIERROR;
-
-    bool firstValueIsLongitude = (Utf8String::npos != u.substr(start, end-start).find_first_of("ewEW"));
-
-    start = end + 1;
-
-    if ((end = u.find(',', start)) == Utf8String::npos)
-        return BSIERROR;
-
-    if (BSISUCCESS != parser->ToValue(gcs.m_geoPoint.longitude, u.substr(start, end-start).c_str()))
-        return BSIERROR;
-
-    bool secondValueIsLatitude = (Utf8String::npos != u.substr(start, end-start).find_first_of("nsNS"));
-
-    start = end + 1;
-
-    if (BSISUCCESS != parser->ToValue(gcs.m_azimuthAngle, u.substr(start).c_str()))
-        return BSIERROR;
-
-    if (firstValueIsLongitude || secondValueIsLatitude)
-        {
-        std::swap(gcs.m_geoPoint.longitude, gcs.m_geoPoint.latitude);
-        }
-
-    return BSISUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::Params::ParseGCSCalculationMethod(GCSCalculationMethod& cm, Utf8StringCR value)
+BentleyStatus iModelBridge::Params::GCSCalculationMethodFromString(GCSCalculationMethod& cm, Utf8StringCR value)
     {
     if (value.EqualsI("default"))
         {
@@ -352,34 +294,19 @@ BentleyStatus iModelBridge::Params::ParseGCSCalculationMethod(GCSCalculationMeth
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
+* @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::Params::ParseGcsSpec(GCSDefinition& gcs, Utf8StringCR gcsParms)
+Utf8String iModelBridge::Params::GCSCalculationMethodToString(GCSCalculationMethod const& cm)
     {
-    if (gcsParms.empty())
+    switch(cm)
         {
-        fprintf(stderr, "expected at least coordinate system key name");
-        return BSIERROR;
+        case GCSCalculationMethod::UseDefault: return "default";
+        case GCSCalculationMethod::UseReprojection: return "reproject";
+        case GCSCalculationMethod::UseGcsTransform: return "transform";
+        case GCSCalculationMethod::UseGcsTransformWithScaling: return "transformscaled";
         }
-
-    if (isalpha(gcsParms[0]))
-        gcs.m_coordSysKeyName = gcsParms;
-    else
-        {
-        gcs.m_coordSysKeyName.clear();
-        if (BSISUCCESS != parseGeoPointAndAzimuth(gcs, gcsParms)
-            && (3 != sscanf(gcsParms.c_str(), "%lf,%lf,%lf", &gcs.m_geoPoint.latitude, &gcs.m_geoPoint.longitude, &gcs.m_azimuthAngle)))
-            {
-            fprintf(stderr, "%s - invalid GCS values - expected latitude,longitude,azimuthangle\n", gcsParms.c_str());
-            return BSIERROR;
-            }
-        }
-
-    gcs.m_geoPoint.elevation = 0.0;
-    gcs.m_originUors.Init(0,0,0);
-    gcs.m_isValid = true;
-
-    return BSISUCCESS;
+    BeAssert(false && "unrecognized GCSCalculationMethod -- keep this function consistent with the enum definition!");
+    return "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -403,40 +330,171 @@ DgnGCSPtr iModelBridge::GCSDefinition::CreateGcs(DgnDbR db)
     return gcs;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::SetGcsJson(JsonValueR json, GCSDefinition const& gcsDef, GCSCalculationMethod const& gcsCalculationMethod)
+    {
+    if (!gcsDef.m_isValid)
+        {
+        BeAssert(false);
+        }
+
+    if (gcsCalculationMethod != GCSCalculationMethod::UseDefault)
+        json[json_gcs()]["gcsCalculationMethod"] = GCSCalculationMethodToString(gcsCalculationMethod);
+
+    if (!gcsDef.m_coordSysKeyName.empty())
+        {
+        auto& member = json[json_gcs()]["coordinateSystemKeyName"];
+        member["key"] = gcsDef.m_coordSysKeyName;
+        return;
+        }
+
+    auto& member = json[json_gcs()]["azmea"];
+    JsonUtils::DPoint3dToJson(member["sourceOrigin"], gcsDef.m_originUors);
+    member["azimuthAngle"] = gcsDef.m_azimuthAngle;   // The angle, clockwise from true north in decimal degrees, of the rotation to be applied.
+    auto& geoPoint = member["geoPoint"];
+    geoPoint["latitude"] = gcsDef.m_geoPoint.latitude;
+    geoPoint["longitude"] = gcsDef.m_geoPoint.longitude;
+    geoPoint["elevation"] = gcsDef.m_geoPoint.elevation;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridge::Params::ParseGcsJson(GCSDefinition& gcsDef, GCSCalculationMethod& gcsCalculationMethod, JsonValueCR json)
+    {
+    if (!json.isMember("gcsCalculationMethod"))
+        gcsCalculationMethod = GCSCalculationMethod::UseDefault;
+    else
+        {
+        auto const& member = json["gcsCalculationMethod"];
+        if (BSISUCCESS != GCSCalculationMethodFromString(gcsCalculationMethod, member.asCString()))
+            return BSIERROR;
+        }
+
+    if (json.isMember("coordinateSystemKeyName"))
+        {
+        gcsDef.m_coordSysKeyName = json["coordinateSystemKeyName"].asCString();
+        return BSISUCCESS;
+        }
+    
+    if (json.isMember("azmea"))
+        {
+        auto const& member = json["azmea"];
+        gcsDef.m_azimuthAngle = member["azimuthAngle"].asDouble();
+        auto const& geoPoint = member["geoPoint"];
+        gcsDef.m_geoPoint.latitude = geoPoint["latitude"].asDouble();
+        gcsDef.m_geoPoint.longitude = geoPoint["longitude"].asDouble();
+        gcsDef.m_geoPoint.elevation = geoPoint["elevation"].asDouble();
+        return BSISUCCESS;
+        }
+    
+    BeAssert(false);
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::SetTransformJson(JsonValueR json, TransformCR transform)
+    {
+    auto& member = json[json_transform()]["transform"];
+    JsonUtils::TransformToJson(member, transform);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      11/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::SetOffsetJson(JsonValueR json, DPoint3dCR offset, AngleInDegrees azimuthAngle)
+    {
+    auto& member = json[json_transform()]["offsetAndAngle"];
+    JsonUtils::DPoint3dToJson(member["offset"], offset);
+    member["angle"] = azimuthAngle.Degrees();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::Params::ParseTransform(Transform& trans, Utf8StringCR str)
+BentleyStatus iModelBridge::Params::ParseTransformJson(Transform& trans, JsonValueCR json)
     {
-    if (str.empty())
-        return BSIERROR;
-
-    trans.InitIdentity();
-
-    if (str[0] == '{')
+    if (json.isMember("transform"))
         {
-        Json::Value json = Json::Value::From(str);
-        if (json.isNull())
-            return BSIERROR;
-        JsonUtils::TransformFromJson(trans, json);
+        JsonUtils::TransformFromJson(trans, json["transform"]);
         return BSISUCCESS;
         }
 
-    if (str[0] == '(')
+    if (json.isMember("offsetAndAngle"))
         {
-        double x,y,z,rdeg;
-        if (4 != sscanf(str.c_str(), "(%lf,%lf,%lf)%lf", &x, &y, &z, &rdeg))
-            {
-            fprintf(stderr, "%s - invalid translation + rotation values - expected (x,y,z)angle\n", str.c_str());
-            return BSIERROR;
-            }
+        auto& member = json["offsetAndAngle"];
+        DPoint3d sourceOrigin;
+        JsonUtils::DPoint3dFromJson(sourceOrigin, member["sourceOrigin"]);
+        DPoint3d offset;
+        JsonUtils::DPoint3dFromJson(offset, member["offset"]);
+        double rdeg = 0;
+        if (member.isMember("angle"))
+            rdeg = member["angle"].asDouble();
         double rrad = Angle::DegreesToRadians(rdeg);
-        trans = Transform::FromAxisAndRotationAngle(BentleyApi::DRay3d::FromOriginAndVector(BentleyApi::DPoint3d::FromZero(), BentleyApi::DVec3d::From(0, 0, 1)), rrad);
-        trans.SetTranslation(DPoint3d::From(x,y,z));
+        auto zAxis = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::From(0, 0, 1));
+        trans = Transform::FromAxisAndRotationAngle(zAxis, rrad);
+        trans.SetTranslation(offset);
         return BSISUCCESS;
         }
+
+    BeAssert(false && "malformed iModelBridge transform JSON data");
 
     return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInputGcs)
+    {
+    for (auto const& propName : obj.getMemberNames())
+        {
+        if (propName.EqualsI(json_transform()))
+            {
+            if (obj.isMember(json_gcs()))
+                {
+                BeAssert(false);
+                fprintf(stderr, "Specify transform or GCS, but not both\n");
+                return BSIERROR;
+                }
+
+            if (BSISUCCESS != ParseTransformJson(m_spatialDataTransform, obj[json_transform()]))
+                return BSIERROR;
+            }
+        else if (propName.EqualsI(json_gcs()))
+            {
+            if (obj.isMember(json_transform()))
+                {
+                BeAssert(false);
+                fprintf(stderr, "Specify transform or GCS, but not both\n");
+                return BSIERROR;
+                }
+
+            BentleyStatus status;
+            if (isForInputGcs)
+                status = ParseGcsJson(m_inputGcs, m_gcsCalculationMethod, obj[json_gcs()]);
+            else
+                {
+                GCSCalculationMethod ignore;
+                status = ParseGcsJson(m_outputGcs, ignore, obj[json_gcs()]);
+                }
+
+            if (BSISUCCESS != status)
+                return status;
+            }
+        else
+            {
+            BeAssert(false);
+            fprintf(stderr, "%s - unrecognized JSON value\n", propName.c_str());
+            return BSIERROR;
+            }
+        }
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -743,9 +801,17 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
     {
     Transform jobTrans = params.GetSpatialDataTransform();
     
+    // Report the jobTrans in a property of the JobSubject. 
+    // Note that we NOT getting the transform from the JobSubject. We are SETTING
+    // the property on the JobSubject, so that the user and apps can see what the 
+    // bridge configuration transform is.
     Transform jobSubjectTransform;
-    if (BSISUCCESS == JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject) && !jobSubjectTransform.IsIdentity())
-        jobTrans = Transform::FromProduct(jobTrans, jobSubjectTransform);
+    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans))
+        {
+        auto jobSubjectED = jobSubject.MakeCopy<Subject>();
+        JobSubjectUtils::SetTransform(*jobSubjectED, jobTrans);
+        jobSubjectED->Update();
+        }
 
     return jobTrans;
     }

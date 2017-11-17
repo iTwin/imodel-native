@@ -137,12 +137,21 @@ LinkConverter::~LinkConverter()
 //---------------------------------------------------------------------------------------
 void LinkConverter::InitializeTempTables()
     {
-    DbResult result = m_dgndb.CreateTable(TEMP_LINK_SOURCES_TABLE, "V8FileSyncInfoId INT NOT NULL, V8ElementId BIGINT NOT NULL, V9ElementId BIGINT NOT NULL");
-    BeAssert(result == BE_SQLITE_OK);
-    UNUSED_VARIABLE(result);
+    if (m_dgndb.TableExists(TEMP_LINK_SOURCES_TABLE))
+        {
+        Statement stmt;
+        stmt.Prepare(m_dgndb, "DELETE FROM " TEMP_LINK_SOURCES_TABLE);
+        stmt.Step();
+        }
+    else
+        {
+        DbResult result = m_dgndb.CreateTable(TEMP_LINK_SOURCES_TABLE, "V8FileSyncInfoId INT NOT NULL, V8ElementId BIGINT NOT NULL, V9ElementId BIGINT NOT NULL");
+        BeAssert(result == BE_SQLITE_OK);
+        UNUSED_VARIABLE(result);
 
-    m_dgndb.ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "ElementIdx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V9ElementId)");
-    m_dgndb.ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "V8Idx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V8FileSyncInfoId,V8ElementId)");
+        m_dgndb.ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "ElementIdx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V9ElementId)");
+        m_dgndb.ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "V8Idx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V8FileSyncInfoId,V8ElementId)");
+        }
     }
 
 //---------------------------------------------------------------------------------------

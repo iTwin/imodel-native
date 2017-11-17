@@ -18,6 +18,7 @@
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include "Registry/iModelBridgeRegistry.h"
+#include "../iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -179,14 +180,8 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-input-sheet=          (required)  Input sheet file name. Can be more than one.\n"
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
-        L"--fwk-transform=            (optional)  3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
+        L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
-        L"--fwk-input-gcs=gcsspec     (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS.\n"
-        L"--fwk-geoCalculation=       (optional)  If a new model is added with the --update option, sets the geographic coordinate calculation method. Possible Values are:\n"
-        L"                                           Default   - Base the calculation method on the source GCS. GCS's calculated from Placemarks are transformed, others are reprojected\n"
-        L"                                           Reproject - Do full geographic reprojection of each point\n"
-        L"                                           Transform - use the source GCS and DgnDb GCS to construct and use a linear transform\n"
-        L"                                           TransformScaled - Similar to Transform, except the transform is scaled to account for the GCS grid to ground scale (also known as K factor).\n"
         );
     }
 
@@ -238,7 +233,6 @@ static BeFileName  GetDefaultAssetsDirectory()
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::JobDefArgs::JobDefArgs()
     {
-    m_spatialDataTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -381,28 +375,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-transform="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-argsJson="))
             {
-            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, getArgValue(argv[iArg])))
-                return BSIERROR;
+            m_argsJson = Json::Value::From(getArgValue(argv[iArg]));
             continue;
             }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input-gcs="))
-            {
-            iModelBridge::GCSDefinition gcs;
-            if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(m_inputGcs, getArgValue(argv[iArg])))
-                return BSIERROR;
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-geoCalculation="))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(m_gcsCalculationMethod, getArgValue(argv[iArg])))
-                return BSIERROR;
-            continue;
-            }
-        
+                
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-bridgeAssetsDir="))
             {
             BeFileName assetsDir(getArgValueW(argv[iArg]));
@@ -418,39 +396,6 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
 
     BeFileName::FixPathName(m_fwkAssetsDir, fwkAssetsDirRaw.c_str());
     m_fwkAssetsDir.BeGetFullPathName();
-
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      10/17
-//---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::JobDefArgs::ParseJsonArgs(JsonValueCR obj)
-    {
-    for (auto const& propName : obj.getMemberNames())
-        {
-        if (propName.EqualsI("transform"))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseTransform(m_spatialDataTransform, obj["transform"].asCString()))
-                return BSIERROR;
-            }
-        else if (propName.EqualsI("gcs"))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(m_inputGcs, obj["gcs"].asCString()))
-                return BSIERROR;
-            }
-
-        else if (propName.EqualsI("geoCalculation"))
-            {
-            if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(m_gcsCalculationMethod, obj["geoCalculation"].asCString()))
-                return BSIERROR;
-            }
-        else
-            {
-            fprintf(stderr, "%s - unrecognized JSON document property", propName.c_str());
-            return BSIERROR;
-            }
-        }
 
     return BSISUCCESS;
     }
@@ -523,7 +468,9 @@ BentleyStatus iModelBridgeFwk::ParseDocProps()
         return BSIERROR;
         }
 
-    return m_jobEnvArgs.ParseJsonArgs(jsonValue);
+    m_jobEnvArgs.m_argsJson = jsonValue;
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -798,13 +745,18 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     //  Note: iModelBridge::_Initialize will register domains, and some of them may be required.
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
-
-    //  Create a new repository. (This will import all required domains and their schemas.)
-    m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
-    if (!m_briefcaseDgnDb.IsValid())
+    if (true)
         {
-        // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
-        return BSIERROR;
+        iModelBridgeCallTerminate callTerminate(*m_bridge);
+
+        //  Create a new repository. (This will import all required domains and their schemas.)
+        m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
+        if (!m_briefcaseDgnDb.IsValid())
+            {
+            // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
+            return BSIERROR;
+            }
+        callTerminate.m_status = BSISUCCESS;
         }
 
     auto rc = m_briefcaseDgnDb->SaveChanges();
@@ -991,13 +943,16 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     params.m_libraryDir = m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName();
     params.m_repoAdmin = ra;
     params.m_inputFileName = m_jobEnvArgs.m_inputFileName;
-    params.m_gcsCalculationMethod = m_jobEnvArgs.m_gcsCalculationMethod;
-    params.m_inputGcs = m_jobEnvArgs.m_inputGcs;
-    params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
+    if (!m_jobEnvArgs.m_drawingAndSheetFiles.empty())
+        params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
+    else
+        {
+        // *** TBD: include every document assigned to this bridge.
+        }
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
-    params.SetSpatialDataTransform(m_jobEnvArgs.m_spatialDataTransform);
+    params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1219,6 +1174,32 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+int iModelBridgeFwk::ProcessSchemaChange()
+    {
+    //  Push the pending schema change to iModelHub in its own changeset
+    m_briefcaseDgnDb->SaveChanges();
+    if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
+        return RETURN_STATUS_SERVER_ERROR;
+    Briefcase_ReleaseSharedLocks();
+
+    // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
+
+    DbResult dbres;
+    bool madeSchemaChanges = false;
+    m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
+    if (!m_briefcaseDgnDb.IsValid())
+        {
+        GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
+        return BentleyStatus::ERROR;
+        }
+
+    BeAssert(!madeSchemaChanges && "No further domain schema changes were expected.");
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::UpdateExistingBim()
     {
     // PRE-CONDITIONS
@@ -1246,8 +1227,10 @@ int iModelBridgeFwk::UpdateExistingBim()
     if (!m_briefcaseDgnDb.IsValid())
         return BentleyStatus::ERROR;
 
-    if (BSISUCCESS != Briefcase_PullMergePush(""))  // *** WIP_BRIDGE: create revision comment from stored descriptions of local Txns?
+    if (BSISUCCESS != Briefcase_PullMergePush(""))
         return RETURN_STATUS_SERVER_ERROR;
+
+    // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
 
     m_briefcaseDgnDb->SaveChanges();
     Briefcase_ReleaseSharedLocks();
@@ -1257,69 +1240,78 @@ int iModelBridgeFwk::UpdateExistingBim()
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
 
-    // Open the briefcase
-    // Note that iModelBridge::_Initialize may have registered new or changed domains, so we have to permit schema changes.
-    bool madeSchemaChanges = false;
-    bool hasDynamicSchemaChanges = false;
-    m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
-    if (!m_briefcaseDgnDb.IsValid())
+    if (true)
         {
-        GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
-        return BentleyStatus::ERROR;
-        }
+        iModelBridgeCallTerminate callTerminate(*m_bridge);
 
-    if (madeSchemaChanges || hasDynamicSchemaChanges)
-        {
-        // We must isolate schema changes in their own revision, before we let the bridge move on to making data changes.
-        m_briefcaseDgnDb->SaveChanges();
-        if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
-            return RETURN_STATUS_SERVER_ERROR;
-        Briefcase_ReleaseSharedLocks();
-        }
-
-    //If we had a schema change, we cannot process the dynamic schema change in the same transaction. So reopen the db.
-    if (madeSchemaChanges)
-        {
-        m_briefcaseDgnDb->CloseDb();
-        m_briefcaseDgnDb = nullptr;
-
-        m_briefcaseDgnDb = m_bridge->OpenBim(dbres, madeSchemaChanges, hasDynamicSchemaChanges);
+        // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
+        bool madeSchemaChanges = false;
+        m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
         if (!m_briefcaseDgnDb.IsValid())
             {
             GetLogger().fatalv("OpenDgnDb failed with error %x", dbres);
             return BentleyStatus::ERROR;
             }
-        if (hasDynamicSchemaChanges)
+
+        if (madeSchemaChanges)
             {
-            m_briefcaseDgnDb->SaveChanges();
-            if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
+            if (0 != ProcessSchemaChange())  // pullmergepush + re-open
+                return BSIERROR;
+            }
+
+        BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
+
+        //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
+        iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
+        if (!callCloseOnReturn.IsReady())
+            {
+            LOG.fatalv("Bridge is not ready or could not open source file");
+            m_briefcaseDgnDb->AbandonChanges();
+            m_briefcaseDgnDb = nullptr;
+            return BentleyStatus::ERROR;
+            }
+
+        m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+
+        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+            {
+            if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))
                 return RETURN_STATUS_SERVER_ERROR;
             Briefcase_ReleaseSharedLocks();
             }
-        }
 
-#ifdef COMMENT_OUT
-    // if we acquire shared locks up front, then we can fail fast if we can't get them. However, we will also
-    // incur a performance penalty, even if there are no updates
-    // to any shared models. All in all, it's better to let the briefcase manager detect the need for
-    // such locks, along with all other locking requirements, and then try to acquire them at the end.
-    // Failure then will be more expensive -- we'll have to rollback and then retry the entire conversion later --
-    // but this should be rare for a correctly written bridge that does not try to write to shared models.
-    if (RepositoryStatus::Success != acquireSharedLocks(*m_briefcaseDgnDb))
-        {
-        m_briefcaseDgnDb = nullptr;
-        return RETURN_STATUS_SERVER_ERROR;
-        }
-#endif
+        //  Let the bridge generate schema changes
+        if (BSISUCCESS != m_bridge->_MakeSchemaChanges())
+            {
+            LOG.fatalv("Bridge _MakeSchemaChanges failed");
+            m_briefcaseDgnDb->AbandonChanges();
+            m_briefcaseDgnDb = nullptr;
+            return BentleyStatus::ERROR;
+            }
 
-    //  Now, finally, we can convert data
-    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
+        madeSchemaChanges = m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb); // see if bridge actually made any changes
+        if (madeSchemaChanges)
+            {
+            callCloseOnReturn.CallCloseFunctions();
+            if (0 != ProcessSchemaChange())  // pullmergepush + re-open
+                return BSIERROR;
+            callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
+            }
+
+        BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
+
+        //  Now, finally, we can convert data
+        BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
-    if (BSISUCCESS != bridgeCvtStatus)
-        {
-        m_briefcaseDgnDb->AbandonChanges();
-        m_briefcaseDgnDb = nullptr;
-        return RETURN_STATUS_CONVERTER_ERROR;
+        if (BSISUCCESS != bridgeCvtStatus)
+            {
+            m_briefcaseDgnDb->AbandonChanges();
+            m_briefcaseDgnDb = nullptr;
+            return RETURN_STATUS_CONVERTER_ERROR;
+            }
+
+        callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
 
     dbres = m_briefcaseDgnDb->SaveChanges();
@@ -1355,7 +1347,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
     // POST-CONDITIONS
     BeAssert((!anyTxnsInFile(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState())) && "Local changes should have been pushed");
-    // *** TBD: briefcase should not be holding any shared locks
+    // *** TBD: check that briefcase is NOT holding any shared locks
 
     m_briefcaseDgnDb = nullptr;
 

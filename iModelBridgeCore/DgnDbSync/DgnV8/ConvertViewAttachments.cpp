@@ -196,7 +196,7 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     auto refTrans = ComputeAttachmentTransform(parentModel.GetTransform(), v8Attachment);
     GetSyncInfo().InsertModel(smapping, drawingModel->GetModelId(), parentModel.GetV8Model(), refTrans);
 
-    rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), smapping));
+    rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), smapping, &v8Attachment));
 
     return rmme;
     }

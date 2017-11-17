@@ -57,96 +57,6 @@ ChangeDetector::~ChangeDetector()
     DELETE_AND_CLEAR(m_byIdIter);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::CheckNoECSchemaChanges()
-    {
-    bmap<Utf8String, uint32_t> syncInfoChecksums;
-    GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums);
-
-    for (auto& modelMapping : m_v8ModelMappings)
-        CheckECSchemasForModel(modelMapping.GetV8Model(), syncInfoChecksums);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void Converter::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Utf8String, uint32_t>& syncInfoChecksums)
-    {
-    auto& dgnv8EC = DgnV8Api::DgnECManager::GetManager();
-    const DgnV8Api::ReferencedModelScopeOption modelScopeOption = DgnV8Api::REFERENCED_MODEL_SCOPE_None;
-
-    Bentley::bvector<DgnV8Api::SchemaInfo> v8SchemaInfos;
-    dgnv8EC.DiscoverSchemasForModel(v8SchemaInfos, v8Model, DgnV8Api::ECSCHEMAPERSISTENCE_Stored, modelScopeOption);
-    if (v8SchemaInfos.empty())
-        return;
-
-    for (auto& v8SchemaInfo : v8SchemaInfos)
-        {
-        if (ECN::ECSchema::IsStandardSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
-            continue;
-
-        bmap<Utf8String, uint32_t>::const_iterator syncEntry = syncInfoChecksums.find(Utf8String(v8SchemaInfo.GetSchemaName()));
-        // If schema was not in the original DgnDb, we need to import it
-        if (syncEntry == syncInfoChecksums.end())
-            {
-            m_needReimportSchemas = true;
-            continue;
-            }
-
-        Bentley::Utf8String schemaXml;
-        uint32_t checksum = -1;
-        if (v8SchemaInfo.IsStoredSchema())
-            {
-            Bentley::WString schemaXmlW;
-            auto stat = dgnv8EC.LocateSchemaXmlInModel(schemaXmlW, v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact, v8Model, modelScopeOption);
-            if (stat != BentleyApi::SUCCESS)
-                {
-                Utf8PrintfString msg("Could not read v8 ECSchema XML for '%s'.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-                ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::MissingData(), Issue::Error(), msg.c_str());
-                OnFatalError(IssueCategory::MissingData());
-                return;
-                }
-
-            schemaXml = Bentley::Utf8String(schemaXmlW);
-            const size_t xmlByteSize = schemaXml.length() * sizeof(Utf8Char);
-            checksum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
-            }
-        else
-            {
-            // handle external schemas
-            //TBD: DgnECManager doesn't seem to allow to just return the schema xml (Is this possible somehow?)
-            //So we need to get the ECSchema and then serialize it to a string.
-            //(we need the string anyways as this is the only way to marshal the schema from v8 to Graphite)
-            auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact);
-            if (externalSchema == nullptr)
-                {
-                Utf8PrintfString msg("Could not locate external v8 ECSchema '%s'", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-                ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::MissingData(), Issue::Error(), msg.c_str());
-                OnFatalError(IssueCategory::MissingData());
-                return;
-                }
-            if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != externalSchema->WriteToXmlString(schemaXml))
-                {
-                Utf8PrintfString msg("Could not serialize external v8 ECSchema '%s'", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-                ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::CorruptData(), Issue::Error(), "Could not serialize external v8 ECSchema.");
-                OnFatalError(IssueCategory::CorruptData());
-                return;
-                }
-            checksum = v8SchemaInfo.GetSchemaKey().m_checkSum;
-            }
-        if (checksum != syncEntry->second)
-            {
-            Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-            ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::InconsistentData(), Issue::ConvertFailure(), msg.c_str());
-            OnFatalError(IssueCategory::InconsistentData());
-            return;
-            }
-
-
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
@@ -263,7 +173,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeDetector::_OnModelInserted(Converter& converter, ResolvedModelMapping const& v8mm, DgnV8Api::DgnAttachment const*)
+void ChangeDetector::_OnModelInserted(Converter& converter, ResolvedModelMapping const& v8mm)
     {
     m_newlyDiscoveredModels.insert(v8mm.GetV8ModelSyncInfoId());
     }

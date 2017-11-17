@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnDbSync/Dwg/DwgBridge.h>
+#include    <DgnDbSync/Dwg/DwgHelper.h>
 #include    <iModelBridge/iModelBridgeSacAdapter.h>
 
 USING_NAMESPACE_BENTLEY
@@ -151,7 +152,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
+BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
     {
     // instantiate a new importer to begin a new job
     m_importer.reset (this->_CreateDwgImporter());
@@ -166,12 +167,10 @@ BentleyStatus   DwgBridge::_OnConvertToBim (DgnDbR bim)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DwgBridge::_OnConvertedToBim (BentleyStatus status)
+void DwgBridge::_OnCloseBim (BentleyStatus status)
     {
     // remove the importer
     m_importer.reset (nullptr);
-    // terminate the toolkit after DwgDbDatabase is released (i.e. via above ~DwgImporter call):
-    DwgImporter::TerminateDwgHost ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -181,6 +180,15 @@ DwgImporter*    DwgBridge::_CreateDwgImporter ()
     {
     // provide the default DWG importer
     return  new DwgImporter (m_options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgBridge::_Terminate (BentleyStatus convertStatus)
+    {
+    // terminate the toolkit after DwgDbDatabase is released
+    DwgImporter::TerminateDwgHost ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -334,3 +342,27 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
     }
 
 END_DGNDBSYNC_DWG_NAMESPACE
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
+    {
+    // Supply a generic DwgBridge
+    return  new DwgBridge();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
+    {
+    // A generic DwgBridge supports any valid DWG, DXF and DXB file type.
+    BeFileName  filename(dwgdxfName);
+    if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DwgBridge");
+        }
+    }

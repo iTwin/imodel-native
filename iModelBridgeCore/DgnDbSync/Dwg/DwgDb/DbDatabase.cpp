@@ -18,6 +18,7 @@ DwgDbObjectId       DwgDbDatabase::GetLayerTableId () const { return DWGDB_CALLS
 DwgDbObjectId       DwgDbDatabase::GetLayer0Id () const { return DWGDB_CALLSDKMETHOD(T_Super::getLayerZeroId, T_Super::layerZero)(); }
 DwgDbObjectId       DwgDbDatabase::GetLayerDefpointsId () { return DWGDB_CALLSDKMETHOD(T_Super::getLayerDefpointsId(false), acdbSymUtil()->layerDefpointsId(this)); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeTableId, T_Super::linetypeTableId)(); }
+DwgDbObjectId       DwgDbDatabase::GetRegAppTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getRegAppTableId, T_Super::regAppTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetTextStyleTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getTextStyleTableId, T_Super::textStyleTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetViewportTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getViewportTableId, T_Super::viewportTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetModelspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(this)); }
@@ -62,6 +63,7 @@ DwgDbObjectId       DwgDbDatabase::GetMaterialDictionaryId () const { return DWG
 DwgDbObjectId       DwgDbDatabase::GetMaterialByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::byLayerMaterialId(), T_Super::byLayerMaterial()); }
 DwgDbObjectId       DwgDbDatabase::GetMaterialByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::byBlockMaterialId(), T_Super::byBlockMaterial()); }
 DwgDbObjectId       DwgDbDatabase::GetMaterialGlobalId () const { return DWGDB_CALLSDKMETHOD(T_Super::globalMaterialId(), T_Super::globalMaterial()); }
+DwgDbObjectId       DwgDbDatabase::GetNamedObjectsDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getNamedObjectsDictionaryId(), T_Super::namedObjectsDictionaryId()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17

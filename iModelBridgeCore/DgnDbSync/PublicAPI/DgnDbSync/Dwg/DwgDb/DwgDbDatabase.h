@@ -55,6 +55,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetLayer0Id () const;
     DWGDB_EXPORT DwgDbObjectId      GetLayerDefpointsId ();
     DWGDB_EXPORT DwgDbObjectId      GetLinetypeTableId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetRegAppTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetTextStyleTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetViewportTableId () const;
     DWGDB_EXPORT DwgString          GetFileName () const;
@@ -104,6 +105,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetMaterialByLayerId () const;
     DWGDB_EXPORT DwgDbObjectId      GetMaterialByBlockId () const;
     DWGDB_EXPORT DwgDbObjectId      GetMaterialGlobalId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetNamedObjectsDictionaryId () const;   // The top level, main dictionary ID
     DWGDB_EXPORT DwgDbObjectId      GetObjectId (DwgDbHandleCR handle);
     };  // DwgDbDatabase
 
