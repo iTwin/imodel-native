@@ -479,6 +479,8 @@ BentleyStatus ECSqlExpPreparer::PrepareCastExpForPrimitive(Utf8StringR sqlSnippe
     return SUCCESS;
     }
 
+
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1273,6 +1275,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     const bool isAnyEveryOrSomeFunction = isAnyOrSomeFunction || isEveryFunction;
     if (isAnyEveryOrSomeFunction)
         {
+        BeAssert(exp.GetChildrenCount() == 1 && "ANY, SOME, EVERY functions expect a single arg");
+
         //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
         //ANY,SOME: checks whether at least one row in the specified BOOLEAN column is TRUE -> MAX(Col) <> 0
         //EVERY: checks whether all rows in the specified BOOLEAN column are TRUE -> MIN(Col) <> 0
@@ -1286,12 +1290,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     if (exp.GetSetQuantifier() != SqlSetQuantifier::NotSpecified)
         nativeSql.Append(ExpHelper::ToSql(exp.GetSetQuantifier())).AppendSpace();
 
-    ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, exp);
-    if (!stat.IsSuccess())
+    NativeSqlBuilder::List argSqlSnippets;
+    ECSqlStatus stat = PrepareFunctionArgList(argSqlSnippets, ctx, exp);
+    if (stat != ECSqlStatus::Success)
         return stat;
 
+    nativeSql.Append(argSqlSnippets, ",");
+
     if (isAnyEveryOrSomeFunction)
+        {
+        BeAssert(argSqlSnippets.size() == 1);
         nativeSql.Append(" <> 0");
+        }
 
     nativeSql.AppendParenRight(); //function arg list parent
 
@@ -1306,15 +1316,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& nativeSql, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgList(NativeSqlBuilder::List& argSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const& functionCallExp)
     {
-    bool isFirstItem = true;
-    for (Exp const* childExp : exp.GetChildren())
+    if (functionCallExp.GetType() != Exp::Type::FunctionCall)
+        {
+        BeAssert(false && "May not call PrepareFunctionArgList on an expression which is neither a FunctionCallExp nor a MemberFunctionCallExp");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    for (Exp const* childExp : functionCallExp.GetChildren())
         {
         ValueExp const& argExp = childExp->GetAs<ValueExp>();
-
-        if (!isFirstItem)
-            nativeSql.AppendComma();
 
         NativeSqlBuilder::List nativeSqlArgumentList;
         ECSqlStatus status;
@@ -1330,8 +1342,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& native
         if (!status.IsSuccess())
             return status;
 
-        nativeSql.Append(nativeSqlArgumentList);
-        isFirstItem = false;
+        if (nativeSqlArgumentList.size() != 1)
+            {
+            ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).", functionCallExp.ToECSql().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        argSqlSnippets.push_back(nativeSqlArgumentList[0]);
         }
 
     return ECSqlStatus::Success;
