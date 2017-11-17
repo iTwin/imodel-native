@@ -9,6 +9,7 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "ECSchemaHelper.h"
 #include "LoggingHelper.h"
+#include <set>
 
 #define NUMERIC_LESS_COMPARE(lhs, rhs) \
     if (lhs < rhs) \
@@ -185,6 +186,15 @@ static bool IsAllowed(ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsAllowed(ECSchemaCR schema)
     {
+    // WIP: temporary workaround until TFS#782547 is implemented
+    static std::set<Utf8String> s_ignoredSchemas = {
+        "ECDbMap",
+        "ECDbSchemaPolicies",
+        "ECDbSystem",
+        };
+    if (s_ignoredSchemas.end() != s_ignoredSchemas.find(schema.GetName()))
+        return false;
+
     if (schema.IsStandardSchema())
         return false;
 
