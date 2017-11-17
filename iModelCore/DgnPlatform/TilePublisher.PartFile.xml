@@ -71,7 +71,7 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubProduct ProductName="TilePublisher" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher\TilePublisher.*.nupkg</Files>
         </Bindings>
     </Part>
 

@@ -121,7 +121,6 @@ static FILE*    openTmpFile
 WCharCP         fileNameInP    // => path/prefix to use or NULL
 )
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEYCONFIG_OS_WINRT)
     WString     prefix;
     BeFileName  path;
     
@@ -143,9 +142,14 @@ WCharCP         fileNameInP    // => path/prefix to use or NULL
     if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempFileName(tempFileName, path,prefix.c_str())) // <- NEEDSWORK: This method is currently only implemented for desktop systems...
         return nullptr;
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
     return _wfsopen (tempFileName.GetName(), L"w+bD", _SH_DENYNO);
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+    // Is this good enough?
+    // I can't find a better alternative to the "D" mode on Unix.
+    return tmpfile();
 #else
-    return 0;
+    #error Unsupported OS.
 #endif
     }
 
@@ -220,13 +224,6 @@ PpiDelta*       pDeltaIn      // => input delta whose buffer is to be read into 
     {
     unsigned int numBufferByteToRead = MIN(PPI_DELTA_DATA_BLOCK_SIZE, pDeltaIn->numByteToReadFromFile);
     size_t numBytesRead = 0;
-
-    // comparison of unsigned expression < 0 is always false
-    // if (numBufferByteToRead < 0)
-    //     {
-    //     PK_SESSION_comment("readDataBufferFromFile returns PK_ERROR_frustrum_failure - negative read size");
-    //     return PK_ERROR_frustrum_failure;
-    //     }
 
     if (numBufferByteToRead > 0)
         {
