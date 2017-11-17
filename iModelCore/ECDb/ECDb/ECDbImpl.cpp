@@ -322,8 +322,11 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
 
     m_ecdb.RemoveFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
 
-    m_ecdb.RemoveFunction(*m_changeValueSqlFunc);
-    m_changeValueSqlFunc = nullptr;
+    if (m_changeValueSqlFunc)
+        {
+        m_ecdb.RemoveFunction(*m_changeValueSqlFunc);
+        m_changeValueSqlFunc = nullptr;
+        }
     }
 
 //---------------------------------------------------------------------------------------
