@@ -73,6 +73,7 @@
 
 #define PACKAGE_ELEMENT_Sources             "Sources"
 #define PACKAGE_ELEMENT_Dataset             "Dataset"
+#define PACKAGE_ELEMENT_Resolution          "Resolution"
 
 // RealityDataSource
 #define PACKAGE_ELEMENT_Source              "Source"

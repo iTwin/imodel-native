@@ -239,6 +239,7 @@ RealityPackageStatus RealityDataSerializer::_ReadUnknownElements(RealityDataPack
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageId) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_BoundingPolygon) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_PackageOrigin) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_ImageryGroup) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_RequestingApplication) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Dataset) ||
+        0 == pNode->NameStricmp(PACKAGE_ELEMENT_RequestingApplication) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Resolution) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_ImageryData) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_Corners) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_LowerLeft) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_LowerRight) ||
         0 == pNode->NameStricmp(PACKAGE_ELEMENT_UpperLeft) || 0 == pNode->NameStricmp(PACKAGE_ELEMENT_UpperRight) ||

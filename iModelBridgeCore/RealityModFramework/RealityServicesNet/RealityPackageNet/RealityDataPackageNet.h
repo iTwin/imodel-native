@@ -103,6 +103,9 @@ namespace RealityPackageNet
             System::String^ GetDataset();
             void SetDataset(System::String^ dataset);
 
+            System::String^ GetResolution();
+            void SetResolution(System::String^ resolution);
+
             //! Data can contain many sources (at least one). This returns the number of sources.
             int GetNumSources();
 
@@ -123,6 +126,7 @@ namespace RealityPackageNet
             System::String^ m_id;
             System::String^ m_name;
             System::String^ m_dataset;
+            System::String^ m_resolution;
         };
 
     //=====================================================================================
