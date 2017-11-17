@@ -185,7 +185,6 @@ public:
             virtual void _OnNothingToUndo() {}
             DGNPLATFORM_EXPORT virtual void _OnPrepareForUndoRedo();
             virtual void _OnNothingToRedo() {}
-            virtual void _OnGraphicsRemoved(Render::GraphicSet&) {}
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnAppliedChanges(TxnManager&);
@@ -524,11 +523,13 @@ public:
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
-        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
-
         //! Supply the HttpClient::Options for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
+        virtual void _OnUndisplayedSetChanged(DgnDbR) {}
+        virtual void _OnHilitedSetChanged(DgnDbR) {}
+        virtual void _OnNewTileReady(DgnDbR) {}
+
         Host()
             {
             m_sessionSettingsAdmin = nullptr;

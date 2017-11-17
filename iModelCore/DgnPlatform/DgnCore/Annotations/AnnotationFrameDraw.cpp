@@ -94,14 +94,14 @@ BentleyStatus AnnotationFrameDraw::Draw(Render::GraphicBuilderR graphic, ViewCon
         {
         setStrokeSymbology(graphic, context, geomParams, frameStyle->GetStrokeColorType(), frameStyle->GetStrokeColorValue(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
-        graphic.AddCurveVector(*frameGeometry, false);
+        graphic.AddCurveVectorR(*frameGeometry, false);
         }
 
     if (frameStyle->IsFillEnabled() && (frameStyle->GetFillTransparency() < 1.0))
         {
         setFillSymbology(graphic, context, geomParams, frameStyle->GetFillColorType(), frameStyle->GetFillColorValue(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
-        graphic.AddCurveVector(*frameGeometry, true);
+        graphic.AddCurveVectorR(*frameGeometry, true);
         }
 
     return SUCCESS;

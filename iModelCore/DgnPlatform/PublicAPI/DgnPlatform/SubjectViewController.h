@@ -41,7 +41,7 @@ private:
 
 
 protected:
-    void _OverrideGraphicParams(Dgn::Render::OvrGraphicParamsR overide, Dgn::GeometrySourceCP source) override;
+    void _AddFeatureOverrides(Render::FeatureSymbologyOverrides&) const override;
     SubjectCPtr GetParentJobSubject(DgnElementCP element);
 
 public:

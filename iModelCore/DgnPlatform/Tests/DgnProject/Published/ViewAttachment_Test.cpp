@@ -190,7 +190,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     {
     // Set up the view to display the new element...
     ViewDefinition::MarginPercent viewMargin(.1,.1,.1,.1);
-    auto& viewDef = viewController.GetViewDefinition();
+    auto& viewDef = viewController.GetViewDefinitionR();
     viewDef.SetStandardViewRotation(StandardView::Top);
     viewDef.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
     viewDef.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
@@ -334,7 +334,7 @@ TEST_F(ViewAttachmentTest, Geom)
 
     viewController->ChangeCategoryDisplay(m_attachmentCatId, true);
     viewController->ChangeCategoryDisplay(m_annotationCatId, true);
-    viewController->GetViewDefinition().GetCategorySelector().Update();
+    viewController->GetViewDefinitionR().GetCategorySelector().Update();
     db.SaveChanges();
     }
 

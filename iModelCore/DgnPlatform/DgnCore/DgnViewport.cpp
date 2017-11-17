@@ -21,16 +21,9 @@ void DgnViewport::DestroyViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SuspendViewport()
     {
-    ClearProgressiveTasks();
+    RemoveAnimator();
     if (m_renderTarget.IsValid())
         RenderQueue().WaitForIdle();
-
-    if (m_viewController.IsValid())
-        {
-        m_viewController->RequestAbort(true);
-        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-        }
 
     SetRenderTarget(nullptr);
     }
@@ -463,7 +456,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    auto& viewDef = m_viewController->GetViewDefinition();
+    auto& viewDef = m_viewController->GetViewDefinitionR();
     DPoint3d origin = viewDef.GetOrigin();
     DVec3d   delta  = viewDef.GetExtents();
     m_rotMatrix     = viewDef.GetRotation();
@@ -695,7 +688,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     DVec3d offset;
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
-    auto& viewDef = m_viewController->GetViewDefinition();
+    auto& viewDef = m_viewController->GetViewDefinitionR();
     auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
@@ -751,7 +744,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    auto& viewDef = m_viewController->GetViewDefinition();
+    auto& viewDef = m_viewController->GetViewDefinitionR();
     auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
@@ -1042,7 +1035,7 @@ ColorDef DgnViewport::GetBackgroundColor() const
     if (!m_viewController.IsValid())
         return ColorDef::Black();
 
-    ColorDef bgColor = m_viewController->GetViewDefinition().GetDisplayStyle().GetBackgroundColor();
+    ColorDef bgColor = m_viewController->GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
     if (ColorDef::Black() == bgColor && GetRenderTarget()->_WantInvertBlackBackground())
@@ -1052,29 +1045,6 @@ ColorDef DgnViewport::GetBackgroundColor() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
-    {
-    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_progressiveTasks.push_back(&task);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ClearProgressiveTasks()
-    {
-    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_progressiveTasks.clear();
-    if (!m_viewController.IsValid())
-        return;
-
-    auto scene = m_viewController->GetScene();
-    if (scene.IsValid())
-        scene->m_progressive = nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    04/2016
 //---------------------------------------------------------------------------------------
@@ -1099,7 +1069,6 @@ ProgressiveTask::Completion DgnViewport::ProcessProgressiveTaskList(ProgressiveT
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SaveViewUndo()
@@ -1158,31 +1127,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     if (m_viewController.IsValid())
         {
-        bool dropGraphics = true;
-
-        if (m_viewController->GetViewDefinition().GetElementClassId() == viewController.GetViewDefinition().GetElementClassId())
-            {
-            ViewFlags oldFlags = m_viewController->GetViewFlags();
-            ViewFlags newFlags = viewController.GetViewFlags();
-
-            // Check for view flag changes that may require us to re-generate cached graphic...
-            if (newFlags.GetRenderMode() == oldFlags.GetRenderMode() &&
-                newFlags.ShowConstructions() == oldFlags.ShowConstructions() &&
-                newFlags.ShowDimensions() == oldFlags.ShowDimensions() &&
-                newFlags.ShowFill() == oldFlags.ShowFill())
-                {
-                // Both sub-category visibility and appearance gets baked into cached graphic...
-                if (!m_viewController->GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride() && !viewController.GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride())
-                    dropGraphics = false;
-                }
-            }
-
-        if (dropGraphics)
-            {
-            m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-            m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-            }
-
         m_viewController->_OnDetachedFromViewport(*this);
         BeAssert(nullptr == m_viewController->m_vp);
         }
@@ -1198,6 +1142,36 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     m_sync.InvalidateController();
     if (m_renderTarget.IsValid())
         m_renderTarget->_QueueReset();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::Animate()
+    {
+    if (m_animator.IsValid() && IViewportAnimator::RemoveMe::Yes == m_animator->_Animate(*this))
+        m_animator = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::RemoveAnimator()
+    {
+    if (m_animator.IsValid())
+        {
+        m_animator->_OnInterrupted(*this);
+        m_animator = nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetAnimator(IViewportAnimatorR animator)
+    {
+    RemoveAnimator();
+    m_animator = &animator;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -15,6 +15,7 @@
 #include "ViewDefinition.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
+#include "TileTree.h"
 
 DGNPLATFORM_TYPEDEFS(FitViewParams)
 DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
@@ -74,10 +75,7 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
-    friend struct SceneQueue::Task;
-    friend struct CreateSceneTask;
     friend struct AuxCoordSystem;
-
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
@@ -107,24 +105,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         uint32_t GetCount() const {return (uint32_t) m_scores.size();}
     };
 
-    //=======================================================================================
-    // The set of DgnElements that are contained in a scene. This is used when performing a progressive
-    // update or heal of a view to determine which elements are already visible.
-    // @bsiclass                                                    Keith.Bentley   02/16
-    //=======================================================================================
-    struct Scene : RefCountedBase, NonCopyableClass
-    {
-        bset<DgnElementId> m_members;
-        Render::GraphicListPtr m_graphics;
-        ProgressiveTaskPtr m_progressive;
-        double m_lowestScore = 0.0;
-        uint32_t m_progressiveTotal = 0;
-        bool m_complete = false;
-        bool Contains(DgnElementId id) const {return m_members.find(id) != m_members.end();}
-        ~Scene() {}
-    };
-    typedef RefCountedPtr<Scene> ScenePtr;
-
 protected:
     friend struct ViewContext;
     friend struct DgnViewport;
@@ -137,10 +117,14 @@ protected:
     DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     bool m_noQuery = false;
+    bool m_featureOverridesDirty = true;
+    bool m_selectionSetDirty;
     SpecialElements m_special;
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
-    ScenePtr m_currentScene;
-    ScenePtr m_readyScene;
+    Render::GraphicListPtr m_currentScene;
+    Render::GraphicListPtr m_readyScene;
+    bmap<DgnModelId, TileTree::RootP> m_roots;
+    bool m_allRootsLoaded = false;
     GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
     DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
     uint32_t m_gridsPerRef = 10;
@@ -161,11 +145,10 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
-    virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
+    virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp; m_featureOverridesDirty=m_selectionSetDirty=true;}
     virtual void _OnDetachedFromViewport(DgnViewportR vp) { m_vp = nullptr;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) = 0;
-    virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
+    virtual BentleyStatus _CreateScene(SceneContextR context) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -207,9 +190,11 @@ protected:
 
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
-    virtual void _DoHeal(HealContext&) {}
 
-    virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
+    //! Override visibility and/or symbology of features. Base implementation handles hilite color.
+    //! Note: This function is invoked just before rendering a frame, if and only if ViewController::AreFeatureOverridesDirty() returns true.
+    //! If you override this function, use SetFeatureOverridesDirty() to set this flag whenever changes are made which will affect your symbology overrides.
+    DGNPLATFORM_EXPORT virtual void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const;
 
     //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
@@ -235,15 +220,20 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
-    ScenePtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task);
-    void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
-    ScenePtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
+    Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
+    void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
+    Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
+    void AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const { _AddFeatureOverrides(overrides); }
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
-    virtual void _CreateTerrain(TerrainContextR context) {}
     virtual void _PickTerrain(PickContextR context) {}
+
+    bool AreFeatureOverridesDirty() const {return m_featureOverridesDirty;}
+    void SetFeatureOverridesDirty(bool dirty=true) {m_featureOverridesDirty = dirty;}
+    bool IsSelectionSetDirty() const {return m_selectionSetDirty;}
+    void SetSelectionSetDirty(bool dirty=true) {m_selectionSetDirty = dirty;}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -308,6 +298,9 @@ public:
     //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
 
+    //! Set the ViewFlags for the DisplayStyle of this view
+    DGNPLATFORM_EXPORT void SetViewFlags(Render::ViewFlags viewFlags);
+
     //! Gets the DgnViewId of the ViewDefinition of this view.
     DgnViewId GetViewId() const {return m_definition->GetViewId();}
 
@@ -315,6 +308,9 @@ public:
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
+
+    //! Set the CategorySelector for this view.
+    void SetCategorySelector(CategorySelectorR selector) { m_definition->SetCategorySelector(selector); SetFeatureOverridesDirty(); }
 
     //! Gets the Auxiliary Coordinate System for this view.
     AuxCoordSystemCR GetAuxCoordinateSystem() const {return *m_auxCoordSys;}
@@ -330,6 +326,16 @@ public:
     //! @param[in] id the DgnSubCategoryId of interest
     //! @return the appearance of the DgnSubCategory for this view.
     DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const {return m_definition->GetDisplayStyle().GetSubCategoryAppearance(id);}
+
+    //! Override the appearance of a SubCategory for this view's DisplayStyle
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
+
+    //! Drop the override of the appearance of a SubCategory from this view's DisplayStyle
+    DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
+
+    //! Look up the appearance overrides for the given SubCategory from this view's DisplayStyle
+    //! If no such overides are defined, returns an empty Override
+    DgnSubCategory::Override GetSubCategoryOverride(DgnSubCategoryId id) const { return m_definition->GetDisplayStyle().GetSubCategoryOverride(id); }
 
     //! Initialize this ViewController.
     DGNPLATFORM_EXPORT void Init();
@@ -370,7 +376,9 @@ public:
     DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* obj) const;
     StatusInt DropAppData(AppData::Key const& key) const {return 0==m_appData.erase(&key) ? ERROR : SUCCESS;}
 
-    ViewDefinitionR GetViewDefinition() const {return *m_definition;}
+    //! Do not make any changes to the view definition which would affect visibility or appearance of elements, subcategories, categories, or geometry classes.
+    ViewDefinitionR GetViewDefinitionR() {return *m_definition;}
+    ViewDefinitionCR GetViewDefinition() const {return *m_definition;}
 
     //! @name Active Volume
     //! @{
@@ -383,11 +391,14 @@ public:
     SpecialElements const& GetSpecialElements() const {return m_special;}
 
     //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
+    DgnElementIdSet const& GetAlwaysDrawn() const {return GetSpecialElements().m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
     //! @param[in] exclusive If true, only these elements are drawn
     DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
+
+    //! Returns true if the set of elements returned by GetAlwaysDrawn() are the *only* elements rendered by this view controller
+    bool IsAlwaysDrawnExclusive() const { return m_noQuery; }
 
     //! Empty the set of elements that are always drawn
     DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
@@ -398,13 +409,10 @@ public:
     //! Get the list of elements that are never drawn.
     //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
+    DgnElementIdSet const& GetNeverDrawn() const {return GetSpecialElements().m_never;}
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
-
-    //! Requests that any active or pending scene queries for this view be canceled, optionally not returning until the request is satisfied
-    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
 };
 
 //=======================================================================================
@@ -421,6 +429,7 @@ protected:
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
 
 public:
+    void SetDisplayStyle(DisplayStyle3dR style) { GetViewDefinition3dR().SetDisplayStyle3d(style); SetViewFlags(style.GetViewFlags()); }
     
     ViewDefinition3dCR GetViewDefinition3d() const {return static_cast<ViewDefinition3dCR>(*m_definition);}
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
@@ -428,6 +437,8 @@ public:
 };
 
 //=======================================================================================
+
+
 //! A SpatialViewController controls views of SpatialModels.
 //! It shows %DgnElements selected by an SQL query that can combine spatial criteria with business and graphic criteria.
 //! @ingroup GROUP_DgnView
@@ -492,6 +503,17 @@ public:
     //=======================================================================================
     struct RangeQuery : SpatialQuery
     {
+        struct Plan
+        {
+            BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
+            mutable uint32_t m_targetNumElements = 0;
+
+            BeDuration GetTimeout() const {return m_maxTime;}
+            void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
+            uint32_t GetTargetNumElements() const {return m_targetNumElements;}
+            void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
+        };
+
         DEFINE_T_SUPER(SpatialQuery)
         bool m_depthFirst = false;
         bool m_cameraOn = false;
@@ -504,7 +526,7 @@ public:
         double m_minScore = 0.0;
         double m_lastScore = 0.0;
         SpatialViewControllerCR m_view;
-        UpdatePlan::Query const& m_plan;
+        Plan m_plan;
         QueryResults* m_results;
 
         int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
@@ -516,36 +538,8 @@ public:
         bool ComputeOcclusionScore(double& score, FrustumCR);
 
     public:
-        RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan, QueryResults*);
-        void DoQuery(SceneQueue::Task&);
-    };
-
-    //=======================================================================================
-    // @bsiclass                                                    Keith.Bentley   03/16
-    //=======================================================================================
-    struct NonSceneQuery : RangeQuery
-    {
-        NonSceneQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR);
-    };
-
-    //=======================================================================================
-    // A ProgressiveTask for a SpatialViewController that draws all of the elements that satisfy the query and range
-    // criteria, but were too small to be in the scene.
-    // @bsiclass                                                    Keith.Bentley   04/14
-    //=======================================================================================
-    struct ProgressiveTask : Dgn::ProgressiveTask
-    {
-        enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
-        bool m_setTimeout = false;
-        uint32_t m_thisBatch = 0;
-        uint32_t m_batchSize = 0;
-        uint64_t m_nextShow  = 0;
-        DgnElementId m_abortedElement;
-        NonSceneQuery m_rangeQuery;
-        SpatialViewControllerR m_view;
-        DgnElementId GetNextId();
-        DGNPLATFORM_EXPORT ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
-        Completion _DoProgressive(RenderListContext& context, WantShow&) override;
+        RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, Plan const& plan, QueryResults*);
+        void DoQuery();
     };
 
 private:
@@ -564,34 +558,30 @@ protected:
 
     void QueryModelExtents(FitContextR);
 
-    DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
     DGNPLATFORM_EXPORT void _PickTerrain(PickContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
-    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return new ProgressiveTask(*this, vp);}
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT SpatialViewController(SpatialViewDefinitionCR definition);
-    ~SpatialViewController() {RequestAbort(true);}
+    ~SpatialViewController() {}
 
     void LoadSkyBox(Render::SystemCR system);
     Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
     double GetGroundElevation() const;
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);
-    DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR);
+    DGNPLATFORM_EXPORT void DrawSkyBox(DecorateContextR);
 
 public:
     virtual double _ForceMinFrontDist() const {return 0.0;}
@@ -651,8 +641,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;} // needs work
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    TileTree::RootP m_root = nullptr;
+
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
@@ -661,10 +652,13 @@ protected:
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
 public:
-    ViewDefinition2dR GetViewDefinition2d() const {return static_cast<ViewDefinition2dR>(*m_definition);}
+    ViewDefinition2dR GetViewDefinition2dR() {return static_cast<ViewDefinition2dR>(*m_definition);}
+    ViewDefinition2dCR GetViewDefinition2d() const {return static_cast<ViewDefinition2dCR>(*m_definition);}
 
     DgnModelId GetViewedModelId() const {return GetViewDefinition2d().GetBaseModelId();}
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
+
+    void SetDisplayStyle(DisplayStyle2dR style) { GetViewDefinition2dR().SetDisplayStyle2d(style); SetViewFlags(style.GetViewFlags()); }
 };
 
 //=======================================================================================
@@ -819,15 +813,15 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 
 private:
     DgnModelId m_viewedModelId;
+    TileTree::RootP m_root = nullptr;
 
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}

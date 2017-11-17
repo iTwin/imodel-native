@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+ 
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
@@ -9,6 +9,8 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include <set>
+#include <forward_list>
 #include <folly/futures/Future.h>
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
@@ -73,16 +75,38 @@ HTTP request caching:
 
 */
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawGraphics)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TileCache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DirtyRanges)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(StreamBuffer)
+
 
 DEFINE_REF_COUNTED_PTR(Tile)
 DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
+DEFINE_REF_COUNTED_PTR(TileCache)
+
+
+//=======================================================================================
+// Manage the creation and cleanup of the local TileCache used by TileData
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct TileCache : RealityData::Cache
+{
+    uint64_t m_allowedSize;
+    BentleyStatus _Prepare() const override;
+    BentleyStatus _Cleanup() const override;
+    TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
+};
+
+
 
 typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 
@@ -96,6 +120,21 @@ struct StreamBuffer : ByteStream
     ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
     ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
     void SetPos(uint32_t pos) {m_currPos=pos;}
+    void ResetPos() {SetPos(0);}
+    uint32_t GetPos() const {return m_currPos;}
+    DGNPLATFORM_EXPORT bool ReadBytes(void* buf, uint32_t size);
+    template<typename T> bool Read (T& buf) { return ReadBytes(&buf, sizeof(buf)); }
+
+    bool Skip(uint32_t numBytes)
+        {
+        auto newPos = m_currPos + numBytes;
+        if (newPos > GetSize())
+            return false;
+
+        SetPos(newPos);
+        return true;
+        }
+
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}
     };
@@ -105,16 +144,58 @@ struct StreamBuffer : ByteStream
 //=======================================================================================
 struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
 {
-    BeAtomic<bool> m_canceled;
-    BeAtomic<int> m_requested;
-    BeAtomic<int> m_fromHttp;
-    BeAtomic<int> m_fromFile;
-    BeAtomic<int> m_fromDb;
+private:
+    TileCPtr        m_tile;
+    BeTimePoint     m_deadline;
+    BeAtomic<bool>  m_canceled;
+public:
+    explicit TileLoadState(TileCR tile, BeTimePoint deadline) : m_tile(&tile), m_deadline(deadline) { }
     DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
-    void Reset() {m_fromDb.store(0); m_fromHttp.store(0); m_fromFile.store(0);}
+    TileCR GetTile() const { return *m_tile; }
+    BeTimePoint GetDeadline() const {return m_deadline;}
+    bool HasDeadline() const {return GetDeadline().IsValid();}
+    bool IsPastDeadline() const {return HasDeadline() && GetDeadline().IsInPast();}
+
+    struct PtrComparator
+    {
+        using is_transparent = std::true_type;
+
+        bool operator()(TileLoadStatePtr const& lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs->m_tile.get(), rhs->m_tile.get()); }
+        bool operator()(TileLoadStatePtr const& lhs, TileCP rhs) const { return operator()(lhs->m_tile.get(), rhs); }
+        bool operator()(TileCP lhs, TileLoadStatePtr const& rhs) const { return operator()(lhs, rhs->m_tile.get()); }
+        bool operator()(TileCP lhs, TileCP rhs) const { return lhs < rhs; }
+    };
+};
+
+//=======================================================================================
+//! A set of ranges within a TileTree which have become damaged due to modification of
+//! the model. Can be partitioned to include only those damaged ranges which intersect
+//! a given range.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct DirtyRanges
+{
+    typedef bvector<DRange3d> List;
+    using iterator = List::iterator;
+    using const_iterator = List::const_iterator;
+private:
+    iterator    m_begin;
+    iterator    m_end;
+public:
+    DirtyRanges(iterator begin, iterator end) : m_begin(begin), m_end(end) { }
+    explicit DirtyRanges(List& list) : m_begin(list.begin()), m_end(list.end()) { }
+    
+    //! Returns the set of dirty ranges which intersect the given range.
+    //! Note that this modifies the ordering of the underlying List's contents (but only within the range thereof represented by this object).
+    DGNPLATFORM_EXPORT DirtyRanges Intersect(DRange3dCR range) const;
+
+    bool empty() const { return m_begin == m_end; }
+    size_t size() const { return std::distance(m_begin, m_end); }
+    const_iterator begin() const { return m_begin; }
+    const_iterator end() const { return m_end; }
 };
 
 //=======================================================================================
@@ -132,21 +213,30 @@ struct Tile : RefCountedBase, NonCopyableClass
 protected:
     RootR   m_root;
     mutable ElementAlignedBox3d m_range;
-    TileCP m_parent;
+    TileCP  m_parent;
+    uint32_t m_depth;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
     mutable BeTimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
 
+    //! Mark this tile as invalidated, e.g. because its contents have been modified.
+    virtual void _Invalidate() = 0;
+    //! Given the non-empty set of damaged ranges intersecting this tile's range, return whether the tile has become invalidated and must be regenerated.
+    virtual bool _IsInvalidated(DirtyRangesCR dirty) const { return true; }
+    //! Invoked at beginning of _SelectTiles() to ensure children are still valid.
+    virtual void _ValidateChildren() const { }
+
+    bool IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const;
 public:
-    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_loadStatus(LoadStatus::NotLoaded) {}
+    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
+    uint32_t GetDepth() const {return m_depth;}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d const& GetRange() const {return m_range;}
-    DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
-    DGNPLATFORM_EXPORT void Pick(PickArgsR args, int depth) const;
+    DGNPLATFORM_EXPORT void Pick(PickArgsR args, uint32_t depth) const;
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
     void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
     void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
@@ -158,6 +248,7 @@ public:
     bool IsNotLoaded() const {return m_loadStatus.load() == LoadStatus::NotLoaded;}
     bool IsNotFound() const {return m_loadStatus.load() == LoadStatus::NotFound;}
     bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
+    bool IsParentDisplayable() const {return nullptr != GetParent() && GetParent()->IsDisplayable();}
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
     RootR GetRootR() {return m_root;}
@@ -170,21 +261,23 @@ public:
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
     virtual bool _HasChildren() const = 0;
 
+    //! Returns whether this tile has graphics.
+    virtual bool _HasGraphics() const = 0;
+
+    //! Returns whether this tile has back-up graphics.
+    virtual bool _HasBackupGraphics() const { return false; }
+
     //! Get the array of children for this Tile.
     //! @param[in] create If false, return nullptr if this tile has children but they are not yet created. Otherwise create them now.
     virtual ChildTiles const* _GetChildren(bool create) const = 0;
 
-    //! Get the graphics for drawing this tile.
-    //! @param[in] drawGraphics The DrawGraphics to contain the graphics.
-    //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
-    virtual void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const = 0;
-
     //! Draw the Graphics of this Tile into args.
     //! @param[in] args The DrawArgs for the current display request.
-    //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
-    DGNPLATFORM_EXPORT virtual void _DrawGraphics(DrawArgsR args, int depth) const;
+    virtual void _DrawGraphics(DrawArgsR args) const = 0;
 
-    virtual void _PickGraphics(PickArgsR args, int depth) const {}
+    virtual void _PickGraphics(PickArgsR args, uint32_t depth) const {}
+
+    virtual Render::GraphicPtr _GetGraphic() const { return nullptr; }
 
     //! Called when tile data is required.
     virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) = 0;
@@ -194,6 +287,36 @@ public:
 
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
     virtual double _GetMaximumSize() const = 0;
+
+    //! Describes a Tile's visibility within a viewing frustum
+    enum class Visibility
+    {
+        OutsideFrustum, // this tile is entirely outside of the viewing frustum
+        TooCoarse, // this tile is too coarse to be drawn
+        Visible, // this tile is of the correct size to be drawn
+    };
+
+    //! Compute the visibility of this tile
+    DGNPLATFORM_EXPORT Visibility GetVisibility(DrawArgsCR args) const;
+
+    enum class SelectParent { Yes, No };
+
+    //! Populates a list of tiles to draw. Returns SelectParent::Yes to substitute this tile's parent in its place.
+    DGNPLATFORM_EXPORT virtual SelectParent _SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const;
+
+    //! Returns true if this tile's entire bounding volume is entirely outside of the viewing frustum or clipping planes
+    bool IsRegionCulled(DrawArgsCR args) const { return IsCulled(GetRange(), args); }
+    //! Returns true if the visible contents of this tile are entirely outside of the viewing frustum or clipping planes
+    bool IsContentCulled(DrawArgsCR args) const { return IsCulled(_GetContentRange(), args); }
+
+    void Invalidate(DirtyRangesCR dirty);
+
+    //! Returns a potentially more tight-fitting range enclosing the visible contents of this tile.
+    virtual ElementAlignedBox3d const& _GetContentRange() const {return m_range;}
+    bool HasContentRange() const;
+
+    //! When the range of the model changes, update this tile's range
+    virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
 };
 
 /*=================================================================================**//**
@@ -204,39 +327,53 @@ public:
 struct Root : RefCountedBase, NonCopyableClass
 {
     friend struct DrawArgs;
+    friend TileLoader;
 
 protected:
     bool m_isHttp;
     bool m_pickable = false;
-    int m_activeLoads = 0;
+    mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;         // transform from tile coordinates to world coordinates
-    double m_biasDistance = 0.0;  // for 2d display priority
-    double m_hiResBiasDistance = -0.5; // for moving higher resolution substitute tiles behind real tiles.
-    double m_loResBiasDistance = -1.0; // for moving lower resolution substitute tiles behind real tiles.
     TilePtr m_rootTile;
     Utf8String m_rootResource;  // either directory or Url.
     BeDuration m_expirationTime = BeDuration::Seconds(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
-    BeConditionVariable m_cv;
+    mutable BeConditionVariable m_cv;
+    DirtyRanges::List m_damagedRanges;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
     //! still valid and that cannot be accomplished in the destructor of Root.
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
-    virtual ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) = 0;
-    DGNPLATFORM_EXPORT virtual Render::ViewFlags _GetDrawViewFlags(RenderContextCR) const;
 
+    virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
+    virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
+
+    virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
+    virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }
+    virtual void _OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id) { }
+
+    void MarkDamaged(DRange3dCR range);
+    void UpdateRange(DirtyRangesCR dirty);
+    void InvalidateDamagedTiles();
+    bvector<TileCPtr> SelectTiles(DrawArgsR args);
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Dgn::Render::SystemP renderSys=nullptr);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline);
+    void RequestTiles(MissingNodesCR, BeTimePoint deadline);
+
+    //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
+    bvector<TileCPtr> SelectTiles(SceneContextR context);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
-    virtual Utf8CP _GetName() const = 0;
-    void StartTileLoad() {BeMutexHolder holder(m_cv.GetMutex()); ++m_activeLoads;}
-    void DoneTileLoad() {{BeMutexHolder holder(m_cv.GetMutex()); --m_activeLoads; BeAssert(m_activeLoads>=0);} m_cv.notify_all();}
-    void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads>0) m_cv.InfiniteWait(holder);}
+    void StartTileLoad(TileLoadStatePtr) const;
+    void DoneTileLoad(TileLoadStatePtr) const;
+    void CancelTileLoad(TileCR tile);
+    void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
+    void WaitForAllLoadsFor(uint32_t milliseconds);
+    void CancelAllTileLoads();
     bool IsHttp() const {return m_isHttp;}
     bool IsPickable() const {return m_pickable;}
     void SetPickable(bool pickable) {m_pickable = pickable;}
@@ -245,11 +382,19 @@ public:
     RealityData::CachePtr GetCache() const {return m_cache;}
     TilePtr GetRootTile() const {return m_rootTile;} //!< Get the root Tile of this Root
     DgnDbR GetDgnDb() const {return m_db;} //!< Get the DgnDb from which this Root was created.
-    Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
+    Dgn::Render::SystemP GetRenderSystemP() const {return m_renderSystem;}
+    DrawArgs CreateDrawArgs(SceneContextR context);
+    ClipVectorCP GetClipVector() const { return _GetClipVector(); }
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
     virtual Utf8String _ConstructTileResource(TileCR tile) const {return m_rootResource + tile._GetTileCacheKey();}
+
+    //! Get the name of this tile tree, chiefly for debugging
+    virtual Utf8CP _GetName() const = 0;
+
+    //! Specify any view flags which should be overridden when rendering this tile tree.
+    DGNPLATFORM_EXPORT virtual Render::ViewFlagsOverrides _GetViewFlagsOverrides() const;
 
     //! Ctor for Root.
     //! @param db The DgnDb from which this Root was created. This is needed to call GeoLocation().GetDgnGCS()
@@ -267,20 +412,27 @@ public:
     //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
     //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
     //! @param maxSize The cache maximum size in bytes.
-    //! @note If this is not an HTTP root, this does nothing.
-    DGNPLATFORM_EXPORT void CreateCache(Utf8CP realityCacheName, uint64_t maxSize);
+    //! @param httpOnly If true create cache only if HTTP root.
+    //! @note If httpOnly && this is not an HTTP root, this does nothing.
+    DGNPLATFORM_EXPORT void CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly = true);
 
     //! Delete, if present, the local SQLite file holding the cache of downloaded tiles.
     //! @note This will first delete the local RealityData::Cache, aborting all outstanding requests and waiting for the queue to empty.
     DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile();
 
     //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
-    //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
+    //! @note Tiles which should be drawn but which are not yet available will be scheduled for progressive display.
+    //! @note During the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
-    DGNPLATFORM_EXPORT void DrawInView(RenderListContext& context, TransformCR, ClipVectorCP);
+    void DrawInView(SceneContextR context);
 
     //! Perform a pick operation on the contents of this tree
     DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP);
+
+    void OnAddToRangeIndex(DRange3dCR range, DgnElementId id);
+    void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
+    void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
+    virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
 };
 
 //=======================================================================================
@@ -295,11 +447,13 @@ public:
 struct TileLoader : RefCountedBase, NonCopyableClass
 {
 protected:
-    Utf8String m_resourceName;  // full file or URL name
-    TilePtr m_tile;             // tile to load, cannot be null.
-    TileLoadStatePtr m_loads;
-    Dgn::Render::SystemP m_renderSys;
-    
+    Utf8String                  m_resourceName;  // full file or URL name
+    TilePtr                     m_tile;             // tile to load, cannot be null.
+    TileLoadStatePtr            m_loads;
+    Dgn::Render::SystemP        m_renderSys;
+    BeSQLite::SnappyFromBlob    m_snappyFrom;
+    BeSQLite::SnappyToBlob      m_snappyTo;
+
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
@@ -312,8 +466,8 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    //! @param[in] renderSys The rendering system for creating graphics (nullptr to use renderSys supplied in Root constructor).
-    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys = nullptr)
+    //! @param[in] renderSys The renderSys.  If null then the root node renderSys is used.
+    TileLoader(Utf8StringCR resourceName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys)
         : m_resourceName(resourceName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_renderSys(renderSys) {}
 
     BentleyStatus LoadTile();
@@ -322,7 +476,10 @@ protected:
 
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
-    Dgn::Render::SystemP GetRenderSystem() {return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystem(): m_renderSys;}
+    Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }
+
+    BeTimePoint GetDeadline() const {return nullptr != m_loads ? m_loads->GetDeadline() : BeTimePoint();}
+    bool HasDeadline() const {return GetDeadline().IsValid();}
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -333,11 +490,15 @@ public:
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
 
+    //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
+    //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
+    virtual bool _IsExpired(uint64_t cachedTileCreateTime) { return false; }
+
     struct LoadFlag
         {
-        Root& m_root;
-        LoadFlag(Root& root) : m_root(root) {root.StartTileLoad();}
-        ~LoadFlag() {m_root.DoneTileLoad();}
+        TileLoadStatePtr m_state;
+        LoadFlag(TileLoadStatePtr state) : m_state(state) {state->GetTile().GetRoot().StartTileLoad(state);}
+        ~LoadFlag() {m_state->GetTile().GetRoot().DoneTileLoad(m_state);}
         };
 
     //! Perform the load asynchronously.
@@ -382,6 +543,81 @@ struct FileDataQuery
 };
 
 //=======================================================================================
+//! Describes a missing tile and its distance from the camera.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MissingNode
+{
+private:
+    TileCPtr    m_tile;
+    double      m_distance;
+public:
+    MissingNode(TileCR tile, double distance) : m_tile(&tile), m_distance(distance) {}
+    MissingNode() {} // for bset use only...
+
+    TileCR GetTile() const { return *m_tile; }
+    double GetDistance() const { return m_distance; }
+    uint32_t GetDepth() const { return GetTile().GetDepth(); }
+
+    bool operator<(MissingNodeCR rhs) const
+        {
+        if (m_tile.get() == rhs.m_tile.get())
+            return false;
+        else if (GetDistance() != rhs.GetDistance())
+            return GetDistance() < rhs.GetDistance();
+        else
+            return GetDepth() < rhs.GetDepth();
+        }
+};
+
+//=======================================================================================
+//! A set of missing tiles intended to be queued for loading.
+//! Sorted according to priority for loading - tiles nearer the root or closer to the camera
+//! are loaded with priority.
+//! A given tile can only appear in the set once.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MissingNodes
+{
+private:
+    typedef bset<MissingNode> Set;
+
+    Set m_set;
+public:
+    void Insert(TileCR tile, double distance);
+    bool Contains(TileCR tile) const;
+
+    bool empty() const { return m_set.empty(); }
+    size_t size() const { return m_set.size(); }
+    void clear() { m_set.clear(); }
+
+    typedef Set::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_set.begin(); }
+    const_iterator end() const { return m_set.end(); }
+};
+
+//=======================================================================================
+//! Accumulates a set of tiles that need to be loaded, for any number of tile trees.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct TileRequests
+{
+private:
+    // NB: We use an std::map because we need each MissingNodes to maintain a stable address as we add to the map
+    typedef std::map<RootP, MissingNodes> Map;
+
+    Map m_map;
+public:
+    //! Obtain the set of missing nodes for the given tile tree.
+    MissingNodesR GetMissing(RootR root) { return m_map.insert(Map::value_type(&root, MissingNodes())).first->second; }
+
+    //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
+    //! are not contained in this set of requests.
+    DGNPLATFORM_EXPORT void RequestMissing(BeTimePoint deadline) const;
+};
+
+//=======================================================================================
 // Arguments for drawing or picking tiles.
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
@@ -399,21 +635,6 @@ struct TileArgs
 };
 
 //=======================================================================================
-// Structure containing the graphics branches to receive drawn graphics.
-// @bsiclass                                                    Ray.Bentley   04/17
-//=======================================================================================
-struct DrawGraphics 
-{
-    Render::GraphicBranch m_graphics;
-    Render::GraphicBranch m_hiResSubstitutes;
-    Render::GraphicBranch m_loResSubstitutes;
-
-    size_t Count() const { return m_graphics.m_entries.size() + m_hiResSubstitutes.m_entries.size() + m_loResSubstitutes.m_entries.size(); }
-
-    void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear();}
-};
-
-//=======================================================================================
 //! Arguments for drawing a tile. As tiles are drawn, their Render::Graphics go into the GraphicBranch member of this object. After all
 //! in-view tiles are drawn, the accumulated list of Render::Graphics are placed in a GraphicBranch with the location
 //! transform for the scene (that is, the tile graphics are always in the local coordinate system of the TileTree.)
@@ -426,23 +647,30 @@ struct DrawGraphics
 //=======================================================================================
 struct DrawArgs : TileArgs
 {
-    typedef bmultimap<int, TileCPtr> MissingNodes;
-    RenderContextR m_context;
-    DrawGraphics m_graphics;
-    MissingNodes m_missing;
+    SceneContextR m_context;
+    Render::GraphicBranch m_graphics;
+    MissingNodesR m_missing;
     BeTimePoint m_now;
     BeTimePoint m_purgeOlderThan;
 
-    void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch, double offset, Utf8CP title);
-    DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
-            : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
-    void Clear() {m_graphics.Clear();  m_missing.clear();}
-    DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
-    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
-};
+    DGNPLATFORM_EXPORT DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr);
 
+    void DrawBranch(Render::ViewFlagsOverridesCR ovrFlags, Render::GraphicBranch& branch);
+    void SetClip(ClipVectorCP clip) {m_clip = clip;}
+    void Clear() {m_graphics.Clear(); m_missing.clear(); }
+    DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
+
+    DGNPLATFORM_EXPORT void InsertMissing(TileCR tile);
+
+    double ComputeTileDistance(TileCR tile) const;
+    double GetTileSizeModifier() const;
+    BeTimePoint GetDeadline() const;
+    uint32_t GetMinDepth() const;
+    uint32_t GetMaxDepth() const;
+    };
+    
 //=======================================================================================
-//! Arguments for performing a Pick of a tile.
+//! Arguments for performing a Pick of a tile.   
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct PickArgs : TileArgs
@@ -485,7 +713,8 @@ struct Root : TileTree::Root
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
     ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
 
-    ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) override;
+    ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootResource, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
 };
@@ -500,7 +729,7 @@ struct Tile : TileTree::Tile
 
     bool m_isLeaf;
     TileId m_id; 
-    Render::IGraphicBuilder::TileCorners m_corners; 
+    Render::GraphicBuilder::TileCorners m_corners; 
     mutable Render::GraphicPtr m_graphic;                   
 
     Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}
@@ -510,37 +739,96 @@ struct Tile : TileTree::Tile
     uint32_t GetRow() const {return m_id.m_row;}
     uint32_t GetColumn() const {return m_id.m_column;}
     virtual TilePtr _CreateChild(TileId) const = 0;
-    bool TryLowerRes(TileTree::DrawGraphicsR args, int depth) const;
-    void TryHigherRes(TileTree::DrawGraphicsR args) const;
     bool _HasChildren() const override {return !m_isLeaf;}
-    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
-    void SetIsLeaf() {m_isLeaf = true; m_children.clear();}
+    bool _HasGraphics() const override {return IsReady() && m_graphic.IsValid();}
+    void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
     ChildTiles const* _GetChildren(bool load) const override;
-    void _GetGraphics(DrawGraphicsR drawGraphics, int depth) const override;
-    void _DrawGraphics(DrawArgsR args, int depth) const override;
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
     Utf8String _GetTileCacheKey() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
+    void _Invalidate() override { m_graphic = nullptr; }
+    DGNPLATFORM_EXPORT void _ValidateChildren() const override;
 };
 
-//=======================================================================================
-// The ProgressiveTask for drawing QuadTree tiles as they arrive asynchronously.
-// @bsiclass                                                    Keith.Bentley   05/16
-//=======================================================================================
-struct ProgressiveTask : Dgn::ProgressiveTask
-{
-    Root& m_root;
-    DrawArgs::MissingNodes m_missing;
-    BeTimePoint m_nextShow;
-    TileLoadStatePtr m_loads;
-    Utf8String m_name;
-
-    Completion _DoProgressive(RenderListContext& context, WantShow&) override;
-    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
-    ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
-};
-    
 } // end QuadTree
+
+//=======================================================================================
+//! An OctTree is a 3d TileTree that subdivides each tile into 8 child tiles. The subdivision
+//! of a parent tile into its children is not necessarily equal.
+//! A tile in an OctTree can be addressed by a TileId comprised of a depth level and 3 indices.
+//! The root tile is {0,0,0,0}.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+namespace OctTree
+{
+//=======================================================================================
+//! Identifies a tile in an OctTree
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TileId
+{
+    uint8_t     m_level;
+    uint32_t    m_i;
+    uint32_t    m_j;
+    uint32_t    m_k;
+
+    TileId(uint8_t level, uint32_t i, uint32_t j, uint32_t k) : m_level(level), m_i(i), m_j(j), m_k(k) { }
+    TileId() : TileId(0,0,0,0) { }
+
+    TileId CreateChildId(uint32_t i, uint32_t j, uint32_t k) const { return TileId(m_level+1, m_i*2+i, m_j*2+j, m_k*2+k); }
+    TileId GetRelativeId(TileId parentId) const;
+
+    static TileId RootId() { return TileId(0,0,0,0); }
+};
+
+//=======================================================================================
+//! The root of an OctTree
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Root : TileTree::Root
+{
+    DEFINE_T_SUPER(TileTree::Root);
+
+    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system);
+};
+
+//=======================================================================================
+//! An OctTree tile. May or may not have its graphics present.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Tile : TileTree::Tile
+{
+    DEFINE_T_SUPER(TileTree::Tile);
+protected:
+    bool                m_isLeaf;
+    TileId              m_id;
+    Render::GraphicPtr  m_graphic;
+
+    Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
+    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child) const;
+
+public:
+    virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
+    bool _HasChildren() const override { return !m_isLeaf; }
+    DGNPLATFORM_EXPORT ChildTiles const* _GetChildren(bool load) const override;
+    DGNPLATFORM_EXPORT void _ValidateChildren() const override;
+    DGNPLATFORM_EXPORT void _DrawGraphics(TileTree::DrawArgsR) const override;
+    Utf8String _GetTileCacheKey() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
+    
+    TileId GetTileId() const { return m_id; }
+    TileId GetRelativeTileId() const;
+    bool _HasGraphics() const override { return IsReady() && m_graphic.IsValid(); }
+    Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
+    Tile const* GetOctParent() const { return static_cast<Tile const*>(GetParent()); }
+    Render::GraphicPtr _GetGraphic() const override { return m_graphic; }
+    bool IsLeaf() const { return m_isLeaf; }
+
+    void SetIsLeaf() { m_isLeaf = true; /*m_children.clear();*/ }
+    void SetGraphic(Render::GraphicR graphic) { m_graphic = &graphic; }
+};
+
+} // end OctTree
 
 //=======================================================================================
 //! Tiles for reality models typically consist of one or more large textured meshes.
@@ -555,24 +843,38 @@ namespace TriMeshTree
 //=======================================================================================
 struct TriMesh : RefCountedBase, NonCopyableClass
 {
-    typedef Render::IGraphicBuilder::TriMeshArgs CreateParams;
+    struct CreateParams
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points = nullptr;
+        FPoint3d const* m_normals = nullptr;
+        FPoint2d const* m_textureUV = nullptr;
+        Render::TexturePtr m_texture;
+
+        Render::QPoint3dList QuantizePoints() const;
+        Render::OctEncodedNormalList QuantizeNormals() const;
+    };
 protected:
-    bvector<FPoint3d> m_points;
-    bvector<FPoint3d> m_normals;
+    Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
+    Render::OctEncodedNormalList m_normals;
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
-    Render::GraphicPtr m_graphic;
+    bvector<Render::GraphicPtr> m_graphics;
+    DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
 public:
     DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
     TriMesh() { }
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetPolyface() const;
-    DGNPLATFORM_EXPORT void GetGraphics(DrawGraphicsR);
+    DGNPLATFORM_EXPORT void Draw(DrawArgsR);
     DGNPLATFORM_EXPORT void Pick(PickArgsR);
 
-    void ClearGraphic() {m_graphic = nullptr;}
-    bvector<FPoint3d> const& GetPoints() const {return m_points;}
+    void ClearGraphic() {m_graphics.clear();}
+    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
+    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
@@ -590,8 +892,7 @@ protected:
     Root(DgnDbR db, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(db, location, sceneFile, system) { }
 
     virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
-    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::Format targetFormat, Render::Image::BottomUp bottomUp, Render::SystemP renderSys)
-        {return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
+    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
 };
 
 //=======================================================================================
@@ -601,7 +902,7 @@ protected:
 struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile);
-    typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.    
+    typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
 
 protected:
     double m_maxDiameter;
@@ -614,14 +915,16 @@ protected:
     virtual bool _WantDebugRangeGraphics() const { return false; }
     DGNPLATFORM_EXPORT void AddDebugRangeGraphics(DrawArgsR args) const;
 
-    ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
+    bool _HasGraphics() const override { return m_meshes.end() != std::find_if(m_meshes.begin(), m_meshes.end(), [](TriMeshPtr const& arg) { return arg->HasGraphics(); }); }
+    void _Invalidate() override { BeAssert(false); }
+    ChildTiles const* _GetChildren(bool) const override {return IsReady() ? &m_children : nullptr;}
     double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
 
-    DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR, int depth) const override;
-    DGNPLATFORM_EXPORT void _GetGraphics(DrawGraphicsR, int depth) const override;
-    DGNPLATFORM_EXPORT void _PickGraphics(PickArgsR, int depth) const override;
+    DGNPLATFORM_EXPORT SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, DrawArgsR) const override;
+    DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR) const override;
+    DGNPLATFORM_EXPORT void _PickGraphics(PickArgsR, uint32_t depth) const override;
 public:
     TriMeshList& GetGeometry() {return m_meshes;}
     void ClearGeometry() {m_meshes.clear();}

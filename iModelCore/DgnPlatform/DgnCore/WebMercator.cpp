@@ -97,10 +97,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MapTile::_GetGraphics(DrawGraphicsR args, int depth) const
+void MapTile::_DrawGraphics(DrawArgsR args) const
     {
     if (m_reprojected)  // if we were unable to re-project this tile, don't draw it.
-        T_Super::_GetGraphics(args, depth);
+        T_Super::_DrawGraphics(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,7 +114,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     MapTileR tile = static_cast<MapTileR>(*m_tile);
     MapRootR mapRoot = tile.GetMapRoot();
 
-    auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+    auto graphic = GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams::World(mapRoot.GetDgnDb()));
 
     // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
     ImageSource::Format format = mapRoot.m_format;
@@ -126,17 +126,14 @@ BentleyStatus MapTile::Loader::_LoadTile()
     ImageSource source(format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = mapRoot.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
+    auto texture = GetRenderSystem()->_CreateTexture(source, Image::BottomUp::No, textureParams);
     m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-    BeAssert(SUCCESS==stat);
-    UNUSED_VARIABLE(stat);
-
-    tile.m_graphic = graphic;
+    tile.m_graphic = graphic->Finish();
+    BeAssert(tile.m_graphic.IsValid());
 
     tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
@@ -154,7 +151,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     if (m_id.m_level < 1) // level 0 tile never re-projects properly
         return ERROR;
 
-    IGraphicBuilder::TileCorners corners;
+    GraphicBuilder::TileCorners corners;
     auto& units= m_root.GetDgnDb().GeoLocation();
     for (int i=0; i<4; ++i)
         {
@@ -351,22 +348,19 @@ Utf8String WebMercatorModel::_GetCopyrightMessage() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Load(SystemP renderSys) const
+TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
     {
     if (m_provider.IsNull())
         {
         BeAssert(false);
-        return;
+        return nullptr;
         }
-
-    if (m_root.IsValid() && (nullptr==renderSys || m_root->GetRenderSystem()==renderSys))
-        return;
 
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
 
     uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-    m_root = new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+    return new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -466,6 +460,7 @@ void MapBoxImageryProvider::_ToJson(Json::Value& value) const
     value[json_mapType()] = (int)m_mapType;
     }
 
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -474,7 +469,7 @@ Utf8String MapBoxImageryProvider::_GetCreditUrl() const
     // NEEDSWORK_MapBox
     return nullptr;
     }
-
+   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -795,6 +790,7 @@ Utf8String  HereImageryProvider::_GetCreditUrl() const
     return nullptr;
     }
 
+#if defined(TODO_ELEMENT_TILE)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace WebMercator
@@ -854,7 +850,6 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
                 // still waiting.
                 return Completion::Aborted;
                 }
-
             case ImageryProvider::TemplateUrlLoadStatus::Failed:
             case ImageryProvider::TemplateUrlLoadStatus::Abandoned:
                 {
@@ -868,7 +863,7 @@ struct FetchTemplateUrlProgressiveTask : ProgressiveTask
 };
 
 END_BENTLEY_DGN_NAMESPACE
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -905,3 +900,13 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     if (m_root.IsValid())
         m_root->DrawInView(context, m_root->GetLocation(), m_root->m_clip.get());
     }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::SystemP system)
+    {
+    return Load(system);
+    }
+

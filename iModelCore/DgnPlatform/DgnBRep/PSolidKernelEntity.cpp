@@ -626,7 +626,7 @@ PK_ENTITY_t                         m_entityTag;
 GeometricPrimitiveCPtr              m_parentGeom; // Needs to be non-owning IBRepEntity to avoid freeing body out from under ElementGeometryTool cache...
 mutable GeometricPrimitiveCPtr      m_entityGeom; // Create on demand...
 mutable DRange3d                    m_range = DRange3d::NullRange(); // Calculate on demand...
-mutable Render::GraphicBuilderPtr   m_graphic; // Create on demand...
+mutable Render::GraphicPtr          m_graphic; // Create on demand...
 DPoint2d                            m_param = DPoint2d::FromZero(); // Locate param(s) for face/edge...convenient for tools...
 DPoint3d                            m_point = DPoint3d::FromZero(); // Locate point for face/edge/vertex...convenient for tools...
 bool                                m_haveLocation = false; // Whether this sub-entity was created from a locate and point/param are valid...
@@ -761,12 +761,12 @@ GeometricPrimitiveCPtr _GetGeometry() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const override
+Render::GraphicPtr _GetGraphic(ViewContextR context) const override
     {
     if (!m_graphic.IsValid())
         {
-        m_graphic = context.CreateGraphic(); // Don't supply viewport, graphic has to be independent of view render mode, etc.
-        m_graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 1); // Expect caller to draw using overrides to control color, weight, and style.
+        auto builder = context.CreateWorldGraphic(); // Don't supply viewport, graphic has to be independent of view render mode, etc.
+        builder->SetSymbology(ColorDef::White(), ColorDef::White(), 1); // Expect caller to draw using overrides to control color, weight, and style.
 
         GeometricPrimitiveCPtr geom = _GetGeometry();
 
@@ -789,12 +789,13 @@ Render::GraphicBuilderPtr _GetGraphic(ViewContextR context) const override
                             continue;
 
                         curve->TransformInPlace(m_parentGeom->GetAsIBRepEntity()->GetEntityTransform());
-                        m_graphic->AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, curve), false);
+                        builder->AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, curve), false);
                         }
                     }
                 }
 
-            geom->AddToGraphic(*m_graphic);
+            geom->AddToGraphic(*builder);
+            m_graphic = builder->Finish();
             }
         }
 
