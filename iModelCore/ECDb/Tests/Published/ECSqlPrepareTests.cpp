@@ -679,14 +679,6 @@ TEST_F(ECSqlSelectPrepareTests, Functions)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.PSA p ORDER BY ECClassId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.PSA p ORDER BY p.ECClassId"));
 
-    //invalid expressions
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT GetClassId() FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.GetClassId() FROM ecsql.PSA p"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.GetClassId FROM ecsql.PSA p"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT GetClassId() FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT a.GetClassId() FROM ecsql.PSA"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT a.GetClassId() FROM ecsql.PSA p"));
-
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ECClassId <> 145"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ECClassId = 145"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE LOWER(S) = UPPER(S)"));
@@ -701,7 +693,19 @@ TEST_F(ECSqlSelectPrepareTests, Functions)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ECInstanceId NOT MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I MATCH random()")) << "fails at step time only";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (I + L) MATCH random()")) << "even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar. Fails at step time only";
+
+    //invalid expressions
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT GetClassId() FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.GetClassId() FROM ecsql.PSA p"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.GetClassId FROM ecsql.PSA p"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT GetClassId() FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT a.GetClassId() FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT a.GetClassId() FROM ecsql.PSA p"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE ECInstanceId MATCH '123'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE LOWER(P2D) IS NULL")) << "Non-scalar args not supported to SQL function";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE LOWER(P3D) IS NULL")) << "Non-scalar args not supported to SQL function";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT count(P2D) FROM ecsql.P")) << "Non-scalar args not supported to SQL function";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT count(P3D) FROM ecsql.P")) << "Non-scalar args not supported to SQL function";
     }
 
 //---------------------------------------------------------------------------------------
