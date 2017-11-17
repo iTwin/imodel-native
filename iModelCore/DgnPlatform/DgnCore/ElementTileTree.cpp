@@ -1323,7 +1323,10 @@ BentleyStatus Loader::_LoadTile()
             }
 
         if (graphic.IsValid())
+            {
+            geometry.Meshes().m_features.SetModelId(root.GetModelId());
             tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
+            }
         }
 
     if (!tile.IsPartial())
@@ -2179,7 +2182,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext)
   : m_tile(tile), m_options(options), m_tolerance(tile.GetTolerance()), m_loadContext(loadContext),
-    m_featureTable(nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile),
+    m_featureTable(tile.GetElementRoot().GetModelId(), nullptr != loadContext.GetRenderSystem() ? loadContext.GetRenderSystem()->_GetMaxFeaturesPerBatch() : s_hardMaxFeaturesPerTile),
     m_builderMap(m_tolerance, &m_featureTable, tile.GetTileRange(), m_tile.GetElementRoot().Is2d())
     {
     SetDgnDb(m_tile.GetElementRoot().GetDgnDb());

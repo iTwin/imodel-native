@@ -588,7 +588,7 @@ protected:
     GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const { return nullptr; }
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const { return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const { return nullptr; }
-    GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const { return nullptr; }
+    GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DgnModelId) const { return nullptr; }
 
     uint32_t _GetMaxFeaturesPerBatch() const override { return 0x7fffffff; }
 };
