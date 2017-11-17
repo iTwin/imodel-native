@@ -949,9 +949,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.m_drawingAndSheetFiles = m_jobEnvArgs.m_drawingAndSheetFiles;
     else
         {
-#ifdef WIP_NEEDS_MORE_THOUGHT // Must prevent the drawing converter from mapping in models that are actually meant to be root models (in a later run).
         GetRegistry()._QueryAllFilesAssignedToBridge(params.m_drawingAndSheetFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
-#endif
         }
     params.SetDoDetectDeletedModelsAndElements(false); // *** TFS#781198
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
@@ -1169,12 +1167,27 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return RETURN_STATUS_SUCCESS;
 
     //  The repo already exists. Run the bridge to update it and then push the changeset to the iModel.
-    auto status = UpdateExistingBim();
+    int status;
+    try
+        {
+        status = UpdateExistingBim();
+        }
+    catch (...)
+        {
+        status = RETURN_STATUS_LOCAL_ERROR;
+        }
 
     s_meter.Hide();
 
     if (m_briefcaseDgnDb.IsValid())     // must make sure briefcase dgndb is closed before tearing down host!
+        {
+        Briefcase_ReleaseAllPublicLocks();  // regardless of the success or failure of the bridge, we must not hold onto any locks that are not the private property of the bridge
+
+        if (BSISUCCESS != status)
+            m_briefcaseDgnDb->AbandonChanges();
+
         m_briefcaseDgnDb = nullptr;
+        }
 
     return status;
     }
@@ -1188,7 +1201,7 @@ int iModelBridgeFwk::ProcessSchemaChange()
     m_briefcaseDgnDb->SaveChanges();
     if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
         return RETURN_STATUS_SERVER_ERROR;
-    Briefcase_ReleaseSharedLocks();
+    Briefcase_ReleaseAllPublicLocks();
 
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
 
@@ -1224,6 +1237,14 @@ int iModelBridgeFwk::UpdateExistingBim()
 	// ***
 	// ***
     DbResult dbres;
+    
+    //                                      ************************************************
+    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+    //                                      ************************************************
+    //                                      
+    //                            *** Do not close it. Do not set it to null                            ***
+    //                            *** Even in case of error, do not attempt to clean up m_briefcaseDgnDb. ***
+    //                            *** The caller does all cleanup, including releasing all public locks. ***
 
     // ***
     // *** TRICKY: Do not call InitBridge until we have done PullMergePush
@@ -1239,11 +1260,13 @@ int iModelBridgeFwk::UpdateExistingBim()
     if (BSISUCCESS != Briefcase_PullMergePush(""))
         return RETURN_STATUS_SERVER_ERROR;
 
+    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
 
     m_briefcaseDgnDb->SaveChanges();
-    Briefcase_ReleaseSharedLocks();
-    m_briefcaseDgnDb = nullptr;
+    Briefcase_ReleaseAllPublicLocks();
+    m_briefcaseDgnDb = nullptr;             // This is safe, because we released all locks.
 
     // Now initialize the bridge.
     if (BSISUCCESS != InitBridge())
@@ -1263,6 +1286,8 @@ int iModelBridgeFwk::UpdateExistingBim()
             return BentleyStatus::ERROR;
             }
 
+        //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+    
         if (madeSchemaChanges)
             {
             if (0 != ProcessSchemaChange())  // pullmergepush + re-open
@@ -1276,27 +1301,28 @@ int iModelBridgeFwk::UpdateExistingBim()
         if (!callCloseOnReturn.IsReady())
             {
             LOG.fatalv("Bridge is not ready or could not open source file");
-            m_briefcaseDgnDb->AbandonChanges();
-            m_briefcaseDgnDb = nullptr;
             return BentleyStatus::ERROR;
             }
 
         m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
                                         // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
 
+
+        //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+
         if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))
                 return RETURN_STATUS_SERVER_ERROR;
-            Briefcase_ReleaseSharedLocks();
+            Briefcase_ReleaseAllPublicLocks();
             }
+
+        //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
         //  Let the bridge generate schema changes
         if (BSISUCCESS != m_bridge->_MakeSchemaChanges())
             {
             LOG.fatalv("Bridge _MakeSchemaChanges failed");
-            m_briefcaseDgnDb->AbandonChanges();
-            m_briefcaseDgnDb = nullptr;
             return BentleyStatus::ERROR;
             }
 
@@ -1309,29 +1335,25 @@ int iModelBridgeFwk::UpdateExistingBim()
             callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
             }
 
+        //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
         //  Now, finally, we can convert data
         BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
         if (BSISUCCESS != bridgeCvtStatus)
-            {
-            m_briefcaseDgnDb->AbandonChanges();
-            m_briefcaseDgnDb = nullptr;
             return RETURN_STATUS_CONVERTER_ERROR;
-            }
 
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
 
     dbres = m_briefcaseDgnDb->SaveChanges();
 
+    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+
     if (BeSQLite::BE_SQLITE_OK != dbres)
-        {
-        m_briefcaseDgnDb->AbandonChanges();
-        m_briefcaseDgnDb = nullptr;
         return RETURN_STATUS_LOCAL_ERROR;
-        }
 
     //  PullMergePush
     //  Note: We may still be holding shared locks that we need to release. If we detect this, we must try again to release them.
@@ -1349,17 +1371,17 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
-        if (BSISUCCESS != Briefcase_ReleaseSharedLocks())
+        if (BSISUCCESS != Briefcase_ReleaseAllPublicLocks())
             return RETURN_STATUS_SERVER_ERROR;
         }
+
+    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+
 
     // If we got here, we completed the update and pushed it.
 
     // POST-CONDITIONS
     BeAssert((!anyTxnsInFile(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState())) && "Local changes should have been pushed");
-    // *** TBD: check that briefcase is NOT holding any shared locks
-
-    m_briefcaseDgnDb = nullptr;
 
     return RETURN_STATUS_SUCCESS;
     }

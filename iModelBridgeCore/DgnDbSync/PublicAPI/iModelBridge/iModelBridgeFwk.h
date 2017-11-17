@@ -219,7 +219,7 @@ protected:
     BentleyStatus Briefcase_AcquireExclusiveLocks();
     BentleyStatus Briefcase_PullAndMerge();
     BentleyStatus Briefcase_PullMergePush(Utf8CP);
-    BentleyStatus Briefcase_ReleaseSharedLocks();
+    BentleyStatus Briefcase_ReleaseAllPublicLocks();
     //! @}
 
     BentleyStatus ParseDocProps();

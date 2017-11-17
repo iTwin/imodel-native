@@ -384,8 +384,11 @@ static bool isLockExclusiveToJob(DgnLockCR lock)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_ReleaseSharedLocks()
+BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
     {
+    if (!m_briefcaseDgnDb.IsValid())
+        return BSIERROR;
+
     GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
 
     DgnLockSet toRelease;
