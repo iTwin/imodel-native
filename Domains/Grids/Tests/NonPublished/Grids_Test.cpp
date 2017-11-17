@@ -2375,34 +2375,6 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-ElementIterator GetCurvesFromFloorPlane(GridPlaneSurfacePtr floorPlane)
-    {
-    Dgn::ElementIterator iterator = floorPlane->GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridCurve), "WHERE ECInstanceId IN"
-                                                                                 "(SELECT TargetECInstanceId"
-                                                                                 " FROM " GRIDS_SCHEMA(GRIDS_REL_GridSurfaceCreatesGridCurve)
-                                                                                 " WHERE SourceECInstanceId = ?)");
-
-    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
-        {
-        pStmnt->BindId(1, floorPlane->GetElementId());
-        }
-    return iterator;
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Haroldas.Vitunskas              11/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
-struct GridPlaneSurfacePtrCmp 
-    { 
-    bool operator() (GridPlaneSurfacePtr const& lhs, GridPlaneSurfacePtr const& rhs) const
-        {
-        return lhs->GetElementId() < rhs->GetElementId();
-        };
-    };
-    
-//---------------------------------------------------------------------------------------
-// @betest                                      Haroldas.Vitunskas              11/2017
-//--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     {
     DgnDbR db = *DgnClientApp::App().Project();
@@ -2502,44 +2474,27 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
 
     db.SaveChanges();
 
-    // Check if grid curves are all created and valid
-    bmap < GridPlaneSurfacePtr, bvector<GridCurveCPtr>, GridPlaneSurfacePtrCmp > orthogonalCurves;
+    // Check if grid curves are all created and have valid geometry
     for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        ElementIterator floorGridCurvesIterator = GetCurvesFromFloorPlane(floorGridSurface);
+        ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
         ASSERT_EQ(3, floorGridCurvesIterator.BuildIdList<DgnElementId>().size());
         
-        bvector<GridCurveCPtr> floorGridCurves;
+        double elevation = floorGridSurface->GetPlane().origin.z;
+        bvector<ICurvePrimitiveCPtr> expectedGeometries =
+            {
+            ICurvePrimitive::CreateLineString({ { 0, 0, elevation },{ 50, 0, elevation } }),
+            ICurvePrimitive::CreateLineString({ { 0, 15, elevation },{ 50, 15, elevation } }),
+            ICurvePrimitive::CreateLineString({ { 0, 0, elevation },{ 0, 50, elevation } })
+            };
+
         for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
             {
             GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
-
-            floorGridCurves.push_back(curve);
-            }
-
-        orthogonalCurves[floorGridSurface] = floorGridCurves;
-        }
-
-    // Check grid curves geometry
-    for (auto floorCurvesPair : orthogonalCurves)
-        {
-        GridPlaneSurfacePtr floorGrid = floorCurvesPair.first;
-        bvector<GridCurveCPtr> floorGridCurves = floorCurvesPair.second;
-
-        double elevation = floorGrid->GetPlane().origin.z;
-        bvector<ICurvePrimitiveCPtr> expectedGeometries =
-            {
-            ICurvePrimitive::CreateLineString({{0, 0, elevation }, {50, 0, elevation}}),
-            ICurvePrimitive::CreateLineString({{0, 15, elevation}, {50, 15, elevation}}),
-            ICurvePrimitive::CreateLineString({{0, 0, elevation}, {0, 50, elevation}})
-            };
-
-        for (GridCurveCPtr gridCurve : floorGridCurves)
-            {
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
-                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*gridCurve->GetCurve(), 0.1); }))
+                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
             }
         }
@@ -2642,32 +2597,13 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
 
     db.SaveChanges();
 
-    // Check if grid curves are all created and valid
-    bmap < GridPlaneSurfacePtr, bvector<GridCurveCPtr>, GridPlaneSurfacePtrCmp > radialCurves;
+    // Check if grid curves are all created and have valid geometry
     for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        ElementIterator floorGridCurvesIterator = GetCurvesFromFloorPlane(floorGridSurface);
+        ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
         ASSERT_EQ(2, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 4 after arced grid curves can be created
         
-        bvector<GridCurveCPtr> floorGridCurves;
-        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
-            {
-            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
-            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
-
-            floorGridCurves.push_back(curve);
-            }
-
-        radialCurves[floorGridSurface] = floorGridCurves;
-        }
-
-    // Check grid curves geometry
-    for (auto floorCurvesPair : radialCurves)
-        {
-        GridPlaneSurfacePtr floorGrid = floorCurvesPair.first;
-        bvector<GridCurveCPtr> floorGridCurves = floorCurvesPair.second;
-
-        double elevation = floorGrid->GetPlane().origin.z;
+        double elevation = floorGridSurface->GetPlane().origin.z;
         bvector<ICurvePrimitiveCPtr> expectedGeometries =
             {
             ICurvePrimitive::CreateLineString({{0, 0, elevation }, 
@@ -2682,13 +2618,16 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                          {20 * std::cos(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), 20 * std::sin(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), elevation }))
             };
 
-        for (GridCurveCPtr gridCurve : floorGridCurves)
+        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
             {
+            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
+
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
-                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*gridCurve->GetCurve(), 0.1); }))
+                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
-            }
+            }        
         }
     }
 
@@ -2797,32 +2736,13 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
 
     db.SaveChanges();
 
-    // Check if grid curves are all created and valid
-    bmap < GridPlaneSurfacePtr, bvector<GridCurveCPtr>, GridPlaneSurfacePtrCmp > sketchCurves;
+    // Check if grid curves are all created and have valid geometry
     for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        ElementIterator floorGridCurvesIterator = GetCurvesFromFloorPlane(floorGridSurface);
+        ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
         ASSERT_EQ(1, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 3 after arced and splined grid curves can be created
-        
-        bvector<GridCurveCPtr> floorGridCurves;
-        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
-            {
-            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
-            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
-
-            floorGridCurves.push_back(curve);
-            }
-
-        sketchCurves[floorGridSurface] = floorGridCurves;
-        }
-
-    // Check grid curves geometry
-    for (auto floorCurvesPair : sketchCurves)
-        {
-        GridPlaneSurfacePtr floorGrid = floorCurvesPair.first;
-        bvector<GridCurveCPtr> floorGridCurves = floorCurvesPair.second;
-
-        double elevation = floorGrid->GetPlane().origin.z;
+      
+        double elevation = floorGridSurface->GetPlane().origin.z;
 
         bvector<double> splineWeights = { 1.0, 1.0, 1.0 };
         bvector<double> splineKnots = { 0, 1, 2, 3, 4, 5 };
@@ -2837,11 +2757,13 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
             ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } }, &splineWeights, &splineKnots, 3, false, false))
             };
 
-        for (GridCurveCPtr gridCurve : floorGridCurves)
+        for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
             {
+            GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
+            ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
-                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*gridCurve->GetCurve(), 0.1); }))
+                                                             [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
             }
         }
