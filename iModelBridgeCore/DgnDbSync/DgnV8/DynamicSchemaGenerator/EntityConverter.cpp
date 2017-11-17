@@ -1667,4 +1667,6 @@ BentleyStatus BisClassConverter::ECClassRemovalContext::FixClassHierarchies()
     return BSISUCCESS;
     }
 
+#if defined(NEEDSWORK_PERFORMANCE)
+#endif
 END_DGNDBSYNC_DGNV8_NAMESPACE
