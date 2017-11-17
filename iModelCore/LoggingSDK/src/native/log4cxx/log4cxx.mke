@@ -74,7 +74,7 @@ LINKER_LIBRARIES   =    $(ContextSubpartsLibs)Bentley.lib \
 # Cannot use libsmtp in DgnDb due to licensing concerns.
 #                        $(BuildContextSubParts)libs/libsmtp08.lib \
 
-%include linklibrary.mki
+%include $(sharedMki)linklibrary.mki
 
 #-----------------------------------------------------------------------
 #   Copy the files required for the SDK
