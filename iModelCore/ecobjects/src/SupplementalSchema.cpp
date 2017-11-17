@@ -799,7 +799,9 @@ static SupplementedSchemaStatus mergeAttributeProperty (IECInstanceR to, IECInst
         {
         ECValue vTo;
         to.GetValue (vTo, accessor);
-        if (!vTo.Equals (vFrom))
+        if (vTo.IsString() && Utf8String::IsNullOrEmpty(vTo.GetUtf8CP()))
+            to.SetValue(accessor, vFrom);
+        else if (!vTo.Equals (vFrom))
             return SupplementedSchemaStatus::SchemaMergeException;
         }
     
