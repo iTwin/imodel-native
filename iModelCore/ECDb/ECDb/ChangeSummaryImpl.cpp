@@ -584,10 +584,15 @@ ECN::ECClassId ChangeExtractor::GetClassIdFromColumn(ChangeIterator::TableMap co
     if (classId.IsValid())
         return classId;
 
+    if (!tableMap.IsMapped())
+        {
+        BeAssert(false);
+        return ECClassId();
+        }
+
     // Search in table itself
-    classId = tableMap.QueryValueId<ECClassId>(classIdColumn.GetName(), instanceId);
+    classId = DbSchemaPersistenceManager::QueryRowClassId(m_ecdb, tableMap.GetTableName(), classIdColumn.GetName(), tableMap.GetIdColumn().GetName(), instanceId);
     BeAssert(classId.IsValid());
-    
     return classId;
     }
 
@@ -860,7 +865,14 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
             return classId;
 
         // Search in the end table
-        classId = rowEntry.GetChangeIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), relEndInstanceId);
+        ChangeIterator::TableMap const* tableMap = rowEntry.GetChangeIterator().GetTableMap(endTableName);
+        if (tableMap == nullptr || !tableMap->IsMapped())
+            {
+            BeAssert(false);
+            return ECClassId();
+            }
+
+        classId = DbSchemaPersistenceManager::QueryRowClassId(m_ecdb, endTableName, classIdColumn->GetName(), tableMap->GetIdColumn().GetName(), relEndInstanceId);
         BeAssert(classId.IsValid());
         return classId;
         }

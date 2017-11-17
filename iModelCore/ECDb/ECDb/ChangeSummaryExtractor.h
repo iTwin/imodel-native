@@ -25,13 +25,12 @@ struct InstanceChange final
         ECInstanceKey m_keyOfChangedInstance;
         DbOpcode m_dbOpcode;
         bool m_isIndirect;
-        Utf8String m_primaryTableName;
 
     public:
         InstanceChange() {}
 
-        InstanceChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, DbOpcode dbOpcode, bool isIndirect, Utf8StringCR tableName) :
-            m_summaryId(summaryId), m_keyOfChangedInstance(keyOfChangedInstance), m_dbOpcode(dbOpcode), m_isIndirect(isIndirect), m_primaryTableName(tableName)
+        InstanceChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, DbOpcode dbOpcode, bool isIndirect) :
+            m_summaryId(summaryId), m_keyOfChangedInstance(keyOfChangedInstance), m_dbOpcode(dbOpcode), m_isIndirect(isIndirect)
             {}
 
         bool IsValid() const { return m_keyOfChangedInstance.GetInstanceId().IsValid(); }
@@ -42,9 +41,6 @@ struct InstanceChange final
         //! Get the DbOpcode of the changed instance that indicates that the instance was inserted, updated or deleted.
         DbOpcode GetDbOpcode() const { return m_dbOpcode; }
         bool IsIndirect() const { return m_isIndirect; }
-
-        //! Get the name of the primary table containing the instance
-        Utf8StringCR GetPrimaryTableName() const { return m_primaryTableName; }
     };
 
 //=======================================================================================
@@ -59,8 +55,6 @@ struct ChangeSummaryExtractor final : NonCopyableClass
             {
             private:
                 ChangeSummaryExtractor const& m_extractor;
-
-                ECN::ECClassId GetClassIdFromColumn(ECInstanceId summaryId, ChangeIterator::TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const;
 
             public:
                 explicit FkRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
@@ -93,7 +87,6 @@ struct ChangeSummaryExtractor final : NonCopyableClass
 
         InstanceChange QueryInstanceChange(ECInstanceId summaryId, ECInstanceKey const&) const;
         ECInstanceId FindChangeId(ECInstanceId summaryId, ECInstanceKey const&) const;
-        ECN::ECClassId QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR primaryTableName, ECInstanceId idOfChangedInstance) const;
         bool ContainsChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(summaryId, keyOfChangedInstance).IsValid(); }
 
 
@@ -106,9 +99,7 @@ struct ChangeSummaryExtractor final : NonCopyableClass
         DbResult InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId) const;
 
         static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
-
-        static bool RawIndirectToBool(int indirect) { return indirect != 0; }
-
+         static bool RawIndirectToBool(int indirect) { return indirect != 0; }
         
     public:
         explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(15) {}

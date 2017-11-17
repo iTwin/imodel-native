@@ -86,6 +86,8 @@ public:
     static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
     static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
 
+    static ECN::ECClassId QueryRowClassId(ECDbCR, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id);
+
     template<typename TId>
     static TId GetLastInsertedId(ECDbCR ecdb)
         {

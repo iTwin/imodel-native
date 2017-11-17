@@ -79,7 +79,7 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId summaryId, IChangeSet
 BentleyStatus ChangeSummaryExtractor::ExtractInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry) const
     {
     InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(),
-                                       RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
+                                       RawIndirectToBool(rowEntry.GetIndirect()));
     bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
     return RecordInstance(instance, rowEntry, recordOnlyIfUpdatedProperties);
     }
@@ -208,7 +208,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
     {
     InstanceChange instanceChange;
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT OpCode,IsIndirect,TableName FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT OpCode,IsIndirect FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -234,7 +234,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
     if (dbOpCode.IsNull()) // enum has changed -> fatal error
         return instanceChange;
 
-    return InstanceChange(summaryId, keyOfChangedInstance, dbOpCode.Value(), stmt->GetValueBoolean(1), Utf8String(stmt->GetValueText(2)));
+    return InstanceChange(summaryId, keyOfChangedInstance, dbOpCode.Value(), stmt->GetValueBoolean(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -257,27 +257,6 @@ ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInst
         return stmt->GetValueId<ECInstanceId>(0);
 
     return ECInstanceId();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-ECClassId ChangeSummaryExtractor::QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR primaryTableName, ECInstanceId instanceId) const
-    {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ChangedInstance.ClassId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND Summary.Id=? AND PrimaryTableName=?");
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return ECClassId();
-        }
-
-    stmt->BindId(1, instanceId);
-    stmt->BindId(2, summaryId);
-    stmt->BindText(3, primaryTableName.c_str(), IECSqlBinder::MakeCopy::No);
-
-    if (stmt->Step() == BE_SQLITE_ROW)
-        return stmt->GetValueId<ECClassId>(0);
-
-    return ECClassId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -326,7 +305,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
     InstanceChange foundInstanceChange = QueryInstanceChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
     if (!foundInstanceChange.IsValid())
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, PrimaryTableName, Summary.Id) VALUES (?,?,?,?,?,?)");
+        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, Summary.Id) VALUES(?,?,?,?,?)");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -337,8 +316,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
         stmt->BindId(2, instance.GetKeyOfChangedInstance().GetInstanceId());
         stmt->BindInt(3, Enum::ToInt(op.Value()));
         stmt->BindBoolean(4, instance.IsIndirect());
-        stmt->BindText(5, instance.GetPrimaryTableName().c_str(), IECSqlBinder::MakeCopy::No);
-        stmt->BindId(6, instance.GetSummaryId());
+        stmt->BindId(5, instance.GetSummaryId());
         return stmt->Step();
         }
 
@@ -455,6 +433,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryI
     return stmt->Step();
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Affan.Khan          10/2017
 //---------------------------------------------------------------------------------------
@@ -547,14 +526,28 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
         }
     else
         {
-        ChangeIterator::TableMap const* otherEndTableMap = rowEntry.GetChangeIterator().GetTableMap(otherEndClassIdColumn->GetTable().GetName());
-        BeAssert(otherEndTableMap != nullptr);
+        DbTable const& otherEndTable = otherEndClassIdColumn->GetTable();
+        if (otherEndTable.GetPrimaryKeyConstraint() == nullptr || otherEndTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
+            {
+            BeAssert(false && "Other end table is expected to have primary key constraint with one column");
+            return ERROR;
+            }
+         
+        DbColumn const& otherEndPkCol = *otherEndTable.GetPrimaryKeyConstraint()->GetColumns()[0];
 
-        // Search in all changes
         if (newOtherEndInstanceId.IsValid())
-            newOtherEndClassId = GetClassIdFromColumn(summaryId, *otherEndTableMap, *otherEndClassIdColumn, newOtherEndInstanceId);
+            {
+            newOtherEndClassId = DbSchemaPersistenceManager::QueryRowClassId(m_extractor.m_ecdb, otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
+                                                                         newOtherEndInstanceId);
+            BeAssert(newOtherEndClassId.IsValid());
+            }
+
         if (oldOtherEndInstanceId.IsValid())
-            oldOtherEndClassId = GetClassIdFromColumn(summaryId, *otherEndTableMap, *otherEndClassIdColumn, oldOtherEndInstanceId);
+            {
+            oldOtherEndClassId = DbSchemaPersistenceManager::QueryRowClassId(m_extractor.m_ecdb, otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
+                                                                         oldOtherEndInstanceId);
+            BeAssert(oldOtherEndClassId.IsValid());
+            }
         }
 
     ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
@@ -590,27 +583,10 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
         newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
         }
 
-    InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
+    InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()));
     return m_extractor.RecordRelInstance(instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-ECN::ECClassId ChangeSummaryExtractor::FkRelChangeExtractor::GetClassIdFromColumn(ECInstanceId summaryId, ChangeIterator::TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const
-    {
-    // Search in all changes
-    ECClassId classId = m_extractor.QueryClassIdOfChangedInstance(summaryId, tableMap.GetTableName(), instanceId);
-    if (classId.IsValid())
-        return classId;
-
-    // Search in table itself
-    classId = tableMap.QueryValueId<ECClassId>(classIdColumn.GetName(), instanceId);
-    BeAssert(classId.IsValid());
-
-    return classId;
-    }
 
 
 //****************************************************************************************
@@ -622,8 +598,7 @@ ECN::ECClassId ChangeSummaryExtractor::FkRelChangeExtractor::GetClassIdFromColum
 //---------------------------------------------------------------------------------------
 BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& classMap) const
     {
-    InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(),
-                            RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
+    InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(), RawIndirectToBool(rowEntry.GetIndirect()));
 
     ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
     GetRelEndInstanceKeys(oldSourceInstanceKey, newSourceInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source);
@@ -743,15 +718,14 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
     const bool endIsInOneTable = classIdPropMap->GetTables().size() == 1;
     if (endIsInOneTable)
         {
-        Utf8StringCR endTableName = classIdColumn->GetTable().GetName();
-
-        // Search in all changes
-        ECClassId classId = m_extractor.QueryClassIdOfChangedInstance(summaryId, endTableName, relEndInstanceId);
-        if (classId.IsValid())
-            return classId;
-
+        DbTable const& endTable = classIdColumn->GetTable();
+        if (endTable.GetPrimaryKeyConstraint() == nullptr || endTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
+            {
+            BeAssert(false && "End table is expected to have a single col PK");
+            return ECClassId();
+            }
         // Search in the end table
-        classId = rowEntry.GetChangeIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), relEndInstanceId);
+        ECClassId classId = DbSchemaPersistenceManager::QueryRowClassId(m_extractor.m_ecdb, endTable.GetName(), classIdColumn->GetName(), endTable.GetPrimaryKeyConstraint()->GetColumns()[0]->GetName(), relEndInstanceId);
         BeAssert(classId.IsValid());
         return classId;
         }
@@ -762,6 +736,5 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
     BeAssert(classId.IsValid());
     return classId;
     }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -828,4 +828,22 @@ bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetC
     return map;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle         11/2017
+//---------------------------------------------------------------------------------------
+//static
+ECClassId DbSchemaPersistenceManager::QueryRowClassId(ECDbCR ecdb, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id)
+    {
+    Utf8PrintfString sql("SELECT %s FROM %s WHERE %s=?", classIdColName.c_str(), tableName.c_str(), pkColName.c_str());
+    CachedStatementPtr statement = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    BeAssert(statement.IsValid());
+
+    if (BE_SQLITE_ROW != statement->BindId(1, id))
+        return ECClassId();
+
+    if (BE_SQLITE_ROW != statement->Step())
+        return ECClassId();
+
+    return statement->GetValueId<ECClassId>(0);
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -140,13 +140,26 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
     m_primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetIdColumn().GetIndex());
     BeAssert(m_primaryInstanceId.IsValid());
 
-    if (m_sqlChange->GetDbOpcode() == DbOpcode::Update && !m_tableMap->QueryInstance(m_primaryInstanceId))
+    if (m_sqlChange->GetDbOpcode() == DbOpcode::Update)
         {
-        // Note: The instance doesn't exist anymore, and has been deleted in future change to the Db.
-        // Processing updates requires that the instance is still available in the Db to extract sufficient EC information, 
-        // especially since a SqlChangeSet records only the updated columns but not the entire row. 
-        BeAssert(false && "SqlChangeSet does not span all modifications made to the Db");
-        return;
+        CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT 1 FROM %s WHERE %s=?", m_tableMap->GetTableName().c_str(),
+                                                                                             m_tableMap->GetIdColumn().GetName().c_str()).c_str());
+
+        if (stmt == nullptr)
+            {
+            BeAssert(false);
+            return;
+            }
+
+        stmt->BindId(1, m_primaryInstanceId);
+        if (BE_SQLITE_DONE == stmt->Step())
+            {
+            // Note: The instance doesn't exist anymore, and has been deleted in future change to the Db.
+            // Processing updates requires that the instance is still available in the Db to extract sufficient EC information, 
+            // especially since a SqlChangeSet records only the updated columns but not the entire row. 
+            BeAssert(false && "SqlChangeSet does not span all modifications made to the Db");
+            return;
+            }
         }
 
     ECClassId primaryClassId;
@@ -169,7 +182,7 @@ ECN::ECClassId ChangeIterator::RowEntry::GetClassIdFromChangeOrTable(Utf8CP clas
         return m_sqlChange->GetValueId<ECClassId>(m_tableMap->GetColumnIndexByName(classIdColumnName));
 
     /* if (dbOpcode == DbOpcode::Update) */
-    return m_tableMap->QueryValueId<ECClassId>(classIdColumnName, instanceId);
+    return DbSchemaPersistenceManager::QueryRowClassId(m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId);
     }
 
 
@@ -325,7 +338,22 @@ DbDupValue ChangeIterator::ColumnEntry::QueryValueFromDb() const
     BeAssert(columnMap != nullptr);
 
     RowEntry const& rowEntry = m_columnIterator.m_rowEntry;
-    return rowEntry.GetTableMap()->QueryValueFromDb(columnMap->GetName(), rowEntry.GetPrimaryInstanceId());
+
+    ChangeIterator::TableMap const* tableMap = rowEntry.GetTableMap();
+    BeAssert(tableMap != nullptr);
+
+    Utf8PrintfString sql("SELECT %s FROM %s WHERE %s=?", columnMap->GetName().c_str(), tableMap->GetTableName().c_str(), tableMap->GetIdColumn().GetName().c_str());
+    CachedStatementPtr statement = m_ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    BeAssert(statement.IsValid());
+
+    statement->BindId(1, rowEntry.GetPrimaryInstanceId());
+
+    DbResult result = statement->Step();
+    if (BE_SQLITE_ROW == result)
+        return statement->GetDbValue(0);
+
+    BeAssert(result == BE_SQLITE_DONE);
+    return DbDupValue(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -636,43 +664,12 @@ ECN::ECClassId ChangeIterator::TableMap::GetClassId() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-DbDupValue ChangeIterator::TableMap::QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId instanceId) const
-    {
-    Utf8PrintfString sql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetIdColumn().GetName().c_str());
-    CachedStatementPtr statement = m_ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
-    BeAssert(statement.IsValid());
-
-    statement->BindId(1, instanceId);
-
-    DbResult result = statement->Step();
-    if (BE_SQLITE_ROW == result)
-        return statement->GetDbValue(0);
-
-    BeAssert(result == BE_SQLITE_DONE);
-    return DbDupValue(nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     04/2016
 //---------------------------------------------------------------------------------------
 int ChangeIterator::TableMap::GetColumnIndexByName(Utf8StringCR columnName) const
     {
     bmap<Utf8String, int>::const_iterator iter = m_columnIndexByName.find(columnName);
     return (iter != m_columnIndexByName.end()) ? iter->second : -1;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-bool ChangeIterator::TableMap::QueryInstance(ECInstanceId instanceId) const
-    {
-    DbDupValue value = QueryValueFromDb(GetIdColumn().GetName(), instanceId);
-    if (!value.IsValid() || value.IsNull())
-        return false;
-
-    return value.GetValueId<ECInstanceId>().IsValid();
     }
 
 //---------------------------------------------------------------------------------------

@@ -43,7 +43,6 @@
         <ECStructProperty propertyName="ChangedInstance" typeName="InstanceKey" description="Key of the change instance"/>
         <ECProperty propertyName="OpCode" typeName="OpCode"/>
         <ECProperty propertyName="IsIndirect" typeName="bool" description="Change happened due to a foreign key action or trigger"/>
-        <ECProperty propertyName="PrimaryTableName" typeName="string"/>
     </ECEntityClass>
     
     <ECEntityClass typeName="PropertyValueChange" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">

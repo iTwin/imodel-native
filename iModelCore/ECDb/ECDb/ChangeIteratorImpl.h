@@ -88,26 +88,9 @@ struct ChangeIterator::TableMap final
         //! Gets the primary Id column
         ColumnMap const& GetIdColumn() const { return m_instanceIdColumnMap; }
 
-
         ChangeIterator::TableClassMap const* GetTableClassMap(ECN::ECClassCR ecClass) const;
 
-        //! @private
-        //! Queries the value stored in the table at the specified column, for the specified instanceId
-        DbDupValue QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId whereInstanceIdIs) const;
-
-        //! @private
-        //! Queries the id value stored in the table at the specified column, for the specified instanceId
-        template <class T_Id> T_Id QueryValueId(Utf8StringCR physicalColumnName, ECInstanceId whereInstanceIdIs) const
-            {
-            DbDupValue value = QueryValueFromDb(physicalColumnName, whereInstanceIdIs);
-            if (!value.IsValid() || value.IsNull())
-                return T_Id();
-            return value.GetValueId<T_Id>();
-            }
-
         int GetColumnIndexByName(Utf8StringCR columnName) const;
-
-        bool QueryInstance(ECInstanceId instanceId) const;
     };
 
 //=======================================================================================
@@ -133,6 +116,7 @@ public:
 
     void Add(std::unique_ptr<ChangeIterator::TableMap> map) { m_maps[map->GetTableName()] = std::move(map); }
     };
+
 //=======================================================================================
 //! Information on mappings to a specific class within a table
 // @bsiclass                                              Ramanujam.Raman      07/2015
