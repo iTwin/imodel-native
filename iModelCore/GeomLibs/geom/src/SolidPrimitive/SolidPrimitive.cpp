@@ -2156,17 +2156,15 @@ GEOMDLLIMPEXP void ISolidPrimitive::AddCurveIntersections
     return _AddCurveIntersections (curves, curvePoints, solidPoints, messages);
     }
 
-
-
-
 bool ISolidPrimitive::ClosestPoint (DPoint3dCR spacePoint, SolidLocationDetail &pickDetail) const
     {
     return _ClosestPoint (spacePoint, pickDetail);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +--------------------------------------------------------------------------------------*/
-static bool isSphere (DgnRotationalSweepDetail& detail, ISolidPrimitivePtr& primitive)
+static bool isDgnRotationalSweepDetailSphere (DgnRotationalSweepDetail& detail, ISolidPrimitivePtr& primitive)
     {
     DEllipse3d  ellipse;
 
@@ -2240,7 +2238,7 @@ static bool isSphere (DgnRotationalSweepDetail& detail, ISolidPrimitivePtr& prim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +--------------------------------------------------------------------------------------*/
-static bool isTorus (DgnRotationalSweepDetail& detail, ISolidPrimitivePtr& primitive)
+static bool isDgnRotationalSweepDetailTorus (DgnRotationalSweepDetail& detail, ISolidPrimitivePtr& primitive)
     {
     if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != detail.m_baseCurve->HasSingleCurvePrimitive ())
         return false;
@@ -2291,9 +2289,36 @@ static bool isTorus (DgnRotationalSweepDetail& detail, ISolidPrimitivePtr& primi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/17
++--------------------------------------------------------------------------------------*/
+static bool isDgnExtrusionDetailCone (DgnExtrusionDetail& detail, ISolidPrimitivePtr& primitive)
+    {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != detail.m_baseCurve->HasSingleCurvePrimitive ())
+        return false;
+
+    DEllipse3dCP  ellipse = detail.m_baseCurve->front ()->GetArcCP ();
+
+    if (!ellipse->IsFullEllipse () || !ellipse->IsCircular ())
+        return false;
+
+    double      baseRadius, arcStart, arcSweep;
+    DPoint3d    basePt, topPt;
+    RotMatrix   baseRMatrix;
+
+    ellipse->GetScaledRotMatrix (basePt, baseRMatrix, baseRadius, baseRadius, arcStart, arcSweep);
+    topPt.SumOf(basePt, detail.m_extrusionVector);
+
+    DgnConeDetail  coneDetail (basePt, topPt, baseRMatrix, baseRadius, baseRadius, detail.m_capped);
+
+    primitive = ISolidPrimitive::CreateDgnCone (coneDetail);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +--------------------------------------------------------------------------------------*/
-static bool isCone (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
+static bool isDgnRuledSweepDetailCone (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
     {
     if (2 != detail.m_sectionCurves.size ())
         return false;
@@ -2338,62 +2363,12 @@ static bool isCone (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
 
     return true;
     }
-#if defined (NOT_NOW)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      12/90
-+--------------------------------------------------------------------------------------*/
-static double   angle3pts (DPoint3dCR pt1, DPoint3dCR pt2, DPoint3dCR pt3)
-    {
-    DVec3d      a, b;
-
-    a.Init (pt1.x - pt2.x, pt1.y - pt2.y, pt1.z - pt2.z);
-    b.Init (pt3.x - pt2.x, pt3.y - pt2.y, pt3.z - pt2.z);
-
-    a.Normalize ();
-    b.Normalize ();
-
-    return (acos (a.DotProduct (b)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      12/86
-+--------------------------------------------------------------------------------------*/
-static bool     isRectangular (size_t numVerts, DPoint3dCP pnts)
-    {
-    return (5 == numVerts &&
-            (fabs (angle3pts (pnts[0], pnts[1], pnts[2]) - msGeomConst_piOver2) < (msGeomConst_pi / 180.0) &&
-             fabs (angle3pts (pnts[1], pnts[2], pnts[3]) - msGeomConst_piOver2) < (msGeomConst_pi / 180.0) &&
-             fabs (angle3pts (pnts[2], pnts[3], pnts[0]) - msGeomConst_piOver2) < (msGeomConst_pi / 180.0)));
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   04/12
 +--------------------------------------------------------------------------------------*/
-static bool     isBoxPoints (DVec3dR normal, bvector<DPoint3d> const* points)
+static bool isBoxPoints (DVec3dR normal, bvector<DPoint3d> const* points)
     {
-#if defined (NOT_NOW)
-    if (!isRectangular (points->size (), &points->front ()))
-        return false;
-    size_t      i;
-    DVec3d      dir1, dir2;
-
-    for (i = 0; i < 3; i++)
-        {
-        dir1.NormalizedDifference (points->at (i+1), points->at (i));
-        dir2.NormalizedDifference ((i == 2) ? points->at (0) : points->at (i+2), points->at (i+1));
-
-        if (dir1.DotProduct (dir2) > mgds_fc_epsilon)
-            break;
-        }
-
-    if (3 != i)
-        return false;
-
-    normal.NormalizedCrossProduct (dir1, dir2);
-
-    return true;
-#else
     Transform   localToWorld, worldToLocal;
 
     if (!PolylineOps::IsRectangle (&points->front (), points->size (), localToWorld, worldToLocal, false))
@@ -2403,14 +2378,51 @@ static bool     isBoxPoints (DVec3dR normal, bvector<DPoint3d> const* points)
     normal.Normalize ();
 
     return true;
-#endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/17
++--------------------------------------------------------------------------------------*/
+static bool isDgnExtrusionDetailBlock (DgnExtrusionDetail& detail, ISolidPrimitivePtr& primitive)
+    {
+    // NOTE: Treat physically closed open profile as normal extrusion to better preserve element type/id/association with modify handles...
+    if (!detail.m_baseCurve->IsClosedPath ())
+        return false;
+
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != detail.m_baseCurve->HasSingleCurvePrimitive ())
+        return false;
+
+    bvector<DPoint3d> const* basePoints = detail.m_baseCurve->front ()->GetLineStringCP ();
+    DVec3d      baseZ;
+
+    if (!isBoxPoints (baseZ, basePoints))
+        return false;
+
+    double      baseX, baseY, topX, topY;
+    DVec3d      baseVectorX, baseVectorY, topVectorX, topVectorY;
+
+    baseX = baseVectorX.NormalizedDifference (basePoints->at (1), basePoints->at (0));
+    baseY = baseVectorY.NormalizedDifference (basePoints->at (2), basePoints->at (1));
+
+    bvector<DPoint3d> topPoints = *basePoints;
+
+    for (DPoint3dR topPt : topPoints)
+        topPt.Add(detail.m_extrusionVector);
+
+    topX = topVectorX.NormalizedDifference (topPoints.at (1), topPoints.at (0));
+    topY = topVectorY.NormalizedDifference (topPoints.at (2), topPoints.at (1));
+
+    DgnBoxDetail  boxDetail (basePoints->front (), topPoints.front (), baseVectorX, baseVectorY, baseX, baseY, topX, topY, detail.m_capped);
+
+    primitive = ISolidPrimitive::CreateDgnBox (boxDetail);
+
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +--------------------------------------------------------------------------------------*/
-static bool isBlock (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
+static bool isDgnRuledSweepDetailBlock (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
     {
     if (2 != detail.m_sectionCurves.size ())
         return false;
@@ -2457,7 +2469,7 @@ static bool isBlock (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   04/12
 +--------------------------------------------------------------------------------------*/
-static bool isExtrusion (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
+static bool isDgnRuledSweepDetailExtrusion (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primitive)
     {
     if (2 != detail.m_sectionCurves.size ())
         return false;
@@ -2477,24 +2489,40 @@ static bool isExtrusion (DgnRuledSweepDetail& detail, ISolidPrimitivePtr& primit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +--------------------------------------------------------------------------------------*/
-bool ISolidPrimitive::Simplify (ISolidPrimitivePtr& primitive)
+bool ISolidPrimitive::Simplify(ISolidPrimitivePtr& primitive)
     {
-    if (!primitive.IsValid ())
+    if (!primitive.IsValid())
         return false;
 
-    switch (primitive->GetSolidPrimitiveType ())
+    switch (primitive->GetSolidPrimitiveType())
         {
         case SolidPrimitiveType_DgnRotationalSweep:
             {
-            DgnRotationalSweepDetail  detail;
+            DgnRotationalSweepDetail detail;
     
-            if (!primitive->TryGetDgnRotationalSweepDetail (detail))
+            if (!primitive->TryGetDgnRotationalSweepDetail(detail))
                 return false;
 
-            if (isSphere (detail, primitive))
+            if (isDgnRotationalSweepDetailSphere(detail, primitive))
                 return true;
 
-            if (isTorus (detail, primitive))
+            if (isDgnRotationalSweepDetailTorus(detail, primitive))
+                return true;
+
+            return false;
+            }
+
+        case SolidPrimitiveType_DgnExtrusion:
+            {
+            DgnExtrusionDetail detail;
+    
+            if (!primitive->TryGetDgnExtrusionDetail(detail))
+                return false;
+
+            if (isDgnExtrusionDetailCone(detail, primitive))
+                return true;
+
+            if (isDgnExtrusionDetailBlock(detail, primitive))
                 return true;
 
             return false;
@@ -2502,18 +2530,18 @@ bool ISolidPrimitive::Simplify (ISolidPrimitivePtr& primitive)
 
         case SolidPrimitiveType_DgnRuledSweep:
             {
-            DgnRuledSweepDetail  detail;
+            DgnRuledSweepDetail detail;
     
-            if (!primitive->TryGetDgnRuledSweepDetail (detail))
+            if (!primitive->TryGetDgnRuledSweepDetail(detail))
                 return false;
 
-            if (isCone (detail, primitive))
+            if (isDgnRuledSweepDetailCone(detail, primitive))
                 return true;
 
-            if (isBlock (detail, primitive))
+            if (isDgnRuledSweepDetailBlock(detail, primitive))
                 return true;
 
-            if (isExtrusion (detail, primitive))
+            if (isDgnRuledSweepDetailExtrusion(detail, primitive))
                 return true;
             
             return false;

@@ -1910,7 +1910,7 @@ GEOMDLLIMPEXP void AddCurveIntersections
     GEOMDLLIMPEXP bool TransformInPlace (TransformCR transform);
 
 //! Detect a solid primitive that could be represented as a simpler type and change it to the simple type.
-//! Tests for rotational sweeps that are a sphere or torus as well as ruled sweeps that are a box, cone, or extrusion.
+//! Tests for rotational sweeps that are a sphere or torus as well as extrusions/ruled sweeps that are a box, cone, or extrusion.
 //! @return true if input primitive was simplified.
     static GEOMDLLIMPEXP bool Simplify (ISolidPrimitivePtr& primitive);
 
