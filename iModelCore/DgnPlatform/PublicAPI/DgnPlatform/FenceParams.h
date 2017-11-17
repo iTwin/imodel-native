@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/FenceParams.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -20,9 +20,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 enum class FenceClipMode
     {
-    None = 0, //!< Inclusion of inside/overlapping elements controlled by overlap mode. No clipping of elements satisfying the fence criteria.
-    Original = 1, //!< Include elements that overlap the fence. Tools will modify the original element.
-    Copy = 3, //!< Include elements that overlap the fence. Tools will not modify the original element.
+    None        = 0, //!< Inclusion of inside/overlapping elements controlled by overlap mode. No clipping of elements satisfying the fence criteria.
+    Original    = 1, //!< Include elements that overlap the fence. Tools will modify the original element.
+    Copy        = 3, //!< Include elements that overlap the fence. Tools will not modify the original element.
     };
 
 //=======================================================================================
@@ -42,7 +42,6 @@ virtual bool _CheckStopFenceContents() {return false;}
 struct FenceParams
 {
 private:
-    // Inputs
     bool                    m_overlapMode;
     double                  m_onTolerance;
     DgnViewportP            m_viewport;
@@ -50,26 +49,12 @@ private:
     ClipVectorPtr           m_clip;
     DRange3d                m_fenceRangeNPC;
     LocateSurfacesPref      m_locateInteriors;
-
-    // Outputs
     bool                    m_hasOverlaps;
-    bvector<double>         m_splitParams;
-
-    bool CurveClipPlaneIntersect(ClipPrimitiveCR, MSBsplineCurveCR, double clipDistance);
-    bool ClipPlaneArcIntersect(ClipPrimitiveCR, double z, DEllipse3dCR);
-    bool ArcIntersect(DPoint2dCP, DEllipse3dCR, ClipPrimitiveCR);
-    bool LinearFenceIntersect(ClipPrimitiveCR, DPoint3dCP, size_t numPoints, bool closed);
-    bool ArcFenceIntersect(ClipPrimitiveCR, DEllipse3dCR);
-    bool CurveFenceIntersect(ClipPrimitiveCR, MSBsplineCurveCR);
 
 public:
     DGNPLATFORM_EXPORT FenceParams();
     DGNPLATFORM_EXPORT FenceParams(FenceParamsP);
     DGNPLATFORM_EXPORT ~FenceParams();
-    double* GetSplitParamsP () {return m_splitParams.empty() ? NULL : &m_splitParams.front();}
-    DGNPLATFORM_EXPORT size_t GetNumSplitParams() const;
-    DGNPLATFORM_EXPORT bool GetSplitParam(size_t i, double &value) const;
-    DGNPLATFORM_EXPORT void SortSplitParams();
 
     void SetHasOverlaps(bool hasOverlaps) {m_hasOverlaps = hasOverlaps;}
     LocateSurfacesPref GetLocateInteriors() {return m_locateInteriors;}
@@ -79,9 +64,6 @@ public:
     DGNPLATFORM_EXPORT bool PointInOtherClips(DPoint3dCR testPoint, ClipPrimitiveCP clip);
     DGNPLATFORM_EXPORT ClipVectorP ExtractClipP ();
     DGNPLATFORM_EXPORT void ClearCurrentClip();
-    DGNPLATFORM_EXPORT void ClearSplitParams();
-    DGNPLATFORM_EXPORT void StoreIntersection(double param);
-    DGNPLATFORM_EXPORT bool StoreIntersectionIfInsideClip(double param, DPoint3dP pointP, ClipPrimitiveCP intersectPrimitive);
     DGNPLATFORM_EXPORT StatusInt GetClipToWorldTransform(TransformR clipToWorld, ClipPrimitiveCR clip) const;
     DGNPLATFORM_EXPORT bool IsOutsideClip() const;
 
@@ -89,8 +71,6 @@ public:
     DGNPLATFORM_EXPORT bool AcceptCurve(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT bool AcceptLineSegments(DPoint3dP,size_t numPoints, bool closed);
     DGNPLATFORM_EXPORT bool AcceptDEllipse3d(DEllipse3dCR);
-
-    DGNPLATFORM_EXPORT void ParseAcceptedGeometry(bvector<CurveVectorPtr>* inside, bvector<CurveVectorPtr>* outside, GeometrySourceCR);
 
     //! Setup the fence parameters from the supplied viewport.
     DGNPLATFORM_EXPORT void SetViewParams(DgnViewportP);
@@ -121,11 +101,6 @@ public:
 
     //! Return current fence viewport.
     DGNPLATFORM_EXPORT DgnViewportP GetViewport() const;
-
-#if defined (NEEDS_WORK_TARGET_MODEL)
-    //! Return the target model for fence viewport. Used as destination for copy with clip.
-    DGNPLATFORM_EXPORT DgnModelP GetDgnModel() const;
-#endif
 
     // Return true if the supplied point is inside the fence.
     DGNPLATFORM_EXPORT bool PointInside(DPoint3dCR);
