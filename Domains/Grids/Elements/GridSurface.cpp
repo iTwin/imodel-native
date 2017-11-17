@@ -338,5 +338,21 @@ BentleyStatus   GridSurface::TryGetLength(double& length) const
     return BentleyStatus::SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ElementIterator GridSurface::MakeCreatedCurvesIterator() const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridCurve), "WHERE ECInstanceId IN"
+                                                                                   "(SELECT TargetECInstanceId"
+                                                                                   " FROM " GRIDS_SCHEMA(GRIDS_REL_GridSurfaceCreatesGridCurve)
+                                                                                   " WHERE SourceECInstanceId = ?)");
+
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindId(1, GetElementId());
+        }
+    return iterator;
+    }
 
 END_GRIDS_NAMESPACE

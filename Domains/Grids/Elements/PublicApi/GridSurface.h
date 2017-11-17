@@ -97,6 +97,9 @@ public:
     //! @param[out] length  length of this surface
     //! @return     BentleyStatus::ERROR if error occured when trying to get surface length
     GRIDELEMENTS_EXPORT BentleyStatus   TryGetLength (double& length) const;
+
+    //! Returns an iterator over created intersection grid curves
+    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeCreatedCurvesIterator() const;
 };
 
 END_GRIDS_NAMESPACE
