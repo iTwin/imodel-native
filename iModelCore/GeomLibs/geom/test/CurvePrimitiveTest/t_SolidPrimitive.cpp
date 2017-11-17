@@ -2726,14 +2726,17 @@ void testSilhouette (IGeometryPtr &g, DPoint4dCR eyePoint)
 TEST(SolidPrimitive,Silhouette)
     {
     Check::QuietFailureScope scoper;
-    DPoint4d eyePoint = DPoint4d::From (0,-20,20, 1);
+    DPoint4d eyePointA = DPoint4d::From (0,-20,20, 1);
+    DPoint4d eyePointB = DPoint4d::From (0,0,20, 1);
     bvector<IGeometryPtr> geometry;
     SampleGeometryCreator::AddSimplestSolidPrimitives (geometry, true);
     SampleGeometryCreator::AddAllSolidTypes (geometry);
     for (size_t i = 0; i < geometry.size (); i++)
         {
         SaveAndRestoreCheckTransform shifter (20,0,0);
-        testSilhouette (geometry[i], eyePoint);
+        testSilhouette (geometry[i], eyePointA);
+        Check::Shift (0,40,0);
+        testSilhouette (geometry[i], eyePointB);
         }
     Check::ClearGeometry ("SolidPrimitive.Silhouette");
     }
