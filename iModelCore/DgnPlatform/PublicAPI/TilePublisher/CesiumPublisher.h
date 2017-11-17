@@ -28,6 +28,12 @@ enum class GroundMode
     FixedPoint,         // Specified point is located at ground level.
 };
 
+enum class HistoryMode
+{
+    OmitHistory,
+    AddHistory,
+    OnlyHistory,
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -56,7 +62,7 @@ protected:
     PublisherContext::GlobeMode     m_globeMode = PublisherContext::GlobeMode::FromDisplayStyle;
 
     // History (WIP) requires IModel Hub connection.
-    bool                            m_wantHistory = false;
+    HistoryMode                     m_historyMode = HistoryMode::OmitHistory;
     Utf8String                      m_userName;
     Utf8String                      m_password;
     Utf8String                      m_environment;
@@ -78,13 +84,13 @@ public:
     bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
-    bool WantHistory() const { return m_wantHistory; }
     GeoPointCP GetGeoLocation() const { return m_geoLocated ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
     PublisherContext::GlobeMode GetGlobeMode() const { return m_globeMode; }
+    HistoryMode GetHistoryMode() const { return m_historyMode; }
 
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
