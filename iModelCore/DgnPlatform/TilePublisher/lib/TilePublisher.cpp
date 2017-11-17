@@ -3194,6 +3194,50 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
         m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
+#include <Bentley\BeDirectoryIterator.h>
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileNameStatus clearNonHistoryDirectories(BeFileNameCR dataDir)
+    {
+    WString path2;
+    BeFileNameStatus stat = BeFileName::FixPathName(path2, dataDir, false);
+    if (BeFileNameStatus::Success != stat)
+        return  stat;
+
+    BeFileName path(path2.c_str());
+
+    if (!BeFileName::DoesPathExist(path))
+        return  BeFileNameStatus::FileNotFound;
+
+    BeFileName filename;
+    bool       isDir;
+    for (BeDirectoryIterator dir(path); dir.GetCurrentEntry(filename, isDir, true) == SUCCESS; dir.ToNext())
+        {
+        if (isDir)
+            {
+            WString     name;
+
+            if (filename.GetBaseName() != L"History")
+                {
+                stat = BeFileName::EmptyAndRemoveDirectory(filename);
+                if (BeFileNameStatus::Success != stat)
+                    return  stat;
+                }
+            }
+        else
+            {
+            BeFileName::SetFileReadOnly(filename, false);
+            stat = BeFileName::BeDeleteFile(filename);
+            if (stat != BeFileNameStatus::Success)
+                return  stat;
+            }
+        }
+
+    return BeFileNameStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3204,10 +3248,15 @@ PublisherContext::Status PublisherContext::InitializeDirectories(BeFileNameCR da
         return Status::CantWriteToBaseDirectory;
 
     bool dataDirExists = BeFileName::DoesPathExist(dataDir);
-    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(dataDir.c_str()))
+
+    if (dataDirExists && BeFileNameStatus::Success != clearNonHistoryDirectories(dataDir))
+        {
         return Status::CantCreateSubDirectory;
+        }
     else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(dataDir))
+        {
         return Status::CantCreateSubDirectory;
+        }
 
     if (BeFileNameStatus::Success != BeFileName::CheckAccess(dataDir, BeFileNameAccess::Write))
         return Status::CantCreateSubDirectory;
