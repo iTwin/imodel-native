@@ -132,7 +132,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <OutDir>$(OutRoot)\$(TARGET_PROCESSOR_DIRECTORY)\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\BentleyTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\BentleyTest\</BaseIntermediateOutputPath>
