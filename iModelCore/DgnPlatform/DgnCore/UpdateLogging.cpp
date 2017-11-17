@@ -162,7 +162,6 @@ void UpdateLogging::RecordDoneUpdate(uint32_t numDrawn, DrawPurpose drawPurpose)
     switch (drawPurpose)
         {
         case DrawPurpose::Update:
-        case DrawPurpose::UpdateHealing:
         case DrawPurpose::UpdateDynamic:
             break;
         default:

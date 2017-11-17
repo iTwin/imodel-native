@@ -45,11 +45,31 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
-                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this), m_elementIdSequence(*this, "bis_elementidsequence")
+                 m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence")
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
 
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityData::CachePtr DgnDb::ElementTileCache() const
+    {
+    if (!m_elementTileCache.IsValid())
+        {
+        BeFileName  cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+
+        cacheName.AppendToPath(GetFileName().GetBaseName());
+        cacheName.AppendExtension(L"TileCache");
+
+        m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
+        if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
+            m_elementTileCache = nullptr;
+        }
+
+    return m_elementTileCache;
     }
 
 //--------------------------------------------------------------------------------------
@@ -69,7 +89,7 @@ SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    m_sceneQueue.Terminate();
+    m_elementTileCache = nullptr;
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;

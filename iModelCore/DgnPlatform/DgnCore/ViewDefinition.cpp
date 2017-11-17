@@ -1170,6 +1170,15 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategory::Override DisplayStyle::GetSubCategoryOverride(DgnSubCategoryId id) const
+    {
+    auto iter = m_subCategoryOverrides.find(id);
+    return m_subCategoryOverrides.end() != iter ? iter->second : DgnSubCategory::Override();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::Appearance DisplayStyle::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
@@ -2269,6 +2278,7 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
 
 }
 
+#if defined(TODO_ELEMENT_TILE)
 static DgnHost::Key s_DisplayMetricsHandlerKey;
 
 //---------------------------------------------------------------------------------------
@@ -2378,6 +2388,7 @@ bool DisplayMetricsHandler::HandleForceHealImmediate(DgnViewportP vp, UpdatePlan
 
     return handler->_HandleForceHealImmediate(vp, plan);
     }
+#endif
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
@@ -2446,3 +2457,4 @@ ViewControllerPtr TemplateViewDefinition3d::_SupplyController() const
     {
     return new TemplateViewController3d(*this);
     }
+

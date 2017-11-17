@@ -637,7 +637,6 @@
        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
     </ProductDirectoryList>
-    
     <Part Name="DgnPlatformNET" BentleyBuildMakeFile="DgnPlatformNET/DgnPlatformNET.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
         <SubPart PartName="DgnPlatformDLL" />

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeasureGeom.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -707,8 +707,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
     if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         // Output edge geometry as CurveVector...
-        GraphicBuilder builder(graphic);
-        WireframeGeomUtil::Draw(builder, entity, &graphic.GetViewContext(), true, false);
+        WireframeGeomUtil::Draw(graphic, entity, &graphic.GetViewContext(), true, false);
 
         return true;
         }
@@ -844,7 +843,6 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                     return true;
 
                 Transform entityTransform = entity.GetEntityTransform();
-                GraphicBuilder builder(graphic);
 
                 for (PK_FACE_t thisFace : faces)
                     {
@@ -854,7 +852,7 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                         continue;
 
                     curve->TransformInPlace(entityTransform);
-                    builder.AddCurveVector(*curve, false);
+                    graphic.AddCurveVectorR(*curve, false);
                     }
 
                 return true;
@@ -891,8 +889,6 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                 if (SUCCESS != BRepUtil::Modify::DisjoinBody(bodies, *copyEntity))
                     return true;
 
-                GraphicBuilder builder(graphic);
-
                 bodies.push_back(copyEntity); // NOTE: bodies doesn't contain original; either it's unchanged or it now refers to the first region...
 
                 for (IBRepEntityPtr thisEntity : bodies)
@@ -900,7 +896,7 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
                     if (SUCCESS != PSolidUtil::ConvertSolidBodyToSheet(PSolidUtil::GetEntityTag(*thisEntity)))
                         continue;
 
-                    builder.AddBody(*thisEntity);
+                    graphic.AddBody(*thisEntity);
                     }
 
                 return true;
@@ -922,7 +918,7 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
     if (!m_geomPrimitive.IsValid())
         return;
 
-    Render::GraphicBuilderPtr builder = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_geomTransform));
+    auto builder = context.CreateWorldGraphic(m_geomTransform);
 
     switch (m_geomPrimitive->GetGeometryType())
         {
@@ -982,7 +978,7 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
             }
         }
 
-    builder->Close();
+    builder->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**

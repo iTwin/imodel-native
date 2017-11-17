@@ -212,6 +212,9 @@ PublisherContext::Status TilesetPublisher::WriteHtmlFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::WriteScripts()
     {
+    if (!m_copyScripts)
+        return Status::Success;
+
     // Symlink the scripts, if not already present
     BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     scriptsSrcDir.AppendToPath(L"scripts");
@@ -388,7 +391,7 @@ void TilesetPublisher::GenerateModelNameList()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, PublisherContext::ClassifierInfo const* classifier) const
     {
-    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId()) : classifier->GetRootName();
+    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), false) : classifier->GetRootName();
 
     return tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }

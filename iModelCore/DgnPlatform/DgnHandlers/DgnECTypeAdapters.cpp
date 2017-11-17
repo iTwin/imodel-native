@@ -3096,7 +3096,7 @@ bool FormatStringTypeAdapter::GetUnformattedStringValue (Utf8StringR valueAsStri
         ValueList (ECValueCR v) : m_value (v) { }
 
         uint32_t    GetCount() const override               { return 1; }
-        virtual ECValueCP   operator[](uint32_t index) const override { return index == 0 ? &m_value : NULL; }
+        ECValueCP   operator[](uint32_t index) const override { return index == 0 ? &m_value : NULL; }
         };
 
     IECInstancePtr attr = NULL != context.GetProperty() ? context.GetProperty()->GetCustomAttribute ("Format") : NULL;

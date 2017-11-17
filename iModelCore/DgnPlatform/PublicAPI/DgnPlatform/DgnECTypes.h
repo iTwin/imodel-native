@@ -315,7 +315,7 @@ private:
     DGNPLATFORM_EXPORT bool _ConvertFromExpressionType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const override;
     DGNPLATFORM_EXPORT bool _CanConvertFromString (ECN::IECTypeAdapterContextCR) const override;
     DGNPLATFORM_EXPORT bool _CanConvertToString (ECN::IECTypeAdapterContextCR) const override;
-    DGNPLATFORM_EXPORT virtual bool _GetPlaceholderValue(ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const /*final*/ override;
+    DGNPLATFORM_EXPORT bool _GetPlaceholderValue(ECN::ECValueR v, ECN::IECTypeAdapterContextCR context) const /*final*/ override;
 
     DGNPLATFORM_EXPORT bool _ConvertToDisplayType (ECN::ECValueR v, ECN::IECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
     DGNPLATFORM_EXPORT bool _GetUnits (ECN::UnitSpecR units, ECN::IECTypeAdapterContextCR context) const override;
