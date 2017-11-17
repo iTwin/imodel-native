@@ -94,15 +94,16 @@ bool _ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR pro
 bool _IsSameStructure (ISolidPrimitiveCR other) const override {return m_data.IsSameStructure (other);}\
 bool _IsSameStructureAndGeometry (ISolidPrimitiveCR other, double tolerance) const  override { return m_data.IsSameStructureAndGeometry (other, tolerance);}\
 bool _IsClosedVolume () const  override { return m_data.IsClosedVolume ();}\
-CurveVectorPtr _SilhouetteCurves(DPoint4dCR eyePoint) const override \
+bool _SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const override \
     {\
-    return m_data.SilhouetteCurves (eyePoint);\
+    return m_data.SilhouetteCurves (eyePoint, curves);\
     }
 
 //! Return curves which are silhoutte curves OTHER than hard edges
-CurveVectorPtr ISolidPrimitive::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool ISolidPrimitive::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
-    return _SilhouetteCurves (eyePoint);
+    curves = nullptr;
+    return _SilhouetteCurves (eyePoint, curves);
     }
 
 /*--------------------------------------------------------------------------------**//**

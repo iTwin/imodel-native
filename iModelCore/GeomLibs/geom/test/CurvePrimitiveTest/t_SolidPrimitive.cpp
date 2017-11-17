@@ -2715,9 +2715,10 @@ void testSilhouette (IGeometryPtr &g, DPoint4dCR eyePoint)
         {
         Check::SaveTransformed (*s);
         showEyePoint (eyePoint);
-        auto silhouettes = s->SilhouetteCurves (eyePoint);
-        if (silhouettes.IsValid ())
-            Check::SaveTransformed (*silhouettes);
+        CurveVectorPtr silhouettes;
+        if (s->SilhouetteCurves (eyePoint, silhouettes))
+            if (silhouettes.IsValid ())
+                Check::SaveTransformed (*silhouettes);
         }
     }
 /*---------------------------------------------------------------------------------**//**

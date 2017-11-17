@@ -13,8 +13,9 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnConeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnConeDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
+    curves = nullptr;
     double      lambda;
     DVec3d      xAxis, yAxis, zAxis;
     DPoint3d    origin;
@@ -45,21 +46,22 @@ CurveVectorPtr DgnConeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
     DPoint3d    trigPointBuffer[2];
 
     if (2 != bsiDCone3d_silhouetteAngles (&cone, trigPointBuffer, NULL, &eyePoint))
-        return nullptr;
+        return true;
     DSegment3d segmentA, segmentB;
     bsiDCone3d_getRuleLine (&cone, &segmentA, trigPointBuffer[0].z);
     bsiDCone3d_getRuleLine (&cone, &segmentB, trigPointBuffer[1].z);
-    auto curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     curves->push_back (ICurvePrimitive::CreateLine (segmentA));
     curves->push_back (ICurvePrimitive::CreateLine (segmentB));
-    return curves;
+    return true;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnSphereDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnSphereDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
+    curves = nullptr;
     Transform localToWorld = this->m_localToWorld;
     Transform worldToLocal;
     if (worldToLocal.InverseOf (localToWorld))
@@ -71,20 +73,19 @@ CurveVectorPtr DgnSphereDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
         bsiGeom_ellipsoidSilhouette (&hEllipse, nullptr, &hMap, &eyePoint);
         if (bsiDEllipse3d_initFromDEllipse4d (&ellipse, &hEllipse, -1))
             {
-            CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-            cv->push_back (ICurvePrimitive::CreateArc (ellipse));
-            return cv;
+            curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            curves->push_back (ICurvePrimitive::CreateArc (ellipse));
             }
         }
-    return nullptr;
+    return true;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnBoxDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnBoxDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
-    return nullptr;
+    return false;
     }
 
 void cb_silhouettePoints (
@@ -102,8 +103,9 @@ CurveVectorP         pCurves
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnTorusPipeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnTorusPipeDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
+    curves = nullptr;
     DToroid3d toroid;
     DRange2d parameterRange;
     parameterRange.low.x = 0.0;
@@ -124,7 +126,7 @@ CurveVectorPtr DgnTorusPipeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
         bsiDToroid3d_set (&toroid, &localToWorld, minorRadiusRatio, &parameterRange);
         RotatedConic rc;
         bsiDToroid3d_getRotatedConic (&toroid, &rc);
-        CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         HConic conics[2];
         int numConic;
         bool isEllipse, isSegment;
@@ -164,34 +166,32 @@ CurveVectorPtr DgnTorusPipeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
             }
         else
             bsiRotatedConic_torusGeneralSilhouette (&rc, &eyePoint, (SilhouetteArrayHandler)cb_silhouettePoints, tolerance, curves.get ());
-        if (curves->size () > 0)
-            return curves;
         }
-    return nullptr;
+    return true;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnExtrusionDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnExtrusionDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
-    return nullptr;
+    return false;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnRotationalSweepDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnRotationalSweepDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
-    return nullptr;
+    return false;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr DgnRuledSweepDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
+bool DgnRuledSweepDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const
     {
-    return nullptr;
+    return false;
     }
 END_BENTLEY_GEOMETRY_NAMESPACE
 
