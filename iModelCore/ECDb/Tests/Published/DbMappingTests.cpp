@@ -3098,8 +3098,8 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
     ECInstanceKey aKey, bKey, aTempKey, bTempKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.A(Name) VALUES('A 1')"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aTempKey, "INSERT INTO ts.ATemp(Name) VALUES('ATemp 1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.B(Val) VALUES(1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.BTemp(Val) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bKey, "INSERT INTO ts.B(Val) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bTempKey, "INSERT INTO ts.BTemp(Val) VALUES(1)"));
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Rel1(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
                                                                                             aKey.GetInstanceId().ToString().c_str(), bKey.GetInstanceId().ToString().c_str()).c_str()));
@@ -3111,7 +3111,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Rel4(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
                                                                         aTempKey.GetInstanceId().ToString().c_str(), bTempKey.GetInstanceId().ToString().c_str()).c_str()));
 
-    std::map<Utf8CP, std::pair<ECInstanceKey, ECInstanceKey>> expectedResults
+    std::map<Utf8String, std::pair<ECInstanceKey, ECInstanceKey>> expectedResults
         {
                 {"Rel1", {aKey, bKey}},
                 {"Rel2", {aKey, bTempKey}},
@@ -3122,7 +3122,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
     for (auto const& kvPair : expectedResults)
         {
         Utf8String ecsql;
-        ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.%s", kvPair.first);
+        ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.%s", kvPair.first.c_str());
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql;
