@@ -87,11 +87,86 @@ CurveVectorPtr DgnBoxDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
     return nullptr;
     }
 
+void cb_silhouettePoints (
+HConic              *pConic,
+DPoint3dP pPointArray,
+int                 numPoint,
+unsigned int        curveMask,
+const RotatedConic  *pSurface,      /* => the rotated conic surface */
+CurveVectorP         pCurves
+)
+    {
+    if (numPoint > 1)
+        pCurves->push_back (ICurvePrimitive::CreateLineString (pPointArray, numPoint));
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017
 +--------------------------------------------------------------------------------------*/
 CurveVectorPtr DgnTorusPipeDetail::SilhouetteCurves(DPoint4dCR eyePoint) const
     {
+    DToroid3d toroid;
+    DRange2d parameterRange;
+    parameterRange.low.x = 0.0;
+    parameterRange.high.x = m_sweepAngle;
+    parameterRange.low.y = 0.0;
+    parameterRange.high.y = Angle::TwoPi ();
+    double minorRadiusRatio;
+    double tolerance = 0.0001 * (fabs (m_majorRadius)  + fabs (m_minorRadius));
+    DPoint3d center;
+    RotMatrix axes;
+    double radiusA, radiusB, sweep;
+    if (TryGetFrame (center, axes, radiusA, radiusB, sweep)
+        && DoubleOps::SafeDivideParameter (minorRadiusRatio, radiusB, radiusA))
+        {
+        axes.ScaleColumns (radiusA, radiusA, radiusB);
+        Transform localToWorld;
+        localToWorld.InitFrom (axes, center);
+        bsiDToroid3d_set (&toroid, &localToWorld, minorRadiusRatio, &parameterRange);
+        RotatedConic rc;
+        bsiDToroid3d_getRotatedConic (&toroid, &rc);
+        CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        HConic conics[2];
+        int numConic;
+        bool isEllipse, isSegment;
+        DEllipse3d ellipse;
+        DSegment3d segment;
+        if (SUCCESS == bsiRotatedConic_interiorConicSilhouette (conics, &numConic, &rc, &eyePoint))
+            {
+            for (int i = 0; i < numConic; i++)
+                {
+                for (int j = 0; j < conics[i].coordinates.sectors.n; j++)
+                    {
+                    MSBsplineCurve bcurve;
+                    if (SUCCESS == bspcurv_simplifyHConic (&bcurve, &ellipse, &isEllipse, &segment, &isSegment, &conics[i],
+                        conics[i].coordinates.sectors.interval[j].minValue,
+                        conics[i].coordinates.sectors.interval[j].maxValue
+                        ))
+                        {
+                        bool useBcurve = true;
+                        if (isEllipse)
+                            {
+                            curves->push_back (ICurvePrimitive::CreateArc (ellipse));
+                            useBcurve = false;
+                            }
+                        if (isSegment)
+                            {
+                            curves->push_back (ICurvePrimitive::CreateLine (segment));
+                            }
+                        if (bcurve.GetIntNumPoles () > 0)
+                            curves->push_back (ICurvePrimitive::CreateBsplineCurveSwapFromSource (bcurve));
+                        else
+                            {
+                            bcurve.ReleaseMem ();
+                            }
+                        }
+                    }
+                }
+            }
+        else
+            bsiRotatedConic_torusGeneralSilhouette (&rc, &eyePoint, (SilhouetteArrayHandler)cb_silhouettePoints, tolerance, curves.get ());
+        if (curves->size () > 0)
+            return curves;
+        }
     return nullptr;
     }
 
