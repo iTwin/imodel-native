@@ -1335,8 +1335,8 @@ TEST(TransferReport, XmlExport)
 	Utf8String report{};
 	transferReport.ToXml(report);
 	report.ReplaceAll("\n", "");
-	EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName" timeSpent="5" CURLcode="0" progress="100"/>)"));
-	EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName2" timeSpent="5" CURLcode="7" progress="0">    <Response ResponseCode="400" Header="SomeHeader"/>  </File>)"));
+	EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName" timeSpent="5" ToolCode="0" progress="100"/>)"));
+	EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName2" timeSpent="5" ToolCode="7" progress="0">    <Response ResponseCode="400" Header="SomeHeader"/>  </File>)"));
 	}
 
 // No way to test those class yet.

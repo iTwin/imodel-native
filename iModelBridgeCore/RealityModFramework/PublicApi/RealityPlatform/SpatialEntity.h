@@ -121,8 +121,6 @@ protected:
     bool m_isEmpty;
     };
 
-
-
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //! This class holds general use metadata. This metadata can be used by many different
@@ -388,7 +386,6 @@ protected:
     uint64_t    m_meanReachabilityStats;
     };
 
-
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //! A Spatial entity data source defines the storage location of a spatial entity.
@@ -639,6 +636,4 @@ protected:
     uint64_t m_approximateFileSize;
     }; 
    
-
-
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

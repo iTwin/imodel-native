@@ -16,6 +16,7 @@
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatformTools/RealityDataService.h>
+#include <Windows.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

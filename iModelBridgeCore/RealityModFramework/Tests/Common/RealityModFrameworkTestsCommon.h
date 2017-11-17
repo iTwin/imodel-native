@@ -12,6 +12,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTest.h>
 #include <Windows.h>
+#include <curl/curl.h>
 #include <RealityPlatformTools/RealityDataService.h>
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityPlatformTools/GeoCoordinationService.h>

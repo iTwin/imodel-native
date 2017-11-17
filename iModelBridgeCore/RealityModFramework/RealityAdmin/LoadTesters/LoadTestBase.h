@@ -15,6 +15,7 @@
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/BeFile.h>
+#include <curl/curl.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

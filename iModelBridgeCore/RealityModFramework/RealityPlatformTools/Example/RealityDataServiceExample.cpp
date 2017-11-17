@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include <Windows.h>
 #include <Bentley/Bentley.h>
 
 #include <BeJsonCpp/BeJsonUtilities.h>

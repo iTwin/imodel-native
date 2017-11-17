@@ -16,7 +16,6 @@
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
-#include <curl/curl.h>
 
 #define CHUNK_SIZE                  (4*1024*1024) //4Mb 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
@@ -550,12 +549,12 @@ private:
 //! @param[in] progress    Percentage uploaded.
 typedef std::function<void(Utf8String filename, double fileProgress, double repoProgress)> RealityDataServiceTransfer_ProgressCallBack;
 
-// ErrorCode --> Curl error code.
+// ErrorCode --> Tool error code.
 //! Callback function to follow the download progression.
 //! @param[out] index       Url index set at the creation
 //! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
-//! @param[out] ErrorCode   Curl error code:(0)Success (xx)Curl (-1)General error, (-2)Retry the current download. 
-//! @param[out] pMsg        Curl English message.
+//! @param[out] ErrorCode   Tool error code:(0)Success (xx)Tool error (-1)General error, (-2)Retry the current download. 
+//! @param[out] pMsg        Tool English message.
 typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataServiceTransfer_StatusCallBack;
 
 //! Callback function to follow the download progression.
@@ -658,7 +657,7 @@ struct RealityDataFileTransfer;
 //=====================================================================================
 struct TransferResult
     {
-    int                     errorCode; //code returned by curl
+    int                     errorCode; //code returned by the REST Tool
     size_t                  progress; //a percentage of how much of the file was successfully downloaded
     time_t                  timeSpent;
     Utf8String              name;
@@ -739,7 +738,7 @@ struct RealityDataServiceTransfer : public RequestConstructor
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
-    void SetupCurlforFile(RealityDataUrl* upload, bool verifyPeer);
+    void SetupRequestforFile(RealityDataUrl* upload, bool verifyPeer);
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
     Utf8String GetAzureToken();
@@ -747,7 +746,7 @@ protected:
     AzureHandshake*             m_handshakeRequest;
     bvector<RealityDataFileTransfer*>         m_filesToTransfer;
 
-    void*                       m_pCurlHandle;
+    void*                       m_pRequestHandle;
 
     Utf8String                  m_id;
     Utf8String                  m_proxyUrl;
@@ -778,7 +777,7 @@ protected:
 //! RealityDataServiceUpload
 //! This class represents an upload service for uploading files or datasets to the
 //!  reality data service.
-//! During the perform the object will rely on CURL in a multithreaded environment 
+//! During the perform the object will rely on the tool in a multithreaded environment 
 //!  to upload sources up to the reality data service.
 //! The process will attempt to optimise the upload process. To do so it may decide
 //!  to group a set of files together in an archive then upload and un-archive the file set
@@ -837,7 +836,7 @@ private:
 //! RealityDataServiceDownload
 //! This class represents a download service for downloading files or datasets from the
 //!  Reality Data Service.
-//! During the perform the object will rely on CURL in a multithreaded environment 
+//! During the perform the object will rely on the tool in a multithreaded environment 
 //!  to download sources down from the Reality Data Service.
 //! The process will attempt to optimise the download process. To do so it may decide
 //!  if the files are large the download process

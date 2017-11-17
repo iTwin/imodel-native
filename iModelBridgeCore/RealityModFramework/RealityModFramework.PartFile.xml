@@ -14,7 +14,7 @@
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />

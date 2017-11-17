@@ -524,7 +524,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityWithDetailsRequestBad)
 {
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("SpatialEntityWithDetailsSpatialRequest failed with response"), _)).Times(1);
-    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Curl error"), _)).Times(1);
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Tool error"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
     {
         response.toolCode = CURLE_OK;

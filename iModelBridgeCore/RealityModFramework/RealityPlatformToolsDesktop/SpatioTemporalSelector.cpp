@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformTools/SpatioTemporalSelector.cpp $
+|     $Source: RealityPlatformToolsDesktop/SpatioTemporalSelector.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

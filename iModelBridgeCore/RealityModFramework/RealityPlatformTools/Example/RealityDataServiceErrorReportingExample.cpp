@@ -10,6 +10,7 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatformTools/RealityDataService.h>
+#include <curl/curl.h>
 
 #include <stdio.h>
 #include <conio.h>

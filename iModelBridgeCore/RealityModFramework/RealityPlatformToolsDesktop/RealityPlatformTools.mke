@@ -52,15 +52,15 @@ $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
 $(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 
-$(o)RealityDataDownload$(oext) : $(baseDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
+$(o)SpatioTemporalSelector$(oext) : $(deskDir)SpatioTemporalSelector.cpp $(PublicApiDir)SpatioTemporalSelector.h ${MultiCompileDepends}
 
-$(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(PublicApiDir)SpatioTemporalSelector.h ${MultiCompileDepends}
+$(o)RealityDataDownload$(oext) : $(deskDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
 
 $(o)WSGServices$(oext) : $(deskDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
 
-$(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
+$(o)RealityDataService$(oext) : $(deskDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
 
-$(o)GeoCoordinationService$(oext) : $(baseDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
+$(o)GeoCoordinationService$(oext) : $(deskDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
 
 $(o)SimpleRDSApi$(oext) : $(deskDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 

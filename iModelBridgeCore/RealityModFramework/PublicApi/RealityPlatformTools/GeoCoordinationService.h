@@ -16,7 +16,6 @@
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
-#include <curl/curl.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

@@ -14,7 +14,6 @@
 #include <Bentley/bmap.h>
 #include <BeXml/BeXml.h>
 #include <Bentley/DateTime.h>
-#include <curl/curl.h>
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 
@@ -27,12 +26,12 @@
 //! @return If RealityDataDownload_ProgressCallBack returns # 0 The download is canceled for this file.
 typedef std::function<int(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal)> RealityDataDownload_ProgressCallBack;
 
-// ErrorCode --> Curl error code.
+// ErrorCode --> Tool error code.
 //! Callback function to follow the download progression.
 //! @param[out] index       Url index set at the creation
 //! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
-//! @param[out] ErrorCode   Curl error code:(0)Success (xx)Curl (-1)General error, (-2)Retry the current download. 
-//! @param[out] pMsg        Curl English message.
+//! @param[out] ErrorCode   Tool error code:(0)Success (xx)Tool error (-1)General error, (-2)Retry the current download. 
+//! @param[out] pMsg        Tool English message.
 typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataDownload_StatusCallBack;
 
 //! Callback function to follow the download progression.
@@ -78,7 +77,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! @bsiclass
 //=======================================================================================
 
-enum class SetupCurlStatus
+enum class SetupRequestStatus
     {
     Success                     = SUCCESS,
     FromCache,
@@ -205,10 +204,10 @@ public:
             {}
         };
 
-    //where the curl download ended, either in success or failure
+    //where the tool download ended, either in success or failure
     struct DownloadResult
         {
-        int                     errorCode; //code returned by curl
+        int                     errorCode; //code returned by the tool
         size_t                  downloadProgress; //a percentage of how much of the file was successfully downloaded
         };
 
@@ -261,7 +260,7 @@ public:
                             writer->WriteElementStart("DownloadAttempt");
                                 {
                                 writer->WriteAttribute("attemptNo", i+1);
-                                writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
+                                writer->WriteAttribute("Toolcode", tr->retries.at(i).errorCode);
                                 writer->WriteAttribute("downloadProgress", tr->retries.at(i).downloadProgress);
                                 }
                             writer->WriteElementEnd();
@@ -336,16 +335,16 @@ private:
 
     void InitEntry(size_t i);
 
-    void SetProxy(CURL* pCurl, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds);
-    SetupCurlStatus Login(LoginInfo& loginInfo, AuthInfo& authInfo);
-    SetupCurlStatus SetupCurlandFile(FileTransfer* ft, bool isRetry = false);
+    void SetProxy(void* pTool, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds);
+    SetupRequestStatus Login(LoginInfo& loginInfo, AuthInfo& authInfo);
+    SetupRequestStatus SetupRequestandFile(FileTransfer* ft, bool isRetry = false);
     bool SetupNextEntry();
     bool SetupMirror(size_t index, int errorCode);
     void AddSisterFiles(FileTransfer* ft, bvector<url_file_pair> sisters, size_t index, size_t sisterCount, size_t sisterIndex);
 
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
 
-    void*                       m_pCurlHandle;
+    void*                       m_pToolHandle;
     size_t                      m_nbEntry;
     size_t                      m_curEntry;
     FileTransfer                *m_pEntries;

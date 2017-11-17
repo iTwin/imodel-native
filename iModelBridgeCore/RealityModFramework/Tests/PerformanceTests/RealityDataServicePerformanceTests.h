@@ -9,7 +9,7 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-
+#include <Windows.h>
 #include <ctime>
 
 #include <Bentley/DateTime.h>

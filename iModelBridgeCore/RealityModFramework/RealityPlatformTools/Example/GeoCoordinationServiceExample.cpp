@@ -12,6 +12,7 @@
 #include <RealityPlatformTools/GeoCoordinationService.h>
 #include <RealityPlatformTools/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
+#include <curl/curl.h>
 
 #include <stdio.h>
 #include <conio.h>

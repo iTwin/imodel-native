@@ -9,7 +9,7 @@ typedef std::function<void(const char* pMsg)> RDS_FeedbackFunction;
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              10/2017
 //! ConnectedResponse
-//! struct used to hold and return all pertinent elements regarding a curl response.
+//! struct used to hold and return all pertinent elements regarding a server response.
 //=====================================================================================
 struct ConnectedResponse : public RawServerResponse
     { 

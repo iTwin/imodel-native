@@ -15,6 +15,7 @@
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityAdmin/RealityDataServiceConsole.h>
 #include <CCApi/CCPublic.h>
+#include <curl/curl.h>
 
 #include <stdio.h>
 #include <conio.h>

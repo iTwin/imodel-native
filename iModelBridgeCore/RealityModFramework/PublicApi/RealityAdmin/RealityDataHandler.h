@@ -8,6 +8,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
+#include <Windows.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 
 #include <Bentley/BeFilename.h>
