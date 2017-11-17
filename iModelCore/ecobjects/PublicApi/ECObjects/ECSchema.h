@@ -252,7 +252,7 @@ protected:
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
 public:
-    ECSchemaP                           GetContainerSchema();
+    ECOBJECTS_EXPORT ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
