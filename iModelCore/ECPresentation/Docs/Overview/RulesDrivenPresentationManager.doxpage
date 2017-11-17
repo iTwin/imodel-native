@@ -85,6 +85,9 @@ rule and ECInstance filtering and value formatting.
 @section SECTION_RulesDrivenPresentationManager_Localization Localization
 The presentation manager also supports localization described in @subpage PAGE_RulesDrivenPresentationManager_Localization "localization page".
 
+@section SECTION_RulesDrivenPresentationManager_PerformanceTips Performance tips
+@subpage PAGE_RulesDrivenPresentationManager_PerformanceTips "Performance tips page" describes how to write rule set to achieve better performance.
+
 @section SECTION_RulesDrivenPresentationManager_SettingUp Setting Up
 Every application that wants to use rules-driven presentation manager should first make sure it's properly initialized. 
 
@@ -2798,3 +2801,30 @@ and this localized string
 Test_@String1@_test_@String2@
 @endverbatim
 */
+
+//=======================================================================================
+// Performance tips
+//=======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_PerformanceTips Performance tips
+These tips will help achieve better presentation performance.
+
+@section SECTION_RulesDrivenPresentationManager_PerformanceTips_WritingRules Writing rule set
+When writing rule set consider:
+<ul>
+    <li>Defining "supported schemas" for rule set and specifications.</li>
+    <li>Making rule specifications as concrete as possible. E.g. instead of specifying just the relationship name, also specify the related class name.</li>
+    <li>Avoiding IsRecursive=True in content queries, if possible.</li>
+</ul>
+
+@section SECTION_RulesDrivenPresentationManger_PerformanceTips_Conditions ECExpressions in rule condition
+When writing rule condition use only these @ref SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode "NavNode expression symbols", if possible:
+<ul>
+    <li>IsOfClass</li>
+	<li>IsInstanceNode</li>
+	<li>IsPropertyGroupingNode</li>
+	<li>IsClassGroupingNode</li>
+	<li>ClassName</li>
+	<li>InstanceId</li>
+</ul>
+Avoid using @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb symbols" and @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "ECInstance symbols".
+*/  
