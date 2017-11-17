@@ -199,7 +199,7 @@
       typedef _structname_ const* _structname_##CP; \
       typedef _structname_ const& _structname_##CR; 
 
-  // Define standard pointer types (P, CP, R, CR) in the current scope for the specified type, without forward-declaring _typename_ as a struct
+  // Define standard pointer types (P, CP, R, CR) in the current namespace for the specified type, without forward-declaring _typename_ as a struct
   #define DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(_typename_) \
       typedef _typename_* _typename_##P, &_typename_##R; \
       typedef _typename_ const* _typename_##CP; \
