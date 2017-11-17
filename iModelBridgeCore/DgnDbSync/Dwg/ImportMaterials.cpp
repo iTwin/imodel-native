@@ -66,7 +66,7 @@ private:
 
     Json::Value         GetRGBFrom (DwgGiMaterialColorCR materialColor) const;
     double              GetBoundedScaleFrom (double scale) const;
-    Material::MapMode   GetMapMode (DwgGiMapperCR dwgMapper) const;
+    TextureMapping::Mode GetMapMode (DwgGiMapperCR dwgMapper) const;
     void                ExtractAndConvertMapUnits ();
     size_t              ReadRawBytes (ByteStream& bytesOut, BeFileNameCR fileNameIn) const;
     BentleyStatus       ReadToRgba (Render::ImageR image, BeFileNameCR filename, bool pseudoBackgroundTransparency) const;
@@ -135,21 +135,17 @@ double          MaterialFactory::GetBoundedScaleFrom (double scale) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Material::MapMode   MaterialFactory::GetMapMode (DwgGiMapperCR dwgMapper) const
+TextureMapping::Mode   MaterialFactory::GetMapMode (DwgGiMapperCR dwgMapper) const
     {
-    Material::MapMode   mapMode(Material::MapMode::None);
-
     switch (dwgMapper.GetProjection())
         {
-        case DwgGiMapper::Planar:       mapMode = Material::MapMode::Planar;       break;
-        case DwgGiMapper::Box:          mapMode = Material::MapMode::Cubic;        break;
-        case DwgGiMapper::Cylinder:     mapMode = Material::MapMode::Cylindrical;  break;
-        case DwgGiMapper::Sphere:       mapMode = Material::MapMode::Spherical;    break;
+        case DwgGiMapper::Planar:       return TextureMapping::Mode::Planar;
+        case DwgGiMapper::Box:          return TextureMapping::Mode::Cubic;
+        case DwgGiMapper::Cylinder:     return TextureMapping::Mode::Cylindrical;
+        case DwgGiMapper::Sphere:       return TextureMapping::Mode::Spherical;
         case DwgGiMapper::InheritProjection:
-        default:                        mapMode = Material::MapMode::Parametric;   break;
+        default:                        return TextureMapping::Mode::Parametric;
         }
-
-    return  mapMode;
     }
 
 /*---------------------------------------------------------------------------------**//**

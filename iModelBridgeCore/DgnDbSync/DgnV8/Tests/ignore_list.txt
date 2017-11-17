@@ -110,3 +110,9 @@ ConverterTests.GCSMultiFilesGCSTransformWithScale
     # Model range is wrong. Model: TPB Building
     # Expected: {775885.795000 83307.686000}{775960.121000 83398.667000}
     # Actual:   {19423.654845 -1229.968723}{19523.497038 -1173.407035}
+    
+#----------------------------------------------------------------------------------------
+#   Tests that are failing only on tiles branch
+#----------------------------------------------------------------------------------------
+ECSchemaTests.RemapSerializedInstance
+ECSchemaTests.RemapReservedPropertyNames

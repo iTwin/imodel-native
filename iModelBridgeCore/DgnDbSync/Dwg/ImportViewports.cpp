@@ -814,7 +814,7 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::SaveViewDefinition (ViewControllerR viewController)
     {
-    auto& viewDef = viewController.GetViewDefinition ();
+    auto& viewDef = viewController.GetViewDefinitionR();
 
     viewDef.GetCategorySelector().Update ();
     viewDef.GetDisplayStyle().Update ();
@@ -1030,7 +1030,7 @@ void            DwgImporter::_PostProcessViewports ()
                     numFrozenLayers = frozenLayers.size ();
                 }
 
-            auto& categorySelector = viewController->GetViewDefinition().GetCategorySelector ();
+            auto& categorySelector = viewController->GetViewDefinitionR().GetCategorySelector ();
             for (ElementIteratorEntry entry : DrawingCategory::MakeIterator(*m_dgndb))
                 {
                 DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();

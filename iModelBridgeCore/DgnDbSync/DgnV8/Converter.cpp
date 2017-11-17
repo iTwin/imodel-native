@@ -1607,6 +1607,7 @@ void Converter::OnCreateComplete()
     // else
     //  ensureAUserView
 
+
     GenerateThumbnails();
     GetDgnDb().SaveSettings();
     }
