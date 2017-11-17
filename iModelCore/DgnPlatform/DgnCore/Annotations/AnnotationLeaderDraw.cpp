@@ -207,7 +207,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(Render::GraphicBuilderR graphic, ViewCo
         if (effectiveLineGeometry.IsValid())
             {
             setStrokeSymbology(graphic, context, geomParams, leaderStyle->GetLineColorType(), leaderStyle->GetLineColorValue(), leaderStyle->GetLineWeight());
-            graphic.AddCurveVector(*effectiveLineGeometry, false);
+            graphic.AddCurveVectorR(*effectiveLineGeometry, false);
             }
         }
 
@@ -220,12 +220,12 @@ BentleyStatus AnnotationLeaderDraw::Draw(Render::GraphicBuilderR graphic, ViewCo
         if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry->GetBoundaryType())
             {
             setStrokeSymbology(graphic, context, geomParams, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), leaderStyle->GetTerminatorWeight());
-            graphic.AddCurveVector(*terminatorGeometry, false);
+            graphic.AddCurveVectorR(*terminatorGeometry, false);
             }
         else
             {
             setFillSymbology(graphic, context, geomParams, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), 0.0);
-            graphic.AddCurveVector(*terminatorGeometry, true);
+            graphic.AddCurveVectorR(*terminatorGeometry, true);
             }
         }
 

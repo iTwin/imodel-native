@@ -993,7 +993,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
     m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
     return stmt;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1746,25 +1746,5 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
     {
     // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
-    {
-    m_tree->VisitElements([&viewport](DgnElementCR el)
-        {
-        auto geom = el.ToGeometrySource();
-        if (nullptr != geom)
-            {
-            geom->Graphics().DropFor(viewport);
-            return;
-            }
-
-        DgnGeometryPartCP part = el.ToGeometryPart();
-        if (nullptr != part)
-            part->Graphics().DropFor(viewport);
-        });
     }
 

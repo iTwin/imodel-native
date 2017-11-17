@@ -35,7 +35,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnGeometryPart : DefinitionElement
 private:
     GeometryStream              m_geometry; //!< Geometry of part
     ElementAlignedBox3d         m_bbox;     //!< Bounding box of part geometry
-    mutable Render::GraphicSet  m_graphics;
     mutable bool                m_multiChunkGeomStream = false;
 
     explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
@@ -84,9 +83,6 @@ public:
 
     //! Get the bounding box for this part (part local coordinates)
     ElementAlignedBox3dCR GetBoundingBox() const {return m_bbox;}
-
-    //! Get the cached set of Render::Graphics for this DgnGeometryPart.
-    Render::GraphicSet& Graphics() const {return m_graphics;}
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);

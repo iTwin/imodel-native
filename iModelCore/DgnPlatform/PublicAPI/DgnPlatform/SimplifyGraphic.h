@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //! @ingroup GROUP_Geometry
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
-struct SimplifyGraphic : Render::Graphic, Render::IGraphicBuilder
+struct SimplifyGraphic : Render::GraphicBuilder
 {
     DEFINE_T_SUPER(Render::Graphic);
 
@@ -25,11 +25,11 @@ protected:
     IGeometryProcessorR m_processor;
     ViewContextR m_context;
     IFacetOptionsPtr m_facetOptions;
-    bool m_isOpen = true;
     Render::GraphicParams m_currGraphicParams;
     Render::GeometryParams m_currGeometryParams;
     GeometryStreamEntryId m_currGeomEntryId;
     ClipVectorPtr m_currClip;
+    bool m_isOpen = true;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
@@ -38,8 +38,8 @@ protected:
     DGNPLATFORM_EXPORT void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override;
     DGNPLATFORM_EXPORT void _AddShape(int numPoints, DPoint3dCP points, bool filled) override;
     DGNPLATFORM_EXPORT void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override;
-    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override;
-    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override;
@@ -49,26 +49,26 @@ protected:
     DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
-    DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
+    DGNPLATFORM_EXPORT void _AddTriMesh(Render::TriMeshArgsCR) override;
     DGNPLATFORM_EXPORT void _AddBody(IBRepEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
-    DGNPLATFORM_EXPORT void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
+    DGNPLATFORM_EXPORT bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) override;
+    DGNPLATFORM_EXPORT bool _WantStrokePattern(PatternParamsCR pattern) override;
+    bool _WantPreBakedBody(IBRepEntityCR) override { return false; }
 
-    bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}
-    StatusInt _Close() override {m_isOpen = false; return SUCCESS;}
-    StatusInt _EnsureClosed() override {return m_isOpen ? _Close() : SUCCESS;}
+    Render::GraphicPtr _Finish() override;
 
     GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
     void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
 
 public:
-    DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
+    DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR, ViewContextR);
 
     virtual ~SimplifyGraphic() {}
 
@@ -119,7 +119,7 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBody(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessTriMesh(TriMeshArgs const&);
+    DGNPLATFORM_EXPORT void ClipAndProcessTriMesh(Render::TriMeshArgsCR);
 
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
@@ -131,6 +131,11 @@ public:
     DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const;
     DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const;
 
+    struct Base : Render::Graphic
+    {
+    public:
+        explicit Base(DgnDbR db) : Render::Graphic(db) { }
+    };
 }; // SimplifyGraphic
 
 //=======================================================================================
@@ -197,7 +202,7 @@ virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, Simplify
 virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(Render::IGraphicBuilder::TriMeshArgs const&, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(Render::TriMeshArgsCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}
@@ -213,7 +218,7 @@ virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic&) {return false
 virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {return false;}
 virtual bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) {return false;}
 virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
-virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&) {return false; }
+virtual bool _ProcessTriMesh(Render::TriMeshArgsCR args, SimplifyGraphic&) {return false; }
 
 //! Called by SimplifyGraphic when clipping (and clips are present).
 //! @return true if handled or false to process according to _GetUnhandledPreference.
@@ -223,7 +228,7 @@ virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic&, ClipVe
 virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessBodyClipped(IBRepEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
-virtual bool _ProcessTriMeshClipped(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic&, ClipVectorCR) {return false; }
+virtual bool _ProcessTriMeshClipped(Render::TriMeshArgsCR args, SimplifyGraphic&, ClipVectorCR) {return false; }
 
 //! Allow processor to output graphics to it's own process methods.
 //! @param[in] context The current view context.

@@ -68,8 +68,8 @@ protected:
     // Allow sub-classes to override how ACS triad is displayed in the view...
     DGNPLATFORM_EXPORT virtual ColorDef _GetAdjustedColor(ColorDef, bool isFill, DgnViewportCR, ACSDisplayOptions) const;
     DGNPLATFORM_EXPORT virtual Utf8String _GetAxisLabel(uint32_t axis) const;
-    DGNPLATFORM_EXPORT virtual void _AddAxisLabel(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions) const;
-    DGNPLATFORM_EXPORT virtual void _AddAxis(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions) const;
+    DGNPLATFORM_EXPORT virtual void _AddAxisLabel(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions, DgnViewportCR vp) const;
+    DGNPLATFORM_EXPORT virtual void _AddAxis(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions, DgnViewportCR vp) const;
     DGNPLATFORM_EXPORT virtual Render::GraphicBuilderPtr _CreateGraphic(DecorateContextR, ACSDisplayOptions) const;
 
     DGNPLATFORM_EXPORT virtual void _Display(DecorateContextR, ACSDisplayOptions) const;

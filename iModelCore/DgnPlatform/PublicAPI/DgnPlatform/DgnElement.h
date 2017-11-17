@@ -15,22 +15,6 @@
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
-
-//=======================================================================================
-// Cached set of Render::Graphics for a GeometrySource
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct GraphicSet
-{
-    struct PtrCompare{bool operator()(Render::GraphicPtr first, Render::GraphicPtr second) const {return first.get()<second.get();}};
-    mutable bset<Render::GraphicPtr, PtrCompare, 8> m_graphics;
-    DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
-    DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
-    DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic); BeAssert(m_graphics.size() < 50);} // we never expect to have more than 50 or so
-    void Clear() {m_graphics.clear();}
-    bool IsEmpty() const {return m_graphics.empty();}
-};
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -712,14 +696,6 @@ public:
         template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(m_id.GetValueUnchecked());}
     };
 
-    //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
-    enum class Hilited : uint8_t
-    {
-        None         = 0, //!< the element is displayed normally (not hilited)
-        Normal       = 1, //!< the element is displayed using the normal hilite appearance
-        Background   = 2, //!< the element is displayed with the background color
-    };
-
     //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of DgnElement.
     struct RestrictedAction : DgnDomain::Handler::RestrictedAction
     {
@@ -1130,7 +1106,7 @@ protected:
         uint32_t m_persistent:1;
         uint32_t m_preassignedId:1;
         uint32_t m_inSelectionSet:1;
-        uint32_t m_hilited:3;
+        uint32_t m_hilited:1;
         uint32_t m_undisplayed:1;
         uint32_t m_propState:2; // See PropState
         Flags() {memset(this, 0, sizeof(*this));}
@@ -1599,6 +1575,10 @@ public:
     //! Make a writable copy of this DgnElement so that the copy may be edited. Also see @ref ElementCopying.
     //! This is merely a templated shortcut to dynamic_cast the return of CopyForEdit to a subclass of DgnElement.
     template<class T> RefCountedPtr<T> MakeCopy() const {return dynamic_cast<T*>(CopyForEdit().get());}
+
+    //! Make a writable copy of the supplied DgnElement so that the copy may be edited. Also see @ref ElementCopying.
+    //! This is merely a templated shortcut to dynamic_cast the return of CopyForEdit to a the supplied DgnElement's actual class.
+    template<class T> static RefCountedPtr<T> MakeCopy(T const& elem) {auto clone=elem.CopyForEdit(); BeAssert(clone.IsNull() || nullptr != dynamic_cast<T*>(clone.get())); return static_cast<T*>(clone.get());}
 
     //! Create a copy of this DgnElement and all of its extended content in a destination model.
     //! The copied element will be persistent in the destination DgnDb. Also see @ref ElementCopying.
@@ -2143,7 +2123,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
     friend struct GeometryBuilder;
 
 protected:
-    virtual Render::GraphicSet& _Graphics() const = 0;
     virtual DgnDbR _GetSourceDgnDb() const = 0;
     virtual DgnElementCP _ToElement() const = 0;
     virtual GeometrySource2dCP _GetAsGeometrySource2d() const = 0; // Either this method or _GetAsGeometrySource3d must return non-null.
@@ -2156,8 +2135,8 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
-    virtual DgnElement::Hilited _IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
-    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+    virtual bool _IsHilited() const {if (nullptr == ToElement()) return false; else return ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    DGNPLATFORM_EXPORT virtual void _SetHilited(bool hilited) const; //!< Change the current Hilited state of this element
 
     friend struct GeometricElement;
 public:
@@ -2177,14 +2156,13 @@ public:
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
     DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-    DgnElement::Hilited IsHilited() const {return _IsHilited();}
-    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
+    bool IsHilited() const {return _IsHilited();} //!< @private
+    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;} //!< @private
     bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;} //!< @private
-    void SetHilited(DgnElement::Hilited newState) const {_SetHilited(newState);} //!< Change the current Hilited state of this element
+    void SetHilited(bool hilited) const {_SetHilited(hilited);} //!< @private
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
     DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
-    Render::GraphicSet& Graphics() const {return _Graphics();}
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
     Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
     DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
@@ -2279,7 +2257,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 protected:
     DgnCategoryId m_categoryId;
     GeometryStream m_geom;
-    mutable Render::GraphicSet m_graphics;
     mutable bool m_multiChunkGeomStream;
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
@@ -2360,7 +2337,6 @@ protected:
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
-    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
     GeometrySourceCP _ToGeometrySource() const override final {return this;}
@@ -2456,7 +2432,6 @@ protected:
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
-    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -3458,7 +3433,6 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct DgnGeometryPart;
     friend struct ElementHandler;
     friend struct TxnManager;
-    friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
@@ -3504,6 +3478,8 @@ private:
     BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
+    DgnElementIdSet m_undisplayedSet;
+    DgnElementIdSet m_hilitedSet;
     mutable BeMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
@@ -3536,7 +3512,6 @@ private:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void ClearECCaches();
-
 public:
     DGNPLATFORM_EXPORT BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
 
@@ -3688,11 +3663,10 @@ public:
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
 
-    //! For all loaded elements, drops any cached graphics associated with the specified viewport.
-    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
-    //! no longer reflect its state.
-    //! @param[in]      viewport The viewport for which to drop graphics
-    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
+    DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;}
+    void SetUndisplayed(DgnElementR, bool isUndisplayed);
+    DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;}
+    void SetHilited(DgnElementR, bool hilited);
 };
 
 //=======================================================================================

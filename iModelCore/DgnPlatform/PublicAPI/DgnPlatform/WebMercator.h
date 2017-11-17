@@ -120,10 +120,10 @@ struct MapTile : TileTree::QuadTree::Tile
     bool m_reprojected = false;  //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     StatusInt ReprojectCorners(GeoPoint*);
     MapTile(MapRootR mapRoot, TileTree::QuadTree::TileId id, MapTileCP parent);
-    void _GetGraphics(TileTree::DrawGraphicsR, int depth) const override;
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
 };
 
 //=======================================================================================
@@ -137,11 +137,11 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
     DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 protected:
+    TileTree::RootPtr Load(Dgn::Render::SystemP) const;
+
     double m_groundBias;
     double m_transparency;
     ImageryProviderPtr m_provider;
-    mutable MapRootPtr m_root;
-    void Load(Dgn::Render::SystemP) const;
 
     void FromJson(Json::Value const& value);
     void ToJson(Json::Value& value) const;
@@ -173,7 +173,7 @@ public:
     //! Create a new WebMercatorModel from ModelHandler::CreateWebMercatorModel method. The caller sets up the ImageryProvider from user input.
     DGNPLATFORM_EXPORT WebMercatorModel(CreateParams const& params);
 
-    void _AddTerrainGraphics(TerrainContextR) const override;
+    TileTree::RootPtr _CreateTileTree(Render::SystemP) override;
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}

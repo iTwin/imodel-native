@@ -74,6 +74,38 @@ bool GradientSymb::operator==(GradientSymbCR rhs) const
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GradientSymb::operator<(GradientSymbCR rhs) const
+    {
+    if (&rhs == this)
+        return false;
+    else if (m_mode != rhs.m_mode)
+        return m_mode < rhs.m_mode;
+    else if (m_flags != rhs.m_flags)
+        return m_flags < rhs.m_flags;
+    else if (m_nKeys != rhs.m_nKeys)
+        return m_nKeys < rhs.m_nKeys;
+    else if (m_angle != rhs.m_angle)
+        return m_angle < rhs.m_angle;
+    else if (m_tint != rhs.m_tint)
+        return m_tint < rhs.m_tint;
+    else if (m_shift != rhs.m_shift)
+        return m_shift < rhs.m_shift;
+
+    int nKeys = m_nKeys > MAX_GRADIENT_KEYS ? MAX_GRADIENT_KEYS : m_nKeys;
+    for (int i = 0; i < nKeys; i++)
+        {
+        if (m_values[i] != rhs.m_values[i])
+            return m_values[i] < rhs.m_values[i];
+        else if (m_colors[i] != rhs.m_colors[i])
+            return m_colors[i].GetValue() < rhs.m_colors[i].GetValue();
+        }
+
+    return false;
+    }
+
 static Byte roundToByte(double f) { return (Byte) std::min (f + .5, 255.0); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -110,11 +142,16 @@ ColorDef GradientSymb::MapColor(double value) const
     double          red     = w0 * (double) color0.GetRed()   + w1 * (double) color1.GetRed();
     double          green   = w0 * (double) color0.GetGreen() + w1 * (double) color1.GetGreen();
     double          blue    = w0 * (double) color0.GetBlue()  + w1 * (double) color1.GetBlue();
+    double          alpha   = w0 * (double) color0.GetAlpha() + w1 * (double) color1.GetAlpha();
 
-    return ColorDef(roundToByte(red), roundToByte(green), roundToByte(blue), 0xff);
+    return ColorDef(roundToByte(red), roundToByte(green), roundToByte(blue), 0xff - roundToByte(alpha));
     }
 
 /*---------------------------------------------------------------------------------**//**
+* This code was more or less copied from QvTexture::initGradientTexture().
+* That code produces the image flipped horizontally and vertically...texture mapping
+* has identity transform...not clear how they end up rendering it correctly.
+* I modified our version to write the image in "reverse".
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
@@ -124,7 +161,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
     double                  dMin, dMax;
     double                  shift = std::min(1.0, fabs(GetShift()));
     ByteStream              imageBytes(4 * width * height);
-    uint32_t*               pImage = (uint32_t*) imageBytes.data();
+    uint32_t*               pImage = reinterpret_cast<uint32_t*>(imageBytes.data()) + width*height;
 
     switch (GetMode())
         {
@@ -166,7 +203,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                         else
                             f = (double) (sin (msGeomConst_piOver2 * (1.0 - d / dMin)));
                         }
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
             break;
@@ -184,7 +221,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                     xr = 0.8f * (x * cosA + y * sinA);
                     yr = y * cosA - x * sinA;
                     f = (double) (sin (msGeomConst_piOver2 * (1.0 - sqrt (xr * xr + yr * yr))));
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
 
@@ -202,7 +239,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                     {
                     x = xs + (double) (i) / 255.0 - 0.5;
                     f = (double) (sin (msGeomConst_piOver2 * (1.0 - sqrt (x * x + y * y) / r)));
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
             break;
@@ -218,7 +255,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                     {
                     x = (double) (i) / 255.0 - xs;
                     f = (double) (sin (msGeomConst_piOver2 * (1.0 - sqrt (x * x + y * y))));
-                    *pImage++ = MapColor(f).GetValue();
+                    *--pImage = MapColor(f).GetValue();
                     }
                 }
             break;
@@ -226,14 +263,98 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
 
         }
     Render::Image image (width, height, std::move(imageBytes), Image::Format::Rgba);
+
 #ifdef  TEST_IMAGE 
     std::FILE*       pFile;
-    if (nullptr != (pFile = fopen("d:\\tmp\\png", "wb")))
+    if (nullptr != (pFile = fopen("d:\\t3\\tmp\\png", "wb")))
         {
+        ImageSource imageSource(image, ImageSource::Format::Png);
         fwrite(imageSource.GetByteStream().GetDataP(), 1, imageSource.GetByteStream().GetSize(), pFile);
         fclose(pFile);
         }
 #endif
     return image;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GradientSymb::HasTransparency() const
+    {
+    for (uint32_t i = 0; i < m_nKeys; i++)
+        if (m_colors[i].GetAlpha() > 0)
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GradientSymb::GetKey(ColorDef& color, double& value, uint32_t iKey) const
+    {
+    if (iKey >= m_nKeys)
+        return ERROR;
+
+    color = m_colors[iKey];
+    value = m_values[iKey];
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   GradientSymb::FromJson(Json::Value const& json)
+    {
+    if (!json.isMember("mode") ||
+        !json["keys"].isArray())
+        return ERROR;
+    
+    m_mode  = (Mode) json["mode"].asUInt();
+    m_flags = (Flags) json["flags"].asUInt();
+    m_angle = json["angle"].asDouble(); 
+    m_tint  = json["tint"].asDouble();
+    m_shift = json["shift"].asDouble(); 
+    
+    m_nKeys = std::min((uint32_t) json["keys"].size(), (uint32_t) MAX_GRADIENT_KEYS);
+
+    for (uint32_t i=0; i<m_nKeys; i++)
+        {
+        m_colors[i] = ColorDef(json["keys"][i]["color"].asUInt());
+        m_values[i] = json["keys"][i]["value"].asDouble();
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     GradientSymb::ToJson () const
+    {
+    Json::Value     value;
+
+    value["mode"]  = (int) GetMode();
+    value["flags"] = (int) GetFlags();
+    value["angle"] = GetAngle(); 
+    value["tint"] = GetTint();
+    value["shift"] = GetShift();
+
+    ColorDef    color;
+    double      keyValue;
+
+    for (uint32_t i=0; SUCCESS == GetKey(color, keyValue, i); i++)
+        {
+        Json::Value keyJson;
+
+        keyJson["value"] = keyValue;
+        keyJson["color"] = color.GetValue();
+
+        value["keys"].append(keyJson);
+        }
+    
+    return value;
+    }
+
 

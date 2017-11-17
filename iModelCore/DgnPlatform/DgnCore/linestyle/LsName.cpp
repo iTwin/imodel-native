@@ -40,10 +40,10 @@ explicit LineStyleRangeCollector(LsComponentR component, LineStyleSymbR lsSymb, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-//  virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
-//  virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
-//  virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
-//  virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+//  bool _ProcessAsFacets(bool isPolyface) const override {return false;}
+//  bool _ProcessAsBody(bool isCurved) const override {return false;}
+//  void _AnnounceContext(ViewContextR context) override {m_context = &context;}
+//  void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
@@ -63,7 +63,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 //---------------------------------------------------------------------------------------
 void _OutputGraphics(ViewContext& viewContext) override
     {
-    Render::GraphicBuilderPtr graphic = viewContext.CreateGraphic();
+    Render::GraphicBuilderPtr graphic = viewContext.CreateWorldGraphic();
     Render::GeometryParams defaultParams;
     LineStyleContext lsContext(*graphic, defaultParams, viewContext);
 
@@ -289,7 +289,7 @@ bool GetUseTextureColors() {return m_useTextureColors;}
 Render::GraphicPtr Stroke(ViewContextR context) const
     {
     // Create the graphic
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
+    auto graphic = context.CreateWorldGraphic(m_transformForTexture);
     LineStyleContext lsContext(*graphic, m_geomParams, context);
 
     lsContext.SetCreatingTexture();
@@ -304,9 +304,7 @@ Render::GraphicPtr Stroke(ViewContextR context) const
     if (lsContext.GetHasTextureColors())
         m_useTextureColors = true;
 
-    graphic->Close();
-
-    return graphic;
+    return graphic->Finish();
     }
 };
 
@@ -634,11 +632,9 @@ Texture* LsDefinition::GetGeometryTexture(double& textureWidth, ViewContextR con
     switch (context.GetDrawPurpose())
         {
         case DrawPurpose::CreateScene:
-        case DrawPurpose::Progressive:
         case DrawPurpose::Plot:
         case DrawPurpose::Dynamics:
         case DrawPurpose::Redraw:
-        case DrawPurpose::Heal:
             {
             LineStyleInfoCP lsInfo = params.GetLineStyle();
 
