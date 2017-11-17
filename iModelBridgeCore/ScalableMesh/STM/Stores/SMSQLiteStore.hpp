@@ -337,6 +337,60 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::SetClipDefinitionsProvider(c
 	m_clipProvider = provider;
 }
 
+template <class EXTENT> void SMSQLiteStore<EXTENT>::WriteClipDataToProjectFilePath()
+{
+	CopyClipSisterFile(SMStoreDataType::DiffSet);
+	SMIndexNodeHeader<EXTENT>* nodeHeader = nullptr;
+	if (m_clipProvider.IsValid())
+	{
+		ISM3DPtDataStorePtr dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, m_clipProvider.get());
+
+		SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::ClipDefinition, true, false);
+
+		if (!sqlFilePtr.IsValid())
+			return;
+
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
+		dataStore->GetClipDefinitionExtOps(extOps);
+		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
+		if (!extOps.IsValid() || !extOpsTarget.IsValid())
+			return;
+		bvector<uint64_t> existingIds;
+
+		extOps->GetAllIDs(existingIds);
+		for (auto& id : existingIds)
+		{
+			bool isActive;
+			bvector<DPoint3d> clipData;
+			SMClipGeometryType geom;
+			SMNonDestructiveClipType type;
+			extOps->LoadClipWithParameters(clipData, id,geom,type, isActive);
+			extOpsTarget->StoreClipWithParameters(clipData, id, geom, type, isActive);
+		}
+		existingIds.clear();
+		extOps->GetAllCoverageIDs(existingIds);
+
+		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+	
+		for (auto& id : existingIds)
+		{
+			size_t count = coverageNameSource->GetBlockDataCount(HPMBlockID(id));
+			bvector<Utf8String> coverages(count);
+			if (count != 0)
+			{
+				coverageNameSource->LoadBlock(coverages.data(), count, HPMBlockID(id));
+				coverageNameTarget->StoreBlock(coverages.data(), count, HPMBlockID(id));
+			}
+		}
+	}
+	else
+	{
+		CopyClipSisterFile(SMStoreDataType::ClipDefinition);
+	}
+}
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
     SMSQLiteFilePtr sqlFilePtr;

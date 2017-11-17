@@ -240,6 +240,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 		virtual bool DoesClipFileExist() const override;
 
 		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
+		virtual void WriteClipDataToProjectFilePath() override;
         
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
                 

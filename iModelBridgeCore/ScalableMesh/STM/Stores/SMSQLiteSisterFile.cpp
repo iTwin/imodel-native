@@ -25,7 +25,7 @@ BeFileName GetTempPathFromProjectPath(const BeFileName& path)
 	return extraFileDir;
 }
 
-bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType) const
+bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType, bool useTempPath) const
     {
     switch (dataType)
         {
@@ -45,7 +45,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
 
         case SMStoreDataType::DiffSet:
-            sqlFileName = GetTempPathFromProjectPath(m_projectFilesPath);
+            sqlFileName = useTempPath ? GetTempPathFromProjectPath(m_projectFilesPath) : m_projectFilesPath;
             sqlFileName.append(L"_clips");
             return true;
             break;
@@ -53,7 +53,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
         case SMStoreDataType::Skirt:
         case SMStoreDataType::CoveragePolygon:
         case SMStoreDataType::CoverageName:
-            sqlFileName = GetTempPathFromProjectPath(m_projectFilesPath);
+            sqlFileName = useTempPath ? GetTempPathFromProjectPath(m_projectFilesPath) : m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;
             break;
@@ -90,7 +90,16 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
-SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing)
+void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
+{
+	WString sqlFileNameSource, sqlFileName;
+	GetSisterSQLiteFileName(sqlFileNameSource, dataType, true);
+	GetSisterSQLiteFileName(sqlFileName, dataType, false);
+
+	BeFileName::BeCopyFile(sqlFileNameSource.c_str(), sqlFileName.c_str());
+}
+
+SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath)
     {
     SMSQLiteFilePtr sqlFilePtr;
 
@@ -122,7 +131,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
             if (!m_smClipSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);
+                GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
                     
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
@@ -163,7 +172,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
             if (!m_smClipDefinitionSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);
+                GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
 
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);

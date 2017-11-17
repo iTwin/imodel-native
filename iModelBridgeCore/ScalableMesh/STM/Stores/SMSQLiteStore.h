@@ -53,6 +53,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 		virtual bool DoesClipFileExist() const override;
 
 		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
+		virtual void WriteClipDataToProjectFilePath() override;
                                
         virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
 
