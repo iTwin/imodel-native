@@ -219,7 +219,7 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
             continue;
 
         auto viewController = ViewDefinition::LoadViewController(entry.GetId(), GetDgnDb());
-        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinition().GetCategorySelector().IsCategoryViewed(category))
+        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
             continue;
 
         auto& models = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
