@@ -838,7 +838,7 @@ ECClassId DbSchemaPersistenceManager::QueryRowClassId(ECDbCR ecdb, Utf8StringCR 
     CachedStatementPtr statement = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     BeAssert(statement.IsValid());
 
-    if (BE_SQLITE_ROW != statement->BindId(1, id))
+    if (BE_SQLITE_OK != statement->BindId(1, id))
         return ECClassId();
 
     if (BE_SQLITE_ROW != statement->Step())

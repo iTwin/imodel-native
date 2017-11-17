@@ -117,7 +117,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
             };
 
         ECSqlStatement instanceChangeStmt;
-        ASSERT_EQ(ECSqlStatus::Success, instanceChangeStmt.Prepare(m_ecdb, "SELECT ECInstanceId, ChangedInstance.Id, ChangedInstance.ClassId, OpCode, IsIndirect, TableName FROM change.InstanceChange WHERE Summary.Id=?"));
+        ASSERT_EQ(ECSqlStatus::Success, instanceChangeStmt.Prepare(m_ecdb, "SELECT ECInstanceId, ChangedInstance.Id, ChangedInstance.ClassId, OpCode, IsIndirect FROM change.InstanceChange WHERE Summary.Id=?"));
         instanceChangeStmt.BindId(1, changeSummaryId);
 
         ECSqlStatement propValueChangeStmt;
