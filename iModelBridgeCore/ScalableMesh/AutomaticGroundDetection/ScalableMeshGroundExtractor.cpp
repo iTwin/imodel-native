@@ -399,6 +399,15 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
     StatusInt status;
+
+    BeFileName terrainPath(m_smTerrainPath);
+    BeFileName directory(terrainPath.GetDirectoryName());
+
+    if (!directory.DoesPathExist())
+        {
+        BeFileNameStatus status = BeFileName::CreateNewDirectory(directory.c_str());
+        assert(BeFileNameStatus::Success == status);
+        }            
             
     IScalableMeshSourceCreatorPtr terrainCreator(IScalableMeshSourceCreator::GetFor(m_smTerrainPath.c_str(), status));
 
