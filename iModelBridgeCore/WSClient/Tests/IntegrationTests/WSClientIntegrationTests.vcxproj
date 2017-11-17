@@ -48,7 +48,7 @@
     <NMakeCleanCommandLine>bb -N0 -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests WebServices* *google* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClientIntegrationTests\gensrc\;$(IncludePath)</IncludePath>
-    <OutDir>$(OutRoot)\$(TARGET_PROCESSOR_DIRECTORY)\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
