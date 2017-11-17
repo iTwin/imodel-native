@@ -266,7 +266,7 @@
         <SubProduct ProductName="ECObjects"/>
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\ecobjects.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\ecobjects\ecobjects.*.nupkg</Files>
         </Bindings>
     </Part>
 

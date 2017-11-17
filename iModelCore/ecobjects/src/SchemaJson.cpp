@@ -141,7 +141,7 @@ SchemaWriteStatus SchemaJsonWriter::Serialize()
 
     m_jsonRoot = Json::Value(Json::ValueType::objectValue);
     m_jsonRoot[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_URI;
-    m_jsonRoot[ECJSON_NAME_ATTRIBUTE] = m_ecSchema.GetName();
+    m_jsonRoot[ECJSON_SCHEMA_NAME_ATTRIBUTE] = m_ecSchema.GetName();
     m_jsonRoot[SCHEMA_VERSION_ATTRIBUTE] = m_ecSchema.GetSchemaKey().GetVersionString();
     m_jsonRoot[ALIAS_ATTRIBUTE] = m_ecSchema.GetAlias();
 

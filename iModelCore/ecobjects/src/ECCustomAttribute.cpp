@@ -479,8 +479,8 @@ bool requireSchemaReference
     CustomAttributeContainerType containerType = _GetContainerType();
     if (!caClass->CanBeAppliedTo(containerType))
         {
-        Utf8String caContainerTypeString = ECXml::ContainerTypeToString(caClass->GetContainerType());
-        Utf8String containerTypeString = ECXml::ContainerTypeToString(containerType);
+        Utf8String caContainerTypeString = SchemaParseUtils::ContainerTypeToString(caClass->GetContainerType());
+        Utf8String containerTypeString = SchemaParseUtils::ContainerTypeToString(containerType);
         LOG.errorv("Cannot add custom attribute of class %s:%s to a container of type %s because the custom attribute has an incompatible 'appliesTo' attribute of %s",
                    classDefinition.GetSchema().GetName().c_str(), classDefinition.GetName().c_str(), containerTypeString.c_str(), caContainerTypeString.c_str());
         return ECObjectsStatus::CustomAttributeContainerTypesNotCompatible;
@@ -657,7 +657,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
     for (BeXmlNodeP customAttributeNode = containerNode.GetFirstChild (); NULL != customAttributeNode; customAttributeNode = customAttributeNode->GetNextSibling ())
         {
-        if (0 != strcmp (customAttributeNode->GetName (), EC_CUSTOM_ATTRIBUTES_ELEMENT))
+        if (0 != strcmp (customAttributeNode->GetName (), ECXML_CUSTOM_ATTRIBUTES_ELEMENT))
             continue;
 
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
@@ -717,7 +717,7 @@ BeXmlWriterR xmlWriter
         return SchemaWriteStatus::Success;
 
     // Add the <ECCustomAttributes> node.
-    xmlWriter.WriteElementStart(EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    xmlWriter.WriteElementStart(ECXML_CUSTOM_ATTRIBUTES_ELEMENT);
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {

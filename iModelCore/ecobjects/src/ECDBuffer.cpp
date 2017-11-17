@@ -182,7 +182,7 @@ Utf8String    PropertyLayout::ToString ()
     {    
     Utf8String typeName;
     if ((m_typeDescriptor.IsPrimitive()) || (m_typeDescriptor.IsPrimitiveArray()))
-        typeName = ECXml::GetPrimitiveTypeName (m_typeDescriptor.GetPrimitiveType());
+        typeName = SchemaParseUtils::PrimitiveTypeToString (m_typeDescriptor.GetPrimitiveType());
     else if (m_typeDescriptor.IsNavigation())
         typeName = "navigation";
     else

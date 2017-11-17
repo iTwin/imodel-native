@@ -47,8 +47,8 @@ ECClassCP ECJsonUtilities::GetClassFromClassNameJson(JsonValueCR json, IECClassL
 Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus)
     {
     Json::Value val(Json::objectValue);
-    val[ECJSON_PRESENTATION_UNIT_OBJECT_UNIT] = fus.GetUnitName();
-    val[ECJSON_PRESENTATION_UNIT_OBJECT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
+    val[ECJSON_UNIT_FORMAT_UNIT] = fus.GetUnitName();
+    val[ECJSON_UNIT_FORMAT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
     return val;
     }
 
@@ -1512,7 +1512,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
         {
         ECPropertyCP  primitiveProperty = arrayProperty.GetAsPrimitiveArrayProperty();
         PrimitiveType   memberType = arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        Utf8CP          typeString = ECXml::GetPrimitiveTypeName(memberType);
+        Utf8CP          typeString = SchemaParseUtils::PrimitiveTypeToString(memberType);
 
         KindOfQuantityCP koq = nullptr;
         if (writeFormattedQuanties)
@@ -1703,7 +1703,7 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECJSON_ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, false, serializeNullValues);
@@ -1746,7 +1746,7 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToPresentationJson(Json::Value&
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECJSON_ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, true);

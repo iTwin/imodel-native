@@ -12,30 +12,3 @@
 always:
    ~linkdir "$(BuildContextPublicApiDir)ECObjects=$(ecobjectsPublicAPISrc)"
    ~linkdir "$(BuildContextPublicApiDir)ECUnits=$(ecunitsPublicAPISrc)"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
