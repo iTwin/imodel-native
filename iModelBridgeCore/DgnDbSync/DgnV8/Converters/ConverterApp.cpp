@@ -437,8 +437,8 @@ void ConverterApp::_DeleteSyncInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
     {
-    m_converter->MakeSchemaChanges();
-    return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
+    auto status = m_converter->MakeSchemaChanges();
+    return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

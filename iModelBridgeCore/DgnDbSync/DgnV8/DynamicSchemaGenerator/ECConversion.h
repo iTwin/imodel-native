@@ -97,6 +97,7 @@ struct DynamicSchemaGenerator
     bool m_skipECContent = true;
     bool m_needReimportSchemas = false;
     bool m_ecConversionFailed = false;
+    bool m_ecConversionFailedDueToLockingError = false;
     bool m_anyImported = false;
     Converter& m_converter;
     ECN::ECSchemaReadContextPtr m_schemaReadContext;
@@ -137,6 +138,7 @@ struct DynamicSchemaGenerator
 
     public:
 
+    bool DidEcConversionFailDueToLockingError() const {return m_ecConversionFailedDueToLockingError;}
     bool WasAborted() const {return m_converter.WasAborted();}
     void ReportProgress() const {m_converter.ReportProgress();}
     template<typename ...Args> void SetStepName(Converter::ProgressMessage::StringId a, Args... args) const {m_converter.SetStepName(a, args...);}

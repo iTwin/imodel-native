@@ -238,7 +238,7 @@ StatusInt DgnDbServerClientUtils::PullMergeAndPush(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool delayBeforeRetry()
+bool DgnDbServerClientUtils::SleepBeforeRetry()
     {
     int sleepTime = rand() % 5000;
     BeThreadUtilities::BeSleep(sleepTime);
@@ -274,7 +274,7 @@ StatusInt DgnDbServerClientUtils::PullAndMerge()
             return SUCCESS;
         m_lastServerError = result.GetError();
         }
-    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
+    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && SleepBeforeRetry());
 
     return ERROR;
     }
@@ -327,7 +327,7 @@ StatusInt DgnDbServerClientUtils::PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db)
             }
         m_lastServerError = result.GetError();
         }
-    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
+    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && SleepBeforeRetry());
     CloseBriefcase();
     db = nullptr;
     return BSIERROR;
@@ -348,7 +348,7 @@ StatusInt DgnDbServerClientUtils::AcquireLocks(LockRequest& req, DgnDbR db)
             return SUCCESS;
         m_lastServerError = Error(Error::Id::Unknown);
         }
-    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && delayBeforeRetry());
+    while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && SleepBeforeRetry());
 
     return ERROR;
     }

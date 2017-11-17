@@ -890,7 +890,8 @@ DynamicSchemaGenerator::SchemaConversionScope::~SchemaConversionScope()
     if (!m_succeeded)
         {
         m_converter.SetEcConversionFailed();
-        m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Error(), "Failed to transform the v8 ECSchemas to a BIS based ECSchema. Therefore EC content is not converted. See logs for details. Please try to adjust the v8 ECSchemas.");
+        if (!m_converter.m_ecConversionFailedDueToLockingError)
+            m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Error(), "Failed to transform the v8 ECSchemas to a BIS based ECSchema. Therefore EC content is not converted. See logs for details. Please try to adjust the v8 ECSchemas.");
         }
     }
 
@@ -2083,12 +2084,19 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
 
-    if (SchemaStatus::Success != GetDgnDb().ImportV8LegacySchemas(constSchemas))
+    auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
+    if (SchemaStatus::Success != importStatus)
         {
         //By design ECDb must not do transaction management itself. A failed schema import can have changed the dgndb though. 
         //So we must abandon these changes.
         //(Cannot use Savepoints, as the change tracker might be enabled)
         GetDgnDb().AbandonChanges();
+        m_ecConversionFailedDueToLockingError = (SchemaStatus::SchemaLockFailed == importStatus);
+        auto cat = Converter::IssueCategory::Briefcase();
+        auto issue = (SchemaStatus::SchemaLockFailed == importStatus)           ? Converter::Issue::SchemaLockFailed():
+                     (SchemaStatus::CouldNotAcquireLocksOrCodes == importStatus)? Converter::Issue::CouldNotAcquireLocksOrCodes():
+                                                                                  Converter::Issue::ImportTargetECSchemas();
+        ReportError(cat, issue, "");        // NB! This is NOT a fatal error! This should NOT abort the converter!
         return BentleyApi::ERROR;
         }
 
@@ -2629,7 +2637,7 @@ void SpatialConverterBase::CreateProvenanceTables()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrder, bvector<DgnV8ModelP> const& modelsInOrder)
+BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrder, bvector<DgnV8ModelP> const& modelsInOrder)
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
@@ -2662,7 +2670,7 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
             }
 
         if (WasAborted())
-            return;
+            return BSIERROR;
 
         // *******
         // WARNING: GenerateSchemas calls Db::AbandonChanges if import fails! Make sure you commit your work before calling GenerateSchemas!
@@ -2672,10 +2680,13 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         gen.GenerateSchemas(filesInOrder, modelsInOrder);
 
         m_skipECContent = gen.GetEcConversionFailed();
+
+        if (gen.DidEcConversionFailDueToLockingError())
+            return BSIERROR;    // This is a re-try-able failure, not a fatal error that should stop the conversion
         }
 
     if (WasAborted())
-        return;
+        return BSIERROR;
 
     GetDgnDb().SaveChanges();
 
@@ -2683,7 +2694,7 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
     importHandlerExtensionsSchema(*this);
 
     if (WasAborted())
-        return;
+        return BSIERROR;
 
     GetDgnDb().SaveChanges();
 
@@ -2696,7 +2707,7 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         }
 
     if (WasAborted())
-        return;
+        return BSIERROR;
 
     GetDgnDb().SaveChanges();
 
@@ -2711,12 +2722,13 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         }
 
     GetDgnDb().SaveChanges();
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::MakeSchemaChanges()
+BentleyStatus RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
@@ -2727,15 +2739,17 @@ void RootModelConverter::MakeSchemaChanges()
     auto cmp = [&](DgnV8ModelP a, DgnV8ModelP b) { return IsLessInMappingOrder(a,b); };
     std::sort(modelsInFMOrder.begin(), modelsInFMOrder.end(), cmp);
 
-    T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
+    auto status = T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TiledFileConverter::MakeSchemaChanges()
+BentleyStatus TiledFileConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
@@ -2747,9 +2761,11 @@ void TiledFileConverter::MakeSchemaChanges()
 
     GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
-    T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
+    auto status = T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
+
+    return status;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
