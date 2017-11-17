@@ -186,11 +186,13 @@ bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializ
         else
             properties = mappedClassIter->second;
 
-        T_propertyNameMappings::iterator mappedPropertiesIterator = properties.find(serializedPropertyName);
-        if (mappedPropertiesIterator != properties.end())
+        for (T_propertyNameMappings::iterator mappedPropertiesIterator = properties.begin(); mappedPropertiesIterator != properties.end(); ++mappedPropertiesIterator)
             {
-            serializedPropertyName = mappedPropertiesIterator->second;
-            return true;
+            if (mappedPropertiesIterator->first.EqualsIAscii(serializedPropertyName.c_str()))
+                {
+                serializedPropertyName = mappedPropertiesIterator->second;
+                return true;
+                }
             }
         }
 
