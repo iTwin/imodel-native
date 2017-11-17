@@ -1,5 +1,2 @@
 
 ImporterAppTests.createIBIMandIModelFromDxf     # Assertion
-
-# Pending fixup following bim0200tiles merge
-BasicTests.createIBimFromDwg

@@ -91,8 +91,8 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (IDxfFiler)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbHandle : public DWGDB_EXTENDCLASS(Handle)
     {
-    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(Handle))
 public:
+    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(Handle))
     DWGDB_ADD_CONSTRUCTORS (Handle)
     DwgDbHandle (DwgDbUInt64 id) : T_Super(id) {}
 
@@ -108,8 +108,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbObjectId : public DWGDB_EXTENDCLASS(ObjectId)
     {
-    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(ObjectId))
 public:
+    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(ObjectId))
     DWGDB_ADD_CONSTRUCTORS (ObjectId)
     DwgDbObjectId (DwgDbObjectIdCR id) : T_Super(id) {}
     DwgDbObjectId (DWGDB_TypeP(Stub) stub) : T_Super(stub) {}
@@ -139,9 +139,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbObject : public DWGDB_EXTENDCLASS(Object)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Object)
 
-public:
     DWGDB_EXPORT bool               IsAProxy () const;
     DWGDB_EXPORT bool               IsPersistent () const;
     };  // DwgDbObject
@@ -214,9 +214,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbDictionary : public DWGDB_EXTENDCLASS (Dictionary)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Dictionary)
 
-public:
     DWGDB_EXPORT DwgDbDictionaryIterator    GetIterator () const;
     DWGDB_EXPORT DwgDbStatus                GetIdAt (DwgDbObjectIdR outId, DwgStringCR inName) const;
     DWGDB_EXPORT DwgDbStatus                GetNameAt (DwgStringR outName, DwgDbObjectIdCR inId) const;
@@ -233,9 +233,9 @@ class DwgGiMaterialMap;
 +===============+===============+===============+===============+===============+======*/
 class DwgDbMaterial : public DWGDB_EXTENDCLASS (Material)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Material)
 
-public:
     enum ChannelFlags           // == AcGiMaterialTraits::ChannelFlags
         {
         None                    = 0x00000,
@@ -322,9 +322,9 @@ DWGDB_DEFINE_OBJECTPTR (Material)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbVisualStyle : public DWGDB_EXTENDCLASS(VisualStyle)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(VisualStyle)
 
-public:
     DWGDB_EXPORT DwgString              GetName () const;
     DWGDB_EXPORT DwgString              GetDescription () const;
     DWGDB_EXPORT DwgDbVisualStyleType   GetType () const;
@@ -336,9 +336,9 @@ DWGDB_DEFINE_OBJECTPTR (VisualStyle)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbLayout : public DWGDB_EXTENDCLASS(Layout)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Layout)
 
-public:
     enum PaperOrientation
         {
         RotateNone      = DWGDB_Type(PlotSettings::PlotRotation::k0degrees),
@@ -371,9 +371,9 @@ DWGDB_DEFINE_OBJECTPTR (Layout)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSpatialFilter : public DWGDB_EXTENDCLASS(SpatialFilter)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(SpatialFilter)
 
-public:
     DWGDB_EXPORT DwgDbStatus        GetDefinition (DPoint2dArrayR points, DVec3dR normal, double& elevation, double& frontClip, double& backClip, bool& enabled) const;
     DWGDB_EXPORT DwgDbStatus        SetDefinition (DPoint2dArrayCR points, DVec3dCR normal, double elevation, double frontClip, double backClip, bool enabled);
     DWGDB_EXPORT TransformR         GetClipTransform (TransformR t) const;
@@ -421,9 +421,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSpatialIndex : public DWGDB_EXTENDCLASS(SpatialIndex)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(SpatialIndex)
 
-public:
     DWGDB_EXPORT DwgDbFilteredBlockIterator  NewIterator (DwgDbSpatialFilterCP filter) const;
     };  // DwgDbSpatialIndex
 DWGDB_DEFINE_OBJECTPTR (SpatialIndex)
@@ -433,9 +433,9 @@ DWGDB_DEFINE_OBJECTPTR (SpatialIndex)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSortentsTable : public DWGDB_EXTENDCLASS(SortentsTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(SortentsTable)
 
-public:
     DWGDB_EXPORT DwgDbStatus        GetFullDrawOrder (DwgDbObjectIdArrayR sortedOut, bool checkSORTENTS=false) const;
     };  // DwgDbSortentsTable
 DWGDB_DEFINE_OBJECTPTR (SortentsTable)
@@ -445,9 +445,9 @@ DWGDB_DEFINE_OBJECTPTR (SortentsTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbXrecord : public DWGDB_EXTENDCLASS(Xrecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Xrecord)
 
-public:
     DWGDB_EXPORT DwgResBufIterator  GetRbChain (DwgDbDatabaseP = nullptr, DwgDbStatus* status = nullptr) const;
     };  // DwgDbXrecord
 DWGDB_DEFINE_OBJECTPTR (Xrecord)
