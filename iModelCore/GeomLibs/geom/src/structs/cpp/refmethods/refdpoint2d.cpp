@@ -51,6 +51,13 @@ DPoint2d DPoint2d::From (DPoint3dCR source)
     return point;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d DPoint2d::From (FPoint2dCR source)
+    {
+    return From(source.x, source.y);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     08/13
