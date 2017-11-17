@@ -55,29 +55,45 @@ struct ChangeSummaryExtractor final : NonCopyableClass
     private:
         enum class ExtractMode { InstancesOnly, RelationshipInstancesOnly };
 
+        struct FkRelChangeExtractor final
+            {
+            private:
+                ChangeSummaryExtractor const& m_extractor;
+
+                ECN::ECClassId GetClassIdFromColumn(ECInstanceId summaryId, ChangeIterator::TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const;
+
+            public:
+                explicit FkRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
+                BentleyStatus Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const&, ChangeIterator::TableClassMap::EndTableRelationshipMap const&) const;
+            };
+
+        struct LinkTableRelChangeExtractor final
+            {
+            private:
+                ChangeSummaryExtractor const& m_extractor;
+
+                BentleyStatus GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd) const;
+                ECN::ECClassId GetRelEndClassId(ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId) const;
+
+            public:
+                explicit LinkTableRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
+                BentleyStatus Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&) const;
+            };
+
         ECDbCR m_ecdb;
         ECSqlStatementCache m_stmtCache;
 
         BentleyStatus Extract(ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
         BentleyStatus ExtractInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
-        BentleyStatus ExtractRelInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry) const;
-        BentleyStatus ExtractRelInstanceInLinkTable(ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&) const;
-        BentleyStatus ExtractRelInstanceInEndTable(ECInstanceId summaryId, ChangeIterator::RowEntry const&, ChangeIterator::TableClassMap::EndTableRelationshipMap const&) const;
+        BentleyStatus ExtractRelInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
 
         BentleyStatus RecordInstance(InstanceChange const&, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties) const;
         BentleyStatus RecordRelInstance(InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey) const;
-        BentleyStatus RecordValue(bool& neededToRecord, InstanceChange const&, ChangeIterator::ColumnEntry const& columnEntry) const;
-
-        void GetRelEndInstanceKeys(ECInstanceId summaryId, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
-        ECN::ECClassId GetRelEndClassId(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
-        ECN::ECClassId GetClassIdFromColumn(ECInstanceId summaryId, ChangeIterator::TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const;
-        static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
-        int GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntry const& rowEntry) const;
-        
+        BentleyStatus RecordValue(bool& neededToRecord, InstanceChange const&, ChangeIterator::ColumnEntry const& columnEntry) const;       
 
         InstanceChange QueryInstanceChange(ECInstanceId summaryId, ECInstanceKey const&) const;
         ECInstanceId FindChangeId(ECInstanceId summaryId, ECInstanceKey const&) const;
-        ECN::ECClassId QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR tableName, ECInstanceId idOfChangedInstance) const;
+        ECN::ECClassId QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR primaryTableName, ECInstanceId idOfChangedInstance) const;
         bool ContainsChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(summaryId, keyOfChangedInstance).IsValid(); }
 
 

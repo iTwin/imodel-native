@@ -97,133 +97,24 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(ECInstanceId summaryId,
     ClassMap::Type type = classMap->GetType();
     if (type == ClassMap::Type::RelationshipLinkTable)
         {
-        RelationshipClassLinkTableMap const& relClassMap = classMap->GetAs<RelationshipClassLinkTableMap>();
-        return ExtractRelInstanceInLinkTable(summaryId, rowEntry, relClassMap);
+        LinkTableRelChangeExtractor linkTableExtractor(*this);
+        return linkTableExtractor.Extract(summaryId, rowEntry, classMap->GetAs<RelationshipClassLinkTableMap>());
         }
 
     ChangeIterator::TableClassMap const* tableClassMap = rowEntry.GetTableMap()->GetTableClassMap(*primaryClass);
     BeAssert(tableClassMap != nullptr);
 
+    FkRelChangeExtractor fkRelExtractor(*this);
     for (ChangeIterator::TableClassMap::EndTableRelationshipMap const* endTableRelMap : tableClassMap->GetEndTableRelationshipMaps())
         {
-        if (SUCCESS != ExtractRelInstanceInEndTable(summaryId, rowEntry, *endTableRelMap))
+        if (SUCCESS != fkRelExtractor.Extract(summaryId, rowEntry, *endTableRelMap))
             return ERROR;
         }
 
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::ExtractRelInstanceInEndTable(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, ChangeIterator::TableClassMap::EndTableRelationshipMap const& endTableRelMap) const
-    {
-    // Check if the other end was/is valid to determine if there's really a relationship that was inserted/updated/deleted
-    ChangeIterator::ColumnMap const& otherEndColumnMap = endTableRelMap.m_relatedInstanceIdColumnMap;
-    ECInstanceId oldOtherEndInstanceId, newOtherEndInstanceId;
-    rowEntry.GetSqlChange()->GetValueIds(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
-    if (!oldOtherEndInstanceId.IsValid() && !newOtherEndInstanceId.IsValid())
-        return ERROR;
 
-    // Evaluate the relationship information
-    ECN::ECClassId relClassId = endTableRelMap.m_relationshipClassId;
-    if (!relClassId.IsValid())
-        {
-        ChangeIterator::ColumnMap const& relClassIdColumnMap = endTableRelMap.m_relationshipClassIdColumnMap;
-
-        relClassId = rowEntry.GetClassIdFromChangeOrTable(relClassIdColumnMap.GetName().c_str(), rowEntry.GetPrimaryInstanceId());
-        BeAssert(relClassId.IsValid());
-        }
-    ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
-
-    ECN::ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
-    BeAssert(relClass != nullptr);
-    RelationshipClassEndTableMap const& relClassMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*relClass)->GetAs<RelationshipClassEndTableMap>();
-
-    // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
-    ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
-    ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
-    ECN::ECRelationshipEnd thisEnd = relClassMap.GetForeignEnd();
-
-    // Setup other end of relationship
-    ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    DbColumn const* otherEndClassIdColumn = endTableRelMap.GetForeignEndClassIdColumn(m_ecdb, *relClass->GetRelationshipClassCP());
-    if (otherEndClassIdColumn == nullptr)
-        {
-        BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
-        return ERROR;
-        }
-
-    ECClassId oldOtherEndClassId, newOtherEndClassId;
-    if (otherEndClassIdColumn->IsVirtual())
-        {
-        // The table at the end contains a single class only - just use the relationship to get the end class
-        oldOtherEndClassId = newOtherEndClassId = GetRelEndClassIdFromRelClass(relClass->GetRelationshipClassCP(), otherEnd);
-        }
-    else
-        {
-        ChangeIterator::TableMap const* otherEndTableMap = rowEntry.GetChangeIterator().GetTableMap(otherEndClassIdColumn->GetTable().GetName());
-        BeAssert(otherEndTableMap != nullptr);
-
-        if (newOtherEndInstanceId.IsValid())
-            newOtherEndClassId = GetClassIdFromColumn(summaryId, *otherEndTableMap, *otherEndClassIdColumn, newOtherEndInstanceId);
-        if (oldOtherEndInstanceId.IsValid())
-            oldOtherEndClassId = GetClassIdFromColumn(summaryId, *otherEndTableMap, *otherEndClassIdColumn, oldOtherEndInstanceId);
-        }
-
-    ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
-    if (newOtherEndInstanceId.IsValid())
-        newOtherEndInstanceKey = ECInstanceKey(newOtherEndClassId, newOtherEndInstanceId);
-    if (oldOtherEndInstanceId.IsValid())
-        oldOtherEndInstanceKey = ECInstanceKey(oldOtherEndClassId, oldOtherEndInstanceId);
-
-    // Setup the change instance of the relationship
-    DbOpcode relDbOpcode;
-    if (newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
-        relDbOpcode = DbOpcode::Insert;
-    else if (!newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid())
-        relDbOpcode = DbOpcode::Delete;
-    else /* if (newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid()) */
-        relDbOpcode = DbOpcode::Update;
-
-    ECInstanceKeyCP oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey;
-    ECInstanceKey invalidKey;
-    oldSourceInstanceKey = newSourceInstanceKey = oldTargetInstanceKey = newTargetInstanceKey = nullptr;
-    if (thisEnd == ECRelationshipEnd_Source)
-        {
-        oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
-        oldTargetInstanceKey = &oldOtherEndInstanceKey;
-        newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
-        newTargetInstanceKey = &newOtherEndInstanceKey;
-        }
-    else
-        {
-        oldSourceInstanceKey = &oldOtherEndInstanceKey;
-        oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
-        newSourceInstanceKey = &newOtherEndInstanceKey;
-        newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
-        }
-
-    InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
-    return RecordRelInstance(instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     12/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::ExtractRelInstanceInLinkTable(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap) const
-    {
-    InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(),
-                                       RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
-
-    ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
-    GetRelEndInstanceKeys(summaryId, oldSourceInstanceKey, newSourceInstanceKey, rowEntry, relClassMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source);
-
-    ECInstanceKey oldTargetInstanceKey, newTargetInstanceKey;
-    GetRelEndInstanceKeys(summaryId, oldTargetInstanceKey, newTargetInstanceKey, rowEntry, relClassMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Target);
-
-    return RecordRelInstance(instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
@@ -370,9 +261,9 @@ ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECClassId ChangeSummaryExtractor::QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR tableName, ECInstanceId instanceId) const
+ECClassId ChangeSummaryExtractor::QueryClassIdOfChangedInstance(ECInstanceId summaryId, Utf8StringCR primaryTableName, ECInstanceId instanceId) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ChangedInstance.ClassId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND Summary.Id=? AND TableName=?");
+    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ChangedInstance.ClassId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND Summary.Id=? AND PrimaryTableName=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -381,7 +272,7 @@ ECClassId ChangeSummaryExtractor::QueryClassIdOfChangedInstance(ECInstanceId sum
 
     stmt->BindId(1, instanceId);
     stmt->BindId(2, summaryId);
-    stmt->BindText(3, tableName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt->BindText(3, primaryTableName.c_str(), IECSqlBinder::MakeCopy::No);
 
     if (stmt->Step() == BE_SQLITE_ROW)
         return stmt->GetValueId<ECClassId>(0);
@@ -435,7 +326,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
     InstanceChange foundInstanceChange = QueryInstanceChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
     if (!foundInstanceChange.IsValid())
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, TableName, Summary.Id) VALUES (?,?,?,?,?,?)");
+        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, PrimaryTableName, Summary.Id) VALUES (?,?,?,?,?,?)");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -588,15 +479,182 @@ ECSqlStatus ChangeSummaryExtractor::BindDbValue(ECSqlStatement& stmt, int idx, D
     return ECSqlStatus::Error;
     }
 
+
+//****************************************************************************************
+// ChangeSummaryExtractor::FkRelChangeExtractor
+//****************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryExtractor::GetRelEndInstanceKeys(ECInstanceId summaryId, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const
+BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, ChangeIterator::TableClassMap::EndTableRelationshipMap const& endTableRelMap) const
+    {
+    // Check if the other end was/is valid to determine if there's really a relationship that was inserted/updated/deleted
+    ChangeIterator::ColumnMap const& otherEndColumnMap = endTableRelMap.m_relatedInstanceIdColumnMap;
+    ECInstanceId oldOtherEndInstanceId, newOtherEndInstanceId;
+    rowEntry.GetSqlChange()->GetValueIds(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
+    if (!oldOtherEndInstanceId.IsValid() && !newOtherEndInstanceId.IsValid())
+        return ERROR;
+
+    // Evaluate the relationship information
+    ECN::ECClassId relClassId = endTableRelMap.m_relationshipClassId;
+    if (!relClassId.IsValid())
+        {
+        ChangeIterator::ColumnMap const& relClassIdColumnMap = endTableRelMap.m_relationshipClassIdColumnMap;
+
+        relClassId = rowEntry.GetClassIdFromChangeOrTable(relClassIdColumnMap.GetName().c_str(), rowEntry.GetPrimaryInstanceId());
+        BeAssert(relClassId.IsValid());
+        }
+    ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
+    
+    ECN::ECClassCP relClassRaw = m_extractor.m_ecdb.Schemas().GetClass(relClassId);
+    if (relClassRaw == nullptr || !relClassRaw->IsRelationshipClass())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
+
+    RelationshipClassEndTableMap const& relClassMap = m_extractor.m_ecdb.Schemas().GetDbMap().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
+
+    // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
+    ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
+    ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
+    ECN::ECRelationshipEnd thisEnd = relClassMap.GetForeignEnd();
+
+    // Setup other end of relationship
+    ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+    DbColumn const* otherEndClassIdColumn = endTableRelMap.GetForeignEndClassIdColumn(m_extractor.m_ecdb, relClass);
+    if (otherEndClassIdColumn == nullptr)
+        {
+        BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
+        return ERROR;
+        }
+
+    ECClassId oldOtherEndClassId, newOtherEndClassId;
+    if (otherEndClassIdColumn->IsVirtual())
+        {
+        // The table at the end contains a single class only - just use the relationship to get the end class
+        ECRelationshipConstraintCR endConstraint = (otherEnd == ECRelationshipEnd_Source) ? relClass.GetSource() : relClass.GetTarget();
+        if (endConstraint.GetConstraintClasses().size() != 1)
+            {
+            BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
+            return ERROR;
+            }
+
+        oldOtherEndClassId = endConstraint.GetConstraintClasses()[0]->GetId();
+        newOtherEndClassId = oldOtherEndClassId;
+        }
+    else
+        {
+        ChangeIterator::TableMap const* otherEndTableMap = rowEntry.GetChangeIterator().GetTableMap(otherEndClassIdColumn->GetTable().GetName());
+        BeAssert(otherEndTableMap != nullptr);
+
+        // Search in all changes
+        if (newOtherEndInstanceId.IsValid())
+            newOtherEndClassId = GetClassIdFromColumn(summaryId, *otherEndTableMap, *otherEndClassIdColumn, newOtherEndInstanceId);
+        if (oldOtherEndInstanceId.IsValid())
+            oldOtherEndClassId = GetClassIdFromColumn(summaryId, *otherEndTableMap, *otherEndClassIdColumn, oldOtherEndInstanceId);
+        }
+
+    ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
+    if (newOtherEndInstanceId.IsValid())
+        newOtherEndInstanceKey = ECInstanceKey(newOtherEndClassId, newOtherEndInstanceId);
+    if (oldOtherEndInstanceId.IsValid())
+        oldOtherEndInstanceKey = ECInstanceKey(oldOtherEndClassId, oldOtherEndInstanceId);
+
+    // Setup the change instance of the relationship
+    DbOpcode relDbOpcode;
+    if (newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
+        relDbOpcode = DbOpcode::Insert;
+    else if (!newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid())
+        relDbOpcode = DbOpcode::Delete;
+    else /* if (newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid()) */
+        relDbOpcode = DbOpcode::Update;
+
+    ECInstanceKeyCP oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey;
+    ECInstanceKey invalidKey;
+    oldSourceInstanceKey = newSourceInstanceKey = oldTargetInstanceKey = newTargetInstanceKey = nullptr;
+    if (thisEnd == ECRelationshipEnd_Source)
+        {
+        oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
+        oldTargetInstanceKey = &oldOtherEndInstanceKey;
+        newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
+        newTargetInstanceKey = &newOtherEndInstanceKey;
+        }
+    else
+        {
+        oldSourceInstanceKey = &oldOtherEndInstanceKey;
+        oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
+        newSourceInstanceKey = &newOtherEndInstanceKey;
+        newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
+        }
+
+    InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
+    return m_extractor.RecordRelInstance(instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     10/2015
+//---------------------------------------------------------------------------------------
+ECN::ECClassId ChangeSummaryExtractor::FkRelChangeExtractor::GetClassIdFromColumn(ECInstanceId summaryId, ChangeIterator::TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const
+    {
+    // Search in all changes
+    ECClassId classId = m_extractor.QueryClassIdOfChangedInstance(summaryId, tableMap.GetTableName(), instanceId);
+    if (classId.IsValid())
+        return classId;
+
+    // Search in table itself
+    classId = tableMap.QueryValueId<ECClassId>(classIdColumn.GetName(), instanceId);
+    BeAssert(classId.IsValid());
+
+    return classId;
+    }
+
+
+//****************************************************************************************
+// ChangeSummaryExtractor::LinkTableRelChangeExtractor
+//****************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Krischan.Eberle     11/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& classMap) const
+    {
+    InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(),
+                            RawIndirectToBool(rowEntry.GetIndirect()), rowEntry.GetTableName());
+
+    ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
+    GetRelEndInstanceKeys(oldSourceInstanceKey, newSourceInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source);
+
+    ECInstanceKey oldTargetInstanceKey, newTargetInstanceKey;
+    GetRelEndInstanceKeys(oldTargetInstanceKey, newTargetInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Target);
+
+    return m_extractor.RecordRelInstance(instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const
     {
     oldInstanceKey = ECInstanceKey();
     newInstanceKey = ECInstanceKey();
 
-    int instanceIdColumnIndex = GetFirstColumnIndex(relClassMap.GetConstraintECInstanceIdPropMap(relEnd), rowEntry);
+    ConstraintECInstanceIdPropertyMap const* constraintIdPropMap = relClassMap.GetConstraintECInstanceIdPropMap(relEnd);
+    if (constraintIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
+    constraintIdPropMap->AcceptVisitor(columnsDisp);
+    if (columnsDisp.GetColumns().size() != 1)
+        return ERROR;
+
+    int instanceIdColumnIndex = rowEntry.GetTableMap()->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
     BeAssert(instanceIdColumnIndex >= 0);
 
     ECInstanceId oldEndInstanceId, newEndInstanceId;
@@ -615,12 +673,14 @@ void ChangeSummaryExtractor::GetRelEndInstanceKeys(ECInstanceId summaryId, ECIns
         BeAssert(oldClassId.IsValid());
         oldInstanceKey = ECInstanceKey(oldClassId, oldEndInstanceId);
         }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECN::ECClassId ChangeSummaryExtractor::GetRelEndClassId(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId) const
+ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClassId(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId) const
     {
     ConstraintECClassIdPropertyMap const* classIdPropMap = relationshipClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
@@ -668,9 +728,15 @@ ECN::ECClassId ChangeSummaryExtractor::GetRelEndClassId(ECInstanceId summaryId, 
     const bool endIsInOneClass = (classIdColumn->GetPersistenceType() == PersistenceType::Virtual);
     if (endIsInOneClass)
         {
-        // TODO: dynamic_cast<PropertyMapRelationshipConstraintClassId const*> (propMap)->GetDefaultConstraintECClassId()
-        // should work, but doesn't for link tables - need to check with Krischan/Affan. 
-        return GetRelEndClassIdFromRelClass(relationshipClassMap.GetClass().GetRelationshipClassCP(), relEnd);
+        ECRelationshipClassCR relClass = *relationshipClassMap.GetClass().GetRelationshipClassCP();
+        ECRelationshipConstraintCR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass.GetSource() : relClass.GetTarget();
+        if (endConstraint.GetConstraintClasses().size() != 1)
+            {
+            BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
+            return ECClassId();
+            }
+
+        return endConstraint.GetConstraintClasses()[0]->GetId();
         }
 
     // Case #2: End is in only one table (Note: not in the current table the row belongs to, but some OTHER end table)
@@ -680,7 +746,7 @@ ECN::ECClassId ChangeSummaryExtractor::GetRelEndClassId(ECInstanceId summaryId, 
         Utf8StringCR endTableName = classIdColumn->GetTable().GetName();
 
         // Search in all changes
-        ECClassId classId = QueryClassIdOfChangedInstance(summaryId, endTableName, relEndInstanceId);
+        ECClassId classId = m_extractor.QueryClassIdOfChangedInstance(summaryId, endTableName, relEndInstanceId);
         if (classId.IsValid())
             return classId;
 
@@ -697,61 +763,5 @@ ECN::ECClassId ChangeSummaryExtractor::GetRelEndClassId(ECInstanceId summaryId, 
     return classId;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-// static
-ECN::ECClassId ChangeSummaryExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd)
-    {
-    if (relClass == nullptr)
-        {
-        BeAssert(false);
-        return ECClassId();
-        }
 
-    ECRelationshipConstraintR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass->GetSource() : relClass->GetTarget();
-    ECRelationshipConstraintClassList const& endClasses = endConstraint.GetConstraintClasses();
-    if (endClasses.size() != 1)
-        {
-        BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
-        return ECClassId();
-        }
-
-    ECClassId classId = endClasses[0]->GetId();
-    BeAssert(classId.IsValid());
-    return classId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-ECN::ECClassId ChangeSummaryExtractor::GetClassIdFromColumn(ECInstanceId summaryId, ChangeIterator::TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const
-    {
-    // Search in all changes
-    ECClassId classId = QueryClassIdOfChangedInstance(summaryId, tableMap.GetTableName(), instanceId);
-    if (classId.IsValid())
-        return classId;
-
-    // Search in table itself
-    classId = tableMap.QueryValueId<ECClassId>(classIdColumn.GetName(), instanceId);
-    BeAssert(classId.IsValid());
-
-    return classId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-int ChangeSummaryExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntry const& rowEntry) const
-    {
-    if (propertyMap == nullptr)
-        return -1;
-
-    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
-    propertyMap->AcceptVisitor(columnsDisp);
-    if (columnsDisp.GetColumns().size() != 1)
-        return -1;
-
-    return rowEntry.GetTableMap()->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

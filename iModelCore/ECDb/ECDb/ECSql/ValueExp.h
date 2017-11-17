@@ -179,8 +179,8 @@ struct FunctionCallExp final : ValueExp
     {
     private:
         Utf8String m_functionName;
-        bool m_isStandardSetFunction;
-        SqlSetQuantifier m_setQuantifier;
+        bool m_isStandardSetFunction = false;
+        SqlSetQuantifier m_setQuantifier = SqlSetQuantifier::NotSpecified;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
