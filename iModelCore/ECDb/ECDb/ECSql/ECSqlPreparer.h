@@ -39,7 +39,6 @@ struct ECSqlExpPreparer final
 
         static ECSqlStatus PrepareNullCastExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, CastExp const&);
         static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8StringCR castOperandSnippet);
-        static ECSqlStatus PrepareFunctionArgExpList(NativeSqlBuilder&, ECSqlPrepareContext&, FunctionCallExp const&);
         static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
 
     public:
@@ -57,6 +56,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareCrossJoinExp(ECSqlPrepareContext&, CrossJoinExp const&);
         static ECSqlStatus PrepareFromExp(ECSqlPrepareContext&, FromExp const&);
         static ECSqlStatus PrepareFunctionCallExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, FunctionCallExp const&);
+        static ECSqlStatus PrepareFunctionArgList(NativeSqlBuilder::List&, ECSqlPrepareContext&, ValueExp const& functionExp);
         static ECSqlStatus PrepareGroupByExp(ECSqlPrepareContext&, GroupByExp const&);
         static ECSqlStatus PrepareHavingExp(ECSqlPrepareContext&, HavingExp const&);
         static ECSqlStatus PrepareLikeRhsValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LikeRhsValueExp const&);
