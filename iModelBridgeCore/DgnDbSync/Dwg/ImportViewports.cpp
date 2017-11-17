@@ -980,9 +980,6 @@ void            DwgImporter::_PostProcessViewports ()
                 m_paperspaceXrefs.push_back (DwgXRefInPaperspace(blockId, paperspaceId, modelId));
             }
         }
-
-    // Initialize the graphics subsystem (LoadViewController will hist nullptr==s_renderQueue otherwise!):
-    DgnViewLib::GetHost().GetViewManager().Startup ();
     
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
 
