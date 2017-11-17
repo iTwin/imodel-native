@@ -243,10 +243,10 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController();
-    viewController->GetViewDefinition().LookAtVolume(db.GeoLocation().GetProjectExtents());
+    viewController->GetViewDefinitionR().LookAtVolume(db.GeoLocation().GetProjectExtents());
 
     DgnDbStatus stat;
-    viewController->GetViewDefinition().Update(&stat);
+    viewController->GetViewDefinitionR().Update(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat);
     }
 

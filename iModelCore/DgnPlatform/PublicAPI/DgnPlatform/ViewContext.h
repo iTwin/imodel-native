@@ -17,6 +17,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace TileTree {struct TileRequests;}
 /**
 * @addtogroup GROUP_ViewContext ViewContext Module
 * A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
@@ -114,9 +115,8 @@ protected:
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
-    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
@@ -130,12 +130,10 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(GeometricModelR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
-    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
-    virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP trans, ClipVectorCP clips) = 0;
+    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) = 0;
+    virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, DgnDbR db, TransformCR tf, ClipVectorCP clips) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
-    DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
-    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
@@ -143,6 +141,11 @@ protected:
     DGNPLATFORM_EXPORT RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
     DGNPLATFORM_EXPORT ScanCriteria::Stop _OnRangeElementFound(DgnElementId) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
+    DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(RenderMaterialId id) const;
+    DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageCR image) const;
+    DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const;
+    DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
+    DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -170,11 +173,19 @@ public:
     ClipVectorCPtr GetActiveVolume() const {return m_volume;}
     void EnableStopAfterTimout(BeDuration::Milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
-    Render::GraphicBuilderPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
-    Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, TransformCP trans=nullptr, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, trans, clips);}
-    Render::GraphicPtr AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
+    Render::GraphicBuilderPtr CreateWorldGraphic(TransformCR tf=Transform::FromIdentity())
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), tf, GetViewport())); }
+    Render::GraphicBuilderPtr CreateViewGraphic(TransformCR tf=Transform::FromIdentity())
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::View(GetDgnDb(), tf, GetViewport())); }
+    Render::TexturePtr CreateTexture(Render::ImageCR image) const { return _CreateTexture(image); }
+    Render::TexturePtr CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp=Render::Image::BottomUp::No) const
+        { return _CreateTexture(source, bottomUp); }
+
+    Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, db, tf, clips);}
+    void AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
+    Render::MaterialPtr GetMaterial(RenderMaterialId id) const { return _GetMaterial(id); }
 
 /** @name Coordinate Query and Conversion */
 /** @{ */
@@ -220,6 +231,12 @@ public:
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! @param[out] viewPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in] worldPts Input array in DgnCoordSystem::World.
+    //! @param[in] nPts Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView(DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
     //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View.
@@ -259,8 +276,11 @@ public:
 
     //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
     //! DgnViewport, so therefore callers must always test the result of this call for nullptr.
+    //! In general, if you are using GetViewport() to access the Render::Target or Render::System associated with the ViewContext, you are doing it wrong.
     //! @return the DgnViewport. nullptr if not attached to a DgnViewport.
     DgnViewportP GetViewport() const {return m_viewport;}
+    Render::SystemP GetRenderSystem() const {return _GetRenderSystem();}
+    Render::TargetP GetRenderTarget() const {return _GetRenderTarget();}
 
     bool Is3dView() const {return m_is3dView;}
     DGNPLATFORM_EXPORT bool IsCameraOn() const;
@@ -311,18 +331,13 @@ struct RenderContext : ViewContext
     friend struct DgnViewport;
 
 protected:
-    Render::OvrGraphicParams m_ovrParams;
     Render::TargetR m_target;
 
 public:
-    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
-
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
-    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
-    Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(branch, trans, clips);}
+    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(std::move(branch), db, tf, clips);}
     Render::TargetR GetTargetR() {return m_target;}
     DgnViewportR GetViewportR()  {return *m_viewport;}   // A RenderContext always have a viewport.
 };
@@ -362,13 +377,23 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext
+//! Accumulates the list of Graphics which comprise the current scene, along with a set
+//! of Tiles which need to be loaded to complete the scene.
+//! @note The TileRequests object accumulates tile requests for multiple SceneContexts;
+//! therefore the requests are not actually processed until all SceneContexts have been
+//! processed. This allows previously-queued tile loads to be canceled if they are no
+//! longer required for any Scene.
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
+
+    TileTree::TileRequests& m_requests;
+
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests);
+
     bool _CheckStop() override;
-    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
 };
 
 //=======================================================================================
@@ -384,55 +409,25 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext
-// @bsiclass                                                    Keith.Bentley   10/15
-//=======================================================================================
-struct ProgressiveContext : RenderListContext
-{
-    DEFINE_T_SUPER(RenderListContext);
-public:
-    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, &scene, plan) {}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_ViewContext
-// @bsiclass                                                    Keith.Bentley   10/15
-//=======================================================================================
-struct HealContext : RenderListContext
-{
-    DEFINE_T_SUPER(RenderListContext);
-    void Flush(bool restart);
-public:
-    virtual void _HealElement(DgnElementId);
-    HealContext(DgnViewportR vp, BSIRectCR, UpdatePlan const& plan);
-};
-
-//=======================================================================================
-//! @ingroup GROUP_ViewContext
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct TerrainContext : RenderListContext
-{
-    DEFINE_T_SUPER(RenderListContext);
-public:
-    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, &terrain, plan) {}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DynamicsContext : RenderContext
 {
     friend struct DgnPrimitiveTool;
 private:
+    Render::DecorationListR m_dynamics;
+    Render::OvrGraphicParams m_ovrParams;
     Render::Task::Priority m_priority;
-    Render::GraphicListR m_dynamics;
+
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    virtual void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source);
     DynamicsContext(DgnViewportR, Render::Task::Priority);
     ~DynamicsContext();
     void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);
 
 public:
+    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
+
     DGNVIEW_EXPORT void DrawElements(DgnElementCPtrVec const& elements, IRedrawOperationP redrawOp=nullptr);
     DGNVIEW_EXPORT void DrawElements(DgnElementIdSet const& elemIds, IRedrawOperationP redrawOp=nullptr);
     DGNVIEW_EXPORT void DrawElement(DgnElementCR element, IRedrawOperationP redrawOp=nullptr);
@@ -447,19 +442,18 @@ struct DecorateContext : RenderContext
     DEFINE_T_SUPER(RenderContext);
     friend struct DgnViewport;
 private:
-    bool    m_isFlash = false;
     Render::Decorations& m_decorations;
     Render::GraphicBranch* m_viewlet = nullptr;
+    Render::OvrGraphicParams m_ovrParams;
 
     StatusInt VisitSheetHit(HitDetailCR hit);
-    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
-    //! Display world coordinate graphic with flash/hilite treatment.
-    DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    //! Display world coordinate graphic with scene lighting and z testing.
+    DGNPLATFORM_EXPORT void AddNormal(Render::GraphicR graphic);
 
     //! Display world coordinate graphic with smooth shading, default lighting, and z testing enabled.
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
@@ -476,8 +470,10 @@ public:
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
 
-    //! Set context to state used to flash elements.
-    void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}
+    //! Display view coordinate graphic as background with smooth shading, default lighting, and z testing disabled. e.g., a sky box.
+    DGNPLATFORM_EXPORT void SetViewBackground(Render::GraphicR graphic);
+
+    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
 };  
 
 END_BENTLEY_DGN_NAMESPACE

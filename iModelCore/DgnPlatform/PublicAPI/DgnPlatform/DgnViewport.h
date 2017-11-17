@@ -12,6 +12,9 @@
 #include "ViewController.h"
 #include "TileTree.h"
 
+DGNPLATFORM_TYPEDEFS(IViewportAnimator);
+DGNPLATFORM_REF_COUNTED_PTR(IViewportAnimator);
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /**  @addtogroup GROUP_DgnView DgnView Module
@@ -48,6 +51,28 @@ struct FitViewParams
 };
 
 //=======================================================================================
+//! Interface adopted by an object which animates a viewport.
+//! Only one animator may be associated with a viewport at a given time. Registering a new
+//! animator replaces any existing animator.
+//! The animator's _Animate() function will be invoked just prior to the rendering of each frame.
+//! The return value of _Animate() indicates whether to keep the animator active or to remove it.
+//! The animator may also be removed in response to certain changes to the viewport - e.g., when
+//! the viewport is closed, or its view controller changed, etc.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct IViewportAnimator : RefCountedBase
+{
+    enum class RemoveMe { Yes, No };
+
+    //! Apply animation to the viewport. Return RemoveMe::Yes when animation is completed, causing the animator to be removed from the viewport.
+    virtual RemoveMe _Animate(DgnViewportR viewport) = 0;
+
+    //! Invoked when this IViewportAnimator is removed from the viewport, e.g. because it was replaced by a new animator, the viewport was closed -
+    //! that is, for any reason other than returning RemoveMe::Yes from _Animate()
+    virtual void _OnInterrupted(DgnViewportR viewport) { }
+};
+
+//=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
  <p>
@@ -68,7 +93,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
     typedef std::deque<ViewDefinitionPtr> ViewUndoStack;
-    typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
     {
@@ -80,6 +104,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         bool m_controller = false;
         bool m_rotatePoint = false;
         bool m_firstDrawComplete = false;
+        bool m_redrawPending = false;
 
     public:
         void InvalidateDecorations() {m_decorations=false;}
@@ -88,18 +113,21 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         void InvalidateController() {m_controller=false; InvalidateRenderPlan(); InvalidateFirstDrawComplete();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
         void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
+        void InvalidateRedrawPending() {m_redrawPending = false;}
         void SetValidDecorations() {m_decorations=true;}
         void SetFirstDrawComplete() {m_firstDrawComplete=true;}
         void SetValidScene() {m_scene=true;}
         void SetValidController() {m_controller=true;}
         void SetValidRenderPlan() {m_renderPlan=true;}
         void SetValidRotatePoint() {m_rotatePoint=true;}
+        void SetRedrawPending() {m_redrawPending = true;}
         bool IsValidDecorations() const {return m_decorations;}
         bool IsValidScene() const {return m_scene;}
         bool IsValidRenderPlan() const {return m_renderPlan;}
         bool IsValidController() const {return m_controller;}
         bool IsValidRotatePoint() const {return m_rotatePoint;}
         bool IsFirstDrawComplete() const {return m_firstDrawComplete;}
+        bool IsRedrawPending() const {return m_redrawPending;}
     };
 
     //! Object to monitor changes to a DgnViewport. See #AddTracker, #DropTracker
@@ -119,7 +147,7 @@ protected:
     Byte m_dynamicsTransparency = 64;
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
-    uint32_t m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
+    uint32_t m_minimumFrameRate = Render::Target::DefaultMinimumFrameRate();
     DPoint3d m_viewOrg;                 // view origin, potentially expanded
     DVec3d m_viewDelta;                 // view delta, potentially expanded
     DPoint3d m_viewOrgUnexpanded;       // view origin (from ViewController, unexpanded)
@@ -127,18 +155,23 @@ protected:
     RotMatrix m_rotMatrix;              // rotation matrix (from ViewController)
     ViewDefinition3d::Camera m_camera;
     Render::TargetPtr m_renderTarget;
-    ColorDef m_hiliteColor = ColorDef::Magenta();
+    Render::HiliteSettings m_hilite;
     DMap4d m_rootToView;
     DMap4d m_rootToNpc;
     double m_frustFraction;
     Utf8String m_viewTitle;
     ViewControllerPtr m_viewController;
-    ProgressiveTasks m_progressiveTasks;
     DPoint3d m_viewCmdTargetCenter;
     ViewDefinitionPtr m_currentBaseline;
     ViewUndoStack m_forwardStack;
     ViewUndoStack m_backStack;
     EventHandlerList<Tracker> m_trackers;
+    IViewportAnimatorPtr m_animator;
+    BeTimePoint m_flashUpdateTime;  // time the current flash started
+    double m_flashIntensity;        // current flash intensity from [0..1]
+    double m_flashDuration;         // the length of time that the flash intensity will increase (in seconds)
+    DgnElementId m_flashedElem;
+    DgnElementId m_lastFlashedElem;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
@@ -153,13 +186,11 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta);
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void QueueDrawFrame(Render::Task::Priority);
-    void ShowChanges(ViewManagerCR, Render::Task::Priority);
-    void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
-    void CreateTerrain(UpdatePlan const& plan);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
-
+    DGNPLATFORM_EXPORT void Animate();
+    DGNVIEW_EXPORT bool ProcessFlash();
+    DGNVIEW_EXPORT void PrepareDecorations(UpdatePlan const&, Render::Decorations&);
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
@@ -169,6 +200,8 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
+    void SetFlashed(DgnElementId id, double duration) {m_lastFlashedElem = m_flashedElem; m_flashedElem = id; m_flashDuration = duration;}
+
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
 
     double GetFrustumFraction() const {return m_frustFraction;}
@@ -176,13 +209,10 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    DGNPLATFORM_EXPORT ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, RenderListContext& context);
-    ProgressiveTask::Completion DoProgressiveTasks(Render::Task::Priority priority);
-    DGNPLATFORM_EXPORT void ClearProgressiveTasks();
+    DGNVIEW_EXPORT bool RenderFrame(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests); // Generally, this should not be called directly
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
-    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, ViewDefinition3d::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
@@ -190,8 +220,9 @@ public:
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
-    void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
-    void SetNeedsHeal() const {m_sync.InvalidateController();}
+    void InvalidateDecorations() const {m_sync.InvalidateDecorations();}
+    void InvalidateController() const {m_sync.InvalidateController();}
+    void InvalidateRenderPlan() const {m_sync.InvalidateRenderPlan();}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
@@ -201,21 +232,15 @@ public:
     DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
-    DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(UpdatePlan const&);
-    void SynchronizeViewport(UpdatePlan const&);
-    bool GetNeedsHeal() {return m_sync.IsValidScene();}
-    DGNVIEW_EXPORT void ForceHealImmediate(BeDuration timeout=BeDuration::FromMilliseconds(500)); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
     void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
-    void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
+    void ChangeDynamics(Render::DecorationListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyViewState(ViewDefinitionCR val, bool saveInUndo=true, BeDuration animationTime=BeDuration::Milliseconds(250));
-    DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
@@ -279,11 +304,14 @@ public:
 
     //! Get the current hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
-    ColorDef GetHiliteColor() const {return m_hiliteColor;}
+    ColorDef GetHiliteColor() const {return m_hilite.GetColor();}
 
     //! Set the current TGBR color value of the user-selected hilite color for this DgnViewport.
     //! @param color The new TBGR hilite color
-    void SetHiliteColor(ColorDef color) {m_hiliteColor=color;}
+    void SetHiliteColor(ColorDef color) {m_hilite.SetColor(color);}
+
+    void SetHilite(Render::HiliteSettings const& hilite) {m_hilite=hilite;}
+    Render::HiliteSettings GetHilite() const {return m_hilite;}
 
 /** @} */
 
@@ -519,10 +547,10 @@ public:
     void AddTracker(Tracker* tracker) {m_trackers.AddHandler(tracker);}
     void DropTracker(Tracker* tracker) {m_trackers.DropHandler(tracker);}
 
-    DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
+    DGNPLATFORM_EXPORT void SetAnimator(IViewportAnimatorR animator);
+    DGNPLATFORM_EXPORT void RemoveAnimator();
 
-    DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
-    void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
+    DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
     //! Read the current image from this viewport from the Rendering system. 
     //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specify a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
@@ -534,6 +562,12 @@ public:
     //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
     //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
     DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize=Point2d::From(0,0));
+
+    //! Read selected data about each pixel within a rectangular portion of the viewport.
+    //! @param[in] viewRect The area of the view to read. The origin specifies the upper-left corner. Must lie entirely within the viewport's dimensions.
+    //! @param[in] selector Specifies the type(s) of data to read.
+    //! @return an IPixelDataBuffer object from which the selected data can be retrieved, or nullptr on error.
+    DGNVIEW_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect, Render::PixelData::Selector selector);
 };
 
 //=======================================================================================
@@ -545,6 +579,7 @@ struct OffscreenViewport : DgnViewport
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
     DGNVIEW_EXPORT OffscreenViewport();
+    DGNVIEW_EXPORT explicit OffscreenViewport(double tileSizeModifier);
 };
 
 //=======================================================================================

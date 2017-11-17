@@ -8,9 +8,6 @@
 #include "BimConsole.h"
 #include <Bentley/BeTimeUtilities.h>
 
-#undef assert
-extern "C" void assert(char* msg, char* f, int l) {}
-
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 

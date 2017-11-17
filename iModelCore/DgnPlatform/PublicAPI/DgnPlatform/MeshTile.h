@@ -460,8 +460,8 @@ public:
 
     void AddTriangle(TileTriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
-    void AddRenderTile(Render::IGraphicBuilder::TileCorners const&, TransformCR transform);
-    void AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam);
+    void AddRenderTile(Render::GraphicBuilder::TileCorners const&, TransformCR transform);
+    void AddTriMesh(Render::TriMeshArgsCR triMesh, TransformCR transform, bool invertVParam);
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
     DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t attribute, uint32_t color);
@@ -1036,8 +1036,7 @@ private:
                                                                                 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
-    FutureStatus GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model);
-
+    FutureStatus GenerateTilesFromTileTree(ITileCollector* collector, double leafTolerance, bool surfacesOnly, GeometricModelP model);
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -1064,16 +1063,13 @@ struct IGenerateMeshTiles
 
 };  // IPublishModelMeshTiles
 
-
 //=======================================================================================
 // Interface for TileTree based models to expose their tree for publishing.
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================
 struct IGetTileTreeForPublishing
 {
-    virtual ClipVectorPtr       _GetPublishingClip () const { return nullptr; }
-    virtual TileTree::RootCPtr  _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const = 0;
-
+    // ###TODO: remove this interface when TileGenerator::GenerateTilesFromTileTree can process everything.
 };  // IGetTileTreeForPublishing
 
 //=======================================================================================                                                                                                                                              bb
@@ -1099,11 +1095,9 @@ struct IGetPublishedTilesetInfo
 {
     virtual PublishedTilesetInfo _GetPublishedTilesetInfo() = 0;
 };
-
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
-//=======================================================================================
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================
@@ -1111,7 +1105,7 @@ struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
-    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier);
 
     struct PointComparator
         {

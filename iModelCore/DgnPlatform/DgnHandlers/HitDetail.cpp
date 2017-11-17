@@ -583,7 +583,7 @@ bool HitDetail::IsInSelectionSet() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Hilited HitDetail::IsHilited() const
+bool HitDetail::IsHilited() const
     {
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
@@ -594,13 +594,13 @@ DgnElement::Hilited HitDetail::IsHilited() const
         source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
         }
 
-    return (nullptr != source ? source->IsHilited() : DgnElement::Hilited::None);
+    return nullptr != source && source->IsHilited();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_SetHilited(DgnElement::Hilited newState) const
+void HitDetail::_SetHilited(bool hilited) const
     {
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
@@ -618,9 +618,7 @@ void HitDetail::_SetHilited(DgnElement::Hilited newState) const
     if (source->IsInSelectionSet())
         return;
 
-    // KLUDGE: Preserve any alternative hilite state (i.e. HILITED_Bold) already set on this element...
-    if (DgnElement::Hilited::None == newState || DgnElement::Hilited::None == source->IsHilited())
-        source->SetHilited(newState);
+    source->SetHilited(hilited);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -892,7 +890,7 @@ bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
+void IntersectDetail::_SetHilited(bool newState) const
     {
     T_Super::_SetHilited(newState);
     m_secondHit->SetHilited(newState);
@@ -913,9 +911,9 @@ void IntersectDetail::_Draw(ViewContextR context) const
 
     // NOTE: When we're flashing, the hilite flags are not necessarily set on the elements. So to get the second path
     //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
-    DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited();
+    bool currHilite = tmpSnapDetail.IsHilited();
 
-    tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
+    tmpSnapDetail.SetHilited(true);
 
     tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
     tmpSnapDetail.Draw(context);

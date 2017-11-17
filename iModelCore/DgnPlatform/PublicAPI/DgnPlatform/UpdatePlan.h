@@ -59,16 +59,6 @@ enum class UpdateAbort : int
     Unknown       = 15
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct ProgressiveTask : RefCounted<NonCopyableClass>
-{
-    enum class Completion {Finished=0, Aborted=1, Failed=2};
-    enum class WantShow : bool {No=0, Yes=1};
-    virtual Completion _DoProgressive(struct RenderListContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
-};
-
 /*=================================================================================**//**
 * The types of events that cause ViewContext operations to abort early.
 * @bsiclass                                                     Keith.Bentley   02/04
@@ -157,28 +147,6 @@ struct StopEvents
 //=======================================================================================
 struct UpdatePlan
 {
-    struct Query
-    {
-        BeDuration m_maxTime = BeDuration::Seconds(2);    // maximum time query should run
-        double m_frustumScale = 1.0;
-        bool m_onlyAlwaysDrawn = false;
-        uint32_t m_minElements = 3000;
-        uint32_t m_maxElements = 50000;
-        mutable uint32_t m_delayAfter = 0;
-        mutable uint32_t m_targetNumElements = 0;
-
-        BeDuration GetTimeout() const {return m_maxTime;}
-        uint32_t GetMinElements() const {return m_minElements;}
-        uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinElements(uint32_t val) {m_minElements = val;}
-        void SetMaxElements(uint32_t val) {m_maxElements = val;}
-        void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
-        uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetTimeout(BeDuration maxTime) {m_maxTime=maxTime;}
-        uint32_t GetDelayAfter() const {return m_delayAfter;}
-        void SetDelayAfter(uint32_t val) const {m_delayAfter=val;}
-    };
-
     struct AbortFlags
     {
         struct Motion
@@ -206,31 +174,83 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    bool m_hasSubRect = false;
-    mutable bool m_wantWait = false;
-    uint32_t m_priority = 0;
-    BeTimePoint m_sceneQuitTime; // don't allow scene creation past this timepoint
-    BeTimePoint m_quitTime; // don't allow this update to continue past this timepoint
-    DRange3d m_subRect;
-    Query m_query;
-    AbortFlags m_abortFlags;
+    struct TileOptions
+    {
+    private:
+        BeTimePoint m_deadline;
+        double m_scale = 1.0;
+        uint32_t m_minDepth = 0;
+        uint32_t m_maxDepth = 100;
+    public:
+        // Optional time-out for generating root tiles (those with no displayable parents). If this time is exceeded, tile generation will halt, producing a partial tile.
+        // The partial tile will later be refined until it is complete.
+        // Note: if the UpdatePlan has WantWait() == true, the UpdatePlan's GetQuitTime() is used instead.
+        bool HasDeadline() const { return m_deadline.IsValid(); }
+        BeTimePoint GetDeadline() const { return m_deadline; }
+        void SetDeadline(BeTimePoint deadline) { m_deadline = deadline; }
+        bool IsTimedOut() const { return HasDeadline() && GetDeadline().IsInPast(); }
 
+        // An optional scale to apply to the computed screen size of each tile. A scale greater than 1.0 causes lower-resolution tiles to be selected. This is useful e.g. when
+        // generating thumbnails (which are generally not rendered full-size) or when speed of tile generation is more important than quality.
+        double GetScale() const { return m_scale; }
+        void SetScale(double scale) { m_scale = scale; }
+
+        // Optional minimum and maximum depths of tiles to select.
+        uint32_t GetMinDepth() const { return m_minDepth; }
+        uint32_t GetMaxDepth() const { return m_maxDepth; }
+        void SetMinDepth(uint32_t depth) { m_minDepth = depth; }
+        void SetMaxDepth(uint32_t depth) { m_maxDepth = depth; }
+        void SetDepthRange(uint32_t minDepth, uint32_t maxDepth) { SetMinDepth(minDepth); SetMaxDepth(maxDepth); }
+        void SetFixedDepth(uint32_t depth) { SetDepthRange(depth, depth); }
+        bool IsWithinDepthRange(uint32_t depth) const { BeAssert(GetMinDepth() <= GetMaxDepth()); return depth >= GetMinDepth() && depth <= GetMaxDepth(); }
+    };
+protected:
+    BeTimePoint m_quitTime;
+    TileOptions m_tileOptions;
+    AbortFlags m_abortFlags;
+    double m_frustumScale = 1.0;
+    uint32_t m_priority;
+    DRange3d m_subRect;
+    bool m_hasSubRect = false;
+    bool m_wantDecorators = true;
+    mutable bool m_wantWait = false;
 public:
-    Query& GetQueryR() {return m_query;}
-    Query const& GetQuery() const {return m_query;}
-    void SetPriority(uint32_t val) {m_priority=val;}
+    // Scale applied to the frustum when selecting tiles. This allows selecting tiles outside of the frustum.
+    double GetFrustumScale() const {return m_frustumScale;}
+    void SetFrustumScale(double scale) {m_frustumScale=scale;}
+
+    // Priority of this update (see Render::Task::Priority)
     uint32_t GetPriority() const {return m_priority;}
+    void SetPriority(uint32_t val) {m_priority=val;}
+
+    // Options controlling how tiles are selected and generated.
+    TileOptions const& GetTileOptions() const { return m_tileOptions; }
+    TileOptions& GetTileOptionsR() { return m_tileOptions; }
+
+    // Conditions under which this update will abort.
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
+    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
     void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
-    void SetWait(bool val) const {m_wantWait=val;}
+
+    // If true, this is a synchronous update which will return either when complete or when quite time is reached. Useful for generating thumbnails.
     bool WantWait() const {return m_wantWait;}
-    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
+    void SetWait(bool val) const {m_wantWait=val;}
+
+    // Time after which this update should stop.
+    bool HasQuitTime() const {return m_quitTime.IsValid();}
     BeTimePoint GetQuitTime() const {return m_quitTime;}
-    void SetSceneQuitTime(BeTimePoint end) {m_sceneQuitTime = end;}
-    BeTimePoint GetSceneQuitTime () const {return m_sceneQuitTime;}
+    void SetQuitTime(BeTimePoint end) {m_quitTime = end;}
+    bool IsTimedOut() const {return HasQuitTime() && GetQuitTime().IsInPast();}
+
+    // An optional sub-range to update. This is used e.g. to 'heal' a rectangular portion of the screen while preserving the screen contents outside that rectangle.
+    bool HasSubRect() const {return m_hasSubRect;}
+    DRange3dCR GetSubRect() const {BeAssert(HasSubRect()); return m_subRect;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
+
+    // If true, decorators will be invoked to add their graphics.
+    bool WantDecorators() const {return m_wantDecorators;}
+    void SetWantDecorators(bool want) {m_wantDecorators=want;}
 };
 
 //=======================================================================================
@@ -241,60 +261,6 @@ struct DynamicUpdatePlan : UpdatePlan
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct SceneQueue
-{
-    //! Executes a query on a separate thread to load elements for a QueryModel
-    struct Task : RefCounted<NonCopyableClass>
-    {
-        DgnViewportR m_vp;
-        ViewControllerPtr m_view;
-        UpdatePlan m_plan;
-        bool m_abortFlag = false;
-
-    public:
-        Task(DgnViewportR vp, ViewController& view, UpdatePlan const& plan) : m_vp(vp), m_view(&view), m_plan(plan) {}
-        virtual void _Go() = 0;
-        uint32_t GetDelayAfter() {return m_plan.m_query.GetDelayAfter();}
-        bool IsForView(ViewController const& view) const {return m_view.get() == &view;}
-        void RequestAbort() {m_abortFlag = true;}
-        bool IsAborted() {return m_abortFlag;}
-    };
-
-    typedef RefCountedPtr<Task> TaskPtr;
-
-private:
-    enum class State {Active, TerminateRequested, Terminated};
-
-    DgnDbR m_db;
-    BeConditionVariable m_cv;
-    std::deque<TaskPtr> m_pending;
-    TaskPtr m_active;
-    State m_state;
-    bool WaitForWork();
-    bool HasActiveOrPending(ViewControllerCR);
-    void Process();
-    THREAD_MAIN_DECL Main(void* arg);
-
-public:
-    SceneQueue(DgnDbR db);
-    void Terminate();
-
-    //! Enqueue a request to execute the query
-    DGNPLATFORM_EXPORT void Add(Task& task);
-
-    //! Cancel any pending requests to process the specified QueryView.
-    //! @param[in] view The view whose processing is to be canceled
-    DGNPLATFORM_EXPORT void RemovePending(ViewControllerCR view);
-
-    //! Suspends the calling thread until the specified model is in the idle state
-    DGNPLATFORM_EXPORT void WaitFor(ViewControllerCR);
-
-    DGNPLATFORM_EXPORT bool IsIdle() const;
     DGNPLATFORM_EXPORT void AbortAll();
-};
-
 END_BENTLEY_DGN_NAMESPACE
 
