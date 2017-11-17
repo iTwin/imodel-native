@@ -655,7 +655,7 @@
         <SubPart PartName="PublishedAPI"/>
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform\DgnPlatform.*.nupkg</Files>
         </Bindings>
     </Part>
 
