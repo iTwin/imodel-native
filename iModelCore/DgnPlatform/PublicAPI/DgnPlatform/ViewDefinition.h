@@ -120,6 +120,9 @@ public:
     //! Drop the override of the appearance of a SubCategory from this DisplayStyle
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
 
+    //! Look up the appearance override for the specified SubCategory
+    DGNPLATFORM_EXPORT DgnSubCategory::Override GetSubCategoryOverride(DgnSubCategoryId id) const;
+
     //! Get the appearance of a SubCategory, taking into consideration any overrides from this DisplayStyle. If the SubCategory
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;

@@ -7,19 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley/BeSystemInfo.h>
-
-#ifdef DEBUG_HEAL
-#   define HEAL_PRINTF DEBUG_PRINTF
-#else
-#   define HEAL_PRINTF(fmt, ...)
-#endif
-
-#define DEBUG_PROGRESSIVE
-#ifdef DEBUG_PROGRESSIVE
-#   define PROGRESSIVE_PRINTF DEBUG_PRINTF
-#else
-#   define PROGRESSIVE_PRINTF(fmt, ...)
-#endif
+#include <DgnPlatform/ElementTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -62,11 +50,8 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_DrawDecorations(DecorateContextR context)
     {
-// Decorators on QV with opengles draw without a depth buffer, which makes ground plane useless.
-// This check should be removed on the tiles (non-QV) branch. WIP_Paul
-#if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)
     DrawGroundPlane(context);
-#endif
+    DrawSkyBox(context);
 
     if (m_copyrightMsgs.empty())
         return;
@@ -87,7 +72,7 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
     DRange2d runningTextBounds = DRange2d::NullRange();
 
     // Always draw text in black, then create a white blanking region behind it so that it's always visible.
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic();
+    Render::GraphicBuilderPtr graphic = context.CreateViewGraphic();
     graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 0);
 
     for (Utf8StringCR msg : m_copyrightMsgs)
@@ -123,7 +108,7 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
     textShape[3].Init(runningTextBounds.high.x, runningTextBounds.low.y);
     graphic->AddShape(_countof(textShape), textShape, true);
 
-    context.AddViewOverlay(*graphic);
+    context.AddViewOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,39 +122,136 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::RequestAbort(bool wait)
+BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
-    auto& queue = GetDgnDb().GetSceneQueue();
-    queue.RemovePending(*this);
+#if defined(ELEMENT_TILE_PROFILE_RANGE_INDEX)
+    static bool s_filledRangeIndices = false;
+    if (!s_filledRangeIndices)
+        {
+        StopWatch profileTimer(true);
+        uint32_t numFilled = 0;
+        for (auto modelId : GetViewedModels())
+            {
+            auto model = GetDgnDb().Models().Get<GeometricModel>(modelId);
+            if (model.IsValid())
+                {
+                model->FillRangeIndex();
+                ++numFilled;
+                }
+            }
 
-    if (wait)
-        queue.WaitFor(*this);
-    }
+        double rangeIndexTime = profileTimer.GetCurrentSeconds();
+        s_filledRangeIndices = true;
+        Utf8PrintfString msg("Filled %u range indices in %f seconds", numFilled, rangeIndexTime);
+        NotifyMessageDetails details(OutputMessagePriority::Info, msg.c_str());
+        T_HOST.GetNotificationAdmin()._OutputMessage(details);
+        }
+#endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
-    {
-    BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
-    BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
+#if defined(ELEMENT_TILE_PROFILE_CREATE_ROOT)
+    if (!m_allRootsLoaded)
+        {
+        StopWatch rootsTimer(true);
+        uint32_t numCreated = 0;
+        for (auto modelId : GetViewedModels())
+            {
+            auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+            TileTree::RootP modelRoot;
+            if (model.IsValid())
+                {
+                modelRoot = model->GetTileTree(context.GetTargetR().GetSystem());
+                ++numCreated;
+                }
 
-    Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
-    if (plan.m_query.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
-        frust.ScaleAboutCenter(plan.m_query.m_frustumScale);
+            m_roots.Insert(modelId, modelRoot);
+            }
 
-    QueryResults results;
-    RangeQuery query(*this, frust, vp, plan.m_query, &results);
-    query.SetSizeFilter(vp, GetSceneLODSize());
+        Utf8PrintfString msg("Loaded %u roots in %f seconds", numCreated, rootsTimer.GetCurrentSeconds());
+        NotifyMessageDetails details(OutputMessagePriority::Info, msg.c_str());
+        T_HOST.GetNotificationAdmin()._OutputMessage(details);
+        m_allRootsLoaded = true;
+        }
+#endif
 
-    if (!m_noQuery)
-        query.DoQuery(task);
+    StopWatch timer(true);
 
-    return results;
+    uint32_t waitForAllLoadsMillis = 0;
+    auto const& plan = context.GetUpdatePlan();
+    if (plan.WantWait() && plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
+        waitForAllLoadsMillis = std::chrono::duration_cast<std::chrono::milliseconds>(context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now()).count();
+
+    if (!m_allRootsLoaded)
+        {
+        // Create as many tile trees as we can within the allotted time...
+        bool timedOut = false;
+
+        for (auto modelId : GetViewedModels())
+            {
+            auto iter = m_roots.find(modelId);
+            if (m_roots.end() == iter)
+                {
+                auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+                TileTree::RootP modelRoot = nullptr;
+                if (model.IsValid())
+                    {
+                    modelRoot = model->GetTileTree(&context.GetTargetR().GetSystem());
+                    Utf8String message = model->GetCopyrightMessage();
+                    if (!message.empty()) // skip emptry strings.
+                        m_copyrightMsgs.insert(message);
+                    }
+
+                m_roots.Insert(modelId, modelRoot);
+
+                if (plan.IsTimedOut())
+                    {
+                    DEBUG_PRINTF("CreateScene aborted");
+                    timedOut = true;
+                    break;
+                    }
+                }
+            }
+
+        m_allRootsLoaded = !timedOut;
+        }
+
+    // Always draw all the tile trees we currently have...
+    // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
+    if (!plan.WantWait())
+        {
+        for (auto pair : m_roots)
+            if (nullptr != pair.second)
+                pair.second->DrawInView(context);
+        }
+    else
+        {
+        // Enqueue any requests for missing tiles...
+        for (auto pair : m_roots)
+            if (nullptr != pair.second)
+                pair.second->SelectTiles(context);
+
+        uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_roots.size()));
+
+        // Wait for requests to complete
+        // Note we are ignoring any time spent creating tile trees above...
+        context.m_requests.RequestMissing(plan.GetQuitTime());
+        for (auto pair : m_roots)
+            {
+            if (nullptr != pair.second)
+                {
+                pair.second->WaitForAllLoadsFor(waitMillis);
+                pair.second->CancelAllTileLoads();
+                pair.second->DrawInView(context);
+                }
+            }
+        }
+
+    //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -177,9 +259,9 @@ ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
-    RequestAbort(true);
     m_noQuery = exclusive;
     m_special.m_always = newSet; // NB: copies values
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,9 +269,9 @@ void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusiv
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ClearAlwaysDrawn()
     {
-    RequestAbort(true);
     m_special.m_always.clear();
     m_noQuery = false;
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -197,8 +279,8 @@ void ViewController::ClearAlwaysDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
-    RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,8 +288,41 @@ void ViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ClearNeverDrawn()
     {
-    RequestAbort(true);
     m_special.m_never.clear();
+    SetFeatureOverridesDirty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::SetViewFlags(Render::ViewFlags newFlags)
+    {
+    auto oldFlags = GetViewFlags();
+    bool dirty = oldFlags.ShowConstructions() != newFlags.ShowConstructions()
+              || oldFlags.ShowDimensions() != newFlags.ShowDimensions()
+              || oldFlags.ShowPatterns() != newFlags.ShowPatterns();
+    if (dirty)
+        SetFeatureOverridesDirty();
+
+    m_definition->GetDisplayStyle().SetViewFlags(newFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
+    {
+    m_definition->GetDisplayStyle().DropSubCategoryOverride(id);
+    SetFeatureOverridesDirty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
+    {
+    m_definition->GetDisplayStyle().OverrideSubCategory(id, ovr);
+    SetFeatureOverridesDirty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,20 +334,19 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff == models.Contains(modelId))
         return;
 
-    RequestAbort(true);
     if (onOff)
+        {
         models.insert(modelId);
+        }
     else
+        {
         models.erase(modelId);
-    }
+        m_roots.erase(m_roots.find(modelId));
+        }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_OnCategoryChange(bool singleEnabled)
-    {
-    T_Super::_OnCategoryChange(singleEnabled);
-    RequestAbort(true);
+    m_allRootsLoaded = false;
+    if (nullptr != m_vp)
+        m_vp->InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -291,54 +405,6 @@ void SpatialViewController::_PickTerrain(PickContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::NonSceneQuery::NonSceneQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query(), nullptr)
-    {
-    if (0.0 != view.GetNonSceneLODSize()) // do we want to filter small elements during progressive phase?
-        {
-        SetTestLOD(true);
-        SetSizeFilter(vp, view.GetNonSceneLODSize());
-        }
-    SetDepthFirst(); // uses less memory
-    Start(view); // prepare statements, bind parameters
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::ProgressiveTask::ProgressiveTask(SpatialViewControllerR view, DgnViewportCR vp) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp), m_view(view)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_CreateTerrain(TerrainContextR context) 
-    {
-    T_Super::_CreateTerrain(context);
-
-    DrawSkyBox(context);
-
-    m_copyrightMsgs.clear();
-    auto& models = GetDgnDb().Models();
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        DgnModelPtr model = models.GetModel(modelId);
-        if (!model.IsValid())
-            continue;
-
-        auto spatialModel = model->ToSpatialModelP();
-        if (nullptr != spatialModel)
-            spatialModel->_AddTerrainGraphics(context);
-
-        Utf8String message = model->GetCopyrightMessage();
-        if (!message.empty()) // skip empty strings.
-            m_copyrightMsgs.insert(message);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr SpatialViewController::GetLights() const
@@ -379,7 +445,7 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
 void SpatialViewController::_VisitAllElements(ViewContextR context)
     {
     QueryResults results;
-    RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), UpdatePlan::Query(), &results); // NOTE: the context may have a smaller frustum than the view
+    RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), RangeQuery::Plan(), &results); // NOTE: the context may have a smaller frustum than the view
     rangeQuery.Start(*this);
 
     if (m_noQuery)
@@ -409,200 +475,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-THREAD_MAIN_IMPL SceneQueue::Main(void* arg)
-    {
-    BeThreadUtilities::SetCurrentThreadName("SceneCreate");
-    DgnDb::SetThreadId(DgnDb::ThreadId::Scene);
-
-    ((SceneQueue*)arg)->Process();
-
-    // After the owning DgnDb calls Terminate()
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::Terminate()
-    {
-    DgnDb::VerifyClientThread();
-
-    BeMutexHolder lock(m_cv.GetMutex());
-
-    if (State::Active != m_state)
-        return;
-
-    m_pending.clear();
-
-    if (m_active.IsValid())
-        m_active->RequestAbort();  // if we're working on a query tell it to stop
-
-    m_state = State::TerminateRequested;
-    while (State::TerminateRequested == m_state)
-        {
-        m_cv.notify_all();
-        m_cv.RelativeWait(lock, 10000);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::RemovePending(ViewControllerCR view)
-    {
-    // We may currently be processing a query for this model. If so, let it complete and queue up another one.
-    // But remove any other previously-queued processing requests for this model.
-    BeMutexHolder lock(m_cv.GetMutex());
-
-    if (m_active.IsValid() && m_active->IsForView(view))
-        m_active->RequestAbort();  // if we're working on a query tell it to stop
-
-    for (auto iter = m_pending.begin(); iter != m_pending.end(); )
-        {
-        if ((*iter)->IsForView(view))
-            {
-            (*iter)->RequestAbort();
-            iter = m_pending.erase(iter);
-            }
-        else
-            ++iter;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::Add(Task& task)
-    {
-    if (&task.m_view->GetDgnDb() != &m_db)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    BeMutexHolder mux(m_cv.GetMutex());
-
-    RemovePending(*task.m_view);
-    m_pending.push_back(&task);
-
-    mux.unlock(); // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
-    m_cv.notify_all();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::AbortAll()
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    if (State::Active != m_state)
-        return;
-
-    m_pending.clear();
-    if (!m_active.IsValid())
-        return;
-
-    m_active->RequestAbort();  // if we're working on a query tell it to stop
-    m_cv.InfiniteWait(holder); // wait for it to complete.
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Note: Must be called with query queue mutex held!
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SceneQueue::HasActiveOrPending(ViewControllerCR view)
-    {
-    if (m_active.IsValid() && m_active->IsForView(view))
-        return true;
-
-    for (auto const& pending : m_pending)
-        {
-        if (pending->IsForView(view))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::WaitFor(ViewControllerCR view)
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    while (HasActiveOrPending(view))
-        m_cv.InfiniteWait(holder);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SceneQueue::SceneQueue(DgnDbR db) : m_db(db), m_state(State::Active)
-    {
     BeThreadUtilities::StartNewThread(Main, this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SceneQueue::IsIdle() const
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    return m_pending.empty() && !m_active.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SceneQueue::WaitForWork()
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    while (m_pending.empty() && State::Active == m_state)
-        m_cv.InfiniteWait(holder);
-
-    if (State::Active != m_state)
-        return false;
-
-    m_active = m_pending.front();
-    m_pending.pop_front();
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::Process()
-    {
-    DgnDb::VerifySceneThread();
-
-    while (WaitForWork())
-        {
-        if (!m_active.IsValid())
-            continue;
-
-        m_active->_Go();
-        uint32_t delay = m_active->GetDelayAfter();
-        BeAssert(delay<2000);
-
-        {
-        BeMutexHolder holder(m_cv.GetMutex());
-        m_active = nullptr;
-        }
-
-        m_cv.notify_all();
-        if (delay) // optionally, wait before starting the next task
-            BeThreadUtilities::BeSleep(delay);
-        }
-
-    BeMutexHolder holder(m_cv.GetMutex());
-    m_state = State::Terminated;
-    m_cv.notify_all();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)
@@ -627,7 +500,7 @@ void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::RangeQuery::DoQuery(SceneQueue::Task& task)
+void SpatialViewController::RangeQuery::DoQuery()
     {
     StopWatch watch(true);
 
@@ -660,11 +533,6 @@ void SpatialViewController::RangeQuery::DoQuery(SceneQueue::Task& task)
             break;
 
         BeAssert(m_lastId==thisId.GetValueUnchecked());
-        if (task.IsAborted())
-            {
-            ERROR_PRINTF("Query aborted");
-            return;
-            }
 
         if (TestElement(thisId) && !IsAlways(thisId))
             {
@@ -756,113 +624,6 @@ int SpatialViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId SpatialViewController::ProgressiveTask::GetNextId()
-    {
-    if (m_abortedElement.IsValid())
-        {
-        DgnElementId id = m_abortedElement;
-        m_abortedElement.Invalidate();
-        return id;
-        }
-
-    return m_rangeQuery.StepRtree();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
-    {
-    m_thisBatch = 0; // restart every pass
-    m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
-    m_setTimeout = false;
-
-    PROGRESSIVE_PRINTF("begin progressive display");
-
-    DgnElementId thisId;
-    ScenePtr scene = m_view.GetScene();
-    while ((thisId=GetNextId()).IsValid())
-        {
-        if (!scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
-            {
-            if (SUCCESS != context.VisitElement(thisId)) // no, draw it now
-                {
-                m_abortedElement = thisId;
-                break;
-                }
-
-            if (!m_setTimeout) // don't set the timeout until after we've drawn one element
-                {
-                context.EnableStopAfterTimout(BeDuration::FromMilliseconds(SHOW_PROGRESS_INTERVAL));
-                m_setTimeout = true;
-                }
-
-            ++scene->m_progressiveTotal;
-            }
-
-        if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch
-            context.SetAborted();
-
-        if (context.CheckStop())
-            break;
-        }
-
-    if (context.WasAborted())
-        {
-        // We only want to show the progress of ProgressiveDisplay once per second.
-        // See if its been more than a second since the last time we showed something.
-        uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
-        if (now > m_nextShow)
-            {
-            m_nextShow = now + SHOW_PROGRESS_INTERVAL;
-            wantShow = WantShow::Yes;
-            }
-
-        PROGRESSIVE_PRINTF("aborted progressive display");
-        return Completion::Aborted;
-        }
-
-    // alway show the last batch.
-    wantShow = WantShow::Yes;
-    PROGRESSIVE_PRINTF("finished progressive. Total=%d", scene->m_progressiveTotal);
-    return Completion::Finished;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_DoHeal(HealContext& context)
-    {
-    ScenePtr scene = GetScene();
-
-    if (!scene.IsValid() || scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
-       return;
-
-    if (scene->m_progressiveTotal == 0) // temporary
-        return;
-
-    HEAL_PRINTF("begin heal");
-
-    NonSceneQuery query(*this, context.GetFrustum(), *context.GetViewport());
-
-    DgnElementId thisId;
-    uint32_t total=0;
-    while (!context.CheckStop() && (thisId=query.StepRtree()).IsValid())
-        {
-        if (!scene->Contains(thisId) && query.TestElement(thisId))
-            {
-            ++total;
-            context._HealElement(thisId); 
-            }
-        }
-
-    BeAssert(scene->m_progressiveTotal >= total);
-    HEAL_PRINTF("done heal, total=%d, abort=%d", total, context.WasAborted());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Set the size of a filter that eliminates elements smaller than a given size (in pixels). To enable this filter, you must also call SetTestLOD.
 * For range queries, we only enable this after we've found our maximum number of hits.
 * @bsimethod                                    Keith.Bentley                   02/16
@@ -882,7 +643,7 @@ void SpatialViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::RangeQuery::RangeQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan, QueryResults* results) :
+SpatialViewController::RangeQuery::RangeQuery(SpatialViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, RangeQuery::Plan const& plan, QueryResults* results) :
         SpatialQuery(&view.m_special, view.GetActiveVolume().get()), m_view(view), m_plan(plan), m_results(results)
     {
     m_count = 0;

@@ -96,8 +96,8 @@ protected:
     SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
+    DGNPLATFORM_EXPORT DgnElementPtr _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
+    DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
@@ -142,8 +142,8 @@ protected:
     SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
+    DGNPLATFORM_EXPORT DgnElementPtr _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
+    DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 

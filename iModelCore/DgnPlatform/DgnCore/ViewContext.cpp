@@ -158,7 +158,7 @@ StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
 
     m_is3dView = viewport->Is3dView();
     SetViewFlags(viewport->GetViewFlags());
-    m_monochromeColor = m_viewport->GetViewController().GetViewDefinition().GetDisplayStyle().GetMonochromeColor();
+    m_monochromeColor = m_viewport->GetViewControllerR().GetViewDefinitionR().GetDisplayStyle().GetMonochromeColor();
 
     return _InitContextForView();
     }
@@ -204,6 +204,25 @@ void ViewContext::WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) c
 
         (viewPts+i)->x = (long) tPt.x;
         (viewPts+i)->y = (long) tPt.y;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::WorldToView(DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const
+    {
+    DPoint3d  tPt;
+    DPoint4d  t4dPt;
+
+    for (int i=0; i<nPts; i++)
+        {
+        WorldToView(&t4dPt, worldPts+i, 1);
+
+        t4dPt.GetProjectedXYZ(tPt);
+
+        (viewPts+i)->x = tPt.x;
+        (viewPts+i)->y = tPt.y;
         }
     }
 
@@ -294,24 +313,22 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         pixelSize = m_viewport->GetPixelSizeAtPoint(&origin);
         }
 
-    Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
-    if (!graphic.IsValid())
-        graphic = _StrokeGeometry(source, pixelSize);
-
+    Render::GraphicPtr graphic = _StrokeGeometry(source, pixelSize);
     if (!graphic.IsValid())
         return ERROR;
 
     _OutputGraphic(*graphic, &source);
 
+#if defined(NEEDSWORK_BRIEN)
     static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
     if (!s_drawRange)
         return SUCCESS;
 
     // Output element local range for debug display and locate...
-    if (graphic->IsSimplifyGraphic() && nullptr == GetIPickGeom())
+    if (nullptr == GetIPickGeom())
         return SUCCESS;
 
-    Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
+    auto rangeGraphic = CreateWorldGraphic(2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform());
     Render::GeometryParams rangeParams;
 
     rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
@@ -331,23 +348,22 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         rangeGraphic->AddRangeBox2d(DRange2d::From(DPoint2d::From(range.low), DPoint2d::From(range.high)), 0.0);
         }
 
-    _OutputGraphic(*rangeGraphic, &source);
+    _OutputGraphic(*rangeGraphic->Finish(), &source);
+#endif
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
     DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
 
     if (!partGeometry.IsValid())
-        return nullptr;
+        return;
 
-    bool isSimplify = graphic.IsSimplifyGraphic();
-
-    if (isSimplify && m_viewport)
+    if (m_viewport)
         {
         Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
         ElementAlignedBox3d range = partGeometry->GetBoundingBox();
@@ -355,66 +371,21 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
         partToWorld.Multiply(range, range);
 
         if (!IsRangeVisible(range))
-            return nullptr; // Part range doesn't overlap pick...
+            return; // Part range doesn't overlap pick...
         }
 
-    BeAssert(isSimplify || nullptr != m_viewport);
-    Render::GraphicPtr partGraphic = (isSimplify ? nullptr : partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()));
+    GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 
-    if (!partGraphic.IsValid())
-        {
-        GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
-
-        auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
-        partGraphic = partBuilder;
-        collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
-            
-        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-            return nullptr;
-
-        partBuilder->Close(); 
-        if (!isSimplify) // NOTE: QvGraphic is the only Render::Graphic that doesn't sub-class SimplifyGraphic currently...and this element graphic cache probably goes away with mesh tiles anyway...
-            partGeometry->Graphics().Save(*partGraphic);
-        }
+    auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
+    collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
+        
+    if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+        return;
 
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
-    graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
-
-    return partGraphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
-    {
-    if (!m_viewflags.ShowWeights())
-        ovrMatSymb.SetWidth(1);
-
-    if (!m_viewflags.ShowTransparency())
-        {
-        ovrMatSymb.SetLineTransparency(0);
-        ovrMatSymb.SetFillTransparency(0);
-        }
-
-    if (m_viewflags.IsMonochrome())
-        {
-        ovrMatSymb.SetLineColor(m_monochromeColor);
-        ovrMatSymb.SetFillColor(m_monochromeColor);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source)
-    {
-    _AddViewOverrides(ovrMatSymb); // Modify ovrMatSymb for view flags...
-
-    if (nullptr != m_viewport)
-        m_viewport->GetViewControllerR()._OverrideGraphicParams(ovrMatSymb, source);
+    graphic.AddSubGraphic(*partBuilder->Finish(), subToGraphic, graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,12 +455,9 @@ StatusInt ViewContext::_VisitHit(HitDetailCR hit)
         return ERROR;
 
     if (graphic.IsValid())
-        {
         _OutputGraphic(*graphic, source); 
-        return SUCCESS;
-        }
 
-    return VisitGeometry(*source);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -683,13 +651,20 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::MaterialPtr ViewContext::_GetMaterial(RenderMaterialId id) const
+    {
+    auto system = GetRenderSystem();
+    return nullptr != system ? system->_GetMaterial(id, GetDgnDb()) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
     {
     Init();
-
-    DgnViewportP vp = context.GetViewport();
 
     m_rasterWidth = DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
@@ -706,11 +681,14 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
 
+#if defined(TODO_ELEMENT_TILE)
+            // We need to handle GradientSymb::Flags::Outline at render-time...
             if (0 == (m_gradient->GetFlags() & GradientSymb::Flags::Outline) && (FillDisplay::ByView != elParams.GetFillDisplay() || context.GetViewFlags().ShowFill()))
                 {
                 m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
                 netElemTransparency = 0.0;  // Don't override the fully transparent outline below...
                 }
+#endif
             }
         else
             {
@@ -733,8 +711,8 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    if (vp && elParams.GetMaterialId().IsValid())
-        m_material = vp->GetRenderTarget()->GetMaterial(elParams.GetMaterialId(), context.GetDgnDb());
+    if (elParams.GetMaterialId().IsValid())
+        m_material = context.GetMaterial(elParams.GetMaterialId());
 
     if (0.0 != netElemTransparency)
         {
@@ -1043,7 +1021,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 
     if (nullptr != vp)
         {
-        appearance = vp->GetViewController().GetViewDefinition().GetDisplayStyle().GetSubCategoryAppearance(m_subCategoryId);
+        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
         }
     else
         {
@@ -1124,9 +1102,17 @@ void GeometryParams::ApplyTransform(TransformCR transform, uint32_t options)
 void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_world.IsValid())
-        m_decorations.m_world = new GraphicList();
+        m_decorations.m_world = new DecorationList();
 
-    m_decorations.m_world->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_world->Add(graphic, ovrParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::SetViewBackground(Render::GraphicR graphic)
+    {
+    m_decorations.m_viewBackground = &graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1135,9 +1121,9 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
 void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_worldOverlay.IsValid())
-        m_decorations.m_worldOverlay = new GraphicList();
+        m_decorations.m_worldOverlay = new DecorationList();
 
-    m_decorations.m_worldOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_worldOverlay->Add(graphic, ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1146,15 +1132,15 @@ void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraph
 void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_viewOverlay.IsValid())
-        m_decorations.m_viewOverlay = new GraphicList();
+        m_decorations.m_viewOverlay = new DecorationList();
 
-    m_decorations.m_viewOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_viewOverlay->Add(graphic, ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+void DecorateContext::AddNormal(Render::GraphicR graphic)
     {
     if (nullptr != m_viewlet)
         {
@@ -1162,19 +1148,10 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
         return;
         }
 
-    if (!m_isFlash)
-        {
-        if (!m_decorations.m_normal.IsValid())
-            m_decorations.m_normal = new GraphicList();
+    if (m_decorations.m_normal.IsNull())
+        m_decorations.m_normal = new GraphicList();
 
-        m_decorations.m_normal->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
-        return;
-        }
-
-    if (!m_decorations.m_flashed.IsValid())
-        m_decorations.m_flashed = new GraphicList();
-
-    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_normal->Add(graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1182,7 +1159,7 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency)
     {
-    AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
+    AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency, GetDgnDb()), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1342,10 +1319,9 @@ static bool getClipPlaneIntersection(double& pMin, double& pMax, DPoint3dCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing)
+static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing, DgnViewportCR vp)
     {
     static double s_maxHorizonGrids = 800.0;
-    DgnViewportCR vp = *graphic.GetViewport();
     DVec3d colNormal, rowNormal;
     double colSpacing = colNormal.Normalize(colVec);
     rowNormal.Normalize(rowVec);
@@ -1429,12 +1405,11 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
+static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions, DgnViewportCR vp)
     {
     double        aa;
     DVec3d        zVec, viewZ;
     DPoint4d      eyePoint;
-    DgnViewportCR vp = *graphic.GetViewport();
 
     vp.GetWorldToViewMap()->M1.GetColumn(eyePoint, 2);
     viewZ.Init(eyePoint.x, eyePoint.y, eyePoint.z);
@@ -1454,12 +1429,12 @@ static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawD
     ColorDef lineColor = vp.MakeColorTransparency(color, GRID_LINE_Transparency);
     ColorDef dotColor = vp.MakeColorTransparency(color, GRID_DOT_Transparency);
     ColorDef planeColor = vp.MakeColorTransparency(color, GRID_PLANE_Transparency);
-    GraphicParams::LinePixels linePat = GraphicParams::LinePixels::Solid;
+    LinePixels linePat = LinePixels::Solid;
 
     if (viewZ.DotProduct(zVec) < 0.0) // Provide visual indication that grid is being viewed from the back (grid z not towards eye)...
         {
         planeColor = vp.MakeColorTransparency(ColorDef::Red(), GRID_PLANE_Transparency);
-        linePat = GraphicParams::LinePixels::Code2;
+        linePat = LinePixels::Code2;
         }
 
     int    gpr = (gridsPerRef>0) ? gridsPerRef : 1;
@@ -1477,7 +1452,7 @@ static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawD
         dotYVec.Scale(rpg);
 
         graphic.SetSymbology(dotColor, planeColor, 1);
-        drawGridDots(graphic, doIsoGrid, gridOrigin, dotYVec, repetitions.y*gpr, dotXVec, repetitions.x*gpr, gridsPerRef);
+        drawGridDots(graphic, doIsoGrid, gridOrigin, dotYVec, repetitions.y*gpr, dotXVec, repetitions.x*gpr, gridsPerRef, vp);
         }
 
     if (0 < gridsPerRef)
@@ -1587,8 +1562,27 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     uorPerPixel *= refScale;
 
     bool drawDots = ((refSpacing.x/uorPerPixel) > minGridSeperationPixels) &&((refSpacing.y/uorPerPixel) > minGridSeperationPixels);
-    Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
+    auto graphic = CreateWorldGraphic();
 
-    drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
-    AddWorldDecoration(*graphic);
+    drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions, vp);
+    AddWorldDecoration(*graphic->Finish());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TargetP ViewContext::_GetRenderTarget() const
+    {
+    auto vp = GetViewport();
+    return nullptr != vp ? vp->GetRenderTarget() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SystemP ViewContext::_GetRenderSystem() const
+    {
+    auto target = GetRenderTarget();
+    return nullptr != target ? &target->GetSystem() : nullptr;
+    }
+

@@ -196,7 +196,7 @@ virtual GeometricPrimitiveCPtr _GetGeometry() const = 0;
 //! @private
 virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
 //! @private
-virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR) const = 0;
+virtual Render::GraphicPtr _GetGraphic(ViewContextR) const = 0;
 //! @private
 virtual bool _GetFaceLocation(DPoint3dR, DPoint2dR) const = 0;
 //! @private
@@ -225,7 +225,7 @@ GeometricPrimitiveCPtr GetGeometry() const {return _GetGeometry();}
 GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 
 //! @return A Render::Graphic representing this sub-entity.
-Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
+Render::GraphicPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
 //! Get pick location and uv parameter from a sub-entity representing a face. 
 //! @return false if the sub-entity was not created from a method where locate information was meaningful.

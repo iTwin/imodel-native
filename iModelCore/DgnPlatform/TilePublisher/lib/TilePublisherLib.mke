@@ -31,6 +31,8 @@ $(o)HistoryPublisher$(oext) : $(SrcDir)HistoryPublisher.cpp $(SrcDir)Constants.h
 
 $(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h $(SrcRoot)DgnPlatform/publicapi/TilePublisher/CesiumPublisher.h ${MultiCompileDepends} 
 
+$(o)CesiumDirectPublisher$(oext) : $(SrcDir)CesiumDirectPublisher.cpp $(SrcDir)CesiumConstants.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \

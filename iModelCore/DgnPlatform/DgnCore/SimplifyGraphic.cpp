@@ -42,10 +42,10 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -55,10 +55,10 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -68,10 +68,10 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Render::GraphicCR graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -370,7 +370,8 @@ bool IsUnclipped() {return m_unclipped;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : T_Super(params), m_processor(processor), m_context(context)
+SimplifyGraphic::SimplifyGraphic(Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
+    : GraphicBuilder(params), m_processor(processor), m_context(context)
     {
     m_facetOptions = m_processor._GetFacetOptionsP();
 
@@ -388,12 +389,12 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
 
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;
     subGraphic->m_currGeomEntryId    = m_currGeomEntryId;
-    subGraphic->m_currClip           = (nullptr != clip ? clip->Clone(&m_localToWorldTransform) : nullptr);
+    subGraphic->m_currClip           = (nullptr != clip ? clip->Clone(&GetLocalToWorldTransform()) : nullptr);
 
     return subGraphic;
     }
@@ -403,7 +404,7 @@ Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d SimplifyGraphic::GetLocalToView() const
     {
-    DMatrix4d   localToWorld = DMatrix4d::From(m_localToWorldTransform);
+    DMatrix4d   localToWorld = DMatrix4d::From(GetLocalToWorldTransform());
     DMatrix4d   worldToView = m_context.GetWorldToView().M0;
     DMatrix4d   localToView;
 
@@ -419,7 +420,7 @@ DMatrix4d SimplifyGraphic::GetViewToLocal() const
     {
     Transform   worldToLocalTrans;
 
-    worldToLocalTrans.InverseOf(m_localToWorldTransform);
+    worldToLocalTrans.InverseOf(GetLocalToWorldTransform());
 
     DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
     DMatrix4d   viewToWorld = m_context.GetWorldToView().M1;
@@ -458,7 +459,7 @@ void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nP
     {
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf(m_localToWorldTransform);
+    worldToLocal.InverseOf(GetLocalToWorldTransform());
     m_context.ViewToWorld(localPts, viewPts, nPts);
     worldToLocal.Multiply(localPts, localPts, nPts);
     }
@@ -470,7 +471,7 @@ void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nP
     {
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf(m_localToWorldTransform);
+    worldToLocal.InverseOf(GetLocalToWorldTransform());
     m_context.ViewToWorld(localPts, viewPts, nPts);
     worldToLocal.Multiply(localPts, localPts, nPts);
     }
@@ -634,7 +635,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             {
             bvector<CurveVectorPtr> insideCurves;
 
-            if (SUCCESS == BRepUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+            if (SUCCESS == BRepUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &GetLocalToWorldTransform()))
                 {
                 for (CurveVectorPtr tmpCurves : insideCurves)
                     m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
@@ -1241,11 +1242,10 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
                 if (0 == polyfaces[i]->GetPointCount())
                     continue;
 
-                GraphicBuilder builder(*this);
                 GeometryParams faceParams;
 
                 params[i].ToGeometryParams(faceParams, m_currGeometryParams);
-                m_context.CookGeometryParams(faceParams, builder);
+                m_context.CookGeometryParams(faceParams, *this);
 
                 if (!doClipping)
                     {
@@ -1327,7 +1327,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         text.ComputeBoundingShape(points);
         text.ComputeTransform().Multiply(points, _countof(points));
 
-        Render::GraphicPtr graphic = _CreateSubGraphic(Transform::FromIdentity(), nullptr);
+        Render::GraphicBuilderPtr graphic = _CreateSubGraphic(Transform::FromIdentity(), nullptr);
         SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
@@ -1341,7 +1341,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
         Render::GraphicBuilderPtr graphic = _CreateSubGraphic(text.ComputeTransform(), nullptr);
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.GetGraphic());
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
             return;
@@ -1451,9 +1451,9 @@ void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled,
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 PUSH_MSVC_IGNORE(6386) // I can't figure out how to silence this static analysis warning in this function, so just ignoring.
-void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
+void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
-    if (1 == usageFlags) // represents thickened line...
+    if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int         nPt = 0;
         DPoint3dP   tmpPtsP = (DPoint3dP) _alloca((numPoints+1) * sizeof (DPoint3d));
@@ -1479,7 +1479,7 @@ POP_MSVC_IGNORE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth)
+void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
@@ -1632,7 +1632,87 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
+
+
+* @bsimethod                                                    RayBentley      01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
+    {
+    ClipAndProcessBody(geom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddTextString(TextStringCR text)
+    {
+    ClipAndProcessText(text);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
+    {
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddTextString(text);
+        }
+    else
+        {
+        TextStringPtr ts = text.Clone();
+        auto origin = ts->GetOrigin();
+        origin.z = zDepth;
+        ts->SetOrigin(origin);
+        _AddTextString(*ts);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
+    {
+    // NEEDSWORK...Draw box...
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  2/2016
+//----------------------------------------------------------------------------------------
+void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
+    {
+#ifdef NOTNOW_MAY_NOT_BE_NEEDED
+    QPoint3d        points[4];
+    QPoint2d        params[4];
+    int32_t         indices[6] = {0, 1, 2, 1, 3, 2};
+    TriMeshArgs     triMesh;
+    
+    triMesh.m_numIndices = 6;
+    triMesh.m_vertIndex = indices;
+    triMesh.m_numPoints = 4;
+    triMesh.m_points = points;
+    triMesh.m_normals = nullptr;
+    triMesh.m_textureUV = params;
+    triMesh.m_texture = const_cast<Render::TextureP> (&tile);
+    triMesh.m_flags = 0;
+
+    for (size_t i=0; i<4; i++)
+        {
+        points[i].x = corners.m_pts[i].x;
+        points[i].y = corners.m_pts[i].y;
+        points[i].z = corners.m_pts[i].z;
+        }
+    
+    params[0].x = params[2].x = 0.0;
+    params[1].x = params[3].x = 1.0;
+    params[0].y = params[1].y = 0.0;
+    params[2].y = params[3].y = 1.0;
+
+    _AddTriMesh(triMesh);
+#endif
+    }
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
@@ -1644,6 +1724,7 @@ void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args) 
     {
+#ifdef NOTNOW_MAY_NOT_BE_NEEDED
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
     // Give output a chance to handle geometry directly...
@@ -1725,124 +1806,10 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
             m_processor._ProcessTriMesh(triMesh, *this);
             }
         }
+#endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
-    {
-    ClipAndProcessBody(geom);
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTextString(TextStringCR text)
-    {
-    ClipAndProcessText(text);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
-    {
-    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
-        {
-        _AddTextString(text);
-        }
-    else
-        {
-        TextStringPtr ts = text.Clone();
-        auto origin = ts->GetOrigin();
-        origin.z = zDepth;
-        ts->SetOrigin(origin);
-        _AddTextString(*ts);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
-    {
-    // NEEDSWORK...Draw box...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    john.gooding                    03/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors)
-    {
-    // NEEDSWORK...Provide option to handle/ignore...
-    enum {MAX_POINTS_PER_BATCH = 300};
-    if (0 == numPoints)
-        return;
-
-    // Don't risk stack overflow to get points buffer
-    int32_t maxPointsPerIter = MAX_POINTS_PER_BATCH;
-
-    if (numPoints < maxPointsPerIter)
-        maxPointsPerIter = numPoints;
-
-    DPoint3dP pointBuffer = (DPoint3dP)_alloca(maxPointsPerIter * sizeof (*pointBuffer));
-
-    // Convert float points to DPoints and add offset
-    FPoint3dCP currIn = points;
-    while (numPoints > 0)
-        {
-        if (m_context.CheckStop())
-            return;
-
-        uint32_t pointsThisIter = numPoints > maxPointsPerIter ? maxPointsPerIter : numPoints;
-
-        for (DPoint3dP  curr = pointBuffer; curr < pointBuffer + pointsThisIter; curr++, currIn++)
-            {
-            curr->x = currIn->x + origin.x;
-            curr->y = currIn->y + origin.y;
-            curr->z = currIn->z + origin.z;
-            }
-
-        _AddPointString(pointsThisIter, pointBuffer);
-        numPoints -= pointsThisIter;
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  2/2016
-//----------------------------------------------------------------------------------------
-void SimplifyGraphic::_AddTile(Render::TextureCR tile, Render::IGraphicBuilder::TileCorners const& corners)
-    {
-    FPoint3d                        points[4];
-    FPoint2d                        params[4];
-    int32_t                         indices[6] = {0, 1, 2, 1, 3, 2};
-    IGraphicBuilder::TriMeshArgs    triMesh;
-    
-    triMesh.m_numIndices = 6;
-    triMesh.m_vertIndex = indices;
-    triMesh.m_numPoints = 4;
-    triMesh.m_points = points;
-    triMesh.m_normals = nullptr;
-    triMesh.m_textureUV = params;
-    triMesh.m_texture = const_cast<Render::TextureP> (&tile);
-    triMesh.m_flags = 0;
-
-    for (size_t i=0; i<4; i++)
-        {
-        points[i].x = corners.m_pts[i].x;
-        points[i].y = corners.m_pts[i].y;
-        points[i].z = corners.m_pts[i].z;
-        }
-    
-    params[0].x = params[2].x = 0.0;
-    params[1].x = params[3].x = 1.0;
-    params[0].y = params[1].y = 0.0;
-    params[2].y = params[3].y = 1.0;
-
-    _AddTriMesh(triMesh);
-    }
- 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2381,7 +2348,7 @@ IGeometryProcessorR    m_processor;
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
     {
     return new SimplifyGraphic(params, m_processor, *this);
     }
@@ -2421,25 +2388,29 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
     context.VisitGeometry(source);
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr SimplifyGraphic::_Finish()
+    {
+    m_isOpen = false;
+    return new Base(GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& options)
+    {
+    return m_processor._DoLineStyleStroke(symb, options, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::_WantStrokePattern(PatternParamsCR pattern)
+    {
+    return m_processor._DoPatternStroke(pattern, *this);
+    }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                                                                                                                      

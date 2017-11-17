@@ -38,7 +38,7 @@ void SpriteLocation::Activate(ISpriteP sprite, DgnViewportP viewport, DPoint3dCR
     if (nullptr == sprite || nullptr == viewport)
         return;
 
-    viewport->SetNeedsRefresh();
+    viewport->InvalidateDecorations();
     m_viewport = viewport;
     sprite->AddRef();
     m_sprite   = sprite;
@@ -58,7 +58,7 @@ void SpriteLocation::Deactivate()
     if (!IsActive())
         return;
 
-    m_viewport->SetNeedsRefresh();
+    m_viewport->InvalidateDecorations();
     m_viewport = nullptr;
     m_sprite->Release();
     m_sprite = nullptr;

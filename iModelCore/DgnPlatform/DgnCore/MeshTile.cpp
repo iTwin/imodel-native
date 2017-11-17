@@ -12,10 +12,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
-#include <windows.h>
-#endif
-
 USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
@@ -26,8 +22,6 @@ static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 
 static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
-
-static Render::GraphicSet s_unusedDummyGraphicSet;
 
 END_UNNAMED_NAMESPACE
 
@@ -352,25 +346,7 @@ bool TileMesh::HasNonPlanarNormals() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    TileMesh::AddRenderTile(Render::IGraphicBuilder::TileCorners const& tileCorners, TransformCR transform)
-    {
-    for (size_t i=0; i<4; i++)
-        m_points.push_back(tileCorners.m_pts[i]);
-
-    transform.Multiply (m_points, m_points);                                                                                                                                                                                                                      
-    m_uvParams.push_back(DPoint2d::From(0.0, 0.0));
-    m_uvParams.push_back(DPoint2d::From(1.0, 0.0));
-    m_uvParams.push_back(DPoint2d::From(0.0, 1.0));
-    m_uvParams.push_back(DPoint2d::From(1.0, 1.0));
-
-    AddTriangle(TileTriangle(0, 1, 2, false));
-    AddTriangle(TileTriangle(1, 3, 2, false));
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam)
+void TileMesh::AddTriMesh(Render::TriMeshArgs const& triMesh, TransformCR transform, bool invertVParam)
     {
     m_points.resize(triMesh.m_numPoints);
 
@@ -380,26 +356,28 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
     if (nullptr != triMesh.m_textureUV)
         m_uvParams.resize(triMesh.m_numPoints);
 
-    for (int32_t i=0; i<triMesh.m_numPoints; i++)
+    for (uint32_t i=0; i<triMesh.m_numPoints; i++)
         {
-        transform.Multiply (m_points.at(i), DPoint3d::From((double) triMesh.m_points[i].x, (double) triMesh.m_points[i].y, (double) triMesh.m_points[i].z));
+        DPoint3d unquantizedPoint = triMesh.m_points[i].Unquantize(triMesh.m_pointParams);
+        transform.Multiply (m_points.at(i), unquantizedPoint.x, unquantizedPoint.y, unquantizedPoint.z);
+
         if (nullptr != triMesh.m_normals)
-            m_normals.at(i).Init((double) triMesh.m_normals[i].x, (double) triMesh.m_normals[i].y, (double) triMesh.m_normals[i].z);
+            m_normals[i] = triMesh.m_normals[i].Decode();
 
         if (nullptr != triMesh.m_textureUV)
-            m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
+            m_uvParams[i].Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
 #define DEFAULT_ATTRIBUTE_VALUE 1
 #ifdef DEFAULT_ATTRIBUTE_VALUE
         m_attributes.resize(triMesh.m_numPoints);
 
-        for (int32_t i=0; i<triMesh.m_numPoints; i++)
+        for (uint32_t i=0; i<triMesh.m_numPoints; i++)
             m_attributes[i] = DEFAULT_ATTRIBUTE_VALUE;
 
         m_validIdsPresent = true;
 #endif
     
-    for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
+    for (uint32_t i=0; i<triMesh.m_numIndices; i += 3)
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
     }
 
@@ -1546,14 +1524,37 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
+    // ###TODO: This is not ready for primetime...
+#ifdef GENERATE_FROM_TILE_TREE_DIRECTLY
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
-
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-    auto                getTileTree = nullptr == generateMeshTiles ? dynamic_cast<IGetTileTreeForPublishing*>(&model) : nullptr;
-    auto                getPublishedURL = nullptr == generateMeshTiles && nullptr == getTileTree ? dynamic_cast<IGetPublishedTilesetInfoP>(&model) : nullptr;
+    GeometricModelP     geometricModel = model.ToGeometricModelP();
+    bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
 
-    GeometricModelCP    geometricModel = model.ToGeometricModel();
+    if (!isModel3d)
+        surfacesOnly = false;
+
+
+    if (nullptr == geometricModel)
+        {
+        BeAssert (false);
+        return folly::makeFuture(TileGeneratorStatus::NoGeometry);
+        }
+
+    double          rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
+    double          minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
+    static  double  s_minLeafTolerance = 1.0E-6;
+
+    leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
+
+    return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
+#else
+    DgnModelPtr         modelPtr(&model);
+    auto                pCollector = &collector;
+    auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
+    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model); // ###TODO: empty interface; remove this once no longer needed
+    GeometricModelP     geometricModel = model.ToGeometricModelP();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
     if (!isModel3d)
@@ -1568,17 +1569,17 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
+#if 0 
     if (nullptr != getPublishedURL)
         {
         return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
         }
-    else if (nullptr != getTileTree)
-        {
-#ifndef SKIP_3MX
-        return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
-#else
-        return folly::makeFuture(TileGeneratorStatus::Success);
 #endif
+
+    if (nullptr != getTileTree)
+        {
+        // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
+        return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
         }
     else if (nullptr != generateMeshTiles)
         {
@@ -1626,8 +1627,9 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             return status;                           
             });
         }
-    }
 
+#endif
+    }
 
 
 
@@ -1886,7 +1888,6 @@ private:
     GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     Placement3dCR _GetPlacement() const override { return m_placement; }
 
-    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
@@ -1918,7 +1919,6 @@ private:
     GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     Placement2dCR _GetPlacement() const override { return m_placement; }
 
-    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
@@ -2589,7 +2589,8 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             if (0.0 == sheetSize.y)
                 sheetSize.y = 0.1;
 
-            Sheet::Model::DrawBorder (context, sheetSize);
+            auto border = Sheet::Model::CreateBorder (context, sheetSize);
+            context.OutputGraphic(*border, nullptr);
             PushCurrentGeometry();
             }
         }
@@ -2612,7 +2613,7 @@ private:
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
 
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
         {
         return new SimplifyGraphic(params, m_processor, *this);
         }
@@ -2640,14 +2641,14 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
+void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
     DgnGeometryPartCPtr     geomPart = m_processor.GetDgnDb().Elements().template Get<DgnGeometryPart>(partId);
 
     if (!geomPart.IsValid())
         {
 //      BeAssert(false);
-        return nullptr;
+        return;
         }
 
     static  size_t s_minInstancePartSize = 2000;
@@ -2663,9 +2664,8 @@ Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPa
         }
     else
         {
-        return T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
+        T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
         }
-    return nullptr;
     }
 
 };
@@ -2941,50 +2941,6 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     return meshes;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileUtil::WriteJsonToFile (WCharCP fileName, Json::Value const& value)
-    {
-    BeFile          outputFile;
-
-    if (BeFileStatus::Success != outputFile.Create (fileName))
-        return ERROR;
-   
-    Utf8String  string = Json::FastWriter().write(value);
-
-    return BeFileStatus::Success == outputFile.Write (nullptr, string.data(), string.size()) ? SUCCESS : ERROR;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
-    {
-    Json::Reader    reader;
-    ByteStream      inputData;
-    BeFile          inputFile;
-
-    return BeFileStatus::Success == inputFile.Open (fileName, BeFileAccess::Read) &&
-           BeFileStatus::Success == inputFile.ReadEntireFile (inputData) &&
-           reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value) ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString TileUtil::GetRootNameForModel(DgnModelId modelId)
-    {
-    WString name = L"Model";
-    name.append(1, '_');
-    WChar idBuf[17];
-    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), modelId.GetValue(), HexFormatOptions::None);
-    name.append(idBuf);
-    return name;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3131,6 +3087,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_materialId.GetValueUnchecked());
     TEST_EQUAL(m_textureImage.get());
     TEST_EQUAL(m_ignoreLighting);
+    TEST_EQUAL(m_class);
     TEST_EQUAL(m_linePixels);
     TEST_EQUAL(m_gradient);
     TEST_EQUAL(m_class);

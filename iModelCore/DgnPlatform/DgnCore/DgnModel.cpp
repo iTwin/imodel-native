@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
 #define MODEL_PROP_ParentModel "ParentModel"
@@ -39,6 +40,10 @@ void DgnModels::AddLoadedModel(DgnModelR model)
     model.m_persistent = true;
     BeMutexHolder _v_v(m_mutex);
     m_models.Insert(model.GetModelId(), &model);
+
+    auto geomModel = model.ToGeometricModelP();
+    if (nullptr != geomModel)
+        geomModel->InitLastElementModifiedTime();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +61,13 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::Empty()
     {
-    m_dgndb.Elements().Destroy(); // Has to be called before models are released.
+    // Tile-loader threads may be executing, so must release roots (and wait for loaders to cancel) first
+    // Must be done before destroying Elements because tile loaders may have ref-counted ptrs to elements
+    for (auto& kvp : m_models)
+        kvp.second->_Destroy();
+
+    // Has to be called before models are released.
+    m_dgndb.Elements().Destroy();
     m_models.clear();
     }
 
@@ -326,6 +337,15 @@ void SpatialModel::AddLights(Render::SceneLightsR lights, Render::TargetR target
         }
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialModel::OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
+    {
+    if (m_root.IsValid())
+        m_root->_OnProjectExtentsChanged(newExtents);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -848,12 +868,17 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::AddToRangeIndex(DgnElementCR element)
     {
+    // NB: We are relying on our knowledge that in order for the tile tree to exist, the range index must be non-null...
     if (nullptr == m_rangeIndex)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom)
+        {
         m_rangeIndex->AddElement(*geom);
+        if (geom->HasGeometry() && m_root.IsValid())
+            m_root->OnAddToRangeIndex(geom->CalculateRange3d(), element.GetElementId());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -861,12 +886,17 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     {
+    // NB: We are relying on our knowledge that in order for the tile tree to exist, the range index must be non-null...
     if (nullptr == m_rangeIndex)
         return;
 
     GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
+        {
         m_rangeIndex->RemoveElement(element.GetElementId());
+        if (m_root.IsValid())
+            m_root->OnRemoveFromRangeIndex(geom->CalculateRange3d(), element.GetElementId());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -874,6 +904,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
     {
+    // NB: We are relying on our knowledge that in order for the tile tree to exist, the range index must be non-null...
     if (nullptr == m_rangeIndex)
         return;
 
@@ -885,15 +916,32 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (nullptr == newGeom)
         return;
 
-    AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
-    AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
-
-    if (origBox.IsEqual(newBox)) // many changes don't affect range
-        return;
+    bool origHasGeom = origGeom->HasGeometry(),
+         newHasGeom  = newGeom->HasGeometry();
+    AxisAlignedBox3d origBox = origHasGeom ? origGeom->CalculateRange3d() : AxisAlignedBox3d(),
+                     newBox  = newHasGeom ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
 
     auto id = original.GetElementId();
-    m_rangeIndex->RemoveElement(id);
-    m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
+    if (!origBox.IsEqual(newBox)) // many changes don't affect range
+        {
+        m_rangeIndex->RemoveElement(id);
+        m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
+        }
+
+    if (m_root.IsValid())
+        {
+        if (origHasGeom)
+            {
+            if (newHasGeom)
+                m_root->OnUpdateRangeIndex(origBox, newBox, id);
+            else
+                m_root->OnRemoveFromRangeIndex(origBox, id);
+            }
+        else if (newHasGeom)
+            {
+            m_root->OnAddToRangeIndex(newBox, id);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1271,18 +1319,6 @@ DgnModelPtr DgnModels::GetModel(DgnModelId modelId)
     return dgnModel.IsValid() ? dgnModel : LoadDgnModel(modelId);
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  2/2016
-//----------------------------------------------------------------------------------------
-void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
-    {
-    for (auto iter : m_models)
-        {
-        if (iter.second.IsValid())
-            iter.second->_DropGraphicsForViewport(viewport);
-        }        
-    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1542,6 +1578,46 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
+    {
+    DgnDb::VerifyClientThread();
+
+    // NB: Reality models sometimes need to load the root outside of the context of a render system.
+    // ###TODO_ELEMENT_TILE: Eventually we may need to support multiple render systems within a single application
+    // - in that case will not want to discard another system's root.
+    if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))
+        m_root = _CreateTileTree(system);
+
+    return m_root.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::ReleaseTileTree()
+    {
+    // NB: We may be loading any number of tiles in background threads. We need to cancel them before destroying this model and its root.
+    // The root's destructor takes care of that.
+    // Why not do this in GeometricModel's destructor? Because loaders may invoke functions like _FillRangeIndex(), which will
+    // have become pure calls by the time we get to that destructor.
+    BeAssert(m_root.IsNull() || 1 == m_root->GetRefCount());
+    m_root = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr GeometricModel::_CreateTileTree(Render::SystemP system)
+    {
+    if (nullptr != system)
+        return ElementTileTree::Root::Create(*this, *system);
+    else
+        return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1921,3 +1997,48 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
 
     return iterator;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::InitLastElementModifiedTime()
+    {
+    if (0 != m_lastModifiedTime.load())
+        return;
+
+    // NB: We're using ECSql because ECDb persists datetime as floating-point julian day value...
+    constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=?";
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
+    stmt->BindId(1, GetModelId());
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        DateTime dt = stmt->GetValueDateTime(0);
+        int64_t unixMillis;
+        if (SUCCESS == dt.ToUnixMilliseconds(unixMillis))
+            {
+            m_lastModifiedTime.store(static_cast<uint64_t>(unixMillis));
+            }
+        else
+            {
+            BeAssert(false);
+            UpdateLastElementModifiedTime();
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::UpdateLastElementModifiedTime()
+    {
+    m_lastModifiedTime.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t GeometricModel::GetLastElementModifiedTime() const
+    {
+    return m_lastModifiedTime.load();
+    }
+

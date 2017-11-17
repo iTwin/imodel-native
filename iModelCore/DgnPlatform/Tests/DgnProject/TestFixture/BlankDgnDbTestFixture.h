@@ -19,7 +19,7 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/15
+* @bsimethod                                                    Umar.Hayat      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BlankDgnDbTestFixture : public ::testing::Test
     {

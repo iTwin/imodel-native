@@ -11,7 +11,7 @@
 #include <TilePublisher/TilePublisher.h>
 
 #define USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM using namespace BentleyApi::Dgn::TilePublish::Cesium;
-;
+
 BEGIN_BENTLEY_TILEPUBLISHER_NAMESPACE
 
 namespace Cesium
@@ -28,6 +28,12 @@ enum class GroundMode
     FixedPoint,         // Specified point is located at ground level.
 };
 
+enum class HistoryMode
+{
+    OmitHistory,
+    AddHistory,
+    OnlyHistory,
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -56,16 +62,20 @@ protected:
     PublisherContext::GlobeMode     m_globeMode = PublisherContext::GlobeMode::FromDisplayStyle;
 
     // History (WIP) requires IModel Hub connection.
-    bool                            m_wantHistory = false;
+    HistoryMode                     m_historyMode = HistoryMode::OmitHistory;
     Utf8String                      m_userName;
     Utf8String                      m_password;
     Utf8String                      m_environment;
     Utf8String                      m_project = "iModelHubTest";
     Utf8String                      m_repository;
+    bool                            m_copyScripts = true;
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
     PublisherParams () { }
+    PublisherParams(BeFileNameCR inputFileName, BeFileNameCR outputDir, WStringCR tilesetName, bool copyScripts=true)
+        : m_inputFileName(inputFileName), m_outputDir(outputDir), m_tilesetName(tilesetName), m_copyScripts(copyScripts) { }
+
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
@@ -78,13 +88,14 @@ public:
     bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
-    bool WantHistory() const { return m_wantHistory; }
     GeoPointCP GetGeoLocation() const { return m_geoLocated ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     PublisherContext::TextureMode GetTextureMode() const { return m_textureMode; }
     Utf8StringCR GetImageryProvider() const { return m_imageryProvider; }
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
     PublisherContext::GlobeMode GetGlobeMode() const { return m_globeMode; }
+    HistoryMode GetHistoryMode() const { return m_historyMode; }
+	bool WantCopyScripts() const { return m_copyScripts; }
 
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
@@ -115,6 +126,7 @@ protected:
     Status                      m_acceptTileStatus = Status::Success;
     bool                        m_verbose;
     bool                        m_wantProgressOutput;
+    bool                        m_copyScripts;
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR, IGetPublishedTilesetInfoR) override;
@@ -151,9 +163,11 @@ protected:
         void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, AxisAlignedBox3dCR projectExtents, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput, GlobeMode globeMode)
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, AxisAlignedBox3dCR projectExtents, BeFileNameCR outputDir, WStringCR tilesetName,
+        GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput,
+        GlobeMode globeMode, bool copyScripts=true)
         : PublisherContext(db, viewIds, outputDir, tilesetName, projectExtents, geoLocation, publishNonSurfaces, maxTilesetDepth, textureMode, globeMode),
-          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput)
+          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput), m_copyScripts(copyScripts)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(L"TileSets").AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -161,7 +175,7 @@ public:
 
     TilesetPublisher(DgnDbR db, AxisAlignedBox3dCR projectExtents, PublisherParamsR params, DgnViewIdSet const& viewsToPublish, DgnViewId defaultView, size_t maxTilesetDepth=5)
         : TilesetPublisher(db, viewsToPublish, defaultView, projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) { }
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode(), params.WantCopyScripts()) { }
 
     TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
 
@@ -193,7 +207,6 @@ public:
 struct TilesetHistoryPublisher : TilesetPublisher
 {
     TILEPUBLISHER_EXPORT static Status PublishHistory(Json::Value& revisionsJson, PublisherParamsCR params, TilesetPublisher& tilesetPublisher);
-
 };  // TilesetHistoryPublisher
 
 } // namespace Cesium

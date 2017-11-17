@@ -1699,24 +1699,72 @@ Transform GeometrySource::GetPlacementTransform() const
 void GeometrySource::SetUndisplayed(bool yesNo) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
+    if (nullptr != el)
+        el->GetDgnDb().Elements().SetUndisplayed(*el, yesNo);
+    }
 
-    if (nullptr == el)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::SetUndisplayed(DgnElementR el, bool isUndisplayed)
+    {
+    DgnDb::VerifyClientThread();
+    auto elemId = el.GetElementId();
+    if (!elemId.IsValid())
+        {
+        BeAssert(false);
         return;
+        }
 
-    el->m_flags.m_undisplayed = yesNo;
+    if (el.m_flags.m_undisplayed != isUndisplayed)
+        {
+        el.m_flags.m_undisplayed = isUndisplayed;
+        if (isUndisplayed)
+            m_undisplayedSet.insert(elemId);
+        else
+            m_undisplayedSet.erase(elemId);
+
+        T_HOST._OnUndisplayedSetChanged(GetDgnDb());
+        }
+
+    BeAssert(isUndisplayed == (m_undisplayedSet.end() != m_undisplayedSet.find(elemId)));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::_SetHilited(DgnElement::Hilited newState) const
+void GeometrySource::_SetHilited(bool hilited) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
+    if (nullptr != el)
+        el->GetDgnDb().Elements().SetHilited(*el, hilited);
+    }
 
-    if (nullptr == el)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::SetHilited(DgnElementR el, bool hilited)
+    {
+    DgnDb::VerifyClientThread();
+    auto elemId = el.GetElementId();
+    if (!elemId.IsValid())
+        {
+        BeAssert(false);
         return;
+        }
 
-    el->m_flags.m_hilited = (uint8_t) newState;
+    if (el.m_flags.m_hilited != hilited)
+        {
+        el.m_flags.m_hilited = hilited;
+        if (hilited)
+            m_hilitedSet.insert(elemId);
+        else
+            m_hilitedSet.erase(elemId);
+
+        T_HOST._OnHilitedSetChanged(GetDgnDb());
+        }
+
+    BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1730,7 +1778,7 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
         return;
 
     el->m_flags.m_inSelectionSet = yesNo; 
-    el->m_flags.m_hilited = (uint8_t) (yesNo ? DgnElement::Hilited::Normal : DgnElement::Hilited::None);
+    SetHilited(yesNo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4109,11 +4157,6 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 void  GeometricElement::_OnDeleted() const 
     {
     T_Super::_OnDeleted();
-    if (m_graphics.IsEmpty())
-        return;
-        
-    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
-    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4122,11 +4165,6 @@ void  GeometricElement::_OnDeleted() const
 void GeometricElement::_OnAppliedDelete() const 
     {
     T_Super::_OnAppliedDelete();
-    if (m_graphics.IsEmpty())
-        return;
-        
-    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
-    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4145,11 +4183,6 @@ void GeometricElement::_OnUpdateFinished() const
     {
     T_Super::_OnUpdateFinished(); 
     T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
-
-    if (m_graphics.IsEmpty())
-        return;
-    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
-    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4336,16 +4369,14 @@ DgnDbStatus GeometricElement3d::_OnInsert()
     if (!SpatialCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
         return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
 
-    m_dgndb.GetSceneQueue().AbortAll(); 
-
     return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_OnUpdate(DgnElementCR el) {m_dgndb.GetSceneQueue().AbortAll(); return T_Super::_OnUpdate(el);}
-DgnDbStatus GeometricElement3d::_OnDelete() const {m_dgndb.GetSceneQueue().AbortAll(); return T_Super::_OnDelete();}
+DgnDbStatus GeometricElement3d::_OnUpdate(DgnElementCR el) {return T_Super::_OnUpdate(el);}
+DgnDbStatus GeometricElement3d::_OnDelete() const {return T_Super::_OnDelete();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15

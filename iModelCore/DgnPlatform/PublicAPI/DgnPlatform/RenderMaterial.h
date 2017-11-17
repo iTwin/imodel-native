@@ -90,12 +90,14 @@ public:
         Type m_type;
 
         bool IsValid() const {return !m_value.isNull();}
-        DGNPLATFORM_EXPORT Render::Material::Trans2x3 GetTransform() const;
+        DGNPLATFORM_EXPORT Render::TextureMapping::Trans2x3 GetTransform() const;
         DGNPLATFORM_EXPORT DPoint2d GetScale() const;
         DGNPLATFORM_EXPORT DPoint2d GetOffset() const;
         DGNPLATFORM_EXPORT Units GetUnits() const;
-        DGNPLATFORM_EXPORT Render::Material::MapMode GetMode() const;
+        DGNPLATFORM_EXPORT Render::TextureMapping::Mode GetMode() const;
+        DGNPLATFORM_EXPORT Render::TextureMapping::Params GetTextureMapParams() const;
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
+        DGNPLATFORM_EXPORT double GetPatternWeight() const;
         Type GetType() const {return m_type;}
         DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;
         DgnTextureId Relocate(DgnImportContext& context);

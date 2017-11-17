@@ -149,8 +149,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     json["viewerOptions"] = viewerOptions;
 
     Json::Value     revisionsJson;
-    if (params.WantHistory() &&
-        TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
+    if (TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
         json["revisions"] = std::move(revisionsJson);
 
     if (Status::Success != (status = WriteAppJson (json)) ||
@@ -213,6 +212,9 @@ PublisherContext::Status TilesetPublisher::WriteHtmlFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::WriteScripts()
     {
+    if (!m_copyScripts)
+        return Status::Success;
+
     // Symlink the scripts, if not already present
     BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     scriptsSrcDir.AppendToPath(L"scripts");
@@ -269,6 +271,13 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params)
     {
+    if (HistoryMode::OnlyHistory == params.GetHistoryMode())
+        {
+        Json::Value     revisionsJson;
+
+        return TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this);
+        }
+
     auto status = InitializeDirectories(GetDataDirectory());
     if (Status::Success != status)
         return status;
@@ -382,7 +391,7 @@ void TilesetPublisher::GenerateModelNameList()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, PublisherContext::ClassifierInfo const* classifier) const
     {
-    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId()) : classifier->GetRootName();
+    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), false) : classifier->GetRootName();
 
     return tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }

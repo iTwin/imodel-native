@@ -9,6 +9,7 @@
 #include <ThreeMx/ThreeMxApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <TilePublisher/CesiumPublisher.h>
+#include <TilePublisher/CesiumTilePublisher.h>
 #include <Raster/RasterApi.h>
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include <ScalableMesh/ScalableMeshLib.h>
@@ -56,6 +57,8 @@ enum class ParamId
     Repository,
     GlobeOn,
     GlobeOff,
+    OnlyHistory,
+    AddHistory,
     Invalid,
 };
 
@@ -99,6 +102,8 @@ static CommandParam s_paramTable[] =
         { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
         { L"gl1", L"globeOn", L"Force globe on in all views", false, true },
         { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
+        { L"hi",  L"historyOnly", L"Publish only history", false, true },
+        { L"h+",  L"history", L"Publish history and TIP", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -290,10 +295,6 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
                 }
 
-            case ParamId::History:
-                m_wantHistory = true;
-                break;
-
             case ParamId::UserName:
                 m_userName = Utf8String(arg.m_value.c_str());
                 break;
@@ -323,6 +324,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_globeMode = PublisherContext::GlobeMode::Off;
                 break;
 
+            case ParamId::OnlyHistory:
+                m_historyMode = HistoryMode::OnlyHistory;
+                break;
+
+            case ParamId::AddHistory:
+                m_historyMode = HistoryMode::AddHistory;
+
             default:
                 LOG.errorv("Unrecognized command option %ls\n", av[i]);
                 return false;
@@ -330,7 +338,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         }
 
 
-    if (m_wantHistory)
+    if (HistoryMode::OmitHistory != m_historyMode)
         {
         if (m_userName.empty() || m_password.empty())
             {
@@ -377,26 +385,6 @@ static void printUsage(WCharCP exePath)
         LOG.infov("  --%ls=|-%ls=\t(%ls)\t%ls\n", cmdArg.m_verbose, cmdArg.m_abbrev, cmdArg.m_required ? L"required" : L"optional", cmdArg.m_descr);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void printStatus(PublisherContext::Status status)
-    {
-    static const Utf8CP s_msg[] =
-        {
-        "Publishing succeeded",
-        "No geometry to publish",
-        "Publishing aborted",
-        "Failed to write to base directory",
-        "Failed to create subdirectory",
-        "Failed to write scene",
-        "Failed to write node"
-        };
-
-    auto index = static_cast<uint32_t>(status);
-    Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
-    LOG.debugv("Result: %hs.\n", msg);
-    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -512,7 +500,12 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
+//#define DIRECT_CESIUM_PUBLISH
+#ifdef DIRECT_CESIUM_PUBLISH
+    CesiumDirect::DirectPublisher publisher(*db, createParams, viewsToPublish, defaultView);
+#else
     TilesetPublisher publisher(*db, db->GeoLocation().ComputeProjectExtents(), createParams, viewsToPublish, defaultView, s_maxTilesetDepth);
+#endif
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {
@@ -531,7 +524,21 @@ int wmain(int ac, wchar_t const** av)
             createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
             
     auto status = publisher.Publish (createParams);
-    printStatus(status);
+
+    static const Utf8CP s_msg[] =
+        {
+        "Publishing succeeded",
+        "No geometry to publish",
+        "Publishing aborted",
+        "Failed to write to base directory",
+        "Failed to create subdirectory",
+        "Failed to write scene",
+        "Failed to write node"
+        };
+
+    auto index = static_cast<uint32_t>(status);
+    Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
+    printf("Result: %hs.\n", msg);
 
     return static_cast<int>(status);
     }
