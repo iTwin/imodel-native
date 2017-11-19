@@ -377,18 +377,34 @@ UnitSynonymMap::UnitSynonymMap(Utf8CP unitName, Utf8CP synonym)
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
+// The description of the map could be either a plain text string <UnitName>,<synonym>
+//   or a Json text string that starts and ends by the "curvy brackets". If this is the case
+//    this function attempts to parse the string into a Json-object that will be used for
+//     populating the instance
 //----------------------------------------------------------------------------------------
 UnitSynonymMap::UnitSynonymMap(Utf8CP descr)
     {
-    bvector<Utf8String> tokens;
-    BeStringUtilities::Split(descr, ", ", nullptr, tokens);
-    if (tokens.size() != 2)
-        Init(nullptr, nullptr);
-    else
-        Init(tokens[0].c_str(), tokens[1].c_str());
+    Init(nullptr, nullptr);
+    if (nullptr != descr && *descr != '\0')
+        {
+        while (isspace(*descr)) descr++; // skip blanks
+        if ('{' == *descr) // indicator of the Json string
+            {
+            Json::Value jval (Json::objectValue);
+            Json::Reader::Parse(descr, jval);
+            LoadJson(jval);
+            }
+        else
+            {
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split(descr, ", ", nullptr, tokens);
+            if (tokens.size() == 2)
+                Init(tokens[0].c_str(), tokens[1].c_str());
+            }
+        }
     }
 
-UnitSynonymMap::UnitSynonymMap(Json::Value jval)
+void UnitSynonymMap::LoadJson(Json::Value jval)
     {
     m_unit = nullptr;
     m_synonym.clear();
@@ -403,11 +419,16 @@ UnitSynonymMap::UnitSynonymMap(Json::Value jval)
         paramName = iter.memberName();
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
-             unitName = val.asString();
+            unitName = val.asString();
         else if (BeStringUtilities::StricmpAscii(paramName, json_synonym()) == 0)
             synonym = val.asString();
         }
     Init(unitName.c_str(), synonym.c_str());
+    }
+
+UnitSynonymMap::UnitSynonymMap(Json::Value jval)
+    {
+    LoadJson(jval);
     }
 
 //----------------------------------------------------------------------------------------

@@ -21,6 +21,7 @@ UNITS_TYPEDEFS(SpecificAccuracy)
 UNITS_TYPEDEFS(UnitSynonymMap)
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
+BE_JSON_NAME(synonymMap)
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(synonym)
 
@@ -188,6 +189,7 @@ private:
     Utf8String m_synonym;
 
     UNITS_EXPORT void Init(Utf8CP unitName, Utf8CP synonym);
+    UNITS_EXPORT void LoadJson(Json::Value jval);
 public:
     UnitSynonymMap() { m_unit = nullptr; m_synonym.clear(); }
     UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym); 
@@ -248,7 +250,7 @@ public:
     UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
     UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
     UNITS_EXPORT Json::Value SynonymMapToJson();
-    UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);
+    UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);   
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

@@ -115,12 +115,35 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::ShowQuantity(98765.4321, "FT", "FT", "stop100-2u", nullptr);
     FormattingTestFixture::ShowQuantity(98765.4321, "FT", "FT", "stop100-2-4u", nullptr);
     FormattingTestFixture::ShowQuantity(98765.4321, "FT", "M", "stop1000-2-4u", nullptr);
-    Utf8CP custJ = "{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"StationFt\", \"SpecName\" : \"StationFt\", \"SpecType\" : \"numeric\"}";
+
+    LOG.info("\n========Using Dynamic Formats");
+
+    Utf8CP custJ = "{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \
+                    \"SpecAlias\" : \"StationFt\", \"SpecName\" : \"StationFt\", \"SpecType\" : \"numeric\"}";
 
     FormattingTestFixture::CustomFormatAnalyzer(98765.4321, "FT", custJ);
-    custJ = "{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\", \"statSeparator\":\"#\"}, \"SpecAlias\" : \"Station#Ft\", \"SpecName\" : \"Station#Ft\", \"SpecType\" : \"numeric\"}";
+
+    custJ = "{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\", \
+              \"statSeparator\":\"#\"}, \"SpecAlias\" : \"Station#Ft\", \"SpecName\" : \"Station#Ft\", \"SpecType\" : \"numeric\"}";
     FormattingTestFixture::CustomFormatAnalyzer(98765.4321, "FT", custJ);
 
+    custJ = "{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"CustomFT\", \"SpecName\" : \"CustomFT\", \"SpecType\" : \"composite\"}";
+    FormattingTestFixture::CustomFormatAnalyzer(23.5, "FT", custJ);
+    FormattingTestFixture::CustomFormatAnalyzer(23.5, "M", custJ);
+
+    custJ = "{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}}, \"NumericFormat\" : {\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"CustomFT\", \"SpecName\" : \"CustomFT\", \"SpecType\" : \"composite\"}";
+    FormattingTestFixture::CustomFormatAnalyzer(23.5, "FT", custJ);
+    FormattingTestFixture::CustomFormatAnalyzer(23.5, "M", custJ);
+
+    custJ = "{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"deg\", \"unitName\" : \"ARC_DEG\"}}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"CustomDeg\", \"SpecName\" : \"CustomDeg\", \"SpecType\" : \"composite\"}";
+    FormattingTestFixture::CustomFormatAnalyzer(23.5, "ARC_DEG", custJ);
+
+    custJ = "{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"CustomDeg\", \"SpecName\" : \"CustomDeg\", \"SpecType\" : \"composite\"}";
+    FormattingTestFixture::CustomFormatAnalyzer(123.25, "ARC_DEG", custJ);
+
+
+
+    LOG.info("\n========Using Dynamic Formats================ (end) \n");
 
     FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_MM");
     if (nacc.HasProblem())
@@ -154,6 +177,7 @@ TEST(FormattingTest, Preliminary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, StdFormatting)
     {
+    "{AddSynonym:{UnitName:\"FT\", Synonym:\"'\"";
 
     FormattingTestFixture::StdFormattingTest("stop100-2",   1517.23, "15+17.23");
     FormattingTestFixture::StdFormattingTest("stop1000-2",   1517.23, "1+517.23");
@@ -260,6 +284,9 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitSynonymMapTest("FT", "feet");
     FormattingTestFixture::UnitSynonymMapTest("ARC_DEG", u8"°");
     FormattingTestFixture::UnitSynonymMapTest("ARC_SECOND", "\"");
+    FormattingTestFixture::UnitSynonymMapTest("FT", u8"фут");
+
+    LOG.infov(L"Unicode text:  %ls = %ls", L"foot", L"фут");
 
     bvector<BEU::UnitSynonymMap> mapV;
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "feet");

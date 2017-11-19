@@ -40,6 +40,7 @@ struct FormattingTestFixture
     private:
         Utf8CP m_text;
     public:
+        static void LogMessage(Utf8CP format, va_list argptr);
         static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump);
         static void ShowSignature(Utf8CP txt, int tstN);
         static void ShowHexDump(Utf8String str, int len);

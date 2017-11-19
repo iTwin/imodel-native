@@ -26,6 +26,15 @@ static void* testFile = nullptr;
 /*=================================================================================**//**
 * @bsiclass                                     		David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/
+
+void FormattingTestFixture::LogMessage(Utf8CP format, va_list argptr)
+    {
+    /*WChar buf[512];
+    WString::VSprintf(WCharCP format, va_list argptr)
+    WCharP wp = BeStringUtilities::Utf8ToWChar(buf, txt, sizeof(buf));
+    LOG.infov("Signature Test%02d  >%s<================", tstN, txt);*/
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -977,8 +986,17 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     BEU::UnitSynonymMap other = BEU::UnitSynonymMap(jval);
     bool ident = map.IsIdentical(other);
     EXPECT_TRUE(map.IsIdentical(other));
-    LOG.infov("UnitSynonymMap(%s, %s) => json: %s (%s)", unitName, synonym, jval.ToString().c_str(), 
-                                                                     FormatConstant::BoolText(ident));
+    WString wName(unitName, true);
+    WString wSyn(synonym, true);
+    WString wJson(jval.ToString().c_str(), true);
+    WString wBool(FormatConstant::BoolText(ident), true);
+    WChar outStr[258];
+    memset(outStr, 0, sizeof(outStr));
+    BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName, wSyn, wJson, wBool);
+    LOG.infov(L"FormattedMapString: %ls", outStr);
+    LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName, wSyn, wJson, wBool);
+
+    //LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", unitName, synonym, jval.ToString().c_str(), FormatConstant::BoolText(ident));
     }
 
 void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
