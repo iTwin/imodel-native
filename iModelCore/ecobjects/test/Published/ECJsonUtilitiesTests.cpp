@@ -48,14 +48,14 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
     EXPECT_EQ(BeInt64Id(UINT64_C(12345678901231231231)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = "-10";
+    jsonStr = "-10"; // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
     ASSERT_EQ(SUCCESS, ParseJson(jsonCpp, jsonStr));
     EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(jsonCpp)) << jsonStr;
 
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
     EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = "3.14";
+    jsonStr = "3.14";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
     ASSERT_EQ(SUCCESS, ParseJson(jsonCpp, jsonStr));
     EXPECT_EQ(BeInt64Id(3), ECJsonUtilities::JsonToId<BeInt64Id>(jsonCpp)) << jsonStr << " floating numbers are rounded";
 
@@ -77,14 +77,14 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
     EXPECT_EQ(BeInt64Id(UINT64_C(1099511627775)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = R"json("-10")json";
+    jsonStr = R"json("-10")json";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
     ASSERT_EQ(SUCCESS, ParseJson(jsonCpp, jsonStr));
     EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(jsonCpp)) << jsonStr;
 
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
     EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = R"json("3.14")json";
+    jsonStr = R"json("3.14")json";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
     ASSERT_EQ(SUCCESS, ParseJson(jsonCpp, jsonStr));
     EXPECT_EQ(BeInt64Id(3), ECJsonUtilities::JsonToId<BeInt64Id>(jsonCpp)) << jsonStr << " floating numbers are rounded";
 
