@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ISelectProvider.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,6 +69,7 @@ struct ISelectProvider::SelectProperties
         WSCACHE_EXPORT void AddExtendedProperty(Utf8StringCR extendedProperty);
         WSCACHE_EXPORT const bvector<Utf8String>& GetExtendedProperties() const;
 
+        //! Set to true to select ECInstanceId and ECClassId
         WSCACHE_EXPORT void SetSelectInstanceId(bool selectInstanceId);
         WSCACHE_EXPORT bool GetSelectInstanceId() const;
 

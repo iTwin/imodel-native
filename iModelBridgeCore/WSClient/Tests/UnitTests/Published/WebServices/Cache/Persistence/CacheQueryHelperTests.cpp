@@ -32,6 +32,17 @@ ECSchemaPtr CacheQueryHelperTests::GetTestSchema()
     return schema;
     }
 
+struct TestSelectProvider : ISelectProvider
+    {
+    std::shared_ptr<SelectProperties> m_selectProperties;
+    int m_sortPrority = 0;
+    SortProperties m_sortProperties;
+
+    virtual std::shared_ptr<SelectProperties> GetSelectProperties(ECClassCR ecClass) const { return m_selectProperties; };
+    virtual int GetSortPriority(ECClassCR ecClass) const { return m_sortPrority; };
+    virtual SortProperties GetSortProperties(ECClassCR ecClass) const { return m_sortProperties; };
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -193,7 +204,7 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithSele
     auto infos = CacheQueryHelper(options).CreateReadInfos(schema->GetClassCP("Table"));
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
-    EXPECT_STREQ("SELECT instance.[Legs], instance.[Name], instance.[ECInstanceId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
+    EXPECT_STREQ("SELECT instance.[Legs], instance.[Name], instance.[ECInstanceId], instance.[ECClassId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,7 +220,7 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithSele
     auto infos = CacheQueryHelper(options).CreateReadInfos(schema->GetClassCP("Table"));
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
-    EXPECT_STREQ("SELECT instance.[ECInstanceId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
+    EXPECT_STREQ("SELECT instance.[ECInstanceId], instance.[ECClassId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,4 +237,40 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithRemo
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
     EXPECT_TRUE(Utf8String::npos != ecSql.find("JOIN ONLY [WSC].[CachedObjectInfo] info ON info.[InstanceId] = instance.ECInstanceId"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithInstanceIdSelected_SelectsClassAndInstanceIds)
+    {
+    auto schema = GetTestSchema();
+
+    TestSelectProvider provider;
+    provider.m_selectProperties = std::make_shared<ISelectProvider::SelectProperties>();
+    provider.m_selectProperties->SetSelectInstanceId(true);
+    provider.m_selectProperties->SetSelectAll(false);
+
+    auto infos = CacheQueryHelper(provider).CreateReadInfos(schema->GetClassCP("Table"));
+    auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
+
+    EXPECT_STREQ("SELECT instance.[ECInstanceId], instance.[ECClassId] FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithInstanceIdNotSelected_DoesNotSelectClassAndInstanceIds)
+    {
+    auto schema = GetTestSchema();
+
+    TestSelectProvider provider;
+    provider.m_selectProperties = std::make_shared<ISelectProvider::SelectProperties>();
+    provider.m_selectProperties->SetSelectInstanceId(false);
+    provider.m_selectProperties->SetSelectAll(false);
+
+    auto infos = CacheQueryHelper(provider).CreateReadInfos(schema->GetClassCP("Table"));
+    auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
+
+    EXPECT_STREQ("SELECT NULL FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
     }
