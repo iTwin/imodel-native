@@ -790,7 +790,7 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         Utf8String msg;
         msg.Sprintf("ECRelationshipClass '%s' contains 'AnyClass' as a constraint.  AnyClass is no longer supported and will be replaced with '%s.'",
                     relClass.GetFullName(), defaultConstraintClass->GetName().c_str());
-        context.ReportIssue(Converter::IssueSeverity::Warning, msg.c_str());
+        context.ReportIssue(Converter::IssueSeverity::Info, msg.c_str());
         }
     
     if (0 == constraint.GetConstraintClasses().size())
