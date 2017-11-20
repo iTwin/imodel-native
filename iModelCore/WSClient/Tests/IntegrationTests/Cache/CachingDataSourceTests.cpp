@@ -547,7 +547,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInva
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository_Succeedsd)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
