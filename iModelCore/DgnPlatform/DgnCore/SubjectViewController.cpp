@@ -91,30 +91,25 @@ void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOver
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::ToggleVisibility(DgnModelId modelId, bool isVisible)
     {
-#ifdef TODO_SUBJECT_OVERRIDES
-    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+    if (m_subjectColors.find(modelId) == m_subjectColors.end())
         return;
     
-    m_subjectColors[subjectId].SetLineTransparency(isVisible ? 0 : 255);
-    m_subjectColors[subjectId].SetFillTransparency(isVisible ? 0 : 255);
-#endif
+    m_subjectColors[modelId].SetAlpha(isVisible ? 0 : 255);
+    SetFeatureOverridesDirty();
     }
 
 //-------------------------------------------------------------------------------------------
 // @bsimethod 												Diego.Pinate 	11/17
 //-------------------------------------------------------------------------------------------
-bool     SubjectViewController::IsVisible(DgnModelId subjectId) const
+bool     SubjectViewController::IsVisible(DgnModelId modelId) const
     {
-#ifdef TODO_SUBJECT_OVERRIDES
-    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+    if (m_subjectColors.find(modelId) == m_subjectColors.end())
         {
         BeAssert(false && "Subject not found in View Controller.");
         return false;
         }
     
-    SubjectColorMap::const_iterator iter = m_subjectColors.find(subjectId);
-    Byte alpha = iter->second.GetFillColor().GetAlpha();
+    SubjectColorMap::const_iterator iter = m_subjectColors.find(modelId);
+    Byte alpha = iter->second.GetAlpha();
     return alpha == 0;
-#endif
-    return false;
     }
