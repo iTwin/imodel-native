@@ -37,13 +37,14 @@ struct Ellipsoid;
 
 class ScalableMeshAnalysis : public IScalableMeshAnalysis
     {
+    typedef BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection RayIntersection;
     private:
         IScalableMesh* m_scmPtr;
         int m_ThreadNumber;
         double m_unit2meter;
 
-        void _CreateCutVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
-        void _CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
+        void _CreateCutVolumeRanges(SMVolumeSegment& segment, bvector<RayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
+        void _CreateFillVolumeRanges(SMVolumeSegment& segment, bvector<RayIntersection>& _IPoints, DPoint3d& median, DVec3d& direction);
 
         //bool _InitGridFrom(ISMGridVolume& grid, double _resolutionMeter, const DRange3d& _rangeMesh, const DRange3d& _rangeRegion, double convertFactor = 1.0);
         bool _InitGridFrom(ISMGridVolume& grid, double _resolutionMeter, const DRange3d& _rangeMesh);
@@ -52,7 +53,12 @@ class ScalableMeshAnalysis : public IScalableMeshAnalysis
         bool _convertTo3SMSpace(const bvector<DPoint3d>& polygon, bvector<DPoint3d>& area);
         bool _convert3SMToWorld(IScalableMesh* _3sm, DPoint3d& pt);
         bool _convertWorldTo3SM(IScalableMesh* _3sm, DPoint3d& pt);
+        bool _convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* ewgs84, DPoint3d& pt);
+        bool _convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* ewgs84, const bvector<RayIntersection>& Hits,
+                                bvector<RayIntersection>& Hits_enu);
+
         bool _GetWorldRange(IScalableMesh *scm, DRange3d& _range);
+        DRange3d _ConvertToWorldRange(IScalableMesh *scmPtr, DRange3d& range3sm);
         bool _GetComputationRange(DRange3d& rangeInter, bool inWorld, const bvector<DPoint3d>& polygon, IScalableMesh *mesh1, IScalableMesh *mesh2, bool bAlignZ);
 
         DTMStatusInt _ComputeDiscreteVolumeWorld(const bvector<DPoint3d>& polygon, double resolution, ISMGridVolume& grid, ISMAnalysisProgressListener* pProgressListener);

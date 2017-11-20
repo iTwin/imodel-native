@@ -161,6 +161,70 @@ Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCent
     return ewgs84;
     }
 
+void DumpGrid(std::string filename, ISMGridVolume& grid)
+    {
+#ifdef SM_ANALYSIS_DEBUG
+    int m_xSize, m_ySize;
+    grid.GetGridSize(m_xSize, m_ySize);
+
+    std::ofstream f;
+    f.open(filename, ios_base::app);
+    f << setprecision(12);
+    f << "Dump Grid ====================== :: " << endl;
+    f << "Grid Size :: " << m_xSize << " , " << m_ySize << endl;
+    f << "Grid Resolution :: " << grid.m_resolution << endl;
+    f << "Grid Range :: low :" << grid.m_range.low.x << " , " << grid.m_range.low.y << " , " << grid.m_range.low.z << endl;
+    f << "Grid Range :: high :" << grid.m_range.high.x << " , " << grid.m_range.high.y << " , " << grid.m_range.high.z << endl;
+    f.close();
+#endif
+    }
+
+// Converts a 3sm range into a World Range
+DRange3d ScalableMeshAnalysis::_ConvertToWorldRange(IScalableMesh *scmPtr, DRange3d& range3sm)
+    {
+        DRange3d rangeW;
+        rangeW.initFrom(0, 0);
+        DPoint3d Corners[8];
+        range3sm.Get8Corners(Corners);
+        for (int k = 0; k < 8; k++)
+            {
+            DPoint3d pt = Corners[k];
+            _convert3SMToWorld(scmPtr, pt);
+            rangeW.Extend(pt);
+            }
+        return rangeW;
+    }
+
+// Convertion from Enu To World of points
+bool ScalableMeshAnalysis::_convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* ewgs84, DPoint3d& pt)
+{
+    if (scmPtr == nullptr || ewgs84 == nullptr)
+        return false;
+    DPoint3d convert = pt;
+    _convertWorldTo3SM(scmPtr, convert);
+    pt = ewgs84->ecef2enu(convert);
+    return true;
+}
+
+// Convertion from Enu To World of Hits
+bool ScalableMeshAnalysis::_convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* ewgs84, const bvector<RayIntersection>& Hits,
+                                              bvector<RayIntersection>& Hits_enu)
+{
+    if (scmPtr == nullptr || ewgs84 == nullptr)
+        return false;
+    for (auto h : Hits)
+    {
+        RayIntersection newhit = h;
+        DPoint3d convert = h.point;
+        _convertWorldToEnu(scmPtr, ewgs84, convert);
+        newhit.point = convert; // convert only the hit point
+        ///newhit.fraction = ??? ;  // fractions are already in meter and kept in meter
+        // normals ???
+        Hits_enu.push_back(newhit);
+    }
+    return true;
+}
+
 bool ScalableMeshAnalysis::_GetComputationParamsInEnu(DRange3d& rangeEnu, bvector<DPoint3d>& polygonEnu,
                                     Ellipsoid *ewgs84, const bvector<DPoint3d>& polygonWorld, IScalableMesh* diffMesh)
     {
@@ -237,6 +301,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     std::ofstream f;
     f.open("c:\\Dev\\logDebugGrid_sdk.txt", ios_base::app);
     f << "==  _ComputeDiscreteVolumeEcef() =============" << endl;
+    f << setprecision(12);
     for (auto pp : polygon)
         f << "Polygon :: " << pp.x << " , " << pp.y << " , " << pp.z << endl;
     f << "==============================================" << endl;
@@ -277,15 +342,13 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     polyface = polyfaceBuilder->GetClientMeshPtr();
 
     auto draping1 = m_scmPtr->GetDTMInterface()->GetDTMDraping();
-    bool isTerrain = true; // m_scmPtr->IsTerrain();
+    bool isTerrain = m_scmPtr->IsTerrain();
 
     bool *intersected = new bool[m_xSize*m_ySize];
     memset(intersected, 0, sizeof(bool)*m_xSize*m_ySize);
 
     double tolerance = std::numeric_limits<double>::min(); // intersection tolerance
     double zsource = rangeEnu.low.z - tolerance; // be sure to start under the range
-    double m_xStep = resolutionInMeter;
-    double m_yStep = resolutionInMeter;
 
     int numProcs = 1;
     if (numProcs > 1)
@@ -319,26 +382,29 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
         if (userAborted)
             continue;
 
-        double x = rangeEnu.low.x + m_xStep * i;
+        double x = rangeEnu.low.x + resolutionInMeter * i;
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); // added here because of parallelisation
 
         for (int j = 0; j < m_ySize; j++)
             {
             intersected[i*m_ySize + j] = false;
 
-            double y = rangeEnu.low.y + m_yStep * j;
+            double y = rangeEnu.low.y + resolutionInMeter * j;
             DPoint3d sourceEnu = DPoint3d::From(x, y, zsource);
             DPoint3d sourceEcef = ewgs84.enu2ecef(sourceEnu);
             DPoint3d sourceW = sourceEcef;
             _convert3SMToWorld(m_scmPtr, sourceW); // 3SM Intersection interface needs world coords
 
-            bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
+            bvector<RayIntersection> Hits;
             bool bret = draping1->IntersectRay(Hits, directionWorld, sourceW);
+
+            // Convert Hits in Enu
+            bvector<RayIntersection> Hits_enu;
+            _convertWorldToEnu(m_scmPtr, &ewgs84, Hits, Hits_enu);
 
             if (bret && Hits.size() > 0)
                 {
                         {
-                        DRay3d ray1 = DRay3d::FromOriginAndVector(sourceW, directionWorld);
                         DRay3d ray = DRay3d::FromOriginAndVector(sourceEnu, directionEnu);
                         DPoint3d polyHit; polyHit.Zero();
                         double rayFraction = 0;
@@ -358,18 +424,18 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
                             else
                                 {
                                 // add the intersection with the polygon in the hit list
-                                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
+                                RayIntersection rayInter;
                                 rayInter.point = polyHit;
                                 rayInter.rayFraction = rayFraction;
                                 rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
                                 rayInter.hasNormal = true;
-                                Hits.push_back(rayInter);
+                                Hits_enu.push_back(rayInter);
 
                                 DTMIntersectionCompare Comparator;
-                                std::sort(Hits.begin(), Hits.end(), Comparator); // sort by ray fraction
+                                std::sort(Hits_enu.begin(), Hits_enu.end(), Comparator); // sort by ray fraction
 
-                                _CreateFillVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
-                                _CreateCutVolumeRanges(aSegment, Hits, rayInter.point, grid.m_direction);
+                                _CreateFillVolumeRanges(aSegment, Hits_enu, rayInter.point, grid.m_direction);
+                                _CreateCutVolumeRanges(aSegment, Hits_enu, rayInter.point, grid.m_direction);
                                 }
 
                             if (aSegment.VolumeRanges.size() > 0)
@@ -395,9 +461,18 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     _FillGridVolumes(grid, intersected); // Sum the discrete volumes
 
     // Convert the range from Enu to World ???
+    // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
     DRange3d _range = grid.m_range;
     grid.m_range = ewgs84.enu2ecef(_range);
-    grid.m_isEcef = true;
+    _range = grid.m_range;
+    grid.m_range = _ConvertToWorldRange(m_scmPtr, _range);
+    double resUOR = grid.m_resolution / m_unit2meter;
+    grid.m_resolution = resUOR;
+    grid.m_isWorld = true;
+
+#ifdef SM_ANALYSIS_DEBUG
+    DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
+#endif
 
     if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;
@@ -532,7 +607,10 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
                     bret = draping2->IntersectRay(interP2, directionWorld, sourceW2); // second SM is supposed to be in same GCS
                     if (bret)
                         {
-                        interPoints[i*m_ySize + j] = DPoint2d::From(interP1.z, interP2.z);
+                        DPoint3d enu1=interP1, enu2=interP2;
+                        _convertWorldToEnu(m_scmPtr, &ewgs84, enu1);
+                        _convertWorldToEnu(diffMesh, &ewgs84, enu2);
+                        interPoints[i*m_ySize + j] = DPoint2d::From(enu1.z, enu2.z);
                         intersected[i*m_ySize + j] = true;
                         }
                     }
@@ -568,10 +646,19 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     // Sum the discrete volumes
     _FillGridVolumes(grid, intersected, m_unit2meter);
 
-    // Convert the range from Enu to World
+    // Convert the range from Enu to World ???
+    // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
     DRange3d _range = grid.m_range;
     grid.m_range = ewgs84.enu2ecef(_range);
-    grid.m_isEcef = true;
+    _range = grid.m_range;
+    grid.m_range = _ConvertToWorldRange(m_scmPtr, _range);
+    double resUOR = grid.m_resolution / m_unit2meter;
+    grid.m_resolution = resUOR;
+    grid.m_isWorld = true;
+
+#ifdef SM_ANALYSIS_DEBUG
+    DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
+#endif 
 
     if (!userAborted) // update only if not aborted
         report.m_workDone = 1.0;
