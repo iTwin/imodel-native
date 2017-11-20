@@ -110,6 +110,7 @@ struct SchemaReader final
         bool TryGetClassFromCache(ECN::ECClassP&, ECN::ECClassId) const;
         BentleyStatus LoadSchemaEntitiesFromDb(SchemaDbEntry*, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
         BentleyStatus LoadSchemaFromDb(SchemaDbEntry*&, ECN::ECSchemaId) const;
+        BentleyStatus LoadClassComponentsFromDb(Context&, ECN::ECClassR) const;
         BentleyStatus LoadPropertiesFromDb(Context&, ECN::ECClassR) const;
         BentleyStatus LoadBaseClassesFromDb(Context&, ECN::ECClassR) const;
         BentleyStatus LoadCAFromDb(ECN::IECCustomAttributeContainerR, Context&, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType) const;
