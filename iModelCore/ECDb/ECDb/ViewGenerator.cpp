@@ -74,17 +74,11 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
 
         ECClassCP ecClass = ecdb.Schemas().GetClass(classId);
         if (ecClass == nullptr)
-            {
-            BeAssert(false);
             return ERROR;
-            }
 
         ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
         if (classMap == nullptr)
-            {
-            BeAssert(false);
             return ERROR;
-            }
 
         if (classMap->GetType() == ClassMap::Type::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
             {

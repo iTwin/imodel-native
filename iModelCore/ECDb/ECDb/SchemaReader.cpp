@@ -277,13 +277,13 @@ ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
     {
     SchemaReader::Context ctx;
     ECClassCP ecclass = GetClass(ctx, ecClassId);
-    if (ecclass == nullptr)
-        return nullptr;
+    if (ecclass != nullptr)
+        {
+        if (SUCCESS == ctx.Postprocess(*this))
+            return ecclass;
+        }
 
-    if (SUCCESS != ctx.Postprocess(*this))
-        return nullptr;
-
-    return ecclass;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -419,31 +419,17 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     stmt = nullptr; //to release it, so that it can be reused without repreparation
 
     //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
-    schemaKey->m_loadedTypeCount++;
     m_classCache[ecClassId] = std::make_unique<ClassDbEntry>(*ecClass);
 
-    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ECContainerId(ecClassId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class))
-        return nullptr;
-
-    if (SUCCESS != LoadMixinAppliesToClass(ctx, *ecClass))
-        return nullptr;
-
-    if (SUCCESS != LoadBaseClassesFromDb(ctx, *ecClass))
-        return nullptr;
-
-    if (SUCCESS != LoadPropertiesFromDb(ctx, *ecClass))
-        return nullptr;
-
-    ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-    if (relClass != nullptr)
+    if (SUCCESS != LoadClassComponentsFromDb(ctx, *ecClass))
         {
-        if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Source))
-            return nullptr;
-
-        if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Target))
-            return nullptr;
+        //set the cache entry to nullptr if the class could not be loaded so that future calls will return nullptr without querying into the DB
+        //(It is not expected that a future call will succeed, so returning nullptr is correct)
+        m_classCache[ecClassId] = nullptr;
+        return nullptr;
         }
 
+    schemaKey->m_loadedTypeCount++;
     return ecClass;
     }
 
@@ -455,14 +441,51 @@ bool SchemaReader::TryGetClassFromCache(ECClassP& ecClass, ECClassId ecClassId) 
     if (!ecClassId.IsValid())
         return false;
 
-    auto classKeyIterator = m_classCache.find(ecClassId);
-    if (classKeyIterator != m_classCache.end())
+    auto it = m_classCache.find(ecClassId);
+    if (it != m_classCache.end())
         {
-        ecClass = classKeyIterator->second->m_cachedClass;
+        //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
+        //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
+        //can be returned right away.
+        if (it->second == nullptr)
+            ecClass = nullptr;
+        else
+            ecClass = it->second->m_cachedClass;
+
         return true;
         }
 
     return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::LoadClassComponentsFromDb(Context& ctx, ECN::ECClassR ecClass) const
+    {
+    if (SUCCESS != LoadCAFromDb(ecClass, ctx, ECContainerId(ecClass.GetId()), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class))
+        return ERROR;
+
+    if (SUCCESS != LoadMixinAppliesToClass(ctx, ecClass))
+        return ERROR;
+
+    if (SUCCESS != LoadBaseClassesFromDb(ctx, ecClass))
+        return ERROR;
+
+    if (SUCCESS != LoadPropertiesFromDb(ctx, ecClass))
+        return ERROR;
+
+    ECRelationshipClassP relClass = ecClass.GetRelationshipClassP();
+    if (relClass != nullptr)
+        {
+        if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, relClass->GetId(), ECRelationshipEnd_Source))
+            return ERROR;
+
+        if (SUCCESS != LoadRelationshipConstraintFromDb(relClass, ctx, relClass->GetId(), ECRelationshipEnd_Target))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

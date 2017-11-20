@@ -52,14 +52,12 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
         ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
         if (schema == nullptr)
             {
-            BeAssert(false && "Failed to reload a previously imported schema");
             LOG.errorv("Schema import failed. Failed to read schema %s from ECDb.", name.c_str());
             return ERROR;
             }
 
         if (!ValidateSchema(*schema))
             {
-            BeAssert(false && "Failed to validate a previously imported schema");
             LOG.errorv("Schema import failed. Failed to validate previously imported schema %s.", name.c_str());
             return ERROR;
             }
@@ -72,14 +70,12 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
         ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
         if (schema == nullptr)
             {
-            BeAssert(false && "Failed to reload imported schema");
             LOG.errorv("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
             return ERROR;
             }
 
         if (!ValidateSchema(*schema))
             {
-            BeAssert(false && "Failed to validate imported schema");
             LOG.errorv("Schema import failed. Failed to validate imported schema %s.", name.c_str());
             return ERROR;
             }

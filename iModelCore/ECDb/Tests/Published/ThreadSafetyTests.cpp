@@ -204,6 +204,51 @@ TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Majd.Uddin                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection_FailingGetClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="A">
+                    <ECProperty propertyName="Prop1" typeName="string" />
+                    <ECProperty propertyName="Prop2" typeName="int" />
+                </ECEntityClass>
+         </ECSchema>)xml")));
+
+    //modify the primitive type of Prop2 to an invalid value
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Property SET PrimitiveType=-1 WHERE Name='Prop2'"));
+    m_ecdb.SaveChanges();
+    ReopenECDb();
+
+    std::vector<BeThread> threads;
+    const uint32_t kThreadCount = BeThreadUtilities::GetHardwareConcurrency();
+    int counter = 0;
+    for (uint32_t i = 0; i < kThreadCount; ++i)
+        {
+        threads.push_back(BeThread::Start([&] ()
+            {
+            printf("Thread %Id starts ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+
+            for (int i = 0; i < 100; ++i)
+                {
+                ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+                EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown property primitive type";
+
+                EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+                }
+
+            printf("Thread %Id ends ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
+            }
+        ));
+        counter++;
+        }
+
+    BeThread::JoinAll(threads);
+    EXPECT_EQ(counter, kThreadCount);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Majd.Uddin                       12/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
