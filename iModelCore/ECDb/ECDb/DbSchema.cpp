@@ -551,6 +551,8 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
 //--------------------------------------------------------------------------------------
 BentleyStatus DbSchema::LoadTempTables() const
     {
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
+
     if (m_tempTablesAreLoaded)
         return SUCCESS;
 

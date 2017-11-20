@@ -129,11 +129,21 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         return ECSqlStatus::Success;
         }
 
+    if (ctx.MustLoadTempTables())
+        {
+        if (SUCCESS != m_ecdb.Schemas().GetDbMap().GetDbSchema().LoadTempTables())
+            {
+            m_ecdb.GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. The ECSQL targets ECClasses with the map strategy 'TemporaryTablePerHierarchy', but recreating the temporary tables failed. [Generated SQLite SQL: %s]", GetECSql(),
+                                                nativeSql.c_str());
+            return ECSqlStatus::Error;
+            }
+        }
+
     //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
     DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        GetECDb().GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
+        m_ecdb.GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
                                                         ECDb::InterpretDbResult(nativeSqlStat), m_ecdb.GetLastError().c_str(), nativeSql.c_str());
 
         //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually

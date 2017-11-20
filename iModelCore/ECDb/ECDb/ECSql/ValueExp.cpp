@@ -323,7 +323,7 @@ BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8S
     expList = arg.Find (Exp::Type::PropertyName, true);
     if (!expList.empty())
         {
-        msg.Sprintf("Invalid MemberFunctionCall expression '%s (...%s...)'. MemberFunctionCall cannot not contain PropertyPath. ", 
+        msg.Sprintf("Invalid MemberFunctionCall expression '%s'. Argument %s is invalid. A MemberFunctionCall expression cannot not contain a PropertyName expression. ", 
                     m_functionName.c_str(), expList.front()->ToString().c_str());
         
         return ERROR;
@@ -332,7 +332,7 @@ BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8S
     expList = arg.Find(Exp::Type::Select, true);
     if (!expList.empty())
         {
-        msg.Sprintf("Invalid MemberFunctionCall expression '%s (...%s...)'. MemberFunctionCall cannot not contain SubQueries. ",
+        msg.Sprintf("Invalid MemberFunctionCall expression '%s'. Argument %s is invalid. MemberFunctionCall expression cannot not contain SubQueries.",
                     m_functionName.c_str(), expList.front()->ToString().c_str());
 
         return ERROR;

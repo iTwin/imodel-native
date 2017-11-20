@@ -295,6 +295,35 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
     }
 
 //---------------------------------------------------------------------------------------
+//! The ChangedValue function is only intended for internal use by ECDb. Still ECDb makes sure it triggers
+//! loading the temp tables in case someone uses the function accidentally
+// @bsimethod                                Krischan.Eberle                  11/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, LoadTempTableForChangedValueFunction)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('hello',123)"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ChangedValue(1,'S','AfterInsert','Hello World') FROM ts.Foo1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_STRCASEEQ("Hello World", stmt.GetValueText(0));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, InvalidSummary)
