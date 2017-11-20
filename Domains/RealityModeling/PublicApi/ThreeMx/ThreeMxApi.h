@@ -177,7 +177,7 @@ private:
     SceneP Load(Dgn::Render::SystemP) const;
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
-    BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { classifiers = m_classifiers; return SUCCESS; }
+    BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override { classifiers = m_classifiers; return SUCCESS; }
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
