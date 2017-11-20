@@ -81,10 +81,10 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             //BeSQLite built-in functions
             {"SELECT 10 FROM ecsql.P WHERE NOT InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
-            //ECDb built-in functions
-            {"SELECT ChangedValue(1,'S','AfterInsert',NULL) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
-            {"SELECT ChangedValueStateToOpCode('BeforeUpdate') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
-            {"SELECT ChangedValueStateToOpCode(2) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            //ECDb built-in functions 
+            {"SELECT ChangedValue(1,'S','AfterInsert',NULL) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)}, //only for ECDb internal use
+            {"SELECT ChangedValueStateToOpCode('BeforeUpdate') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)}, //only for ECDb internal use
+            {"SELECT ChangedValueStateToOpCode(2) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)}, //only for ECDb internal use
         };
 
 
