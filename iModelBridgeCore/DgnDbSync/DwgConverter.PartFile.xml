@@ -273,7 +273,7 @@
     <!-- Documentation -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Dwg/Docs/BuildDoc.mke" OnlyPlatforms="x64">
-        <SubPart PartName="PublicAPI" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <RequiredRepository>DgnPlatform</RequiredRepository>
         <Bindings>
             <Directory SourceName="Delivery/docs" ProductDirectoryName="DwgImporterDocs" />
         </Bindings>
