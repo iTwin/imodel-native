@@ -146,7 +146,6 @@ bool ElementConverter::SchemaRemapper::_ResolveClassName(Utf8StringR serializedC
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const
     {
-#if defined(NEEDSWORK_PERFORMANCE)
     if (!m_convSchema.IsValid())
         {
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -203,7 +202,6 @@ bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializ
             return true;
         }
 
-#endif
     return false;
     }
 
