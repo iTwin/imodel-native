@@ -1054,8 +1054,20 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform)
+CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform, bool makeLinestring)
     {
+    if (makeLinestring)
+        {
+        static int32_t  s_nPoints = 100;
+        DPoint3dArray   points;
+        if (DwgDbStatus::Success == spline.GetSamplePoints(s_nPoints, points) && points.size() > 0)
+            {
+            if (nullptr != transform)
+                transform->Multiply (&points.front(), points.size());
+            return CurveVector::CreateLinear (&points.front(), points.size(), CurveVector::BOUNDARY_TYPE_Outer);
+            }
+        }
+
     DPoint3dArray       poles;
     DwgDbDoubleArray    knots, weights;
 
@@ -1142,9 +1154,10 @@ CurveVectorPtr  DwgHelper::CreateCurveVectorFrom (DwgDbObjectId entityId, Transf
     if (polyline3d.OpenStatus() == DwgDbStatus::Success)
         return  DwgHelper::CreateCurveVectorFrom (*polyline3d.get(), transform);
     
+    // drop Spline curve to linestring - currently BSpline curve does not seem to clip DgnView well, TFS#589853.
     DwgDbSplinePtr  spline(entityId, DwgDbOpenMode::ForRead);
     if (spline.OpenStatus() == DwgDbStatus::Success)
-        return  DwgHelper::CreateCurveVectorFrom (*spline.get(), transform);
+        return  DwgHelper::CreateCurveVectorFrom (*spline.get(), transform, true);
     
     DwgDbRegionPtr  region(entityId, DwgDbOpenMode::ForRead);
     if (region.OpenStatus() == DwgDbStatus::Success)
