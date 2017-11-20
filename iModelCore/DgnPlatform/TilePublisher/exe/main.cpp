@@ -49,7 +49,6 @@ enum class ParamId
     NoReplace,
     VerboseStatistics,
     TextureMode,
-    History,
     UserName,
     Password,
     Environment,
@@ -94,7 +93,6 @@ static CommandParam s_paramTable[] =
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
         { L"tx", L"textureMode", L"Texture mode - \"Embedded (default)\", \"External\", or \"Compressed\"", false, false },
-        { L"hi", L"history", L"Publish History (Requires credentials etc.)", false, true },
         { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
         { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
         { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
@@ -330,10 +328,13 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
 
             case ParamId::AddHistory:
                 m_historyMode = HistoryMode::AddHistory;
+                break;
+
 
             default:
                 LOG.errorv("Unrecognized command option %ls\n", av[i]);
                 return false;
+
             }
         }
 
@@ -359,7 +360,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
     if (m_outputDir.empty())
         m_outputDir = m_inputFileName.GetDirectoryName();
 
-    if (m_tilesetName.empty())
+    if (m_tilesetName.empty())                                                      
         {
         if (!m_inputFileName.empty())
             m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
