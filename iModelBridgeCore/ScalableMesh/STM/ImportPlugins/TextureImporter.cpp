@@ -298,7 +298,7 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
         else
             urlPtr = HFCURL::Instanciate(sourceRef.GetPathCStr());
 
-        const HFCPtr<HRFRasterFile> rasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(urlPtr, HFC_READ_ONLY));
+        const HFCPtr<HRFRasterFile> rasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(urlPtr, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
                         
         ContentDescriptor descriptor(CreateDescriptor(rasterFile));
 
