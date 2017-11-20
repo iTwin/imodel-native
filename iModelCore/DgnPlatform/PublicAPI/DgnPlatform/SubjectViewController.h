@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/ViewController.h>
 #include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/Render.h>
 #include <DgnPlatform/IAuxCoordSys.h>
 #include <DgnPlatform/ViewContext.h>
 #include <DgnPlatform/UpdatePlan.h>
@@ -21,6 +22,7 @@ DGNPLATFORM_TYPEDEFS(SubjectViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SubjectViewController)
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
@@ -32,7 +34,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SubjectViewController : SpatialViewController
     DEFINE_T_SUPER(SpatialViewController)
     friend struct SpatialViewDefinition;
 
-    typedef bmap<DgnElementId, Render::OvrGraphicParams> SubjectColorMap;
+    typedef bmap<DgnModelId, FeatureSymbologyOverrides::Appearance> SubjectColorMap;
 
 private:
     SubjectColorMap     m_subjectColors;
@@ -52,17 +54,12 @@ public:
     //! Toggles visibility of a specific subject
     //! @param[in] subjectId
     //! @param[in] isVisible
-    DGNPLATFORM_EXPORT void     ToggleVisibility(DgnElementId subjectId, bool isVisible);
+    DGNPLATFORM_EXPORT void     ToggleVisibility(DgnModelId modelId, bool isVisible);
 
     //! Returns true if a subject is visible
     //! @param[in] subjectId ID of the job subject
     //! @return true if job subject is visible
-    DGNPLATFORM_EXPORT bool     IsVisible(DgnElementId subjectId) const;
-
-    //! Sets overrides for a subject
-    //! @param[in] subjectId
-    //! @param[in] overrides
-    DGNPLATFORM_EXPORT void     SetOverrides(DgnElementId subjectId, Dgn::Render::OvrGraphicParamsR overrides);
+    DGNPLATFORM_EXPORT bool     IsVisible(DgnModelId modelId) const;
 
     //! Constructor
     DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view, DgnDbP db, SubjectColorMap const& subjectColors);
