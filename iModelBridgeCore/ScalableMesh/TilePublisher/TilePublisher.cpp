@@ -9,6 +9,9 @@
 #include "TilePublisher\TilePublisher.h"
 #include "Constants.h"
 
+#include "..\STM\ScalableMeshQuery.h"
+
+
 //USING_NAMESPACE_BENTLEY_DGN
 //USING_NAMESPACE_BENTLEY_RENDER
 //using namespace BentleyApi::Dgn::Render::Tile3d;
@@ -158,6 +161,43 @@ void TilePublisher::AppendUInt32(uint32_t value)
     {
     std::fwrite(&value, 1, sizeof(value), m_outputFile);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifndef VANCOUVER_API
+virtual TileMeshList ScalableMeshTileNode::_GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override
+#else
+TileMeshList ScalableMeshTileNode::_GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
+#endif
+    {   
+    TileMeshList        tileMeshes;
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(m_outputTexture, false, m_coverageID != -1);
+    auto meshP = m_node->GetMeshUnderClip2(flags, m_clips, m_coverageID, m_isClipBoundary);
+    if (!meshP.IsValid() || meshP->GetNbFaces() == 0) return tileMeshes;
+
+    TileMeshBuilderPtr      builder;
+    TileDisplayParamsPtr    displayParams;
+    
+    if (m_node->IsTextured() && m_outputTexture)
+        {
+        auto textureP = m_node->GetTextureCompressed();
+        ImageSource jpgTex(ImageSource::Format::Jpeg, ByteStream(textureP->GetData(), (uint32_t)textureP->GetSize()));
+        TileTextureImagePtr     tileTexture = TileTextureImage::Create(jpgTex);
+        displayParams = TileDisplayParams::Create(0xffffff, tileTexture, true);
+        }
+    else
+        {
+        TileTextureImagePtr     tileTexture = nullptr;
+        displayParams = TileDisplayParams::Create(0x007700, tileTexture, false);
+        }
+    builder = TileMeshBuilder::Create(displayParams, 0.0);
+    builder->AddPolyface(*meshP->GetPolyfaceQuery(), false);
+
+    tileMeshes.push_back(builder->GetMesh());
+    return tileMeshes;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/16

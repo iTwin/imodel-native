@@ -18,6 +18,10 @@
 #define SM_LISTING_FILE_NAME L"list.txt"
 #endif
 
+#ifndef SM_DISPLAY_QUERY_RESULTS
+#define SM_DISPLAY_QUERY_RESULTS L"displayQueryResults.txt"
+#endif
+
 //#define VANCOUVER_API
 #ifndef VANCOUVER_API   
 #include <DgnView/ViewManager.h>
