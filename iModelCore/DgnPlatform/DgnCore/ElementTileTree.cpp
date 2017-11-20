@@ -837,6 +837,7 @@ private:
     LoadContextCR   m_loadContext;
     bool            m_aborted = false;
     bool            m_anySkipped = false;
+    bool            m_is2d;
 
     bool CheckStop() { return m_aborted || (m_aborted = m_loadContext.WasAborted()); }
 
@@ -865,8 +866,8 @@ private:
         else if (!entry.m_range.IntersectsWith(m_range))
             return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        double sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
-        if (sizeSq >= m_minRangeDiagonalSquared)
+        double sizeSq = Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d) ? 0.0 : entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+        if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
             Insert(sizeSq, entry.m_id);
         else
             m_anySkipped = true;
@@ -875,7 +876,7 @@ private:
         }
 public:
     ElementCollector(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements)
-        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loadContext(loadContext)
+        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loadContext(loadContext), m_is2d(!rangeIndex.Is3d())
         {
         rangeIndex.Traverse(*this);
         }
