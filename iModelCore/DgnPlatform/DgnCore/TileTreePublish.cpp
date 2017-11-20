@@ -272,7 +272,7 @@ virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const
 virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const override 
     {
     if (m_context.m_outputTile.IsValid())
-		m_context.m_outputTile->AddTriMesh(args, m_context.m_transformFromDgn, m_context.m_clip);
+        m_context.m_outputTile->AddTriMesh(args, m_context.m_transformFromDgn, m_context.m_clip);
     return  nullptr;
     }
 
