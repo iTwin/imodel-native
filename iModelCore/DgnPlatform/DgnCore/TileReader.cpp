@@ -1608,7 +1608,7 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
     contentRange = header.contentRange;
     isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
 
-    Render::FeatureTable features(100000);
+    Render::FeatureTable features(model.GetModelId(), 100000);
     Render::Primitives::MeshBuilderMap builders(0.0, &features, DRange3d::NullRange(), false);
     DgnTile::Flags flags;
     auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());

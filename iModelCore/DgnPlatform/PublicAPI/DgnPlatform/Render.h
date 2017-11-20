@@ -2595,12 +2595,13 @@ struct FeatureTable
     typedef bmap<Feature, uint32_t> Map;
 private:
     Map         m_map;
+    DgnModelId  m_modelId;
     uint32_t    m_maxFeatures;
-    
 public:
-    explicit FeatureTable(uint32_t maxFeatures) : m_maxFeatures(maxFeatures) { }
-    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_maxFeatures(src.m_maxFeatures) { }
-    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_maxFeatures = src.m_maxFeatures; return *this; }
+    explicit FeatureTable(uint32_t maxFeatures) : FeatureTable(DgnModelId(), maxFeatures) { }
+    FeatureTable(DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
+    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
+    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_modelId = src.m_modelId; m_maxFeatures = src.m_maxFeatures; return *this; }
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
     uint32_t GetIndex(FeatureCR feature)
@@ -2641,6 +2642,7 @@ public:
         return false;
         }
 
+    DgnModelId GetModelId() const { return m_modelId; }
     uint32_t GetMaxFeatures() const { return m_maxFeatures; }
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
@@ -2658,6 +2660,7 @@ public:
     // Used by tile reader...
     void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
+    void SetModelId(DgnModelId modelId) { m_modelId = modelId; }
 };
 
 //=======================================================================================
@@ -2764,9 +2767,9 @@ struct FeatureSymbologyOverrides
         OvrGraphicParams ToOvrGraphicParams() const;
     };
 private:
-
     DgnElementIdSet                     m_alwaysDrawn;
     DgnElementIdSet                     m_neverDrawn;
+    bmap<DgnModelId, Appearance>        m_modelOverrides; // Appearance for all elements within models which have been explicitly overridden.
     bmap<DgnElementId, Appearance>      m_elementOverrides; // Appearance for elements which have been explicitly overridden.
     DgnSubCategoryIdSet                 m_visibleSubCategories;
     bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
@@ -2782,7 +2785,7 @@ public:
 
     // Returns false if the feature is invisible.
     // Otherwise, populates the feature's Appearance overrides
-    DGNPLATFORM_EXPORT bool GetAppearance(Appearance&, FeatureCR) const;
+    DGNPLATFORM_EXPORT bool GetAppearance(Appearance&, FeatureCR, DgnModelId) const;
     DGNPLATFORM_EXPORT bool IsFeatureVisible(FeatureCR) const;
     DGNPLATFORM_EXPORT bool IsSubCategoryVisible(DgnSubCategoryId) const;
     DGNPLATFORM_EXPORT bool IsClassVisible(DgnGeometryClass) const;
@@ -2790,6 +2793,10 @@ public:
     // NB: Appearance can override nothing, which prevents the default overrides from applying to it.
     DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance, bool replaceExisting=true);
     DGNPLATFORM_EXPORT void ClearElementOverrides(DgnElementId);
+
+    // Specify overrides for all elements within the specified model. These overrides take priority.
+    DGNPLATFORM_EXPORT void OverrideModel(DgnModelId, Appearance, bool replaceExisting=true);
+    DGNPLATFORM_EXPORT void ClearModelOverrides(DgnModelId);
 
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance, bool replaceExisting=true);
     DGNPLATFORM_EXPORT void ClearSubCategoryOverrides(DgnSubCategoryId);

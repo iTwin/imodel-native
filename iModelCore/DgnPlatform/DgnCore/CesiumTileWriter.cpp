@@ -595,7 +595,7 @@ struct RenderSystem : Render::System
     mutable DRange3d                    m_range;
     mutable FeatureTable               m_featureTable;
 
-    RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(s_maxFeatures)  { }
+    RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(model.GetModelId(), s_maxFeatures)  { }
 
     virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
