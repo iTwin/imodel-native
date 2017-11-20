@@ -726,7 +726,7 @@ public:
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
     //! The bridge may generate a schema dynamically, based on the content of the source files. Or, in the case of an update, the bridge can upgrade or change a previously generated schema. 
     //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas.
+    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas. The bridge *must* return a non-zero error status if LockSchemas fails.
     //! @note The bridge should *not* convert elements or models in this function.
     virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
 

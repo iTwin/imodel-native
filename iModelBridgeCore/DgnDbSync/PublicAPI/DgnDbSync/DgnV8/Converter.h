@@ -814,6 +814,9 @@ struct Converter
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
         L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
+        L10N_STRING(SchemaLockFailed)           // =="SchemaLockFailed"==
+        L10N_STRING(CouldNotAcquireLocksOrCodes) // =="CouldNotAcquireLocksOrCodes"==
+        L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
 
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -2167,7 +2170,7 @@ protected:
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
-    void MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
+    BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2481,7 +2484,7 @@ public:
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
 
-    DGNDBSYNC_EXPORT void MakeSchemaChanges();
+    DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
@@ -2571,7 +2574,7 @@ public:
     DGNDBSYNC_EXPORT void ConvertRootModel();
     DGNDBSYNC_EXPORT void ConvertTile(BeFileNameCR);
     DGNDBSYNC_EXPORT void FinishedConversion() {_FinishConversion(); _OnConversionComplete();}
-    DGNDBSYNC_EXPORT void MakeSchemaChanges();
+    DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 
 };
 

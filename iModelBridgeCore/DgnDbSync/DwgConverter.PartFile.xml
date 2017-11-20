@@ -45,6 +45,7 @@
     <!-- Build DwgImporter using OpenDWG Toolkit -->
     <Product Name="OpenDwgImporter">
         <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" /> <!-- This is here only for bb1 so it will trigger linking the partfile into the buildcontext which is needed for the DirectoryList -->
+        <SubPart PartName="Docs"                LibType="Dynamic"/>
         <SubPart PartName="OpenDwgImportExe" />
         <Directories DirectoryListName="OpenDwgConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList" />
@@ -107,6 +108,7 @@
     <!-- Build the default DwgImporter using RealDWG Toolkit -->
     <Product Name="RealDwgImporter" BuildInstallSet="true">
         <SubPart PartName="PublicAPI"           PartFile="DgnDbSync" /> <!-- This is here only for bb1 so it will trigger linking the partfile into the buildcontext which is needed for the DirectoryList -->
+        <SubPart PartName="Docs"                LibType="Dynamic"/>
         <SubPart PartName="RealDwgImportExe" />
         <Directories DirectoryListName="RealDwgConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList" />
@@ -176,6 +178,7 @@
         <ProductDirectory Name="VendorNotices"              Path="Notices" />
         <ProductDirectory Name="VendorNotices"              Path="Notices" LibType="static" />
         <ProductDirectory Name="BentleyEulaDelivery"        Path="Notices" />
+        <ProductDirectory Name="DwgImporterDocs"            Deliver="false" />
         <ProductDirectory Name="Assemblies"                 Deliver="false" LibType="static" />
         <ProductDirectory Name="Assemblies"                 Deliver="true"                  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="PublisherLoggingConfigXml"                                  RelativeTo="ApplicationRoot" />
@@ -187,6 +190,7 @@
     <!-- ****************************  Start temporary parts for AutoPlant Bridge 2017 ****************************** -->
     <!-- Build another DwgImporter with a different version of RealDwg Toolkit -->
     <Product Name="RealDwg2017Importer">
+        <SubPart PartName="Docs" LibType="Dynamic"/>
         <SubPart PartName="RealDwg2017ImportExe" />
         <Directories DirectoryListName="RealDwg2017ConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList" />
@@ -264,6 +268,15 @@
         <SubPart PartName="RealDwgBridge" />
     </Part>
 
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Documentation -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Dwg/Docs/BuildDoc.mke" OnlyPlatforms="x64">
+        <Bindings>
+            <Directory SourceName="Delivery/docs" ProductDirectoryName="DwgImporterDocs" />
+        </Bindings>
+    </Part>
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- DwgConverterTests -->

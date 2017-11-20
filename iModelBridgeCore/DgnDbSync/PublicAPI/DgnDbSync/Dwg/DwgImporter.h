@@ -65,7 +65,7 @@ public:
 
     //! Compute new name
     //! @param[out] newName The new name, if successful
-    //! @param[in] baseFilename The file that is being imported
+    //! @param[in] baseFileName The file that is being imported
     //! @return non-zero error status if no new name could be computed. In case of error, \a newName is not modified.
     BentleyStatus ComputeNewName(Utf8StringR newName, BeFileNameCR baseFileName) const;
 
@@ -188,12 +188,13 @@ struct IDwgChangeDetector
     typedef std::function<bool(DwgSyncInfo::ElementIterator::Entry const&, DwgImporter& converter)> T_DwgSyncInfoElementFilter;
 
     //! Called by a DwgImporter to detect if a DWG object is changed or new.
-    //! @param[out] prov    Information about the element that can be used to decide how or if to update it in the bim and how to record the change in syncinfo
-    //! @param[in] obj      A DWG object
-    //! @param[in] model    Mapping info for the DWG model that contains this DWG object
+    //! @param[out] results The information about what the change detector has found
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] id       The object ID of the DWG entity to check
+    //! @param[in] map      Mapping info for the DWG model that contains this DWG object
     //! @param[in] filter   Optional. Chooses among existing elements in DwgSyncInfo
     //! @return true if the element is new or has changed.
-    virtual bool _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter* f = nullptr) = 0;
+    virtual bool _IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR id, ResolvedModelMapping const& map, T_DwgSyncInfoElementFilter* filter = nullptr) = 0;
     //! @}
 
     //! @name Recording DWG content seen (so that we can deduce deletes)
@@ -205,11 +206,14 @@ struct IDwgChangeDetector
 
     //! Called when a DWG model is discovered. This callback should be invoked during the model-discovery phase,
     //! before the elements in the specified model are converted.
-    virtual void _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) = 0;
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] map      Mapping info for the DWG model
+    virtual void _OnModelSeen (DwgImporter& importer, ResolvedModelMapping const& map) = 0;
     //! Called when a DWG model is first mapped into the BIM.
-    //! @param rmm The DWG model and the DgnModel to which it is mapped
-    //! @param attachment If the DWG model is a root model, this will be nullptr. Otherwise, this will be the attachment that was used to reach the DWG model.
-    virtual void _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) = 0;
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] map      The DWG model and the DgnModel to which it is mapped
+    //! @param[in] xRef     The xref attachment if the DWG model is a root model, this will be nullptr. Otherwise, this would be the attachment that was used to reach the DWG model.
+    virtual void _OnModelInserted (DwgImporter& importer, ResolvedModelMapping const& map, DwgDbDatabaseCP xRef) = 0;
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{

@@ -110,6 +110,8 @@ public:
     void CloseBriefcase() override {m_briefcase = nullptr;}
 
     StatusInt AcquireLocks(LockRequest&, DgnDbR) override;
+
+    static bool SleepBeforeRetry();
 };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -36,24 +36,48 @@ BEGIN_DWGDB_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 class DwgDbEntity : public DWGDB_EXTENDCLASS(Entity)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Entity)
 
-public:
+    //! @return The AutoCAD Color Index (ACI).
     DWGDB_EXPORT uint16_t           GetColorIndex () const;
+    //! @return The color definition.
     DWGDB_EXPORT DwgCmColor         GetColor () const;
+    //! @return The entity color definition.
     DWGDB_EXPORT DwgCmEntityColor   GetEntityColor () const;
+    //! @return The object ID of the layer.
     DWGDB_EXPORT DwgDbObjectId      GetLayerId () const;
+    //! @return The object ID of the linetype.
     DWGDB_EXPORT DwgDbObjectId      GetLinetypeId () const;
+    //! @return The linetype scale factor applied to this entity.
     DWGDB_EXPORT double             GetLinetypeScale () const;
+    //! @return The lineweight on the entity.
     DWGDB_EXPORT DwgDbLineWeight    GetLineweight () const;
+    //! @return The object ID of the material.
     DWGDB_EXPORT DwgDbObjectId      GetMaterialId () const;
+    //! @return The transparency.
     DWGDB_EXPORT DwgTransparency    GetTransparency () const;
+    //! @return The visibility of the entity.  DwgDbVisibility::Visible, the entity is displayed.  DwgDbVisibility::Invisible, the entity is not display.
     DWGDB_EXPORT DwgDbVisibility    GetVisibility () const;
+    //! Get the Entity Coordinate System (ECS).
+    //! @param[out] ecs The full transformation of the entity.
     DWGDB_EXPORT void               GetEcs (TransformR ecs) const;
+    //! Get the grip points of the entity.
+    //! @param[out] points The grip points.
+    //! @param[out] snapModes The possible snap modes at each grip point, if not nullptr.
+    //! @param[out] geomIds The possible snap geometry IDS at each grip point, if not nullptr.
     DWGDB_EXPORT DwgDbStatus        GetGripPoints (DPoint3dArrayR points, DwgDbIntArrayP snapModes = nullptr, DwgDbIntArrayP geomIds = nullptr) const;
+    //! Get the range of the entity.
+    //! @param[out] range The geometrical extents of the entity.
     DWGDB_EXPORT DwgDbStatus        GetRange (DRange3dR range) const;
+    //! Draw the entity.
+    //! @param[out] geometry The interfaces to receive the geometries that are drawn by the toolkit.
+    //! @param[in] options The interfaces to control toolkit on drawing the entity.
+    //! @param[out] params The interfaces to get/set symbologies and other graphical traits.
     DWGDB_EXPORT void               Draw (IDwgDrawGeometryR geometry, IDwgDrawOptionsR options, IDwgDrawParametersR params);
+    //! Call AutoCAD command LIST to print entity properties as text strings.
     DWGDB_EXPORT void               List () const;
+    //! Get the drawable object of this entity.
     DWGDB_EXPORT DwgGiDrawablePtr   GetDrawable ();
     };  // DwgDbEntity
 DWGDB_DEFINE_OBJECTPTR (Entity)
@@ -63,9 +87,9 @@ DWGDB_DEFINE_OBJECTPTR (Entity)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbLine : public DWGDB_EXTENDCLASS(Line)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Line)
 
-public:
     DWGDB_EXPORT DPoint3d   GetStartPoint () const;
     DWGDB_EXPORT DPoint3d   GetEndPoint () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
@@ -78,9 +102,9 @@ DWGDB_DEFINE_OBJECTPTR (Line)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbPolyline : public DWGDB_EXTENDCLASS(Polyline)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Polyline)
 
-public:
     DWGDB_EXPORT bool       IsClosed () const;
     DWGDB_EXPORT size_t     GetNumPoints () const;
     DWGDB_EXPORT DPoint3d   GetPointAt (size_t index) const;
@@ -107,9 +131,9 @@ DWGDB_DEFINE_OBJECTPTR (Polyline)
 +===============+===============+===============+===============+===============+======*/
 class DwgDb2dPolyline : public DWGDB_EXTENDCLASS(2dPolyline)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(2dPolyline)
 
-public:
     DWGDB_EXPORT bool       IsClosed () const;
     DWGDB_EXPORT size_t     GetNumPoints () const;
     DWGDB_EXPORT bool       GetConstantWidth (double& width) const;
@@ -127,9 +151,9 @@ DWGDB_DEFINE_OBJECTPTR (2dPolyline)
 +===============+===============+===============+===============+===============+======*/
 class DwgDb3dPolyline : public DWGDB_EXTENDCLASS(3dPolyline)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(3dPolyline)
 
-public:
     enum Type
         {
         Simple      = DWGDB_SDKENUM_DB(k3dSimplePoly),
@@ -148,9 +172,9 @@ DWGDB_DEFINE_OBJECTPTR (3dPolyline)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbArc : public DWGDB_EXTENDCLASS(Arc)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Arc)
 
-public:
     DWGDB_EXPORT DPoint3d   GetCenter () const;
     DWGDB_EXPORT double     GetRadius () const;
     DWGDB_EXPORT double     GetStartAngle () const;
@@ -166,9 +190,9 @@ DWGDB_DEFINE_OBJECTPTR (Arc)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbCircle : public DWGDB_EXTENDCLASS(Circle)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Circle)
 
-public:
     DWGDB_EXPORT DPoint3d   GetCenter () const;
     DWGDB_EXPORT double     GetDiameter () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
@@ -181,9 +205,9 @@ DWGDB_DEFINE_OBJECTPTR (Circle)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbEllipse : public DWGDB_EXTENDCLASS(Ellipse)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Ellipse)
 
-public:
     DWGDB_EXPORT DPoint3d   GetCenter () const;
     DWGDB_EXPORT double     GetMajorRadius () const;
     DWGDB_EXPORT double     GetMinorRadius () const;
@@ -200,9 +224,9 @@ DWGDB_DEFINE_OBJECTPTR (Ellipse)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSpline : public DWGDB_EXTENDCLASS(Spline)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Spline)
 
-public:
     DWGDB_EXPORT DwgDbStatus    GetNurbsData (int16_t& degree, bool& rational, bool& closed, bool& periodic, DPoint3dArrayR poles, DwgDbDoubleArrayR knots, DwgDbDoubleArrayR weights, double& poleTol, double& knotTol) const;
     };  // DwgDbSpline
 DWGDB_DEFINE_OBJECTPTR (Spline)
@@ -212,9 +236,9 @@ DWGDB_DEFINE_OBJECTPTR (Spline)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbAttribute : public DWGDB_EXTENDCLASS(Attribute)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Attribute)
 
-public:
     DWGDB_EXPORT DPoint3d   GetOrigin () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
@@ -235,9 +259,9 @@ DWGDB_DEFINE_OBJECTPTR (Attribute)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbAttributeDefinition : public DWGDB_EXTENDCLASS(AttributeDefinition)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(AttributeDefinition)
 
-public:
     DWGDB_EXPORT DPoint3d   GetOrigin () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
@@ -256,9 +280,9 @@ DWGDB_DEFINE_OBJECTPTR (AttributeDefinition)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbViewport : public DWGDB_EXTENDCLASS(Viewport)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Viewport)
 
-public:
     DWGDB_EXPORT bool           IsOn () const;
     DWGDB_EXPORT bool           IsGridEnabled () const;
     DWGDB_EXPORT bool           IsUcsIconEnabled () const;
@@ -311,9 +335,9 @@ DWGDB_DEFINE_OBJECTPTR (Viewport)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbBlockReference : public DWGDB_EXTENDCLASS(BlockReference)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(BlockReference)
 
-public:
     DWGDB_EXPORT DwgDbObjectId  GetBlockTableRecordId () const;
     DWGDB_EXPORT DPoint3d       GetPosition () const;
     DWGDB_EXPORT void           GetBlockTransform (TransformR tranform) const;
@@ -332,9 +356,9 @@ DWGDB_DEFINE_OBJECTPTR (BlockReference)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbHatch : public DWGDB_EXTENDCLASS(Hatch)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Hatch)
 
-public:
     enum class HatchType        // == Super::HatchObjectType
         {
         Hatch               = 0,
@@ -368,9 +392,9 @@ DWGDB_DEFINE_OBJECTPTR (Hatch)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbRasterImage : public DWGDB_EXTENDCLASS(RasterImage)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(RasterImage)
     
-public:
     enum class ClipType     // == T_Super::ClipBoundaryType
         {
         Invalid,
@@ -491,9 +515,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbPointCloudEx : public DWGDB_EXTENDCLASS(PointCloudEx)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(PointCloudEx)
     
-public:
     DWGDB_EXPORT DwgDbStatus    TraversePointData (IPointsProcessor* processor, IPointsFilter* filter, PointCloudDataQuery::Type type, int lod) const;
     DWGDB_EXPORT void           GetEcs (TransformR ecs) const;
     DWGDB_EXPORT DPoint3d       GetLocation () const;
@@ -510,9 +534,9 @@ DWGDB_DEFINE_OBJECTPTR (PointCloudEx)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbPoint : public DWGDB_EXTENDCLASS(Point)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Point)
 
-public:
     DWGDB_EXPORT DPoint3d   GetPosition () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
@@ -524,9 +548,9 @@ DWGDB_DEFINE_OBJECTPTR (Point)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSolid : public DWGDB_EXTENDCLASS(Solid)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Solid)
 
-public:
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
     };  // DwgDbSolid
@@ -537,9 +561,9 @@ DWGDB_DEFINE_OBJECTPTR (Solid)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbShape : public DWGDB_EXTENDCLASS(Shape)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Shape)
 
-public:
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
     };  // DwgDbSolid
@@ -550,9 +574,9 @@ DWGDB_DEFINE_OBJECTPTR (Shape)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbTrace : public DWGDB_EXTENDCLASS(Trace)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Trace)
 
-public:
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
     };  // DwgDbTrace
@@ -563,9 +587,9 @@ DWGDB_DEFINE_OBJECTPTR (Trace)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbFace : public DWGDB_EXTENDCLASS(Face)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Face)
 
-public:
     DWGDB_EXPORT DwgDbStatus    GetVertexAt (DPoint3dR point, uint16_t index) const;
     DWGDB_EXPORT DwgDbStatus    GetTransform (TransformR ecs) const;
     DWGDB_EXPORT bool           IsPlanar () const;
@@ -577,9 +601,9 @@ DWGDB_DEFINE_OBJECTPTR (Face)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbRegion : public DWGDB_EXTENDCLASS(Region)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Region)
 
-public:
     DWGDB_EXPORT DVec3d     GetNormal () const;
     };  // DwgDbRegion
 DWGDB_DEFINE_OBJECTPTR (Region)
@@ -589,9 +613,9 @@ DWGDB_DEFINE_OBJECTPTR (Region)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbText : public DWGDB_EXTENDCLASS(Text)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(Text)
 
-public:
     DWGDB_EXPORT DPoint3d   GetPosition () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
