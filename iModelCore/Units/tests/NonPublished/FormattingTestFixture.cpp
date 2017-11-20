@@ -992,9 +992,9 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     WString wBool(FormatConstant::BoolText(ident), true);
     WChar outStr[258];
     memset(outStr, 0, sizeof(outStr));
-    BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName, wSyn, wJson, wBool);
+    BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
     LOG.infov(L"FormattedMapString: %ls", outStr);
-    LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName, wSyn, wJson, wBool);
+    LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
 
     //LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", unitName, synonym, jval.ToString().c_str(), FormatConstant::BoolText(ident));
     }
