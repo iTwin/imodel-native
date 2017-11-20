@@ -209,7 +209,14 @@ TEST_F(EventTests, MultipleCallbacksTest)
 
     // Act and wait for events
     CreateAndPushModel(briefcase);
-    BeThreadUtilities::BeSleep(3000);
+
+    for(int i = 0; i < 20; i++)
+        {
+        if (4 == callbackNum1 && 1 == callbackNum2)
+            break;
+
+        BeThreadUtilities::BeSleep(1000);
+        }
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback1)->GetResult());
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback2)->GetResult());
