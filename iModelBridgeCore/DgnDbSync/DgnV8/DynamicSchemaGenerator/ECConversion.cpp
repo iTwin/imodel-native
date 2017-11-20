@@ -969,6 +969,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              }
          }
 
+     schemas.clear();
+     m_schemaReadContext->GetCache().GetSchemas(schemas);
      for (BECN::ECSchemaP schema : schemas)
          {
          if (schema->IsSupplementalSchema())
@@ -2135,7 +2137,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
     constSchemas.erase(removeAt, constSchemas.end());
 
-//#define EXPORT_BISIFIEDECSCHEMAS 1
+#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {
     BeFileName bimFileName = GetDgnDb().GetFileName();
