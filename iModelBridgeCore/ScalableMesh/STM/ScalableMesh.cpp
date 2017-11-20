@@ -430,6 +430,11 @@ void IScalableMesh::CompactExtraFiles()
 	return _CompactExtraFiles();
 }
 
+void IScalableMesh::WriteExtraFiles()
+{
+	return _WriteExtraFiles();
+}
+
 void IScalableMesh::GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
     return _GetCurrentlyViewedNodes(nodes);
@@ -2710,6 +2715,16 @@ template <class POINT>  void                    ScalableMesh<POINT>::_CompactExt
 
 	m_scmIndexPtr->GetDataStore()->CompactProjectFiles();
    }
+
+template <class POINT>  void                    ScalableMesh<POINT>::_WriteExtraFiles()
+{
+	assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+
+	if (m_scmIndexPtr->m_isInsertingClips == true)
+		return;
+
+	m_scmIndexPtr->GetDataStore()->WriteClipDataToProjectFilePath();
+}
 
 template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
