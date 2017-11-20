@@ -121,6 +121,7 @@ struct DynamicSchemaGenerator
 
     BentleyStatus ConsolidateV8ECSchemas();
     BentleyStatus MergeV8ECSchemas(struct ECSchemaXmlDeserializer& deserializer, bmap<Utf8String, bvector<bpair<ECN::SchemaKey, Utf8String>>> const& schemaXmlMap) const;
+    void SwizzleOpenPlantSupplementals(bvector<BECN::ECSchemaPtr>& tmpSupplementals, BECN::ECSchemaP primarySchema, bvector<BECN::ECSchemaP> supplementalSchemas);
     BentleyStatus SupplementV8ECSchemas();
     BentleyStatus ConvertToBisBasedECSchemas();
     BentleyStatus ImportTargetECSchemas();

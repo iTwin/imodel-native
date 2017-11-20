@@ -969,6 +969,18 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              }
          }
 
+     for (BECN::ECSchemaP schema : schemas)
+         {
+         if (schema->IsSupplementalSchema())
+             continue;
+         if (!ECN::ECSchemaConverter::Convert(*schema, false))
+             {
+             Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
+             ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+             return BentleyApi::BSIERROR;
+             }
+         }
+
 //#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
      if (m_flattenedRefs.size() > 0)
@@ -997,6 +1009,61 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 #endif
 
      return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchemaPtr>& tmpSupplementals, BECN::ECSchemaP primarySchema, bvector<BECN::ECSchemaP> supplementalSchemas)
+    {
+    bool foundSupplemental = false;
+    bvector<BECN::ECSchemaP> units;
+    for (BECN::ECSchemaP supp : supplementalSchemas)
+        {
+        if (supp->GetName().StartsWithIAscii("OpenPlant_3D_Supplemental_Units"))
+            foundSupplemental = true;
+        else if (supp->GetName().StartsWithIAscii("OpenPlant_Supplemental_Units"))
+            units.push_back(supp);
+        }
+    if (!foundSupplemental)
+        {
+        for (BECN::ECSchemaP unitSchema : units)
+            {
+            BECN::ECSchemaPtr op3d;
+            if (BECN::ECObjectsStatus::Success != unitSchema->CopySchema(op3d))
+                {
+                Utf8String error;
+                error.Sprintf("Failed to create an OpenPlant_3D copy of the units schema '%s'; Unit information will be unavailable. See log file for details.", Utf8String(unitSchema->GetName()).c_str());
+                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                continue;
+                }
+
+            Utf8String oldName(op3d->GetName().c_str());
+            oldName.ReplaceAll("OpenPlant", "OpenPlant_3D");
+            op3d->SetName(oldName);
+            BECN::SupplementalSchemaMetaDataPtr metaData;
+            if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
+                {
+                Utf8String error;
+                error.Sprintf("Failed to get supplemental metadata from supplemental units schema '%s'; Unit information will be unavailable. See log file for details.", Utf8String(unitSchema->GetName()).c_str());
+                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                continue;
+                }
+            BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
+            op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
+            Utf8String newName(metaData->GetPrimarySchemaName());
+            newName.ReplaceAll("OpenPlant", "OpenPlant_3D");
+            BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
+                                                                                                       metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
+            if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
+                {
+                BECN::ECClassP nonConstClass = const_cast<BECN::ECClassP>(&instance->GetClass());
+                op3d->AddReferencedSchema(nonConstClass->GetSchemaR());
+                }
+            BECN::SupplementalSchemaMetaData::SetMetadata(*op3d, *newMetaData);
+            tmpSupplementals.push_back(op3d);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1056,13 +1123,22 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             supplementalSchemas.push_back(supplementalSchema.get ());
             }
         }
-    // _AddSupplementalSchemas(supplementalSchemas, *m_schemaReadContext);
+
+    bvector<BECN::ECSchemaPtr> tmpSupplementals;
     for (BECN::ECSchemaP primarySchema : primarySchemas)
         {
         if (primarySchema->IsSupplemented())
             {
             BeAssert(false && "V8 primary schemas are not expected to be supplemented already when deserialized from XML.");
             continue;
+            }
+
+        // Later versions of OP3D don't use a separate units schema for supplementation.  Instead, they share the OpenPlant version.  
+        if (primarySchema->GetName().EqualsIAscii("OpenPlant_3D"))
+            {
+            SwizzleOpenPlantSupplementals(tmpSupplementals, primarySchema, supplementalSchemas);
+            for (BECN::ECSchemaPtr supp : tmpSupplementals)
+                supplementalSchemas.push_back(supp.get());
             }
 
         BECN::SupplementedSchemaBuilder builder;
@@ -1072,12 +1148,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             error.Sprintf("Failed to supplement ECSchema '%s'. See log file for details.", Utf8String(primarySchema->GetName ()).c_str());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
-            }
-        if (!ECN::ECSchemaConverter::Convert(*primarySchema, false))
-            {
-            Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", primarySchema->GetFullSchemaName().c_str());
-            ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-            return BentleyApi::BSIERROR;
             }
         }
 
@@ -1106,6 +1176,9 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
     {
     for (ECN::IECInstancePtr instance : sourceContainer.GetCustomAttributes(true))
         {
+        if (instance->GetClass().GetName().Equals("CalculatedECPropertySpecification") && instance->GetClass().GetSchema().GetName().Equals("Bentley_Standard_CustomAttributes"))
+            continue;
+
         ECN::ECSchemaPtr flatCustomAttributeSchema = m_flattenedRefs[instance->GetClass().GetSchema().GetName()];
         if (!flatCustomAttributeSchema.IsValid())
             {
@@ -1122,6 +1195,9 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
+        if (!ECN::ECSchema::IsSchemaReferenced(*targetContainer.GetContainerSchema(), *flatCustomAttributeSchema))
+            targetContainer.GetContainerSchema()->AddReferencedSchema(*flatCustomAttributeSchema);
+
         targetContainer.SetCustomAttribute(*copiedCA);
         }
     return BSISUCCESS;
