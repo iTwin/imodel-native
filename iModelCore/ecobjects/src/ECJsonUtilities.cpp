@@ -136,13 +136,16 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& int64Val, JsonValueCR json)
         return SUCCESS;
         }
 
-    if (json.isConvertibleTo(Json::ValueType::intValue))
+    if (json.isNumeric())
         {
-        int64Val = json.asInt64();
+        if (json.isUInt())
+            int64Val = json.asUInt64();
+        else
+            int64Val = json.asInt64();
+
         return SUCCESS;
         }
 
-    BeAssert(false);
     return ERROR;
     }
 
@@ -390,7 +393,7 @@ void ECJsonUtilities::Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::
             case ECJsonInt64Format::AsDecimalString:
             {
             char str[32];
-            const int len = sprintf(str, "%" PRId64, val);
+            const int len = sprintf(str, "%" PRIi64, val);
             json.SetString(str, len, allocator);
             return;
             }
@@ -420,7 +423,15 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
 
     if (json.IsNumber())
         {
-        val = json.GetInt64();
+        if (json.IsInt() || json.IsInt64())
+            val = json.GetInt64();
+        else if (json.IsUint() || json.IsUint64())
+            val = json.GetUint64();
+        else if (json.IsFloat() || json.IsDouble())
+            val = (int64_t) json.GetDouble();
+        else
+            return ERROR;
+
         return SUCCESS;
         }
 
@@ -438,7 +449,6 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
         return SUCCESS;
         }
 
-    BeAssert(false);
     return ERROR;
     }
 
