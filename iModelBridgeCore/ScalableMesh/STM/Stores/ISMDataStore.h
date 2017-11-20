@@ -276,6 +276,8 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 		-----------------------------------------------------------------------------*/
 		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) {};
 
+		virtual void WriteClipDataToProjectFilePath() = 0;
+
         /**----------------------------------------------------------------------------
          Get the next node ID available.
         -----------------------------------------------------------------------------*/

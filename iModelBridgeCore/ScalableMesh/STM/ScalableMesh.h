@@ -339,6 +339,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
 		virtual void                               _CompactExtraFiles() override;
 
+		virtual void                               _WriteExtraFiles() override;
+
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
@@ -555,6 +557,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return;
             }
 		virtual void                               _CompactExtraFiles() override {}
+
+		virtual void                               _WriteExtraFiles() override {}
 
         virtual bool                               _ShouldInvertClips() override { return false; }
 

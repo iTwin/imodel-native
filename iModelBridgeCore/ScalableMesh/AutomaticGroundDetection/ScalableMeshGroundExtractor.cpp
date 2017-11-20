@@ -401,6 +401,8 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 	SMStatus status;
             
 	StatusInt statusOpen;
+
+	BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(m_smTerrainPath.c_str()).c_str());
     IScalableMeshSourceCreatorPtr terrainCreator(IScalableMeshSourceCreator::GetFor(m_smTerrainPath.c_str(), statusOpen));
 
     assert(statusOpen == SUCCESS);
