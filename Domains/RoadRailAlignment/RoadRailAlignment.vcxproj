@@ -30,6 +30,7 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPair.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairEditor.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairIntersection.h" />
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentProfileViewDefinition.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentReferent.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryDebug.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryHelper.h" />
@@ -50,6 +51,7 @@
     <ClCompile Include="AlignmentPair.cpp" />
     <ClCompile Include="AlignmentPairEditor.cpp" />
     <ClCompile Include="AlignmentPairIntersection.cpp" />
+    <ClCompile Include="AlignmentProfileViewDefinition.cpp" />
     <ClCompile Include="AlignmentReferent.cpp" />
     <ClCompile Include="GeometryDebug.cpp" />
     <ClCompile Include="GeometryHelper.cpp" />
