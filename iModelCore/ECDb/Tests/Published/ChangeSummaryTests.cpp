@@ -89,7 +89,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
 
     void DumpChangeSummary(ECInstanceId changeSummaryId, Utf8CP label) const
         {
-//#ifdef DUMP_CHANGE_SUMMARY
+#ifdef DUMP_CHANGE_SUMMARY
         printf("%s\r\n", label);
         printf("-----------------\r\n");
 
@@ -161,7 +161,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
             propValueChangeStmt.Reset();
             propValueChangeStmt.ClearBindings();
             }
-//#endif
+#endif
         }
 
     static Utf8CP ChangedOpCodeToString(ChangeOpCode opCode)
@@ -1033,41 +1033,12 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    // Insert Employee - FirstName, LastName
-    // Insert Company - Name
-    // Insert Hardware - Make (String), Model (String)
-    // Insert EmployeeCompany - End Table relationship (Company__trg_11_id)
-    // Insert EmployeeHardware - Link Table relationship
-
-    ECSqlStatement statement;
-    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
-    ECInstanceKey employeeKey;
-    DbResult stepStatus = statement.Step(employeeKey);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
-    ECInstanceKey companyKey1;
-    stepStatus = statement.Step(companyKey1);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
-    ECInstanceKey companyKey2;
-    stepStatus = statement.Step(companyKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
-    ECInstanceKey hardwareKey1;
-    stepStatus = statement.Step(hardwareKey1);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
-    ECInstanceKey hardwareKey2;
-    stepStatus = statement.Step(hardwareKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+    ECInstanceKey employeeKey, companyKey1, companyKey2, hardwareKey1, hardwareKey2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(employeeKey, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(companyKey1, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(companyKey2, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(hardwareKey1, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(hardwareKey2, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')"));
 
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
@@ -1105,7 +1076,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     m_ecdb.SaveChanges();
     tracker.Restart();
 
-    statement.Finalize();
+    ECSqlStatement statement;
     statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
     statement.BindId(1, employeeKey.GetClassId());
     statement.BindId(2, employeeKey.GetInstanceId());
@@ -1113,8 +1084,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     statement.BindId(4, hardwareKey1.GetInstanceId());
 
     ECInstanceKey employeeHardwareKey;
-    stepStatus = statement.Step(employeeHardwareKey);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(employeeHardwareKey));
 
     changeset.Free();
 
@@ -1145,8 +1115,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     statement.Finalize();
     statement.Prepare(m_ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
     statement.BindId(1, employeeHardwareKey.GetInstanceId());
-    stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
     statement.Finalize();
     statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1156,8 +1125,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     statement.BindId(4, hardwareKey2.GetInstanceId());
 
     ECInstanceKey employeeHardwareKey2;
-    stepStatus = statement.Step(employeeHardwareKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(employeeHardwareKey2));
 
     changeset.Free();
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));

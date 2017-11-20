@@ -473,7 +473,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
     ECInstanceId oldOtherEndInstanceId, newOtherEndInstanceId;
     rowEntry.GetSqlChange()->GetValueIds(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
     if (!oldOtherEndInstanceId.IsValid() && !newOtherEndInstanceId.IsValid())
-        return ERROR;
+        return SUCCESS; // no changes in relationship
 
     // Evaluate the relationship information
     ECN::ECClassId relClassId = endTableRelMap.m_relationshipClassId;
