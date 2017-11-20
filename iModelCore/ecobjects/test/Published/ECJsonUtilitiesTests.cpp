@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <Bentley/BeId.h>
+#include <ostream>
 
 USING_NAMESPACE_BENTLEY_EC
 
