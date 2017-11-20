@@ -44,7 +44,7 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
             if (Unit::GetUnitForECProperty(originalUnit, *ecProp))
                 {
                 ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
-                KindOfQuantityCP koq = convertedProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                KindOfQuantityCP koq = convertedProp->GetKindOfQuantity();
                 ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
                 Units::UnitCP convertedUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
                 if (nullptr == convertedUnit) // If null it may be a dummy unit added during conversion ... 
@@ -56,6 +56,40 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                 }
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                        Caleb.Shafer            06/2017
+// Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayProperty)
+    {
+    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECArrayProperty propertyName="Length" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <DimensionName>L</DimensionName>
+                        <UnitName>FOOT</UnitName>
+                        <AllowableUnits />
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECArrayProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    validateUnitsInConvertedSchema(*schema, *originalSchema);
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
 
 //---------------------------------------------------------------------------------------

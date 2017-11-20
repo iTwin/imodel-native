@@ -954,7 +954,7 @@ bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, Units::UnitCP newUn
     return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit().GetUnit(), newUnit);
     }
 
-ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, PrimitiveECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
     {
     persistenceUnitChanged = false;
     KindOfQuantityCP baseKOQ = prop->GetKindOfQuantity();
@@ -1001,7 +1001,7 @@ void removePropertyUnitCustomAttributes(IECCustomAttributeContainerR container)
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
     {
-    PrimitiveECPropertyP prop = dynamic_cast<PrimitiveECPropertyP> (&container);
+    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
         Utf8String fullName = schema.GetFullSchemaName();
