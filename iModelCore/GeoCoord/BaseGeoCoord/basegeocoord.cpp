@@ -5557,7 +5557,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
     {
-    assert (inputVdc != outputVdc);
+    // Datums should be different except if both are Geoid.
+    assert (inputVdc != outputVdc || inputVdc == vdcGeoid);
 
     m_fromVDC = inputVdc;
     m_toVDC = outputVdc;
@@ -5604,6 +5605,10 @@ GeoPointCR  inLatLong
     // vdcGeoid    vdcGeoid - In this specific case we remove Geoid elev, apply ellipsoidal height diff then apply Geoid at new location.
     //                        although this case would give approximatively the same result the slight
     //                        lat/long value may introduce a very small change in elevation.
+
+    // If both datums are Geoid then we bypass conversion
+    if (vdcGeoid == m_fromVDC && vdcGeoid == m_toVDC)
+        return SUCCESS;
 
     // If we have NGVD29 to NAVD88 conversion
     if ((m_fromVDC == vdcNGVD29 || m_fromVDC == vdcNAVD88) && (m_toVDC == vdcNGVD29 || m_toVDC == vdcNAVD88) && (m_toVDC != m_fromVDC))
@@ -12252,7 +12257,10 @@ BaseGCSCR       to
     // are they the same?
     VertDatumCode   fromVDC = NetVerticalDatum (from);
     VertDatumCode   toVDC   = NetVerticalDatum (to);
-    if (fromVDC == toVDC)
+
+    // If vertical datums are both geoid we still create a vertical datum converter to prevent ellipsoidal
+    // vertical transformation
+    if (fromVDC == toVDC && fromVDC != vdcGeoid) 
         return NULL;
 
     // If either vertical datum codes are NGVD29 or NAVD88 then we init
