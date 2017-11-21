@@ -1365,9 +1365,8 @@ struct GraphicBuilder : RefCountedBase
         DgnViewportP    m_viewport;
         GraphicType     m_type;
 
-        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type)
-            { BeAssert(GraphicType::Scene == type || nullptr != vp); }
     public:
+        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type) { }
         DGNPLATFORM_EXPORT CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type);
 
         //! Create params for a graphic in world coordinates, not necessarily associated with any viewport.

@@ -92,7 +92,7 @@ protected:
     template<typename T> void PopulateGraphic(T populateGraphic)
         {
         // Using view coords because have no viewport from which to determine appropriate facet tolerance
-        GraphicBuilderPtr gf = m_system._CreateGraphic(GraphicBuilder::CreateParams::View(GetDgnDb()));
+        GraphicBuilderPtr gf = m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromIdentity(), nullptr, GraphicType::ViewOverlay));
         ActivateGraphicParams(*gf);
         populateGraphic(*gf);
         gf->Finish();
