@@ -1407,6 +1407,8 @@ struct GraphicBuilder : RefCountedBase
         bool IsViewCoordinates() const { return GraphicType::ViewBackground == GetType() || GraphicType::ViewOverlay == GetType(); }
         bool IsWorldCoordinates() const { return !IsViewCoordinates(); }
         bool IsSceneGraphic() const { return GraphicType::Scene == GetType(); }
+        bool IsViewBackground() const { return GraphicType::ViewBackground == GetType(); }
+        bool IsOverlay() const { return GraphicType::ViewOverlay == GetType() || GraphicType::WorldOverlay == GetType(); }
 
         void SetPlacement(TransformCR tf) { m_placement=tf; }
     };

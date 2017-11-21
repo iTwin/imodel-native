@@ -1634,6 +1634,9 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     if (m_geometries.empty())
         return builderMap;
 
+    // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
+    // This is required to make overlay decorations render correctly.
+    uint16_t order = 0;
     for (auto const& geom : m_geometries)
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
@@ -1647,9 +1650,13 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
             MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            if (options.WantPreserveOrder())
+                key.SetOrder(order++);
+
             MeshBuilderR meshBuilder = builderMap[key];
 
-            meshBuilder.BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
+            auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+            meshBuilder.BeginPolyface(*polyface, edgeOptions);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1665,6 +1672,8 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
                 MeshBuilderMap::Key key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, tileStrokes.m_isPlanar);
+                if (options.WantPreserveOrder())
+                    key.SetOrder(order++);
 
                 MeshBuilderR builder = builderMap[key];
                 uint32_t fillColor = displayParams->GetLineColor();
@@ -2728,9 +2737,12 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
     if (!accum.IsEmpty())
         {
+        // Overlay decorations don't test Z. Tools like to layer multiple primitives on top of one another; they rely on the primitives rendering
+        // in that same order to produce correct results (e.g., a thin line rendered atop a thick line of another color).
+        // No point generating edges for graphics that are always rendered in smooth shade mode.
+        GeometryOptions options(GetCreateParams());
         PrimitiveBuilderContext context(*this);
         double tolerance = ComputeTolerance(accum);
-        GeometryOptions options;
         accum.SaveToGraphicList(m_primitives, options, tolerance, context);
         }
 
