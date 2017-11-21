@@ -113,6 +113,39 @@ size_t StdFormatSet::StdInit()
     cvs = new CompositeValueSpec("YRD", "FT", "IN");
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
     AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");
+
+    cvs = new CompositeValueSpec("M");
+    cvs->SetUnitLabels("m");
+    AddFormat("Meters4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "meters4u");
+
+    cvs = new CompositeValueSpec("FT");
+    cvs->SetUnitLabels("'");
+    AddFormat("Feet4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "feet4u");
+
+    cvs = new CompositeValueSpec("IN");
+    cvs->SetUnitLabels("\"");
+    AddFormat("Inches4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "inches4u");
+
+    cvs = new CompositeValueSpec("IN");
+    cvs->SetUnitLabels("\"");
+    AddFormat("Inches18u", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "Inches18u");
+
+    cvs = new CompositeValueSpec("ARC_DEG");
+    cvs->SetUnitLabels("\xC2\xB0");
+    AddFormat("DecimalDeg4", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "decimalDeg4");
+
+    cvs = new CompositeValueSpec("FT");
+    cvs->SetUnitLabels("'");
+    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetMinWidth(2);
+    AddFormat("StationFt2", stop, cvs, "stationFt2");
+
+    cvs = new CompositeValueSpec("M");
+    cvs->SetUnitLabels("m");
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetMinWidth(4);
+    AddFormat("StationM4", stop, cvs, "stationM4");
+
     size_t s = m_formatSet.size();
     return s;
     }
