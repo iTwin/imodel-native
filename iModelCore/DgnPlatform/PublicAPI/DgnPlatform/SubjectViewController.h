@@ -52,12 +52,12 @@ public:
     DGNPLATFORM_EXPORT void     SetModelsAndCategoriesVisibility(bool visible);
 
     //! Toggles visibility of a specific subject
-    //! @param[in] subjectId
+    //! @param[in] modelId
     //! @param[in] isVisible
     DGNPLATFORM_EXPORT void     ToggleVisibility(DgnModelId modelId, bool isVisible);
 
     //! Returns true if a subject is visible
-    //! @param[in] subjectId ID of the job subject
+    //! @param[in] modelId ID of the job subject
     //! @return true if job subject is visible
     DGNPLATFORM_EXPORT bool     IsVisible(DgnModelId modelId) const;
 
