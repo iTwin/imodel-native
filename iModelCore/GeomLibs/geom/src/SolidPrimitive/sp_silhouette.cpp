@@ -120,14 +120,14 @@ bool DgnTorusPipeDetail::SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &c
     if (TryGetFrame (center, axes, radiusA, radiusB, sweep)
         && DoubleOps::SafeDivideParameter (minorRadiusRatio, radiusB, radiusA))
         {
-        axes.ScaleColumns (radiusA, radiusA, radiusB);
+        axes.ScaleColumns (radiusA, radiusA, radiusA);
         Transform localToWorld;
         localToWorld.InitFrom (axes, center);
         bsiDToroid3d_set (&toroid, &localToWorld, minorRadiusRatio, &parameterRange);
         RotatedConic rc;
         bsiDToroid3d_getRotatedConic (&toroid, &rc);
         curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-        HConic conics[2];
+        HConic conics[10];
         int numConic;
         bool isEllipse, isSegment;
         DEllipse3d ellipse;
