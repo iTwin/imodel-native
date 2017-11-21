@@ -176,13 +176,13 @@ ICancellationTokenPtr cancellationToken
                 return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult->GetError()));
 
             for (auto userInfo : queryUsersResult->GetValue())
-            {
-            usersList.push_back(userInfo);
-            BeMutexHolder lock(s_userInfoCacheMutex);
-            if (s_userInfoCache.find(userInfo->GetId()) == s_userInfoCache.end())
-                s_userInfoCache.Insert(userInfo->GetId(), userInfo);
-            lock.unlock();
-            }
+                {
+                usersList.push_back(userInfo);
+                BeMutexHolder lock(s_userInfoCacheMutex);
+                if (s_userInfoCache.find(userInfo->GetId()) == s_userInfoCache.end())
+                    s_userInfoCache.Insert(userInfo->GetId(), userInfo);
+                lock.unlock();
+                }
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
