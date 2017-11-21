@@ -7,7 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <Bentley/Bentley.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
+
 
 class DisplayQueryTester
     {

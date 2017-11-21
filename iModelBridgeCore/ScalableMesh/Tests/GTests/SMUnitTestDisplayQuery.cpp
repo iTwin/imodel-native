@@ -7,7 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestDisplayQuery.h"
+#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct SmCachedDisplayTexture
     {
@@ -20,11 +24,38 @@ struct SmCachedDisplayMesh
     {    
     };
 
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
 struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
     {   
 private:
+
+    int m_nbCreatedMesh; 
+    int m_nbDestroyedMesh;
+    int m_nbCreatedTexture;
+    int m_nbDestroyedTexture;
     
 public:
+
+    int GetNbCreatedMesh()
+        {
+        return m_nbCreatedMesh;
+        }
+
+    int GetNbDestroyedMesh()
+        {
+        return m_nbDestroyedMesh;
+        }
+
+    int GetNbCreatedTexture()
+        {
+        return m_nbCreatedTexture;
+        }
+
+    int GetNbDestroyedTexture()
+        {
+        return m_nbDestroyedTexture;
+        }    
 
     //Inherited from IScalableMeshDisplayCacheManager
     virtual BentleyStatus _CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
@@ -86,8 +117,8 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                  uint64_t                smId)
     {
 
-
-
+    m_nbCreatedMesh++;
+    
 #if 0
     QvTextureID textureId = 0;
 
@@ -118,6 +149,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh)
 {
+    m_nbDestroyedMesh++;
+ 
+#if 0 
     // shutting down
     if (nullptr == DgnPlatformLib::QueryHost())
         return SUCCESS;
@@ -129,7 +163,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDispla
     }
 
     delete cachedDisplayMesh;
-
+#endif
 
     return SUCCESS;
 }
@@ -143,6 +177,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
     int                      format,      // => see QV_*_FORMAT definitions above
     unsigned char const *    texels)      // => texel image)
 {
+
+    m_nbCreatedTexture++;    
+
+#if 0
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
 
     qv_defineTileSection(qvCachedDisplayTexture->m_textureID, nullptr, 0, xSize, ySize, enableAlpha, format, texels);
@@ -153,12 +191,16 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
 
     isStoredOnGpu = false;
     usedMemInBytes = xSize * ySize * 6;
-
+#endif
     return SUCCESS;
 }
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture)
 {
+
+    m_nbDestroyedTexture++;
+
+#if 0 
     if (cachedDisplayTexture->m_textureID != 0)
     {
         qv_deleteTexture(cachedDisplayTexture->m_textureID);
@@ -166,6 +208,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDis
     }
 
     delete cachedDisplayTexture;
+#endif
 
     return SUCCESS;
 }
@@ -188,8 +231,16 @@ bool ScalableMeshDisplayCacheManager::_IsUsingVideoMemory()
 
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager(ViewContextR viewContext)
 {
+#if 0 
     m_qvCache = T_HOST.GetGraphicsAdmin()._CreateQvCache();
+#endif
+
+    m_nbCreatedMesh = 0;
+    m_nbDestroyedMesh = 0;
+    m_nbCreatedTexture = 0;
+    m_nbDestroyedTexture = 0;
 }
+
 
 ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()
 {
