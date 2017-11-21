@@ -273,6 +273,7 @@
     <!-- Documentation -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Dwg/Docs/BuildDoc.mke" OnlyPlatforms="x64">
+        <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
         <RequiredRepository>DgnPlatform</RequiredRepository>
         <Bindings>
             <Directory SourceName="Delivery/docs" ProductDirectoryName="DwgImporterDocs" />
