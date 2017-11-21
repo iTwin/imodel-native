@@ -389,7 +389,7 @@ SimplifyGraphic::SimplifyGraphic(Render::GraphicBuilder::CreateParams const& par
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
 
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;

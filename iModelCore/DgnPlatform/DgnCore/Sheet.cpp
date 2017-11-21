@@ -362,9 +362,9 @@ void Sheet::ViewController::_LoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR size)
+Render::GraphicPtr Sheet::Model::CreateBorder(DecorateContextR context, DPoint2dCR size)
     {
-    Render::GraphicBuilderPtr border = context.CreateViewGraphic();
+    Render::GraphicBuilderPtr border = context.CreateViewBackground();
     RectanglePoints rect(0, 0, size.x, size.y, context);
     border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, LinePixels::Solid);
     border->AddLineString2d(5, rect, 0.0);
