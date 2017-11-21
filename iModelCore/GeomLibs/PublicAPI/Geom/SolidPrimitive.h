@@ -1999,6 +1999,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (DMatrix4dR worldProducts) co
 
 //! Return curves which are silhoutte curves OTHER than hard edges
 //! @param [in] eyePoint For flat view, the view direction with weight=0.  For perspective, the eye point with weight=1.
+//! @param [in] curves silhouette curves.
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
