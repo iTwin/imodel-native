@@ -266,20 +266,16 @@ struct DisabledFullNodesLoadContext
 struct EmptyNavNodesProvider : NavNodesProvider
 {
 private:
-    NavNodeCPtr m_virtualNode;
-private:
-    EmptyNavNodesProvider(NavNodesProviderContextCR context, NavNodeCP virtualNode) 
-        : NavNodesProvider(context), m_virtualNode(virtualNode) 
-        {}
+    EmptyNavNodesProvider(NavNodesProviderContextCR context);
 protected:
     virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}
     virtual bool _HasNodes() const override {return false;}
     virtual size_t _GetNodesCount() const override {return 0;}
     virtual EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
 public:
-    static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextCR context, NavNodeCP virtualNode)
+    static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextCR context)
         {
-        return new EmptyNavNodesProvider(context, virtualNode);
+        return new EmptyNavNodesProvider(context);
         }
     };
 
@@ -409,13 +405,13 @@ struct QueryBasedNodesProvider : MultiNavNodesProvider
 
 private:
     NavigationQueryCPtr m_query;
-    bvector<ECClassId> m_usedClassIds;
+    bmap<ECClassId, bool> m_usedClassIds;
     NavigationQueryExecutor m_executor;
     size_t m_executorIndex;
     mutable bool m_inProvidersRequest;
 
 private:
-    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bset<ECClassId> const&);
+    ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);
     bool ShouldReturnChildNodes(JsonNavNode const& node, HasChildrenFlag& hasChildren) const;
     void Initialize();
     NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
@@ -429,13 +425,13 @@ protected:
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context, 
-        NavigationQuery const& query, bset<ECClassId> const& usedClassIds = bset<ECClassId>())
+        NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>())
         {
         return new QueryBasedNodesProvider(context, query, usedClassIds);
         }
     NavigationQueryExecutor const& GetExecutor() const {return m_executor;}
     NavigationQueryExecutor& GetExecutorR() {return m_executor;}
-    void SetQuery(NavigationQuery const& query, bset<ECClassId> const&);
+    void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
 };
 
 /*=================================================================================**//**
@@ -536,6 +532,25 @@ public:
     static RefCountedPtr<CachedVirtualNodeChildrenProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements)
         {
         return new CachedVirtualNodeChildrenProvider(context, cache, statements);
+        }
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                10/2017
++===============+===============+===============+===============+===============+======*/
+struct NodesWithUndeterminedChildrenProvider : SQLiteCacheNodesProvider
+{
+private:
+    NodesWithUndeterminedChildrenProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&);
+
+protected:
+    BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetCountStatement() const override;
+
+public:
+    static RefCountedPtr<NodesWithUndeterminedChildrenProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements)
+        {
+        return new NodesWithUndeterminedChildrenProvider(context, cache, statements);
         }
 };
 

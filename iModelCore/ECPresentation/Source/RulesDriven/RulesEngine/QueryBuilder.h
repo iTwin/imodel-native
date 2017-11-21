@@ -273,7 +273,6 @@ public:
     template<typename T> static RefCountedPtr<T> CreateNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     template<typename T> static RefCountedPtr<ComplexPresentationQuery<T>> CreateComplexNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     
-    static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const&);
     static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache&);
     static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);
     static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR);

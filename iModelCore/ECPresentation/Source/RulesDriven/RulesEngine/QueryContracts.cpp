@@ -729,14 +729,25 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValueClause(ECProper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetPointAsJsonStringClause(Utf8StringCR propertyName, Utf8CP prefix)
+static Utf8String GetPointAsJsonStringClause(Utf8StringCR propertyName, Utf8CP prefix, int dimensions)
     {
+    BeAssert(2 == dimensions || 3 == dimensions);
+    static char axis[] = {'x', 'y', 'z'};
+
+    Utf8String prefixAndProperty;
+    if (nullptr != prefix && 0 != *prefix)
+        prefixAndProperty.append(Wrap(prefix)).append(".");
+    prefixAndProperty.append(Wrap(propertyName));
+
     Utf8String clause;
     clause.append(FUNCTION_NAME_GetPointAsJsonString).append("(");
-    if (nullptr != prefix && 0 != *prefix)
-        clause.append(Wrap(prefix)).append(".");
-
-    clause.append(Wrap(propertyName)).append(")");
+    for (int i = 0; i < dimensions; ++i)
+        {
+        if (i > 0)
+            clause.append(", ");
+        clause.append(prefixAndProperty).append(".").append(1, axis[i]);
+        }
+    clause.append(")");
     return clause;
     }
 
@@ -753,9 +764,11 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP p
             CreateList("ECClassId", "ECInstanceId", labelClause, "NULL"));
         return field->GetSelectClause("parentInstance");
         }
-    if (m_property.GetIsPrimitive() && (PRIMITIVETYPE_Point3d == m_property.GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_Point2d == m_property.GetAsPrimitiveProperty()->GetType()))
-        return GetPointAsJsonStringClause(m_property.GetName(), prefix);
- 
+    if (m_property.GetIsPrimitive() && PRIMITIVETYPE_Point3d == m_property.GetAsPrimitiveProperty()->GetType())
+        return GetPointAsJsonStringClause(m_property.GetName(), prefix, 3);
+    if (m_property.GetIsPrimitive() && PRIMITIVETYPE_Point2d == m_property.GetAsPrimitiveProperty()->GetType())
+        return GetPointAsJsonStringClause(m_property.GetName(), prefix, 2);
+
     return GetPrefixedClause(m_property.GetName(), prefix);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -931,9 +944,13 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
         switch (prop.GetAsPrimitiveProperty()->GetType())
             {
             case PRIMITIVETYPE_Point2d:
+                {
+                Utf8String clause = GetPointAsJsonStringClause(propertyAccessString, prefix, 2);
+                return PresentationQueryContractSimpleField::Create(fieldName, clause.c_str(), false);
+                }
             case PRIMITIVETYPE_Point3d:
                 {
-                Utf8String clause = GetPointAsJsonStringClause(propertyAccessString, prefix);
+                Utf8String clause = GetPointAsJsonStringClause(propertyAccessString, prefix, 3);
                 return PresentationQueryContractSimpleField::Create(fieldName, clause.c_str(), false);
                 }
             case PRIMITIVETYPE_Integer:

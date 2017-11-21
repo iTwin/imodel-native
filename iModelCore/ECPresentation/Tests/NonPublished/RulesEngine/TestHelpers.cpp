@@ -480,7 +480,7 @@ ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR de
     ContentDescriptor::Property prop, IPropertyCategorySupplierR categorySupplier)
     {
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(primaryClass, prop, categorySupplier);
-    descriptor.GetAllFields().push_back(field);
+    descriptor.AddField(field);
     return *descriptor.GetAllFields().back();
     }
 

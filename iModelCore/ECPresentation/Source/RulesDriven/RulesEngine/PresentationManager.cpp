@@ -73,7 +73,7 @@ static PresentationRuleSetPtr FindRuleset(RuleSetLocaterManager const& locaters,
 struct RulesDrivenECPresentationManager::RulesetECExpressionsCache : IECExpressionsCacheProvider
 {
 private:
-    bmap<Utf8CP, ECExpressionsCache*> m_caches;
+    bmap<Utf8String, ECExpressionsCache*> m_caches;
 protected:
     ECExpressionsCache& _Get(Utf8CP rulesetId) override
         {
@@ -138,7 +138,11 @@ public:
 };
 
 ECSqlStatementCache* CreateECSqlStatementCache() {return new ECSqlStatementCache(50);}
-struct RulesDrivenECPresentationManager::ECDbStatementsCache : SimpleECDbBaseCache<ECSqlStatementCache, CreateECSqlStatementCache> {};
+struct RulesDrivenECPresentationManager::ECDbStatementsCache : SimpleECDbBaseCache<ECSqlStatementCache, CreateECSqlStatementCache>, IECSqlStatementCacheProvider 
+{
+protected:
+    ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) override {return SimpleECDbBaseCache::GetCache(db);}
+};
 
 RelatedPathsCache* CreateRelatedPathsCache() {return new RelatedPathsCache();}
 struct RulesDrivenECPresentationManager::ECDbRelatedPathsCache : SimpleECDbBaseCache<RelatedPathsCache, CreateRelatedPathsCache> {};
@@ -163,15 +167,19 @@ private:
             RulesPreprocessor::RootNodeRuleParameters params(context.GetDb(), context.GetRuleset(), TargetTree_MainTree,
                 context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
-            provider = MultiSpecificationNodesProvider::Create(context, specs);
+            if (!specs.empty())
+                provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
             RulesPreprocessor::ChildNodeRuleParameters params(context.GetDb(), *parent, context.GetRuleset(), TargetTree_MainTree, 
                 context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
             ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
-            provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
+            if (!specs.empty())
+                provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
+        if (provider.IsNull())
+            provider = EmptyNavNodesProvider::Create(context);
         return provider;
         }
 
@@ -268,15 +276,16 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     m_categorySupplier(nullptr), m_ecPropertyFormatter(nullptr), m_localizationProvider(nullptr)
     {
     GetLocaters().SetRulesetCallbacksHandler(this);
+    GetConnections().AddListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
     m_customFunctions = new CustomFunctionsInjector();
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, 
-        GetConnections(), disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
-    m_contentCache = new ContentCache();
     m_statementCache = new ECDbStatementsCache();
+    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, 
+        GetConnections(), *m_statementCache, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
+    m_contentCache = new ContentCache();
     m_relatedPathsCache = new ECDbRelatedPathsCache();
     m_userSettings.SetLocalizationProvider(&GetLocalizationProvider());
     m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, GetConnections(), *m_nodesProviderContextFactory, 
@@ -286,7 +295,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     BeFileName supplementalRulesetsDirectory = paths.GetAssetsDirectory();
     supplementalRulesetsDirectory.append(L"UI\\");
     supplementalRulesetsDirectory.append(L"PresentationRules\\");
-    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(supplementalRulesetsDirectory));
+    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalRulesetsDirectory.GetNameUtf8().c_str())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,6 +304,7 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
 RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
     {
     GetLocaters().SetRulesetCallbacksHandler(nullptr);
+    GetConnections().DropListener(*this);
     DELETE_AND_CLEAR(m_updateHandler);
     DELETE_AND_CLEAR(m_statementCache);
     DELETE_AND_CLEAR(m_relatedPathsCache);
@@ -348,6 +358,30 @@ void RulesDrivenECPresentationManager::_OnSettingChanged(Utf8CP rulesetId, Utf8C
     {
     CustomFunctionsManager::GetManager()._OnSettingChanged(rulesetId, settingId);
     m_updateHandler->NotifySettingChanged(rulesetId, settingId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnConnectionEvent(ConnectionEvent const& evt)
+    {
+    if (evt.GetEventType() == ConnectionEventType::Opened)
+        {
+        ECDbCR connection = evt.GetConnection();
+        RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[&connection] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(connection));
+        GetLocaters().RegisterLocater(*locater);
+        }
+    else if (evt.GetEventType() == ConnectionEventType::Closed)
+        {
+        auto iter = m_embeddedRuleSetLocaters.find(&evt.GetConnection());
+        if (m_embeddedRuleSetLocaters.end() == iter)
+            {
+            BeAssert(false);
+            return;
+            }
+        GetLocaters().UnregisterLocater(*iter->second);
+        m_embeddedRuleSetLocaters.erase(iter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,6 +515,39 @@ NavNodeCPtr RulesDrivenECPresentationManager::_GetParent(ECDbR connection, NavNo
 NavNodeCPtr RulesDrivenECPresentationManager::_GetNode(ECDbR connection, uint64_t nodeId)
     {
     return GetNodesCache().GetNode(nodeId, NodeVisibility::Physical);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::TraverseNodes(ECDbR connection, JsonValueCR options, DataContainer<NavNodeCPtr> nodes)
+    {
+    for (int i = 0; i < nodes.GetSize(); i++)
+        {
+        NavNodeCPtr node = nodes.Get(i);
+        if (node->HasChildren())
+            TraverseNodes(connection, options, GetChildren(connection, *node, PageOptions(), options));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NavNodeCPtr> RulesDrivenECPresentationManager::_GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions)
+    {
+    NavigationOptions options(jsonOptions);
+    if (!GetNodesCache().IsDataSourceCached(connection.GetDbGuid(), options.GetRulesetId()))
+        GetRootNodes(connection, PageOptions(), jsonOptions);
+    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetDisableUpdates());
+    size_t nodesCount = provider->GetNodesCount();
+    for (size_t i = 0; i < nodesCount; i++)
+        {
+        JsonNavNodePtr node;
+        provider->GetNode(node, i);
+        if (node->HasChildren())
+            TraverseNodes(connection, jsonOptions, GetChildren(connection, *node, PageOptions(), jsonOptions));
+        }
+    return GetNodesCache().GetFilteredNodes(connection, options.GetRulesetId(), filterText);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -852,4 +919,12 @@ void RulesDrivenECPresentationManager::_OnNodeCollapsed(ECDbR connection, uint64
         node->SetIsExpanded(false);
         GetNodesCache().Update(nodeId, *node);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::_OnAllNodesCollapsed(ECDbR connection, JsonValueCR options)
+    {
+    GetNodesCache().ResetExpandedNodes(connection.GetDbGuid(), options["RulesetId"].asCString());
     }

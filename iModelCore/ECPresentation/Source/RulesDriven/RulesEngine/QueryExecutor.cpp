@@ -661,6 +661,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
                 }
             }
 
+        ContentQueryContractCPtr fieldsContract = m_query->GetContract(contractId);
         bool possiblyMerged = (resultsMerged && primaryRecordKeys.size() > 1);
         for (ContentDescriptor::Field const* field : descriptor.GetAllFields())
             {
@@ -693,7 +694,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
                 else
                     {
                     // find the field property that's appropriate for this instance
-                    matchingProperty = m_query->GetContract(contractId)->FindMatchingProperty(propertiesField, recordClass);
+                    matchingProperty = fieldsContract->FindMatchingProperty(propertiesField, recordClass);
                     }
 
                 if (nullptr != matchingProperty)

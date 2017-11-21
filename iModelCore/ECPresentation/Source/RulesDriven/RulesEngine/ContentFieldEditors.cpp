@@ -12,18 +12,21 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FieldEditorJsonParams::_Equals(Params const& other) const
+int FieldEditorJsonParams::_CompareTo(Params const& other) const
     {
-    if (!Params::_Equals(other))
-        return false;
+    int baseCompare = Params::_CompareTo(other);
+    if (0 != baseCompare)
+        return baseCompare;
 
     FieldEditorJsonParams const* jsonParams = dynamic_cast<FieldEditorJsonParams const*>(&other);
     if (nullptr == jsonParams)
         {
         BeAssert(false);
-        return false;
+        return -1;
         }
-    return m_json == jsonParams->m_json;
+    Utf8String lhs = BeRapidJsonUtilities::ToString(m_json);
+    Utf8String rhs = BeRapidJsonUtilities::ToString(jsonParams->m_json);
+    return strcmp(lhs.c_str(), rhs.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,18 +42,23 @@ rapidjson::Document FieldEditorJsonParams::_AsJson(rapidjson::Document::Allocato
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FieldEditorMultilineParams::_Equals(Params const& other) const
+int FieldEditorMultilineParams::_CompareTo(Params const& other) const
     {
-    if (!Params::_Equals(other))
-        return false;
+    int baseCompare = Params::_CompareTo(other);
+    if (0 != baseCompare)
+        return baseCompare;
 
     FieldEditorMultilineParams const* multilineParams = dynamic_cast<FieldEditorMultilineParams const*>(&other);
     if (nullptr == multilineParams)
         {
         BeAssert(false);
-        return false;
+        return -1;
         }
-    return m_spec.GetHeightInRows() == multilineParams->m_spec.GetHeightInRows();
+    if (m_spec.GetHeightInRows() < multilineParams->m_spec.GetHeightInRows())
+        return -1;
+    if (m_spec.GetHeightInRows() > multilineParams->m_spec.GetHeightInRows())
+        return 1;
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,39 +75,40 @@ rapidjson::Document FieldEditorMultilineParams::_AsJson(rapidjson::Document::All
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FieldEditorRangeParams::_Equals(Params const& other) const
+int FieldEditorRangeParams::_CompareTo(Params const& other) const
     {
-    if (!Params::_Equals(other))
-        return false;
+    int baseCompare = Params::_CompareTo(other);
+    if (0 != baseCompare)
+        return baseCompare;
 
     FieldEditorRangeParams const* rangeParams = dynamic_cast<FieldEditorRangeParams const*>(&other);
     if (nullptr == rangeParams)
         {
         BeAssert(false);
-        return false;
+        return -1;
         }
 
     if (nullptr == m_spec.GetMinimumValue() && nullptr != rangeParams->m_spec.GetMinimumValue())
-        return false;
+        return -1;
     if (nullptr != m_spec.GetMinimumValue() && nullptr == rangeParams->m_spec.GetMinimumValue())
-        return false;
+        return 1;
     if (nullptr != m_spec.GetMinimumValue() && nullptr != rangeParams->m_spec.GetMinimumValue()
         && 0 != BeNumerical::Compare(*m_spec.GetMinimumValue(), *rangeParams->m_spec.GetMinimumValue()))
         {
-        return false;
+        return BeNumerical::Compare(*m_spec.GetMinimumValue(), *rangeParams->m_spec.GetMinimumValue());
         }
 
     if (nullptr == m_spec.GetMaximumValue() && nullptr != rangeParams->m_spec.GetMaximumValue())
-        return false;
+        return -1;
     if (nullptr != m_spec.GetMaximumValue() && nullptr == rangeParams->m_spec.GetMaximumValue())
-        return false;
+        return 1;
     if (nullptr != m_spec.GetMaximumValue() && nullptr != rangeParams->m_spec.GetMaximumValue()
         && 0 != BeNumerical::Compare(*m_spec.GetMaximumValue(), *rangeParams->m_spec.GetMaximumValue()))
         {
-        return false;
+        return BeNumerical::Compare(*m_spec.GetMaximumValue(), *rangeParams->m_spec.GetMaximumValue());
         }
 
-    return true;
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -126,23 +135,40 @@ rapidjson::Document FieldEditorRangeParams::_AsJson(rapidjson::Document::Allocat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FieldEditorSliderParams::_Equals(Params const& other) const
+int FieldEditorSliderParams::_CompareTo(Params const& other) const
     {
-    if (!Params::_Equals(other))
-        return false;
+    int baseCompare = Params::_CompareTo(other);
+    if (0 != baseCompare)
+        return baseCompare;
 
     FieldEditorSliderParams const* sliderParams = dynamic_cast<FieldEditorSliderParams const*>(&other);
     if (nullptr == sliderParams)
         {
         BeAssert(false);
-        return false;
+        return -1;
         }
 
-    return 0 == BeNumerical::Compare(m_spec.GetMinimumValue(), sliderParams->m_spec.GetMinimumValue())
-        && 0 == BeNumerical::Compare(m_spec.GetMaximumValue(), sliderParams->m_spec.GetMaximumValue())
-        && m_spec.GetIntervalsCount() == sliderParams->m_spec.GetIntervalsCount()
-        && m_spec.GetValueFactor() == sliderParams->m_spec.GetValueFactor()
-        && m_spec.IsVertical() == sliderParams->m_spec.IsVertical();
+    if (BeNumerical::Compare(m_spec.GetMinimumValue(), sliderParams->m_spec.GetMinimumValue()) < 0)
+        return -1;
+    if (BeNumerical::Compare(m_spec.GetMinimumValue(), sliderParams->m_spec.GetMinimumValue()) > 0)
+        return 1;
+    if (BeNumerical::Compare(m_spec.GetMaximumValue(), sliderParams->m_spec.GetMaximumValue()) < 0)
+        return -1;
+    if (BeNumerical::Compare(m_spec.GetMaximumValue(), sliderParams->m_spec.GetMaximumValue()) > 0)
+        return 1;
+    if (m_spec.GetIntervalsCount() < sliderParams->m_spec.GetIntervalsCount())
+        return -1;
+    if (m_spec.GetIntervalsCount() > sliderParams->m_spec.GetIntervalsCount())
+        return 1;
+    if (m_spec.GetValueFactor() < sliderParams->m_spec.GetValueFactor())
+        return -1;
+    if (m_spec.GetValueFactor() > sliderParams->m_spec.GetValueFactor())
+        return 1;
+    if (m_spec.IsVertical() < sliderParams->m_spec.IsVertical())
+        return -1;
+    if (m_spec.IsVertical() > sliderParams->m_spec.IsVertical())
+        return 1;
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**

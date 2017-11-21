@@ -35,6 +35,19 @@ enum class NodesCacheType
     };
 
 /*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                10/2017
++===============+===============+===============+===============+===============+======*/
+struct IECSqlStatementCacheProvider
+{
+protected:
+    virtual ~IECSqlStatementCacheProvider() {}
+    virtual ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) = 0;
+
+public:
+    ECSqlStatementCache& GetECSqlStatementCache(ECDbCR db) {return _GetECSqlStatementCache(db);}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
 struct IHierarchyCache
@@ -45,11 +58,11 @@ protected:
     virtual NavNodesProviderPtr _GetDataSource(DataSourceInfo const&) const = 0;
     virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const = 0;
     
-    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) = 0;
+    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool) = 0;
     virtual void _Cache(JsonNavNodeR, bool) = 0;
 
     virtual void _Update(uint64_t, JsonNavNodeCR) = 0;
-    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECClassId> const*, bvector<Utf8String> const*) = 0;
+    virtual void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*) = 0;
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
     virtual void _MakeVirtual(JsonNavNodeCR) = 0;
@@ -66,7 +79,7 @@ public:
     //! Get the data source the node with the supplied ID belongs to.
     NavNodesProviderPtr GetDataSource(uint64_t nodeId) const {return _GetDataSource(nodeId);}
     
-    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bvector<ECClassId> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds, 
+    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds,
         bool disableUpdates = false)
         {
         _Cache(info, filter, relatedClassIds, relatedSettingIds, disableUpdates);
@@ -74,7 +87,7 @@ public:
     void Cache(JsonNavNodeR node, bool isVirtual) {_Cache(node, isVirtual);}
 
     void Update(uint64_t nodeId, JsonNavNodeCR node) {_Update(nodeId, node);}
-    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bvector<ECClassId> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
+    void Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
         {
         _Update(info, filter, relatedClassIds, relatedSettingIds);
         }
@@ -113,6 +126,7 @@ private:
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
     mutable BeSQLite::StatementCache m_statements;
+    IECSqlStatementCacheProvider& m_ecsqlStamementCache;
     mutable bvector<bpair<HierarchyLevelInfo, NavNodesProviderPtr>> m_quickDataSourceCache;
     mutable bvector<bpair<uint64_t, JsonNavNodePtr>> m_quickNodesCache;
     
@@ -121,7 +135,7 @@ private:
 
     void CacheNode(DataSourceInfo const&, NavNodeR, bool isVirtual);
     void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, bool);
-    void CacheRelatedClassIds(uint64_t datasourceId, bvector<ECClassId> const&);
+    void CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const&);
     void CacheRelatedSettingIds(uint64_t datasourceId, bvector<Utf8String> const&);
     DataSourceInfo GetDataSourceInfo(BeSQLite::BeGuid const* connectionId, Utf8CP rulesetId, uint64_t const* parentNodeId, bool isVirtual) const;
     DataSourceInfo GetDataSourceInfo(uint64_t nodeId) const;
@@ -133,10 +147,10 @@ private:
     bool IsUpdatesDisabled(HierarchyLevelInfo const& info) const;
     void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
 
-    NavNodeCPtr LocateECInstanceNode(ECInstanceNodeKey const&) const;
-    NavNodeCPtr LocateECClassGroupingNode(ECClassGroupingNodeKey const&) const;
-    NavNodeCPtr LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey const&) const;
-    NavNodeCPtr LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeKey const&) const;
+    NavNodeCPtr LocateECInstanceNode(ECDbCR, ECInstanceNodeKey const&) const;
+    NavNodeCPtr LocateECClassGroupingNode(ECDbCR, ECClassGroupingNodeKey const&) const;
+    NavNodeCPtr LocateECPropertyGroupingNode(ECDbCR, ECPropertyGroupingNodeKey const&) const;
+    NavNodeCPtr LocateDisplayLabelGroupingNode(ECDbCR, DisplayLabelGroupingNodeKey const&) const;
 
     void AddQuick(HierarchyLevelInfo, NavNodesProviderR);
     void RemoveQuick(HierarchyLevelInfo const&);
@@ -155,21 +169,21 @@ protected:
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const&) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const override;
-    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) override;
+    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool) override;
     ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, bool) override;
     ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR) override;
-    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECClassId> const*, bvector<Utf8String> const*) override;
+    ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;
     
     // INavNodeLocater
-    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override;
+    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR) const override;
 
     // IConnectionsListener
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerR, NodesCacheType);
+    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerR, IECSqlStatementCacheProvider&, NodesCacheType);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(HierarchyLevelInfo const&, NavNodesProviderR);
@@ -192,6 +206,10 @@ public:
 
     ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR);
     BeSQLite::Db const& GetDb() const {return m_db;}
+
+    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
+    ECPRESENTATION_EXPORT void ResetExpandedNodes(BeSQLite::BeGuid connectionId, Utf8CP rulesetId);
+    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(ECDbR connection, Utf8CP ruleSetId, bool isUpdatesDisabled) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

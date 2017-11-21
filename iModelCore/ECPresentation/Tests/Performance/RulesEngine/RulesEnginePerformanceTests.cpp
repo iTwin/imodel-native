@@ -30,8 +30,9 @@ void RulesEnginePerformanceTests::SetUp()
     BeFileName assetsDirectory, temporaryDirectory;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDirectory);
     BeTest::GetHost().GetTempDir(temporaryDirectory);
+    ECSchemaReadContext::Initialize(assetsDirectory);
     m_manager = new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
-
+    ECSchemaReadContext::Initialize(assetsDirectory);
     // set up presentation manager
     PresentationRuleSetPtr ruleset = _SupplyRuleset();
     if (!ruleset.IsValid())

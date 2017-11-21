@@ -87,7 +87,9 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(ECDbR connecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefaultECInstanceChangeHandler::_CanHandle(ECDbCR connection, ECClassCR) const
     {
-    // wip: should return true if it's possible to update ECDb without a write token
+    if (connection.GetECDbSettings().RequiresECCrudWriteToken())
+        return false;
+
     return true;
     }
 

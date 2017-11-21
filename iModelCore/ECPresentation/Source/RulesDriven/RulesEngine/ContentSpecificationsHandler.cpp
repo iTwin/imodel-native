@@ -13,6 +13,8 @@
 
 #define NO_RELATED_PROPERTIES_KEYWORD "_none_"
 
+static RelatedClassPath s_emptyRelationshipPath;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -223,14 +225,14 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
     SelectClassInfo info(ecClass, isSpecificationPolymorphic);
 
     bvector<RelatedClass> navigationPropertiesPaths;
-    PropertyAppenderPtr appender = _CreatePropertyAppender(ecClass, RelatedClassPath(), RelationshipMeaning::SameInstance);
+    PropertyAppenderPtr appender = _CreatePropertyAppender(ecClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance);
     ECPropertyIterable properties = ecClass.GetProperties(true);
     for (ECPropertyCP prop : properties)
         AppendProperty(*appender, navigationPropertiesPaths, *prop, "this");
     
     if (_ShouldIncludeRelatedProperties())
         {
-        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(RelatedClassPath(), ecClass, "this", spec.GetRelatedProperties(), false);
+        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), false);
         for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
             relatedPropertyPaths.push_back({navigationPropertyPath});
         info.SetRelatedPropertyPaths(relatedPropertyPaths);
@@ -254,7 +256,7 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         bvector<RelatedClass> navigationPropertiesPaths;
         if (!GetContext().IsClassHandled(selectClass))
             {
-            PropertyAppenderPtr appender = _CreatePropertyAppender(selectClass, RelatedClassPath(), RelationshipMeaning::SameInstance);
+            PropertyAppenderPtr appender = _CreatePropertyAppender(selectClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance);
             ECPropertyIterable properties = selectClass.GetProperties(true);
             for (ECPropertyCP prop : properties)
                 AppendProperty(*appender, navigationPropertiesPaths, *prop, "this");
@@ -271,7 +273,7 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         
         if (_ShouldIncludeRelatedProperties())
             {
-            bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(RelatedClassPath(), selectClass, "this", spec.GetRelatedProperties(), true);
+            bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), true);
             for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
                 relatedPropertyPaths.push_back({navigationPropertyPath});
             appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);

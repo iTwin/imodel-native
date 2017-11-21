@@ -52,7 +52,7 @@ typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationCo
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener
+struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener, IConnectionsListener
 {
     struct ECDbStatementsCache;
     struct ECDbRelatedPathsCache;
@@ -173,6 +173,7 @@ private:
     IPropertyCategorySupplier* m_categorySupplier;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     ILocalizationProvider const* m_localizationProvider;
+    bmap<ECDb const*, RuleSetLocaterPtr> m_embeddedRuleSetLocaters;
     
 //__PUBLISH_SECTION_END__
 private:
@@ -184,6 +185,7 @@ private:
     IPropertyCategorySupplier& GetCategorySupplier() const;
     ILocalizationProvider const& GetLocalizationProvider() const;
     void OnConnection(ECDbCR) const;
+    void TraverseNodes(ECDbR, JsonValueCR, DataContainer<NavNodeCPtr>);
     
 public:
     NodesCache const& GetNodesCache() const {return GetNodesCacheR();}
@@ -201,6 +203,9 @@ protected:
 
     // IUserSettingsChangeListener
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
+
+    // IConnectionListener
+    ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
     
     // IECPresentationManager: Navigation
     ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetRootNodes(ECDbR, PageOptionsCR, JsonValueCR) override;
@@ -210,10 +215,12 @@ protected:
     ECPRESENTATION_EXPORT bool _HasChild(ECDbR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(ECDbR, NavNodeCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> _GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions) override;
     ECPRESENTATION_EXPORT void _OnNodeChecked(ECDbR, uint64_t nodeId) override;
     ECPRESENTATION_EXPORT void _OnNodeUnchecked(ECDbR, uint64_t nodeId) override;
     ECPRESENTATION_EXPORT void _OnNodeExpanded(ECDbR, uint64_t nodeId) override;
     ECPRESENTATION_EXPORT void _OnNodeCollapsed(ECDbR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT void _OnAllNodesCollapsed(ECDbR, JsonValueCR options) override;
     
     // IECPresentationManager: Content
     ECPRESENTATION_EXPORT bvector<SelectClassInfo> _GetContentClasses(ECDbR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR) override;

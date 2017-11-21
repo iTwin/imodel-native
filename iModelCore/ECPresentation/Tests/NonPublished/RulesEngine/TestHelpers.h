@@ -152,7 +152,7 @@ private:
     bmap<NavNodeKeyCP, NavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override
+    NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)
@@ -281,7 +281,7 @@ protected:
         return GetDataSource(HierarchyLevelInfo(context.GetDb().GetDbGuid(), context.GetRuleset().GetRuleSetId(), nodeHierarchy.GetNode().GetParentNodeId()));
         }
     
-    void _Cache(DataSourceInfo& info, DataSourceFilter const&, bvector<ECClassId> const&, bvector<Utf8String> const&, bool) override
+    void _Cache(DataSourceInfo& info, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool) override
         {
         }
     void _Cache(JsonNavNodeR node, bool isVirtual) override
@@ -310,11 +310,11 @@ protected:
         if (m_hierarchy.end() != iter)
             iter->second.SetNode(tempNode);
         }
-    void _Update(DataSourceInfo const&, DataSourceFilter const*, bvector<ECN::ECClassId> const*, bvector<Utf8String> const*) override
+    void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*) override
         {
         }
 
-    NavNodeCPtr _LocateNode(NavNodeKeyCR key) const override
+    NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodeIdsByKey.find(&key);
         if (m_nodeIdsByKey.end() != iter)
@@ -511,7 +511,7 @@ protected:
         }
 
 public:
-    TestNodesProviderContextFactory() : m_statementsCache(10) {}
+    TestNodesProviderContextFactory() : m_statementsCache(10), m_nodesCache(nullptr) {}
     void SetNodesCache(IHierarchyCacheP cache) {m_nodesCache = cache;}
 };
 

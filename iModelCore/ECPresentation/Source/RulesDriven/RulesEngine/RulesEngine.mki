@@ -89,6 +89,8 @@ $(o)ContentSpecificationsHandler$(oext): $(RulesEngineSourceDirectory)ContentSpe
 
 $(o)PropertyInfoStore$(oext):            $(RulesEngineSourceDirectory)PropertyInfoStore.cpp $(RulesEngineDependencies)
 
+$(o)RuleSetEmbedder$(oext):              $(RulesEngineSourceDirectory)RuleSetEmbedder.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =
