@@ -10,6 +10,7 @@
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <TerrainModel/Core/IDTM.h>
+#include "SMUnitTestDisplayQuery.h"
 
 class ScalableMeshEnvironment : public ::testing::Environment
     {
@@ -114,6 +115,47 @@ public:
 
 };
 
+
+class ScalableMeshTestDisplayQuery : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>>
+{
+protected:
+    BeFileName m_filename;
+    DMatrix4d m_transform;
+    bvector<DPoint3d> m_sourcePtOrLinearData;
+    bvector<DPoint3d> m_expectedResult;
+
+public:
+    virtual void SetUp() {
+        auto paramList = GetParam();
+        m_filename = std::get<0>(paramList);
+        m_transform = std::get<1>(paramList);
+        m_sourcePtOrLinearData = std::get<2>(paramList);
+        m_expectedResult = std::get<3>(paramList);
+    }
+    virtual void TearDown() { }
+    BeFileName GetFileName() { return m_filename; }
+    bvector<DPoint3d>& GetData() { return m_sourcePtOrLinearData; }
+    bvector<DPoint3d>& GetResult() { return m_expectedResult; }
+    ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
+
+    ScalableMesh::IScalableMeshPtr OpenMesh()
+    {
+        StatusInt status;
+        ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
+        BeAssert(status == SUCCESS);
+        if (myScalableMesh != nullptr)
+        {
+            GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS();
+            Transform tr;
+            tr.InitFrom(m_transform);
+            myScalableMesh->SetReprojection(*gcs, tr);
+        }
+        return myScalableMesh;
+    }
+
+};
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -186,6 +228,8 @@ TEST_P(ScalableMeshTest, CanGenerate3DTiles)
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTest, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH))));
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
+
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_DISPLAY_QUERY_RESULTS))));
 
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {
@@ -274,3 +318,26 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 //
 //    return retCode;
 //    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
+    {
+    auto myScalableMesh = OpenMesh();
+
+    /*
+    bvector<DPoint3d> sourcePts = GetData();
+    TerrainModel::DTMDrapedLinePtr result;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
+    ASSERT_EQ(result.IsValid(), true);
+    for (size_t i = 0; i < GetResult().size(); ++i)
+    {
+        DPoint3d pt;
+        result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
+        EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
+        EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
+        EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
+    }*/
+    }
