@@ -42,12 +42,12 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
-    WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
+    WireframeGeomUtil::Draw(geom, *builder, &context);
 
     return processor.GetCurveVector();
     }
@@ -55,12 +55,12 @@ static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
-    WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
+    WireframeGeomUtil::Draw(geom, *builder, &context);
 
     return processor.GetCurveVector();
     }
@@ -68,12 +68,12 @@ static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(SimplifyGraphic const& graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, IBRepEntityCR geom, ViewContextR context)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
-    WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
+    WireframeGeomUtil::Draw(geom, *builder, &context);
 
     return processor.GetCurveVector();
     }
@@ -808,7 +808,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
         // NOTE: Can't use WireframeGeomUtil::CollectCurves because we require geometry relative to this graphic/context...
-        CurveVectorPtr curves = SimplifyCurveCollector::Process(*this, geom, m_context, m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = SimplifyCurveCollector::Process(*this, geom, m_context);
 
         if (!curves.IsValid())
             return;
@@ -924,7 +924,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
         // NOTE: Can't use WireframeGeomUtil::CollectCurves because we require geometry relative to this graphic/context...
-        CurveVectorPtr curves = SimplifyCurveCollector::Process(*this, geom, m_context, m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = SimplifyCurveCollector::Process(*this, geom, m_context);
 
         if (!curves.IsValid())
             return;
@@ -1196,7 +1196,7 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
         // NOTE: Can't use WireframeGeomUtil::CollectCurves because we require geometry relative to this graphic/context...
-        CurveVectorPtr curves = SimplifyCurveCollector::Process(*this, geom, m_context, m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+        CurveVectorPtr curves = SimplifyCurveCollector::Process(*this, geom, m_context);
 
         if (!curves.IsValid())
             return;

@@ -88,7 +88,6 @@ struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 private:
     bool m_doneSearching;
     bool m_unusableLStyleHit;
-    bool m_doLocateSilhouettes;
     bool m_doLocateInteriors;
     TestLStylePhase m_testingLStyle;
     GeomDetail m_currGeomDetail;
@@ -151,8 +150,6 @@ public:
     bool GetDoneSearching() {return m_doneSearching;}
     void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TestLStylePhase::None == phase) m_unusableLStyleHit = false;}
     DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
-    void InitStrokeForCache() {m_doLocateSilhouettes = false;}
-    bool GetLocateSilhouettes() {return m_doLocateSilhouettes;}
     bool* GetLocateInteriors() {return &m_doLocateInteriors;}
 
     bool _IsSnap() const override;
