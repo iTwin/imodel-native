@@ -1086,7 +1086,8 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
         auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName](Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
         if (found != reservedNames.end())
             {
-            ecClass.RenameConflictProperty(prop, true);
+            ECN::ECPropertyP renamedProperty = nullptr;
+            ecClass.RenameConflictProperty(prop, true, renamedProperty);
             }
         BECN::ECClassCP structType = nullptr;
 
