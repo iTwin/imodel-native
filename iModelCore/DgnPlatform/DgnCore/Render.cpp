@@ -253,7 +253,10 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
 
     // Feature symbology is per-Target - will need to be updated for new Target (now, or possibly later if newTarget=nullptr)
     if (m_viewController.IsValid())
+        {
         m_viewController->SetFeatureOverridesDirty();
+        m_viewController->SetSelectionSetDirty();
+        }
 
     m_sync.InvalidateFirstDrawComplete();
     }
