@@ -98,7 +98,7 @@ iModelInfoPtr iModelInfo::Parse(WSObjectsReader::Instance instance, Utf8StringCR
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Paulius.Valiunas               08/2017
 //---------------------------------------------------------------------------------------
-void iModelInfo::AddCreatorInfoSelect(Utf8StringR selectString)
+void iModelInfo::AddHasCreatorInfoSelect(Utf8StringR selectString)
     {
-    selectString.Sprintf("%s,%s-forward-%s.*", selectString.c_str(), ServerSchema::Relationship::CreatorInfo, ServerSchema::Class::UserInfo);
+    selectString.Sprintf("%s,%s-forward-%s.*", selectString.c_str(), ServerSchema::Relationship::HasCreatorInfo, ServerSchema::Class::UserInfo);
     }

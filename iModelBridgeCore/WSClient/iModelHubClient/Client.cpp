@@ -148,9 +148,9 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
 
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
 
-    //Always select CreatorInfo relationship
+    //Always select HasCreatorInfo relationship
     Utf8String select = "*";
-    iModelInfo::AddCreatorInfoSelect(select);
+    iModelInfo::AddHasCreatorInfoSelect(select);
     query.SetSelect(select);
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
@@ -214,9 +214,9 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
     filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, iModelName.c_str());
     query.SetFilter(filter);
 
-    //Always select Owner Info relationship
+    //Always select HasCreatorInfo relationship
     Utf8String select = "*";
-    iModelInfo::AddCreatorInfoSelect(select);
+    iModelInfo::AddHasCreatorInfoSelect(select);
     query.SetSelect(select);
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
@@ -279,9 +279,9 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
     filter.Sprintf("$id+eq+'%s'", iModelId.c_str());
     query.SetFilter(filter);
 
-    //Always select Owner Info relationship
+    //Always select HasCreatorInfo relationship
     Utf8String select = "*";
-    iModelInfo::AddCreatorInfoSelect(select);
+    iModelInfo::AddHasCreatorInfoSelect(select);
     query.SetSelect(select);
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
