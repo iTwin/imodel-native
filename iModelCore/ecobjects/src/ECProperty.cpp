@@ -671,6 +671,14 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
     return &(m_class.GetSchema());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ECProperty::_GetContainerName() const
+    {
+    return Utf8String(Utf8String(GetClass().GetFullName()) + ":" + GetName()).c_str();
+    }
+
 ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
     {
     // typeName may potentially be qualified so we must parse into an alias and short class name

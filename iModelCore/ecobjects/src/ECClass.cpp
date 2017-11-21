@@ -3130,6 +3130,14 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ECRelationshipConstraint::_GetContainerName() const
+    {
+    return Utf8String(Utf8String(m_relClass->GetFullName()) + ":" + GetRoleLabel()).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipConstraint::IsValid(bool resolveIssues)

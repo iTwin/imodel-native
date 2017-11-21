@@ -248,11 +248,14 @@ protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;
     virtual CustomAttributeContainerType _GetContainerType() const = 0;
+    virtual Utf8CP                      _GetContainerName() const = 0;
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
 public:
     ECOBJECTS_EXPORT ECSchemaP                           GetContainerSchema();
+    Utf8CP                              GetContainerName() const { return _GetContainerName(); }
+
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
@@ -771,7 +774,8 @@ protected:
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
-    
+    Utf8CP _GetContainerName() const override;
+
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const {return NULL;}
     virtual bool                                _IsCalculated() const {return false;}
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) {return false;}
@@ -1452,6 +1456,7 @@ protected:
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
+    Utf8CP _GetContainerName() const override { return GetFullName(); }
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
     // schemas index class by name so publicly name can not be reset
@@ -2293,6 +2298,7 @@ private:
 
 protected:
     ECSchemaCP _GetContainerSchema() const override;
+    Utf8CP _GetContainerName() const override;
     CustomAttributeContainerType _GetContainerType() const override {return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint;}
 
 public:
@@ -3253,6 +3259,7 @@ private:
 
 protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
+    Utf8CP _GetContainerName() const override { return GetName().c_str(); }
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
 public:
