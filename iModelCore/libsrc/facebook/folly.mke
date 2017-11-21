@@ -12,10 +12,11 @@ IS_THIRD_PARTY_LIBRARY = 1
 %include mdl.mki
 
 FollyDir = $(SrcRoot)libsrc/facebook/folly/
+FollyVendorAPISrc = $(_MakeFilePath)VendorApi/folly/
 
 cDefs +% -D__BE_FOLLY_DLL__
 
-$(BuildContext)VendorAPI/folly : $(_MakeFilePath)VendorApi/folly
+$(BuildContext)VendorAPI/folly : $(FollyVendorAPISrc)
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)Delivery/folly-notice.txt : $(_MakeFilePath)folly/LICENSE
@@ -41,7 +42,7 @@ $(o)Time$(oext) : $(FollyDir)portability/Time.cpp ${MultiCompileDepends}
 
 $(o)Singleton$(oext) : $(FollyDir)Singleton.cpp ${MultiCompileDepends}
 
-$(o)BeFolly$(oext) : $(FollyDir)BeFolly.cpp ${MultiCompileDepends}
+$(o)BeFolly$(oext) : $(FollyDir)BeFolly.cpp $(FollyVendorAPISrc)BeFolly.h ${MultiCompileDepends}
 
 $(o)Demangle$(oext) : $(FollyDir)Demangle.cpp ${MultiCompileDepends}
 
