@@ -614,8 +614,8 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
             {
             int value = _wtoi(envVarStr.c_str());
 
-            if (value > 0)
-                {
+            if (value > 0 && addtionalSeedPts.size() > (double)value)
+                {                
                 int skipIncrement = ceil(addtionalSeedPts.size() / (double)value);
 
                 auto seedPtIter = addtionalSeedPts.begin();
