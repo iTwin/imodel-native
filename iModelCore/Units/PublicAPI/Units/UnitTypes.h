@@ -192,9 +192,22 @@ private:
     UNITS_EXPORT void LoadJson(Json::Value jval);
 public:
     UnitSynonymMap() { m_unit = nullptr; m_synonym.clear(); }
-    UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym); 
-    //! two comma separated names. The first name must be a registered Unit name.
-    UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
+    //!
+    //! @description UnitSynonymMap links a non-canonical unit name (synonym) to the specific Unit
+    //! @remark Attaching "synonyms" to the specific Units helps in avoiding conflict between synonyms
+    //! @remark However, each synonym must be unique among all synonyms of the specific Phenomenon
+    //! @remark The canonical Unit name must be unique among all units of all Phenomena
+    //!
+    //! The first argument of the constructor is a required text string that can contain of of the 
+    //! following:
+    //!   a valid canonical Unit name
+    //!   a valid canonical Unit name followed by comma and the synonym: <UnitName>,<synonym>
+    //!   a Json string that containts a canonical Unit name and its synonym: {"synonym":"°","unitName":"ARC_DEG"}
+    //! When the first argument contains only the name of the unit, the second argument must be a synonym
+    //! Invalide names or their invalid combination will result in the empty Map
+
+    UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr); 
+    //UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
     UNITS_EXPORT UnitSynonymMap(Json::Value jval);
     bool IsMapEmpty() { return (nullptr == m_unit) && m_synonym.empty(); }
     Utf8CP GetSynonym() const { return m_synonym.c_str(); }

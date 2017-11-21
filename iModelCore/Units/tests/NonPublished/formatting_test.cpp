@@ -281,12 +281,15 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitProxyJsonTest("ARC_MINUTE", "'");
     FormattingTestFixture::UnitProxyJsonTest("ARC_SECOND", "\"");
 
+    LOG.info("\n============ UnitSynonymMapTest ==================");
+
     FormattingTestFixture::UnitSynonymMapTest("FT", "feet");
     FormattingTestFixture::UnitSynonymMapTest("ARC_DEG", u8"°");
     FormattingTestFixture::UnitSynonymMapTest("ARC_SECOND", "\"");
     FormattingTestFixture::UnitSynonymMapTest("FT", u8"фут");
-
-    LOG.infov(L"Unicode text:  %ls = %ls", L"foot", L"фут");
+    FormattingTestFixture::UnitSynonymMapTest(u8"FT,фут");
+    FormattingTestFixture::UnitSynonymMapTest(u8"{\"synonym\":\"фут\", \"unitName\" : \"FT\"}");
+    LOG.info("============ UnitSynonymMapTest(end) ==================\n");
 
     bvector<BEU::UnitSynonymMap> mapV;
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "feet");

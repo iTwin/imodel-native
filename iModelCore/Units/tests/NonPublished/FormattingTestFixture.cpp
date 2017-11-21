@@ -986,14 +986,18 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     BEU::UnitSynonymMap other = BEU::UnitSynonymMap(jval);
     bool ident = map.IsIdentical(other);
     EXPECT_TRUE(map.IsIdentical(other));
+    if (Utf8String::IsNullOrEmpty(synonym))
+        synonym = "*";
+    if (Utf8String::IsNullOrEmpty(unitName))
+        unitName = "*";
     WString wName(unitName, true);
     WString wSyn(synonym, true);
     WString wJson(jval.ToString().c_str(), true);
     WString wBool(FormatConstant::BoolText(ident), true);
-    WChar outStr[258];
-    memset(outStr, 0, sizeof(outStr));
-    BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-    LOG.infov(L"FormattedMapString: %ls", outStr);
+    //WChar outStr[258];
+    //memset(outStr, 0, sizeof(outStr));
+    //BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+    //LOG.infov(L"FormattedMapString: %ls", outStr);
     LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
 
     //LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", unitName, synonym, jval.ToString().c_str(), FormatConstant::BoolText(ident));

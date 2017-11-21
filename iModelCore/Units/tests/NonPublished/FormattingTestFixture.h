@@ -78,7 +78,7 @@ struct FormattingTestFixture
         static void NamedFormatJsonTest(int testNum, Utf8CP formatName, bool verbose, Utf8CP expected);
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
         static void UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName);
-        static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym);
+        static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym=nullptr);
         static void RegistryLookupUnitCITest(Utf8CP unitName);
         static void CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat);
         //static void LoadUnitSynonymsTest();
