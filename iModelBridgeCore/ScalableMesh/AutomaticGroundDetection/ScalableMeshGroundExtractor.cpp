@@ -619,14 +619,23 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
     bvector<DPoint3d> seedpoints;    
     GroundDetectionParametersPtr params(GroundDetectionParameters::Create());        
     params->SetLargestStructureSize(LARGEST_STRUCTURE_SIZE_DEFAULT);
-    params->SetTriangleEdgeThreshold(0.05);
- 
+
+#ifdef VANCOUVER_API //TFS# 725973 - Descartes prefers faster processing than more precise results.
+    params->SetTriangleEdgeThreshold(1.0);
+#else
+	params->SetTriangleEdgeThreshold(0.05);
+#endif
+	 
     params->SetAnglePercentileFactor(s_anglePercentile);
     params->SetHeightPercentileFactor(s_heightPercentile);
 
     params->SetUseMultiThread(s_useMultiThread);        
     
+
+#ifndef VANCOUVER_API //TFS# 725973 - Descartes prefers faster processing than more precise results.
     AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
+#endif
+
 
     m_createProgress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_DETECT_GROUND;
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_DETECT_GROUND;
