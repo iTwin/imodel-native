@@ -134,6 +134,18 @@ size_t StdFormatSet::StdInit()
     cvs->SetUnitLabels("\xC2\xB0");
     AddFormat("DecimalDeg4", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "decimalDeg4");
 
+    cvs = new CompositeValueSpec("FT");
+    cvs->SetUnitLabels("'");
+    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetMinWidth(2);
+    AddFormat("StationFt2", stop, cvs, "stationFt2");
+
+    cvs = new CompositeValueSpec("M");
+    cvs->SetUnitLabels("m");
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetMinWidth(4);
+    AddFormat("StationM4", stop, cvs, "stationM4");
+
     size_t s = m_formatSet.size();
     return s;
     }
