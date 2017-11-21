@@ -91,14 +91,11 @@ public:
 
     virtual bool _IsUsingVideoMemory() override;
 
-    ScalableMeshDisplayCacheManager(ViewContextR viewContext);
+    ScalableMeshDisplayCacheManager(/*ViewContextR viewContext*/);
 
     ~ScalableMeshDisplayCacheManager();
 
 };
-
-
-
 
 
 //Inherited from IScalableMeshDisplayCacheManager
@@ -177,7 +174,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
     int                      format,      // => see QV_*_FORMAT definitions above
     unsigned char const *    texels)      // => texel image)
 {
-
+     
     m_nbCreatedTexture++;    
 
 #if 0
@@ -248,6 +245,25 @@ ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()
 }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IScalableMeshProgressiveQueryEnginePtr DisplayQueryTester::GetProgressiveQueryEngine()
+    {
+    if (m_progressiveQueryEngine == nullptr)
+        {
+        m_displayCacheManager = new ScalableMeshDisplayCacheManager();
+        /*
+        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
+            {
+            return nullptr;
+            }
+            */
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayCacheManager, m_displayTexture);
+        }
+
+    return m_progressiveQueryEngine;
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,5 +285,97 @@ DisplayQueryTester::~DisplayQueryTester()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
     {
+
+#if 0 
+    DMatrix4d localToView(context.GetLocalToView());
+
+    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
+
+    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
+
+    //DPoint3d viewBox[8];
+
+    //NEEDS_WORK_SM : Remove from query
+    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
+    DMatrix4d rootToStorage;
+
+    //Convert the view box in storage.
+    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
+
+    BeAssert(inverted != 0);
+#endif
+    status = SUCCESS;
+
+   
+
+    IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
+    
+    viewDependentQueryParams->SetMinScreenPixelsPerPoint(m_minScreenPixelsPerPoint);
+    viewDependentQueryParams->SetMaxPixelError(m_maxPixelError);
+    
+
+#if 0 
+    ClipVectorCP clip;
+    clip = context.GetTransformClipStack().GetClip();
+    //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
+    //viewDependentQueryParams->SetViewBox(viewBox);
+    
+    viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
+
+    //NEEDS_WORK_SM : Needed?
+    /*
+    if (s_progressiveDraw)
+    {
+    viewDependentQueryParams->SetProgressiveDisplay(true);
+    viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
+    }
+    */
+
+    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));
+    clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
+#endif
+
+
+    viewDependentQueryParams->SetViewClipVector(m_clipVector);
+    
+#if 0 
+    m_currentDrawingInfoPtr->m_overviewNodes.clear();
+
+    queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+    m_currentDrawingInfoPtr->m_currentQuery = queryId;
+#endif 
+
+    int queryId = 0;
+    bvector<bool> clips;
+    const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr> startingNodes;
+
+    /*NEEDS_WORK_SM : Get clips
+    m_DTMDataRef->GetVisibleClips(clips);
+    */
+    
+    StatusInt status = GetProgressiveQueryEngine()->StartQuery(queryId,
+                                                               viewDependentQueryParams,
+                                                               startingNodes,
+                                                               m_displayTexture, //No wireframe mode, so always load the texture.
+                                                               clips,
+                                                               m_smPtr);
+
+    ASSERT_TRUE(status == SUCCESS);
+
+    if (m_waitQueryComplete)
+        {
+        while (!GetProgressiveQueryEngine()->IsQueryComplete(queryId))
+            {
+            BeThreadUtilities::BeSleep(200);
+            }
+        }
+
+    ASSERT_TRUE(GetProgressiveQueryEngine()->IsQueryComplete(queryId));
+
+
+    bvector<IScalableMeshCachedDisplayNodePtr> meshNodes;
+    
+    status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
+    ASSERT_TRUE(status == SUCCESS);    
     }
 
