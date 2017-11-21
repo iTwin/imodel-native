@@ -9,7 +9,6 @@
 #include "Constants.h"
 #include "CesiumConstants.h"
 
-
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
@@ -152,11 +151,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
         json["revisions"] = std::move(revisionsJson);
 
-    if (Status::Success != (status = WriteAppJson (json)) ||
-        Status::Success != (status = WriteHtmlFile()))
-        return  status;
-
-    return WriteScripts ();
+    return WriteStandaloneHtmlFile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,10 +178,29 @@ PublisherContext::Status TilesetPublisher::WriteAppJson (Json::Value& json)
 
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Ray.Bentley     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteHtmlFile()
+PublisherContext::Status    TilesetPublisher::WriteStandaloneHtmlFile(PublisherParams const& params)
     {
+    if (params.GetBimiumDistDir().empty())       // If no Bimium distribution directory then assume standalone HTML not required.
+        return Status::Success;  
+
+    if (!BeFileName::DoesPathExist(params.GetBimiumDistDir()))
+        return Status::CantFindBimiumScripts;
+
+    BeFileName scriptsDstDir(m_outputDir);
+    scriptsDstDir.AppendToPath(L"PublishedScripts");
+
+    if (!BeFileName::DoesPathExist(scriptsDstDir.c_str()))
+        {
+        BeFileName::CreateNewDirectory(scriptsDstDir.c_str());
+
+        scriptsDstDir.AppendToPath(L"Bimium");
+
+        if (BeFileNameStatus::Success != BeFileName::CloneDirectory(params.GetBimiumDistDir().c_str(), scriptsDstDir.c_str()))
+            return Status::CantCopyBimiumScripts;
+        }
+
     // Produce the html file contents
     BeFileName  htmlFileName = m_outputDir;
     WString     jsonRootName = m_rootName + L"_AppData";
@@ -206,24 +220,6 @@ PublisherContext::Status TilesetPublisher::WriteHtmlFile()
     return Status::Success;
     }
 
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteScripts()
-    {
-    if (!m_copyScripts)
-        return Status::Success;
-
-    // Symlink the scripts, if not already present
-    BeFileName scriptsSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    scriptsSrcDir.AppendToPath(L"scripts");
-    BeFileName scriptsDstDir(m_outputDir);
-    scriptsDstDir.AppendToPath(L"PublishedScripts");
-    BeFileName::CloneDirectory(scriptsSrcDir.c_str(), scriptsDstDir.c_str());
-
-    return Status::Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16

@@ -1649,6 +1649,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="PartitionOriginatesFromRepository" strength="referencing" modifier="Sealed">
+        <!-- deprecated - use ElementHasLinks -->
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="originates from" polymorphic="true">
             <Class class="InformationPartitionElement"/>

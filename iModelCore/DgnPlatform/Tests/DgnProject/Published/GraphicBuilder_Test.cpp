@@ -260,7 +260,7 @@ protected:
     MeshBuilderMap  m_builders;
     uint64_t        m_curElemId = 0ull;
 
-    MeshBuilderTest() : m_features(100) { }
+    MeshBuilderTest() : m_features(DgnModelId(), 100) { } // m_defaultModelId not initialized yet - we don't care about the model ID anyway.
 
     struct TestContext : ViewContext
     {

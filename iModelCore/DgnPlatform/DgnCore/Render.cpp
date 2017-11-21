@@ -253,7 +253,10 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
 
     // Feature symbology is per-Target - will need to be updated for new Target (now, or possibly later if newTarget=nullptr)
     if (m_viewController.IsValid())
+        {
         m_viewController->SetFeatureOverridesDirty();
+        m_viewController->SetSelectionSetDirty();
+        }
 
     m_sync.InvalidateFirstDrawComplete();
     }
@@ -762,9 +765,14 @@ bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) const
+bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat, DgnModelId modelId) const
     {
-    app.Init();
+    auto modelApp = m_modelOverrides.find(modelId);
+    bool haveModelOverrides = m_modelOverrides.end() != modelApp;
+    if (haveModelOverrides)
+        app = modelApp->second;
+    else
+        app.Init();
 
     // Is the element visible?
     auto elemId = feat.GetElementId();
@@ -785,7 +793,7 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
         auto elemIter = m_elementOverrides.find(elemId);
         haveElemOverrides = m_elementOverrides.end() != elemIter;
         if (haveElemOverrides)
-            app = elemIter->second;
+            app = haveModelOverrides ? elemIter->second.Extend(app) : elemIter->second;
         }
 
     auto subcatId = feat.GetSubCategoryId();
@@ -799,7 +807,7 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat) c
             app = subcatIter->second.Extend(app);
         }
 
-    if (!haveElemOverrides)
+    if (!haveElemOverrides && !haveModelOverrides)
         app = m_defaultOverrides.Extend(app);
 
     bool visible = alwaysDrawn || IsClassVisible(feat.GetClass());
@@ -882,6 +890,34 @@ void FeatureSymbologyOverrides::OverrideElement(DgnElementId id, Appearance app,
 void FeatureSymbologyOverrides::ClearElementOverrides(DgnElementId id)
     {
     m_elementOverrides.erase(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::OverrideModel(DgnModelId id, Appearance app, bool replaceExisting)
+    {
+    if (!id.IsValid())
+        return;
+
+    auto iter = m_modelOverrides.find(id);
+    if (m_modelOverrides.end() != iter)
+        {
+        if (replaceExisting)
+            iter->second = app;
+        }
+    else
+        {
+        m_modelOverrides.Insert(id, app);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureSymbologyOverrides::ClearModelOverrides(DgnModelId id)
+    {
+    m_modelOverrides.erase(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
