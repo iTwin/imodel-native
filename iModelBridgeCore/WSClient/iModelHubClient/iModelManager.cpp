@@ -141,7 +141,8 @@ IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, D
                                                                         lastChangeSetId, req.Options(), m_cancellationToken()));
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-        result = ExecuteAsync(m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
+        result = ExecuteAsync(m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, 
+                                                               req.Options(), m_cancellationToken()));
     if (result->IsSuccess ())
         {
         return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
@@ -205,7 +206,8 @@ RepositoryStatus iModelManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSe
         return RepositoryStatus::ServerUnavailable;
 
     auto availableTask = m_connection->QueryCodesLocks(db.GetBriefcaseId(), m_cancellationToken());
-    auto unavailableTask = m_connection->QueryUnavailableCodesLocks(db.GetBriefcaseId(), db.Revisions().GetParentRevisionId(), m_cancellationToken());
+    auto unavailableTask = m_connection->QueryUnavailableCodesLocks(db.GetBriefcaseId(), db.Revisions().GetParentRevisionId(), 
+                                                                    m_cancellationToken());
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(availableTask);
     tasks.insert(unavailableTask);
