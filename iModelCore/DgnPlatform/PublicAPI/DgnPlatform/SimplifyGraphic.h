@@ -183,12 +183,6 @@ virtual bool _DoLineStyleStroke(Render::LineStyleSymbCR, IFacetOptionsPtr&, Simp
 //! @return A pointer to facet option structure to use or nullptr to use default options.
 virtual IFacetOptionsP _GetFacetOptionsP() {return nullptr;}
 
-//! Whether to include edge curves when UnhandledPreference::Curve is requested for a surface/solid geometric primitive.
-virtual bool _IncludeWireframeEdges() {return true;}
-
-//! Whether to include face iso curves when UnhandledPreference::Curve is requested for a surface/solid geometric primitive.
-virtual bool _IncludeWireframeFaceIso() {return true;}
-
 //! Adjust z-depth for 2d geometry. By default, z is set to zero.
 virtual double _AdjustZDepth(double zDepth) {return 0.0;}
 

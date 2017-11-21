@@ -707,7 +707,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
     if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         // Output edge geometry as CurveVector...
-        WireframeGeomUtil::Draw(graphic, entity, &graphic.GetViewContext(), true, false);
+        WireframeGeomUtil::Draw(entity, graphic, &graphic.GetViewContext());
 
         return true;
         }
