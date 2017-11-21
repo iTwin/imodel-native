@@ -257,6 +257,7 @@ struct Task : RefCounted<NonCopyableClass>
         DefineGeometryTexture,
         DestroyTarget,
         Initialize,
+        OnResized,
         OverrideFeatureSymbology,
         ReadImage,
         ReadPixels,
