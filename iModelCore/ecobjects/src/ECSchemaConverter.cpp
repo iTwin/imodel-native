@@ -1568,7 +1568,7 @@ ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttr
         return ConvertSchemaDisplayOptions(schema, instance);
 
     Utf8String fullName = schema.GetFullSchemaName();
-    LOG.warningv("Found DisplayOptions custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+    LOG.warningv("Found DisplayOptions custom attribute on a container which is not a schema or class, removing.  Container is in schema %s", fullName.c_str());
     container.RemoveCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);
     container.RemoveSupplementedCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);
     return ECObjectsStatus::Success;
