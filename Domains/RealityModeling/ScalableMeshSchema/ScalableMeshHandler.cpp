@@ -451,7 +451,7 @@ void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
 
     for (auto& mesh : m_meshes)
         {
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateWorldGraphic();
+        Render::GraphicBuilderPtr graphic = args.m_context.CreateSceneGraphic();
 
         GraphicBuilder::TileCorners corners;
         DPoint3d rangeCorners[8];
