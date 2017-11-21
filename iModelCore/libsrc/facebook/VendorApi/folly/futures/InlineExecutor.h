@@ -27,6 +27,7 @@ namespace folly {
     void add(Func f) override {
       f();
     }
+    void addWithPriority(Func f, int8_t) override {add(std::move(f));}
   };
 
 }

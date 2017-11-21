@@ -645,7 +645,7 @@ collect(InputIterator first, InputIterator last) {
     typename std::iterator_traits<InputIterator>::value_type::value_type T;
 
   auto ctx = std::make_shared<detail::CollectContext<T>>(
-    std::distance(first, last));
+    (int)std::distance(first, last));
   mapSetCallback<T>(first, last, [ctx](size_t i, Try<T>&& t) {
     if (t.hasException()) {
        if (!ctx->threw.exchange(true)) {
