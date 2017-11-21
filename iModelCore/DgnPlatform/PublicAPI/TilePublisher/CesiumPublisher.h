@@ -60,6 +60,7 @@ protected:
     bool                            m_overwriteExisting = true;
     bool                            m_wantProgressOutput = true;
     PublisherContext::GlobeMode     m_globeMode = PublisherContext::GlobeMode::FromDisplayStyle;
+    BeFileName                      m_bimiumDistDir;
 
     // History (WIP) requires IModel Hub connection.
     HistoryMode                     m_historyMode = HistoryMode::OmitHistory;
@@ -68,13 +69,12 @@ protected:
     Utf8String                      m_environment;
     Utf8String                      m_project = "iModelHubTest";
     Utf8String                      m_repository;
-    bool                            m_copyScripts = true;
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
     PublisherParams () { }
-    PublisherParams(BeFileNameCR inputFileName, BeFileNameCR outputDir, WStringCR tilesetName, bool copyScripts=true)
-        : m_inputFileName(inputFileName), m_outputDir(outputDir), m_tilesetName(tilesetName), m_copyScripts(copyScripts) { }
+    PublisherParams(BeFileNameCR inputFileName, BeFileNameCR outputDir, WStringCR tilesetName)
+        : m_inputFileName(inputFileName), m_outputDir(outputDir), m_tilesetName(tilesetName) { }
 
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
@@ -95,7 +95,8 @@ public:
     Utf8StringCR GetTerrainProvider() const { return m_terrainProvider; }
     PublisherContext::GlobeMode GetGlobeMode() const { return m_globeMode; }
     HistoryMode GetHistoryMode() const { return m_historyMode; }
-	bool WantCopyScripts() const { return m_copyScripts; }
+    void SetBimiumDistDir(BeFileNameCR bimiumDistDir) { m_bimiumDistDir = bimiumDistDir; }
+    BeFileNameCR GetBimiumDistDir() const { return m_bimiumDistDir; }
 
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
@@ -126,7 +127,6 @@ protected:
     Status                      m_acceptTileStatus = Status::Success;
     bool                        m_verbose;
     bool                        m_wantProgressOutput;
-    bool                        m_copyScripts;
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR, IGetPublishedTilesetInfoR) override;
@@ -140,8 +140,7 @@ protected:
 
     Status WriteWebApp(DPoint3dCR groundPoint, PublisherParams const& params);
     Status WriteAppJson (Json::Value& json);
-    Status WriteHtmlFile();
-    Status WriteScripts();
+    Status WriteStandaloneHtmlFile(PublisherParams const& params);
 
     DPoint3d GetGroundPoint(DRange3dCR range, PublisherParams const& params); 
 
@@ -167,7 +166,7 @@ public:
         GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool verbose, TextureMode textureMode, bool wantProgressOutput,
         GlobeMode globeMode, bool copyScripts=true)
         : PublisherContext(db, viewIds, outputDir, tilesetName, projectExtents, geoLocation, publishNonSurfaces, maxTilesetDepth, textureMode, globeMode),
-          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput), m_copyScripts(copyScripts)
+          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true), m_wantProgressOutput(wantProgressOutput)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(L"TileSets").AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -175,7 +174,8 @@ public:
 
     TilesetPublisher(DgnDbR db, AxisAlignedBox3dCR projectExtents, PublisherParamsR params, DgnViewIdSet const& viewsToPublish, DgnViewId defaultView, size_t maxTilesetDepth=5)
         : TilesetPublisher(db, viewsToPublish, defaultView, projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), maxTilesetDepth,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode(), params.WantCopyScripts()) { }
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()
+            ) { }
 
     TILEPUBLISHER_EXPORT Status Publish(PublisherParams const& params);
 

@@ -477,6 +477,10 @@ int wmain(int ac, wchar_t const** av)
         printUsage(av[0]);
         return 1;
         }
+    
+    WString     bimiumVar;
+    if (SUCCESS == ConfigurationManager::GetVariable(bimiumVar, L"BIMIUM_DIST_DIR"))
+        createParams.SetBimiumDistDir(BeFileName(bimiumVar.c_str()));
 
     Host host;
     DgnPlatformLib::Initialize(host, false);
@@ -501,7 +505,6 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-//#define DIRECT_CESIUM_PUBLISH
 #ifdef DIRECT_CESIUM_PUBLISH
     CesiumDirect::DirectPublisher publisher(*db, createParams, viewsToPublish, defaultView);
 #else
