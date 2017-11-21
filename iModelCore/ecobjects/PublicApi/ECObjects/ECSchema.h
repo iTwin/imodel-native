@@ -1415,7 +1415,7 @@ private:
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
-    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, Utf8String newName);
+    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, ECPropertyP& renamedProperty, Utf8String newName);
     void RenameDerivedProperties(Utf8String newName);
 
     // Adds the ECv3ConversionAttributes:RenamedPropertiesMapping Custom Attribute with the original name provided.
@@ -1602,7 +1602,8 @@ public:
     //! Note: This does not do any checks to determine if the give property's name does actually conflict.  It will always rename the property.
     //! @param[in]  conflictProperty    The property whose name conflicts with either a base class property or a reserved system property name
     //! @param[in]  renameDerivedProperties Whether to also rename derived properties
-    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties);
+    //! @param[out] renamedProperty         The renamed property
+    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties, ECPropertyP& renamedProperty);
 
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class

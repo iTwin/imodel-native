@@ -1218,15 +1218,15 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFa
         "           </ECCustomAttributes>";
 
     Utf8PrintfString schema1Xml(schemaXml, instance1Xml, instance2Xml, instance1Xml);
-    // B and C should have the strict Std Value which will prevent it from converting. 
+    // B and C should have the strict Std Value which will cause the derived properties to be renamed 
     // B and A will have different Std Values but since B is strict it won't be able to convert its derived class, A, to the enum
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1Xml.c_str(), *context));
     
-    EXPECT_FALSE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have failed";
-    CheckTypeName("int", *schema, "TitleA", {"B","C","A"});
-    EXPECT_EQ(0, schema->GetEnumerationCount()) << "Conversion should not have created any enums";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion should have succeeded by renaming the properties";
+    CheckTypeName("B_TitleA", *schema, "TitleA", {"B","C"});
+    EXPECT_EQ(2, schema->GetEnumerationCount()) << "Conversion should have created two enums";
     
     // C and A have the same SD Value but since B is not strict and A can't be strict since it's a base property they should create an enum
     // It will try to convert C to the enum and fail, so C then attempts to creates its own enum but also fails and reverts to int
@@ -1235,20 +1235,22 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionFa
     Utf8PrintfString schema2Xml(schemaXml, instance1Xml, instance1Xml, instance2Xml);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schema2Xml.c_str(), *context));
 
-    EXPECT_FALSE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion failed";
-    EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should not have created any enums";
-    CheckTypeName("C_TitleA", *schema2, "TitleA", {"A","C"});
-    CheckTypeName("int", *schema2, "TitleA", {"B"});
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion should have succeeded by renaming the properties";
+    EXPECT_EQ(2, schema2->GetEnumerationCount()) << "Conversion should have created two enums";
+    CheckTypeName("A_tr_TitleA_", *schema2, "tr_TitleA_", {"A"});
+    CheckTypeName("A_tr_TitleA_", *schema2, "TitleA", {"C"});
+    CheckTypeName("B_TitleA", *schema2, "TitleA", {"B"});
 
     ECSchemaPtr schema3;
     Utf8PrintfString schema3Xml(schemaXml, instance2Xml, instance1Xml, instance1Xml);
     context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schema3Xml.c_str(), *context));
 
-    EXPECT_FALSE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have failed";
-    EXPECT_EQ(1, schema3->GetEnumerationCount()) << "Conversion should not have created any enums";
-    CheckTypeName("B_TitleA", *schema3, "TitleA", {"A","B"});
-    CheckTypeName("int", *schema3, "TitleA", {"C"});
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have succeeded";
+    EXPECT_EQ(2, schema3->GetEnumerationCount()) << "Conversion should have created two enums";
+    CheckTypeName("A_tr_TitleA_", *schema2, "tr_TitleA_", {"A"});
+    CheckTypeName("A_tr_TitleA_", *schema2, "TitleA", {"C"});
+    CheckTypeName("B_TitleA", *schema2, "TitleA", {"B"});
     }
 
 //---------------------------------------------------------------------------------------
@@ -1338,9 +1340,10 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
     ECSchemaPtr schema1;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, schemaXML, *m_readContext));
 
-    EXPECT_FALSE(ECSchemaConverter::Convert(*schema1.get())) << "Schema conversion should have failed";
-    CheckTypeName("int", *schema1, "TitleA", { "A", "B" });
-    EXPECT_EQ(0, schema1->GetEnumerationCount()) << "Conversion should not have created any enums";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema1.get())) << "Schema conversion should not have failed";
+    CheckTypeName("A_tr_TitleA_", *schema1, "tr_TitleA_", {"A"});
+    CheckTypeName("B_TitleA", *schema1, "TitleA", {"B"});
+    EXPECT_EQ(2, schema1->GetEnumerationCount()) << "Conversion should have created two enums";
     ValidateSchema(*schema1);
 
     Utf8CP schemaXML2 = "<?xml version='1.0' encoding='UTF-8'?>"
@@ -1389,7 +1392,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
 
     EXPECT_TRUE(ECSchemaConverter::Convert(*schema2.get())) << "Schema conversion should have passed";
     CheckTypeName("B_TitleA", *schema2, "TitleA", { "A", "B", "C" });
-    EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should not have created any enums";
+    EXPECT_EQ(1, schema2->GetEnumerationCount()) << "Conversion should have created one enum";
     ValidateSchema(*schema2);
 
     Utf8CP schemaXML3 = "<?xml version='1.0' encoding='UTF-8'?>"
@@ -1434,9 +1437,10 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
     ECSchemaPtr schema3;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schemaXML3, *m_readContext));
 
-    EXPECT_FALSE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have failed to convert";
-    CheckTypeName("int", *schema3, "TitleA", {"A", "B", "C"});
-    EXPECT_EQ(0, schema3->GetEnumerationCount()) << "Conversion should not have created any enums";
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema3.get())) << "Schema conversion should have failed to convert";
+    CheckTypeName("A_tr_TitleA_", *schema1, "tr_TitleA_", {"A"});
+    CheckTypeName("B_TitleA", *schema3, "TitleA", {"B", "C"});
+    EXPECT_EQ(2, schema3->GetEnumerationCount()) << "Conversion should have created two enums";
     ValidateSchema(*schema3);
 
     Utf8CP schemaXML4 = "<?xml version='1.0' encoding='UTF-8'?>"

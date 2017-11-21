@@ -439,7 +439,8 @@ void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
             auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
             if (found != reservedNames.end())
                 {
-                nonConstClass->RenameConflictProperty(ecProp, true);
+                ECPropertyP newProperty;
+                nonConstClass->RenameConflictProperty(ecProp, true, newProperty);
                 }
             }
         }
@@ -655,7 +656,27 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
     for (auto const& derivedClass : currentClass->GetDerivedClasses())
         {
         if (ECObjectsStatus::Success != (status = ConvertToEnum(rootClass, derivedClass, propName, enumeration, sdInfo)))
-            return status;
+            {
+            if (ECObjectsStatus::DataTypeMismatch == status)
+                {
+                ECClassP nonConstClass = const_cast<ECClassP>(derivedClass);
+                ECPropertyP derivedProperty = nonConstClass->GetPropertyP(propName);
+                ECPropertyP renamedProperty = nullptr;
+                if (ECObjectsStatus::Success != derivedClass->RenameConflictProperty(derivedProperty, true, renamedProperty))
+                    return status;
+                else
+                    {
+                    IECInstancePtr renamedPropInstance = renamedProperty->GetCustomAttributeLocal(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+                    if (!renamedPropInstance.IsValid())
+                        return ECObjectsStatus::Success;
+
+                    if (ECObjectsStatus::Success != (status = Convert(nonConstClass->GetSchemaR(), *renamedProperty, *renamedPropInstance)))
+                        return status;
+                    }
+                }
+            else
+                return status;
+            }
         }
     
     if (nullptr != prop && ECObjectsStatus::Success == status)
