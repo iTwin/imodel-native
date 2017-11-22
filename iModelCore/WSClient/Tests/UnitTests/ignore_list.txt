@@ -48,23 +48,6 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 #--------------------------------------------------------------------------------
 # RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
 #--------------------------------------------------------------------------------
-
-#TFS 733253
-ChangeManagerTests.*
-    # DgnDb61-16Q3, WinX64, DEBUG
-    # <Random crashes among at least half a dozen of these tests, no output or stack printed>
-
-#TFS 733265
-ChangeGraphTests.*
-    # DgnDb61-16Q2, WinX86, DEBUG
-    # <Random crashes among these tests, no output or stack printed>
-
-#TFS 733272
-CachingDataSourceTests.*
-    # DgnDb61-16Q3, WinX64, DEBUG
-    # <Any one of these tests seems to randomly crash or hang with no output or stack printed>
-
-
 #TFS 775875 (Client SDK Cpp) Calculated properties no linger supported in ecdb, follow-up if it needs fixing on WSClient
 #[ RUN      ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
     #{SRC}\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(4440): error:       Expected: "OldValue"
@@ -83,31 +66,6 @@ CachingDataSourceTests.GetFile_CalledMultipleTimes*
     # bim0200, NDEBUG, x64 and x86
     # The first hung on line 751 of the test body: while (!downloadStarted);
     # The rest seemed to randomly hang as well.
-
-#TFS 733272
-CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
-    # bim0200, NDEBUG, x86, random
-    # Randomly crashes, no stack printed, test output:
-    # [ RUN      ] CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
-    # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'. Start tag expected, '<' not found
-    #
-    # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - line 1, position 1
-    # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'
-
-#TFS 733272
-CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
-    # bim0200dev, DEBUG, x64, random
-    # [ RUN      ] CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
-    # 2016-10-27 07:54:41,529 ERROR [0x00002790] BeAssert - F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
-    # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
-    # F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
-    # CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (798 ms)
-
-UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
-    # bim0200, NDEBUG, x64, random, firebug hang
-
-UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate
-    # bim0200dev, x86, NDEBUG, firebug, random, crash
 
 UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
     # DgnDb61-16Q4, x64, NDEBUG (PRG)
@@ -131,27 +89,6 @@ ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
     # End of tests reports:
     # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
     # ERROR: 1 leaked mock object found at program exit.
-
-ConnectSignInManagerTests.GetAuthenticationHandler_UrlProvider*
-    # bim0200dev, x86, DEBUG, CRASHES
-    # [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderProduction_SetsValidateCertificateForAllRequests
-    # 2016-12-20 09:17:23,277 ERROR [0x00004974] WSClient - Base token not found for 'https://connect-wsg20.bentley.com' delegation token
-
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest
-    # bim0200dev, x86, DEBUG, CRASHES
-
-#TFS 733277
-PassportTests.*
-    # bim0200dev, x86, DEBUG, CRASHES
-
-#TFS 733272
-CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
-    # bim0200dev, x86, DEBUG
-    # [ RUN      ] CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
-    # 2017-01-13 08:35:20,299 ERROR [0x0000b4ac] BeAssert - F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
-    # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(225): error: Failed
-    # F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
-    # CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (1379 ms)
 
 UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
     # bim0200, x64, NDEBUG
@@ -185,13 +122,6 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
 #Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
 *ConnectWebServicesClientCTests*
 
-# bim0200dev, x86, DEBUG, hang
-ConnectSignInManagerTests.GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull
-
-# bim0200dev, x64 & x86, DEBUG, random crashes
-WSClientTests.GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported
-WSRepositoryClientTests.Send*
-
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 # bim0200dev, x64, DEBUG
 # [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
@@ -202,85 +132,6 @@ ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsin
 #          Expected: to be called once
 #            Actual: called twice - over-saturated and active
 # ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
-
-UsageTrackingTests.PostSingleUsage
-    # bim0200dev, x64, DEBUG, random hang
-    # Main thread:
-    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
-    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
-    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
-    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
-    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182   C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345  C++
-    #   WSClientTest.exe!BentleyB0200::Tasks::PackagedAsyncTask<enum BentleyB0200::WebServices::UsageTracking::Status>::GetResult() Line 186    C++
-    #   WSClientTest.exe!UsageTrackingTests_PostSingleUsage_Test::TestBody() Line 46    C++
-    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2434   C++
-    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2485  C++
-    #   WSClientTest.exe!testing::Test::Run() Line 2528 C++
-    #   ...
-
-UsageTrackingTests.PostMultipleUsage
-    # bim0200dev, x64, DEBUG, random hang
-    # Main thread:
-    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
-    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
-    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
-    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
-    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
-    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
-    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182   C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345  C++
-    #   WSClientTest.exe!BentleyB0200::Tasks::PackagedAsyncTask<enum BentleyB0200::WebServices::UsageTracking::Status>::GetResult() Line 186    C++
-    #   WSClientTest.exe!UsageTrackingTests_PostMultipleUsage_Test::TestBody() Line 70  C++
-    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2434   C++
-    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2485  C++
-    #   WSClientTest.exe!testing::Test::Run() Line 2528 C++
-    #   ...
-
-DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
-    # bim0200, x86, NDEBUG, PRG, seems random
-    # [ RUN      ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
-    # e:\Builds\dcsdk02000128\Source\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(237): error:       Expected: BeFileNameStatus::Success
-    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
-    #       Which is: BeFileNameStatus::FileNotFound
-    # e:\Builds\dcsdk02000128\Source\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(238): error:       Expected: BeFileNameStatus::Success
-    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
-    #       Which is: BeFileNameStatus::AlreadyExists
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [12] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x17f0fd0)
-    # [11] testing::Test::Run (0x17feb70)
-    # [10] testing::TestInfo::Run (0x17fee00)
-    # [9] testing::TestCase::Run (0x17fec60)
-    # [8] testing::internal::UnitTestImpl::RunAllTests (0x17ff0a0)
-    # [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x17f13f0)
-    # [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x17f11b0)
-    # [5] testing::UnitTest::Run (0x17fef80)
-    # [4] main (0x1327800)
-    # [3] __scrt_common_main_seh (0x180a418)
-    # [2] BaseThreadInitThunk (0x76807be0)
-    # [1] RtlInitializeExceptionChain (0x77a4ab00)
-    # [0] RtlInitializeExceptionChain (0x77a4ab00)
-    #
-    # [  FAILED  ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty (1916 ms)
-
-DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching
-    # bim0200, x64 & x86, NDEBUG
-    # [ RUN      ] DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching
-    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(293): error: Value of: VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"})
-    #   Actual: false
-    # Expected: true
-    # DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching (68 ms)
-
-ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
-    # bim0200dev, x64 & x86, DEBUG,
-    # hangs
 
 DataSourceCacheTests.Create_ValidParameters_Success
     # bim0200dev, x64, DEBUG
@@ -347,101 +198,6 @@ DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
     #       Which is: 32768
     # DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success (871 ms)
 
-DataSourceCacheTests.*
-    # bim0200dev, x64, DEBUG
-    # These will fail one-by-one as you start ignoring them.
-
-ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest
-    # bim0200dev, x64, NDEBUG, firebug, random hang
-
- WSClientTests.GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce
-    # bim0200dev, x64, DEBUG, random hang
-    #
-    # Main thread:
-    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
-    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
-    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
-    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
-    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
-    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
-    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182   C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345  C++
-    #   WSClientTest.exe!BentleyB0200::Tasks::PackagedAsyncTask<BentleyB0200::Tasks::AsyncResult<BentleyB0200::WebServices::WSInfo,BentleyB0200::WebServices::WSError> >::GetResult() Line 186  C++
-    #   WSClientTest.exe!WSClientTests_GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce_Test::TestBody() Line 169   C++
-    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2446   C++
-    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2497  C++
-    #   WSClientTest.exe!testing::Test::Run() Line 2540 C++
-    #   WSClientTest.exe!testing::TestInfo::Run() Line 2719 C++
-    #   WSClientTest.exe!testing::TestCase::Run() Line 2834 C++
-    #   WSClientTest.exe!testing::internal::UnitTestImpl::RunAllTests() Line 4709   C++
-    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl *, bool(testing::internal::UnitTestImpl::*)(), const char *) Line 2446 C++
-    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl *, bool(testing::internal::UnitTestImpl::*)(), const char *) Line 2497    C++
-    #   WSClientTest.exe!testing::UnitTest::Run() Line 4316 C++
-    #   WSClientTest.exe!RUN_ALL_TESTS() Line 2234  C++
-    #   WSClientTest.exe!main(int, char * *) Line 450   C++
-    #   WSClientTest.exe!__scrt_common_main_seh() Line 253  C++
-    #   kernel32.dll!BaseThreadInitThunk() Unknown
-    #   ntdll.dll!RtlUserThreadStart() Unknown
-    #
-    # 3 other work threads have identical stacks:
-    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
-    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
-    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
-    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
-    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
-    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
-    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::ConcurrentQueue<std::shared_ptr<BentleyB0200::Tasks::AsyncTask> >::ProtectedWaitAndPop(std::shared_ptr<BentleyB0200::Tasks::AsyncTask> &, BentleyB0200::BeMutexHolder &) Line 143   C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::TaskScheduler::WaitAndPop() Line 84 C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_RunAsyncTasksLoop() Line 110  C++
-    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_Run() Line 95 C++
-    #   BentleyB02.dll!std::_Invoker_pmf_pointer::_Call<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>(void(BentleyB0200::Tasks::AsyncTaskRunner::*)(), BentleyB0200::Tasks::AsyncTaskRunner * &&) Line 1342  C++
-    #   BentleyB02.dll!std::invoke<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>(void(BentleyB0200::Tasks::AsyncTaskRunner::*)() &&, BentleyB0200::Tasks::AsyncTaskRunner * &&) Line 1445    C++
-    #   BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Execute<0,1>(std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *> &, std::integer_sequence<unsigned __int64,0,1>) Line 241    C++
-    #   BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Run(std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *> > > > *) Line 247    C++
-    #   BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Go() Line 233    C++
-    #   BentleyB02.dll!std::_Pad::_Call_func(void *) Line 210   C++
-    #   ucrtbase.dll!_o__strtoui64()   Unknown
-    #   kernel32.dll!BaseThreadInitThunk() Unknown
-    #   ntdll.dll!RtlUserThreadStart() Unknown
-
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
-UrlProviderTests.GetUrl_ValidateAllGetters
-    # bim0200holdouts, x64, NDEBUG, random PRG failure
-    # [ RUN      ] UrlProviderTests.GetUrl_ValidateAllGetters
-    # e:\Builds\dcsdk02000157\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(88): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
-    #          Expected: to be called once
-    #            Actual: never called - unsatisfied and active
-    # [  FAILED  ] UrlProviderTests.GetUrl_ValidateAllGetters (893 ms)
-
-UrlProviderTests.GetPunchlistWsgUrl_NoCachedAndNoConnectionError_ReturnsDefaultUrl
-    # bim2-0r1, x64, NDEBUG, random PRG failure
-    # Crash (no output)
-    
-ConnectTokenProviderTests.UpdateToken_CredentialsSet_CallsImsServerToRetrieveToken
-    # bim0200dev, x64, DEBUG, randomly hangs
-
-# These tests directly use the AsyncTask API, or a test helper class that does.
-# Arturas: [ignoring such tests] would be a reasonable thing to do to be on the safe side. As far as I know, tests that use AsyncTask tend to randomly hang, so it is possible that any of those might hang the build. We will look for a short time solution to make sure that we would safely run as many tests as possible and BeFolly is long term plan.
-CachingDataSourceTests.*
-ConnectAuthenticationHandlerTests.*
-ConnectSignInManagerTests.*
-ConnectTokenProviderTests.*
-ConnectWebServicesClientCTests.*
-DataSourceCacheUpgradeTests.*
-DiskRepositoryClientTests.*
-EventParserTests.*
-iModelManagerTests.*
-MultiProgressCallbackHandlerTests.*
-RepositoryCompatibilityTests_Create.*
-RepositoryCompatibilityTests_Upgrade.*
-RetryTests.*
-UrlProviderTests.*
-WSRepositoryClientTests.*
