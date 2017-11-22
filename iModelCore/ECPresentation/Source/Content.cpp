@@ -571,13 +571,7 @@ static rapidjson::Value CreateKindOfQuantityJson(KindOfQuantityCR koq, rapidjson
     json.AddMember("Name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
     json.AddMember("DisplayLabel", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
     json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit().ToText(true).c_str(), allocator), allocator);
-    json.AddMember("CurrentUnit", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
-
-    rapidjson::Value units(rapidjson::kArrayType);
-    for (auto unit : koq.GetPresentationUnitList())
-        units.PushBack(rapidjson::Value(unit.ToText(true).c_str(), allocator), allocator);
-
-    json.AddMember("PresentationUnits", units, allocator);
+    json.AddMember("CurrentFusId", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
 
     return json;
     }
