@@ -128,10 +128,11 @@ struct TextStringGeometry : Geometry
 private:
     TextStringPtr                   m_text;
     mutable bvector<CurveVectorPtr> m_glyphCurves;
+    DgnDbR                          m_db;
     bool                            m_checkGlyphBoxes;
 
     TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
-        : Geometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes)
+        : Geometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes), m_db(db)
         { 
         InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
         }
@@ -171,6 +172,44 @@ public:
     GeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
+
+//=======================================================================================
+//! Text is frequently used for decorations, which are regenerated constantly; and
+//! glyphs can be too expensive to regenerate and re-facet from scratch every frame.
+//! Cache them a la qv_addGlyphToFont(), but tie their lifetime to the DgnDb's.
+//! NOTE: Because we're still 100% confident in the thread-safety of the DgnFont APIs,
+//! TextStringGeometry::InitGlyphCurves() uses the DgnFonts' mutex - so we also
+//! protect GlyphMap's data with the same mutex.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct GlyphMap : DgnDb::AppData
+{
+private:
+    static Key const& GetKey() { static Key s_key; return s_key; }
+
+    // Weird - a DgnFont does not supply its DgnFontId - must ask DgnFonts to iterate a map to look it up...
+    // Let's assume the DgnFontCP will remain valid?
+    using GlyphId = bpair<DgnFontCP, uint16_t>;
+    using Map = bmap<GlyphId, CurveVectorCPtr>;
+
+    Map m_map;
+
+    GlyphMap() { }
+
+    static GlyphMap& Get(DgnDbR db)
+        {
+        return static_cast<GlyphMap&>(*db.FindOrAddAppData(GetKey(), []() { return new GlyphMap(); }));
+        }
+
+    CurveVectorCPtr FindOrInsert(DgnGlyphCR glyph, DgnFontCR font);
+    bvector<CurveVectorPtr> GetCurves(TextStringCR text);
+public:
+    static bvector<CurveVectorPtr> GetCurves(TextStringCR text, DgnDbR db)
+        {
+        BeMutexHolder lock(DgnFonts::GetMutex());
+        return Get(db).GetCurves(text);
+        }
+};
 
 END_UNNAMED_NAMESPACE
 
@@ -1891,37 +1930,66 @@ size_t TextStringGeometry::_GetFacetCount(FacetCounter& counter) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<CurveVectorPtr> GlyphMap::GetCurves(TextStringCR text)
+    {
+    bvector<CurveVectorPtr> curves;
+
+    DgnGlyphCP const* glyphs = text.GetGlyphs();
+    if (nullptr == glyphs)
+        return curves;
+
+    DPoint3dCP glyphOrigins = text.GetGlyphOrigins();
+    BeAssert(nullptr != glyphOrigins);
+
+    DVec3d xAxis, yAxis;
+    text.ComputeGlyphAxes(xAxis, yAxis);
+    Transform rot = Transform::From(RotMatrix::From2Vectors(xAxis, yAxis));
+
+    DgnFontCR font = text.GetStyle().GetFont();
+    for (size_t i = 0; i < text.GetNumGlyphs(); i++)
+        {
+        auto glyph = glyphs[i];
+        if (nullptr == glyph)
+            continue;
+
+        auto cachedCurve = FindOrInsert(*glyph, font);
+        if (cachedCurve.IsNull())
+            continue;
+
+        auto curve = cachedCurve->Clone();
+        curve->TransformInPlace(Transform::FromProduct(Transform::From(glyphOrigins[i]), rot));
+        curves.push_back(curve);
+        }
+
+    return curves;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorCPtr GlyphMap::FindOrInsert(DgnGlyphCR glyph, DgnFontCR font)
+    {
+    GlyphId glyphId(&font, glyph.GetId());
+    auto iter = m_map.find(glyphId);
+    if (m_map.end() == iter)
+        {
+        bool unused_isFilled;
+        CurveVectorPtr cv = glyph.GetCurveVector(unused_isFilled);
+        iter = m_map.Insert(glyphId, cv.get()).first;
+        }
+
+    return iter->second.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/    
 void  TextStringGeometry::InitGlyphCurves() const
     {
-    if (!m_glyphCurves.empty())
-        return;
-
-    // ###TODO: Fonts are a freaking mess.
-    BeMutexHolder lock(DgnFonts::GetMutex());
-
-    DVec3d              xAxis, yAxis;
-    DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
-    DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
-
-    m_text->ComputeGlyphAxes(xAxis, yAxis);
-    Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
-
-    for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
-        {
-        if (nullptr != glyphs[iGlyph])
-            {
-            bool            isFilled = false;
-            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
-
-            if (glyphCurveVector.IsValid())
-                {
-                glyphCurveVector->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
-                m_glyphCurves.push_back(glyphCurveVector);
-                }
-            }
-        }                                                                                                           
+    if (m_glyphCurves.empty())
+        m_glyphCurves = GlyphMap::GetCurves(*m_text, m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**
