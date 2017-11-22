@@ -578,10 +578,11 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName)
 //----------------------------------------------------------------------------------------
 void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     {
-    UnitCP un = FindSynonym(synonym);
-    if (nullptr != un)
-        return;
     UnitSynonymMap map = UnitSynonymMap(unitName, synonym);
+    UnitCP un = FindSynonym(map.GetSynonym());
+
+    if (nullptr != un) // synonym is found - we don't add duplicate
+        return;
     m_altNames.push_back(map);
     }
 //----------------------------------------------------------------------------------------
