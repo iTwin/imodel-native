@@ -13,7 +13,7 @@
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
-struct ChangeDetectorFacade : public Teleporter::IChangeDetector, RefCountedBase
+struct ChangeDetectorFacade : public Teleporter::IChangeDetector
     {
     struct ResultsFacade : public Teleporter::IChangeDetector::IResults
         {

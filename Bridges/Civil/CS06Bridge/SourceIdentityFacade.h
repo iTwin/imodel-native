@@ -13,7 +13,7 @@
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
-struct SourceIdentityFacade : public Teleporter::ISourceIdentity, RefCountedBase
+struct SourceIdentityFacade : public Teleporter::ISourceIdentity
     {
     private:
         Dgn::iModelBridgeSyncInfoFile::SourceIdentity m_sourceIdentity;

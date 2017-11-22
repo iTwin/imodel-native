@@ -13,7 +13,7 @@
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
-struct RecordFacade : public Teleporter::IRecord, RefCountedBase
+struct RecordFacade : public Teleporter::IRecord
     {
     private:
         Dgn::iModelBridgeSyncInfoFile::Record m_record;

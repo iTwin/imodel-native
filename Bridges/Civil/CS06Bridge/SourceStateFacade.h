@@ -13,7 +13,7 @@
 
 BEGIN_CS06BRIDGE_NAMESPACE
 
-struct SourceStateFacade : public Teleporter::ISourceState, RefCountedBase
+struct SourceStateFacade : public Teleporter::ISourceState
     {
     private:
         Dgn::iModelBridgeSyncInfoFile::SourceState m_sourceState;

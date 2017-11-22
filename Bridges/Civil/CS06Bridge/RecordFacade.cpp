@@ -17,7 +17,7 @@ BEGIN_CS06BRIDGE_NAMESPACE
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RecordFacade::RecordFacade(Dgn::iModelBridgeSyncInfoFile::Record record) 
-    : m_record(record), Teleporter::IRecord(), RefCountedBase()
+    : m_record(record), Teleporter::IRecord()
     {
     }
 

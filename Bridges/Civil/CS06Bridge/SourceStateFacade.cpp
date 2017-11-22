@@ -15,7 +15,7 @@ BEGIN_CS06BRIDGE_NAMESPACE
 * @bsimethod                                Jonathan.DeCarlo                    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceStateFacade::SourceStateFacade(Dgn::iModelBridgeSyncInfoFile::SourceState sourceState) 
-    : m_sourceState(sourceState), Teleporter::ISourceState(), RefCountedBase()
+    : m_sourceState(sourceState), Teleporter::ISourceState()
     {
 
     }
