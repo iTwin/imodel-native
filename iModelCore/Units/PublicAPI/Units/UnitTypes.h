@@ -25,6 +25,7 @@ BE_JSON_NAME(synonymMap)
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(synonym)
 
+typedef bvector<UnitSynonymMap> T_UnitSynonymVector;
 
 enum class UnitsProblemCode
     {
@@ -263,7 +264,9 @@ public:
     UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
     UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
     UNITS_EXPORT Json::Value SynonymMapToJson();
-    UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);   
+    UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV); 
+    UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const { return &m_altNames; }
+    UNITS_EXPORT size_t GetSynonymCount() const { return m_altNames.size(); }
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

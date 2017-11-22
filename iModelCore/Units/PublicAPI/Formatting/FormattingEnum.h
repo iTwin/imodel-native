@@ -391,7 +391,8 @@ struct Utils
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
     UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name);
-    static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return IsNameNullOrEmpty(name) ? subs : name; }
+    static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return Utf8String::IsNullOrEmpty(name) ? subs : name; }
+    static Utf8CP SubstituteNull(Utf8CP name, Utf8CP subs) { return (nullptr == name) ? subs : name; }
     //UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
     UNITS_EXPORT static bool AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP u2);
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
