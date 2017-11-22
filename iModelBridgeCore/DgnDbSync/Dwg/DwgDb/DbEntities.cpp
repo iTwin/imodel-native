@@ -392,6 +392,102 @@ DwgDbStatus     DwgDbSpline::GetNurbsData (int16_t& degree, bool& rational, bool
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbSpline::GetSamplePoints (double fromParam, double toParam, double chordTol, DPoint3dArrayR points, DwgDbDoubleArrayR params, bool resample) const
+    {
+    DWGGE_TypeP(Curve3d) curve = nullptr;
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    status = ToDwgDbStatus (T_Super::getOdGeCurve(curve, OdGeContext::gTol));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::getAcGeCurve(curve, AcGeContext::gTol));
+#endif
+
+    if (status == DwgDbStatus::Success && curve != nullptr)
+        {
+        DWGGE_Type(Point3dArray)    gePoints;
+        DWGGE_Type(DoubleArray)     geParams;
+
+        curve->getSamplePoints (fromParam, toParam, chordTol, gePoints, geParams, resample);
+
+        uint32_t    nPoints = static_cast<uint32_t> (gePoints.length());
+        if (nPoints == 0)
+            return  DwgDbStatus::InvalidData;
+
+        for (uint32_t i = 0; i < nPoints; i++)
+            {
+            points.push_back (Util::DPoint3dFrom(gePoints[i]));
+            params.push_back (geParams[i]);
+            }
+
+        delete curve;
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbSpline::GetSamplePoints (int32_t nSample, DPoint3dArrayR points) const
+    {
+    DWGGE_TypeP(Curve3d) curve = nullptr;
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    status = ToDwgDbStatus (T_Super::getOdGeCurve(curve, OdGeContext::gTol));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::getAcGeCurve(curve, AcGeContext::gTol));
+#endif
+
+    if (status == DwgDbStatus::Success && curve != nullptr)
+        {
+        DWGGE_Type(Point3dArray)    gePoints;
+        curve->getSamplePoints (nSample, gePoints);
+        Util::GetPointArray (points, gePoints);
+
+        delete curve;
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbSpline::GetSamplePoints (int32_t nSample, DPoint3dArrayR points, DwgDbDoubleArrayR params) const
+    {
+    DWGGE_TypeP(Curve3d) curve = nullptr;
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    status = ToDwgDbStatus (T_Super::getOdGeCurve(curve, OdGeContext::gTol));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::getAcGeCurve(curve, AcGeContext::gTol));
+#endif
+
+    if (status == DwgDbStatus::Success && curve != nullptr)
+        {
+        DWGGE_Type(Point3dArray)    gePoints;
+        DWGGE_Type(DoubleArray)     geParams;
+
+        curve->getSamplePoints (nSample, gePoints, geParams);
+
+        uint32_t    nPoints = static_cast<uint32_t> (gePoints.length());
+        if (nPoints == 0)
+            return  DwgDbStatus::InvalidData;
+
+        for (uint32_t i = 0; i < nPoints; i++)
+            {
+            points.push_back (Util::DPoint3dFrom(gePoints[i]));
+            params.push_back (geParams[i]);
+            }
+
+        delete curve;
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DwgDbAttribute::GetValueString (DwgStringR value) const

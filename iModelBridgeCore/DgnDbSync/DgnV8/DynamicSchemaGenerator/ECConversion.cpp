@@ -958,30 +958,29 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
      m_schemaReadContext->GetCache().GetSchemas(schemas);
      bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group", 
          "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
+     bool needsFlattening = false;
+     // It is possible that a schema will refer to one of the above schemas that needs flattening.  In such a situation, the reference needs to be updated to the flattened ref.  There is no
+     // easy way to replace a referenced schema.  Therefore, if one of the schemas in the set needs to be flattened, we just flatten everything which automatically updates the references.
      for (BECN::ECSchemaP schema : schemas)
          {
          Utf8CP schemaName = schema->GetName().c_str();
          auto found = std::find_if(schemasWithMultiInheritance.begin(), schemasWithMultiInheritance.end(), [schemaName] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(schemaName, reserved) == 0; });
          if (found != schemasWithMultiInheritance.end())
              {
-             if (BSISUCCESS != FlattenSchemas(schema))
-                 return BSIERROR;
+             needsFlattening = true;
+             break;
              }
+         }
+
+     if (needsFlattening)
+         {
+         for (BECN::ECSchemaP schema : schemas)
+             if (BSISUCCESS != FlattenSchemas(schema))
+                return BSIERROR;
          }
 
      schemas.clear();
      m_schemaReadContext->GetCache().GetSchemas(schemas);
-     for (BECN::ECSchemaP schema : schemas)
-         {
-         if (schema->IsSupplementalSchema())
-             continue;
-         if (!ECN::ECSchemaConverter::Convert(*schema, false))
-             {
-             Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
-             ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-             return BentleyApi::BSIERROR;
-             }
-         }
 
 //#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
@@ -1010,6 +1009,18 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          }
 #endif
 
+     for (BECN::ECSchemaP schema : schemas)
+         {
+         if (schema->IsSupplementalSchema())
+             continue;
+         if (!ECN::ECSchemaConverter::Convert(*schema, false))
+             {
+             Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
+             ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+             return BentleyApi::BSIERROR;
+             }
+         }
+
      return BSISUCCESS;
     }
 
@@ -1020,9 +1031,10 @@ void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchem
     {
     bool foundSupplemental = false;
     bvector<BECN::ECSchemaP> units;
+    Utf8PrintfString suppName("%s_Supplemental_Units", primarySchema->GetName().c_str());
     for (BECN::ECSchemaP supp : supplementalSchemas)
         {
-        if (supp->GetName().StartsWithIAscii("OpenPlant_3D_Supplemental_Units"))
+        if (supp->GetName().StartsWithIAscii(suppName.c_str()))
             foundSupplemental = true;
         else if (supp->GetName().StartsWithIAscii("OpenPlant_Supplemental_Units"))
             units.push_back(supp);
@@ -1035,13 +1047,13 @@ void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchem
             if (BECN::ECObjectsStatus::Success != unitSchema->CopySchema(op3d))
                 {
                 Utf8String error;
-                error.Sprintf("Failed to create an OpenPlant_3D copy of the units schema '%s'; Unit information will be unavailable. See log file for details.", Utf8String(unitSchema->GetName()).c_str());
+                error.Sprintf("Failed to create an %s copy of the units schema '%s'; Unit information will be unavailable. See log file for details.", primarySchema->GetName().c_str(), (unitSchema->GetName()).c_str());
                 ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                 continue;
                 }
 
             Utf8String oldName(op3d->GetName().c_str());
-            oldName.ReplaceAll("OpenPlant", "OpenPlant_3D");
+            oldName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
             op3d->SetName(oldName);
             BECN::SupplementalSchemaMetaDataPtr metaData;
             if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
@@ -1054,7 +1066,7 @@ void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchem
             BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
             op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
             Utf8String newName(metaData->GetPrimarySchemaName());
-            newName.ReplaceAll("OpenPlant", "OpenPlant_3D");
+            newName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
             BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
                                                                                                        metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
             if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
@@ -1136,7 +1148,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             }
 
         // Later versions of OP3D don't use a separate units schema for supplementation.  Instead, they share the OpenPlant version.  
-        if (primarySchema->GetName().EqualsIAscii("OpenPlant_3D"))
+        if (primarySchema->GetName().EqualsIAscii("OpenPlant_3D") || primarySchema->GetName().EqualsIAscii("OpenPlant_PID"))
             {
             SwizzleOpenPlantSupplementals(tmpSupplementals, primarySchema, supplementalSchemas);
             for (BECN::ECSchemaPtr supp : tmpSupplementals)
@@ -1316,6 +1328,24 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatClass(ECN::ECClassP& targetClass, 
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP targetClass, ECN::ECPropertyCP sourceProperty)
     {
+    // Only copy properties either directly on the same class or on a base class that was dropped.  Don't copy properties from base classes that are still set
+    if (0 != strcmp(targetClass->GetFullName(), sourceProperty->GetClass().GetFullName()))
+        {
+        ECN::ECClassP targetPropertyClass = nullptr;
+        ECN::ECSchemaPtr flatSchema = m_flattenedRefs[sourceProperty->GetClass().GetSchema().GetName()];
+        if (!flatSchema.IsValid())
+            {
+            if (Utf8String(sourceProperty->GetClass().GetSchema().GetName()).StartsWithIAscii("SP3D"))
+                targetPropertyClass = targetClass->GetSchemaR().GetClassP(sourceProperty->GetClass().GetName().c_str());
+            else
+                return BSIERROR;
+            }
+        else
+            targetPropertyClass = flatSchema->GetClassP(sourceProperty->GetClass().GetName().c_str());
+        if (targetClass->Is(targetPropertyClass))
+            return BSISUCCESS;
+        }
+
     ECN::ECPropertyP destProperty = nullptr;
     if (sourceProperty->GetIsPrimitive())
         {
@@ -1707,6 +1737,7 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                 if (sourceBaseClass->GetSchema().GetName().EqualsIAscii(sourceClass->GetSchema().GetName().c_str()))
                     baseClassesFromSchema++;
                 }
+
             if (totalBaseClasses == 1)
                 {
                 for (ECN::ECClassP sourceBaseClass : baseClasses)
@@ -1725,6 +1756,14 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                         {
                         targetClass->AddBaseClass(*flatSchema->GetClassCP(sourceBaseClass->GetName().c_str()), false, false, false);
                         }
+                    else
+                        {
+                        ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceBaseClass->GetSchema().GetName()];
+                        if (!flatBaseSchema.IsValid())
+                            continue;
+                        ECN::ECClassP flatBase = flatBaseSchema->GetClassP(sourceBaseClass->GetName().c_str());
+                        addDroppedDerivedClass(flatBase, targetClass);
+                        }
                     }
                 }
             else if (totalBaseClasses > 1)
@@ -1737,11 +1776,15 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                     ECN::ECClassP flatBase = flatBaseSchema->GetClassP(baseClass->GetName().c_str());
                     addDroppedDerivedClass(flatBase, targetClass);
                     }
-
                 }
             if (targetClass->GetClassModifier() == ECN::ECClassModifier::Abstract)
                 verifyBaseClassAbstract(targetClass);
+            }
 
+        // This needs to happen after all of the baseclasses have been set.
+        for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
+            {
+            ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());
             for (ECN::ECPropertyCP sourceProperty : sourceClass->GetProperties(true))
                 {
                 if (BSISUCCESS != CopyFlattenedProperty(targetClass, sourceProperty))

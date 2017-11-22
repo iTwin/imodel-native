@@ -228,6 +228,23 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(Spline)
 
     DWGDB_EXPORT DwgDbStatus    GetNurbsData (int16_t& degree, bool& rational, bool& closed, bool& periodic, DPoint3dArrayR poles, DwgDbDoubleArrayR knots, DwgDbDoubleArrayR weights, double& poleTol, double& knotTol) const;
+    //! Stroke the Spline for sample points
+    //! @param[in] fromParam    Starting parameter
+    //! @param[in] toParam      Ending parameter
+    //! @param[in] chordTol     The chord height tolerance
+    //! @param[out] points      Resultant sample points
+    //! @param[out] params      Resultant parameters with respect to the sample points
+    //! @param[in] resample     Force stroking the Spline?
+    DWGDB_EXPORT DwgDbStatus GetSamplePoints (double fromParam, double toParam, double chordTol, DPoint3dArrayR points, DwgDbDoubleArrayR params, bool resample = false) const;
+    //! Stroke the Spline for sample points
+    //! @param[in] nSample      Number of sample points to be returned
+    //! @param[out] points      Resultant sample points
+    DWGDB_EXPORT DwgDbStatus GetSamplePoints (int32_t nSample, DPoint3dArrayR points) const;
+    //! Stroke the Spline for sample points
+    //! @param[in] nSample      Number of sample points to be returned
+    //! @param[out] points      Resultant sample points
+    //! @param[out] params      Resultant parameters with respect to the sample points
+    DWGDB_EXPORT DwgDbStatus GetSamplePoints (int32_t nSample, DPoint3dArrayR points, DwgDbDoubleArrayR params) const;
     };  // DwgDbSpline
 DWGDB_DEFINE_OBJECTPTR (Spline)
 
