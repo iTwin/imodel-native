@@ -918,7 +918,7 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
     if (!m_geomPrimitive.IsValid())
         return;
 
-    auto builder = context.CreateWorldGraphic(m_geomTransform);
+    auto builder = context.CreateSceneGraphic(m_geomTransform);
 
     switch (m_geomPrimitive->GetGeometryType())
         {

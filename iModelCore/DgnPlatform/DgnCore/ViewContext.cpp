@@ -1562,7 +1562,7 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     uorPerPixel *= refScale;
 
     bool drawDots = ((refSpacing.x/uorPerPixel) > minGridSeperationPixels) &&((refSpacing.y/uorPerPixel) > minGridSeperationPixels);
-    auto graphic = CreateWorldGraphic();
+    auto graphic = CreateWorldDecoration();
 
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions, vp);
     AddWorldDecoration(*graphic->Finish());

@@ -1049,7 +1049,7 @@ void RedlineViewController::_DrawDecorations(DecorateContextR context)
     params.SetIsFilled(true);
     params.SetIsBlankingRegion(true);
 
-    auto graphic = context.CreateViewGraphic();
+    auto graphic = context.CreateViewBackground();
     graphic->ActivateGraphicParams(params);
     graphic->AddShape(5, pts, true);
 
