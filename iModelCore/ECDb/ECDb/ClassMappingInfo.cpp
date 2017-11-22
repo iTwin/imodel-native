@@ -116,7 +116,16 @@ BentleyStatus ClassMappingInfo::InitializeFromSchema()
             }
         }
 
-    if (!m_userDefinedStrategy.IsNull())
+    if (m_userDefinedStrategy.IsNull())
+        {
+        if (!m_tableName.empty())
+            {
+            Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is '%s'.",
+                            m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(MapStrategy::ExistingTable));
+            return ERROR;
+            }
+        }
+    else
         {
         switch (m_userDefinedStrategy.Value())
             {

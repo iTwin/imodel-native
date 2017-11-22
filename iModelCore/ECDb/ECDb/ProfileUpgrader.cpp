@@ -65,6 +65,12 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_Type ON " TABLE_Table "(Type);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Adding index ix_ec_Table_Type on table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+    
     LOG.debug("ECDb profile upgrade: Created table ' " TABLE_TableSpace "' and Added column TableSpaceId to table ' " TABLE_Table "'.");
     return BE_SQLITE_OK;
     }

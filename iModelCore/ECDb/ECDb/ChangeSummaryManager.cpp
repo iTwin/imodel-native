@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 BentleyStatus ChangeSummaryManager::SetupChangeSummaryCache() const
     {
-    return m_ecdb.Schemas().GetDbMap().GetDbSchema().RecreateTempTables();
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

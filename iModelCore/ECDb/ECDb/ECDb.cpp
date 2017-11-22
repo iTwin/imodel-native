@@ -64,6 +64,17 @@ DbResult ECDb::_OnDbOpening()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbOpened(OpenParams const& params)
+    {
+    DbResult stat = Db::_OnDbOpened(params);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return m_pimpl->OnDbOpened(params);
+    }
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_OnDbCreated(CreateParams const& params)

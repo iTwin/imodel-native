@@ -167,6 +167,7 @@ protected:
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
+    ECDB_EXPORT DbResult _OnDbOpened(OpenParams const&) override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT DbResult _OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;

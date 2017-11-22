@@ -243,6 +243,23 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangeSummaryTestFixture, LoadTempTablesOnOpen)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("openreadonly.ecdb"));
+
+    BeFileName fileName(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary"));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)

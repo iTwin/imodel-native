@@ -333,7 +333,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
         {
-        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s.%s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetTableSpace().GetName().c_str(), index.GetTable().GetName().c_str(),
                                        ecdb.GetLastError().c_str(), ddl.c_str());
 
         return ERROR;

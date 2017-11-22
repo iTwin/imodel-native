@@ -76,7 +76,6 @@ TEST_F(ECDbTestFixture, Settings)
                 EXPECT_EQ(allowChangesetMergingIncompatibleSchemaImport, ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
 
                 ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-
                 Utf8CP ecsql = "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('foofile.txt')";
                 if (requiresECCrudWriteToken)
                     {

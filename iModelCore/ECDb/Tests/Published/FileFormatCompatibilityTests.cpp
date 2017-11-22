@@ -1141,9 +1141,9 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    //In upgraded file, we have one more table (ec_TableSpace) and two more indexes (one on ec_Table(TableSpaceId), 
-    //one on ec_TableSpace(Id)
-    ASSERT_EQ(benchmarkMasterTableRowCount + 3, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
+    //In upgraded file, we have one more table (ec_TableSpace) and three more indexes (ec_Table(TableSpaceId),ec_Table(Type), 
+    //ec_TableSpace(Id))
+    ASSERT_EQ(benchmarkMasterTableRowCount + 4, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------

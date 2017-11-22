@@ -569,17 +569,14 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
 //-------------------------------------------------------------------------------------- -
 // @bsimethod                                                Krischan.Eberle        11/2017
 //--------------------------------------------------------------------------------------
-BentleyStatus DbSchema::RecreateTempTables() const
+BentleyStatus DbSchema::RecreateTempTables(bool& hasTempTables) const
     {
     BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
-
-    if (m_tempTablesAreLoaded)
-        return SUCCESS;
-
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT t.Name FROM " TABLE_Table " t JOIN " TABLE_TableSpace " ts ON t.TableSpaceId=ts.Id WHERE ts.Name='" TABLESPACE_Temp "'");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT t.Name FROM " TABLE_Table " t JOIN " TABLE_TableSpace " ts ON t.TableSpaceId=ts.Id WHERE t.Type<>" SQLVAL_DbTable_Type_Existing " AND ts.Name='" TABLESPACE_Temp "'");
     if (stmt == nullptr)
         return ERROR;
 
+    hasTempTables = false;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         DbTable const* table = FindTable(stmt->GetValueText(0));
@@ -589,6 +586,7 @@ BentleyStatus DbSchema::RecreateTempTables() const
             return ERROR;
             }
 
+        hasTempTables = true;
         BeAssert(table->GetTableSpace().IsTemp());
         if (DbSchemaPersistenceManager::TableExists(m_ecdb, table->GetName().c_str(), TABLESPACE_Temp))
             continue;
@@ -597,17 +595,20 @@ BentleyStatus DbSchema::RecreateTempTables() const
             return ERROR;
         }
 
-    return LoadTempIndexes();
+    if (!hasTempTables)
+        return SUCCESS;
+
+    return RecreateTempIndexes();
     }
 
 
 //-------------------------------------------------------------------------------------- -
 // @bsimethod                                                Krischan.Eberle        11/2017
 //--------------------------------------------------------------------------------------
-BentleyStatus DbSchema::LoadTempIndexes() const
+BentleyStatus DbSchema::RecreateTempIndexes() const
     {
     std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>> indexes;
-    if (LoadIndexDefs(indexes, " INNER JOIN " TABLE_TableSpace " TS ON TS.Id=T.TableSpaceId WHERE TS.Name='" TABLESPACE_Temp "'"))
+    if (LoadIndexDefs(indexes, " INNER JOIN " TABLE_TableSpace " TS ON TS.Id=T.TableSpaceId WHERE T.Type<>" SQLVAL_DbTable_Type_Existing " AND TS.Name='" TABLESPACE_Temp "'"))
         return ERROR;
 
     for (std::pair<DbTable*, std::unique_ptr<DbIndex>> const& pair : indexes)

@@ -241,6 +241,7 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
     ctx.SetPhase(SchemaImportContext::Phase::MappingSchemas);
+
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;

@@ -359,38 +359,6 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
         return ERROR;
         }
 
-    //if temp tables are involved, recreate them (but only if the tables are owned by ECDb
-    if (GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
-        {
-        bool areTempTablesInvolved = false;
-        for (SystemPropertyMap::PerTableIdPropertyMap const* idPropMap : sourceECInstanceIdPropMap->GetDataPropertyMaps())
-            {
-            if (idPropMap->GetColumn().GetTable().GetTableSpace().IsTemp())
-                {
-                areTempTablesInvolved = true;
-                break;
-                }
-            }
-
-        if (!areTempTablesInvolved)
-            {
-            for (SystemPropertyMap::PerTableIdPropertyMap const* idPropMap : targetECInstanceIdPropMap->GetDataPropertyMaps())
-                {
-                if (idPropMap->GetColumn().GetTable().GetTableSpace().IsTemp())
-                    {
-                    areTempTablesInvolved = true;
-                    break;
-                    }
-                }
-            }
-
-        if (areTempTablesInvolved)
-            {
-            if (SUCCESS != GetDbMap().GetDbSchema().RecreateTempTables())
-                return ERROR;
-            }
-        }
-
     if (GetPropertyMapsR().Insert(targetClassIdPropMap) != SUCCESS)
         return ERROR;
 

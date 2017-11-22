@@ -471,6 +471,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON " TABLE_Table "(ParentTableId);"
                            "CREATE INDEX ix_ec_Table_TableSpaceId ON " TABLE_Table "(TableSpaceId);"
+                           "CREATE INDEX ix_ec_Table_Type ON " TABLE_Table "(Type);"
                            "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON " TABLE_Table "(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

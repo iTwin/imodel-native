@@ -41,6 +41,25 @@ DbResult ECDb::Impl::OnDbOpening() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbOpened(ECDb::OpenParams const& params) const
+    {
+    PERFLOG_START("ECDb", "Open> Recreate Temp Tables");
+    //this must happen after potential profile upgrades, so cannot do it in OnDbOpening
+    bool hasTempTables = false;
+    if (SUCCESS != Schemas().GetDbMap().GetDbSchema().RecreateTempTables(hasTempTables))
+        return BE_SQLITE_ERROR;
+
+    //end transaction as a roll back done later by the client would remove the temp tables again
+    if (hasTempTables)
+        m_ecdb.SaveChanges();
+
+    PERFLOG_FINISH("ECDb", "Open> Recreate Temp Tables");
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2016
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::OnDbClose() const

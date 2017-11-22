@@ -55,7 +55,7 @@ DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams)
+BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams const& openParams)
     {
     CloseECDb();
     if (schema.GetType() == SchemaItem::Type::File)
@@ -121,7 +121,7 @@ void ECDbTestFixture::CloseECDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan     02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDbTestFixture::OpenECDb(BeFileNameCR filePath, ECDb::OpenParams params)
+DbResult ECDbTestFixture::OpenECDb(BeFileNameCR filePath, ECDb::OpenParams const& params)
     {
     if (m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
@@ -132,7 +132,7 @@ DbResult ECDbTestFixture::OpenECDb(BeFileNameCR filePath, ECDb::OpenParams param
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan     02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDbTestFixture::ReopenECDb()
+DbResult ECDbTestFixture::ReopenECDb(ECDb::OpenParams const* openParams)
     {
     if (!m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
@@ -140,6 +140,10 @@ DbResult ECDbTestFixture::ReopenECDb()
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     const bool isReadonly = m_ecdb.IsReadonly();
     CloseECDb();
+
+    if (openParams != nullptr)
+        return OpenECDb(ecdbFileName, *openParams);
+
     return OpenECDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
     }
 
@@ -192,7 +196,7 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
 // @bsimethod                                     Krischan.Eberle    10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams)
+DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams)
     {
     BeFileName clonePath;
     BeTest::GetHost().GetOutputRoot(clonePath);

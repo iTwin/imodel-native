@@ -2905,6 +2905,52 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, RecreateTempTablesOnOpen)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("RecreateTempTablesOnOpen.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                        <TableSpace>temp</TableSpace>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECDb::OpenParams openParams(ECDb::OpenMode::Readonly);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(&openParams));
+
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+
+    //creating temp tables is under transaction management. ECDb therefore commits after having recreated the temp tables,
+    //so that a rollback wouldn't delete them
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()); 
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+
+    //now open without default txn
+    openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly, DefaultTxn::No);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(&openParams));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+    {
+    Savepoint sp(m_ecdb, "");
+    sp.Cancel();
+    }
+    openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No);
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(&openParams));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+    {
+    Savepoint sp(m_ecdb, "");
+    sp.Cancel();
+    }
+
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  10/17

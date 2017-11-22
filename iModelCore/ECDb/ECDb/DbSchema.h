@@ -647,7 +647,6 @@ private:
     TableSpaceManager m_tableSpaceManager;
     TableCollection m_tables;
     mutable bool m_indexDefsAreLoaded = false;
-    mutable bool m_tempTablesAreLoaded = false;
     mutable DbTable* m_nullTable = nullptr;
 
     DbTable* LoadTable(Utf8StringCR name) const;
@@ -659,7 +658,7 @@ private:
 
     BentleyStatus LoadIndexDefs(std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>>&, Utf8CP sqlWhereOrJoinClause) const;
 
-    BentleyStatus LoadTempIndexes() const;
+    BentleyStatus RecreateTempIndexes() const;
 
 public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_tables(ecdb), m_tableSpaceManager(ecdb) {}
@@ -683,7 +682,7 @@ public:
     //!This function save or update table as required. It skip if a table is not loaded
     BentleyStatus SaveOrUpdateTables() const;
 
-    BentleyStatus RecreateTempTables() const;
+    BentleyStatus RecreateTempTables(bool& hasTempTables) const;
 
     TableSpaceManager const& GetTableSpaceManager() const { return m_tableSpaceManager; }
 

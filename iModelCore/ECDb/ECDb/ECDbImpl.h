@@ -111,6 +111,7 @@ private:
 
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;
+    DbResult OnDbOpened(ECDb::OpenParams const&) const;
     DbResult OnDbCreated() const;
     void OnDbClose() const;
     DbResult OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId);

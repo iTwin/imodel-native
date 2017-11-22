@@ -431,13 +431,6 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 
     BeAssert(!GetTables().empty());
 
-    //only recreate temp tables if tables are owned by ECDb
-    if (m_mapStrategyExtInfo.GetStrategy() != MapStrategy::ExistingTable && GetPrimaryTable().GetTableSpace().IsTemp())
-        {
-        if (SUCCESS != GetDbMap().GetDbSchema().RecreateTempTables())
-            return ERROR;
-        }
-
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
