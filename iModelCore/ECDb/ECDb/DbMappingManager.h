@@ -59,12 +59,13 @@ struct ForeignKeyPartitionView final : NonCopyableClass
                 TargetECClassId = 5
                 };
 
-            uint64_t m_hashCode;
-            DbColumn const* m_cols[6];
             ForeignKeyPartitionView const& m_fkInfo;
-            bool m_persisted;
-        private:
+            uint64_t m_hashCode = 0;
+            DbColumn const* m_cols[6];
+            bool m_persisted = false;
+
             explicit Partition(ForeignKeyPartitionView const&);
+        
             void UpdateHash();
             DbColumn const* GetColumn(ColumnId) const;
             BentleyStatus SetColumn(ColumnId, DbColumn const*);
@@ -318,8 +319,8 @@ struct DbMappingManager final : NonCopyableClass
             ~Tables();
 
             static DbTable* FindOrCreateTable(SchemaImportContext&, ClassMap const&, ClassMappingInfo const&, DbTable::Type, DbTable const* primaryTable);
-            static DbTable* CreateTableForExistingTableStrategy(SchemaImportContext&, ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
-            static DbTable* CreateTableForOtherStrategies(SchemaImportContext&, ClassMap const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+            static DbTable* CreateTableForExistingTableStrategy(SchemaImportContext&, ClassMap const&, DbTableSpace const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
+            static DbTable* CreateTableForOtherStrategies(SchemaImportContext&, ClassMap const&, DbTableSpace const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
             static BentleyStatus CreateClassIdColumn(SchemaImportContext&, DbTable&, PersistenceType);
             static bool IsExclusiveRootClassOfTable(ClassMappingInfo const&);
             static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);

@@ -52,6 +52,8 @@ struct ChangedValueSqlFunction final : ScalarFunction
     public:
         explicit ChangedValueSqlFunction(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ChangedValue, 4, DbValueType::BlobVal), m_ecdb(ecdb), m_statementCache(5) {}
         ~ChangedValueSqlFunction() {}
+
+        void ClearCache() { m_statementCache.Empty(); }
     };
 
 

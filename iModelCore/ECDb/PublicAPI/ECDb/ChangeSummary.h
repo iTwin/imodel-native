@@ -14,6 +14,8 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+//! @deprecated Use ECDb::ExtractChangeSummary instead
+//!
 //! @private internal use only
 //! A custom function to test if an instance exists in the change set
 //! @e Example
@@ -38,6 +40,8 @@ struct ValuesTable;
 struct ChangeExtractor;
 
 //=======================================================================================
+//! @deprecated Use ECDb::ExtractChangeSummary instead
+//!
 //! Utility to interpret a set of changes to the database as EC instances. 
 //! 
 //! @remarks The utility iterates over the raw Sqlite changes to consolidate and extract 

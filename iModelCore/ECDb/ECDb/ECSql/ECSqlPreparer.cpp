@@ -538,7 +538,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
 
     BeAssert(table != nullptr);
-    BeAssert(!table->GetTypeInfo().IsVirtual());
+    BeAssert(table->GetType() != DbTable::Type::Virtual);
     NativeSqlBuilder nativeSqlSnippet;
     nativeSqlSnippet.AppendEscaped(table->GetName());
     nativeSqlSnippets.push_back(nativeSqlSnippet);
@@ -1307,7 +1307,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     nativeSqlSnippets.push_back(nativeSql);
 
     if (functionName.EqualsIAscii(SQLFUNC_ChangedValue))
-        ctx.SetMustLoadTempTables();
+        ctx.SetMustRecreateChangeSummaryCache();
 
     return ECSqlStatus::Success;
     }

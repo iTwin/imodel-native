@@ -359,11 +359,36 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
         return ERROR;
         }
 
-    if (sourceECInstanceIdPropMap->GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::TemporaryTablePerHierarchy ||
-        targetECInstanceIdPropMap->GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::TemporaryTablePerHierarchy)
+    //if temp tables are involved, recreate them (but only if the tables are owned by ECDb
+    if (GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
-        if (SUCCESS != GetDbMap().GetDbSchema().LoadTempTables())
-            return ERROR;
+        bool areTempTablesInvolved = false;
+        for (SystemPropertyMap::PerTableIdPropertyMap const* idPropMap : sourceECInstanceIdPropMap->GetDataPropertyMaps())
+            {
+            if (idPropMap->GetColumn().GetTable().GetTableSpace().IsTemp())
+                {
+                areTempTablesInvolved = true;
+                break;
+                }
+            }
+
+        if (!areTempTablesInvolved)
+            {
+            for (SystemPropertyMap::PerTableIdPropertyMap const* idPropMap : targetECInstanceIdPropMap->GetDataPropertyMaps())
+                {
+                if (idPropMap->GetColumn().GetTable().GetTableSpace().IsTemp())
+                    {
+                    areTempTablesInvolved = true;
+                    break;
+                    }
+                }
+            }
+
+        if (areTempTablesInvolved)
+            {
+            if (SUCCESS != GetDbMap().GetDbSchema().RecreateTempTables())
+                return ERROR;
+            }
         }
 
     if (GetPropertyMapsR().Insert(targetClassIdPropMap) != SUCCESS)
@@ -437,14 +462,14 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     DbTable const* sourceTable = *sourceTables.begin();
     DbTable const* targetTable = *targetTables.begin();
 
-    Nullable<bool> sourceIsTemp = sourceTable->GetTypeInfo().GetIsTempFlag();
-    Nullable<bool> targetIsTemp = targetTable->GetTypeInfo().GetIsTempFlag();
+    const bool sourceIsTemp = sourceTable->GetTableSpace().IsTemp();
+    const bool targetIsTemp = targetTable->GetTableSpace().IsTemp();
 
-    if (GetMapStrategy().GetStrategy() != MapStrategy::TemporaryTablePerHierarchy)
+    if (!GetPrimaryTable().GetTableSpace().IsTemp())
         {
         if (sourceIsTemp == true || targetIsTemp == true)
             {
-            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as a link table. As its source or target class has the map strategy 'TemporaryTablePerHierarchy', the ECRelationshipClass must also specify that strategy.",
+            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as a link table. As its source or target class are mapped to the TEMP table space, the ECRelationshipClass must also map to the TEMP table space.",
                             GetClass().GetFullName());
             return ClassMappingStatus::Error;
             }
@@ -466,7 +491,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
 
     //only create constraints on TPH root or if not TPH and not existing table
-    if (GetPrimaryTable().GetTypeInfo().GetType() != DbTable::Type::Existing && !GetPrimaryTable().GetTypeInfo().IsTemp() && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
+    if (GetPrimaryTable().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
         {
         Nullable<bool> createFkConstraints;
         ca.TryGetCreateForeignKeyConstraints(createFkConstraints);
@@ -665,7 +690,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& ctx, bool allowDuplicateRelationships)
     {
-    if (GetPrimaryTable().GetTypeInfo().GetType() == DbTable::Type::Existing)
+    if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
         return;
 
     // Add indices on the source and target based on cardinality
@@ -756,7 +781,6 @@ void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn
     if (nullptr != col4 && col4->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col4);
     }
-
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -974,9 +998,9 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
     if (column != nullptr)
         return column;
 
-    persType = table.GetTypeInfo().GetType() != DbTable::Type::Existing ? persType : PersistenceType::Virtual;
+    persType = table.GetType() != DbTable::Type::Existing ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
-    if (!table.GetTypeInfo().IsVirtual() && persType == PersistenceType::Virtual)
+    if (table.GetType() != DbTable::Type::Virtual && persType == PersistenceType::Virtual)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for " ECDBSYS_PROP_SourceECInstanceId " or " ECDBSYS_PROP_TargetECInstanceId " in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.",
                    GetClass().GetFullName(), table.GetName().c_str());

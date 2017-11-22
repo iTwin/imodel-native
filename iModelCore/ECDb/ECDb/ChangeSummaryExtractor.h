@@ -105,6 +105,8 @@ struct ChangeSummaryExtractor final : NonCopyableClass
         explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(15) {}
 
         BentleyStatus Extract(ECInstanceId& changeSummaryId, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
+
+        void ClearCache() { m_stmtCache.Empty(); }
     };
 
 

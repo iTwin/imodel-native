@@ -35,8 +35,8 @@ DbTable& ClassMap::GetPrimaryTable() const
 
     for (DbTable* table : GetTables())
         {
-        DbTable::TypeInfo const& typeInfo = table->GetTypeInfo();
-        if (typeInfo.GetType() == DbTable::Type::Primary || typeInfo.GetType() == DbTable::Type::Existing || typeInfo.GetType() == DbTable::Type::Virtual)
+        DbTable::Type tableType = table->GetType();
+        if (tableType == DbTable::Type::Primary || tableType == DbTable::Type::Existing || tableType == DbTable::Type::Virtual)
             return *table;
         }
 
@@ -54,11 +54,11 @@ DbTable& ClassMap::GetJoinedOrPrimaryTable() const
     DbTable* primaryTable = nullptr;
     for (DbTable* table : m_tables)
         {
-        DbTable::TypeInfo const& typeInfo = table->GetTypeInfo();
+        DbTable::Type type = table->GetType();
 
-        if (typeInfo.GetType() == DbTable::Type::Joined)
+        if (type == DbTable::Type::Joined)
             joinedTable = table;
-        else if (typeInfo.GetType() == DbTable::Type::Primary || typeInfo.GetType() == DbTable::Type::Existing || typeInfo.GetType() == DbTable::Type::Virtual)
+        else if (type == DbTable::Type::Primary || type == DbTable::Type::Existing || type == DbTable::Type::Virtual)
             primaryTable = table;
 
         if (joinedTable != nullptr)
@@ -76,7 +76,7 @@ DbTable* ClassMap::GetOverflowTable() const
     {
     for (DbTable* table : GetTables())
         {
-        if (table->GetTypeInfo().GetType() == DbTable::Type::Overflow)
+        if (table->GetType() == DbTable::Type::Overflow)
             return table;
         }
 
@@ -239,7 +239,7 @@ BentleyStatus ClassMap::AddOrUpdateTableList(DataPropertyMap const& propertyThat
     DbTable& propertyTable = const_cast< DbTable&>(propertyThatIsNotYetAdded.GetTable());
     if (std::find(m_tables.begin(), m_tables.end(), &propertyTable) == m_tables.end())
         {
-        if (propertyTable.GetTypeInfo().GetType() == DbTable::Type::Overflow)
+        if (propertyTable.GetType() == DbTable::Type::Overflow)
             return SetOverflowTable(propertyTable);
 
         AddTable(propertyTable);
@@ -406,20 +406,14 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return SUCCESS;
         }
 
-    if (m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TemporaryTablePerHierarchy)
-        {
-        if (SUCCESS != GetDbMap().GetDbSchema().LoadTempTables())
-            return ERROR;
-        }
-
     for (std::pair<Utf8String, std::vector<DbColumn const*>> const& propMapping : dbLoadCtx.GetPropertyMaps())
         {
         std::vector<DbColumn const*> const& columns = propMapping.second;
         for (DbColumn const* column : columns)
             {
-            if (column->GetTable().GetTypeInfo().GetType() == DbTable::Type::Joined)
+            if (column->GetTable().GetType() == DbTable::Type::Joined)
                 joinedTables.insert(&column->GetTableR());
-            else if (column->GetTable().GetTypeInfo().GetType() == DbTable::Type::Overflow)
+            else if (column->GetTable().GetType() == DbTable::Type::Overflow)
                 overflowTables.insert(&column->GetTableR());
             else if (column->GetKind() != DbColumn::Kind::ECClassId)
                 primaryTables.insert(&column->GetTableR());
@@ -437,6 +431,13 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 
     BeAssert(!GetTables().empty());
 
+    //only recreate temp tables if tables are owned by ECDb
+    if (m_mapStrategyExtInfo.GetStrategy() != MapStrategy::ExistingTable && GetPrimaryTable().GetTableSpace().IsTemp())
+        {
+        if (SUCCESS != GetDbMap().GetDbSchema().RecreateTempTables())
+            return ERROR;
+        }
+
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
@@ -444,7 +445,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (mapColumnsList == nullptr)
         return ERROR;
 
-        //Load ECInstanceId================================================
+    //Load ECInstanceId================================================
     RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, *mapColumnsList);
     if (ecInstanceIdPropertyMap == nullptr)
         {
@@ -493,7 +494,6 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             }
         }
    
-    //bvector<ECPropertyCP> failedToLoadProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         DataPropertyMap const*  tphBaseClassPropMap = nullptr;
@@ -562,8 +562,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
 
         //! ECSchema update added new property for which we need to save property map
         DbMapSaveContext ctx(m_ecdb);
-        //First make sure table is updated on disk. The table must already exist for this operation to work.
-        if (GetDbMap().GetDbSchema().UpdateTableInDb(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
+        if (GetDbMap().GetDbSchema().UpdateTable(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
             {
             BeAssert(false && "Failed to save table");
             return ERROR;

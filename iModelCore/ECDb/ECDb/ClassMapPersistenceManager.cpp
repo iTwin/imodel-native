@@ -202,7 +202,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         return ERROR;
         }
 
-    if (mapStrategy == MapStrategy::TablePerHierarchy || mapStrategy == MapStrategy::TemporaryTablePerHierarchy)
+    if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
         Nullable<TablePerHierarchyInfo::ShareColumnsMode> shareColumnsMode(TablePerHierarchyInfo::ShareColumnsMode::No);
         if (!stmt->IsColumnNull(1))
@@ -229,7 +229,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
     else
         {
         BeAssert(stmt->IsColumnNull(1) && stmt->IsColumnNull(2) && stmt->IsColumnNull(3) &&
-                 "ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy/TemporaryTablePerHierarchy");
+                 "ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy.Value());
         }
 

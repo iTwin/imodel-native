@@ -31,8 +31,6 @@ Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
                 return "OwnTable";
             case MapStrategy::TablePerHierarchy:
                 return "TablePerHierarchy";
-            case MapStrategy::TemporaryTablePerHierarchy:
-                return "TemporaryTablePerHierarchy";
             default:
                 BeAssert(false && "Unhandled value for ECDbMapStrategy in ToString");
                 return nullptr;

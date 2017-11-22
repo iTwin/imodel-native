@@ -70,15 +70,6 @@ DbResult ECDb::Impl::OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                11/2017
-//---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeset, ECDb::ChangeSummaryExtractOptions const& options) const
-    {
-    return m_changeSummaryExtractor.Extract(changeSummaryId, changeset, options);
-    }
-
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2017
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList)
@@ -246,6 +237,8 @@ void ECDb::Impl::ClearECDbCache() const
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 
+    const_cast<ChangeSummaryManager&>(m_changeSummaryManager).ClearCache();
+
     const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
@@ -300,16 +293,12 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
     }
 
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::RegisterBuiltinFunctions() const
     {
-    m_ecdb.AddFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
-    
-    m_changeValueSqlFunc = std::make_unique<ChangedValueSqlFunction>(m_ecdb);
-    m_ecdb.AddFunction(*m_changeValueSqlFunc);
+    m_changeSummaryManager.RegisterSqlFunctions();
     }
 
 //---------------------------------------------------------------------------------------
@@ -320,13 +309,7 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (!m_ecdb.IsDbOpen())
         return;
 
-    m_ecdb.RemoveFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
-
-    if (m_changeValueSqlFunc)
-        {
-        m_ecdb.RemoveFunction(*m_changeValueSqlFunc);
-        m_changeValueSqlFunc = nullptr;
-        }
+    m_changeSummaryManager.UnregisterSqlFunction();
     }
 
 //---------------------------------------------------------------------------------------

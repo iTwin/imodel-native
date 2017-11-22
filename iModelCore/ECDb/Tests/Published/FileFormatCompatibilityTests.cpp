@@ -53,7 +53,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
                                     "JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId " \
                                     "JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId " \
                                     "ORDER BY s.Name,c.Name,rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name"
-#define PROFILETABLE_SELECT_Table "SELECT parentT.Name, t.Name, t.Type, t.IsTemporary, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t " \
+#define PROFILETABLE_SELECT_TableSpace "SELECT Id,Name FROM ec_TableSpace ORDER BY Id"
+#define PROFILETABLE_SELECT_Table "SELECT parentT.Name, t.Name, t.Type, t.TableSpaceId, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t " \
                                     "JOIN ec_Table parentT ON parentT.Id=t.ParentTableId JOIN ec_Class exclusiveRootClass ON exclusiveRootClass.Id=t.ExclusiveRootClassId JOIN ec_Schema exclusiveRootClassS ON exclusiveRootClassS.Id=exclusiveRootClass.SchemaId " \
                                     "ORDER BY t.Name"
 #define PROFILETABLE_SELECT_Column "SELECT t.Name, c.Name,c.Type,c.IsVirtual,c.Ordinal,c.NotNullConstraint,c.UniqueConstraint,c.CheckConstraint,c.DefaultConstraint,c.CollationConstraint,c.OrdinalInPrimaryKey,c.ColumnKind FROM ec_Column c " \
@@ -1077,7 +1078,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(21, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     
@@ -1119,7 +1120,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
         Utf8CP benchmarkName = benchmarkDdlLookupStmt.GetValueText(0);
         Utf8CP benchmarkDdl = nullptr;
         if (BeStringUtilities::StricmpAscii(benchmarkName, "ec_Table") == 0)
-            benchmarkDdl = "CREATE TABLE ec_Table(Id INTEGER PRIMARY KEY,ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,Type INTEGER NOT NULL,ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,UpdatableViewName TEXT, IsTemporary BOOLEAN CHECK (IsTemporary IN (0,1)))";
+            benchmarkDdl = "CREATE TABLE ec_Table(Id INTEGER PRIMARY KEY,ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,Type INTEGER NOT NULL,ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,UpdatableViewName TEXT, TableSpaceId INTEGER REFERENCES ec_TableSpace(Id) ON DELETE CASCADE)";
         else
             benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(1);
 
@@ -1140,7 +1141,9 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    ASSERT_EQ(benchmarkMasterTableRowCount, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
+    //In upgraded file, we have one more table (ec_TableSpace) and two more indexes (one on ec_Table(TableSpaceId), 
+    //one on ec_TableSpace(Id)
+    ASSERT_EQ(benchmarkMasterTableRowCount + 3, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1160,7 +1163,7 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(21, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     //schema profile tables
@@ -1180,6 +1183,7 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassMap", PROFILETABLE_SELECT_ClassMap));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyPath", PROFILETABLE_SELECT_PropertyPath));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyMap", PROFILETABLE_SELECT_PropertyMap));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_TableSpace", PROFILETABLE_SELECT_TableSpace));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Table", PROFILETABLE_SELECT_Table));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Column", PROFILETABLE_SELECT_Column));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Index", PROFILETABLE_SELECT_Index));

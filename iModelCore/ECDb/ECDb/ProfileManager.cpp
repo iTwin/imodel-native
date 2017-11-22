@@ -450,19 +450,27 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    //ec_TableSpace
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_TableSpace
+                           "(Id INTEGER PRIMARY KEY,"
+                           "Name TEXT UNIQUE NOT NULL COLLATE NOCASE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     //ec_Table
     stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Table
                            "(Id INTEGER PRIMARY KEY,"
                            "ParentTableId INTEGER REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE," //ECDb requires table names to be unique even across other db schema names
+                           "TableSpaceId INTEGER REFERENCES " TABLE_TableSpace "(Id) ON DELETE CASCADE,"
                            "Type INTEGER NOT NULL,"
-                           "IsTemporary BOOLEAN CHECK (IsTemporary IN (" SQLVAL_False "," SQLVAL_True "))," //only set if type != Existing
                            "ExclusiveRootClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE SET NULL,"
                            "UpdatableViewName TEXT)"); //UpdatableViewName is not used anymore -> WIP_NEXTGEN_DELETE
-if (BE_SQLITE_OK != stat)
+    if (BE_SQLITE_OK != stat)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON " TABLE_Table "(ParentTableId);"
+                           "CREATE INDEX ix_ec_Table_TableSpaceId ON " TABLE_Table "(TableSpaceId);"
                            "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON " TABLE_Table "(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

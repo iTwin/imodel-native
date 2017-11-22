@@ -223,14 +223,14 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
         return instanceChange;
 
     int opCodeVal = stmt->GetValueInt(0);
-    Nullable<ChangeOpCode> opCode = ChangeSummaryHelper::ToChangeOpCode(opCodeVal);
+    Nullable<ChangeOpCode> opCode = ChangeSummaryManager::ToChangeOpCode(opCodeVal);
     if (opCode.IsNull())
         {
         BeAssert(false);
         return instanceChange;
         }
 
-    Nullable<DbOpcode> dbOpCode = ChangeSummaryHelper::ToDbOpCode(opCode.Value());
+    Nullable<DbOpcode> dbOpCode = ChangeSummaryManager::ToDbOpCode(opCode.Value());
     if (dbOpCode.IsNull()) // enum has changed -> fatal error
         return instanceChange;
 
@@ -298,7 +298,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 
     DbOpcode dbOpcode = instance.GetDbOpcode();
 
-    Nullable<ChangeOpCode> op = ChangeSummaryHelper::ToChangeOpCode(dbOpcode);
+    Nullable<ChangeOpCode> op = ChangeSummaryManager::ToChangeOpCode(dbOpcode);
     if (op.IsNull()) // DbOpCode enum has changed -> fatal error code needs to be adjusted
         return BE_SQLITE_ERROR;
 

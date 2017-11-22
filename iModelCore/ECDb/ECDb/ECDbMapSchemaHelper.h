@@ -130,6 +130,10 @@ struct ClassMapCustomAttribute final
         //! @param[out] mapStrategy MapStrategy. IsNull() is true, if the MapStrategy property wasn't set in the ClassMap.
         //! @return SUCCESS if MapStrategy was set or unset in the ClassMap. ERROR otherwise
         BentleyStatus TryGetMapStrategy(Nullable<Utf8String>& mapStrategy) const;
+        //! Tries to get the value of the TableSpace property in the ClassMap.
+        //! @param[out] tableSpace TableSpace. IsNull() is true, if the TableSpace property wasn't set in the ClassMap.
+        //! @return SUCCESS if TableSpace was set or unset in the ClassMap, ERROR otherwise
+        BentleyStatus TryGetTableSpace(Nullable<Utf8String>& tableSpace) const;
         //! Tries to get the value of the TableName property in the ClassMap.
         //! @param[out] tableName Table name. IsNull() is true, if the TableName property wasn't set in the ClassMap.
         //! @return SUCCESS if TableName was set or unset in the ClassMap, ERROR otherwise

@@ -228,8 +228,9 @@ MapStrategyInfo TestHelper::GetMapStrategy(ECClassId classId) const
 Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        R"sql(SELECT t.Id,t.Type,t.IsTemporary,parent.Name,t.ExclusiveRootClassId
+        R"sql(SELECT t.Id,t.Type,ts.Name,parent.Name,t.ExclusiveRootClassId
                 FROM ec_Table t LEFT JOIN ec_Table parent ON parent.Id = t.ParentTableId
+                LEFT JOIN ec_TableSpace ts ON ts.Id=t.TableSpaceId
                 WHERE t.Name=?)sql");
 
     if (stmt == nullptr)
@@ -244,11 +245,13 @@ Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
         return Table();
 
     BeInt64Id tableId = stmt->GetValueId<BeInt64Id>(0);
-
     Table::Type type = (Table::Type) stmt->GetValueInt(1);
-    Nullable<bool> isTemp;
+
+    Utf8String tableSpace;
     if (!stmt->IsColumnNull(2))
-        isTemp = stmt->GetValueBoolean(2);
+        tableSpace.assign(stmt->GetValueText(2));
+    else
+        tableSpace.assign("main");
 
     Utf8CP parentTableName = nullptr;
     if (!stmt->IsColumnNull(3))
@@ -258,7 +261,7 @@ Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
     if (!stmt->IsColumnNull(4))
         exclusiveRootClassId = stmt->GetValueId<ECClassId>(4);
 
-    Table table(tableName, type, isTemp, parentTableName, exclusiveRootClassId);
+    Table table(tableSpace, tableName, type, parentTableName, exclusiveRootClassId);
 
     //now load columns
     stmt = m_ecdb.GetCachedStatement("SELECT " SQL_SELECTCLAUSE_ecColumn " FROM ec_Column c WHERE c.TableId=? ORDER BY c.Ordinal");

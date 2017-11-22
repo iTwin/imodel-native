@@ -153,7 +153,10 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options) const { return m_pimpl->ExtractChangeSummary(changeSummaryId, changeSet, options); }
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options) const 
+    { 
+    return m_pimpl->GetChangeSummaryManager().GetExtractor().Extract(changeSummaryId, changeSet, options); 
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2015

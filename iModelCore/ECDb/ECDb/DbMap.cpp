@@ -443,7 +443,7 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
             }
         }
 
-    LOG.debugv("Schema Import>CreateOrUpdateRequiredTables> Created %d tables, updated %d tables, and %d tables were up-to-date.", nCreated, nUpdated, nWasUpToDate);
+    LOG.debugv("Schema Import> Created %d tables, updated %d tables, and %d tables were up-to-date.", nCreated, nUpdated, nWasUpToDate);
     return SUCCESS;
     }
 
@@ -484,7 +484,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
         {
         //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
         Utf8String dropIndexSql;
-        dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
+        dropIndexSql.Sprintf("DROP INDEX [%s].[%s]", index.GetTable().GetTableSpace().GetName().c_str(), index.GetName().c_str());
         m_ecdb.TryExecuteSql(dropIndexSql.c_str());
         }
 
@@ -522,7 +522,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
             usedIndexNames.insert(index.GetName().c_str());
 
         //indexes on virtual tables are ignored
-        if (!index.GetTable().GetTypeInfo().IsVirtual())
+        if (index.GetTable().GetType() != DbTable::Type::Virtual)
             {
             Utf8String ddl, comparableIndexDef;
             if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
@@ -684,7 +684,7 @@ size_t DbMap::GetRelationshipConstraintTableCount(SchemaImportContext& ctx, ECRe
     for (ClassMap const* classMap : classMaps)
         {
         DbTable const* table = abstractEndPoint ? &classMap->GetJoinedOrPrimaryTable() : &classMap->GetPrimaryTable();
-        if (classMap->GetPrimaryTable().GetTypeInfo().IsVirtual())
+        if (classMap->GetPrimaryTable().GetType() == DbTable::Type::Virtual)
             hasAtLeastOneVirtualTable = true;
         else
             nonVirtualTables.insert(table);
@@ -711,7 +711,7 @@ std::set<DbTable const*> DbMap::GetRelationshipConstraintPrimaryTables(SchemaImp
         std::vector<DbTable const*> nonOverflowClassMapTables;
         for (DbTable const* table : classMap->GetTables())
             {
-            if (table->GetTypeInfo().GetType() != DbTable::Type::Overflow)
+            if (table->GetType() != DbTable::Type::Overflow)
                 nonOverflowClassMapTables.push_back(table);
             }
 
@@ -723,7 +723,7 @@ std::set<DbTable const*> DbMap::GetRelationshipConstraintPrimaryTables(SchemaImp
 
         for (DbTable const* table : nonOverflowClassMapTables)
             {
-            if (table->GetTypeInfo().GetType() == DbTable::Type::Joined)
+            if (table->GetType() == DbTable::Type::Joined)
                 {
                 DbTable::LinkNode const* primaryTable = table->GetLinkNode().GetParent();
                 BeAssert(primaryTable != nullptr);
@@ -747,7 +747,7 @@ std::set<DbTable const*> DbMap::GetRelationshipConstraintPrimaryTables(SchemaImp
     std::set<DbTable const*> finalSetOfTables;
     for (DbTable const* table : tables)
         {
-        if (!table->GetTypeInfo().IsVirtual())
+        if (table->GetType() != DbTable::Type::Virtual)
             finalSetOfTables.insert(table);
         }
 
@@ -834,9 +834,6 @@ BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
-
-        //if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        //    classMap.GetAs<RelationshipClassEndTableMap>().ResetPartitionCache();
         }
 
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))

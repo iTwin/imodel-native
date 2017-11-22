@@ -2796,7 +2796,7 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
 
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablecatests.ecdb"));
-    Utf8CP tempTableDdl = "CREATE TEMP TABLE SessionSettings(Id INTEGER PRIMARY KEY, FooId INTEGER, Name TEXT, Val)";
+    Utf8CP tempTableDdl = "CREATE TEMP TABLE SessionSetting(Id INTEGER PRIMARY KEY, FooId INTEGER, Name TEXT, Val)";
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(tempTableDdl));
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2809,7 +2809,8 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>ExistingTable</MapStrategy>
-                        <TableName>temp.SessionSettings</TableName>
+                        <TableSpace>temp</TableSpace>
+                        <TableName>SessionSetting</TableName>
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward"/>
@@ -2839,7 +2840,7 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(tempTableDdl));
 
     //insert test instance in temp table
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl(Utf8PrintfString("INSERT INTO temp.SessionSettings(FooId,Name,Val) VALUES(%s,'Logging',1)", fooKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl(Utf8PrintfString("INSERT INTO temp.SessionSetting(FooId,Name,Val) VALUES(%s,'Logging',1)", fooKey.GetInstanceId().ToString().c_str()).c_str()));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Foo.Id,Name,Val FROM ts.SessionSetting")) << "temp table expected to exist";
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -2908,9 +2909,9 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
+TEST_F(DbMappingTestFixture, TempTableSpace)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("TemporaryTablePerHierarchyMapStrategy.ecdb",SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("TempTableSpace.ecdb",SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -2920,7 +2921,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                        <TableSpace>temp</TableSpace>
                     </ClassMap>
                     <DbIndexList xmlns="ECDbMap.02.00">
                        <Indexes>
@@ -2955,8 +2956,8 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
            <ECRelationshipClass typeName="LinkTableRel" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
-                    </ClassMap>
+                       <TableSpace>temp</TableSpace>
+                     </ClassMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="Foo" />
@@ -3013,12 +3014,12 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
+TEST_F(DbMappingTestFixture, TempTableSpace_LinkTables)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("TemporaryTablePerHierarchyMapStrategy_LinkTables.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("TempTableSpace_LinkTables.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
             <ECEntityClass typeName="A" modifier="None">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -3027,24 +3028,26 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
             </ECEntityClass>
             <ECEntityClass typeName="ATemp" modifier="None">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
-                    </ClassMap>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <MapStrategy>TablePerHierarchy</MapStrategy>
+                       <TableSpace>temp</TableSpace>
+                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
             <ECEntityClass typeName="BTemp" modifier="None">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <MapStrategy>TablePerHierarchy</MapStrategy>
+                       <TableSpace>temp</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Val" typeName="int" />
             </ECEntityClass>
            <ECRelationshipClass typeName="Rel1" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <TableSpace>temp</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
@@ -3056,8 +3059,8 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
            </ECRelationshipClass>
            <ECRelationshipClass typeName="Rel2" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <TableSpace>temp</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
@@ -3069,8 +3072,8 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
            </ECRelationshipClass>
            <ECRelationshipClass typeName="Rel3" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <TableSpace>temp</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
@@ -3082,8 +3085,8 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
            </ECRelationshipClass>
            <ECRelationshipClass typeName="Rel4" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <TableSpace>temp</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
@@ -3140,7 +3143,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_LinkTables)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
+TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -3149,13 +3152,29 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
         "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>"
+        "                <TableSpace>temp</TableSpace>"
         "                <TableName>Foo</TableName>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>"))) << "ClassMap::TableName not allowed with TemporaryTablePerHierarchy strategy.";
+        "</ECSchema>"))) << "ClassMap::TableName not allowed if strategy is not existing even if table space is temp.";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "                <TableSpace>temp</TableSpace>"
+        "                <TableName>Foo</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "ClassMap::TableName not allowed if strategy is not existing even if table space is temp.";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -3167,7 +3186,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                      <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
@@ -3195,7 +3214,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                      <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string" />
@@ -3226,7 +3245,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                      <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string" />
@@ -3234,7 +3253,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                      <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
@@ -3262,7 +3281,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                      <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string" />
@@ -3270,7 +3289,7 @@ TEST_F(DbMappingTestFixture, TemporaryTablePerHierarchyMapStrategy_InvalidCases)
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>TemporaryTablePerHierarchy</MapStrategy>
+                      <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string" />

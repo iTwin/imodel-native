@@ -63,7 +63,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbMapSchemaHelper.h \
                 $(baseDir)PolicyManager.h \
                 $(baseDir)ChangeIteratorImpl.h \
-                $(baseDir)ChangeSummarySchemaHelper.h \
+                $(baseDir)ChangeSummaryManager.h \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
@@ -214,6 +214,8 @@ $(o)ECDbMapSchemaHelper$(oext):                               $(baseDir)ECDbMapS
 $(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstanceFinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ViewGenerator$(oext):                                     $(baseDir)ViewGenerator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSummaryManager$(oext):                              $(baseDir)ChangeSummaryManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSummaryExtractor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -460,7 +462,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
 $(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbFileInfo.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMeta.01.00.00.ecschema.xml
@@ -489,5 +491,5 @@ always:
     ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
     ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
     @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
-    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
+    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml"
 

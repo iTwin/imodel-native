@@ -166,6 +166,17 @@ BentleyStatus ClassMapCustomAttribute::TryGetMapStrategy(Nullable<Utf8String>& m
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   11 / 2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMapCustomAttribute::TryGetTableSpace(Nullable<Utf8String>& tableSpace) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    return CustomAttributeReader::TryGetTrimmedValue(tableSpace, *m_ca, "TableSpace");
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassMapCustomAttribute::TryGetTableName(Nullable<Utf8String>& tableName) const

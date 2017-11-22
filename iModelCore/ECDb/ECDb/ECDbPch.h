@@ -59,9 +59,9 @@
 #include "SchemaValidator.h"
 #include "SchemaImportContext.h"
 
+#include "ChangeSummaryManager.h"
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
-#include "ChangeSummarySchemaHelper.h"
 
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"

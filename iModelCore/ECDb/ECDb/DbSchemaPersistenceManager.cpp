@@ -72,11 +72,11 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 //static
 DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetTypeInfo().GetType() == DbTable::Type::Virtual || table.GetTypeInfo().GetType() == DbTable::Type::Existing)
+    if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
 
     CreateOrUpdateTableResult mode;
-    if (ecdb.TableExists(table.GetName().c_str()))
+    if (TableExists(ecdb, table.GetName().c_str(), table.GetTableSpace().GetName().c_str()))
         mode = IsTableChanged(ecdb, table) ? CreateOrUpdateTableResult::Updated : CreateOrUpdateTableResult::WasUpToDate;
     else
         mode = CreateOrUpdateTableResult::Created;
@@ -108,16 +108,17 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    DbTable::TypeInfo const& typeInfo = table.GetTypeInfo();
-    if (typeInfo.GetType() == DbTable::Type::Existing || typeInfo.GetType() == DbTable::Type::Virtual)
+    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "CreateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
         }
 
     Utf8String ddl("CREATE TABLE ");
-    if (typeInfo.IsTemp())
+    if (table.GetTableSpace().IsTemp())
         ddl.append("temp.");
+    else if (table.GetTableSpace().IsAttached())
+        ddl.append("[").append(table.GetTableSpace().GetName()).append("].");
 
     ddl.append("[").append(table.GetName()).append("](");
 
@@ -185,7 +186,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 //static
 BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetTypeInfo().GetType() == DbTable::Type::Existing || table.GetTypeInfo().GetType() == DbTable::Type::Virtual)
+    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "UpdateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
@@ -324,7 +325,7 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
 //static
 BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const& index, Utf8StringCR ddl)
     {
-    if (index.GetTable().GetTypeInfo().IsVirtual())
+    if (index.GetTable().GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "Must not call this method for indexes on virtual tables");
         return ERROR;
@@ -364,8 +365,11 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, U
 
     ddl.append("INDEX ");
     
-    if (index.GetTable().GetTypeInfo().IsTemp())
-        ddl.append(" temp.");
+    DbTableSpace const& tableSpace = index.GetTable().GetTableSpace();
+    if (tableSpace.IsTemp())
+        ddl.append("temp.");
+    else if (tableSpace.IsAttached())
+        ddl.append("[").append(tableSpace.GetName()).append("].");
 
     ddl.append("[").append(index.GetName()).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
     comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")");
@@ -392,7 +396,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     {
     auto buildECClassIdFilter = [] (Utf8StringR filterSqlExpression, StorageDescription const& desc, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
         {
-        if (table.GetTypeInfo().IsVirtual())
+        if (table.GetType() == DbTable::Type::Virtual)
             return SUCCESS; //-> noop
 
         Partition const* partition = desc.GetPartition(table);
@@ -504,7 +508,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
     {
     for (DbTrigger const* trigger : table.GetTriggers())
         {
-        if (TriggerExistsInDb(ecdb, *trigger))
+        if (TriggerExists(ecdb, *trigger))
             {
             if (failIfExists)
                 {
@@ -516,8 +520,11 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             }
 
         Utf8String ddl("CREATE TRIGGER ");
-        if (table.GetTypeInfo().IsTemp())
+        DbTableSpace const& tableSpace = table.GetTableSpace();
+        if (tableSpace.IsTemp())
             ddl.append("temp.");
+        else if (tableSpace.IsAttached())
+            ddl.append("[").append(tableSpace.GetName()).append("].");
 
         ddl.append("[").append(trigger->GetName()).append("] ");
 
@@ -538,7 +545,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
             {
-            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s.%s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetTypeInfo().IsTemp() ? "temp" : "main", trigger->GetTable().GetName().c_str(),
+            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s.%s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetTableSpace().GetName().c_str(), trigger->GetTable().GetName().c_str(),
                                                           ecdb.GetLastError().c_str());
             return ERROR;
             }
@@ -551,14 +558,9 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static
-bool DbSchemaPersistenceManager::TriggerExistsInDb(ECDbCR ecdb, DbTrigger const& trigger)
+bool DbSchemaPersistenceManager::TriggerExists(ECDbCR ecdb, DbTrigger const& trigger)
     {
-    CachedStatementPtr stmt;
-    if (trigger.GetTable().GetTypeInfo().IsTemp())
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from temp.sqlite_master WHERE type='trigger' and name=?");
-    else
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from sqlite_master WHERE type='trigger' and name=?");
-
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("select NULL from [%s].sqlite_master WHERE type='trigger' and name=?", trigger.GetTable().GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -680,36 +682,20 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
 // @bsimethod                                                    Affan.Khan        01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName, Utf8CP dbSchemaName)
+BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName, Utf8CP tableSpace)
     {
-    if (Utf8String::IsNullOrEmpty(dbSchemaName))
+    if (Utf8String::IsNullOrEmpty(tableSpace))
         {
-        if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, "main"))
+        std::vector<Utf8String> tableSpaces;
+        if (SUCCESS != GetTableSpaces(tableSpaces, ecdb))
             return ERROR;
 
-        if (!colInfos.empty())
-            return SUCCESS;
-
-        if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, "temp"))
-            return ERROR;
-
-        if (!colInfos.empty())
-            return SUCCESS;
-
-        Statement attachedDbStmt;
-        if (BE_SQLITE_OK != attachedDbStmt.Prepare(ecdb, "pragma database_list"))
-            return ERROR;
-
-        while (BE_SQLITE_ROW == attachedDbStmt.Step())
+        for (Utf8StringCR tableSpace : tableSpaces)
             {
-            Utf8CP attachedSchemaName = attachedDbStmt.GetValueText(1);
-            if (BeStringUtilities::StricmpAscii(attachedSchemaName, "main") == 0 || BeStringUtilities::StricmpAscii(attachedSchemaName, "temp") == 0)
-                continue;
-
-            if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, attachedSchemaName))
+            if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, tableSpace.c_str()))
                 return ERROR;
 
-            if (!colInfos.empty())
+            if (!colInfos.empty()) // table found, no need to continue in other table spaces
                 return SUCCESS;
             }
 
@@ -718,19 +704,19 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
 
     colInfos.clear();
 
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, Utf8PrintfString("PRAGMA [%s].table_info('%s')", dbSchemaName, tableName.c_str()).c_str()))
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("PRAGMA [%s].table_info('%s')", tableSpace, tableName.c_str()).c_str());
+    if (stmt == nullptr)
         return ERROR;
 
-    while (stmt.Step() == BE_SQLITE_ROW)
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
-        Utf8String colName(stmt.GetValueText(1));
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(1), "name") == 0);
+        Utf8String colName(stmt->GetValueText(1));
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(2), "type") == 0);
         Utf8String colTypeName;
-        if (!stmt.IsColumnNull(2))
-            colTypeName.assign(stmt.GetValueText(2));
+        if (!stmt->IsColumnNull(2))
+            colTypeName.assign(stmt->GetValueText(2));
 
         DbColumn::Type colType = DbColumn::Type::Any;
         if (!colTypeName.empty())
@@ -756,21 +742,58 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteC
                 colType = DbColumn::Type::Boolean;
             }
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
-        const bool colIsNotNull = stmt.GetValueBoolean(3);
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(3), "notnull") == 0);
+        const bool colIsNotNull = stmt->GetValueBoolean(3);
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(4), "dflt_value") == 0);
         Utf8String colDefaultValue;
-        if (!stmt.IsColumnNull(4))
-            colDefaultValue.assign(stmt.GetValueText(4));
+        if (!stmt->IsColumnNull(4))
+            colDefaultValue.assign(stmt->GetValueText(4));
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
-        const int pkOrdinal = stmt.GetValueInt(5); //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(5), "pk") == 0);
+        const int pkOrdinal = stmt->GetValueInt(5); //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
 
         colInfos.push_back(SqliteColumnInfo(colName, colType, pkOrdinal, colIsNotNull, colDefaultValue));
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbSchemaPersistenceManager::GetTableSpaces(std::vector<Utf8String>& tableSpaces, ECDbCR ecdb)
+    {
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("pragma database_list");
+    if (stmt == nullptr)
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        tableSpaces.push_back(stmt->GetValueText(1));
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+//static
+bool DbSchemaPersistenceManager::TableSpaceExists(ECDbCR ecdb, Utf8StringCR tableSpace)
+    {
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("pragma database_list");
+    if (stmt == nullptr)
+        return false;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (tableSpace.EqualsIAscii(stmt->GetValueText(1)))
+            return true;
+        }
+
+    return false;
     }
 
 //---------------------------------------------------------------------------------------

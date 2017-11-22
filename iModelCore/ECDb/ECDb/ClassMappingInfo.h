@@ -60,6 +60,7 @@ private:
 
     ClassMap const* m_tphBaseClassMap = nullptr;
 
+    Utf8String m_tableSpace;
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty = nullptr;
@@ -85,6 +86,7 @@ public:
     ECN::ECClassCR GetClass() const { return m_ecClass; }
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.IsTablePerHierarchy()); return m_tphBaseClassMap; }
+    Utf8StringCR GetTableSpace() const { return m_tableSpace; }
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }

@@ -398,7 +398,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     //add vertical partitions
     for (DbTable const* table : lwmc.GetVerticalPartitionsForClass(classId))
         {
-        if (table->GetTypeInfo().IsVirtual())
+        if (table->GetType() == DbTable::Type::Virtual)
             continue;
 
         Partition* vp = storageDescription->AddVerticalPartition(*table, storageDescription->GetHorizontalPartition(*table) != nullptr);
@@ -459,7 +459,7 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
     m_horizontalPartitions.push_back(Partition(table));
 
     const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
-    if (!table.GetTypeInfo().IsVirtual())
+    if (table.GetType() != DbTable::Type::Virtual)
         m_nonVirtualHorizontalPartitionIndices.push_back(indexOfAddedPartition);
 
     if (isRootPartition)
@@ -473,8 +473,8 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool isRootPartition)
     {
-    BeAssert(!table.GetTypeInfo().IsVirtual());
-    if (table.GetTypeInfo().IsVirtual())
+    BeAssert(table.GetType() != DbTable::Type::Virtual);
+    if (table.GetType() == DbTable::Type::Virtual)
         return nullptr;
 
     m_verticalPartitions.push_back(Partition(table));
@@ -492,8 +492,7 @@ Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool i
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    02 / 2016
 //------------------------------------------------------------------------------------------
-Partition::Partition(Partition const& rhs)
-    : m_table(rhs.m_table), m_partitionClassIds(rhs.m_partitionClassIds),
+Partition::Partition(Partition const& rhs) : m_table(rhs.m_table), m_partitionClassIds(rhs.m_partitionClassIds),
     m_inversedPartitionClassIds(rhs.m_inversedPartitionClassIds), m_hasInversedPartitionClassIds(rhs.m_hasInversedPartitionClassIds)
     {}
 
@@ -516,8 +515,7 @@ Partition& Partition::operator=(Partition const& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-Partition::Partition(Partition&& rhs)
-    : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)),
+Partition::Partition(Partition&& rhs) : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)),
     m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds))
     {
     //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't

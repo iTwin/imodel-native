@@ -47,12 +47,12 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
     const bool isIntegerVal = stateValue.GetValueType() == DbValueType::IntegerVal;
     Nullable<ChangedValueState> state;
     if (isIntegerVal)
-        state = ChangeSummaryHelper::ToChangedValueState(stateValue.GetValueInt());
+        state = ChangeSummaryManager::ToChangedValueState(stateValue.GetValueInt());
     else
-        state = ChangeSummaryHelper::ToChangedValueState(stateValue.GetValueText());
+        state = ChangeSummaryManager::ToChangedValueState(stateValue.GetValueText());
 
     Nullable<ChangeOpCode> opCode;
-    if (state.IsNull() || (opCode = ChangeSummaryHelper::DetermineOpCodeFromChangedValueState(state.Value())).IsNull())
+    if (state.IsNull() || (opCode = ChangeSummaryManager::DetermineOpCodeFromChangedValueState(state.Value())).IsNull())
         {
         Utf8String msg;
         if (isIntegerVal)
@@ -105,9 +105,9 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
     const bool stateIsIntegerVal = changedValueStateValue.GetValueType() == DbValueType::IntegerVal;
     Nullable<ChangedValueState> state;
     if (stateIsIntegerVal)
-        state = ChangeSummaryHelper::ToChangedValueState(changedValueStateValue.GetValueInt());
+        state = ChangeSummaryManager::ToChangedValueState(changedValueStateValue.GetValueInt());
     else
-        state = ChangeSummaryHelper::ToChangedValueState(changedValueStateValue.GetValueText());
+        state = ChangeSummaryManager::ToChangedValueState(changedValueStateValue.GetValueText());
 
     if (state.IsNull())
         {

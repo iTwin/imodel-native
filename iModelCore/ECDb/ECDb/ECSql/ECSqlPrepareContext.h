@@ -115,7 +115,7 @@ struct ECSqlPrepareContext final : NonCopyableClass
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
 
-        bool m_mustLoadTempTables = false;
+        bool m_mustRecreateChangeSummaryCache = false;
 
     public:
         explicit ECSqlPrepareContext(IECSqlPreparedStatement&);
@@ -139,8 +139,8 @@ struct ECSqlPrepareContext final : NonCopyableClass
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }
 
-        bool MustLoadTempTables() const { return m_mustLoadTempTables; }
-        void SetMustLoadTempTables() { m_mustLoadTempTables = true; }
+        bool MustRecreateChangeSummaryCache() const { return m_mustRecreateChangeSummaryCache; }
+        void SetMustRecreateChangeSummaryCache() { m_mustRecreateChangeSummaryCache = true; }
 
         ExpScope const& GetCurrentScope() const { return m_scopes.Current(); }
         ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }

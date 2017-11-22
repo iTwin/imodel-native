@@ -38,7 +38,7 @@ struct SqliteColumnInfo final
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbSchemaPersistenceManager final : public NonCopyableClass
+struct DbSchemaPersistenceManager final
     {
 public:
     enum class CreateOrUpdateTableResult
@@ -51,8 +51,8 @@ public:
         };
 
 private:
-    DbSchemaPersistenceManager();
-    ~DbSchemaPersistenceManager();
+    DbSchemaPersistenceManager() = delete;
+    ~DbSchemaPersistenceManager() = delete;
 
     static bool IsTableChanged(ECDbCR, DbTable const&);
 
@@ -61,7 +61,7 @@ private:
     static BentleyStatus AlterTable(ECDbCR, DbTable const&, std::vector<DbColumn const*> const& columnsToAdd);
 
     static BentleyStatus CreateTriggers(ECDbCR, DbTable const&, bool failIfExists);
-    static bool TriggerExistsInDb(ECDbCR, DbTrigger const&);
+    static bool TriggerExists(ECDbCR, DbTrigger const&);
 
     static BentleyStatus AppendColumnDdl(Utf8StringR ddl, DbColumn const&);
     //!@param[in] singleFkColumn must not be nullptr if @p embedInColumnDdl is true
@@ -81,8 +81,6 @@ public:
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
-    static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP dbSchemaName = nullptr);
-
     static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
     static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
 
@@ -101,15 +99,20 @@ public:
         return TId((uint64_t) id);
         }
 		
-	   static bool TableExistsInDb(ECDbCR ecdb, Utf8CP tableName, Utf8CP dbSchemaName = nullptr)
-        { 
-        if (Utf8String::IsNullOrEmpty(dbSchemaName))
+    static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP dbSchemaName = nullptr);
+
+    static bool TableSpaceExists(ECDbCR ecdb, Utf8StringCR tableSpace);
+    static BentleyStatus GetTableSpaces(std::vector<Utf8String>& tableSpaces, ECDbCR ecdb);
+
+    static bool TableExists(ECDbCR ecdb, Utf8CP tableName, Utf8CP tableSpace = nullptr)
+        {
+        if (Utf8String::IsNullOrEmpty(tableSpace))
             return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s]", tableName).c_str());
 
-        return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s].[%s]", dbSchemaName, tableName).c_str()); 
+        return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s].[%s]", tableSpace, tableName).c_str());
         }
 
-    static bool IndexExistsInDb(ECDbCR ecdb, Utf8CP indexName, Utf8CP dbSchemaName = nullptr)
+    static bool IndexExists(ECDbCR ecdb, Utf8CP indexName, Utf8CP dbSchemaName = nullptr)
         {
         CachedStatementPtr stmt;
         if (Utf8String::IsNullOrEmpty(dbSchemaName))
@@ -132,7 +135,7 @@ public:
     static Nullable<MapStrategy> ToMapStrategy(int val)
         {
         if (val == Enum::ToInt(MapStrategy::NotMapped) || val == Enum::ToInt(MapStrategy::OwnTable) || val == Enum::ToInt(MapStrategy::TablePerHierarchy) ||
-            val == Enum::ToInt(MapStrategy::ExistingTable) || val == Enum::ToInt(MapStrategy::TemporaryTablePerHierarchy) ||
+            val == Enum::ToInt(MapStrategy::ExistingTable) ||
             val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
             return Enum::FromInt<MapStrategy>(val);
 

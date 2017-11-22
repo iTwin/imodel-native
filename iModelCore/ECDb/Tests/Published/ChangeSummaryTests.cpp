@@ -326,7 +326,7 @@ TEST_F(ChangeSummaryTestFixture, LoadTempTableForChangedValueFunction)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, InvalidSummary)
+TEST_F(ChangeSummaryTestFixture, SchemaChange)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
 
@@ -347,14 +347,13 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
     // Test2: Change to ec_ tables - should cause an error creating a change summary
     tracker.Restart();
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?> "
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "</ECSchema>")));
 
     changeSet.Free();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
-    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(summaryId, changeSet));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryId, changeSet));
     }
 
 //---------------------------------------------------------------------------------------
@@ -362,10 +361,9 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Crud)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(
-        R"(<?xml version='1.0' encoding='utf-8'?>
-            <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
-                <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />
+    ASSERT_EQ(SUCCESS, SetupECDb("changeSummary_Crud.ecdb", SchemaItem(R"(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
                 <ECEntityClass typeName='Foo' modifier='None'>
                     <ECCustomAttributes>
                         <ClassMap xmlns='ECDbMap.02.00'>
@@ -387,10 +385,10 @@ TEST_F(ChangeSummaryTestFixture, Crud)
                     <ECNavigationProperty propertyName='Foo' relationshipName='Rel' direction='Backward'/>
                 </ECEntityClass>
                 <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>
-                    <Source cardinality='(0,1)' polymorphic='True'>
+                    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='embeds'>
                         <Class class='Foo'/>
                     </Source>
-                    <Target cardinality='(0,N)' polymorphic='True'>
+                    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is embedded in'>
                         <Class class='Goo' />
                     </Target>
                 </ECRelationshipClass>
@@ -1265,7 +1263,7 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixtureV1, InvalidSummary)
+TEST_F(ChangeSummaryTestFixtureV1, SchemaChange)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
 
@@ -1273,16 +1271,13 @@ TEST_F(ChangeSummaryTestFixtureV1, InvalidSummary)
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    DbResult result = m_ecdb.SavePropertyString(PropertySpec("TestName", "TestNamespace"), "TestValue");
-    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SavePropertyString(PropertySpec("TestName", "TestNamespace"), "TestValue"));
 
     TestChangeSet changeSet;
-    result = changeSet.FromChangeTrack(tracker);
-    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
 
     ChangeSummary changeSummary(m_ecdb);
-    BentleyStatus status = changeSummary.FromChangeSet(changeSet);
-    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(SUCCESS, changeSummary.FromChangeSet(changeSet));
 
     // Test2: Change to ec_ tables - should cause an error creating a change summary
     tracker.Restart();
@@ -1293,8 +1288,10 @@ TEST_F(ChangeSummaryTestFixtureV1, InvalidSummary)
         "</ECSchema>")));
 
     changeSet.Free();
-    result = changeSet.FromChangeTrack(tracker);
-    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
+
+    changeSummary.Free();
+    ASSERT_EQ(SUCCESS, changeSummary.FromChangeSet(changeSet));
     }
 
 

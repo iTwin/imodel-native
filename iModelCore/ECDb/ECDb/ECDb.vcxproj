@@ -22,6 +22,7 @@
     <ClCompile Include="ChangeIteratorImpl.cpp" />
     <ClCompile Include="ChangeSummaryExtractor.cpp" />
     <ClCompile Include="ChangeSummaryImpl.cpp" />
+    <ClCompile Include="ChangeSummaryManager.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
@@ -145,7 +146,7 @@
     <ClInclude Include="ChangeIteratorImpl.h" />
     <ClInclude Include="ChangeSummaryExtractor.h" />
     <ClInclude Include="ChangeSummaryImpl.h" />
-    <ClInclude Include="ChangeSummarySchemaHelper.h" />
+    <ClInclude Include="ChangeSummaryManager.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
@@ -251,9 +252,7 @@
       <SubType>Designer</SubType>
     </Xml>
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
-    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="ECSchemas\ECDbMap.02.00.01.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml" />
   </ItemGroup>

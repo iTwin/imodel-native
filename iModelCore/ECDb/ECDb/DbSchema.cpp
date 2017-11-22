@@ -16,6 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //****************************************************************************************
 //DbSchema
 //****************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -61,17 +62,17 @@ DbTable* DbSchema::FindTableP(Utf8StringCR name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::AddTable(Utf8StringCR name, DbTable::TypeInfo const& tableTypeInfo, ECClassId exclusiveRootClassId)
+DbTable* DbSchema::AddTable(DbTableSpace const& dbNamespace, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId)
     {
-    return m_tables.Add(DbTableId(), name, tableTypeInfo, exclusiveRootClassId, nullptr);
+    return m_tables.Add(DbTableId(), dbNamespace, name, tableType, exclusiveRootClassId, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::AddTable(Utf8StringCR name, DbTable::TypeInfo const& tableTypeInfo, ECClassId exclusiveRootClassId, DbTable const& parentTable)
+DbTable* DbSchema::AddTable(DbTableSpace const& dbNamespace, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const& parentTable)
     {
-    return m_tables.Add(DbTableId(), name, tableTypeInfo, exclusiveRootClassId, &parentTable);
+    return m_tables.Add(DbTableId(), dbNamespace, name, tableType, exclusiveRootClassId, &parentTable);
     }
 
 //---------------------------------------------------------------------------------------
@@ -89,7 +90,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
         bset<Utf8StringCP, CompareIUtf8Ascii> oldColumnList;
         bmap<Utf8StringCP, SqliteColumnInfo const*, CompareIUtf8Ascii> newColumnList;
         std::vector<SqliteColumnInfo> dbColumnList;
-        if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(dbColumnList, m_ecdb, tableName))
+        if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(dbColumnList, m_ecdb, tableName, table->GetTableSpace().GetName().c_str()))
             {
             BeAssert(false);
             return ERROR;
@@ -156,6 +157,9 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::SaveOrUpdateTables() const
     {
+    if (SUCCESS != m_tableSpaceManager.PersistNewTableSpaces())
+        return ERROR;
+
     //Following return the list of table and there id from db
     bmap<Utf8String, DbTableId, CompareIUtf8Ascii> existingTables = DbSchemaPersistenceManager::GetTableDefNamesAndIds(m_ecdb);
     for (DbTable const* table : m_tables.GetTablesInDependencyOrder())
@@ -190,6 +194,7 @@ void DbSchema::ClearCache() const
     {
     m_nullTable = nullptr;
     m_tables.ClearCache();
+    m_tableSpaceManager.ClearCache();
     m_indexDefsAreLoaded = false;
     }
 
@@ -204,24 +209,33 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO " TABLE_Table "(Name,Type,IsTemporary,ExclusiveRootClassId,ParentTableId) VALUES(?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO " TABLE_Table "(ParentTableId,Name,TableSpaceId,Type,ExclusiveRootClassId) VALUES(?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
-    stmt->BindText(1, table.GetName(), Statement::MakeCopy::No);
-    stmt->BindInt(2, Enum::ToInt(table.GetTypeInfo().GetType()));
-    if (!table.GetTypeInfo().GetIsTempFlag().IsNull())
-        stmt->BindBoolean(3, table.GetTypeInfo().GetIsTempFlag().Value());
-
-    if (table.HasExclusiveRootECClass())
-        stmt->BindId(4, table.GetExclusiveRootECClassId());
-
     DbTable::LinkNode const* parentNode = table.GetLinkNode().GetParent();
     if (parentNode != nullptr)
-        stmt->BindId(5, parentNode->GetTable().GetId());
+        stmt->BindId(1, parentNode->GetTable().GetId());
 
-    DbResult stat = stmt->Step();
-    if (stat != BE_SQLITE_DONE)
+    stmt->BindText(2, table.GetName(), Statement::MakeCopy::No);
+
+    DbTableSpace const& tableSpace = table.GetTableSpace();
+    if (!tableSpace.GetId().IsValid())
+        {
+        BeAssert(false && "TableSpace must be persisted before persisting new table def");
+        return ERROR;
+        }
+
+    if (!tableSpace.IsMain())
+        stmt->BindId(3, tableSpace.GetId());
+
+    stmt->BindInt(4, Enum::ToInt(table.GetType()));
+
+    if (table.HasExclusiveRootECClass())
+        stmt->BindId(5, table.GetExclusiveRootECClassId());
+
+
+    if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
     const DbTableId tableId = DbSchemaPersistenceManager::GetLastInsertedId<DbTableId>(m_ecdb);
@@ -341,6 +355,7 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
     const_cast<DbColumn&>(column).SetId(colId);
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -457,7 +472,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
             return SUCCESS;
         }
 
-    if (table.GetTypeInfo().GetType() != DbTable::Type::Existing && table.GetTypeInfo().GetType() != DbTable::Type::Virtual)
+    if (table.GetType() != DbTable::Type::Existing && table.GetType() != DbTable::Type::Virtual)
         table.InitializeSharedColumnNameGenerator(sharedColumnCount);
 
     return SUCCESS;
@@ -490,7 +505,7 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,Type,IsTemporary,ExclusiveRootClassId,ParentTableId FROM " TABLE_Table " WHERE Name=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,TableSpaceId,Type,ExclusiveRootClassId,ParentTableId FROM " TABLE_Table " WHERE Name=?");
     if (stmt == nullptr)
         return nullptr;
 
@@ -498,18 +513,23 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
         return nullptr;
 
     DbTableId id = stmt->GetValueId<DbTableId>(0);
-    BeAssert(!stmt->IsColumnNull(1) && "Type column is expected to have NOT NULL constraint");
-    Nullable<DbTable::Type> tableType = DbSchemaPersistenceManager::ToDbTableType(stmt->GetValueInt(1));
+
+    DbTableSpaceId tableSpaceId = stmt->GetValueId<DbTableSpaceId>(1);
+    DbTableSpace const* tableSpace = m_tableSpaceManager.LoadTableSpace(tableSpaceId);
+    if (tableSpace == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    BeAssert(!stmt->IsColumnNull(2) && "Type column is expected to have NOT NULL constraint");
+    Nullable<DbTable::Type> tableType = DbSchemaPersistenceManager::ToDbTableType(stmt->GetValueInt(2));
     if (tableType.IsNull())
         {
         LOG.errorv("Failed to load information about table '%s'. It has a type not supported by this software. The file might have been used with newer versions of the software.",
                                          name.c_str());
         return nullptr;
         }
-
-    Nullable<bool> isTemp;
-    if (!stmt->IsColumnNull(2))
-        isTemp = Nullable<bool>(stmt->GetValueBoolean(2));
 
     ECClassId exclusiveRootClassId = !stmt->IsColumnNull(3) ? stmt->GetValueId<ECClassId>(3) : ECClassId();
 
@@ -525,7 +545,7 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     DbTable const* parentTable = parentTableId.IsValid() ? FindTable(parentTableId) : nullptr;
     BeAssert(!parentTableId.IsValid() || parentTable != nullptr && "Failed to find parent table");
 
-    DbTable* table = const_cast<TableCollection&>(m_tables).Add(id, name, DbTable::TypeInfo(tableType.Value(), isTemp), exclusiveRootClassId, parentTable);
+    DbTable* table = const_cast<TableCollection&>(m_tables).Add(id, *tableSpace, name, tableType.Value(), exclusiveRootClassId, parentTable);
     if (table == nullptr)
         {
         BeAssert(false);
@@ -549,14 +569,14 @@ DbTable* DbSchema::LoadTable(Utf8StringCR name) const
 //-------------------------------------------------------------------------------------- -
 // @bsimethod                                                Krischan.Eberle        11/2017
 //--------------------------------------------------------------------------------------
-BentleyStatus DbSchema::LoadTempTables() const
+BentleyStatus DbSchema::RecreateTempTables() const
     {
     BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
 
     if (m_tempTablesAreLoaded)
         return SUCCESS;
 
-    CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT Name FROM " TABLE_Table " WHERE IsTemporary=" SQLVAL_True);
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT t.Name FROM " TABLE_Table " t JOIN " TABLE_TableSpace " ts ON t.TableSpaceId=ts.Id WHERE ts.Name='" TABLESPACE_Temp "'");
     if (stmt == nullptr)
         return ERROR;
 
@@ -569,8 +589,8 @@ BentleyStatus DbSchema::LoadTempTables() const
             return ERROR;
             }
 
-        BeAssert(table->GetTypeInfo().IsTemp());
-        if (DbSchemaPersistenceManager::TableExistsInDb(m_ecdb, table->GetName().c_str(), "temp"))
+        BeAssert(table->GetTableSpace().IsTemp());
+        if (DbSchemaPersistenceManager::TableExists(m_ecdb, table->GetName().c_str(), TABLESPACE_Temp))
             continue;
 
         if (DbSchemaPersistenceManager::CreateOrUpdateTableResult::Created != DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table))
@@ -580,20 +600,21 @@ BentleyStatus DbSchema::LoadTempTables() const
     return LoadTempIndexes();
     }
 
+
 //-------------------------------------------------------------------------------------- -
 // @bsimethod                                                Krischan.Eberle        11/2017
 //--------------------------------------------------------------------------------------
 BentleyStatus DbSchema::LoadTempIndexes() const
     {
     std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>> indexes;
-    if (LoadIndexDefs(indexes, " T.IsTemporary= " SQLVAL_True))
+    if (LoadIndexDefs(indexes, " INNER JOIN " TABLE_TableSpace " TS ON TS.Id=T.TableSpaceId WHERE TS.Name='" TABLESPACE_Temp "'"))
         return ERROR;
 
     for (std::pair<DbTable*, std::unique_ptr<DbIndex>> const& pair : indexes)
         {
         DbIndex const& index = *pair.second;
 
-        if (DbSchemaPersistenceManager::IndexExistsInDb(m_ecdb, index.GetName().c_str(), "temp"))
+        if (DbSchemaPersistenceManager::IndexExists(m_ecdb, index.GetName().c_str(), TABLESPACE_Temp))
             continue;
 
         Utf8String ddl,unused;
@@ -631,18 +652,18 @@ BentleyStatus DbSchema::LoadIndexDefs() const
 //-------------------------------------------------------------------------------------- -
 // @bsimethod                                                Krischan.Eberle        11/2017
 //--------------------------------------------------------------------------------------
-BentleyStatus DbSchema::LoadIndexDefs(std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>>& indexDefs, Utf8CP whereClause) const
+BentleyStatus DbSchema::LoadIndexDefs(std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>>& indexDefs, Utf8CP sqlWhereOrJoinClause) const
     {
     Utf8CP sql = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.AddNotNullWhereExp, I.IsAutoGenerated, I.ClassId, I.AppliesToSubclassesIfPartial FROM " TABLE_Index " I INNER JOIN " TABLE_Table " T ON T.Id = I.TableId";
 
     CachedStatementPtr stmt;
-    if (Utf8String::IsNullOrEmpty(whereClause))
+    if (Utf8String::IsNullOrEmpty(sqlWhereOrJoinClause))
         stmt = GetECDb().GetImpl().GetCachedSqliteStatement(sql);
     else
         {
-        Utf8String sqlWithWhere(sql);
-        sqlWithWhere.append(" WHERE ").append(whereClause);
-        stmt = GetECDb().GetImpl().GetCachedSqliteStatement(sqlWithWhere.c_str());
+        Utf8String extendedSql(sql);
+        extendedSql.append(sqlWhereOrJoinClause);
+        stmt = GetECDb().GetImpl().GetCachedSqliteStatement(extendedSql.c_str());
         }
 
     if (stmt == nullptr)
@@ -761,7 +782,7 @@ DbTable const* DbSchema::GetNullTable() const
         {
         m_nullTable = FindTableP(DBSCHEMA_NULLTABLENAME);
         if (m_nullTable == nullptr)
-            m_nullTable = const_cast<DbSchema*>(this)->AddTable(DBSCHEMA_NULLTABLENAME, DbTable::TypeInfo(DbTable::Type::Virtual, nullptr), ECClassId());
+            m_nullTable = const_cast<DbSchema*>(this)->AddTable(m_tableSpaceManager.GetMain(), DBSCHEMA_NULLTABLENAME, DbTable::Type::Virtual, ECClassId());
 
         if (m_nullTable != nullptr && m_nullTable->GetEditHandleR().CanEdit())
             m_nullTable->GetEditHandleR().EndEdit();
@@ -802,7 +823,7 @@ DbTable const* DbSchema::TableCollection::Get(DbTableId tableId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2017
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, DbTable::TypeInfo const& tableTypeInfo, ECClassId exclusiveRootClassId, DbTable const* parentTable)
+DbTable* DbSchema::TableCollection::Add(DbTableId tableId, DbTableSpace const& dbNamespace, Utf8StringCR name, DbTable::Type tableType, ECClassId exclusiveRootClassId, DbTable const* parentTable)
     {
     if (name.empty())
         {
@@ -816,14 +837,14 @@ DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, Db
         return nullptr;
         }
 
-    if (parentTable != nullptr && tableTypeInfo.GetIsTempFlag() != parentTable->GetTypeInfo().GetIsTempFlag())
+    if (parentTable != nullptr && !dbNamespace.GetName().EqualsIAscii(parentTable->GetTableSpace().GetName()))
         {
-        BeAssert(false && "Child table is expected to have same TypeInfo::GetIsTempFlag as parent table");
+        BeAssert(false && "Child table is expected to have same TableSpace as parent table");
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(m_ecdb, tableId, name, tableTypeInfo, exclusiveRootClassId, parentTable);
-    if (tableTypeInfo.GetType() == DbTable::Type::Existing)
+    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(m_ecdb, tableId, dbNamespace, name, tableType, exclusiveRootClassId, parentTable);
+    if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
     DbTable* tableP = table.get();
@@ -848,9 +869,9 @@ std::vector<DbTable const*> DbSchema::TableCollection::GetTablesInDependencyOrde
         {
         if (tableKey.second != nullptr)
             {
-            if (tableKey.second->GetTypeInfo().GetType() == DbTable::Type::Joined)
+            if (tableKey.second->GetType() == DbTable::Type::Joined)
                 cachedTablesJoined.push_back(tableKey.second.get());
-            else if (tableKey.second->GetTypeInfo().GetType() == DbTable::Type::Overflow)
+            else if (tableKey.second->GetType() == DbTable::Type::Overflow)
                 cachedTablesOverflow.push_back(tableKey.second.get());
             else
                 cachedTables.insert(cachedTables.begin(), tableKey.second.get());
@@ -881,20 +902,209 @@ void DbSchema::TableCollection::Remove(Utf8StringCR tableName) const
     }
 
 
+
+
+
+//****************************************************************************************
+//DbSchema::TableSpaceManager
+//****************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpace const& DbSchema::TableSpaceManager::GetMain() const
+    {
+    if (m_mainTableSpace != nullptr)
+        return *m_mainTableSpace;
+
+    FindOrAddTableSpace(TABLESPACE_Main);
+    BeAssert(m_mainTableSpace != nullptr);
+    return *m_mainTableSpace;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpace const& DbSchema::TableSpaceManager::GetTemp() const
+    {
+    if (m_tempTableSpace != nullptr)
+        return *m_tempTableSpace;
+
+    FindOrAddTableSpace(TABLESPACE_Temp);
+    BeAssert(m_tempTableSpace != nullptr);
+    return *m_tempTableSpace;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpace const* DbSchema::TableSpaceManager::FindOrAddTableSpace(Utf8CP name) const
+    {
+    auto it = m_tableSpaces.find(name);
+    if (it != m_tableSpaces.end())
+        return it->second.get();
+
+    DbTableSpaceId id = LookupTableSpaceId(name);
+    if (!id.IsValid())
+        return AddTableSpace(name); // add a new namespace
+
+    return AddTableSpace(id, name); //add a an existing namespace
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpace const* DbSchema::TableSpaceManager::AddTableSpace(DbTableSpaceId id, Utf8CP name) const
+    {
+    if (m_tableSpaces.find(name) != m_tableSpaces.end())
+        return nullptr;
+
+    DbTableSpace const* ts = nullptr;
+    
+    {
+    std::unique_ptr<DbTableSpace> tsPtr = std::make_unique<DbTableSpace>(id, name);
+    ts = tsPtr.get();
+    m_tableSpaces[ts->GetName().c_str()] = std::move(tsPtr);
+    }
+
+    //cache the known table space objects for quicker access and a particular order for persistence
+    if (ts->IsMain())
+        {
+        m_tableSpacesOrdered.insert(m_tableSpacesOrdered.begin(), ts);
+        m_mainTableSpace = ts;
+        }
+    else if (ts->IsTemp())
+        {
+        if (m_tableSpacesOrdered.empty() || !m_tableSpacesOrdered[0]->IsMain())
+            m_tableSpacesOrdered.insert(m_tableSpacesOrdered.begin(), ts);
+        else
+            m_tableSpacesOrdered.insert(m_tableSpacesOrdered.begin() + 1, ts);
+
+        m_tempTableSpace = ts;
+        }
+    else
+        m_tableSpacesOrdered.push_back(ts);
+
+    return ts;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpace const* DbSchema::TableSpaceManager::LoadTableSpace(DbTableSpaceId id) const
+    {
+    if (!id.IsValid())
+        return &GetMain(); //main table space is not persisted in ec_Table to save some disk space
+
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM " TABLE_TableSpace " WHERE Id=?");
+    if (stmt == nullptr)
+        return nullptr;
+
+    stmt->BindId(1, id);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
+
+    Utf8CP name = stmt->GetValueText(0);
+
+    auto it = m_tableSpaces.find(name);
+    if (it != m_tableSpaces.end())
+        return it->second.get();
+
+    return AddTableSpace(id, name);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpaceId DbSchema::TableSpaceManager::LookupTableSpaceId(Utf8CP name) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM " TABLE_TableSpace " WHERE Name=?");
+    if (stmt == nullptr)
+        return DbTableSpaceId();
+
+    stmt->BindText(1, name, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DbTableSpaceId();
+
+    return stmt->GetValueId<DbTableSpaceId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle        11/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::TableSpaceManager::PersistNewTableSpaces() const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO " TABLE_TableSpace "(Name) VALUES(?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    for (DbTableSpace const* tableSpace : m_tableSpacesOrdered)
+        {
+        if (tableSpace->GetId().IsValid())
+            continue; //if it has id, it was already persisted
+
+        stmt->BindText(1, tableSpace->GetName(), Statement::MakeCopy::No);
+
+        if (BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+
+        stmt->Reset();
+        stmt->ClearBindings();
+
+        const DbTableSpaceId id = DbSchemaPersistenceManager::GetLastInsertedId<DbTableSpaceId>(m_ecdb);
+        if (!id.IsValid())
+            return ERROR;
+
+        const_cast<DbTableSpace&>(*tableSpace).SetId(id);
+        }
+
+    return SUCCESS;
+    }
+
+//****************************************************************************************
+//DbTableSpace
+//****************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   11/2017
+//---------------------------------------------------------------------------------------
+DbTableSpace::DbTableSpace(DbTableSpaceId id, Utf8CP name) : m_id(id), m_name(name)
+    {
+    if (m_name.empty() || m_name.EqualsIAscii(TABLESPACE_Main))
+        {
+        m_type = Type::Main;
+        if (m_name.empty())
+            m_name.assign(TABLESPACE_Main);
+
+        return;
+        }
+
+    if (m_name.EqualsIAscii(TABLESPACE_Temp))
+        {
+        m_type = Type::Temp;
+        return;
+        }
+
+    m_type = Type::Attached;
+    }
+
+
 //****************************************************************************************
 //DbTable
 //****************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, TypeInfo const& typeInfo, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
-    : m_ecdb(ecdb), m_id(id), m_name(name), m_typeInfo(typeInfo), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
+DbTable::DbTable(ECDbCR ecdb, DbTableId id, DbTableSpace const& dbNamespace, Utf8StringCR name, Type type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+    : m_ecdb(ecdb), m_id(id), m_tableSpace(dbNamespace), m_name(name), m_type(type), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
     {
-    if (typeInfo.GetType() != Type::Existing && typeInfo.GetType() != Type::Virtual)
-        m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(typeInfo.GetType()));
+    if (m_type != Type::Existing && m_type != Type::Virtual)
+        m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(m_type));
 
     BeAssert(m_linkNode.Validate() == SUCCESS);
-    BeAssert(m_linkNode.GetParent() == nullptr || m_linkNode.GetParent()->GetTable().GetTypeInfo().GetIsTempFlag() == m_typeInfo.GetIsTempFlag());
+    BeAssert(m_linkNode.GetParent() == nullptr || m_linkNode.GetParent()->GetTable().GetTableSpace().GetName().EqualsIAscii(m_tableSpace.GetName()));
     }
 
 
@@ -983,7 +1193,7 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::AddTrigger(Utf8StringCR triggerName, DbTrigger::Type type, Utf8StringCR condition, Utf8StringCR body)
     {
-    if (m_typeInfo.GetType() == Type::Existing)
+    if (m_type == Type::Existing)
         {
         BeAssert(false);
         return ERROR;
@@ -1050,7 +1260,7 @@ DbColumn* DbTable::AddColumn(DbColumnId id, Utf8StringCR colName, DbColumn::Type
     if (!GetEditHandleR().CanEdit())
         {
         IssueReporter const& issues = m_ecdb.GetImpl().Issues();
-        if (m_typeInfo.GetType() == Type::Existing)
+        if (m_type == Type::Existing)
             issues.Report("Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
         else
             {
@@ -1061,7 +1271,7 @@ DbColumn* DbTable::AddColumn(DbColumnId id, Utf8StringCR colName, DbColumn::Type
         return nullptr;
         }
 
-    if (m_typeInfo.IsVirtual())
+    if (m_type == Type::Virtual)
         {
         //!Force column to be virtual
         persistenceType = PersistenceType::Virtual;
@@ -1203,7 +1413,7 @@ DbTable::LinkNode::LinkNode(DbTable const& table, DbTable const* parent) : m_tab
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::LinkNode::Validate() const
     {
-    switch (m_table.GetTypeInfo().GetType())
+    switch (m_table.GetType())
         {
             case Type::Primary:
             {
@@ -1215,10 +1425,12 @@ BentleyStatus DbTable::LinkNode::Validate() const
 
             if (!m_children.empty())
                 {
-                TypeInfo const& typeInfo = m_children[0]->m_table.GetTypeInfo();
+                Type type = m_children[0]->m_table.GetType();
+                DbTableSpace const& tableSpace = m_children[0]->m_table.GetTableSpace();
+
                 for (size_t i = 1; i < m_children.size(); i++)
                     {
-                    if (m_children[i]->m_table.GetTypeInfo() != typeInfo)
+                    if (m_children[i]->m_table.GetType() != type || m_children[i]->m_table.GetTableSpace() != tableSpace)
                         {
                         BeAssert(false && "All sibling tables must be of the same type");
                         return ERROR;
@@ -1240,15 +1452,15 @@ BentleyStatus DbTable::LinkNode::Validate() const
 
             case Type::Joined:
             {
-            if (m_parent == nullptr || m_parent->m_table.GetTypeInfo().GetType() != Type::Primary)
+            if (m_parent == nullptr || m_parent->m_table.GetType() != Type::Primary || m_parent->m_table.GetTableSpace() != m_table.GetTableSpace())
                 {
-                BeAssert(false && "Joined table must have a parent table and it must be of type 'Primary'");
+                BeAssert(false && "Joined table must have a parent table and it must be of type 'Primary' and parent and joined table must be in same table space");
                 return ERROR;
                 }
 
             if (!m_children.empty())
                 {
-                if (m_children.size() > 1 || m_children[0]->m_table.GetTypeInfo().GetType() != Type::Overflow)
+                if (m_children.size() > 1 || m_children[0]->m_table.GetType() != Type::Overflow)
                     {
                     BeAssert(false && "Joined table can only have a single child table at most and it must be an overflow table");
                     return ERROR;
@@ -1260,9 +1472,9 @@ BentleyStatus DbTable::LinkNode::Validate() const
 
             case Type::Overflow:
             {
-            if (m_parent == nullptr)
+            if (m_parent == nullptr || m_parent->m_table.GetTableSpace() != m_table.GetTableSpace())
                 {
-                BeAssert(false && "Overflow table must have a parent table");
+                BeAssert(false && "Overflow table must have a parent table and both must be in the same table space");
                 return ERROR;
                 }
 
@@ -1304,12 +1516,12 @@ BentleyStatus DbTable::LinkNode::Validate() const
 //---------------------------------------------------------------------------------------
 DbTable::LinkNode const* DbTable::LinkNode::FindOverflowTable() const
     {
-    BeAssert(m_table.GetTypeInfo().GetType() != Type::Overflow);
+    BeAssert(m_table.GetType() != Type::Overflow);
     if (m_children.empty())
         return nullptr;
 
     LinkNode const* nextNode = m_children[0];
-    return nextNode->m_table.GetTypeInfo().GetType() == Type::Overflow ? nextNode : nullptr;
+    return nextNode->m_table.GetType() == Type::Overflow ? nextNode : nullptr;
     }
 
 //****************************************************************************************
@@ -1843,5 +2055,7 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 
     return true;
     }
+
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

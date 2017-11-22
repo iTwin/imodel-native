@@ -53,22 +53,33 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
                                      "SELECT c.Id FROM " TABLE_Class " c, " TABLE_ClassMap " cm WHERE c.Id = cm.ClassId AND "
                                      "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
-                                     "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_TemporaryTablePerHierarchy ","
-                                     SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"))
+                                     "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"))
         return ERROR;
 
-    bvector<ECClassId> classIds;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
         BeAssert(classId.IsValid());
-        classIds.push_back(classId);
+
+        ECClassCP ecClass = ecdb.Schemas().GetClass(classId);
+        if (ecClass == nullptr)
+            return ERROR;
+
+        ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
+        if (classMap == nullptr)
+            return ERROR;
+
+        //skip temp tables if owned by ECDb because they will not exist if the file is not opened with ECDb.
+        //In case of ExistingTable, it is up to the owner to deal with temp tables
+        if (classMap->GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable && classMap->GetPrimaryTable().GetTableSpace().IsTemp())
+            continue;
+
+        if (CreateECClassView(ecdb, *classMap) != SUCCESS)
+            return ERROR;
         }
 
-    stmt.Finalize();
-    const BentleyStatus stat = CreateECClassViews(ecdb, classIds);
     PERFLOG_FINISH("ECDb", "Create ECClass views");
-    return stat;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -90,12 +101,24 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
         if (classMap == nullptr)
             return ERROR;
 
-        if (classMap->GetType() == ClassMap::Type::NotMapped || classMap->GetMapStrategy().GetStrategy() == MapStrategy::TemporaryTablePerHierarchy || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
+        const MapStrategy mapStrategy = classMap->GetMapStrategy().GetStrategy();
+
+        if (mapStrategy == MapStrategy::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass())
+            || mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable || mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable)
             {
-            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or has the map strategy 'TemporaryTablePerHierarchy' or not an ECEntityClass or ECRelationshipClass.",
-                                                          classMap->GetClass().GetFullName(), classId.ToString().c_str());
+            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityClass or a link table ECRelationshipClass.",
+                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }
+
+        if (mapStrategy != MapStrategy::ExistingTable && classMap->GetPrimaryTable().GetTableSpace().IsTemp())
+            {
+            //only fail if tables are owned by ECDb. In case of ExistingTable, it is up to the owner to deal with temp tables
+            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is mapped to the TEMP table space.",
+                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
+            return ERROR;
+            }
+
 
         if (CreateECClassView(ecdb, *classMap) != SUCCESS)
             return ERROR;
@@ -454,7 +477,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 
     for (Partition const* partition : partitionOfInterest)
         {
-        if (partition->GetTable().GetTypeInfo().IsVirtual())
+        if (partition->GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         //For vertical partition we like to skip the first primary partition table.
@@ -602,7 +625,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
     StorageDescription const& storageDesc = relationMap.GetStorageDescription();
     for (Partition const& partition : storageDesc.GetHorizontalPartitions())
         {
-        if (partition.GetTable().GetTypeInfo().IsVirtual())
+        if (partition.GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         NativeSqlBuilder view;
@@ -1240,7 +1263,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 //static
 BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
     {
-    if (table.GetTypeInfo().IsVirtual())
+    if (table.GetType() == DbTable::Type::Virtual)
         return SUCCESS;
 
     StorageDescription const& desc = classMap.GetStorageDescription();
@@ -1410,7 +1433,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
     if (!ignoreVirtualColumnCheck)
         {
         BeAssert(propertyMap.FindDataPropertyMap(*table) != nullptr);
-        if (table->GetTypeInfo().IsVirtual() || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+        if (table->GetType() == DbTable::Type::Virtual || propertyMap.FindDataPropertyMap(*table)->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
             return nullptr;
         }
 
