@@ -142,22 +142,6 @@ public:
 
     ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
 
-    ScalableMesh::IScalableMeshPtr OpenMesh()
-    {
-        StatusInt status;
-        ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
-        BeAssert(status == SUCCESS);
-        if (myScalableMesh != nullptr)
-        {
-            GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS();
-            /*
-            Transform tr;
-            tr.InitFrom(m_transform);
-            myScalableMesh->SetReprojection(*gcs, tr);
-            */
-        }
-        return myScalableMesh;
-    }
 
 };
 
@@ -235,7 +219,7 @@ INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTest, ::testing::ValuesIn(Scal
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
 
-INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_RESULTS))));
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));
 
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {
@@ -257,7 +241,7 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 }
 
 TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
-{
+{   
 	auto myScalableMesh = OpenMesh();
 	bvector<DPoint3d> sourcePts = GetData();
 	TerrainModel::DTMDrapedLinePtr result;
@@ -272,6 +256,48 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 		EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
 	}
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
+    {
+
+    /*
+    BeFileName GetFileName() { return m_filename; }
+    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
+    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
+    bvector<double>& GetExpectedResults() { return m_expectedResults; }
+    */
+
+
+    //auto myScalableMesh = OpenMesh();
+
+    /*
+    bvector<DPoint3d> sourcePts = GetData();
+    TerrainModel::DTMDrapedLinePtr result;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
+    ASSERT_EQ(result.IsValid(), true);
+    for (size_t i = 0; i < GetResult().size(); ++i)
+    {
+    DPoint3d pt;
+    result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
+    EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
+    EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
+    EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
+    }*/
+    
+
+    DisplayQueryTester queryTester;
+
+    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
+
+    EXPECT_EQ(result == true, true);
+
+    if (result)
+        queryTester.DoQuery();
+    }
+
 
 // Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
 // When calling from main function, we actually want to return an error.
@@ -325,25 +351,3 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 //    return retCode;
 //    }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Mathieu.St-Pierre   11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
-    {
-    auto myScalableMesh = OpenMesh();
-
-    /*
-    bvector<DPoint3d> sourcePts = GetData();
-    TerrainModel::DTMDrapedLinePtr result;
-    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
-    ASSERT_EQ(result.IsValid(), true);
-    for (size_t i = 0; i < GetResult().size(); ++i)
-    {
-        DPoint3d pt;
-        result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
-        EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
-        EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
-        EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
-    }*/
-    }

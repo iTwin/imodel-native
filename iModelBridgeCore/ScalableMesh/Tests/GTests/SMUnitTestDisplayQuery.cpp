@@ -7,7 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestDisplayQuery.h"
+#include <Bentley/BeTest.h>
+#include <Bentley\BeThread.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -18,10 +22,13 @@ struct SmCachedDisplayTexture
     SmCachedDisplayTexture()
         {    
         }    
+
+    int dummy; 
     };
 
 struct SmCachedDisplayMesh
     {    
+    int dummy;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -115,6 +122,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     {
 
     m_nbCreatedMesh++;
+    isStoredOnGpu = false;
+    usedMemInBytes = sizeof(SmCachedDisplayMesh);
+    cachedDisplayMesh = new SmCachedDisplayMesh;
     
 #if 0
     QvTextureID textureId = 0;
@@ -176,6 +186,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
 {
      
     m_nbCreatedTexture++;    
+    isStoredOnGpu = false;
+    usedMemInBytes = sizeof(SmCachedDisplayTexture);
+    cachedDisplayTexture = new SmCachedDisplayTexture;
+
 
 #if 0
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
@@ -270,7 +284,7 @@ IScalableMeshProgressiveQueryEnginePtr DisplayQueryTester::GetProgressiveQueryEn
 * @bsimethod                                    Mathieu.St-Pierre                 11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayQueryTester::DisplayQueryTester()
-    {
+    {    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,8 +299,6 @@ DisplayQueryTester::~DisplayQueryTester()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
     {
-#ifdef ACTIVATED
-
 #if 0 
     DMatrix4d localToView(context.GetLocalToView());
 
@@ -304,8 +316,10 @@ void DisplayQueryTester::DoQuery()
     bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
 
     BeAssert(inverted != 0);
-#endif
+
     status = SUCCESS;
+#endif
+    
 
    
 
@@ -313,7 +327,7 @@ void DisplayQueryTester::DoQuery()
     
     viewDependentQueryParams->SetMinScreenPixelsPerPoint(m_minScreenPixelsPerPoint);
     viewDependentQueryParams->SetMaxPixelError(m_maxPixelError);
-    
+    viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
 
 #if 0 
     ClipVectorCP clip;
@@ -361,7 +375,7 @@ void DisplayQueryTester::DoQuery()
                                                                clips,
                                                                m_smPtr);
 
-    ASSERT_TRUE(status == SUCCESS);
+    ASSERT_EQ(status == SUCCESS, true);
 
     if (m_waitQueryComplete)
         {
@@ -371,14 +385,73 @@ void DisplayQueryTester::DoQuery()
             }
         }
 
-    ASSERT_TRUE(GetProgressiveQueryEngine()->IsQueryComplete(queryId));
+    ASSERT_EQ(GetProgressiveQueryEngine()->IsQueryComplete(queryId), true);
 
 
     bvector<IScalableMeshCachedDisplayNodePtr> meshNodes;
     
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
-    ASSERT_TRUE(status == SUCCESS);    
+    ASSERT_EQ(status == SUCCESS, true);
+            
+    int nbReturnedNodes = (int)meshNodes.size();
 
-#endif
+
+    meshNodes.clear();
+    m_progressiveQueryEngine = nullptr;
+    m_smPtr = nullptr;
+
+    int nbExpectedNodes = (int)m_expectedResults[0];
+    
+    EXPECT_EQ(nbReturnedNodes == nbExpectedNodes, true);    
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() >= nbReturnedNodes, true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh() >= nbReturnedNodes, true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() >= nbReturnedNodes, true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() >= nbReturnedNodes, true);
+
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh(), true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture(), true);    
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayQueryTester::SetQueryParams(const BeFileName& smFileName, const DMatrix4d& rootToView, const bvector<DPoint4d>& clipPlanes, const bvector<double>& expectedResults)
+    {
+    StatusInt status;
+    m_smPtr = ScalableMesh::IScalableMesh::GetFor(smFileName, true, true, status);
+            
+    if (m_smPtr == nullptr)
+        return false;
+            
+    memcpy(&m_rootToViewMatrix, &rootToView.coff, sizeof(rootToView.coff));
+
+    bvector<ClipPlane> clips(clipPlanes.size());
+
+    for (size_t ind = 0; ind < clipPlanes.size(); ind++)
+        {        
+        DVec3d normal(DVec3d::From(clipPlanes[ind].x, clipPlanes[ind].y, clipPlanes[ind].z));
+
+        clips[ind] = ClipPlane(normal, clipPlanes[ind].w);
+        }
+       
+    ConvexClipPlaneSet convexClipPlaneSet(&clips[0], clips.size());
+
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+
+    ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
+
+    m_clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
+
+    m_expectedResults.resize(expectedResults.size());
+    memcpy(&m_expectedResults[0], &expectedResults[0], sizeof(double) * expectedResults.size());
+
+    return true;
+    /*
+    DMatrix4d& rootToView;
+    bvector<DPoint4d>& clipPlanes;
+    bvector<double>& expectedResults
+    */
+
+        
+
+    }

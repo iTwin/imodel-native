@@ -18,8 +18,8 @@
 #define SM_LISTING_FILE_NAME L"list.txt"
 #endif
 
-#ifndef SM_DISPLAY_QUERY_RESULTS
-#define SM_DISPLAY_QUERY_RESULTS L"displayQueryResults.txt"
+#ifndef SM_DISPLAY_QUERY_TEST_CASES
+#define SM_DISPLAY_QUERY_TEST_CASES L"displayQueryTestCases.txt"
 #endif
 
 //#define VANCOUVER_API
@@ -54,7 +54,7 @@ namespace ScalableMeshGTestUtil
         TYPE_3DTILES,
         TYPE_UNKNOWN
         };
-
+    
     bvector<BeFileName> GetFiles(BeFileName dataPath);
 
 	bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> GetListOfValues(BeFileName listingFile);
