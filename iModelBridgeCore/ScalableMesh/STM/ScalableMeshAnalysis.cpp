@@ -213,7 +213,14 @@ bool ScalableMeshAnalysis::_GetComputationRange(DRange3d& rangeInter, bool inWor
 
     rangeInter.IntersectionOf(rangeMesh, rangePolygon);
     if (rangeInter.IsNull())
-        return false; // no intersection
+        {
+        // polygon can be planar on Z, add some elevation
+        rangePolygon.low.z += -1.0;
+        rangePolygon.high.z += 1.0;
+        rangeInter.IntersectionOf(rangeMesh, rangePolygon);
+        if (rangeInter.IsNull()) // still null ???
+            return false; // no intersection
+        }
 
     if (bAlignZ) // align the bottom Z
         {
