@@ -2052,7 +2052,9 @@ public:
     ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
     bool IsUnitComparable(Utf8CP unitName) {return Utf8String::IsNullOrEmpty(unitName) ? false : m_persistenceFUS.IsUnitComparable(unitName);}
     ECOBJECTS_EXPORT Json::Value ToJson(bool useAlias) const;
-
+    ECOBJECTS_EXPORT  BEU::T_UnitSynonymVector* GetSynonymVector() const;
+    ECOBJECTS_EXPORT  size_t GetSynonymCount() const;
+    ECOBJECTS_EXPORT  BEU::PhenomenonCP GetPhenomenon() const;
     //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
