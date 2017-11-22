@@ -610,7 +610,7 @@
             - @b main
             - @b temp. Tables in the temp table space will be deleted when the file is closed.
          
-         Further table spaces can be created with SQLite's <a href"https://sqlite.org/lang_attach.html" target="_blank">ATTACH command</a>. 
+         Further table spaces can be created with SQLite's <a href="https://sqlite.org/lang_attach.html" target="_blank">ATTACH command</a>. 
          @note It is the application's responsibility to attach and detach custom table spaces.
     - @b TableName (optional, required for MapStrategies @em ExistingTable):
     Specify a table name for this class for the MapStrategy.

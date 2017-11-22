@@ -51,7 +51,9 @@ DbResult ECDb::Impl::OnDbOpened(ECDb::OpenParams const& params) const
     if (SUCCESS != Schemas().GetDbMap().GetDbSchema().RecreateTempTables(hasTempTables))
         return BE_SQLITE_ERROR;
 
-    //end transaction as a roll back done later by the client would remove the temp tables again
+    //commit transaction as a roll back done later by the client would remove the temp tables again
+    //This is safe even if no default txn was specified as open param as during opening a txn is active
+    //This is also safe if open param is read-only as nothing is written to disk (I assume)
     if (hasTempTables)
         m_ecdb.SaveChanges();
 
