@@ -4862,6 +4862,69 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesDescriptorsWithSimilarNavigationProperties, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ChildElement" relationshipName="ElementContainsElements" direction="Backward"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesDescriptorsWithSimilarNavigationProperties)
+    {
+    // set up data set
+    ECClassCP element = GetClass("Element");
+    ECClassCP derivedElement = GetClass("DerivedElement");
+
+    IECInstancePtr elementInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *element);
+    IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedElement);
+
+    // set up selection
+    SelectionInfo elementSelection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*elementInstance)}));
+    SelectionInfo derivedSelection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*derivedInstance)}));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesDescriptorsWithSimilarNavigationProperties", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptors
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, elementSelection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, derivedSelection, options.GetJson());
+    ASSERT_TRUE(descriptor2.IsValid());
+
+    // merge descriptors
+    ContentDescriptorPtr mergedDescriptor = ContentDescriptor::Create(*descriptor);
+    mergedDescriptor->MergeWith(*descriptor2);
+    ASSERT_TRUE(mergedDescriptor.IsValid());
+    EXPECT_EQ(mergedDescriptor->GetAllFields().size(), descriptor->GetAllFields().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsOfDifferentClasses, R"*(

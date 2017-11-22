@@ -276,6 +276,8 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
                 fieldsRemapInfo[sourceField] = targetField;
                 }
             }
+        if (found)
+            continue;
 
         for (Field* targetField : m_fields)
             {
@@ -818,7 +820,9 @@ bool ContentDescriptor::ECPropertiesField::_Equals(Field const& other) const
         return true;
 
     // if both lists have elements, just compare the first one
-    return m_properties[0] == other.AsPropertiesField()->GetProperties()[0];
+    ECPropertiesFieldKey thisKey(m_properties[0], GetEditor());
+    ECPropertiesFieldKey otherKey(other.AsPropertiesField()->GetProperties()[0], other.GetEditor());
+    return !(thisKey < otherKey) && !(otherKey < thisKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
