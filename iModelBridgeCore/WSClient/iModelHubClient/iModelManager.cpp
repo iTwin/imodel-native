@@ -163,7 +163,7 @@ RepositoryStatus iModelManager::_Demote(DgnLockSet const& locks, DgnCodeSet cons
         return RepositoryStatus::ServerUnavailable;
 
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = ExecuteAsync(m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken));
+    auto result = ExecuteAsync(m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken()));
     if (result->IsSuccess ())
         {
         return RepositoryStatus::Success;
