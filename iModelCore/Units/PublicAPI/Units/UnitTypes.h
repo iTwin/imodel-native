@@ -201,7 +201,7 @@ public:
     //! The first argument of the constructor is a required text string that can contain of of the 
     //! following:
     //!   a valid canonical Unit name
-    //!   a valid canonical Unit name followed by comma and the synonym: <UnitName>,<synonym>
+    //!   a valid canonical Unit name followed by comma and the synonym: UnitName,synonym
     //!   a Json string that containts a canonical Unit name and its synonym: {"synonym":"°","unitName":"ARC_DEG"}
     //! When the first argument contains only the name of the unit, the second argument must be a synonym
     //! Invalide names or their invalid combination will result in the empty Map
