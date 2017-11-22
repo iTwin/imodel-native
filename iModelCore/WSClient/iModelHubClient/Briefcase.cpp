@@ -601,7 +601,6 @@ ICancellationTokenPtr cancellationToken
     auto versionManager = m_imodelConnection->GetVersionsManager();
 
     ChangeSetsInfoResultPtr changeSetResult = ExecuteAsync(versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
-    );
 
     if (!changeSetResult->IsSuccess())
         {
