@@ -168,7 +168,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
         {
         auto primitiveProp = prop->GetAsPrimitiveProperty();
         SetPrimitiveValue(ecVal, primitiveProp->GetType(), value);
-        ECObjectsStatus ecStatus = instance.SetValue(accessString.c_str(), ecVal);
+        ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecVal);
         if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
             BeAssert(false);
