@@ -341,7 +341,9 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     else
         {
         models.erase(modelId);
-        m_roots.erase(m_roots.find(modelId));
+        auto rootIter = m_roots.find(modelId);
+        if (m_roots.end() != rootIter)
+            m_roots.erase(rootIter);
         }
 
     m_allRootsLoaded = false;
