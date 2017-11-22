@@ -116,26 +116,30 @@ public:
 };
 
 
-class ScalableMeshTestDisplayQuery : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>>
+class ScalableMeshTestDisplayQuery : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>
 {
 protected:
-    BeFileName m_filename;
-    DMatrix4d m_transform;
-    bvector<DPoint3d> m_sourcePtOrLinearData;
-    bvector<DPoint3d> m_expectedResult;
+    BeFileName        m_filename;
+    DMatrix4d         m_rootToViewMatrix;    
+    bvector<DPoint4d> m_clipPlanes;
+    bvector<double>   m_expectedResults;
 
 public:
+
     virtual void SetUp() {
         auto paramList = GetParam();
         m_filename = std::get<0>(paramList);
-        m_transform = std::get<1>(paramList);
-        m_sourcePtOrLinearData = std::get<2>(paramList);
-        m_expectedResult = std::get<3>(paramList);
+        m_rootToViewMatrix = std::get<1>(paramList);
+        m_clipPlanes = std::get<2>(paramList);
+        m_expectedResults = std::get<3>(paramList);
     }
+
     virtual void TearDown() { }
     BeFileName GetFileName() { return m_filename; }
-    bvector<DPoint3d>& GetData() { return m_sourcePtOrLinearData; }
-    bvector<DPoint3d>& GetResult() { return m_expectedResult; }
+    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
+    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
+    bvector<double>& GetExpectedResults() { return m_expectedResults; }
+
     ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
 
     ScalableMesh::IScalableMeshPtr OpenMesh()
@@ -146,9 +150,11 @@ public:
         if (myScalableMesh != nullptr)
         {
             GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS();
+            /*
             Transform tr;
             tr.InitFrom(m_transform);
             myScalableMesh->SetReprojection(*gcs, tr);
+            */
         }
         return myScalableMesh;
     }
@@ -229,7 +235,7 @@ INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTest, ::testing::ValuesIn(Scal
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
 
-INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_DISPLAY_QUERY_RESULTS))));
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_RESULTS))));
 
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {

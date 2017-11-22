@@ -58,6 +58,8 @@ namespace ScalableMeshGTestUtil
     bvector<BeFileName> GetFiles(BeFileName dataPath);
 
 	bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> GetListOfValues(BeFileName listingFile);
+
+    bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>   GetListOfDisplayQueryValues(BeFileName listingFile);
     
     SMMeshType GetFileType(BeFileName file);
 

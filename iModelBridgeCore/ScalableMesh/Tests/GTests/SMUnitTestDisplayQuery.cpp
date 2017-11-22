@@ -226,7 +226,7 @@ bool ScalableMeshDisplayCacheManager::_IsUsingVideoMemory()
     return false;
 }
 
-ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager(ViewContextR viewContext)
+ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
 {
 #if 0 
     m_qvCache = T_HOST.GetGraphicsAdmin()._CreateQvCache();
@@ -285,6 +285,7 @@ DisplayQueryTester::~DisplayQueryTester()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
     {
+#ifdef ACTIVATED
 
 #if 0 
     DMatrix4d localToView(context.GetLocalToView());
@@ -377,5 +378,7 @@ void DisplayQueryTester::DoQuery()
     
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
     ASSERT_TRUE(status == SUCCESS);    
+
+#endif
     }
 
