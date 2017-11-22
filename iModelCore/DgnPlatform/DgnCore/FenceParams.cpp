@@ -575,7 +575,7 @@ bool AcceptCurveVector(CurveVectorCR curves)
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
         return false;
 
-    auto graphic = CreateWorldGraphic();
+    auto graphic = CreateSceneGraphic();
 
     graphic->AddCurveVector(curves, false);
 

@@ -2040,6 +2040,8 @@ public:
 
         return true;
         }
+
+    static bool IsMinimumRange(FPoint3dCR low, FPoint3dCR high, bool is2d); //!< @private
 };
 
 //=======================================================================================

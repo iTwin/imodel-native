@@ -167,7 +167,7 @@ static std::string s_computeLighting = R"RAW_STRING(
         vec3 toEye = normalize (position);
 
         if (proj[3][3] != 1.0) // perspective
-            normal = faceforward(normal, toEye, -normal);
+            normal = faceforward(normal, toEye, normal);
         else
             normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);
 

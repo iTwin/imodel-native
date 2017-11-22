@@ -14,34 +14,23 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double wireframe_getTolerance(CurveVectorCR curves)
+static void wireframe_addVertex(bvector<DPoint3d>& pts, DPoint3dCR pt, bool checkDistance)
     {
-    static double s_minRuleLineTolerance = 1.0e-8;
-   
-    return curves.ResolveTolerance(s_minRuleLineTolerance); // TFS# 24423 - Length calculation can be very slow for B-Curves. s_defaultLengthRelTol * curves.Length ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void wireframe_addRulePoints(bvector<DPoint3d>& pts, bvector<bool>& interior, DPoint3dCR pt, bool isVertex, double ruleTolerance, bool checkDistance)
-    {
-    if (checkDistance && 0 != pts.size())
+    if (checkDistance && !pts.empty())
         {
-        if (pt.Distance(pts.back()) <= ruleTolerance)
+        if (pt.IsEqual(pts.back(), 1.0e-12))
             return; // Don't duplicate previous point...
-        else if (pt.Distance(pts.front()) <= ruleTolerance)
+        else if (pt.IsEqual(pts.front(), 1.0e-12))
             return; // Don't duplicate first point...
         }
 
     pts.push_back(pt);
-    interior.push_back(!isVertex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts, bvector<bool>& interior, double ruleTolerance, bool checkDistance, CheckStop* stopTester)
+static bool wireframe_collectVertices(CurveVectorCR curves, bvector<DPoint3d>& pts, bool checkDistance, CheckStop* stopTester)
     {
     if (1 > curves.size())
         return false;
@@ -56,7 +45,7 @@ static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts
             if (stopTester && stopTester->_CheckStop())
                 return true;
 
-            wireframe_collectPoints(*curve->GetChildCurveVectorCP(), pts, interior, ruleTolerance, checkDistance, stopTester);
+            wireframe_collectVertices(*curve->GetChildCurveVectorCP(), pts, checkDistance, stopTester);
             }
         }
     else
@@ -73,10 +62,10 @@ static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts
                 {
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
                     {
-                    DSegment3dCP  segment = curve->GetLineCP();
+                    DSegment3dCP segment = curve->GetLineCP();
 
-                    wireframe_addRulePoints(pts, interior, segment->point[0], true, ruleTolerance, checkDistance);
-                    wireframe_addRulePoints(pts, interior, segment->point[1], true, ruleTolerance, checkDistance);
+                    wireframe_addVertex(pts, segment->point[0], checkDistance);
+                    wireframe_addVertex(pts, segment->point[1], checkDistance);
                     break;
                     }
 
@@ -85,7 +74,7 @@ static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts
                     bvector<DPoint3d> const* points = curve->GetLineStringCP();
 
                     for (size_t iPt = 0; iPt < points->size(); ++iPt)
-                        wireframe_addRulePoints(pts, interior, points->at(iPt), true, ruleTolerance, checkDistance);
+                        wireframe_addVertex(pts, points->at(iPt), checkDistance);
                     break;
                     }
 
@@ -94,43 +83,14 @@ static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts
                     DEllipse3dCP  ellipse = curve->GetArcCP();
 
                     if (ellipse->IsFullEllipse())
-                        {
-                        for (size_t iRule = 0; iRule < 4; ++iRule)
-                            {
-                            double    theta = iRule * Angle::PiOver2();
-                            DPoint3d  point;
-
-                            ellipse->Evaluate(point, theta);
-                            wireframe_addRulePoints(pts, interior, point, false, ruleTolerance, checkDistance);
-                            }
                         break;
-                        }
 
-                    double      start, sweep;
-                    DPoint3d    startPt, endPt;
+                    DPoint3d startPt, endPt;
 
-                    ellipse->GetSweep(start, sweep);
                     ellipse->EvaluateEndPoints(startPt, endPt);
 
-                    int  interiorPts = (int) (fabs(sweep) / (0.5 * Angle::Pi()));
-
-                    wireframe_addRulePoints(pts, interior, startPt, true, ruleTolerance, checkDistance);
-
-                    if (interiorPts > 0)
-                        {
-                        int     i;
-                        double  theta, delta = sweep / (double) (interiorPts);
-
-                        for (i=0, theta = start + delta; i < interiorPts; i++, theta += delta)
-                            {
-                            DPoint3d  point;
-
-                            ellipse->Evaluate(point, theta);
-                            wireframe_addRulePoints(pts, interior, point, DoubleOps::AlmostEqual(theta, start + sweep), ruleTolerance, checkDistance);
-                            }
-                        }
-
-                    wireframe_addRulePoints(pts, interior, endPt, true, ruleTolerance, checkDistance);
+                    wireframe_addVertex(pts, startPt, checkDistance);
+                    wireframe_addVertex(pts, endPt, checkDistance);
                     break;
                     }
 
@@ -138,31 +98,44 @@ static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts
                     {
                     bvector<DPoint3d> const* points = curve->GetAkimaCurveCP();
 
-                    for (size_t iPt = 2; iPt < points->size()-2; ++iPt)
-                        wireframe_addRulePoints(pts, interior, points->at(iPt), 2 == iPt || points->size()-2 == iPt+1, ruleTolerance, checkDistance);
+                    wireframe_addVertex(pts, points->at(2), checkDistance);
+                    wireframe_addVertex(pts, points->at(points->size()-3), checkDistance);
                     break;
                     }
 
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+                default:
                     {
                     MSBsplineCurveCP bcurve = curve->GetProxyBsplineCurveCP();
-                    int              iPt, numPoints = bcurve->params.numPoles;
-                    double           r, delta = 1.0 / (bcurve->params.closed ? bcurve->params.numPoles : bcurve->params.numPoles-1);
 
-                    for (iPt = 0, r = 0.0; iPt < numPoints; r += delta, iPt++)
+                    if (!bcurve)
+                        break;
+
+                    if (2 == bcurve->params.order)
                         {
-                        DPoint3d    point;
+                        bvector<DPoint3d> poles;
 
-                        bcurve->FractionToPoint(point, r);
-                        wireframe_addRulePoints(pts, interior, point, bcurve->params.closed ? false : (0 == iPt || numPoints == iPt+1), ruleTolerance, checkDistance);
+                        bcurve->GetUnWeightedPoles(poles);
+
+                        for (DPoint3dR pole : poles)
+                            wireframe_addVertex(pts, pole, checkDistance);
+                        break;
                         }
+
+                    if (bcurve->params.closed)
+                        break;
+
+                    DPoint3d pointS, pointE;
+
+                    bcurve->FractionToPoint(pointS, 0.0);
+                    bcurve->FractionToPoint(pointE, 1.0);
+
+                    wireframe_addVertex(pts, pointS, checkDistance);
+                    wireframe_addVertex(pts, pointE, checkDistance);
                     break;
                     }
-
-                default:
-                    break;
                 }
             }
         }
@@ -173,50 +146,9 @@ static bool wireframe_collectPoints(CurveVectorCR curves, bvector<DPoint3d>& pts
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectArcMidPoints(CurveVectorCR curves, bvector<DPoint3d>& pts, bvector<bool>& interior, double ruleTolerance, bool checkDistance, CheckStop* stopTester)
+static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint3dCR originPt, double sweepAngle, TransformCR transform, RotMatrixCR axes, RotMatrixCR invAxes)
     {
-    if (1 > curves.size())
-        return false;
-
-    if (curves.IsUnionRegion() || curves.IsParityRegion())
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
-                continue;
-
-            if (stopTester && stopTester->_CheckStop())
-                return true;
-
-            wireframe_collectArcMidPoints(*curve->GetChildCurveVectorCP(), pts, interior, ruleTolerance, checkDistance, stopTester);
-            }
-        }
-    else
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (!curve.IsValid() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != curve->GetCurvePrimitiveType())
-                continue;
-
-            if (stopTester && stopTester->_CheckStop())
-                return true;
-
-            DPoint3d    point;
-
-            curve->FractionToPoint(0.5, point);
-            wireframe_addRulePoints(pts, interior, point, true, ruleTolerance, checkDistance);
-            }
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint3dCR originPt, double sweepAngle, TransformCR transform, RotMatrixCR axes, RotMatrixCR invAxes, double ruleTolerance)
-    {
-    DPoint3d    endPt, centerPt, tmpPt;
+    DPoint3d endPt, centerPt, tmpPt;
 
     transform.Multiply(&endPt, &startPt, 1);
     centerPt = originPt;
@@ -226,8 +158,8 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
     axes.Multiply(centerPt);
     centerPt.z = tmpPt.z;
 
-    DVec3d      xVec, yVec, zVec;
-    RotMatrix   rMatrix;
+    DVec3d    xVec, yVec, zVec;
+    RotMatrix rMatrix;
 
     zVec.Init(0.0, 0.0, 1.0);
     xVec.NormalizedDifference(tmpPt, centerPt);
@@ -236,9 +168,9 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
     rMatrix.InitProduct(invAxes, rMatrix);
     axes.MultiplyTranspose(centerPt);
 
-    double  radius = centerPt.Distance(startPt);
+    double radius = centerPt.Distance(startPt);
 
-    if (radius < ruleTolerance)
+    if (radius < 1.0e-10)
         return false;
 
     ellipse.InitFromScaledRotMatrix(centerPt, rMatrix, radius, radius, 0.0, sweepAngle);
@@ -246,116 +178,21 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct StrokeSurfaceCurvesInfo
-    {
-    CheckStop*                  m_stopTester;
-    Render::GraphicBuilderR     m_graphic;
-    MSBsplineSurfaceCR          m_surface;
-    bool                        m_includeEdges;
-    bool                        m_includeFaceIso;
-
-    StrokeSurfaceCurvesInfo(CheckStop* stopTester, Render::GraphicBuilderR graphic, MSBsplineSurfaceCR surface, bool includeEdges, bool includeFaceIso) : m_stopTester(stopTester), m_graphic(graphic), m_surface(surface), m_includeEdges(includeEdges), m_includeFaceIso(includeFaceIso) {}
-    };
-
-#define MAX_CLIPBATCH   200
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcurve, double u0, double u1, double v0, double v1)
-    {
-    StrokeSurfaceCurvesInfo* info = (StrokeSurfaceCurvesInfo*) userArg;
-
-    // Special case when full boundary isn't displayed...process as strokes...
-    if (info->m_includeEdges && !info->m_surface.holeOrigin && (u0 == u1 && u0 == v0 && u0 == v1))
-        {
-        BsurfBoundary  *boundP = &info->m_surface.boundaries[abs((int) u0)];
-        int            lastEdge, thisEdge, numStrokes;
-        DPoint2d       *bP, *endP;
-        DPoint3d       strokeBuffer[MAX_CLIPBATCH+1];
-        DSegment3d     chord;
- 
-        numStrokes = 0;
-        bP = endP = boundP->points;
-        info->m_surface.EvaluatePoint(chord.point[1], bP->x, bP->y);
-        thisEdge = bsputil_edgeCode(bP, 0.0);
- 
-        for (endP += boundP->numPoints, bP++; bP < endP; bP++)
-            {
-            chord.point[0] = chord.point[1];
-            lastEdge = thisEdge;
-            info->m_surface.EvaluatePoint(chord.point[1], bP->x, bP->y);
-            thisEdge = bsputil_edgeCode(bP, 0.0);
- 
-            // If both points are on the same edge then do not stroke this segment...
-            if (!(lastEdge & thisEdge))
-                {
-                /* Leave this test in as it supports discontinuity in a B-spline (which arises from the conversion of group holes). */
-                if (numStrokes && !LegacyMath::RpntEqual(&chord.point[0], strokeBuffer + numStrokes - 1))
-                    {
-                    info->m_graphic.AddLineString(numStrokes, strokeBuffer);
-                    numStrokes = 0;
-                    }
- 
-                /* If the buffer is empty ... */
-                if (!numStrokes)
-                    {
-                    strokeBuffer[0] = chord.point[0];
-                    numStrokes = 1;
-                    }
- 
-                strokeBuffer[numStrokes] = chord.point[1];
-                numStrokes += 1;
- 
-                if (numStrokes >= MAX_CLIPBATCH-1)
-                    {
-                    info->m_graphic.AddLineString(numStrokes, strokeBuffer);
-                    strokeBuffer[0] = strokeBuffer[numStrokes - 1];
-                    numStrokes = 1;
-                    }
-                }
-            }
- 
-        info->m_graphic.AddLineString(numStrokes, strokeBuffer);
- 
-        return (info->m_stopTester && info->m_stopTester->_CheckStop() ? ERROR : SUCCESS);
-        }
-
-    bool  showThisRule = true;
-
-    if (!info->m_includeEdges || !info->m_includeFaceIso)
-        {
-        if ((DoubleOps::AlmostEqual(u0, u1) && (DoubleOps::AlmostEqual(u0, 0.0) || DoubleOps::AlmostEqual(u0, 1.0))) ||
-            (DoubleOps::AlmostEqual(v0, v1) && (DoubleOps::AlmostEqual(v0, 0.0) || DoubleOps::AlmostEqual(v0, 1.0))))
-            showThisRule = info->m_includeEdges;
-        else
-            showThisRule = info->m_includeFaceIso;            
-        }
-
-    if (showThisRule)
-        info->m_graphic.AddBSplineCurve(*bcurve, false);
-
-    return (info->m_stopTester && info->m_stopTester->_CheckStop() ? ERROR : SUCCESS);
-    }
-
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectRules(DgnExtrusionDetailR detail, bvector<DSegment3d>& rules, bvector<bool>& interior, CheckStop* stopTester)
+static bool wireframe_collectLateralEdges(DgnExtrusionDetailR detail, bvector<DSegment3d>& edges, CheckStop* stopTester)
     {
     bvector<DPoint3d> pts;
 
-    if (wireframe_collectPoints(*detail.m_baseCurve, pts, interior, wireframe_getTolerance(*detail.m_baseCurve), true, stopTester))
+    if (wireframe_collectVertices(*detail.m_baseCurve, pts, true, stopTester))
         return true;
 
     for (size_t iPt = 0; iPt < pts.size(); ++iPt)
         {
-        DSegment3d  segment = DSegment3d::FromOriginAndDirection(pts[iPt], detail.m_extrusionVector);
+        DSegment3d segment = DSegment3d::FromOriginAndDirection(pts[iPt], detail.m_extrusionVector);
 
-        rules.push_back(segment);
+        edges.push_back(segment);
         }
 
     return false;
@@ -364,17 +201,15 @@ static bool wireframe_collectRules(DgnExtrusionDetailR detail, bvector<DSegment3
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectRules(DgnRotationalSweepDetailR detail, bvector<DEllipse3d>& rules, bvector<bool>& interior,  CheckStop* stopTester)
+static bool wireframe_collectLateralEdges(DgnRotationalSweepDetailR detail, bvector<DEllipse3d>& edges, CheckStop* stopTester)
     {
-    double ruleTolerance = wireframe_getTolerance(*detail.m_baseCurve);
-    bvector<bool> tmpInterior;
     bvector<DPoint3d> pts;
 
-    if (wireframe_collectPoints(*detail.m_baseCurve, pts, tmpInterior, ruleTolerance, true, stopTester))
+    if (wireframe_collectVertices(*detail.m_baseCurve, pts, true, stopTester))
         return true;
 
-    RotMatrix   axes, invAxes, tmpRMatrix;
-    Transform   transform;
+    RotMatrix axes, invAxes, tmpRMatrix;
+    Transform transform;
 
     invAxes.InitFrom1Vector(detail.m_axisOfRotation.direction, 2, true);
     axes.TransposeOf(invAxes);
@@ -383,35 +218,14 @@ static bool wireframe_collectRules(DgnRotationalSweepDetailR detail, bvector<DEl
     tmpRMatrix.InitProduct(invAxes, tmpRMatrix);
     transform.From(tmpRMatrix, detail.m_axisOfRotation.origin);
 
-    for (size_t iRule = 0; iRule < pts.size(); ++iRule)
+    for (size_t iPt = 0; iPt < pts.size(); ++iPt)
         {
-        DEllipse3d  ellipse;
+        DEllipse3d ellipse;
 
-        if (!wireframe_computeArc(ellipse, pts.at(iRule), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes, ruleTolerance))
+        if (!wireframe_computeArc(ellipse, pts.at(iPt), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes))
             continue;
 
-        rules.push_back(ellipse);
-        interior.push_back(tmpInterior.at(iRule));
-        }
-
-    if (0 == rules.size()) // TR#115152 - Problem generating rule arc from arc profile with end point on axis of revolution and small sweep...
-        {    
-        pts.clear();
-        tmpInterior.clear();
-
-        if (wireframe_collectArcMidPoints(*detail.m_baseCurve, pts, tmpInterior, ruleTolerance, true, stopTester))
-            return true;
-
-        for (size_t iRule = 0; iRule < pts.size(); ++iRule)
-            {
-            DEllipse3d  ellipse;
-
-            if (!wireframe_computeArc(ellipse, pts.at(iRule), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes, ruleTolerance))
-                continue;
-
-            rules.push_back(ellipse);
-            interior.push_back(tmpInterior.at(iRule));
-            }
+        edges.push_back(ellipse);
         }
 
     return false;
@@ -420,17 +234,15 @@ static bool wireframe_collectRules(DgnRotationalSweepDetailR detail, bvector<DEl
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectRules(DgnRuledSweepDetailR detail, bvector<DSegment3d>& rules, bvector<bool>& interior, CheckStop* stopTester)
+static bool wireframe_collectLateralEdges(DgnRuledSweepDetailR detail, bvector<DSegment3d>& edges, CheckStop* stopTester)
     {
     for (size_t iProfile = 0; iProfile < detail.m_sectionCurves.size()-1; ++iProfile)
         {
-        bvector<bool> interior1;
-        bvector<bool> interior2;
         bvector<DPoint3d> rulePts1;
         bvector<DPoint3d> rulePts2;
 
-        if (wireframe_collectPoints(*detail.m_sectionCurves.at(iProfile), rulePts1, interior1, wireframe_getTolerance(*detail.m_sectionCurves.at(iProfile)), true, stopTester) ||
-            wireframe_collectPoints(*detail.m_sectionCurves.at(iProfile+1), rulePts2, interior2, wireframe_getTolerance(*detail.m_sectionCurves.at(iProfile+1)), true, stopTester))
+        if (wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile), rulePts1, true, stopTester) ||
+            wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile+1), rulePts2, true, stopTester))
             return true;
 
         if (rulePts1.size() != rulePts2.size())
@@ -439,15 +251,14 @@ static bool wireframe_collectRules(DgnRuledSweepDetailR detail, bvector<DSegment
                 {
                 // Special case to handle zero scale in both XY...
                 rulePts2.insert(rulePts2.end(), rulePts1.size()-1, rulePts2.front());
-                interior2.insert(interior2.end(), interior1.size()-1, interior2.front());
                 }
             else
                 {
-                rulePts1.clear(); rulePts2.clear(); interior1.clear(); interior2.clear();
+                rulePts1.clear(); rulePts2.clear();
 
                 // In case of zero scale in only X or Y...we have no choice but to re-collect without excluding any points...
-                if (wireframe_collectPoints(*detail.m_sectionCurves.at(iProfile), rulePts1, interior1, 0.0, false, stopTester) ||
-                    wireframe_collectPoints(*detail.m_sectionCurves.at(iProfile+1), rulePts2, interior2, 0.0, false, stopTester))
+                if (wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile), rulePts1, false, stopTester) ||
+                    wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile+1), rulePts2, false, stopTester))
                     return true;
 
                 if (rulePts1.size() != rulePts2.size())
@@ -457,11 +268,10 @@ static bool wireframe_collectRules(DgnRuledSweepDetailR detail, bvector<DSegment
 
         for (size_t iRule = 0; iRule < rulePts1.size(); ++iRule)
             {
-            DSegment3d  segment;
+            DSegment3d segment;
 
             segment.Init(rulePts1.at(iRule), rulePts2.at(iRule));
-            rules.push_back(segment);
-            interior.push_back(interior1.at(iRule));
+            edges.push_back(segment);
             }
         }
 
@@ -519,7 +329,7 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, ViewContext* stopTester, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilderR graphic, CheckStop* stopTester)
     {
     GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
 
@@ -527,94 +337,46 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
         {
         case SolidPrimitiveType_DgnTorusPipe:
             {
-            DgnTorusPipeDetail  detail;
+            DgnTorusPipeDetail detail;
 
             if (!primitive.TryGetDgnTorusPipeDetail(detail))
                 return;
 
-            int     maxURules = 4;
-            bool    showCap0 = (Angle::IsFullCircle(detail.m_sweepAngle) ? includeFaceIso : includeEdges);
-            bool    showCap1 = (Angle::IsFullCircle(detail.m_sweepAngle) ? false : includeEdges);
-
-            if (showCap0)
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(0.0)), CurveTopologyId::FromSweepProfile(0), entryId);
-
-            if (showCap1)
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(1.0)), CurveTopologyId::FromSweepProfile(1), entryId);
-
-            if (!includeFaceIso)
+            if (Angle::IsFullCircle(detail.m_sweepAngle))
                 return;
 
-            size_t  numVRules = DgnRotationalSweepDetail::ComputeVRuleCount(detail.m_sweepAngle);
-
-            for (size_t vRule = 1; vRule < numVRules; ++vRule)
-                {
-                double  vFraction = (1.0 / numVRules) * vRule;
-
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction)), CurveTopologyId::FromSweepProfile(vRule + 1), entryId);
-                }
-
-            for (int uRule = 0; uRule < maxURules; ++uRule)
-                {
-                double  uFraction = (1.0 / maxURules) * uRule;
-
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction)), CurveTopologyId::FromSweepLateral(uRule), entryId);
-                }
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(0.0)), CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(1.0)), CurveTopologyId::FromSweepProfile(1), entryId);
             return;
             }
 
         case SolidPrimitiveType_DgnCone:
             {
-            DgnConeDetail  detail;
+            DgnConeDetail detail;
 
             if (!primitive.TryGetDgnConeDetail(detail))
                 return;
 
-            if (detail.m_radiusA > 0.0 && includeEdges)
+            if (detail.m_radiusA > 0.0)
                 {
-                DEllipse3d  ellipse;
+                DEllipse3d ellipse;
 
                 ellipse.InitFromDGNFields3d(detail.m_centerA, detail.m_vector0, detail.m_vector90, detail.m_radiusA, detail.m_radiusA, 0.0, msGeomConst_2pi);
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(0), entryId);
                 }
 
-            if (detail.m_radiusB > 0.0 && includeEdges)
+            if (detail.m_radiusB > 0.0)
                 {
-                DEllipse3d  ellipse;
+                DEllipse3d ellipse;
     
                 ellipse.InitFromDGNFields3d(detail.m_centerB, detail.m_vector0, detail.m_vector90, detail.m_radiusB, detail.m_radiusB, 0.0, msGeomConst_2pi);
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(1), entryId);
                 }
-
-            DgnViewportCP viewport = nullptr != stopTester ? stopTester->GetViewport() : nullptr;
-            if (!includeFaceIso || nullptr == viewport)
-                return;
-
-            Transform   worldToLocalTrans;
-
-            worldToLocalTrans.InverseOf(graphic.GetLocalToWorldTransform());
-
-            DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
-            DMatrix4d   viewToWorld = viewport->GetWorldToViewMap()->M1;
-            DMatrix4d   viewToLocal;
-
-            viewToLocal.InitProduct(worldToLocal, viewToWorld);
-
-            DSegment3d  silhouettes[2];
-
-            if (!detail.GetSilhouettes(silhouettes[0], silhouettes[1], viewToLocal))
-                return; // NOTE: This is expected to fail for TopologyCurveGenerator::CurveByIdCollector, don't allow associations to silhouettes!!!
-
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(silhouettes[0]), CurveTopologyId::FromSweepSilhouette(0), entryId);
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(silhouettes[1]), CurveTopologyId::FromSweepSilhouette(1), entryId);
             return;
             }
 
         case SolidPrimitiveType_DgnBox:
             {
-            if (!includeEdges)
-                return; // No face iso to display...
-
             DgnBoxDetail  detail;
 
             if (!primitive.TryGetDgnBoxDetail(detail))
@@ -624,7 +386,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
 
             detail.GetCorners(corners);
 
-            DPoint3d  baseRectangle[5];
+            DPoint3d baseRectangle[5];
 
             baseRectangle[0] = corners[0];
             baseRectangle[1] = corners[1];
@@ -632,7 +394,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
             baseRectangle[3] = corners[2];
             baseRectangle[4] = corners[0];
 
-            DPoint3d  topRectangle[5];
+            DPoint3d topRectangle[5];
 
             topRectangle[0] = corners[4];
             topRectangle[1] = corners[5];
@@ -650,100 +412,75 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
 
         case SolidPrimitiveType_DgnSphere:
             {
-            DgnSphereDetail  detail;
+            DgnSphereDetail detail;
 
             if (!primitive.TryGetDgnSphereDetail(detail))
                 return;
 
-            if (includeFaceIso)
-                {
-                int     maxURules = 4;
-            
-                for (int uRule = 0; uRule < maxURules; ++uRule)
-                    {
-                    double  uFraction = (1.0 / maxURules) * uRule;
+            double latitude0, latitude1, z0, z1;
 
-                    drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction)), CurveTopologyId::FromSweepLateral(uRule), entryId);
-                    }
-                }
+            if (!detail.GetSweepLimits(latitude0, latitude1, z0, z1))
+                return; // true sphere...
 
-            if (!includeEdges)
-                return;
+            double vFraction0 = detail.LatitudeToVFraction(latitude0);
+            double vFraction1 = detail.LatitudeToVFraction(latitude1);
 
-            // Draw merdian if latitude sweep > 90 and includes 0.0 sweep latitude...
-            if (fabs(detail.m_latitudeSweep) < Angle::PiOver2())
-                return;
-
-            double  vFraction = detail.LatitudeToVFraction(0.0);
-
-            if (vFraction <= 0.0 || vFraction >= 1.0)
-                return;
-
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction)), CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction0)), CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction1)), CurveTopologyId::FromSweepProfile(1), entryId);
             return;
             }
 
         case SolidPrimitiveType_DgnExtrusion:
             {
-            DgnExtrusionDetail  detail;
+            DgnExtrusionDetail detail;
 
             if (!primitive.TryGetDgnExtrusionDetail(detail))
                 return;
 
-            if (includeEdges)
-                {
-                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurveTopologyId::FromSweepProfile(0), entryId);
 
-                if (stopTester && stopTester->_CheckStop())
-                    return;
-
-                CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
-
-                tmpCurve->TransformInPlace(Transform::From(detail.m_extrusionVector));
-                drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurveTopologyId::FromSweepProfile(1), entryId);
-
-                if (stopTester && stopTester->_CheckStop())
-                    return;
-                }
-
-            bvector<bool> interior;
-            bvector<DSegment3d> rules;
-
-            if (wireframe_collectRules(detail, rules, interior, stopTester))
+            if (stopTester && stopTester->_CheckStop())
                 return;
 
-            for (uint32_t iRule = 0; iRule < rules.size(); ++iRule)
-                {
-                if (!(interior.at(iRule) ? includeFaceIso : includeEdges))
-                    continue;
+            CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
 
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(rules.at(iRule)), CurveTopologyId::FromSweepLateral(iRule), entryId);
+            tmpCurve->TransformInPlace(Transform::From(detail.m_extrusionVector));
+            drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurveTopologyId::FromSweepProfile(1), entryId);
+
+            if (stopTester && stopTester->_CheckStop())
+                return;
+
+            bvector<DSegment3d> edges;
+
+            if (wireframe_collectLateralEdges(detail, edges, stopTester))
+                return;
+
+            for (uint32_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+                {
+                if (stopTester && stopTester->_CheckStop())
+                    return;
+
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(edges.at(iEdge)), CurveTopologyId::FromSweepLateral(iEdge), entryId);
                 }
             return;
             }
 
         case SolidPrimitiveType_DgnRotationalSweep:
             {
-            DgnRotationalSweepDetail  detail;
+            DgnRotationalSweepDetail detail;
 
             if (!primitive.TryGetDgnRotationalSweepDetail(detail))
                 return;
 
-            bool    showCap0 = (Angle::IsFullCircle(detail.m_sweepAngle) ? includeFaceIso : includeEdges);
-            bool    showCap1 = (Angle::IsFullCircle(detail.m_sweepAngle) ? false : includeEdges);
-
-            if (showCap0)
+            if (!Angle::IsFullCircle(detail.m_sweepAngle))
                 {
                 drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurveTopologyId::FromSweepProfile(0), entryId);
 
                 if (stopTester && stopTester->_CheckStop())
                     return;
-                }
 
-            if (showCap1)
-                {
-                DPoint3d    axisPoint;
-                Transform   transform;
+                DPoint3d  axisPoint;
+                Transform transform;
 
                 axisPoint.SumOf(detail.m_axisOfRotation.origin, detail.m_axisOfRotation.direction);
                 transform.InitFromLineAndRotationAngle(detail.m_axisOfRotation.origin, axisPoint, detail.m_sweepAngle);
@@ -757,42 +494,17 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                     return;
                 }
 
-            if (includeFaceIso)
-                {
-                // Draw V rules (if any needed) in addition to end caps...
-                size_t  numVRules = detail.GetVRuleCount();
+            bvector<DEllipse3d> edges;
 
-                for (size_t vRule = 1; vRule < numVRules; ++vRule)
-                    {
-                    double      vFraction = (1.0 / numVRules) * vRule;
-                    Transform   transform, derivativeTransform;
-
-                    if (!detail.GetVFractionTransform(vFraction, transform, derivativeTransform))
-                        continue;
-
-                    CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
-
-                    tmpCurve->TransformInPlace(transform);
-                    drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurveTopologyId::FromSweepProfile(vRule + 1), entryId);
-
-                    if (stopTester && stopTester->_CheckStop())
-                        return;
-                    }
-                }
-
-            // Draw U rule arcs based on profile geometry...
-            bvector<bool> interior;
-            bvector<DEllipse3d> rules;
-
-            if (wireframe_collectRules(detail, rules, interior, stopTester))
+            if (wireframe_collectLateralEdges(detail, edges, stopTester))
                 return;
 
-            for (uint32_t uRule = 0; uRule < rules.size(); ++uRule)
+            for (uint32_t iEdge = 0; iEdge < edges.size(); ++iEdge)
                 {
-                if (!(interior.at(uRule) ? includeFaceIso : includeEdges))
-                    continue;
+                if (stopTester && stopTester->_CheckStop())
+                    return;
 
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(rules.at(uRule)), CurveTopologyId::FromSweepLateral(uRule), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(edges.at(iEdge)), CurveTopologyId::FromSweepLateral(iEdge), entryId);
                 }
             return;
             }
@@ -804,31 +516,27 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
             if (!primitive.TryGetDgnRuledSweepDetail(detail))
                 return;
 
-            if (includeEdges)
+            uint32_t curveIndex = 0;
+
+            for (CurveVectorPtr curves: detail.m_sectionCurves)
                 {
-                uint32_t curveIndex = 0;
+                drawSolidPrimitiveCurveVector(graphic, *curves, CurveTopologyId::FromSweepProfile(curveIndex++), entryId);
 
-                for (CurveVectorPtr curves: detail.m_sectionCurves)
-                    {
-                    drawSolidPrimitiveCurveVector(graphic, *curves, CurveTopologyId::FromSweepProfile(curveIndex++), entryId);
-
-                    if (stopTester && stopTester->_CheckStop())
-                        return;
-                    }
+                if (stopTester && stopTester->_CheckStop())
+                    return;
                 }
 
-            bvector<bool> interior;
-            bvector<DSegment3d> rules;
+            bvector<DSegment3d> edges;
 
-            if (wireframe_collectRules(detail, rules, interior, stopTester))
+            if (wireframe_collectLateralEdges(detail, edges, stopTester))
                 return;
 
-            for (size_t uRule = 0; uRule < rules.size(); ++uRule)
+            for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
                 {
-                if (!(interior.at(uRule) ? includeFaceIso : includeEdges))
-                    continue;
+                if (stopTester && stopTester->_CheckStop())
+                    return;
 
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(rules.at(uRule)), CurveTopologyId::FromSweepLateral(uRule), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(edges.at(iEdge)), CurveTopologyId::FromSweepLateral(iEdge), entryId);
                 }
             return;
             }
@@ -841,37 +549,30 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR surface, CheckStop* stopTester, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(MSBsplineSurfaceCR surface, Render::GraphicBuilderR graphic, CheckStop* stopTester)
     {
-    if (includeEdges)
+    if (surface.uParams.closed && surface.vParams.closed)
+        return;
+
+    CurveVectorPtr curves = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
+
+    if (!curves.IsValid())
+        return;
+
+    // NOTE: This should be BOUNDARY_TYPE_None with bcurve primitives. Output each curve separately so callers don't have to deal with nesting...
+    for (ICurvePrimitivePtr curve : *curves)
         {
-        CurveVectorPtr  curves = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
+        if (!curve.IsValid())
+            continue;
 
-        if (curves.IsValid())
-            {
-            // NOTE: This should be BOUNDARY_TYPE_None with bcurve primitives. Output each curve separately so callers don't have to deal with nesting...
-            for (ICurvePrimitivePtr curve : *curves)
-                {
-                if (!curve.IsValid())
-                    continue;
-
-                graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-                }
-            }
-        }
-
-    if (includeFaceIso)
-        {
-        StrokeSurfaceCurvesInfo info(stopTester, graphic, surface, false, true);
-
-        bspproc_surfaceWireframeByCurves(&surface, wireframe_drawSurfaceCurveCallback, &info, false);
+        graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
         }
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR entity, CheckStop* stopTester, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graphic, CheckStop* stopTester)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity);
@@ -881,69 +582,57 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
 
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
-    if (includeEdges)
-        {
-        int         nEdges = 0;
-        PK_EDGE_t*  edgeTags = nullptr;
+    int         nEdges = 0;
+    PK_EDGE_t*  edgeTags = nullptr;
 
-        PK_BODY_ask_edges(entityTag, &nEdges, &edgeTags);
+    PK_BODY_ask_edges(entityTag, &nEdges, &edgeTags);
 
-        for (int iEdge = 0; iEdge < nEdges; ++iEdge)
-            {
-            if (stopTester && stopTester->_CheckStop())
-                return;
-
-            bool isHiddenEntity = false;
-
-            if (SUCCESS == PSolidAttrib::GetHiddenAttribute(isHiddenEntity, edgeTags[iEdge]) && isHiddenEntity)
-                continue;
-
-            ICurvePrimitivePtr curve;
-
-            if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, edgeTags[iEdge]))
-                break;
-
-            PK_FACE_t faceTag = (attachments ? PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(edgeTags[iEdge]) : PK_ENTITY_null);
-
-            if (PK_ENTITY_null != faceTag)
-                {
-                T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
-                T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
-                T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
-
-                if (found == faceToSubElemIdMap.end())
-                    {
-                    BeAssert(false); // ERROR - Face not represented in map...
-                    }
-                else
-                    {
-                    FaceAttachment faceAttachment = faceAttachmentsVec.at(found->second.second);
-                    Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
-
-                    if (nullptr != graphicParams)
-                        graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
-                    }
-                }
-
-            curve->TransformInPlace(entity.GetEntityTransform());
-            graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-            }
-
-        PK_MEMORY_free(edgeTags);
-        }
-
-    if (includeFaceIso)
+    for (int iEdge = 0; iEdge < nEdges; ++iEdge)
         {
         if (stopTester && stopTester->_CheckStop())
             return;
 
-        // NEEDSWORK...Do something with face hatch lines???
+        bool isHiddenEntity = false;
+
+        if (SUCCESS == PSolidAttrib::GetHiddenAttribute(isHiddenEntity, edgeTags[iEdge]) && isHiddenEntity)
+            continue;
+
+        ICurvePrimitivePtr curve;
+
+        if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, edgeTags[iEdge]))
+            break;
+
+        PK_FACE_t faceTag = (attachments ? PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(edgeTags[iEdge]) : PK_ENTITY_null);
+
+        if (PK_ENTITY_null != faceTag)
+            {
+            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
+            T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+            T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
+
+            if (found == faceToSubElemIdMap.end())
+                {
+                BeAssert(false); // ERROR - Face not represented in map...
+                }
+            else
+                {
+                FaceAttachment faceAttachment = faceAttachmentsVec.at(found->second.second);
+                Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+
+                if (nullptr != graphicParams)
+                    graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
+                }
+            }
+
+        curve->TransformInPlace(entity.GetEntityTransform());
+        graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
         }
+
+    PK_MEMORY_free(edgeTags);
 #endif
     }
 
 BEGIN_UNNAMED_NAMESPACE
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -954,11 +643,7 @@ protected:
 MSBsplineSurfaceCP      m_surface;
 ISolidPrimitiveCP       m_primitive;
 IBRepEntityCP           m_entity;
-
-bool                    m_includeEdges;
-bool                    m_includeFaceIso;
 GeometryStreamEntryIdCP m_entryId;
-
 CurveVectorPtr          m_curves;
 
 public:
@@ -966,15 +651,12 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit RuleCollector(bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
+explicit RuleCollector(GeometryStreamEntryIdCP entryId)
     {
     m_surface   = nullptr;
     m_primitive = nullptr;
     m_entity    = nullptr;
-
-    m_includeEdges   = includeEdges;
-    m_includeFaceIso = includeFaceIso;
-    m_entryId        = entryId;
+    m_entryId   = entryId;
     }
 
 virtual ~RuleCollector() {}
@@ -1012,17 +694,17 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 void _OutputGraphics(ViewContextR context) override
     {
-    auto graphic = context.CreateWorldGraphic();
+    auto graphic = context.CreateSceneGraphic();
 
     if (nullptr != m_entryId && m_entryId->IsValid())
         graphic->SetGeometryStreamEntryId(m_entryId);
 
     if (m_surface)
-        WireframeGeomUtil::Draw(*graphic, *m_surface, &context, m_includeEdges, m_includeFaceIso);
+        WireframeGeomUtil::Draw(*m_surface, *graphic, &context);
     else if (m_primitive)
-        WireframeGeomUtil::Draw(*graphic, *m_primitive, &context, m_includeEdges, m_includeFaceIso);
+        WireframeGeomUtil::Draw(*m_primitive, *graphic, &context);
     else if (m_entity)
-        WireframeGeomUtil::Draw(*graphic, *m_entity, &context, m_includeEdges, m_includeFaceIso);
+        WireframeGeomUtil::Draw(*m_entity, *graphic, &context);
 
     graphic->Finish();
     }
@@ -1040,15 +722,14 @@ void SetSolidEntity(IBRepEntityCR entity) {m_entity = &entity;}
 CurveVectorPtr GetCurveVector() {return m_curves;}
 
 }; // RuleCollector
-
 END_UNNAMED_NAMESPACE
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, GeometryStreamEntryIdCP entryId)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso, entryId);
+    RuleCollector rules(entryId);
 
     rules.SetSolidPrimitive(primitive);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1059,9 +740,9 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, Dgn
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, GeometryStreamEntryIdCP entryId)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso, entryId);
+    RuleCollector rules(entryId);
 
     rules.SetBsplineSurface(surface);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1072,9 +753,9 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnD
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(IBRepEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(IBRepEntityCR entity, DgnDbR dgnDb, GeometryStreamEntryIdCP entryId)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso, entryId);
+    RuleCollector rules(entryId);
 
     rules.SetSolidEntity(entity);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1146,6 +827,49 @@ void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GraphicBuilderR grap
         // Open and none path types ok...
         graphic.AddCurveVector2d(curves, false, zDepth);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct StrokeSurfaceCurvesInfo
+    {
+    CheckStop*                  m_stopTester;
+    Render::GraphicBuilderR     m_graphic;
+    MSBsplineSurfaceCR          m_surface;
+
+    StrokeSurfaceCurvesInfo(CheckStop* stopTester, Render::GraphicBuilderR graphic, MSBsplineSurfaceCR surface) : m_stopTester(stopTester), m_graphic(graphic), m_surface(surface) {}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcurve, double u0, double u1, double v0, double v1)
+    {
+    StrokeSurfaceCurvesInfo* info = (StrokeSurfaceCurvesInfo*) userArg;
+
+    if (!((DoubleOps::AlmostEqual(u0, u1) && (DoubleOps::AlmostEqual(u0, 0.0) || DoubleOps::AlmostEqual(u0, 1.0))) ||
+          (DoubleOps::AlmostEqual(v0, v1) && (DoubleOps::AlmostEqual(v0, 0.0) || DoubleOps::AlmostEqual(v0, 1.0)))))
+        info->m_graphic.AddBSplineCurve(*bcurve, false);
+
+    return (info->m_stopTester && info->m_stopTester->_CheckStop() ? ERROR : SUCCESS);
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void WireframeGeomUtil::DrawUVRules(MSBsplineSurfaceCR surface, Render::GraphicBuilderR graphic, Render::GraphicParamsCR params, CheckStop* stopTester)
+    {
+    StrokeSurfaceCurvesInfo info(stopTester, graphic, surface);
+    Render::GraphicParams uvParams(params);
+
+    uvParams.SetWidth(1);
+    uvParams.SetLinePixels(LinePixels::Solid);
+    graphic.ActivateGraphicParams(uvParams, nullptr);
+
+    bspproc_surfaceWireframeByCurves(&surface, wireframe_drawSurfaceCurveCallback, &info, false);
+
+    graphic.ActivateGraphicParams(params, nullptr); // Restore params...
     }
 
 /*----------------------------------------------------------------------------------*//**

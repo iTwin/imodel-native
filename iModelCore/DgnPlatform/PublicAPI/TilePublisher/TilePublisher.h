@@ -252,6 +252,8 @@ struct PublisherContext : TileGenerator::ITileCollector
         ErrorWritingScene,
         ErrorWritingNode,
         CantOpenOutputFile,
+        CantFindBimiumScripts,
+        CantCopyBimiumScripts,
 
         // History publishing...
         CantConnectToIModelHub,

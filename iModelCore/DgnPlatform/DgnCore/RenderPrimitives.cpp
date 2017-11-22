@@ -84,6 +84,10 @@ private:
     bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     void _SetInCache(bool inCache) override { m_inCache = inCache; }
+
+    static PolyfaceHeaderPtr FixPolyface(PolyfaceHeaderR, IFacetOptionsR);
+    static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
+    static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
 public:
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint)
         {
@@ -1190,6 +1194,79 @@ void Strokes::Transform(TransformCR transform)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOptionsR facetOptions)
+    {
+    // Avoid IPolyfaceConstruction if possible...AddPolyface_matched() does a ton of expensive remapping which is unnecessary for our use case.
+    // (Plus we can avoid cloning the input if caller owns it)
+    PolyfaceHeaderPtr polyface(&geom);
+    size_t maxPerFace;
+    if (geom.GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions.GetMaxPerFace())
+        {
+        IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(facetOptions);
+        builder->AddPolyface(geom);
+        polyface = &builder->GetClientMeshR();
+        }
+    else
+        {
+        bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
+             addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
+             addFaceData = addParams && 0 == geom.GetFaceCount(),
+             addEdgeChains = facetOptions.GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount();
+
+        if (addNormals)
+            AddNormals(*polyface, facetOptions);
+
+        if (addParams)
+            AddParams(*polyface, facetOptions);
+
+        if (addFaceData)
+            polyface->BuildPerFaceFaceData();
+
+        if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
+            polyface->Triangulate(3);
+
+        if (addEdgeChains)
+            polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
+        }
+
+    return polyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
+    {
+    static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+    static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
+    polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveGeometry::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
+    {
+    LocalCoordinateSelect selector;
+    switch (facetOptions.GetParamMode())
+        {
+        case FACET_PARAM_01BothAxes:
+            selector = LOCAL_COORDINATE_SCALE_01RangeBothAxes;
+            break;
+        case FACET_PARAM_01LargerAxis:
+            selector = LOCAL_COORDINATE_SCALE_01RangeLargerAxis;
+            break;
+        default:
+            selector = LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft;
+            break;
+        }
+
+    polyface.BuildPerFaceParameters(selector);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
@@ -1203,6 +1280,9 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
 
         if (!HasTexture())
             polyface->ClearParameters(false);
+
+        // Make sure params, normals, etc present if needed. Note we wait until now so that the tolerance can be computed...
+        polyface = FixPolyface(*polyface, facetOptions);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
         return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface));
@@ -1554,6 +1634,9 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     if (m_geometries.empty())
         return builderMap;
 
+    // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
+    // This is required to make overlay decorations render correctly.
+    uint16_t order = 0;
     for (auto const& geom : m_geometries)
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
@@ -1567,9 +1650,13 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
             MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            if (options.WantPreserveOrder())
+                key.SetOrder(order++);
+
             MeshBuilderR meshBuilder = builderMap[key];
 
-            meshBuilder.BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
+            auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+            meshBuilder.BeginPolyface(*polyface, edgeOptions);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1585,6 +1672,8 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
                 MeshBuilderMap::Key key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, tileStrokes.m_isPlanar);
+                if (options.WantPreserveOrder())
+                    key.SetOrder(order++);
 
                 MeshBuilderR builder = builderMap[key];
                 uint32_t fillColor = displayParams->GetLineColor();
@@ -2648,9 +2737,12 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
     if (!accum.IsEmpty())
         {
+        // Overlay decorations don't test Z. Tools like to layer multiple primitives on top of one another; they rely on the primitives rendering
+        // in that same order to produce correct results (e.g., a thin line rendered atop a thick line of another color).
+        // No point generating edges for graphics that are always rendered in smooth shade mode.
+        GeometryOptions options(GetCreateParams());
         PrimitiveBuilderContext context(*this);
         double tolerance = ComputeTolerance(accum);
-        GeometryOptions options;
         accum.SaveToGraphicList(m_primitives, options, tolerance, context);
         }
 

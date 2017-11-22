@@ -501,7 +501,6 @@ protected:
 
     static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
     static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
-    template<typename T> void AddPolyface(PolyfaceQueryCR geom, bool filled, T cloneGeom);
 
     void _AddPolyface(PolyfaceQueryCR, bool) override;
     void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
@@ -673,7 +672,7 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::World(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::Scene(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -698,93 +697,11 @@ void TileBuilder::ReInitialize(DRange3dCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> void TileBuilder::AddPolyface(PolyfaceQueryCR geom, bool filled, T cloneGeom)
-    {
-    // The 'require params' flag from context's facet options is not relevant - determine for this specific polyface.
-    auto facetOptions = m_context.GetFacetOptions().Clone();
-    facetOptions->SetParamsRequired(GetMeshDisplayParams(filled).IsTextured());
-
-    PolyfaceHeaderPtr polyface;
-
-    // Avoid IPolyfaceConstruction if possible...AddPolyface_matched() does a ton of expensive remapping which is unnecessary for our use case.
-    // (Plus we can avoid cloning the input if caller owns it)
-    size_t maxPerFace;
-    if (geom.GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions->GetMaxPerFace())
-        {
-        IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(*facetOptions);
-        builder->AddPolyface(geom);
-        polyface = &builder->GetClientMeshR();
-        }
-    else
-        {
-        bool addNormals = facetOptions->GetNormalsRequired() && 0 == geom.GetNormalCount(),
-             addParams = facetOptions->GetParamsRequired() && 0 == geom.GetParamCount(),
-             addFaceData = addParams && 0 == geom.GetFaceCount(),
-             addEdgeChains = facetOptions->GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount();
-
-        if (addNormals || addParams || addFaceData || addEdgeChains)
-            {
-            polyface = cloneGeom();
-            if (addNormals)
-                AddNormals(*polyface, *facetOptions);
-
-            if (addParams)
-                AddParams(*polyface, *facetOptions);
-
-            if (addFaceData)
-                polyface->BuildPerFaceFaceData();
-
-            if (!geom.HasConvexFacets() && facetOptions->GetConvexFacetsRequired())
-                polyface->Triangulate(3);
-
-            if (addEdgeChains)
-                polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
-            }
-        }
-
-    Add(*polyface, filled);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileBuilder::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
-    {
-    static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
-    static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
-    polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileBuilder::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
-    {
-    LocalCoordinateSelect selector;
-    switch (facetOptions.GetParamMode())
-        {
-        case FACET_PARAM_01BothAxes:
-            selector = LOCAL_COORDINATE_SCALE_01RangeBothAxes;
-            break;
-        case FACET_PARAM_01LargerAxis:
-            selector = LOCAL_COORDINATE_SCALE_01RangeLargerAxis;
-            break;
-        default:
-            selector = LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft;
-            break;
-        }
-
-    polyface.BuildPerFaceParameters(selector);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileBuilder::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     {
-    AddPolyface(geom, filled, [&]() { return geom.Clone(); });
+    AddPolyfaceR(*geom.Clone(), filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -792,7 +709,7 @@ void TileBuilder::_AddPolyface(PolyfaceQueryCR geom, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileBuilder::_AddPolyfaceR(PolyfaceHeaderR geom, bool filled)
     {
-    AddPolyface(geom, filled, [&]() { return &geom; });
+    Add(geom, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -900,7 +817,7 @@ TileContext::TileContext(GeometryList& geometries, RootR root, DRange3dCR range,
     SetViewFlags(GetDefaultViewFlags());
 
     // These are reused...
-    m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams::World(root.GetDgnDb()));
+    m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams::Scene(root.GetDgnDb()));
     m_subGraphic = new TileSubGraphic(*this);
     }
 
@@ -920,6 +837,7 @@ private:
     LoadContextCR   m_loadContext;
     bool            m_aborted = false;
     bool            m_anySkipped = false;
+    bool            m_is2d;
 
     bool CheckStop() { return m_aborted || (m_aborted = m_loadContext.WasAborted()); }
 
@@ -948,8 +866,8 @@ private:
         else if (!entry.m_range.IntersectsWith(m_range))
             return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        double sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
-        if (sizeSq >= m_minRangeDiagonalSquared)
+        double sizeSq = Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d) ? 0.0 : entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+        if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
             Insert(sizeSq, entry.m_id);
         else
             m_anySkipped = true;
@@ -958,7 +876,7 @@ private:
         }
 public:
     ElementCollector(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoadContextCR loadContext, uint32_t maxElements)
-        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loadContext(loadContext)
+        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loadContext(loadContext), m_is2d(!rangeIndex.Is3d())
         {
         rangeIndex.Traverse(*this);
         }
@@ -1813,7 +1731,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     if (!wantRange && !wantContentRange)
         return (m_debugGraphics.m_graphic = nullptr);
 
-    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams::World(GetElementRoot().GetDgnDb()));
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams::Scene(GetElementRoot().GetDgnDb()));
     GraphicParams params;
     params.SetWidth(0);
     if (wantRange)
