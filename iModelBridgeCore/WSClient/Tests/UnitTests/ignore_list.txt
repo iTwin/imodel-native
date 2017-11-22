@@ -49,6 +49,7 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 # RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
 #--------------------------------------------------------------------------------
 #TFS 775875 (Client SDK Cpp) Calculated properties no linger supported in ecdb, follow-up if it needs fixing on WSClient
+DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
 #[ RUN      ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
     #{SRC}\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(4440): error:       Expected: "OldValue"
     #      Which is: 00007FF6619F9600
