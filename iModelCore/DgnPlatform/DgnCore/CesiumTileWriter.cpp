@@ -48,7 +48,9 @@ private:
     DgnDbR                                  m_db;
     bool                                    m_is3d;
     DgnCategoryId                           m_uncategorized;
+#if defined(ERROR_UNUSED_FIELD)
     FeatureTableCR                          m_attrs;
+#endif
     bmap<DgnElementId, DgnElementId>        m_assemblyIds;
     bmap<DgnSubCategoryId, DgnCategoryId>   m_categoryIds;
                             
@@ -145,7 +147,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::objectValue), m_db(db), m_is3d(is3d), m_attrs(attrs)
+BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::objectValue), m_db(db), m_is3d(is3d)
+#if defined(ERROR_UNUSED_FIELD)
+, m_attrs(attrs)
+#endif
     {
     InitUncategorizedCategory();
 
@@ -155,7 +160,9 @@ BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d) : m_json(Json::obj
                             categoryIds    = Json::arrayValue,
                             subCategoryIds = Json::arrayValue;
 
+#if defined(ERROR_UNUSED_VARIABLE)
     bool                    validLabelsFound = false;
+#endif
                         
     for (auto const& kvp : attrs)
         {
