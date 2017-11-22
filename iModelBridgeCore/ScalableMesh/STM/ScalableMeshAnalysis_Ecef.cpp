@@ -259,7 +259,14 @@ bool ScalableMeshAnalysis::_GetComputationParamsInEnu(DRange3d& rangeEnu, bvecto
     rangeEnu = DRange3d::From(0, 0);
     rangeEnu.IntersectionOf(rangeMeshEnu, rangeRegionEnu);
     if (rangeEnu.IsNull())
-        return false; // cannot compute volume, no intersection with restriction region
+        {
+        // polygon can be planar on Z, add some elevation (1 meter)
+        rangeRegionEnu.low.z += -1.0;
+        rangeRegionEnu.high.z += 1.0;
+        rangeEnu.IntersectionOf(rangeMeshEnu, rangeRegionEnu);
+        if (rangeEnu.IsNull()) // still null ?
+            return false; // cannot compute volume, no intersection with restriction region
+        }
 
     // keep the lowest Z value for volume 
     rangeEnu.low.z = std::min(rangeMeshEnu.low.z, rangeEnu.low.z);
@@ -321,7 +328,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     
     DRange3d rangeEnu;
     bvector<DPoint3d> polygonEnu;
-    _GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, nullptr);
+    if ( _GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, nullptr) == false )
+        return DTMStatusInt::DTM_ERROR; // invalid region intersection
 
     if (!_InitGridFrom(grid, resolutionInMeter, rangeEnu))
         return DTMStatusInt::DTM_ERROR; // could not initialize grid
@@ -511,7 +519,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionWorld);
     DRange3d rangeEnu;
     bvector<DPoint3d> polygonEnu;
-    _GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, diffMesh);
+    if (_GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, diffMesh) == false)
+        return DTMStatusInt::DTM_ERROR; // invalid region intersection
 
     // Create the Grid in Enu for the computation
     if (!_InitGridFrom(grid, resolutionInMeter, rangeEnu))
@@ -644,7 +653,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
         }
 
     // Sum the discrete volumes
-    _FillGridVolumes(grid, intersected, m_unit2meter);
+    _FillGridVolumes(grid, intersected, 1.0); // SNU, volumes are already in the right units // ,m_unit2meter);
 
     // Convert the range from Enu to World ???
     // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
