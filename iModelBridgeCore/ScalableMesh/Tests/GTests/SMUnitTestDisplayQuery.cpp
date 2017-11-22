@@ -267,13 +267,8 @@ IScalableMeshProgressiveQueryEnginePtr DisplayQueryTester::GetProgressiveQueryEn
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayCacheManager = new ScalableMeshDisplayCacheManager();
-        /*
-        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
-            {
-            return nullptr;
-            }
-            */
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayCacheManager, m_displayTexture);
+        
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayCacheManager, m_displayTexture);                
         }
 
     return m_progressiveQueryEngine;
@@ -299,66 +294,15 @@ DisplayQueryTester::~DisplayQueryTester()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
     {
-#if 0 
-    DMatrix4d localToView(context.GetLocalToView());
 
-    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
-
-    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
-
-    //DPoint3d viewBox[8];
-
-    //NEEDS_WORK_SM : Remove from query
-    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
-    DMatrix4d rootToStorage;
-
-    //Convert the view box in storage.
-    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
-
-    BeAssert(inverted != 0);
-
-    status = SUCCESS;
-#endif
-    
-
-   
+    InitializeProgressiveQueries();       
 
     IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
     
     viewDependentQueryParams->SetMinScreenPixelsPerPoint(m_minScreenPixelsPerPoint);
     viewDependentQueryParams->SetMaxPixelError(m_maxPixelError);
     viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
-
-#if 0 
-    ClipVectorCP clip;
-    clip = context.GetTransformClipStack().GetClip();
-    //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
-    //viewDependentQueryParams->SetViewBox(viewBox);
-    
-    viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
-
-    //NEEDS_WORK_SM : Needed?
-    /*
-    if (s_progressiveDraw)
-    {
-    viewDependentQueryParams->SetProgressiveDisplay(true);
-    viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
-    }
-    */
-
-    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));
-    clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
-#endif
-
-
     viewDependentQueryParams->SetViewClipVector(m_clipVector);
-    
-#if 0 
-    m_currentDrawingInfoPtr->m_overviewNodes.clear();
-
-    queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
-    m_currentDrawingInfoPtr->m_currentQuery = queryId;
-#endif 
 
     int queryId = 0;
     bvector<bool> clips;
@@ -384,22 +328,40 @@ void DisplayQueryTester::DoQuery()
             BeThreadUtilities::BeSleep(200);
             }
         }
-
+    
     ASSERT_EQ(GetProgressiveQueryEngine()->IsQueryComplete(queryId), true);
-
-
+    
     bvector<IScalableMeshCachedDisplayNodePtr> meshNodes;
+    bvector<IScalableMeshCachedDisplayNodePtr> overviewMeshNodes;
     
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
-    ASSERT_EQ(status == SUCCESS, true);
-            
+    EXPECT_EQ(status == SUCCESS, true);
+    
+    status = GetProgressiveQueryEngine()->GetOverviewNodes(overviewMeshNodes, queryId);
+    EXPECT_EQ(status == SUCCESS, true);
+                            
     int nbReturnedNodes = (int)meshNodes.size();
+
+    overviewMeshNodes.clear();
+    meshNodes.clear();
+    
+    status = GetProgressiveQueryEngine()->StopQuery(queryId);
+    EXPECT_EQ(status == SUCCESS, true);
+
+    status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
+    EXPECT_EQ(status != SUCCESS, true);
+
+    status = GetProgressiveQueryEngine()->GetOverviewNodes(overviewMeshNodes, queryId);
+    EXPECT_EQ(status != SUCCESS, true);
+    
+    EXPECT_EQ(overviewMeshNodes.size() == 0 && meshNodes.size() == 0, true);
+   
     bool isTerrain = m_smPtr->IsTerrain();
     bool isTextured = m_smPtr->IsTextured();
-
-    meshNodes.clear();
+        
     m_progressiveQueryEngine = nullptr;
     m_smPtr = nullptr;
+    ClearProgressiveQueriesInfo();
 
     int nbExpectedNodes = (int)m_expectedResults[0];
     
