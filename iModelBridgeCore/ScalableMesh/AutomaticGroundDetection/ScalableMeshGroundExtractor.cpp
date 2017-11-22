@@ -608,6 +608,32 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
             addtionalSeedPts.push_back(pt);
             }
 
+        WString envVarStr;
+
+        if (BSISUCCESS == ConfigurationManager::GetVariable(envVarStr, L"SM_GROUND_MAX_SEEDS_FROM_DRAPED_ROI"))
+            {
+            int value = _wtoi(envVarStr.c_str());
+
+            if (value > 0 && addtionalSeedPts.size() > (double)value)
+                {                
+                int skipIncrement = ceil(addtionalSeedPts.size() / (double)value);
+
+                auto seedPtIter = addtionalSeedPts.begin();
+
+                int iterInd = 0;
+
+                while (seedPtIter != addtionalSeedPts.end())
+                    {
+                    if (iterInd % skipIncrement != 0)
+                        seedPtIter = addtionalSeedPts.erase(seedPtIter);
+                    else
+                        seedPtIter++;
+                    
+                    iterInd++;
+                    }                
+                }
+            }
+
         params->AddAdditionalSeedPoints(addtionalSeedPts);        
         }    
     }
@@ -619,14 +645,35 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
     bvector<DPoint3d> seedpoints;    
     GroundDetectionParametersPtr params(GroundDetectionParameters::Create());        
     params->SetLargestStructureSize(LARGEST_STRUCTURE_SIZE_DEFAULT);
+
+/*
+#ifdef VANCOUVER_API //TFS# 725973 - Descartes prefers faster processing than more precise results.
+    params->SetTriangleEdgeThreshold(1.0);
+#else
+*/
     params->SetTriangleEdgeThreshold(0.05);
- 
+//#endif
+
+    WString envVarStr;
+
+    if (BSISUCCESS == ConfigurationManager::GetVariable(envVarStr, L"SM_GROUND_TRI_EDGE"))
+        {
+        double value = _wtof(envVarStr.c_str());
+
+        if (value > 0)
+            params->SetTriangleEdgeThreshold(value);
+        }
+	 
     params->SetAnglePercentileFactor(s_anglePercentile);
     params->SetHeightPercentileFactor(s_heightPercentile);
 
     params->SetUseMultiThread(s_useMultiThread);        
     
+
+//#ifndef VANCOUVER_API //TFS# 725973 - Descartes prefers faster processing than more precise results.
     AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
+//#endif
+
 
     m_createProgress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_DETECT_GROUND;
     m_createProgress.ProgressStep() = ScalableMeshStep::STEP_DETECT_GROUND;

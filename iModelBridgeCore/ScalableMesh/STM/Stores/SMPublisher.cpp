@@ -5,14 +5,14 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 
-void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData)
+void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData, bool outputTexture)
     {
-    return _Publish(node, transform, outData);
+    return _Publish(node, transform, outData, outputTexture);
     }
 
-void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
+void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture)
     {
-    return _Publish(node, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, outData);
+    return _Publish(node, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, outData, outputTexture);
     }
 
 IScalableMeshPublisherPtr IScalableMeshPublisher::Create(const SMPublishType& type)

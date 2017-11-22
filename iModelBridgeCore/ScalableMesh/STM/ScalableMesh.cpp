@@ -3110,7 +3110,19 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
             }
         }
 
-    status = m_scmIndexPtr->Publish3DTiles(path, m_reprojectionTransform, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr());
+
+    IScalableMeshTextureInfoPtr textureInfo;
+
+    status = ScalableMesh<POINT>::_GetTextureInfo(textureInfo);
+
+    bool outputTexture = true;
+
+    //BingMap texture MUST NOT be baked into the Cesium 3D tile data
+    if (status != SUCCESS || textureInfo->IsUsingBingMap())
+        outputTexture = false;
+
+    
+    status = m_scmIndexPtr->Publish3DTiles(path, m_reprojectionTransform, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr(), outputTexture);
     SMNodeGroupPtr rootTileset = m_scmIndexPtr->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
 

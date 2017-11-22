@@ -24,6 +24,8 @@ cDefs + -DVANCOUVER_API
 
 $(o)ScalableMeshUnitTests.obj   : $(_MakeFilePath)/ScalableMeshUnitTests.cpp ${MultiCompileDepends}
 
+$(o)SMUnitTestDisplayQuery.obj   : $(_MakeFilePath)/SMUnitTestDisplayQuery.cpp ${MultiCompileDepends}
+
 $(o)SMUnitTestUtil.obj   : $(_MakeFilePath)/SMUnitTestUtil.cpp $(_MakeFilePath)/SMUnitTestUtil.h ${MultiCompileDepends}
 
 
