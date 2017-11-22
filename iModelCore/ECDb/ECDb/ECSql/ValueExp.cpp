@@ -533,8 +533,20 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("any"))
         return PRIMITIVETYPE_Boolean;
 
+    if (functionName.EqualsIAscii("changes"))
+        return PRIMITIVETYPE_Long;
+
+    if (functionName.EqualsIAscii("char"))
+        return PRIMITIVETYPE_String;
+
     if (functionName.EqualsIAscii("count"))
         return PRIMITIVETYPE_Long;
+
+    if (functionName.EqualsIAscii("date"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("datetime"))
+        return PRIMITIVETYPE_String;
 
     if (functionName.EqualsIAscii("every"))
         return PRIMITIVETYPE_Boolean;
@@ -550,6 +562,54 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
 
     if (functionName.EqualsIAscii("instr"))
         return PRIMITIVETYPE_Integer;
+
+    if (functionName.EqualsIAscii("json"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_array"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_array_length"))
+        return PRIMITIVETYPE_Long;
+
+    if (functionName.EqualsIAscii("json_extract"))
+        return PRIMITIVETYPE_String; // must be type 'Any'
+
+    if (functionName.EqualsIAscii("json_group_array"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_group_object"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_insert"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_object"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_quote"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_remove"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_replace"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_set"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_type"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_valid"))
+        return PRIMITIVETYPE_Boolean;
+
+    if (functionName.EqualsIAscii("julianday"))
+        return PRIMITIVETYPE_Double;
+
+    if (functionName.EqualsIAscii("last_insert_rowid"))
+        return PRIMITIVETYPE_Long;
 
     if (functionName.EqualsIAscii("length"))
         return PRIMITIVETYPE_Long;
@@ -569,6 +629,12 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("quote"))
         return PRIMITIVETYPE_String;
 
+    if (functionName.EqualsIAscii("printf"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("random"))
+        return PRIMITIVETYPE_Long;
+
     if (functionName.EqualsIAscii("randomblob"))
         return PRIMITIVETYPE_Binary;
 
@@ -577,6 +643,9 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
 
     if (functionName.EqualsIAscii("replace"))
         return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("round"))
+        return PRIMITIVETYPE_Double;
 
     if (functionName.EqualsIAscii("rtrim"))
         return PRIMITIVETYPE_String;
@@ -587,10 +656,34 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("soundex"))
         return PRIMITIVETYPE_String;
 
-    if (functionName.EqualsIAscii("substr"))
+    if (functionName.EqualsIAscii("sqlite_compileoption_get"))
         return PRIMITIVETYPE_String;
 
+    if (functionName.EqualsIAscii("sqlite_compileoption_used"))
+        return PRIMITIVETYPE_Boolean;
+
+    if (functionName.EqualsIAscii("sqlite_source_id"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("sqlite_version"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("strftime"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("substr"))
+        return PRIMITIVETYPE_String;
+    
+    if (functionName.EqualsIAscii("time"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("total_changes"))
+        return PRIMITIVETYPE_Long;
+
     if (functionName.EqualsIAscii("trim"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("typeof"))
         return PRIMITIVETYPE_String;
 
     if (functionName.EqualsIAscii("unicode"))
@@ -606,7 +699,8 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("invirtualset"))
         return PRIMITIVETYPE_Boolean;
 
-    //all other functions get the default return type
+    //all other functions get the default return type 
+    //WIP: Need to deal with functions that return different types
     return ECN::PRIMITIVETYPE_Double;
     }
 

@@ -2640,8 +2640,6 @@ Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
                 return "BOOLEAN";
             case SQL_TOKEN_DATE:
                 return "DATE";
-            case SQL_TOKEN_DATETIME:
-                return "DATETIME";
             case SQL_TOKEN_DOUBLE:
                 return "DOUBLE";
             case SQL_TOKEN_FLOAT:
