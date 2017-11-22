@@ -432,4 +432,29 @@ ValidatedSize ClipPlane::FindPointOnBothPlanes (bvector<DPoint3d> const &data, C
         }
     return ValidatedSize (0, false);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlane::AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const
+    {
+    for (auto &primitive : curves)
+        AppendCrossings (*primitive, crossings);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlane::AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const
+    {
+    auto childCV = curve.GetChildCurveVectorCP ();
+    if (childCV)
+        AppendCrossings (*childCV, crossings);
+    else
+        {
+        DPlane3d plane = GetDPlane3d ();
+        curve.AppendCurvePlaneIntersections (plane, crossings);
+        }
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

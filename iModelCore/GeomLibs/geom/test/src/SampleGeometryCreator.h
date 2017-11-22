@@ -222,6 +222,45 @@ static void AddStepLinestrings (bvector<ICurvePrimitivePtr> &data, int stepCycle
         data.push_back (ICurvePrimitive::CreateLineString (stepPoints));
         }
     }
+// evaluate points at regular fraction spacing on each of two curvs.
+// construct lines between all such pairs.
+static void AddLinesBetweenFractions (bvector<ICurvePrimitivePtr> &data, ICurvePrimitiveCR curveA, size_t numA, ICurvePrimitiveCR curveB, size_t numB, double setBackFraction = 0.03)
+    {
+    DPoint3d xyzA, xyzB;
+    for (double i = 0; i < numA; i++)
+        {
+        curveA.FractionToPoint (i / numA, xyzA);
+        for (double j = 0; j < numB; j++)
+            {
+            curveB.FractionToPoint (j / numB, xyzB);
+            auto lineAB = ICurvePrimitive::CreateLine (DSegment3d::From (
+                DPoint3d::FromInterpolate (xyzA, setBackFraction, xyzB),
+                DPoint3d::FromInterpolate (xyzB, setBackFraction, xyzA)
+                ));
+            data.push_back (lineAB);
+            }
+        }
+    }
+
+// for each line segment in lines, create an elliptic arc with:
+// 1) line ends are the opposite ends of major axis points
+// 2) the perpendicular radius is specified fraction (perpendicularFraction) of the major radius.
+// 3) specified start and sweep angles
+static void AddArcsFromMajorAxisLines (bvector<ICurvePrimitivePtr> &data, bvector<ICurvePrimitivePtr> &lines, double perpendicularFraction, Angle angle0, Angle sweep)
+    {
+    DSegment3d segment;
+    for (auto & line : lines)
+        {
+        if (line->TryGetLine (segment))
+            {
+            DPoint3d center = segment.FractionToPoint (0.5);
+            DPoint3d minorPoint = DPoint3d::FromInterpolateAndPerpendicularXY (
+                    segment.point[0], 0.5, segment.point[1], 0.5 * perpendicularFraction);
+            auto arc = DEllipse3d::FromPoints (center, segment.point[1], minorPoint, angle0.Radians (), sweep.Radians ());
+            data.push_back (ICurvePrimitive::CreateArc (arc));
+            }
+        }
+    }
 
 static void AddUnitArcSweepVariety (bvector<ICurvePrimitivePtr> &data, size_t numStartAngle, size_t numSweepAngle)
     {

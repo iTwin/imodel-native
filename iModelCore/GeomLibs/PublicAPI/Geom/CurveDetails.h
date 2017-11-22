@@ -215,6 +215,8 @@ static GEOMDLLIMPEXP void DeltaZExtremes (bvector<CurveLocationDetailPair> const
 static GEOMDLLIMPEXP void SplitByDeltaZ (bvector<CurveLocationDetailPair> const &pairs, double splitDistance,
     bvector<CurveLocationDetailPair> *pairA, bvector<CurveLocationDetailPair> *pairB);
 
+//!! Lexical compare:  curve first, then fration from detailA, then fraction from detailB.
+static bool cb_compareCurveFraction (CurveLocationDetailPair dataA, CurveLocationDetailPair dataB);
 };
 
 #ifndef SmallGeomLib

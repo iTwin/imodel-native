@@ -199,7 +199,17 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     bool clearOutside = true,        //!< [in] true to clear the outside data.
     double distanceTolerance = 0.0  //!< [in] if nonzero, polygons within this distance of interior planes are classified as entirely "in"
     ) const;
-    }; // ConvexClipPlaneSet
+
+    //! Compute crossings of this set's planes with curve primitives within a CurveVector.
+    //! @param [in] curves candidate curves
+    //! @param [out] crossings detailed crossing data.
+    GEOMDLLIMPEXP void AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const;
+
+    //! Compute crossings of this set's planes a curve primitive
+    //! @param [in] curve candidate curve
+    //! @param [out] crossings detailed crossing data.
+    GEOMDLLIMPEXP void AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const;
+}; // ConvexClipPlaneSet
 
 
 typedef bvector <ConvexClipPlaneSet>    T_ConvexClipPlaneSets;
@@ -275,6 +285,44 @@ struct  ClipPlaneSet :  T_ConvexClipPlaneSets
     GEOMDLLIMPEXP void AppendIntervals(DEllipse3dCR arc, bvector<DSegment1d> &intervals) const;
     GEOMDLLIMPEXP bool IsAnyPointInOrOn(MSBsplineCurveCR curve) const;
     GEOMDLLIMPEXP void AppendIntervals(MSBsplineCurveCR curve, bvector<DSegment1d> &intervals) const;
+
+    //! Compute crossings of this ClipPlaneSet with curve primitives within a CurveVector.
+    //! @param [in] curves candidate curves
+    //! @param [out] crossings detailed crossing data.
+    GEOMDLLIMPEXP void AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const;
+
+    //! Compute crossings of this ClipPlaneSet a curve primitive
+    //! @param [in] curve candidate curve
+    //! @param [out] crossings detailed crossing data.
+    GEOMDLLIMPEXP void AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const;
+
+    //! Determine if a CurveVector is completely in, completely out, or mixed with respect
+    //! to a postive ClipPlaneSet and a mask (hole) ClipPlaneSet.
+    //! @param curves [in] curves or region to clip.
+    //! @param clipSet [in] the positive clip set
+    //! @param maskSet [in] the negative (holes) clip set
+    //! @param considerRegions [in] if true, treat Outer, Inner, Parity, and Union regions as areas.
+    //!        If false, only consider boundaries.
+    GEOMDLLIMPEXP static ClipPlaneContainment ClassifyCurveVectorInSetDifference
+    (
+    CurveVectorCR curves,
+    ClipPlaneSetCR clipSet,
+    ClipPlaneSetCR maskSet,
+    bool considerRegions
+    );
+
+    //! Determine if a CurveVector is completely in, completely out, or mixed with respect
+    //! to a postive ClipPlaneSet and a mask (hole) ClipPlaneSet.
+    //! @param curve [in] curve to test
+    //! @param clipSet [in] the positive clip set
+    //! @param maskSet [in] the negative (holes) clip set
+    GEOMDLLIMPEXP static ClipPlaneContainment ClassifyCurvePrimitiveInSetDifference
+    (
+    ICurvePrimitiveCR curve,
+    ClipPlaneSetCR clipSet,
+    ClipPlaneSetCR maskSet
+    );
+
 
     };
 
