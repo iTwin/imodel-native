@@ -394,7 +394,8 @@ void DisplayQueryTester::DoQuery()
     ASSERT_EQ(status == SUCCESS, true);
             
     int nbReturnedNodes = (int)meshNodes.size();
-
+    bool isTerrain = m_smPtr->IsTerrain();
+    bool isTextured = m_smPtr->IsTextured();
 
     meshNodes.clear();
     m_progressiveQueryEngine = nullptr;
@@ -405,8 +406,19 @@ void DisplayQueryTester::DoQuery()
     EXPECT_EQ(nbReturnedNodes == nbExpectedNodes, true);    
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() >= nbReturnedNodes, true);
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh() >= nbReturnedNodes, true);
-    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() >= nbReturnedNodes, true);
-    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() >= nbReturnedNodes, true);
+    
+    if (!isTextured)
+        {
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() == 0, true);
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() == 0, true);
+        }
+    else        
+    if (isTerrain) //3D 3SM are sharing textures amongst multiple leaf with common ancestor.
+        {
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() >= nbReturnedNodes, true);
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() >= nbReturnedNodes, true);
+        }
+        
 
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh(), true);
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture(), true);    
