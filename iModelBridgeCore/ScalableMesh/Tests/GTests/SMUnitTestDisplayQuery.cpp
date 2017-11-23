@@ -7,7 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestDisplayQuery.h"
+#include <Bentley/BeTest.h>
+#include <Bentley\BeThread.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -18,10 +22,13 @@ struct SmCachedDisplayTexture
     SmCachedDisplayTexture()
         {    
         }    
+
+    int dummy; 
     };
 
 struct SmCachedDisplayMesh
     {    
+    int dummy;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -115,6 +122,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     {
 
     m_nbCreatedMesh++;
+    isStoredOnGpu = false;
+    usedMemInBytes = sizeof(SmCachedDisplayMesh);
+    cachedDisplayMesh = new SmCachedDisplayMesh;
     
 #if 0
     QvTextureID textureId = 0;
@@ -176,6 +186,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
 {
      
     m_nbCreatedTexture++;    
+    isStoredOnGpu = false;
+    usedMemInBytes = sizeof(SmCachedDisplayTexture);
+    cachedDisplayTexture = new SmCachedDisplayTexture;
+
 
 #if 0
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
@@ -253,13 +267,8 @@ IScalableMeshProgressiveQueryEnginePtr DisplayQueryTester::GetProgressiveQueryEn
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayCacheManager = new ScalableMeshDisplayCacheManager();
-        /*
-        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
-            {
-            return nullptr;
-            }
-            */
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayCacheManager, m_displayTexture);
+        
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayCacheManager, m_displayTexture);                
         }
 
     return m_progressiveQueryEngine;
@@ -270,7 +279,7 @@ IScalableMeshProgressiveQueryEnginePtr DisplayQueryTester::GetProgressiveQueryEn
 * @bsimethod                                    Mathieu.St-Pierre                 11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayQueryTester::DisplayQueryTester()
-    {
+    {    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,66 +294,15 @@ DisplayQueryTester::~DisplayQueryTester()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
     {
-#ifdef ACTIVATED
 
-#if 0 
-    DMatrix4d localToView(context.GetLocalToView());
-
-    DMatrix4d smToUOR = DMatrix4d::From(m_smToModelUorTransform);
-
-    bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
-
-    //DPoint3d viewBox[8];
-
-    //NEEDS_WORK_SM : Remove from query
-    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
-    DMatrix4d rootToStorage;
-
-    //Convert the view box in storage.
-    bool inverted = bsiDMatrix4d_invertQR(&rootToStorage, &m_storageToUorsTransfo);
-
-    BeAssert(inverted != 0);
-#endif
-    status = SUCCESS;
-
-   
+    InitializeProgressiveQueries();       
 
     IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
     
     viewDependentQueryParams->SetMinScreenPixelsPerPoint(m_minScreenPixelsPerPoint);
     viewDependentQueryParams->SetMaxPixelError(m_maxPixelError);
-    
-
-#if 0 
-    ClipVectorCP clip;
-    clip = context.GetTransformClipStack().GetClip();
-    //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
-    //viewDependentQueryParams->SetViewBox(viewBox);
-    
     viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
-
-    //NEEDS_WORK_SM : Needed?
-    /*
-    if (s_progressiveDraw)
-    {
-    viewDependentQueryParams->SetProgressiveDisplay(true);
-    viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
-    }
-    */
-
-    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));
-    clipVectorCopy->TransformInPlace(m_modelUorToSmTransform);
-#endif
-
-
     viewDependentQueryParams->SetViewClipVector(m_clipVector);
-    
-#if 0 
-    m_currentDrawingInfoPtr->m_overviewNodes.clear();
-
-    queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
-    m_currentDrawingInfoPtr->m_currentQuery = queryId;
-#endif 
 
     int queryId = 0;
     bvector<bool> clips;
@@ -361,7 +319,7 @@ void DisplayQueryTester::DoQuery()
                                                                clips,
                                                                m_smPtr);
 
-    ASSERT_TRUE(status == SUCCESS);
+    ASSERT_EQ(status == SUCCESS, true);
 
     if (m_waitQueryComplete)
         {
@@ -370,15 +328,104 @@ void DisplayQueryTester::DoQuery()
             BeThreadUtilities::BeSleep(200);
             }
         }
-
-    ASSERT_TRUE(GetProgressiveQueryEngine()->IsQueryComplete(queryId));
-
-
+    
+    ASSERT_EQ(GetProgressiveQueryEngine()->IsQueryComplete(queryId), true);
+    
     bvector<IScalableMeshCachedDisplayNodePtr> meshNodes;
+    bvector<IScalableMeshCachedDisplayNodePtr> overviewMeshNodes;
     
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
-    ASSERT_TRUE(status == SUCCESS);    
+    EXPECT_EQ(status == SUCCESS, true);
+    
+    status = GetProgressiveQueryEngine()->GetOverviewNodes(overviewMeshNodes, queryId);
+    EXPECT_EQ(status == SUCCESS, true);
+                            
+    int nbReturnedNodes = (int)meshNodes.size();
 
-#endif
+    overviewMeshNodes.clear();
+    meshNodes.clear();
+    
+    status = GetProgressiveQueryEngine()->StopQuery(queryId);
+    EXPECT_EQ(status == SUCCESS, true);
+
+    status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
+    EXPECT_EQ(status != SUCCESS, true);
+
+    status = GetProgressiveQueryEngine()->GetOverviewNodes(overviewMeshNodes, queryId);
+    EXPECT_EQ(status != SUCCESS, true);
+    
+    EXPECT_EQ(overviewMeshNodes.size() == 0 && meshNodes.size() == 0, true);
+   
+    bool isTerrain = m_smPtr->IsTerrain();
+    bool isTextured = m_smPtr->IsTextured();
+        
+    m_progressiveQueryEngine = nullptr;
+    m_smPtr = nullptr;
+    ClearProgressiveQueriesInfo();
+
+    int nbExpectedNodes = (int)m_expectedResults[0];
+    
+    EXPECT_EQ(nbReturnedNodes == nbExpectedNodes, true);    
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() >= nbReturnedNodes, true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh() >= nbReturnedNodes, true);
+    
+    if (!isTextured)
+        {
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() == 0, true);
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() == 0, true);
+        }
+    else        
+    if (isTerrain) //3D 3SM are sharing textures amongst multiple leaf with common ancestor.
+        {
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() >= nbReturnedNodes, true);
+        EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() >= nbReturnedNodes, true);
+        }
+        
+
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh(), true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture(), true);    
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayQueryTester::SetQueryParams(const BeFileName& smFileName, const DMatrix4d& rootToView, const bvector<DPoint4d>& clipPlanes, const bvector<double>& expectedResults)
+    {
+    StatusInt status;
+    m_smPtr = ScalableMesh::IScalableMesh::GetFor(smFileName, true, true, status);
+            
+    if (m_smPtr == nullptr)
+        return false;
+            
+    memcpy(&m_rootToViewMatrix, &rootToView.coff, sizeof(rootToView.coff));
+
+    bvector<ClipPlane> clips(clipPlanes.size());
+
+    for (size_t ind = 0; ind < clipPlanes.size(); ind++)
+        {        
+        DVec3d normal(DVec3d::From(clipPlanes[ind].x, clipPlanes[ind].y, clipPlanes[ind].z));
+
+        clips[ind] = ClipPlane(normal, clipPlanes[ind].w);
+        }
+       
+    ConvexClipPlaneSet convexClipPlaneSet(&clips[0], clips.size());
+
+    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+
+    ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
+
+    m_clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
+
+    m_expectedResults.resize(expectedResults.size());
+    memcpy(&m_expectedResults[0], &expectedResults[0], sizeof(double) * expectedResults.size());
+
+    return true;
+    /*
+    DMatrix4d& rootToView;
+    bvector<DPoint4d>& clipPlanes;
+    bvector<double>& expectedResults
+    */
+
+        
+
+    }

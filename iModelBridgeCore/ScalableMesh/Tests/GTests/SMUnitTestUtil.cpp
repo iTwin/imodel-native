@@ -233,7 +233,7 @@ bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> S
             f >> results[i];
             /*
             DPoint3d pt;
-            f >> pt.x;
+            f >> pt.x;  
             f >> pt.y;
             f >> pt.z;
             resultPts.push_back(pt);*/

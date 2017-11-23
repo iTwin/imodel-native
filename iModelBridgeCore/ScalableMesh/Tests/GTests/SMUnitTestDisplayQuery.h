@@ -20,11 +20,12 @@ class DisplayQueryTester
 
         double           m_minScreenPixelsPerPoint = 800;
         double           m_maxPixelError = 1;
-        double           m_rootToViewMatrix[3][4];
+        double           m_rootToViewMatrix[4][4];
         ClipVectorPtr    m_clipVector;
         bool             m_displayTexture;
         IScalableMeshPtr m_smPtr;
-        bool             m_waitQueryComplete = true;
+        bool             m_waitQueryComplete = true;        
+        bvector<double>  m_expectedResults;
 
 
         IScalableMeshDisplayCacheManagerPtr     m_displayCacheManager;
@@ -37,6 +38,8 @@ class DisplayQueryTester
         DisplayQueryTester();
 
         virtual ~DisplayQueryTester();
+
+        bool SetQueryParams(const BeFileName& smFileName, const DMatrix4d& rootToView, const bvector<DPoint4d>& clipPlanes, const bvector<double>& expectedResults);
 
         void DoQuery();
 
