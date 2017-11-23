@@ -1,15 +1,15 @@
 {
   "Environment": "DEV",
-  "ProjectId": "2b56f4f1-fea2-4736-ab6e-dc2b02f8f2da",
+  "ProjectId": "52a2af9e-1430-4a09-8b77-f168762863e6",
   "Users": [
     {
-      "Password": "pmadm1",
-      "Username": "BistroDEV_pmadm1@mailinator.com",
+      "Password": "admin_password_please_change",
+      "Username": "admin_user_please_change",
       "IsAdmin": true
     },
     {
-      "Password": "user1",
-      "Username": "BistroDEV_regular1@mailinator.com"
+      "Password": "regular_password_please_change",
+      "Username": "regular_user_please_change"
     }
   ]
 }
