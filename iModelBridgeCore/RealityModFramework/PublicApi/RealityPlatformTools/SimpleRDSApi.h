@@ -83,24 +83,24 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              10/2017
-//! ConnectedRealityDataProjectRelationship
-//! Extends RealityDataProjectRelationship, directly integrating requests to describe, 
+//! ConnectedRealityDataRelationship
+//! Extends RealityDataRelationship, directly integrating requests to describe, 
 //! create, upload, download, and delete entries on the server
 //=====================================================================================
-struct ConnectedRealityDataProjectRelationship: public RealityDataProjectRelationship
+struct ConnectedRealityDataRelationship: public RealityDataRelationship
     {
 public:
-    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataProjectRelationship() : RealityDataProjectRelationship() {}
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataRelationship() : RealityDataRelationship() {}
 
     //! Server request
     //! Will retrieve all relationships for a reality data
-    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String rdId);
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector);
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector, Utf8String rdId);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForRDId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector);
     
     //! Server request
     //! Will retrieve all relationships for a project
-    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector, Utf8String projectId);
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataProjectRelationshipPtr>& relationshipVector);
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector, Utf8String projectId);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse RetrieveAllForProjectId(bvector<ConnectedRealityDataRelationshipPtr>& relationshipVector);
     
     //! Server request
     //! Will create a relationship between the realitydata and project set in this object
@@ -110,9 +110,9 @@ public:
     //! Will delete a relationship between the realitydata and project set in this object
     REALITYDATAPLATFORM_EXPORT ConnectedResponse Delete();
 
-    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataProjectRelationship(RealityDataProjectRelationshipPtr relationship);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataRelationship(RealityDataRelationshipPtr relationship);
 private:
-    REALITYDATAPLATFORM_EXPORT void Clone(RealityDataProjectRelationshipPtr relationship);
+    REALITYDATAPLATFORM_EXPORT void Clone(RealityDataRelationshipPtr relationship);
     };
 
 //=====================================================================================

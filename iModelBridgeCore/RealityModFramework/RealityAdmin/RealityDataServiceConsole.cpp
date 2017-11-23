@@ -1474,8 +1474,8 @@ void RealityDataConsole::ForceMassUnlink()
     
     RawServerResponse projectResponse = RawServerResponse();
 
-    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest("");
-    bvector<RealityDataProjectRelationshipPtr> entities;
+    RealityDataRelationshipByRealityDataIdRequest idReq = RealityDataRelationshipByRealityDataIdRequest("");
+    bvector<RealityDataRelationshipPtr> entities;
 
     Utf8String id;
     RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete("", "");//dummy
@@ -1484,10 +1484,10 @@ void RealityDataConsole::ForceMassUnlink()
 
     for (int i = 0; i < m_serverNodes.size(); ++i)
         {
-        idReq = RealityDataProjectRelationshipByRealityDataIdRequest(m_serverNodes[i].GetInstanceId());
+        idReq = RealityDataRelationshipByRealityDataIdRequest(m_serverNodes[i].GetInstanceId());
         entities = RealityDataService::Request(idReq, projectResponse);
 
-        for(RealityDataProjectRelationshipPtr entity : entities)
+        for(RealityDataRelationshipPtr entity : entities)
             {
             relReq = RealityDataRelationshipDelete(m_serverNodes[i].GetInstanceId(), entity->GetRelatedId());
             WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
@@ -1695,8 +1695,8 @@ void RealityDataConsole::Relationships()
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
 
-    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(instanceId);
-    bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, projectResponse);
+    RealityDataRelationshipByRealityDataIdRequest idReq = RealityDataRelationshipByRealityDataIdRequest(instanceId);
+    bvector<RealityDataRelationshipPtr> entities = RealityDataService::Request(idReq, projectResponse);
 
     if (projectResponse.status == RequestStatus::BADREQ)
         {
@@ -1705,13 +1705,13 @@ void RealityDataConsole::Relationships()
         }
     else if (entities.size() == 0)
         {
-        DisplayInfo("There seems to be no projects attached to this RealityData\n", DisplayOption::Error);
+        DisplayInfo("There seems to be no relation attached to this RealityData\n", DisplayOption::Error);
         return;
         }
 
-    DisplayInfo("Projects attached to this RealityData\n\n");
-    for (RealityDataProjectRelationshipPtr entity : entities)
-        DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetRelatedId()));
+    DisplayInfo("Related attached to this RealityData\n\n");
+    for (RealityDataRelationshipPtr entity : entities)
+        DisplayInfo(Utf8PrintfString(" RelatedId          : %s\n RelationType", entity->GetRelatedId(), entity->GetRelationType()));
     }
 
 void RealityDataConsole::CreateRD()

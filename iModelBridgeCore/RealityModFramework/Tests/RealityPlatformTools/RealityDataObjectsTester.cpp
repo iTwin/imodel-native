@@ -862,7 +862,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataCustomCreate)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
 //-------------------------------------------------------------------------------------
-TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
+TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipBasicTest)
     {
     Utf8CP jsonString = "{"
                           "\"instances\": [" 
@@ -901,14 +901,14 @@ TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
     const Json::Value instance = root["instances"][0];
     ASSERT_TRUE(instance.isMember("properties"));
 
-    RealityDataProjectRelationshipPtr myRelationShip = RealityDataProjectRelationship::Create(instance);
+    RealityDataRelationshipPtr myRelationShip = RealityDataRelationship::Create(instance);
     EXPECT_STREQ(myRelationShip->GetRealityDataId().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
     EXPECT_STREQ(myRelationShip->GetRelatedId().c_str(), "504fc784-2b2d-465f-b1d9-de58bf6cf0f2");
     EXPECT_STREQ(myRelationShip->GetRelationType().c_str(), "CONNECT-Project");
 
     const Json::Value instance2 = root["instances"][1];
     ASSERT_TRUE(instance.isMember("properties"));
-    RealityDataProjectRelationshipPtr myRelationShip2 = RealityDataProjectRelationship::Create(instance2);
+    RealityDataRelationshipPtr myRelationShip2 = RealityDataRelationship::Create(instance2);
     EXPECT_STREQ(myRelationShip2->GetRealityDataId().c_str(), "8411d048-78ec-495a-b263-cad44dba7a17");
     EXPECT_STREQ(myRelationShip2->GetRelatedId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
     EXPECT_STREQ(myRelationShip2->GetRelationType().c_str(), "CONNECT-Project");
@@ -918,9 +918,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         02/2017
 //-------------------------------------------------------------------------------------
-TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipGetSet)
+TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipGetSet)
     {
-    RealityDataProjectRelationshipPtr myRelationShip = RealityDataProjectRelationship::Create();
+    RealityDataRelationshipPtr myRelationShip = RealityDataRelationship::Create();
     ASSERT_STREQ(myRelationShip->GetRelatedId().c_str(), "");
     ASSERT_STREQ(myRelationShip->GetRealityDataId().c_str(), "");
     ASSERT_STREQ(myRelationShip->GetRelationType().c_str(), "");

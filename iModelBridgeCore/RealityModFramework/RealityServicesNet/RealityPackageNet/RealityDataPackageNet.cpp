@@ -158,6 +158,10 @@ PackageRealityDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
     pData->SetDataset(dataset.c_str());
 
+    Utf8String resolution;
+    BeStringUtilities::WCharToUtf8(resolution, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetResolution()).ToPointer()));
+    pData->SetResolution(resolution.c_str());
+
     // Set corners.
     List<double>^ corners = managedData->GetCornersCP();
     if (0 != corners->Count)
@@ -222,6 +226,10 @@ PackageRealityDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
     pData->SetDataset(dataset.c_str());
 
+    Utf8String resolution;
+    BeStringUtilities::WCharToUtf8(resolution, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetResolution()).ToPointer()));
+    pData->SetResolution(resolution.c_str());
+
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
         {
@@ -269,6 +277,10 @@ PackageRealityDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
     pData->SetDataset(dataset.c_str());
+
+    Utf8String resolution;
+    BeStringUtilities::WCharToUtf8(resolution, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetResolution()).ToPointer()));
+    pData->SetResolution(resolution.c_str());
 
     // Set location.
     List<double>^ location = managedData->GetLocation();
@@ -336,6 +348,10 @@ PackageRealityDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
     pData->SetDataset(dataset.c_str());
 
+    Utf8String resolution;
+    BeStringUtilities::WCharToUtf8(resolution, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetResolution()).ToPointer()));
+    pData->SetResolution(resolution.c_str());
+
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
         {
@@ -384,6 +400,10 @@ PackageRealityDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData
     Utf8String dataset;
     BeStringUtilities::WCharToUtf8(dataset, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetDataset()).ToPointer()));
     pData->SetDataset(dataset.c_str());
+
+    Utf8String resolution;
+    BeStringUtilities::WCharToUtf8(resolution, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedData->GetResolution()).ToPointer()));
+    pData->SetResolution(resolution.c_str());
 
     // Add alternate sources.
     for (int i = 1; i < managedData->GetNumSources(); ++i)
@@ -760,6 +780,22 @@ String^ RealityDataNet::GetDataset()
 void RealityDataNet::SetDataset(String^ dataset)
     {
     m_dataset = dataset;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                    11/2017
+//-------------------------------------------------------------------------------------
+String^ RealityDataNet::GetResolution()
+    {
+    return m_resolution;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                    11/2017
+//-------------------------------------------------------------------------------------
+void RealityDataNet::SetResolution(String^ resolution)
+    {
+    m_resolution = resolution;
     }
 
 //-------------------------------------------------------------------------------------

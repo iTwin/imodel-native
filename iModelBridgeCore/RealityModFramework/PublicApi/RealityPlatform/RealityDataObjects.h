@@ -52,15 +52,15 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
 //! @bsiclass                                           Spencer.Mason 2017/01
-//! This class is used to represent a pair RealityDataId/ProjectId indicating a relationship between them. 
+//! This class is used to represent a triplet RealityDataId/RelatedId/RelationType indicating a relationship between them. 
 //! RealityData can be linked with many projects and projects can link with many different reality data
 //=====================================================================================
-struct RealityDataProjectRelationship : public RefCountedBase
+struct RealityDataRelationship : public RefCountedBase
     {
 public:
     //! Extracts a relationship from the given json instance.
-    REALITYDATAPLATFORM_EXPORT static RealityDataProjectRelationshipPtr Create(Json::Value jsonInstance) { return new RealityDataProjectRelationship(jsonInstance); }
-    REALITYDATAPLATFORM_EXPORT static RealityDataProjectRelationshipPtr Create() { return new RealityDataProjectRelationship(); }
+    REALITYDATAPLATFORM_EXPORT static RealityDataRelationshipPtr Create(Json::Value jsonInstance) { return new RealityDataRelationship(jsonInstance); }
+    REALITYDATAPLATFORM_EXPORT static RealityDataRelationshipPtr Create() { return new RealityDataRelationship(); }
 
     //! Get/Set
     //! The RealityDataId of the RealityData linked to the project. Normally both RealityData and Project are of the same enterprise but if the RealityData is marked as public
@@ -72,13 +72,13 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelatedId() const;
     REALITYDATAPLATFORM_EXPORT void SetRelatedId(Utf8StringCR relatedId);
 
-    //! The project id that is linked with reality data.
+    //! The relation type. The type of relationship is a string key that can be in the reserved list or not (user defined type).
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelationType() const;
     REALITYDATAPLATFORM_EXPORT void SetRelationType(Utf8StringCR relationType);
     
 protected:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship(Json::Value jsonInstance);
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship();
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationship(Json::Value jsonInstance);
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationship();
     Utf8String m_realityDataId;
     Utf8String m_relatedId;
     Utf8String m_relationType;

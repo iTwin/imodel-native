@@ -340,7 +340,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         std::cout << "  TEST                                        mean              min             max" << std::endl;
         std::cout << "WSG Handshake                            : " << mean_handshake           << ",         " << min_handshake             << ",           " << max_handshake           << std::endl;
         std::cout << "Create RealityData                       : " << mean_createRealityData   << ",         " << min_createRealityData     << ",           " << max_createRealityData   << std::endl;
-        std::cout << "Create RealityDataProjectRelationship    : " << mean_createRelationship  << ",         " << min_createRelationship    << ",           " << max_createRelationship  << std::endl;
+        std::cout << "Create RealityDataRelationship           : " << mean_createRelationship  << ",         " << min_createRelationship    << ",           " << max_createRelationship  << std::endl;
         std::cout << "Upload                                   : " << mean_uploadTest          << ",         " << min_uploadTest            << ",           " << max_uploadTest          << std::endl;
         std::cout << "Download                                 : " << mean_downloadTest        << ",         " << min_downloadTest          << ",           " << max_downloadTest        << std::endl;
         std::cout << "Get Document                             : " << mean_getDocument         << ",         " << min_getDocument           << ",           " << max_getDocument         << std::endl;
@@ -515,7 +515,7 @@ StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject(timeSt
     int64_t startTime;
     int64_t endTime;
 
-    RealityDataProjectRelationshipPtr relationship = RealityDataProjectRelationship::Create();
+    RealityDataRelationshipPtr relationship = RealityDataRelationship::Create();
 
     RealityDataRelationshipCreateRequest creationRelationshipRequest(m_newRealityData->GetIdentifier(), "toto");
 
@@ -530,9 +530,9 @@ StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject(timeSt
 
     // Report
     if (OK != response.status)
-        std::cout << "Create RealityDataProjectRelationship: Failure no: " << response.status << std::endl;
+        std::cout << "Create RealityDataRelationship: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Create RealityDataProjectRelationship Test: " << (endTime - startTime) << std::endl;
+        std::cout << "Create RealityDataRelationship Test: " << (endTime - startTime) << std::endl;
     
     theTimeStats.m_createRelationship = (endTime - startTime);
 
@@ -717,13 +717,13 @@ StatusInt RealityDataServicePerformanceTests::GetRelationship(timeStats& theTime
     int64_t startTime = 0;
     int64_t endTime = 0;
     
-    RealityDataProjectRelationshipByRealityDataIdRequest myRequest(m_newRealityData->GetIdentifier());
+    RealityDataRelationshipByRealityDataIdRequest myRequest(m_newRealityData->GetIdentifier());
 
     // Start time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    bvector<RealityDataProjectRelationshipPtr> listOfRel = RealityDataService::Request(myRequest, response);
+    bvector<RealityDataRelationshipPtr> listOfRel = RealityDataService::Request(myRequest, response);
     
     if (listOfRel.size() == 0 && OK == response.status)
         {
@@ -736,9 +736,9 @@ StatusInt RealityDataServicePerformanceTests::GetRelationship(timeStats& theTime
 
     // Report
     if (OK != response.status)
-        std::cout << "Get RealityDataProjectRelationship: Failure no: " << response.status << std::endl;
+        std::cout << "Get RealityDataRelationship: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Get RealityDataProjectRelationship Test: " << (endTime - startTime) << std::endl;
+        std::cout << "Get RealityDataRelationship Test: " << (endTime - startTime) << std::endl;
     
     theTimeStats.m_getRelationship = (endTime - startTime);
 
@@ -768,9 +768,9 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship(timeStats& theT
 
     // Report
     if (OK != response.status)
-        std::cout << "Delete RealityDataProjectRelationship: Failure no: " << response.status << std::endl;
+        std::cout << "Delete RealityDataRelationship: Failure no: " << response.status << std::endl;
     else
-        std::cout << "Delete RealityDataProjectRelationship Test: " << (endTime - startTime) << std::endl;
+        std::cout << "Delete RealityDataRelationship Test: " << (endTime - startTime) << std::endl;
 
     theTimeStats.m_deleteRelationship = (endTime - startTime);
     

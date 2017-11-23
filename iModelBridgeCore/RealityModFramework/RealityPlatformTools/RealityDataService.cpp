@@ -336,7 +336,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
@@ -345,7 +345,7 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataProjectRelationshipByRealityDataIdRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataRelationshipByRealityDataIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId));
@@ -802,7 +802,7 @@ void RealityDataListByUltimateIdPagedRequest::_PrepareHttpRequestStringAndPayloa
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'%s'", m_encodedId));
@@ -824,7 +824,7 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'%s'", m_id));
@@ -1859,7 +1859,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByUltim
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse)
     {
     return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), rawResponse);
     }
@@ -1867,7 +1867,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse)
     {
     return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), rawResponse);
     }
@@ -1875,9 +1875,9 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::_RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse)
 {
-    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
+    bvector<RealityDataRelationshipPtr> relations = bvector<RealityDataRelationshipPtr>();
 
     if (!RealityDataService::AreParametersSet())
         {
@@ -1890,11 +1890,11 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelations
     Json::Value instances(Json::objectValue);
     Json::Reader::Parse(rawResponse.body, instances);
     if (rawResponse.status != RequestStatus::OK)
-        s_errorCallback("RealityDataProjectRelationshipRequest failed with response", rawResponse);
+        s_errorCallback("RealityDataRelationshipRequest failed with response", rawResponse);
     else
         {
         for (auto instance : instances["instances"])
-            relations.push_back(RealityDataProjectRelationship::Create(instance));
+            relations.push_back(RealityDataRelationship::Create(instance));
         }
 
     return relations;
@@ -1903,7 +1903,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelations
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse)
     {
     return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), rawResponse);
     }
@@ -1911,7 +1911,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse)
     {
     return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), rawResponse);
     }
@@ -1919,9 +1919,9 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRelationships(const RealityDataPagedRequest* request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::_RequestPagedRelationships(const RealityDataPagedRequest* request, RawServerResponse& rawResponse)
     {
-    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
+    bvector<RealityDataRelationshipPtr> relations = bvector<RealityDataRelationshipPtr>();
 
     if (!RealityDataService::AreParametersSet())
         {
@@ -1935,11 +1935,11 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRela
     Json::Reader::Parse(rawResponse.body, instances);
 
     if (rawResponse.status != RequestStatus::OK)
-        s_errorCallback("RealityDataProjectRelationshipPagedRequest failed with response", rawResponse);
+        s_errorCallback("RealityDataRelationshipPagedRequest failed with response", rawResponse);
     else
         {
         for (auto instance : instances["instances"])
-            relations.push_back(RealityDataProjectRelationship::Create(instance));
+            relations.push_back(RealityDataRelationship::Create(instance));
         if ((uint8_t)relations.size() < request->GetPageSize())
             rawResponse.status = RequestStatus::LASTPAGE;
         }

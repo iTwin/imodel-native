@@ -357,7 +357,7 @@ void RDSUser::ValidateListRealityData(int activeUsers)
 
 CURL* RDSUser::ListRelationship()
     {
-    RealityDataProjectRelationshipByProjectIdPagedRequest listReq = RealityDataProjectRelationshipByProjectIdPagedRequest(m_id);
+    RealityDataRelationshipByProjectIdPagedRequest listReq = RealityDataRelationshipByProjectIdPagedRequest(m_id);
 
     m_correspondance.response.clear();
     m_correspondance.req.url = listReq.GetHttpRequestString();

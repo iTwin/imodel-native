@@ -116,6 +116,12 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
         if (NULL != pDatasetNode)
             pDatasetNode->GetContent(dataset);
 
+        // Resolution.
+        Utf8String resolution;
+        BeXmlNodeP pResolutionNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Resolution);
+        if (NULL != pResolutionNode)
+            pResolutionNode->GetContent(resolution);
+
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
         if (NULL == pSourcesNode)
@@ -177,6 +183,8 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
             pImgData->SetIdentifier(id.c_str());
             pImgData->SetName(name.c_str());
             pImgData->SetDataset(dataset.c_str());
+            pImgData->SetResolution(resolution.c_str());
+
             for (size_t i = 1; i < pSources.size(); ++i)
                 {
                 pImgData->AddSource(*pSources[i]);
@@ -191,6 +199,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
                 pImgData->SetIdentifier(id.c_str());
                 pImgData->SetName(name.c_str());
                 pImgData->SetDataset(dataset.c_str());
+                pImgData->SetResolution(resolution.c_str());
                 start = 1;
                 }
             for (size_t i = start; i < pMultiBandSources.size(); ++i)
@@ -248,6 +257,11 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
         if (NULL != pDatasetNode)
             pDatasetNode->GetContent(dataset);
 
+        // Resolution.
+        Utf8String resolution;
+        BeXmlNodeP pResolutionNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Resolution);
+        if (NULL != pResolutionNode)
+            pResolutionNode->GetContent(resolution);
 
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
@@ -272,6 +286,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
         pModelData->SetIdentifier(id.c_str());
         pModelData->SetName(name.c_str());
         pModelData->SetDataset(dataset.c_str());
+        pModelData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pModelData->AddSource(*pSources[i]);
@@ -326,6 +341,12 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
         if (NULL != pDatasetNode)
             pDatasetNode->GetContent(dataset);
 
+        // Resolution.
+        Utf8String resolution;
+        BeXmlNodeP pResolutionNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Resolution);
+        if (NULL != pResolutionNode)
+            pResolutionNode->GetContent(resolution);
+
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
         if (NULL == pSourcesNode)
@@ -370,6 +391,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
         pPinnedData->SetIdentifier(id.c_str());
         pPinnedData->SetName(name.c_str());
         pPinnedData->SetDataset(dataset.c_str());
+        pPinnedData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pPinnedData->AddSource(*pSources[i]);
@@ -425,6 +447,12 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
         if (NULL != pDatasetNode)
             pDatasetNode->GetContent(dataset);
 
+        // Resolution.
+        Utf8String resolution;
+        BeXmlNodeP pResolutionNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Resolution);
+        if (NULL != pResolutionNode)
+            pResolutionNode->GetContent(resolution);
+
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
         if (NULL == pSourcesNode)
@@ -448,6 +476,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
         pTerrainData->SetIdentifier(id.c_str());
         pTerrainData->SetName(name.c_str());
         pTerrainData->SetDataset(dataset.c_str());
+        pTerrainData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pTerrainData->AddSource(*pSources[i]);
@@ -502,6 +531,12 @@ RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPac
         if (NULL != pDatasetNode)
             pDatasetNode->GetContent(dataset);
 
+        // Resolution.
+        Utf8String resolution;
+        BeXmlNodeP pResolutionNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Resolution);
+        if (NULL != pResolutionNode)
+            pResolutionNode->GetContent(resolution);
+
         // Sources.
         BeXmlNodeP pSourcesNode = pDataNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Sources);
         if (NULL == pSourcesNode)
@@ -525,6 +560,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPac
         pUndefinedData->SetIdentifier(id.c_str());
         pUndefinedData->SetName(name.c_str());
         pUndefinedData->SetDataset(dataset.c_str());
+        pUndefinedData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
             pUndefinedData->AddSource(*pSources[i]);
@@ -627,6 +663,10 @@ RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node
         if (!pImgData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pImgData->GetDataset().c_str());      
 
+        // Resolution.
+        if (!pImgData->GetResolution().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pImgData->GetResolution().c_str());  
+
         // Sources.
         if (0 != pImgData->GetNumSources())
             { 
@@ -696,6 +736,10 @@ RealityPackageStatus RealityDataSerializerV2::_WriteModelGroup(BeXmlNodeR node, 
         if (!pModelData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pModelData->GetDataset().c_str());
 
+        // Resolution.
+        if (!pModelData->GetResolution().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pModelData->GetResolution().c_str());
+
         // Sources.
         if (0 != pModelData->GetNumSources())
             {
@@ -749,6 +793,10 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
         // Dataset.
         if (!pPinnedData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pPinnedData->GetDataset().c_str());
+
+        // Resolution.
+        if (!pPinnedData->GetResolution().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pPinnedData->GetResolution().c_str());
 
         // Sources.
         if (0 != pPinnedData->GetNumSources())
@@ -814,6 +862,10 @@ RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node
         if (!pTerrainData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pTerrainData->GetDataset().c_str());
 
+        // Resolution.
+        if (!pTerrainData->GetResolution().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pTerrainData->GetResolution().c_str());
+
         // Sources.
         if (0 != pTerrainData->GetNumSources())
             {
@@ -868,6 +920,10 @@ RealityPackageStatus RealityDataSerializerV2::_WriteUndefinedGroup(BeXmlNodeR no
         // Dataset.
         if (!pUndefinedData->GetDataset().empty())
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Dataset, pUndefinedData->GetDataset().c_str());
+
+        // Resolution.
+        if (!pUndefinedData->GetResolution().empty())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pUndefinedData->GetResolution().c_str());
 
         // Sources.
         if (0 != pUndefinedData->GetNumSources())

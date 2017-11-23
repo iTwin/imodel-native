@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonInstance)
+RealityDataRelationship::RealityDataRelationship(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
         {
@@ -32,18 +32,18 @@ RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonI
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-RealityDataProjectRelationship::RealityDataProjectRelationship()
+RealityDataRelationship::RealityDataRelationship()
     {
     }
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-Utf8StringCR RealityDataProjectRelationship::GetRealityDataId() const { return m_realityDataId; }
+Utf8StringCR RealityDataRelationship::GetRealityDataId() const { return m_realityDataId; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-void RealityDataProjectRelationship::SetRealityDataId(Utf8StringCR realityDataId)  
+void RealityDataRelationship::SetRealityDataId(Utf8StringCR realityDataId)  
 {
     // Normally the id must comply with sme specific GUID format ... should validate
     m_realityDataId = realityDataId; 
@@ -52,13 +52,13 @@ void RealityDataProjectRelationship::SetRealityDataId(Utf8StringCR realityDataId
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-Utf8StringCR RealityDataProjectRelationship::GetRelatedId() const { return m_relatedId; }
+Utf8StringCR RealityDataRelationship::GetRelatedId() const { return m_relatedId; }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-void RealityDataProjectRelationship::SetRelatedId(Utf8StringCR relatedId)
+void RealityDataRelationship::SetRelatedId(Utf8StringCR relatedId)
     { 
     // Project id may comply with some naming rules ... check?
     m_relatedId = relatedId;
@@ -67,13 +67,13 @@ void RealityDataProjectRelationship::SetRelatedId(Utf8StringCR relatedId)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
-Utf8StringCR RealityDataProjectRelationship::GetRelationType() const { return m_relationType; }
+Utf8StringCR RealityDataRelationship::GetRelationType() const { return m_relationType; }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
 //-------------------------------------------------------------------------------------
-void RealityDataProjectRelationship::SetRelationType(Utf8StringCR relationType)
+void RealityDataRelationship::SetRelationType(Utf8StringCR relationType)
     {   
     // Project id may comply with some naming rules ... check?
     m_relationType = relationType;

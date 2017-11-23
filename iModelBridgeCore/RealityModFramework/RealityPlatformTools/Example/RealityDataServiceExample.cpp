@@ -82,9 +82,9 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving provenance for id" << std::endl;
 
-    RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(projectId);
+    RealityDataRelationshipByProjectIdRequest* relationReq = new RealityDataRelationshipByProjectIdRequest(projectId);
     RawServerResponse relationResponse = RawServerResponse();
-    bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq, relationResponse);
+    bvector<RealityDataRelationshipPtr> relationships = RealityDataService::Request(*relationReq, relationResponse);
 
     if (relationResponse.status != RequestStatus::BADREQ)
         {
@@ -176,9 +176,9 @@ int main(int argc, char *argv[])
         std::cout << "error retrieving spatial entities with organization id" << std::endl;
 
 
-    RealityDataProjectRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataProjectRelationshipByProjectIdPagedRequest(projectId);
+    RealityDataRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataRelationshipByProjectIdPagedRequest(projectId);
     RawServerResponse relationResponse2 = RawServerResponse();
-    bvector<RealityDataProjectRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, relationResponse2);
+    bvector<RealityDataRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, relationResponse2);
 
     if (relationResponse2.status != RequestStatus::BADREQ)
         {

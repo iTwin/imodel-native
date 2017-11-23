@@ -486,6 +486,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_A_ID                    "412"
     #define RPACKAGE_IMDATA_A_NAME                  "Canadian Digital Elevation Model Mosaic (CDEM) 014E"
     #define RPACKAGE_IMDATA_A_DATASET               "CDEM"
+    #define RPACKAGE_IMDATA_A_RESOLUTION            "12.3x12.8"
     #define RPACKAGE_IMDATA_A_SRC_1_URI_PART1       "http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip"
     #define RPACKAGE_IMDATA_A_SRC_1_URI_PART2       "cdem_dem_014.tif"
     #define RPACKAGE_IMDATA_A_SRC_1_URI_TYPE        "tif"
@@ -503,6 +504,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_B_ID                    "46341"
     #define RPACKAGE_IMDATA_B_NAME                  "GeoBase Landsat 7 Orthoimagery S4_05230_4828_20060814"
     #define RPACKAGE_IMDATA_B_DATASET               "Landsat 7"
+    #define RPACKAGE_IMDATA_B_RESOLUTION            "15.3x7.8"
     #define RPACKAGE_IMDATA_B_SRC_1_URI_PART1       "http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip"
     #define RPACKAGE_IMDATA_B_SRC_1_URI_PART2       "S4_05230_4828_20060814_m20_1_utm22.tif"
     #define RPACKAGE_IMDATA_B_SRC_1_URI_TYPE        "tif"
@@ -541,6 +543,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_C_ID                    "41342"
     #define RPACKAGE_IMDATA_C_NAME                  "Canadian Digital Elevation Data (CDED) 001K11"
     #define RPACKAGE_IMDATA_C_DATASET               "CDED"
+    #define RPACKAGE_IMDATA_C_RESOLUTION            "83.4x56.8"
     #define RPACKAGE_IMDATA_C_SRC_1_URI_PART1       "http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip"
     #define RPACKAGE_IMDATA_C_SRC_1_URI_PART2       "*.dem"
     #define RPACKAGE_IMDATA_C_SRC_1_URI_TYPE        "dem"
@@ -558,6 +561,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_D_ID                    "341342"
     #define RPACKAGE_IMDATA_D_NAME                  "UAO2003"
     #define RPACKAGE_IMDATA_D_DATASET               "NAIP"
+    #define RPACKAGE_IMDATA_D_RESOLUTION            "1.4x0.95"
     #define RPACKAGE_IMDATA_D_SRC_1_URI_PART1       "http://ftp.utah.gouv.com/imagery/ua02003/12tvk035685.tif"
     #define RPACKAGE_IMDATA_D_SRC_1_URI_PART2       ""
     #define RPACKAGE_IMDATA_D_SRC_1_URI_TYPE        "tif"
@@ -719,7 +723,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     #define RPACKAGE_IMDATA_MULTI_B1_ID              "ESA:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01"
     #define RPACKAGE_IMDATA_MULTI_B1_NAME            "S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01"
-    #define RPACKAGE_IMDATA_MULTI_B1_DATASET         "ESA:Sentinel-2"
+    #define RPACKAGE_IMDATA_MULTI_B1_DATASET         "ESA:Sentinel-2"    
+    #define RPACKAGE_IMDATA_MULTI_B1_RESOLUTION      "10.4x9.5"
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_URI         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production"
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_URI_TYPE    "jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_ID          "USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01"
@@ -899,6 +904,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     #define RPACKAGE_PINDATA_B_ID                   ""
     #define RPACKAGE_PINDATA_B_NAME                 ""
+    #define RPACKAGE_PINDATA_B_RESOLUTION           "83.4x56.8"
     #define RPACKAGE_PINDATA_B_LONG                 -71.23876 
     #define RPACKAGE_PINDATA_B_LAT                  47.4754
     #define RPACKAGE_PINDATA_B_SRC_1_URI_PART1      "http://www.bentley.com/userdata/pinned/roadTraffic.zip"
@@ -964,6 +970,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_TERDATA_A_ID                   "USGS:53174905e4b0cd4cd83c06a6"
     #define RPACKAGE_TERDATA_A_NAME                 "USGS NED ned19_n42x50_w071x25_ma_lftne_lot7_2011"
     #define RPACKAGE_TERDATA_A_DATASET              "NED"
+    #define RPACKAGE_TERDATA_A_RESOLUTION           "4.5x4.5"
     #define RPACKAGE_TERDATA_A_SRC_1_URI_PART1      "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n42x50_w071x25_ma_lftne_lot7_2011.zip"
     #define RPACKAGE_TERDATA_A_SRC_1_URI_PART2      ""
     #define RPACKAGE_TERDATA_A_SRC_1_URI_TYPE       "img"
@@ -1095,6 +1102,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "<Id>" RPACKAGE_IMDATA_A_ID "</Id>"
         "<Name>" RPACKAGE_IMDATA_A_NAME "</Name>"
         "<Dataset>" RPACKAGE_IMDATA_A_DATASET "</Dataset>"
+        "<Resolution>" RPACKAGE_IMDATA_A_RESOLUTION "</Resolution>"
         "<Sources>"
             "<!-- The URI below indicates the name and location of the compound document to be downloaded as well as the name of the file containing the data separated by a '#' character."
                  "Since this portion is a REGEX all '.' characters must be enclosed in brackets! -->"
@@ -1121,6 +1129,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "<Id>" RPACKAGE_IMDATA_B_ID "</Id>"
         "<Name>" RPACKAGE_IMDATA_B_NAME "</Name>"
         "<Dataset>" RPACKAGE_IMDATA_B_DATASET "</Dataset>"
+        "<Resolution>" RPACKAGE_IMDATA_B_RESOLUTION "</Resolution>"
         "<Sources>"
             "<!-- The present of a hash sign # separator inside the uri indicates that the left part is the name of a compound document and the right part"
                  "(if present) indicates the file within compound of the source of data. The later part can designate more than one file in compound by use of wildcards (* or ?)."
@@ -1157,6 +1166,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
           "<Id>" RPACKAGE_IMDATA_C_ID "</Id>"
           "<Name>" RPACKAGE_IMDATA_C_NAME "</Name>"
           "<Dataset>" RPACKAGE_IMDATA_C_DATASET "</Dataset>"
+          "<Resolution>" RPACKAGE_IMDATA_C_RESOLUTION "</Resolution>"
           "<Sources>"
               "<!-- Compound file contains two dem files representing eastern and western portions of the source. Both files form the source. This is expressed using the regexp located after the # -->"
               "<Source uri='" RPACKAGE_IMDATA_C_SRC_1_URI_PART1 "#" RPACKAGE_IMDATA_C_SRC_1_URI_PART2 "' type='" RPACKAGE_IMDATA_C_SRC_1_URI_TYPE "'>"
@@ -1173,6 +1183,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "<Id>" RPACKAGE_IMDATA_D_ID "</Id>"
         "<Name>" RPACKAGE_IMDATA_D_NAME "</Name>"
         "<Dataset>" RPACKAGE_IMDATA_D_DATASET "</Dataset>"
+        "<Resolution>" RPACKAGE_IMDATA_D_RESOLUTION "</Resolution>"
         "<Sources>"
             "<Source uri='" RPACKAGE_IMDATA_D_SRC_1_URI_PART1 "' type='" RPACKAGE_IMDATA_D_SRC_1_URI_TYPE "'>"
                 "<Id>" RPACKAGE_IMDATA_D_SRC_1_ID "</Id>"
@@ -1356,6 +1367,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
         "<Id>" RPACKAGE_IMDATA_MULTI_B1_ID "</Id>"
         "<Name>" RPACKAGE_IMDATA_MULTI_B1_NAME "</Name>"
         "<Dataset>" RPACKAGE_IMDATA_MULTI_B1_DATASET "</Dataset>"
+        "<Resolution>" RPACKAGE_IMDATA_MULTI_B1_RESOLUTION "</Resolution>"
         "<Sources>"
             "<MultiBandSource uri='" RPACKAGE_IMDATA_MULTI_B1_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_B1_SRC_URI_TYPE "'>"
                 "<Id>" RPACKAGE_IMDATA_MULTI_B1_SRC_ID "</Id>"
@@ -1566,6 +1578,9 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
            "<Position>" STRINGIFY(RPACKAGE_PINDATA_A_LONG) " " STRINGIFY(RPACKAGE_PINDATA_A_LAT) "</Position>"
        "</PinnedData>"
        "<PinnedData>"
+            "<!-- Event though the resolution of pinned data can be meaningless unless the context and noture is known it can be "
+                 "useful in some case for the application -->"
+            "<Resolution>" RPACKAGE_PINDATA_B_RESOLUTION "</Resolution>"
             "<Sources>"
                 "<!-- Pinned data can be of various formats even a video clip and this clip can even be inbedded in a compound document -->"
                 "<Source uri='" RPACKAGE_PINDATA_B_SRC_1_URI_PART1 "#" RPACKAGE_PINDATA_B_SRC_1_URI_PART2 "' type='" RPACKAGE_PINDATA_B_SRC_1_URI_TYPE "'>"
@@ -1620,6 +1635,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
             "<Id>" RPACKAGE_TERDATA_A_ID "</Id>"
             "<Name>" RPACKAGE_TERDATA_A_NAME "</Name>"
             "<Dataset>" RPACKAGE_TERDATA_A_DATASET "</Dataset>"
+            "<Resolution>" RPACKAGE_TERDATA_A_RESOLUTION "</Resolution>"
             "<Sources>"
                 "<!-- Notice in the URI the absence of indication of the file within compound containing the data. Sometimes"
                  "this information cannot be known and it is then up to the application to attempt determination of the "
@@ -1741,6 +1757,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_A_ID, pPackage->GetImageryGroup()[0]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_NAME, pPackage->GetImageryGroup()[0]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_DATASET, pPackage->GetImageryGroup()[0]->GetDataset().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_RESOLUTION, pPackage->GetImageryGroup()[0]->GetResolution().c_str());
 
     ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[0]->GetSource(0).GetElementName());
 
@@ -1766,6 +1783,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_B_ID, pPackage->GetImageryGroup()[1]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_NAME, pPackage->GetImageryGroup()[1]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_DATASET, pPackage->GetImageryGroup()[1]->GetDataset().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_RESOLUTION, pPackage->GetImageryGroup()[1]->GetResolution().c_str());
 
         // 2A
     ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetSource(0).GetElementName());
@@ -1809,6 +1827,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_C_ID, pPackage->GetImageryGroup()[2]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_NAME, pPackage->GetImageryGroup()[2]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_DATASET, pPackage->GetImageryGroup()[2]->GetDataset().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_RESOLUTION, pPackage->GetImageryGroup()[2]->GetResolution().c_str());
 
     ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[2]->GetSource(0).GetElementName());
 
@@ -1833,6 +1852,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_D_ID, pPackage->GetImageryGroup()[3]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_NAME, pPackage->GetImageryGroup()[3]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_DATASET, pPackage->GetImageryGroup()[3]->GetDataset().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_RESOLUTION, pPackage->GetImageryGroup()[3]->GetResolution().c_str());
 
     ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[3]->GetSource(0).GetElementName());
 
@@ -2074,6 +2094,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_PINDATA_A_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[0]->GetSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().longitude, RPACKAGE_PINDATA_A_LONG, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().latitude, RPACKAGE_PINDATA_A_LAT, LONGLAT_EPSILON);
+    ASSERT_STREQ(RPACKAGE_PINDATA_B_RESOLUTION, pPackage->GetPinnedGroup()[1]->GetResolution().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_PART1, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[1]->GetSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().longitude, RPACKAGE_PINDATA_B_LONG, LONGLAT_EPSILON);
@@ -2086,6 +2107,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_TERDATA_A_ID, pPackage->GetTerrainGroup()[0]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_NAME, pPackage->GetTerrainGroup()[0]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_DATASET, pPackage->GetTerrainGroup()[0]->GetDataset().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_RESOLUTION, pPackage->GetTerrainGroup()[0]->GetResolution().c_str());
 
     ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[0]->GetSource(0).GetDataType().c_str());
