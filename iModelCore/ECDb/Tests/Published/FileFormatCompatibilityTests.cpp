@@ -1274,6 +1274,77 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     //Now modify some entries in the ec tables that mimick the scenario where new ECClass types, ECProperty types, MapStrategies would
     //get added in future versions of ECDb.
 
+    //Missing table
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP TABLE ts_A"));
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for missing table";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.A")) << "Preparing ECSQL against class with missing table is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    //Missing joined table
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP TABLE ts_SubB"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "B");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for missing table";
+
+    testClass = m_ecdb.Schemas().GetClass("TestSchema", "SubB");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for missing table";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.B")) << "Preparing ECSQL against class with missing table is expected to fail";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SubB")) << "Preparing ECSQL against class with missing table is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
     //Unknown MapStrategy
     {
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=5 WHERE ClassId=%s", aClassId.ToString().c_str()).c_str()));
@@ -1296,8 +1367,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
-                <ECEntityClass typeName="SubA">
-                    <BaseClass>ts.A</BaseClass>
+               <ECEntityClass typeName="SubB2">
+                    <BaseClass>ts.B</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
                 </ECSchema>)xml")));
