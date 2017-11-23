@@ -165,9 +165,9 @@ public:
     DRange1d &altitudeRange                 //!< [out] min and max altitude values.
     ) const;
 
-    void ClipPlane::AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const;
+    void AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const;
 
-    void ClipPlane::AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const;
+    void AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const;
 
     //! Apply offset to plane.
     GEOMDLLIMPEXP   void    OffsetDistance (double distance);
