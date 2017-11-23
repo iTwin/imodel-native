@@ -1310,7 +1310,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(6, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
@@ -1327,6 +1327,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     EXPECT_EQ(1000, jsonValues["ClassF_ClassH_PropertyF"].GetInt());
     EXPECT_TRUE(jsonValues["ClassF_ClassH_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_PointProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassF_ClassH_ClassD"].IsNull());
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
@@ -1336,6 +1337,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     EXPECT_EQ(2000, jsonValues1["ClassF_ClassH_PropertyF"].GetInt());
     EXPECT_TRUE(jsonValues1["ClassF_ClassH_LongProperty"].IsNull());
     EXPECT_FALSE(jsonValues1["ClassH_PointProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
     EXPECT_TRUE(jsonValues1["ClassF_ClassH_ClassD"].IsNull());
     }
 
@@ -3411,7 +3413,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(7, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
     // request for content
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
@@ -3431,6 +3433,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_TRUE(jsonValues["ClassE_ClassF_ClassG_ClassH_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassG_D"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_PointProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues["ClassE_ClassF_ClassG_ClassH_ClassD"].GetInt64());
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
@@ -3441,6 +3444,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_TRUE(jsonValues1["ClassE_ClassF_ClassG_ClassH_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues1["ClassG_D"].IsNull());
     EXPECT_TRUE(jsonValues1["ClassH_PointProperty"].IsNull());
+    EXPECT_TRUE(jsonValues1["ClassH_Point2dProperty"].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1["ClassE_ClassF_ClassG_ClassH_ClassD"].GetInt64());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(2)->AsJson();
@@ -3451,6 +3455,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     EXPECT_TRUE(jsonValues2["ClassE_ClassF_ClassG_ClassH_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues2["ClassG_D"].IsNull());
     EXPECT_TRUE(jsonValues2["ClassH_PointProperty"].IsNull());
+    EXPECT_TRUE(jsonValues2["ClassH_Point2dProperty"].IsNull());
     EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2["ClassE_ClassF_ClassG_ClassH_ClassD"].GetInt64());
     }
 

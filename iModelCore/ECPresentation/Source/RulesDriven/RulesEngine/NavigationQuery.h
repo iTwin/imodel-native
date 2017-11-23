@@ -344,8 +344,8 @@ private:
     static void AppendToSelectClause(Utf8StringR, Utf8CP clause);
     static void Select(Utf8StringR, Utf8CP clause, bool append);
     static void SelectString(Utf8StringR, Utf8CP str, Utf8CP alias = nullptr, bool append = true);
-    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, ECPropertyCR prop, bool distinct, Utf8CP alias = nullptr, bool append = true);
-    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, Utf8CP className, Utf8CP propertyName, bool distinct, Utf8CP alias = nullptr, bool append = true);
+    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, ECPropertyCR prop, Utf8CP alias = nullptr, bool append = true);
+    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, Utf8CP className, Utf8CP propertyName, Utf8CP alias = nullptr, bool append = true);
 
 protected:
     ComplexPresentationQuery() : m_limit(nullptr), m_offset(nullptr), m_isSelectAll(false) {}

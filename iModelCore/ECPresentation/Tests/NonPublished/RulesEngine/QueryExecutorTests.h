@@ -33,6 +33,7 @@ struct QueryExecutorTests : ::testing::Test
     PresentationRuleSetPtr m_ruleset;
     CustomFunctionsInjector* m_customFunctionsInjector;
     DefaultCategorySupplier m_categorySupplier;
+    TestPropertyFormatter const* m_propertyFormatter;
     
     ECEntityClassCP m_widgetClass;
     ECEntityClassCP m_gadgetClass;
@@ -53,12 +54,14 @@ struct QueryExecutorTests : ::testing::Test
         m_gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
         m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();
         m_widgetHasGadgetsClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+        m_propertyFormatter = new TestPropertyFormatter();
         }
 
     void TearDown() override
         {
         s_project->GetECDb().AbandonChanges();
         delete m_customFunctionsInjector;
+        delete m_propertyFormatter;
         Localization::Terminate();
         }
 

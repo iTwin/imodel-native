@@ -177,7 +177,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        classQuery->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
+        classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
@@ -188,6 +189,10 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         bvector<ECInstanceId> const& selectedInstanceIds = selection.GetInstanceIds(selectClassInfo.GetSelectClass());
         if (!selectedInstanceIds.empty())
             classQuery->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet(std::move(selectedInstanceIds))});
+
+        // handle selecting property for distinct values 
+        if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
+            classQuery->GroupByContract(*contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -215,7 +220,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        classQuery->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
+        classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         if (specification.IsRecursive())
@@ -231,13 +237,17 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
             classQuery->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet(selection.GetInstanceIds(*selectClassInfo.GetPrimaryClass()))});
             }
 
-            // handle related properties
-            for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
-                classQuery->Join(path, true);
+        // handle related properties
+        for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
+            classQuery->Join(path, true);
             
-            // handle instance filtering
-            if (!specification.GetInstanceFilter().empty())
-                classQuery->Where(ECExpressionsHelper(m_params.GetECExpressionsCache()).ConvertToECSql(specification.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+        // handle instance filtering
+        if (!specification.GetInstanceFilter().empty())
+            classQuery->Where(ECExpressionsHelper(m_params.GetECExpressionsCache()).ConvertToECSql(specification.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+
+        // handle selecting property for distinct values 
+        if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
+            classQuery->GroupByContract(*contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -263,7 +273,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        classQuery->SelectContract(*ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery), "this");
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
+        classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
@@ -273,6 +284,10 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         // handle instance filtering
         if (!specification.GetInstanceFilter().empty())
             classQuery->Where(ECExpressionsHelper(m_params.GetECExpressionsCache()).ConvertToECSql(specification.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+
+        // handle selecting property for distinct values 
+        if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
+            classQuery->GroupByContract(*contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }

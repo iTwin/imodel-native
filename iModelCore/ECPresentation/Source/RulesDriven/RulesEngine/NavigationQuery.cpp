@@ -440,7 +440,7 @@ bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses
         return nullptr != m_limit;
         
     if (CLAUSE_GroupBy == (CLAUSE_GroupBy & clauses))
-        return m_groupingContract.IsValid() && m_groupingContract->IsAggregating() && ContractHasNonAggregateFields(*m_groupingContract);
+        return m_groupingContract.IsValid() && ((m_groupingContract->IsAggregating() && ContractHasNonAggregateFields(*m_groupingContract)) || m_groupingContract->IsGettingUniqueValues());
     
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
         return !m_havingClause.empty();
@@ -477,11 +477,11 @@ void ComplexPresentationQuery<TBase>::Select(Utf8StringR output, Utf8CP clause, 
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, ECPropertyCR selectProperty, bool distinct, Utf8CP alias, bool append)
+void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, ECPropertyCR selectProperty, Utf8CP alias, bool append)
     {
     Utf8String className(selectProperty.GetClass().GetName().c_str());
     Utf8String propertyName(selectProperty.GetName().c_str());
-    SelectProperty(output, className.c_str(), propertyName.c_str(), distinct, alias, append);
+    SelectProperty(output, className.c_str(), propertyName.c_str(), alias, append);
     }
 
 enum class FieldNameMatchingStages
@@ -589,7 +589,7 @@ static Utf8String Wrap(Utf8StringCR str) {return Utf8String("[").append(str).app
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, Utf8CP className, Utf8CP propertyName, bool distinct, Utf8CP alias, bool append)
+void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, Utf8CP className, Utf8CP propertyName, Utf8CP alias, bool append)
     {
     Utf8String classAndPropertyNames;
     if (nullptr == className)
@@ -602,13 +602,6 @@ void ComplexPresentationQuery<TBase>::SelectProperty(Utf8StringR output, Utf8CP 
         propertySelectClause = classAndPropertyNames;
     else
         propertySelectClause.append(classAndPropertyNames).append(" AS ").append(Wrap(alias));
-
-    if (distinct)
-        {
-        Utf8String temp = "DISTINCT ";
-        temp.append(propertySelectClause);
-        temp.swap(propertySelectClause);
-        }
 
     Select(output, propertySelectClause.c_str(), append);
     }
@@ -706,9 +699,9 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
 
             Utf8String selectClauseField;
             if (m_nestedQuery.IsNull() || nullptr != m_nestedQuery->AsStringQuery() || selectWithClauses || FieldVisibility::Outer == field->GetVisibility())
-                SelectProperty(selectClauseField, nullptr, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()).c_str(), field->IsDistinct(), field->GetName(), true);
+               SelectProperty(selectClauseField, nullptr, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()).c_str(), field->GetName(), true);
             else
-                SelectProperty(selectClauseField, nullptr, field->GetName(), field->IsDistinct(), nullptr, true);
+                SelectProperty(selectClauseField, nullptr, field->GetName(), nullptr, true);
             selectClauseFields.push_back(selectClauseField);
             }
         }
@@ -724,9 +717,9 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
             
             Utf8String selectClauseField;
             if (m_groupingContract.get() == groupingContract)
-                SelectProperty(selectClauseField, nullptr, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()).c_str(), false, field->GetName(), true);
+                SelectProperty(selectClauseField, nullptr, field->GetSelectClause(m_selectPrefix.c_str(), m_nestedQuery.IsValid()).c_str(), field->GetName(), true);
             else
-                SelectProperty(selectClauseField, nullptr, field->GetName(), false, nullptr, true);
+                SelectProperty(selectClauseField, nullptr, field->GetName(), nullptr, true);
             selectClauseFields.push_back(selectClauseField);
             }
         }
@@ -837,7 +830,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::GroupByContrac
 template<typename TBase>
 Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
     {
-    if (m_groupingContract.IsNull() || !m_groupingContract->IsAggregating())
+    if (m_groupingContract.IsNull() || (!m_groupingContract->IsAggregating() && !m_groupingContract->IsGettingUniqueValues()))
         return "";
 
     Utf8String groupByClause;
@@ -849,7 +842,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
 
         if (!groupByClause.empty())
             groupByClause.append(", ");
-        groupByClause.append(field->GetName());
+        groupByClause.append(field->GetGroupingClause());
         }
     return groupByClause;
     }
@@ -1423,6 +1416,8 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
 
     // WHERE
     if (!m_whereClause.Equals(other.m_whereClause))
+        return false;
+    if (m_whereClauseBindings.size() != other.m_whereClauseBindings.size())
         return false;
     for (BoundQueryValue const* value : m_whereClauseBindings)
         {

@@ -27,6 +27,7 @@ PresentationQueryContractFieldCPtr PresentationQueryContract::GetField(Utf8CP na
     return nullptr;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -39,6 +40,15 @@ bool PresentationQueryContract::IsAggregating() const
             return true;
         }
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationQueryContract::IsGettingUniqueValues() const
+    {
+    bvector<PresentationQueryContractFieldCPtr> fields = GetFields();
+    return fields.size() == 1 && fields[0]->IsDistinct();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -922,31 +932,48 @@ static Utf8String GetPropertySelectClauseFromAccessString(Utf8StringCR accessStr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String PropertyDisplayValueSelectStringClause(ECPropertyCR ecProperty, Utf8StringCR valueAccessString)
+    {
+    Utf8String clause;
+    clause.append(FUNCTION_NAME_GetPropertyDisplayValue).append("('");
+    clause.append(ecProperty.GetClass().GetSchema().GetName());
+    clause.append("', '");
+    clause.append(ecProperty.GetClass().GetName());
+    clause.append("', '");
+    clause.append(ecProperty.GetName());
+    clause.append("', ");
+    clause.append(valueAccessString).append(")");
+    return clause;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, ECPropertyCR prop, bool isDistinct)
     {
     if (prop.GetIsPrimitive())
         {
+        Utf8String valueClause;
+        if (nullptr != prefix && 0 != *prefix)
+            valueClause.append(Wrap(prefix)).append(".");
+        valueClause.append(propertyAccessString);
+
         switch (prop.GetAsPrimitiveProperty()->GetType())
             {
             case PRIMITIVETYPE_Point2d:
             case PRIMITIVETYPE_Point3d:
+                valueClause = GetPointAsJsonStringClause(propertyAccessString, prefix);
+            default:
                 {
-                Utf8String clause = GetPointAsJsonStringClause(propertyAccessString, prefix);
-                return PresentationQueryContractSimpleField::Create(fieldName, clause.c_str(), false);
-                }
-            case PRIMITIVETYPE_Integer:
-            case PRIMITIVETYPE_String:
-                {
-                /*if (nullptr != primitiveProperty.GetEnumeration())
+                PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, valueClause.c_str(), false, isDistinct);
+                if (isDistinct)
                     {
-                    Utf8String enumSchema = Utf8String("'").append(primitiveProperty.GetEnumeration()->GetSchema().GetName()).append("'");
-                    Utf8String enumClass = Utf8String("'").append(primitiveProperty.GetEnumeration()->GetName()).append("'");
-                    field = PresentationQueryContractFunctionField::Create(propertiesField.GetName().c_str(), FUNCTION_NAME_GetECEnumerationValue,
-                        {enumSchema, enumClass, propertyAccessor}, false);
-                    break;
-                    }*/
+                    Utf8String displayValueClause = PropertyDisplayValueSelectStringClause(prop, valueClause);
+                    field->SetGroupingClause(displayValueClause);
+                    }
+                return field;
                 }
             }
         }

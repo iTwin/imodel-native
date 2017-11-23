@@ -602,38 +602,12 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationP
 +===============+===============+===============+===============+===============+======*/
 struct TestContract : NavigationQueryContract
 {
-public:
-    static Utf8CP GeneralField;
-    static Utf8CP InternalField;
-    static Utf8CP OuterField;
-    static Utf8CP AggregateField;
-
 private:
-    RefCountedPtr<PresentationQueryContractSimpleField> m_generalField;
-    RefCountedPtr<PresentationQueryContractSimpleField> m_internalField;
-    RefCountedPtr<PresentationQueryContractSimpleField> m_outerField;
-    RefCountedPtr<PresentationQueryContractSimpleField> m_aggregateField;
-
-private:
-    TestContract()
-        : m_generalField(PresentationQueryContractSimpleField::Create(GeneralField, "GetGeneralField()", false, false, false, FieldVisibility::Both)),
-        m_internalField(PresentationQueryContractSimpleField::Create(InternalField, "GetInternalField()", false, false, false, FieldVisibility::Inner)),
-        m_outerField(PresentationQueryContractSimpleField::Create(OuterField, "GetOuterField()", false, false, false, FieldVisibility::Outer)),
-        m_aggregateField(PresentationQueryContractSimpleField::Create(AggregateField, "GetAggregateField()", false, false, true, FieldVisibility::Both))
-        {
-        }
+    bvector<PresentationQueryContractFieldCPtr> m_fields;
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
-    bvector<PresentationQueryContractFieldCPtr> _GetFields() const override
-        {
-        bvector<PresentationQueryContractFieldCPtr> fields;
-        fields.push_back(m_generalField);
-        fields.push_back(m_internalField);
-        fields.push_back(m_outerField);
-        fields.push_back(m_aggregateField);
-        return fields;
-        }
+    bvector<PresentationQueryContractFieldCPtr> _GetFields() const override {return m_fields;}
     /*virtual uint8_t _GetIndex(Utf8CP lookup) const override
         {
         static bvector<Utf8CP> fieldNames;
@@ -657,11 +631,8 @@ protected:
 
 public:
     static RefCountedPtr<TestContract> Create() {return new TestContract();}
+    void AddField(PresentationQueryContractFieldCPtr field) {m_fields.push_back(field);}
 };
-Utf8CP TestContract::GeneralField = "GeneralField";
-Utf8CP TestContract::InternalField = "InternalField";
-Utf8CP TestContract::OuterField = "OuterField";
-Utf8CP TestContract::AggregateField = "AggregateField";
 typedef RefCountedPtr<TestContract> TestContractPtr;
 
 /*---------------------------------------------------------------------------------**//**
@@ -675,6 +646,10 @@ TEST_F(ComplexNavigationQueryTests, SelectAllDoesntIncludeInternalFieldsInOuterQ
     ASSERT_TRUE(nullptr != ecClass);
 
     TestContractPtr contract = TestContract::Create();
+    contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField", "GetGeneralField()", false, false, false, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("InternalField", "GetInternalField()", false, false, false, FieldVisibility::Inner));
+    contract->AddField(PresentationQueryContractSimpleField::Create("OuterField", "GetOuterField()", false, false, false, FieldVisibility::Outer));
+    contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, false, true, FieldVisibility::Both));
 
     ComplexNavigationQueryPtr innerQuery = ComplexNavigationQuery::Create();
     innerQuery->SelectContract(*contract);
@@ -694,4 +669,115 @@ TEST_F(ComplexNavigationQueryTests, SelectAllDoesntIncludeInternalFieldsInOuterQ
         "GROUP BY GeneralField");
     Utf8String str = outerQuery->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByFieldName)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    TestContractPtr contract = TestContract::Create();
+    contract->AddField(PresentationQueryContractSimpleField::Create("DistinctField", "GetDistinctField()", false, true, false, FieldVisibility::Both));
+    query->GroupByContract(*contract);
+
+    ASSERT_FALSE(contract->IsAggregating());
+    ASSERT_TRUE(contract->IsGettingUniqueValues());
+    ASSERT_STREQ(" GROUP BY DistinctField", query->ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByGroupingClause)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    TestContractPtr contract = TestContract::Create();
+    PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create("DistinctField", "GetDistinctField()", false, true, false, FieldVisibility::Both);
+    field->SetGroupingClause("GroupingClause");
+    contract->AddField(field);
+    query->GroupByContract(*contract);
+
+    ASSERT_FALSE(contract->IsAggregating());
+    ASSERT_TRUE(contract->IsGettingUniqueValues());
+    ASSERT_STREQ(" GROUP BY GroupingClause", query->ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateField_AggregateFieldIsNotGroupedWhenNoOtherFieldsAreSelected)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    TestContractPtr contract = TestContract::Create();   
+    contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, false, true, FieldVisibility::Both));
+    query->SelectContract(*contract, "this");
+    query->GroupByContract(*contract);
+
+    ASSERT_TRUE(contract->IsAggregating());
+    ASSERT_FALSE(contract->IsGettingUniqueValues());
+    ASSERT_STREQ("SELECT GetAggregateField() AS [AggregateField]", query->ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateField_AggregateFieldIsGroupedByNotAggregateField)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    TestContractPtr contract = TestContract::Create();   
+    contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField", "GetGeneralField()", false, false, false, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, false, true, FieldVisibility::Both));
+    query->SelectContract(*contract, "this");
+    query->GroupByContract(*contract);
+
+    ASSERT_TRUE(contract->IsAggregating());
+    ASSERT_FALSE(contract->IsGettingUniqueValues());
+    Utf8String expected(
+        "SELECT GetGeneralField() AS [GeneralField], GetAggregateField() AS [AggregateField]"
+        " GROUP BY GeneralField");
+    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_SelectingMultipleAggregateFields_AggregateFieldsAreGroupedByMultipleNotAggregateFields)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    TestContractPtr contract = TestContract::Create();   
+    contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField1", "GetGeneralField1()", false, false, false, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField2", "GetGeneralField2()", false, false, false, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField1", "GetAggregateField1()", false, false, true, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField2", "GetAggregateField2()", false, false, true, FieldVisibility::Both));
+    query->SelectContract(*contract, "this");
+    query->GroupByContract(*contract);
+
+    ASSERT_TRUE(contract->IsAggregating());
+    ASSERT_FALSE(contract->IsGettingUniqueValues());
+    Utf8String expected(
+        "SELECT GetGeneralField1() AS [GeneralField1], GetGeneralField2() AS [GeneralField2], GetAggregateField1() AS [AggregateField1], GetAggregateField2() AS [AggregateField2]"
+        " GROUP BY GeneralField1, GeneralField2");
+    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateAndDistinctFields_AggregateFieldsAreGroupedByGeneralAndDistinctFields)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    TestContractPtr contract = TestContract::Create();   
+    contract->AddField(PresentationQueryContractSimpleField::Create("GeneralField", "GetGeneralField()", false, false, false, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("DistinctField", "GetDistinctField()", false, true, false, FieldVisibility::Both));
+    contract->AddField(PresentationQueryContractSimpleField::Create("AggregateField", "GetAggregateField()", false, false, true, FieldVisibility::Both));
+    query->SelectContract(*contract, "this");
+    query->GroupByContract(*contract);
+
+    ASSERT_TRUE(contract->IsAggregating());
+    ASSERT_FALSE(contract->IsGettingUniqueValues());
+    Utf8String expected(
+        "SELECT GetGeneralField() AS [GeneralField], GetDistinctField() AS [DistinctField], GetAggregateField() AS [AggregateField]"
+        " GROUP BY GeneralField, DistinctField");
+    ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
     }

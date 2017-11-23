@@ -97,10 +97,7 @@ static rapidjson::Document ParseJson(Utf8CP serialized, rapidjson::MemoryPoolAll
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
     {
-    rapidjson::Document json = ParseJson(value.GetText(), nullptr);
-    if (json.IsNull() || !json.IsObject())
-        return DPoint2d();
-    return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
+    return GetPoint2dFromJsonString(value.GetText());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,10 +105,7 @@ DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
     {
-    rapidjson::Document json = ParseJson(value.GetText(), nullptr);
-    if (json.IsNull() || !json.IsObject())
-        return DPoint3d();
-    return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
+    return GetPoint3dFromJsonString(value.GetText());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,6 +126,28 @@ DPoint3d ValueHelpers::GetPoint3dFromJson(JsonValueCR json)
     if (json.isNull() || !json.isObject())
         return DPoint3d();
     return DPoint3d::From(json["x"].asDouble(), json["y"].asDouble(), json["z"].asDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
+    {
+    rapidjson::Document json = ParseJson(str, nullptr);
+    if (json.IsNull() || !json.IsObject())
+        return DPoint2d();
+    return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
+    {
+    rapidjson::Document json = ParseJson(str, nullptr);
+    if (json.IsNull() || !json.IsObject())
+        return DPoint3d();
+    return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +441,7 @@ ECValue ValueHelpers::GetECValueFromString(PrimitiveType valueType, Utf8StringCR
     switch (valueType)
         {
         case PRIMITIVETYPE_Boolean:
-            return ECValue(str.EqualsI("true") ? true : false);
+            return ECValue(str.EqualsI("true") || str.EqualsI("1") ? true : false);
         case PRIMITIVETYPE_Double:
             return ECValue(std::stod(str.c_str()));
         case PRIMITIVETYPE_Integer:

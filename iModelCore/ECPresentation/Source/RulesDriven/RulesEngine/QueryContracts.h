@@ -31,6 +31,7 @@ struct PresentationQueryContractField : RefCountedBase
 private:
     Utf8String m_defaultName;
     Utf8String m_name;
+    Utf8String m_groupingClause;
     bool m_isDistinct;
     bool m_allowsPrefix;
     bool m_isAggregateField;
@@ -48,6 +49,8 @@ public:
     Utf8CP     GetDefaultName() const {return m_defaultName.c_str();}
     Utf8CP     GetName() const {return m_name.empty() ? GetDefaultName() : m_name.c_str();}
     void       SetName(Utf8CP name) {m_name = name;}
+    Utf8CP     GetGroupingClause() const {return !m_groupingClause.empty() ? m_groupingClause.c_str() : GetName();}
+    void       SetGroupingClause(Utf8String name) {m_groupingClause = name;}
     bool       IsAggregateField() const {return m_isAggregateField;}
     FieldVisibility GetVisibility() const {return m_fieldVisibility;}
     bool       IsDistinct() const {return m_isDistinct;}
@@ -172,6 +175,7 @@ public:
     void SetECInstanceIdFieldName(Utf8CP name) {_SetECInstanceIdFieldName(name);}
     void SetECClassIdFieldName(Utf8CP name) {_SetECClassIdFieldName(name);}
     ECPRESENTATION_EXPORT bool IsAggregating() const;
+    ECPRESENTATION_EXPORT bool IsGettingUniqueValues() const;
     ECPRESENTATION_EXPORT bool HasInnerFields() const;
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> GetFields() const;
     ECPRESENTATION_EXPORT PresentationQueryContractFieldCPtr GetField(Utf8CP name) const;
