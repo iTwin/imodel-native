@@ -2493,11 +2493,11 @@ public:
     //! the ATTACH sql statement is executed and restarted afterwards.
     //! @param[in] filename The name of the file holding the SQLite database to be attached.
     //! @param[in] alias The alias by which the database is attached.
-    BE_SQLITE_EXPORT DbResult AttachDb(Utf8CP filename, Utf8CP alias);
+    BE_SQLITE_EXPORT DbResult AttachDb(Utf8CP filename, Utf8CP alias) const;
 
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
-    BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias);
+    BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,

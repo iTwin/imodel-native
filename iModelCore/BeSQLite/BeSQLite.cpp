@@ -1776,7 +1776,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
+DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const
     {
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (txn!= nullptr) && (BE_SQLITE_OK == txn->Commit(nullptr));
@@ -1799,7 +1799,7 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::DetachDb(Utf8CP alias)
+DbResult Db::DetachDb(Utf8CP alias) const
     {
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr));
