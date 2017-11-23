@@ -11,7 +11,7 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/RealityDataPackage.h>
-#include <RealityPlatform/RealityDataSource.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include <BeXml/BeXml.h>
 #include "RealitySerialization.h"
 
@@ -35,7 +35,7 @@ RealityPackageStatus RealityDataSerializer::ReadPinnedGroup(RealityDataPackageR 
 RealityPackageStatus RealityDataSerializer::ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom) { return _ReadTerrainGroup(package, xmlDom); }
 RealityPackageStatus RealityDataSerializer::ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom) { return _ReadUndefinedGroup(package, xmlDom); }
 RealityPackageStatus RealityDataSerializer::ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode) { return _ReadUnknownElements(package, pNode); }
-RealityDataSourcePtr RealityDataSerializer::ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode) { return _ReadSource(status, pNode); }
+SpatialEntityDataSourcePtr RealityDataSerializer::ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode) { return _ReadSource(status, pNode); }
 MultiBandSourcePtr   RealityDataSerializer::ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode) { return _ReadMultiBandSource(status, pNode); }
 
 RealityPackageStatus RealityDataSerializer::WritePackageInfo(BeXmlNodeR node, RealityDataPackageCR package) const { return _WritePackageInfo(node, package); }
@@ -44,7 +44,7 @@ RealityPackageStatus RealityDataSerializer::WriteModelGroup(BeXmlNodeR node, Rea
 RealityPackageStatus RealityDataSerializer::WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WritePinnedGroup(node, package); }
 RealityPackageStatus RealityDataSerializer::WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WriteTerrainGroup(node, package); }
 RealityPackageStatus RealityDataSerializer::WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const { return _WriteUndefinedGroup(node, package); }
-RealityPackageStatus RealityDataSerializer::WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const { return _WriteSource(node, source); }
+RealityPackageStatus RealityDataSerializer::WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const { return _WriteSource(node, source); }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -275,7 +275,7 @@ RealityPackageStatus RealityDataSerializer::_ReadUnknownElements(RealityDataPack
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode)
+SpatialEntityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode)
     {
     // Create data source from uri and type.
     Utf8String uri, type;
@@ -287,32 +287,36 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
     UriPtr pUri = Uri::Create(uri.c_str());
     pNode->GetAttributeStringValue(type, PACKAGE_SOURCE_ATTRIBUTE_Type);
 
-    RealityDataSourcePtr pDataSource = RealityDataSource::Create(*pUri, type.c_str());
+    SpatialEntityDataSourcePtr pDataSource = SpatialEntityDataSource::Create(*pUri, type.c_str());
     if (pDataSource == NULL)
         {
         status = RealityPackageStatus::UnknownError;
         return NULL;
         }
 
+    SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
+
     // Streamed.
     bool isStreamed;
     pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_SOURCE_ATTRIBUTE_Streamed);
-    pDataSource->SetStreamed(isStreamed);
+    pServer->SetStreamed(isStreamed);
 
     // Id.
     Utf8String id;
     pNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
     pDataSource->SetId(id.c_str());
 
+    SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::Create();
+
     // Copyright.
     Utf8String copyright;
     pNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
-    pDataSource->SetCopyright(copyright.c_str());
+    pMetadata->SetLegal(copyright.c_str());
 
     // TermOfUse.
     Utf8String termOfUse;
     pNode->GetContent(termOfUse, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TermOfUse);
-    pDataSource->SetTermOfUse(termOfUse.c_str());
+    pMetadata->SetTermsOfUse(termOfUse.c_str());
 
     // Provider.
     Utf8String provider;
@@ -322,22 +326,24 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
     // Server login key.
     Utf8String serverLoginKey;
     pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
-    pDataSource->SetServerLoginKey(serverLoginKey.c_str());
+    pServer->SetLoginKey(serverLoginKey.c_str());
 
     // Server login method.
     Utf8String serverLoginMethod;
     pNode->GetContent(serverLoginMethod, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginMethod);
-    pDataSource->SetServerLoginMethod(serverLoginMethod.c_str());
+    pServer->SetLoginMethod(serverLoginMethod.c_str());
 
     // Server registration page.
     Utf8String serverRegPage;
     pNode->GetContent(serverRegPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerRegPage);
-    pDataSource->SetServerRegistrationPage(serverRegPage.c_str());
+    pServer->SetRegistrationPage(serverRegPage.c_str());
 
     // Server organisation page.
     Utf8String serverOrgPage;
     pNode->GetContent(serverOrgPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerOrgPage);
-    pDataSource->SetServerOrganisationPage(serverOrgPage.c_str());
+    pServer->SetOrganisationPage(serverOrgPage.c_str());
+
+    pDataSource->SetServer(pServer);
 
     // Size.
     uint64_t size;
@@ -348,7 +354,7 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
     // Metadata.
     Utf8String metadata;
     pNode->GetContent(metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-    pDataSource->SetMetadata(metadata.c_str());
+    pMetadata->SetDescription(metadata.c_str());
 
     // Metadata type.
     Utf8String metadataType;
@@ -356,8 +362,10 @@ RealityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStatus& st
     if (NULL != pMetadataNode)
         {
         pMetadataNode->GetAttributeStringValue(metadataType, PACKAGE_SOURCE_ATTRIBUTE_Type);
-        pDataSource->SetMetadataType(metadataType.c_str());
+        pMetadata->SetMetadataType(metadataType.c_str());
         }
+
+    pDataSource->SetMetadata(pMetadata);
 
     // GeoCS.
     Utf8String geocs;
@@ -414,50 +422,56 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
         return NULL;
         }
 
+    SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
+
     // Streamed.
     bool isStreamed;
     pNode->GetAttributeBooleanValue(isStreamed, PACKAGE_SOURCE_ATTRIBUTE_Streamed);
-    pDataSource->SetStreamed(isStreamed);
+    pServer->SetStreamed(isStreamed);
 
     // Id.
     Utf8String id;
     pNode->GetContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Id);
     pDataSource->SetId(id.c_str());
 
+    SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::Create();
+
     // Copyright.
     Utf8String copyright;
     pNode->GetContent(copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
-    pDataSource->SetCopyright(copyright.c_str());
+    pMetadata->SetLegal(copyright.c_str());
 
     // TermOfUse.
     Utf8String termOfUse;
     pNode->GetContent(termOfUse, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TermOfUse);
-    pDataSource->SetTermOfUse(termOfUse.c_str());
+    pMetadata->SetTermsOfUse(termOfUse.c_str());
 
     // Provider.
     Utf8String provider;
     pNode->GetContent(provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
     pDataSource->SetProvider(provider.c_str());
-
+    
     // Server login key.
     Utf8String serverLoginKey;
     pNode->GetContent(serverLoginKey, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginKey);
-    pDataSource->SetServerLoginKey(serverLoginKey.c_str());
+    pServer->SetLoginKey(serverLoginKey.c_str());
 
     // Server login method.
     Utf8String serverLoginMethod;
     pNode->GetContent(serverLoginMethod, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerLoginMethod);
-    pDataSource->SetServerLoginMethod(serverLoginMethod.c_str());
+    pServer->SetLoginMethod(serverLoginMethod.c_str());
 
     // Server registration page.
     Utf8String serverRegPage;
     pNode->GetContent(serverRegPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerRegPage);
-    pDataSource->SetServerRegistrationPage(serverRegPage.c_str());
+    pServer->SetRegistrationPage(serverRegPage.c_str());
 
     // Server organisation page.
     Utf8String serverOrgPage;
     pNode->GetContent(serverOrgPage, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ServerOrgPage);
-    pDataSource->SetServerOrganisationPage(serverOrgPage.c_str());
+    pServer->SetOrganisationPage(serverOrgPage.c_str());
+
+    pDataSource->SetServer(pServer);
 
     // Size.
     uint64_t size;
@@ -467,7 +481,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     // Metadata.
     Utf8String metadata;
     pNode->GetContent(metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
-    pDataSource->SetMetadata(metadata.c_str());
+    pMetadata->SetDescription(metadata.c_str());
 
     // Metadata type.
     Utf8String metadataType;
@@ -475,8 +489,10 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     if (NULL != pMetadataNode)
         {
         pMetadataNode->GetAttributeStringValue(metadataType, PACKAGE_SOURCE_ATTRIBUTE_Type);
-        pDataSource->SetMetadataType(metadataType.c_str());
+        pMetadata->SetMetadataType(metadataType.c_str());
         }
+
+    pDataSource->SetMetadata(pMetadata);
 
     // GeoCS.
     Utf8String geocs;
@@ -512,7 +528,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     BeXmlNodeP pRedBandNode = pNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_RedBand);
     if (pRedBandNode != NULL)
         {
-        RealityDataSourcePtr pRedBandSource = ReadSource(status, pRedBandNode->GetFirstChild());
+        SpatialEntityDataSourcePtr pRedBandSource = ReadSource(status, pRedBandNode->GetFirstChild());
         if (pRedBandSource != NULL)
             pDataSource->SetRedBand(*pRedBandSource);
         }
@@ -521,7 +537,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     BeXmlNodeP pGreenBandNode = pNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_GreenBand);
     if (pGreenBandNode != NULL)
         {
-        RealityDataSourcePtr pGreenBandSource = ReadSource(status, pGreenBandNode->GetFirstChild());
+        SpatialEntityDataSourcePtr pGreenBandSource = ReadSource(status, pGreenBandNode->GetFirstChild());
         if (pGreenBandSource != NULL)
             pDataSource->SetGreenBand(*pGreenBandSource);
         }
@@ -530,7 +546,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     BeXmlNodeP pBlueBandNode = pNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BlueBand);
     if (pBlueBandNode != NULL)
         {
-        RealityDataSourcePtr pBlueBandSource = ReadSource(status, pBlueBandNode->GetFirstChild());
+        SpatialEntityDataSourcePtr pBlueBandSource = ReadSource(status, pBlueBandNode->GetFirstChild());
         if (pBlueBandSource != NULL)
             pDataSource->SetBlueBand(*pBlueBandSource);
         }
@@ -539,7 +555,7 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     BeXmlNodeP pPanchromaticNode = pNode->SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PanchromaticBand);
     if (pPanchromaticNode != NULL)
         {
-        RealityDataSourcePtr pPanchromaticBandSource = ReadSource(status, pPanchromaticNode->GetFirstChild());
+        SpatialEntityDataSourcePtr pPanchromaticBandSource = ReadSource(status, pPanchromaticNode->GetFirstChild());
         if (pPanchromaticBandSource != NULL)
             pDataSource->SetPanchromaticBand(*pPanchromaticBandSource);
         }
@@ -623,7 +639,7 @@ RealityPackageStatus RealityDataSerializer::_WriteUndefinedGroup(BeXmlNodeR node
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializer::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+RealityPackageStatus RealityDataSerializer::_WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const
     {
     return RealityPackageStatus::UnknownError;
     }

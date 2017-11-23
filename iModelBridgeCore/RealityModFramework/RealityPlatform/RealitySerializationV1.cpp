@@ -11,7 +11,7 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/RealityDataPackage.h>
-#include <RealityPlatform/RealityDataSource.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include <BeXml/BeXml.h>
 #include "RealitySerialization.h"
 
@@ -100,7 +100,7 @@ RealityPackageStatus RealityDataSerializerV1::_ReadImageryGroup(RealityDataPacka
         if (NULL == pSourceNode)
             continue; // Missing source node.
 
-        RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+        SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
         if (status != RealityPackageStatus::Success)
             return status;
 
@@ -158,7 +158,7 @@ RealityPackageStatus RealityDataSerializerV1::_ReadModelGroup(RealityDataPackage
         if (NULL == pSourceNode)
             continue; // Missing source node.
 
-        RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+        SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
         if (status != RealityPackageStatus::Success)
             return status;
 
@@ -198,7 +198,7 @@ RealityPackageStatus RealityDataSerializerV1::_ReadPinnedGroup(RealityDataPackag
         if (NULL == pSourceNode)
             continue; // Missing source node.
 
-        RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+        SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
         if (status != RealityPackageStatus::Success)
             return status;
 
@@ -246,7 +246,7 @@ RealityPackageStatus RealityDataSerializerV1::_ReadTerrainGroup(RealityDataPacka
         if (NULL == pSourceNode)
             continue; // Missing source node.
 
-        RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+        SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
         if (status != RealityPackageStatus::Success)
             return status;
 
@@ -460,11 +460,11 @@ RealityPackageStatus RealityDataSerializerV1::_WriteTerrainGroup(BeXmlNodeR node
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const
     {
     // Required fields.
     UriCR uri = source.GetUri();
-    Utf8String type = source.GetType();
+    Utf8String type = source.GetDataType();
     if (uri.ToString().empty() || type.empty())
         return RealityPackageStatus::MissingSourceAttribute;
 
@@ -473,8 +473,8 @@ RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, Real
     pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
 
     // Optional fields.
-    if (!source.GetCopyright().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
+    if (source.GetMetadataCP() != nullptr && !source.GetMetadataCP()->GetLegal().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetMetadataCP()->GetLegal().c_str());
 
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
@@ -485,8 +485,8 @@ RealityPackageStatus RealityDataSerializerV1::_WriteSource(BeXmlNodeR node, Real
     if (0 != source.GetSize())
         pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Filesize, source.GetSize());
 
-    if (!source.GetMetadata().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
+    if (source.GetMetadataCP() != nullptr && !source.GetMetadataCP()->GetDescription().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadataCP()->GetDescription().c_str());
 
     return RealityPackageStatus::Success;
     }

@@ -17,6 +17,9 @@ always:
         
 NUGET_BASE_PATH=$(BuildContext)Subparts/
 
+#The nuget package won't really be built outside of PRG if BUILD_NUGET is not defined. A placeholder file is created instead.
+#BUILD_NUGET=1
+
 NuGetBaseName=Bentley.RealityDbECPluginC
 NuSpecPath=$(SrcRoot)RealityModFramework/RealityDbECPlugin/NuGet/RealityDbECPluginC.nuspec
 NuGetDependencies=\#Json_version\#=$(BuildContext)SubParts\Assemblies\Newtonsoft.Json.dll \#ECF_version\#=$(BuildContext)SubParts\Assemblies\Bentley.EC.PluginBuilder3.dll \#Logging_version\#=$(BuildContext)SubParts\Assemblies\Bentley.logging-2.0.dll \#PlatformTech_version\#=$(BuildContext)SubParts\Assemblies\Bentley.Exceptions.dll \#ConfManager_version\#=$(BuildContext)SubParts\Assemblies\Microsoft.WindowsAzure.Configuration.dll \#ServiceBus_version\#=$(BuildContext)SubParts\Assemblies\Microsoft.ServiceBus.dll \#SaaSClient_version\#=$(BuildContext)SubParts\Assemblies\Bentley.SelectServer.SaaS.Client.dll \#Buddi_version\#=$(BuildContext)SubParts\Assemblies\Bentley.Discovery.Buddi.Client.dll

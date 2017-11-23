@@ -222,7 +222,7 @@ struct RealityDataSerializer : public RefCountedBase
         RealityPackageStatus ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         RealityPackageStatus ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
-        RealityDataSourcePtr ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
+        SpatialEntityDataSourcePtr ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
         MultiBandSourcePtr   ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode);
 
         // Write methods.
@@ -232,7 +232,7 @@ struct RealityDataSerializer : public RefCountedBase
         RealityPackageStatus WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         RealityPackageStatus WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         RealityPackageStatus WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
-        RealityPackageStatus WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
+        RealityPackageStatus WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const;
 
     private:
         // Serialize/Deserialize methods to override.
@@ -247,7 +247,7 @@ struct RealityDataSerializer : public RefCountedBase
         virtual RealityPackageStatus _ReadTerrainGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadUndefinedGroup(RealityDataPackageR package, BeXmlDomR xmlDom);
         virtual RealityPackageStatus _ReadUnknownElements(RealityDataPackageR package, BeXmlNodeP pNode);
-        virtual RealityDataSourcePtr _ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
+        virtual SpatialEntityDataSourcePtr _ReadSource(RealityPackageStatus& status, BeXmlNodeP pNode);
         virtual MultiBandSourcePtr   _ReadMultiBandSource(RealityPackageStatus& status, BeXmlNodeP pNode);
 
         // Write methods to override if necessary.
@@ -257,7 +257,7 @@ struct RealityDataSerializer : public RefCountedBase
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
-        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const;
     };
 
 //=====================================================================================
@@ -289,7 +289,7 @@ struct RealityDataSerializerV1 : public RealityDataSerializer
         virtual RealityPackageStatus _WriteModelGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
-        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const;
     };
 
 //=====================================================================================
@@ -323,7 +323,7 @@ struct RealityDataSerializerV2 : public RealityDataSerializer
         virtual RealityPackageStatus _WritePinnedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteTerrainGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
         virtual RealityPackageStatus _WriteUndefinedGroup(BeXmlNodeR node, RealityDataPackageCR package) const;
-        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const;
+        virtual RealityPackageStatus _WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const;
     };
 
 //=====================================================================================

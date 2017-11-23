@@ -44,7 +44,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h $(RealityDepends) ${MultiCompileDepends}
 
-$(o)RealityDataSource$(oext) : $(baseDir)RealityDataSource.cpp $(PublicApiDir)RealityDataSource.h $(RealityDepends) ${MultiCompileDepends}
+#$(o)RealityDataSource$(oext) : $(baseDir)RealityDataSource.cpp $(PublicApiDir)RealityDataSource.h $(RealityDepends) ${MultiCompileDepends}
 
 $(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
 

@@ -527,11 +527,11 @@ int main(int argc, char *argv[])
                 data->SetClassification(SpatialEntity::Classification::IMAGERY);
 
                 // Build the data source
-                SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
+                MultiBandSourcePtr newDataSource = MultiBandSource::Create();
             
-                newDataSource->SetUrl(panUrl.c_str());
+                UriPtr uri = Uri::Create(panUrl.c_str());
+                newDataSource->SetUri(*uri);
                 newDataSource->SetMultibandUrls(redUrl, greenUrl, blueUrl, panUrl);
-                newDataSource->SetIsMultiband(true);
                 newDataSource->SetServerId(serverId);
 
                 newDataSource->SetNoDataValue("0");

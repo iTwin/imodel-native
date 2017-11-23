@@ -8,7 +8,7 @@
 
 // Package.
 #include "RealityDataPackageNet.h"
-#include "RealityDataSourceNet.h"
+#include "SpatialEntityDataSourceNet.h"
 
 #include <Bentley/BeFileName.h>
 
@@ -44,9 +44,9 @@ UriPtr ManagedToNativeUri2(UriNet^ managedUri)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Christian.Tye-gingras         	02/2017
 //-------------------------------------------------------------------------------------
-RealityDataSourcePtr ManagedToNativeRealityDataSource3(RealityDataSourceNet^ managedSource)
+SpatialEntityDataSourcePtr ManagedToNativeSpatialEntityDataSource3(SpatialEntityDataSourceNet^ managedSource)
     {
-    return *(RealityDataSourcePtr*) managedSource->GetPeer().ToPointer();
+    return *(SpatialEntityDataSourcePtr*) managedSource->GetPeer().ToPointer();
     }
 
 //-------------------------------------------------------------------------------------
@@ -67,15 +67,17 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
     BeStringUtilities::WCharToUtf8(nativeId, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetId()).ToPointer()));
     nativeSource->SetId(nativeId.c_str());
 
+    SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::Create();
+
     // Copyright.
     Utf8String nativeCopyright;
     BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
-    nativeSource->SetCopyright(nativeCopyright.c_str());
+    pMetadata->SetLegal(nativeCopyright.c_str());
 
     // Term of use.
     Utf8String nativeTermOfUse;
     BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
-    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
+    pMetadata->SetTermsOfUse(nativeTermOfUse.c_str());
 
     // Provider.
     Utf8String nativeProvider;
@@ -88,12 +90,14 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
     // Metadata.
     Utf8String nativeMetadata;
     BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
-    nativeSource->SetMetadata(nativeMetadata.c_str());
+    pMetadata->SetDescription(nativeMetadata.c_str());
 
     // Metadata type.
     Utf8String nativeMetadataType;
     BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
-    nativeSource->SetMetadataType(nativeMetadataType.c_str());
+    pMetadata->SetMetadataType(nativeMetadataType.c_str());
+
+    nativeSource->SetMetadata(pMetadata);
 
     // GeoCS.
     Utf8String nativeGeoCS;
@@ -115,10 +119,10 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
     nativeSource->SetSisterFiles(nativeSisterFiles);
 
     // Multiband source specific info.
-    nativeSource->SetRedBand(*ManagedToNativeRealityDataSource3(managedSource->GetRedBand()));
-    nativeSource->SetGreenBand(*ManagedToNativeRealityDataSource3(managedSource->GetGreenBand()));
-    nativeSource->SetBlueBand(*ManagedToNativeRealityDataSource3(managedSource->GetBlueBand()));
-    nativeSource->SetPanchromaticBand(*ManagedToNativeRealityDataSource3(managedSource->GetPanchromaticBand()));
+    nativeSource->SetRedBand(*ManagedToNativeSpatialEntityDataSource3(managedSource->GetRedBand()));
+    nativeSource->SetGreenBand(*ManagedToNativeSpatialEntityDataSource3(managedSource->GetGreenBand()));
+    nativeSource->SetBlueBand(*ManagedToNativeSpatialEntityDataSource3(managedSource->GetBlueBand()));
+    nativeSource->SetPanchromaticBand(*ManagedToNativeSpatialEntityDataSource3(managedSource->GetPanchromaticBand()));
 
     return nativeSource;
     }
@@ -138,7 +142,7 @@ PackageRealityDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
         }
     else
         {
-        pData = PackageRealityData::CreateImagery(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), bvector<GeoPoint2d>());
+        pData = PackageRealityData::CreateImagery(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(0)), bvector<GeoPoint2d>());
         }
 
     // Set basic members.
@@ -180,7 +184,7 @@ PackageRealityDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }        
         }    
 
@@ -202,7 +206,7 @@ PackageRealityDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
         }
     else
         {
-        pData = PackageRealityData::CreateModel(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        pData = PackageRealityData::CreateModel(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
@@ -228,7 +232,7 @@ PackageRealityDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -250,7 +254,7 @@ PackageRealityDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
         }
     else
         {
-        pData = PackageRealityData::CreatePinned(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)), 0, 0);
+        pData = PackageRealityData::CreatePinned(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(0)), 0, 0);
         }
 
     // Set basic members.
@@ -294,7 +298,7 @@ PackageRealityDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -316,7 +320,7 @@ PackageRealityDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
         }
     else
         {
-        pData = PackageRealityData::CreateTerrain(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        pData = PackageRealityData::CreateTerrain(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
@@ -342,7 +346,7 @@ PackageRealityDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -365,7 +369,7 @@ PackageRealityDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData
         }
     else
         {
-        pData = PackageRealityData::CreateUndefined(*ManagedToNativeRealityDataSource3(managedData->GetSource(0)));
+        pData = PackageRealityData::CreateUndefined(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(0)));
         }
 
     // Set basic members.
@@ -392,7 +396,7 @@ PackageRealityDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData
             }
         else
             {
-            pData->AddSource(*ManagedToNativeRealityDataSource3(managedData->GetSource(i)));
+            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -769,7 +773,7 @@ int RealityDataNet::GetNumSources()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ RealityDataNet::GetSource(int index)
+SpatialEntityDataSourceNet^ RealityDataNet::GetSource(int index)
     {
     return m_sources[index];
     }
@@ -777,7 +781,7 @@ RealityDataSourceNet^ RealityDataNet::GetSource(int index)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-void RealityDataNet::AddSource(RealityDataSourceNet^ dataSource)
+void RealityDataNet::AddSource(SpatialEntityDataSourceNet^ dataSource)
     {
     m_sources->Add(dataSource);
     }
@@ -785,9 +789,9 @@ void RealityDataNet::AddSource(RealityDataSourceNet^ dataSource)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-RealityDataNet::RealityDataNet(RealityDataSourceNet^ dataSource)
+RealityDataNet::RealityDataNet(SpatialEntityDataSourceNet^ dataSource)
     {
-    m_sources = gcnew List<RealityDataSourceNet^>();
+    m_sources = gcnew List<SpatialEntityDataSourceNet^>();
     m_sources->Add(dataSource);
     }
 
@@ -798,7 +802,7 @@ RealityDataNet::RealityDataNet(RealityDataSourceNet^ dataSource)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-ImageryDataNet^ ImageryDataNet::Create(RealityDataSourceNet^ dataSource, List<double>^ corners)
+ImageryDataNet^ ImageryDataNet::Create(SpatialEntityDataSourceNet^ dataSource, List<double>^ corners)
     {
     return gcnew ImageryDataNet(dataSource, corners);
     }
@@ -845,11 +849,11 @@ void ImageryDataNet::SetCorners(List<double>^ corners)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-ImageryDataNet::ImageryDataNet(RealityDataSourceNet^ dataSource, List<double>^ corners)
+ImageryDataNet::ImageryDataNet(SpatialEntityDataSourceNet^ dataSource, List<double>^ corners)
     : RealityDataNet(dataSource)
     {
     // Managed to native reality data source.
-    RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
+    SpatialEntityDataSourcePtr pNativeSource = SpatialEntityDataSource::Create("", "");
 
 
     // Managed to native corners.
@@ -896,18 +900,18 @@ ImageryDataNet::!ImageryDataNet()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-ModelDataNet^ ModelDataNet::Create(RealityDataSourceNet^ dataSource)
+ModelDataNet^ ModelDataNet::Create(SpatialEntityDataSourceNet^ dataSource)
     {
     return gcnew ModelDataNet(dataSource);
     }
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-ModelDataNet::ModelDataNet(RealityDataSourceNet^ dataSource)
+ModelDataNet::ModelDataNet(SpatialEntityDataSourceNet^ dataSource)
     : RealityDataNet(dataSource)
     {
     // Managed to native reality data source.
-    RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
+    SpatialEntityDataSourcePtr pNativeSource = SpatialEntityDataSource::Create("", "");
 
     m_pModelData = new PackageRealityDataPtr(PackageRealityData::CreateModel(*pNativeSource));
     }
@@ -939,7 +943,7 @@ ModelDataNet::!ModelDataNet()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-PinnedDataNet^ PinnedDataNet::Create(RealityDataSourceNet^ dataSource, double longitude, double latitude)
+PinnedDataNet^ PinnedDataNet::Create(SpatialEntityDataSourceNet^ dataSource, double longitude, double latitude)
     {
     return gcnew PinnedDataNet(dataSource, longitude, latitude);
     }
@@ -1017,11 +1021,11 @@ bool PinnedDataNet::SetArea(List<double>^ polygonPts)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-PinnedDataNet::PinnedDataNet(RealityDataSourceNet^ dataSource, double longitude, double latitude)
+PinnedDataNet::PinnedDataNet(SpatialEntityDataSourceNet^ dataSource, double longitude, double latitude)
     : RealityDataNet(dataSource)
     {
     // Managed to native reality data source.
-    RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
+    SpatialEntityDataSourcePtr pNativeSource = SpatialEntityDataSource::Create("", "");
 
     m_pPinnedData = new PackageRealityDataPtr(PackageRealityData::CreatePinned(*pNativeSource, longitude, latitude));
     }
@@ -1053,7 +1057,7 @@ PinnedDataNet::!PinnedDataNet()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-TerrainDataNet^ TerrainDataNet::Create(RealityDataSourceNet^ dataSource)
+TerrainDataNet^ TerrainDataNet::Create(SpatialEntityDataSourceNet^ dataSource)
     {
     return gcnew TerrainDataNet(dataSource);
     }
@@ -1061,11 +1065,11 @@ TerrainDataNet^ TerrainDataNet::Create(RealityDataSourceNet^ dataSource)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-TerrainDataNet::TerrainDataNet(RealityDataSourceNet^ dataSource)
+TerrainDataNet::TerrainDataNet(SpatialEntityDataSourceNet^ dataSource)
     : RealityDataNet(dataSource)
     {
     // Managed to native reality data source.
-    RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
+    SpatialEntityDataSourcePtr pNativeSource = SpatialEntityDataSource::Create("", "");
 
     m_pTerrainData = new PackageRealityDataPtr(PackageRealityData::CreateTerrain(*pNativeSource));
     }
@@ -1096,7 +1100,7 @@ TerrainDataNet::!TerrainDataNet()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    04/2017
 //-------------------------------------------------------------------------------------
-UndefinedDataNet^ UndefinedDataNet::Create(RealityDataSourceNet^ dataSource)
+UndefinedDataNet^ UndefinedDataNet::Create(SpatialEntityDataSourceNet^ dataSource)
     {
     return gcnew UndefinedDataNet(dataSource);
     }
@@ -1104,11 +1108,11 @@ UndefinedDataNet^ UndefinedDataNet::Create(RealityDataSourceNet^ dataSource)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
-UndefinedDataNet::UndefinedDataNet(RealityDataSourceNet^ dataSource)
+UndefinedDataNet::UndefinedDataNet(SpatialEntityDataSourceNet^ dataSource)
     : RealityDataNet(dataSource)
     {
     // Managed to native reality data source.
-    RealityDataSourcePtr pNativeSource = RealityDataSource::Create("", "");
+    SpatialEntityDataSourcePtr pNativeSource = SpatialEntityDataSource::Create("", "");
 
     m_pUndefinedData = new PackageRealityDataPtr(PackageRealityData::CreateUndefined(*pNativeSource));
     }

@@ -453,7 +453,7 @@ namespace IndexECPlugin.Source.Helpers
                     blueBandFileSize = Math.Max(0, blueBandFileSize);
                     panchromaticBandFileSize = Math.Max(0, panchromaticBandFileSize);
 
-                    RealityDataSourceNet redBandSN = RealityDataSourceNet.Create(UriNet.Create(redBandURL), genericInfo.Type);
+                    SpatialEntityDataSourceNet redBandSN = SpatialEntityDataSourceNet.Create(UriNet.Create(redBandURL), genericInfo.Type);
                     SetRdsnFields(redBandSN, genericInfo);
                     redBandSN.SetSize((ulong) redBandFileSize);
                     if ( redBandSisterFilesString != null )
@@ -461,7 +461,7 @@ namespace IndexECPlugin.Source.Helpers
                         redBandSN.SetSisterFiles(redBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
                         }
 
-                    RealityDataSourceNet greenBandSN = RealityDataSourceNet.Create(UriNet.Create(greenBandURL), genericInfo.Type);
+                    SpatialEntityDataSourceNet greenBandSN = SpatialEntityDataSourceNet.Create(UriNet.Create(greenBandURL), genericInfo.Type);
                     SetRdsnFields(greenBandSN, genericInfo);
                     greenBandSN.SetSize((ulong) greenBandFileSize);
                     if ( greenBandSisterFilesString != null )
@@ -469,7 +469,7 @@ namespace IndexECPlugin.Source.Helpers
                         greenBandSN.SetSisterFiles(greenBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
                         }
 
-                    RealityDataSourceNet blueBandSN = RealityDataSourceNet.Create(UriNet.Create(blueBandURL), genericInfo.Type);
+                    SpatialEntityDataSourceNet blueBandSN = SpatialEntityDataSourceNet.Create(UriNet.Create(blueBandURL), genericInfo.Type);
                     SetRdsnFields(blueBandSN, genericInfo);
                     blueBandSN.SetSize((ulong) blueBandFileSize);
                     if ( blueBandSisterFilesString != null )
@@ -477,7 +477,7 @@ namespace IndexECPlugin.Source.Helpers
                         blueBandSN.SetSisterFiles(blueBandSisterFilesString.Split('|').Select(sf => UriNet.Create(sf)).ToList());
                         }
 
-                    RealityDataSourceNet panchromaticBandSN = RealityDataSourceNet.Create(UriNet.Create(panchromaticBandURL), genericInfo.Type);
+                    SpatialEntityDataSourceNet panchromaticBandSN = SpatialEntityDataSourceNet.Create(UriNet.Create(panchromaticBandURL), genericInfo.Type);
                     SetRdsnFields(panchromaticBandSN, genericInfo);
                     panchromaticBandSN.SetSize((ulong) panchromaticBandFileSize);
                     if ( panchromaticBandSisterFilesString != null )
@@ -514,7 +514,7 @@ namespace IndexECPlugin.Source.Helpers
                         SetParameterizedURL(genericInfo, m_selectedBBox, m_email, m_coordinateSystem);
                         }
 
-                    RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
+                    SpatialEntityDataSourceNet rdsn = SpatialEntityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 
                     SetRdsnFields(rdsn, genericInfo);
 
@@ -550,7 +550,7 @@ namespace IndexECPlugin.Source.Helpers
             genericInfo.URI = modifiedURI;
             }
 
-        private static void SetRdsnFields (RealityDataSourceNet rdsn, GenericInfo genericInfo)
+        private static void SetRdsnFields (SpatialEntityDataSourceNet rdsn, GenericInfo genericInfo)
             {
             if ( genericInfo.Copyright != null )
                 {
@@ -968,7 +968,7 @@ namespace IndexECPlugin.Source.Helpers
                     continue;
                     }
 
-                RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
+                SpatialEntityDataSourceNet rdsn = SpatialEntityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 
                 SetRdsnFields(rdsn, genericInfo);
 
@@ -981,7 +981,7 @@ namespace IndexECPlugin.Source.Helpers
             return usgsSourceNetList;
             }
 
-        //private void SortRealityDataSourceNet (List<ImageryDataNet> imgGroup, List<ModelDataNet> modelGroup, List<TerrainDataNet> terrainGroup, Tuple<RealityDataSourceNet, string> sourceTuple)
+        //private void SortSpatialEntityDataSourceNet (List<ImageryDataNet> imgGroup, List<ModelDataNet> modelGroup, List<TerrainDataNet> terrainGroup, Tuple<SpatialEntityDataSourceNet, string> sourceTuple)
         //    {
         //    //This switch case is temporary. The best thing we should have done
         //    //was to create a method for this, but these "sourceNet" will probably
@@ -1020,7 +1020,7 @@ namespace IndexECPlugin.Source.Helpers
         //        }
         //    }
 
-        private RealityDataNet CreateAppropriateRDN (RealityDataSourceNet rdsn, string classification, string spatialEntityID, string name, string dataset, string footprint)
+        private RealityDataNet CreateAppropriateRDN (SpatialEntityDataSourceNet rdsn, string classification, string spatialEntityID, string name, string dataset, string footprint)
             {
             RealityDataNet dataNet;
             //This switch case is temporary. The best thing we should have done

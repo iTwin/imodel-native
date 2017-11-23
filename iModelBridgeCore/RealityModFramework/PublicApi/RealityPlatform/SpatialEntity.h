@@ -16,6 +16,41 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+
+//=====================================================================================
+//! Resource identifier representing a document location. The uri can designate a compound 
+//! document such as a zip file. The uri is then separated in two parts by the presence of a 
+//! hash sign (#). The first part indicates the location and the name of a compound 
+//! document and the later part identify the file(s) within the compound.
+//! @bsiclass                                   Jean-Francois.Cote              9/2016
+//=====================================================================================
+struct Uri : public RefCountedBase
+    {
+    public:
+        friend struct RealityDataSource;
+
+        //! Create a uri with a fully qualified identifier or with separated parts.
+        REALITYDATAPLATFORM_EXPORT static UriPtr Create(Utf8CP resourceIdentifier);
+        REALITYDATAPLATFORM_EXPORT static UriPtr Create(Utf8CP source, Utf8CP fileInCompound);
+
+        //! Get the first part of the identifier e.g. the full path of the document.
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSource() const;
+
+        //! Get the later part of the identifier e.g. the file in the compound document. Null if the source is not a compound document.
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFileInCompound() const;
+
+        //! Get the complete identifier as a string.
+        REALITYDATAPLATFORM_EXPORT Utf8String ToString() const;
+
+    protected:
+        Uri() {}
+        Uri(Utf8CP source, Utf8CP fileInCompound);
+
+    private:
+        Utf8String m_source;
+        Utf8String m_fileInCompound;
+    };
+
 //=====================================================================================
 //! Overview:
 //! The following classes represents the foundation of the GeoCoordination Service
@@ -207,6 +242,11 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadataUrl(Utf8CP metadataUrl);
 
+    //! Get/Set the type of the metadata. FGDC and ISO-19115 are the only two formats supported. All other 
+    // formats will be indicated as TEXT to be interpreted by a human. Might be empty.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataType() const;
+    REALITYDATAPLATFORM_EXPORT void         SetMetadataType(Utf8CP metadataType);
+
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDisplayStyle() const;
     REALITYDATAPLATFORM_EXPORT void SetDisplayStyle(Utf8CP displayStyle);
@@ -227,6 +267,7 @@ protected:
     Utf8String m_keywords;
     Utf8String m_metadataUrl;
     Utf8String m_displayStyle;
+    Utf8String m_metadataType;
 
     bool m_isEmpty;
     };
@@ -386,6 +427,8 @@ protected:
     uint64_t    m_meanReachabilityStats;
     };
 
+struct RealityDataSourceSerializer;
+
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //! A Spatial entity data source defines the storage location of a spatial entity.
@@ -400,16 +443,19 @@ struct SpatialEntityDataSource : public RefCountedBase
 public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Create();
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Create(Utf8CP uri, Utf8CP type);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Create(UriR uri, Utf8CP type);
 
     //! Get/Set
     //! The Id of the data source
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
     REALITYDATAPLATFORM_EXPORT void SetId(Utf8CP id);
 
-    //! Get/Set
-    //! The full Url to the data source
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUrl() const;
-    REALITYDATAPLATFORM_EXPORT void SetUrl(Utf8CP url);
+    //! Get/Set the source location. It could be a fully qualified URL or a relative path to the package file. Required attribute.
+    //! ex: "http://www.Bentley.com/logo.jpg"
+    //!     "./imagery/road.jpg"
+    REALITYDATAPLATFORM_EXPORT UriCR        GetUri() const;
+    REALITYDATAPLATFORM_EXPORT void         SetUri(UriR uri);
 
     //! Get/Set
     //! A formatted string indicating the geographic coordinate system used by the data source. This field 
@@ -466,39 +512,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCoordinateSystem() const;
     REALITYDATAPLATFORM_EXPORT void SetCoordinateSystem(Utf8CP coordSys);
 
-    //! The following fields concern data sources that are multiband in nature. Instead of
-    //! deriving a class we opted to add the fields in the main data source.
-    //! By default a data source is not multiband.
-    REALITYDATAPLATFORM_EXPORT bool GetIsMultiband() const;
-    REALITYDATAPLATFORM_EXPORT void SetIsMultiband( bool isMultiband );
-
-    //! Get/Set the multiband URLs. If the data source is a compound document then the bands must be located
-    //! in files located in the compound docuemnt otherwise the four values point to external Urls.
-    //! We only support four types of bands for multiband sources red, green, blue and panchromatic. The last one is optional
-    //! since all information may be contained in the red, green, blue bands.
-    REALITYDATAPLATFORM_EXPORT void GetMultibandUrls( Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl ) const;
-    REALITYDATAPLATFORM_EXPORT void SetMultibandUrls( Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl );
-    
-    //! Get/Set
-    //! The size in kilobytes of the red band or zero if unknown
-    REALITYDATAPLATFORM_EXPORT uint64_t GetRedBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetRedBandSize( uint64_t size );
-
-    //! Get/Set
-    //! The size in kilobytes of the green band or zero if unknown
-    REALITYDATAPLATFORM_EXPORT uint64_t GetGreenBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetGreenBandSize( uint64_t size );
-
-    //! Get/Set
-    //! The size in kilobytes of the blue band or zero if unknown
-    REALITYDATAPLATFORM_EXPORT uint64_t GetBlueBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetBlueBandSize( uint64_t size );
-
-    //! Get/Set
-    //! The size in kilobytes of the panchromatic band or zero if unknown
-    REALITYDATAPLATFORM_EXPORT uint64_t GetPanchromaticBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize( uint64_t size );
-
     REALITYDATAPLATFORM_EXPORT 	long int GetServerId() const;
     //serverId is a mutable value so that it can be set on a const ref, before performing a Save()
     REALITYDATAPLATFORM_EXPORT void SetServerId(long int id ) const;
@@ -507,13 +520,52 @@ public:
     //! Since the server is an optional field of the data source it is expressed as a pointer
     //! The pointer returned or given can be null
     REALITYDATAPLATFORM_EXPORT SpatialEntityServerCP GetServerCP() const;
-    REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerP server);
+    REALITYDATAPLATFORM_EXPORT SpatialEntityServerP GetServerP();
+    REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerPtr server);
+
+    //! Get/Set
+    //! A string containing a key to the data provider. Keys are informally attributed and must 
+    //! be representative of the source of the data (not the file distribution organism). 
+    //! Current values introduced include ‘USGS’, ‘GeoGratis’. Once attributed to a dataset these 
+    //! should be maintained constant. The value is useful for discriminating data eccentricities 
+    //! based on the provider. For example, many JP2 Imagery files from USGS do not contain the Geographic 
+    //! Coordinate System definition (probable oversight from USGS). Since these JP2 files all use 
+    //! the ‘WebMercator’ coordinate system the application could make use of the data provider field 
+    //! to impose this coordinate system for JP2 files from this provider only.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvider() const;
+    REALITYDATAPLATFORM_EXPORT void SetProvider(Utf8CP provider);
+
+    //! Get/Set
+    //! A name for the provider of the data. It can be identical to the DataProvider key or 
+    //! a more elaborate name for human interpretation. For example, the DataProvider GeoGratis 
+    //! can be associated with the provider name ‘Government of Canada’.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProviderName() const;
+    REALITYDATAPLATFORM_EXPORT void SetProviderName(Utf8CP providerName);
+
+    //! Get/Set
+    //! A reference to a metadata object. This object can be used by many spatial entities.
+    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCP GetMetadataCP() const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataPtr GetMetadataP();
+    REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataPtr metadata);
+
+    //! Get/Set files or documents that are required for the proper interpretation of the source. The sister file 
+    //! location is specified using the same pattern as the URI of the source. Might be empty.
+    REALITYDATAPLATFORM_EXPORT const bvector<UriPtr>&     GetSisterFiles() const;
+    REALITYDATAPLATFORM_EXPORT void                       SetSisterFiles(const bvector<UriPtr>& sisterFiles);
+
+    //! Get the element name.
+    REALITYDATAPLATFORM_EXPORT Utf8CP GetElementName() const;
 
 protected:
     SpatialEntityDataSource();
+    SpatialEntityDataSource(UriR uri, Utf8CP type);
+    SpatialEntityDataSource(Utf8CP uri, Utf8CP type);
+
+    // Must be re-implemented by each child class. Used by serialization.
+    virtual Utf8CP _GetElementName() const;
 
     Utf8String m_id;
-    Utf8String m_url;
+    UriPtr m_pUri;
     Utf8String m_geoCS;
     Utf8String m_compoundType;
     uint64_t m_size;
@@ -523,19 +575,162 @@ protected:
     Utf8String m_noDataValue;
     Utf8String m_coordinateSystem;
 
-
-    bool m_isMultiband = false;
-    Utf8String m_redDownloadUrl;
-    Utf8String m_blueDownloadUrl;
-    Utf8String m_greenDownloadUrl;
-    Utf8String m_panchromaticDownloadUrl;
-    uint64_t m_redSize;
-    uint64_t m_blueSize;
-    uint64_t m_greenSize;
-    uint64_t m_panchromaticSize;
+    Utf8String m_provider;
+    Utf8String m_providerName;
+    SpatialEntityMetadataPtr m_pMetadata;
+    bvector<UriPtr> m_sisterFiles;
 
     mutable long int m_serverId = -1; //SQLINTEGER long int
-}; 
+};
+
+//=====================================================================================
+//! This is a descendant of source type that allows specification of wms data. The WMS 
+//! source is fully qualified since in addition to the server URL, it contains the list 
+//! of layers, styles, coordinate system, selected delivery format, transparency setting.
+//! The WMS source can be seen as raster except requests sent to the server require 
+//! variable parameter definition based on content of WMS settings and additional 
+//! location of request.
+//! @bsiclass                                   Jean-Francois.Cote              06/2015
+//=====================================================================================
+struct WmsDataSource : public SpatialEntityDataSource
+    {
+    DEFINE_T_SUPER(SpatialEntityDataSource)
+
+public:
+    friend struct RealityDataSourceSerializer;
+
+    REALITYDATAPLATFORM_EXPORT static WmsDataSourcePtr Create(Utf8CP uri);
+    REALITYDATAPLATFORM_EXPORT static WmsDataSourcePtr Create(UriR uri);
+
+    //! Get/Set the WMS specific map settings.
+    //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
+    //! You can take a look at PublicApi/RealityPlatform/WmsSource.h for more details on the structure of a WmsMapSettings object.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR  GetMapSettings() const;
+    REALITYDATAPLATFORM_EXPORT void          SetMapSettings(Utf8CP mapSettings);
+
+protected:
+    WmsDataSource() {}
+    WmsDataSource(UriR uri);
+    virtual ~WmsDataSource();
+
+    virtual Utf8CP _GetElementName() const;
+
+private:
+    Utf8String m_mapSettings;
+    };
+
+//=====================================================================================
+//! This is a descendant of source type that allows specification of Open Street Map data.
+//! The OSM source is fully qualified since in addition to the server URL it contains
+//! the protocol identifier and the coordinates of the region designated. It fully represents 
+//! an OSM data blob/file. It also allows specification of alternate URLs to alternate OSM 
+//! source representing the same region and the same stream format. Many alternate URLs 
+//! can be specified.
+//! 
+//! This class is deprecated and is only used to serialize or 
+//! deserialized version 1.0 of the package.
+//!
+//! @bsiclass                                   Jean-Francois.Cote              06/2015
+//=====================================================================================
+struct OsmDataSource : public SpatialEntityDataSource
+    {
+    DEFINE_T_SUPER(SpatialEntityDataSource)
+
+public:
+    friend struct RealityDataSourceSerializer;
+
+    REALITYDATAPLATFORM_EXPORT static OsmDataSourcePtr Create(Utf8CP uri, DRange2dCP bbox);
+
+    //! Get/Set the OSM specific resources.
+    //! The string used here should represent a xml fragment containing all the nodes/infos required for OSM processing.
+    //! You can take a look at PublicApi/RealityPlatform/OsmSource.h for more details on the structure of an OsmResource object.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR  GetOsmResource() const;
+    REALITYDATAPLATFORM_EXPORT void          SetOsmResource(Utf8CP osmResource);
+
+protected:
+    OsmDataSource() {}
+    OsmDataSource(Utf8CP uri);
+    virtual ~OsmDataSource();
+
+    virtual Utf8CP _GetElementName() const;
+
+private:
+    Utf8String m_osmResource;
+    };
+
+//=====================================================================================
+//! This is a descendant of source type that allows specification of multi band raster 
+//! data. Normally it does not apply to any other type. When the source is of this type 
+//! then the attribute 'uri' of the source should contain either one of the bands, 
+//! ideally the panchromatic if present.
+//! @bsiclass                                   Jean-Francois.Cote              06/2015
+//=====================================================================================
+struct MultiBandSource : public SpatialEntityDataSource
+    {
+    DEFINE_T_SUPER(SpatialEntityDataSource)
+
+public:
+    friend struct RealityDataSourceSerializer;
+
+    REALITYDATAPLATFORM_EXPORT static MultiBandSourcePtr Create();
+    REALITYDATAPLATFORM_EXPORT static MultiBandSourcePtr Create(UriR uri, Utf8CP type);
+    
+    //! Get/Set the multiband URLs. If the data source is a compound document then the bands must be located
+    //! in files located in the compound docuemnt otherwise the four values point to external Urls.
+    //! We only support four types of bands for multiband sources red, green, blue and panchromatic. The last one is optional
+    //! since all information may be contained in the red, green, blue bands.
+    REALITYDATAPLATFORM_EXPORT void GetMultibandUrls(Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl ) const;
+    REALITYDATAPLATFORM_EXPORT void SetMultibandUrls(Utf8StringCR redUrl, Utf8StringCR greenUrl, Utf8StringCR blueUrl, Utf8StringCR panchromaticUrl);
+
+    //! Get/Set
+    //! The size in kilobytes of the red band or zero if unknown
+    REALITYDATAPLATFORM_EXPORT uint64_t GetRedBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetRedBandSize(uint64_t size);
+
+    //! Get/Set
+    //! The size in kilobytes of the green band or zero if unknown
+    REALITYDATAPLATFORM_EXPORT uint64_t GetGreenBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetGreenBandSize(uint64_t size);
+
+    //! Get/Set
+    //! The size in kilobytes of the blue band or zero if unknown
+    REALITYDATAPLATFORM_EXPORT uint64_t GetBlueBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetBlueBandSize(uint64_t size);
+
+    //! Get/Set
+    //! The size in kilobytes of the panchromatic band or zero if unknown
+    REALITYDATAPLATFORM_EXPORT uint64_t GetPanchromaticBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize(uint64_t size);
+
+    //! Get/Set the red band. A band essentially contains a source for the band data. Required.
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCP GetRedBand() const;
+    REALITYDATAPLATFORM_EXPORT void SetRedBand(SpatialEntityDataSourceR band);
+
+    //! Get/Set the green band. A band essentially contains a source for the band data. Required.
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCP GetGreenBand() const;
+    REALITYDATAPLATFORM_EXPORT void SetGreenBand(SpatialEntityDataSourceR band);
+
+    //! Get/Set the green band. A band essentially contains a source for the band data. Required.
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCP GetBlueBand() const;
+    REALITYDATAPLATFORM_EXPORT void SetBlueBand(SpatialEntityDataSourceR band);
+
+    //! Get/Set the panchromatic band. A band essentially contains a source for the band data. Optional.
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCP GetPanchromaticBand() const;
+    REALITYDATAPLATFORM_EXPORT void SetPanchromaticBand(SpatialEntityDataSourceR band);
+
+protected:
+    MultiBandSource() {}
+    MultiBandSource(UriR uri, Utf8CP type);
+    virtual ~MultiBandSource() {}
+
+    virtual Utf8CP _GetElementName() const;
+
+private:
+    SpatialEntityDataSourcePtr m_pRedBand;
+    SpatialEntityDataSourcePtr m_pGreenBand;
+    SpatialEntityDataSourcePtr m_pBlueBand;
+    SpatialEntityDataSourcePtr m_pPanchromaticBand;
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
@@ -547,6 +742,7 @@ protected:
 struct SpatialEntity : public RealityDataBase
 {
 public:
+    friend RealityDataSerializer;
 
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create();
@@ -608,7 +804,7 @@ public:
     //! A reference to a metadata object. This object can be used by many spatial entities.
     REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCP GetMetadataCP() const;
     REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataP GetMetadataP();
-    REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataP metadata);
+    REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataPtr metadata);
   
     // Get/Set
     //! A value in percentage between 0 and 100 of the occlusion of the data. This usually means the cloud 
@@ -618,22 +814,29 @@ public:
     REALITYDATAPLATFORM_EXPORT float GetOcclusion() const;
     REALITYDATAPLATFORM_EXPORT void SetOcclusion( float cover );
 
+    //! Get package version.
+    REALITYDATAPLATFORM_EXPORT uint32_t GetMajorVersion() const;
+    REALITYDATAPLATFORM_EXPORT void SetMajorVersion(uint32_t major);
+    REALITYDATAPLATFORM_EXPORT uint32_t GetMinorVersion() const;
+    REALITYDATAPLATFORM_EXPORT void SetMinorVersion(uint32_t minor);
 
 protected:
     SpatialEntity();
 
     float m_occlusion;
-    Utf8String m_provider;
-    Utf8String m_providerName;
+    mutable Utf8String m_provider;
+    mutable Utf8String m_providerName;
     Utf8String m_dataType;
     DateTime m_date;
     Utf8String m_thumbnailURL;
     Utf8String m_thumbnailLoginKey;
-    SpatialEntityMetadataPtr m_pMetadata;
+    mutable SpatialEntityMetadataPtr m_pMetadata;
     bvector<SpatialEntityDataSourcePtr> m_DataSources;
 
     Utf8String m_description;
     uint64_t m_approximateFileSize;
+    uint32_t m_majorVersion;
+    uint32_t m_minorVersion;
     }; 
    
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

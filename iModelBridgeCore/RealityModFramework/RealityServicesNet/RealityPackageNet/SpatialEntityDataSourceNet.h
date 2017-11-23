@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityServicesNet/RealityPackageNet/RealityDataSourceNet.h $
+|     $Source: RealityServicesNet/RealityPackageNet/SpatialEntityDataSourceNet.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -46,10 +46,10 @@ namespace RealityPackageNet
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              10/2016
     //=====================================================================================
-    public ref class RealityDataSourceNet
+    public ref class SpatialEntityDataSourceNet
         {
         public:
-            static RealityDataSourceNet^ Create(UriNet^ uri, System::String^ type);
+            static SpatialEntityDataSourceNet^ Create(UriNet^ uri, System::String^ type);
 
             //! Get/Set the source uri. It could be a full URL or a path relative to the package file.
             //! ex: "http://www.Bentley.com/logo.jpg"
@@ -128,19 +128,19 @@ namespace RealityPackageNet
             void SetPeer(System::IntPtr);
 
         protected:
-            RealityDataSourceNet() {}
-            RealityDataSourceNet(UriNet^ uri, System::String^ type);
-            virtual ~RealityDataSourceNet();
-            !RealityDataSourceNet();
+            SpatialEntityDataSourceNet() {}
+            SpatialEntityDataSourceNet(UriNet^ uri, System::String^ type);
+            virtual ~SpatialEntityDataSourceNet();
+            !SpatialEntityDataSourceNet();
    
         private:
-            RealityPlatform::RealityDataSourcePtr* m_pSource;
+            RealityPlatform::SpatialEntityDataSourcePtr* m_pSource;
         };
 
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              10/2016
     //=====================================================================================
-    public ref class WmsDataSourceNet : public RealityDataSourceNet
+    public ref class WmsDataSourceNet : public SpatialEntityDataSourceNet
         {
         public:
             static WmsDataSourceNet^ Create(System::String^ uri);
@@ -166,7 +166,7 @@ namespace RealityPackageNet
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              10/2016
     //=====================================================================================
-    public ref class OsmDataSourceNet : public RealityDataSourceNet
+    public ref class OsmDataSourceNet : public SpatialEntityDataSourceNet
         {
         public:
             static OsmDataSourceNet^ Create(System::String^ uri, double bboxMinX, double bboxMinY, double bboxMaxX, double bboxMaxY);
@@ -190,26 +190,26 @@ namespace RealityPackageNet
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              10/2016
     //=====================================================================================
-    public ref class MultiBandSourceNet : public RealityDataSourceNet
+    public ref class MultiBandSourceNet : public SpatialEntityDataSourceNet
         {
         public:
             static MultiBandSourceNet^ Create(UriNet^ uri, System::String^ type);
 
             //! Get/Set the red band. 
-            RealityDataSourceNet^ GetRedBand();
-            void SetRedBand(RealityDataSourceNet^ band);
+            SpatialEntityDataSourceNet^ GetRedBand();
+            void SetRedBand(SpatialEntityDataSourceNet^ band);
 
             //! Get/Set the green band.
-            RealityDataSourceNet^ GetGreenBand();
-            void SetGreenBand(RealityDataSourceNet^ band);
+            SpatialEntityDataSourceNet^ GetGreenBand();
+            void SetGreenBand(SpatialEntityDataSourceNet^ band);
 
             //! Get/Set the green band.
-            RealityDataSourceNet^ GetBlueBand();
-            void SetBlueBand(RealityDataSourceNet^ band);
+            SpatialEntityDataSourceNet^ GetBlueBand();
+            void SetBlueBand(SpatialEntityDataSourceNet^ band);
 
             //! Get/Set the panchromatic band.
-            RealityDataSourceNet^ GetPanchromaticBand();
-            void SetPanchromaticBand(RealityDataSourceNet^ band);
+            SpatialEntityDataSourceNet^ GetPanchromaticBand();
+            void SetPanchromaticBand(SpatialEntityDataSourceNet^ band);
 
         protected:
             MultiBandSourceNet() {}

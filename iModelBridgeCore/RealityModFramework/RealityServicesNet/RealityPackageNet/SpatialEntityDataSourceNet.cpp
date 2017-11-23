@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityServicesNet/RealityPackageNet/RealityDataSourceNet.cpp $
+|     $Source: RealityServicesNet/RealityPackageNet/SpatialEntityDataSourceNet.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 // Package.
-#include "RealityDataSourceNet.h"
+#include "SpatialEntityDataSourceNet.h"
 
 using namespace RealityPlatform;
 using namespace RealityPackageNet;
@@ -49,29 +49,29 @@ UriPtr ManagedToNativeUri(UriNet^ managedUri)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativeSource)
+SpatialEntityDataSourceNet^ NativeToManagedSpatialEntityDataSource(SpatialEntityDataSourceCR nativeSource)
     {
     UriNet^ managedUri = NativeToManagedUri(nativeSource.GetUri());
 
     marshal_context ctx;
-    String^ managedType = ctx.marshal_as<String^>(nativeSource.GetType().c_str());
+    String^ managedType = ctx.marshal_as<String^>(nativeSource.GetDataType().c_str());
 
     // Create source with required parameters.
-    RealityDataSourceNet^ managedSource = RealityDataSourceNet::Create(managedUri, managedType);
+    SpatialEntityDataSourceNet^ managedSource = SpatialEntityDataSourceNet::Create(managedUri, managedType);
 
     // Streamed.
-    managedSource->SetStreamed(nativeSource.IsStreamed());
+    managedSource->SetStreamed(nativeSource.GetServerCP()->IsStreamed());
 
     // Id.
     String^ managedId = ctx.marshal_as<String^>(nativeSource.GetId().c_str());
     managedSource->SetId(managedId);
 
     // Copyright.
-    String^ managedCopyright = ctx.marshal_as<String^>(nativeSource.GetCopyright().c_str());
+    String^ managedCopyright = ctx.marshal_as<String^>(nativeSource.GetMetadataCP()->GetLegal().c_str());
     managedSource->SetCopyright(managedCopyright);
 
     // Term of use.
-    String^ managedTermOfUse = ctx.marshal_as<String^>(nativeSource.GetTermOfUse().c_str());
+    String^ managedTermOfUse = ctx.marshal_as<String^>(nativeSource.GetMetadataCP()->GetTermsOfUse().c_str());
     managedSource->SetTermOfUse(managedTermOfUse);
 
     // Provider.
@@ -79,19 +79,19 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
     managedSource->SetProvider(managedProvider);
 
     // Server login key.
-    String^ managedServerLoginKey = ctx.marshal_as<String^>(nativeSource.GetServerLoginKey().c_str());
+    String^ managedServerLoginKey = ctx.marshal_as<String^>(nativeSource.GetServerCP()->GetLoginKey().c_str());
     managedSource->SetServerLoginKey(managedServerLoginKey);
 
     // Server login method.
-    String^ managedServerLoginMethod = ctx.marshal_as<String^>(nativeSource.GetServerLoginMethod().c_str());
+    String^ managedServerLoginMethod = ctx.marshal_as<String^>(nativeSource.GetServerCP()->GetLoginMethod().c_str());
     managedSource->SetServerLoginMethod(managedServerLoginMethod);
 
     // Server registration page.
-    String^ managedServerRegPage = ctx.marshal_as<String^>(nativeSource.GetServerRegistrationPage().c_str());
+    String^ managedServerRegPage = ctx.marshal_as<String^>(nativeSource.GetServerCP()->GetRegistrationPage().c_str());
     managedSource->SetServerRegistrationPage(managedServerRegPage);
 
     // Server organisation page.
-    String^ managedServerOrgPage = ctx.marshal_as<String^>(nativeSource.GetServerOrganisationPage().c_str());
+    String^ managedServerOrgPage = ctx.marshal_as<String^>(nativeSource.GetServerCP()->GetOrganisationPage().c_str());
     managedSource->SetServerOrganisationPage(managedServerOrgPage);
 
     // Size.
@@ -99,11 +99,11 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
     managedSource->SetSize(size);
 
     // Metadata.
-    String^ managedMetadata = ctx.marshal_as<String^>(nativeSource.GetMetadata().c_str());
+    String^ managedMetadata = ctx.marshal_as<String^>(nativeSource.GetMetadataCP()->GetDescription().c_str());
     managedSource->SetMetadata(managedMetadata);
 
     // Metadata type.
-    String^ managedMetadataType = ctx.marshal_as<String^>(nativeSource.GetMetadataType().c_str());
+    String^ managedMetadataType = ctx.marshal_as<String^>(nativeSource.GetMetadataCP()->GetMetadataType().c_str());
     managedSource->SetMetadataType(managedMetadataType);
 
     // GeoCS.
@@ -129,7 +129,7 @@ RealityDataSourceNet^ NativeToManagedRealityDataSource(RealityDataSourceCR nativ
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ managedSource)
+SpatialEntityDataSourcePtr ManagedToNativeSpatialEntityDataSource(SpatialEntityDataSourceNet^ managedSource)
     {
     RealityPlatform::UriPtr nativeUri = ManagedToNativeUri(managedSource->GetUri());
 
@@ -137,10 +137,16 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ mana
     BeStringUtilities::WCharToUtf8(nativeType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetSourceType()).ToPointer()));
 
     // Create source with required parameters.
-    RealityDataSourcePtr nativeSource = RealityDataSource::Create(*nativeUri, nativeType.c_str());
+    SpatialEntityDataSourcePtr nativeSource = SpatialEntityDataSource::Create(*nativeUri, nativeType.c_str());
+
+    SpatialEntityServerPtr nativeServer = SpatialEntityServer::Create();
+
+    SpatialEntityMetadataPtr nativeMetadata = SpatialEntityMetadata::Create();
 
     // Streamed.
-    nativeSource->SetStreamed(managedSource->IsStreamed());
+    nativeServer->SetStreamed(managedSource->IsStreamed());
+
+    nativeSource->SetServer(nativeServer);
 
     // Id.
     Utf8String nativeId;
@@ -150,12 +156,14 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ mana
     // Copyright.
     Utf8String nativeCopyright;
     BeStringUtilities::WCharToUtf8(nativeCopyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetCopyright()).ToPointer()));
-    nativeSource->SetCopyright(nativeCopyright.c_str());
+    nativeMetadata->SetLegal(nativeCopyright.c_str());
 
     // Term of use.
     Utf8String nativeTermOfUse;
     BeStringUtilities::WCharToUtf8(nativeTermOfUse, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetTermOfUse()).ToPointer()));
-    nativeSource->SetTermOfUse(nativeTermOfUse.c_str());
+    nativeMetadata->SetTermsOfUse(nativeTermOfUse.c_str());
+
+    nativeSource->SetMetadata(nativeMetadata);
 
     // Provider.
     Utf8String nativeProvider;
@@ -165,35 +173,35 @@ RealityDataSourcePtr ManagedToNativeRealityDataSource(RealityDataSourceNet^ mana
     // Server login key.
     Utf8String nativeServerLoginKey;
     BeStringUtilities::WCharToUtf8(nativeServerLoginKey, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerLoginKey()).ToPointer()));
-    nativeSource->SetServerLoginKey(nativeServerLoginKey.c_str());
+    nativeServer->SetLoginKey(nativeServerLoginKey.c_str());
 
     // Server login method.
     Utf8String nativeServerLoginMethod;
     BeStringUtilities::WCharToUtf8(nativeServerLoginMethod, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerLoginMethod()).ToPointer()));
-    nativeSource->SetServerLoginMethod(nativeServerLoginMethod.c_str());
+    nativeServer->SetLoginMethod(nativeServerLoginMethod.c_str());
 
     // Server registration page.
     Utf8String nativeServerRegPage;
     BeStringUtilities::WCharToUtf8(nativeServerRegPage, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerRegistrationPage()).ToPointer()));
-    nativeSource->SetServerRegistrationPage(nativeServerRegPage.c_str());
+    nativeServer->SetRegistrationPage(nativeServerRegPage.c_str());
 
     // Server organisation page.
     Utf8String nativeServerOrgPage;
     BeStringUtilities::WCharToUtf8(nativeServerOrgPage, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetServerOrganisationPage()).ToPointer()));
-    nativeSource->SetServerOrganisationPage(nativeServerOrgPage.c_str());
+    nativeServer->SetOrganisationPage(nativeServerOrgPage.c_str());
 
     // Size.
     nativeSource->SetSize(managedSource->GetSize());
 
     // Metadata.
-    Utf8String nativeMetadata;
-    BeStringUtilities::WCharToUtf8(nativeMetadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
-    nativeSource->SetMetadata(nativeMetadata.c_str());
+    Utf8String nativeMetadataStr;
+    BeStringUtilities::WCharToUtf8(nativeMetadataStr, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadata()).ToPointer()));
+    nativeMetadata->SetDescription(nativeMetadataStr.c_str());
 
     // Metadata type.
     Utf8String nativeMetadataType;
     BeStringUtilities::WCharToUtf8(nativeMetadataType, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetMetadataType()).ToPointer()));
-    nativeSource->SetMetadataType(nativeMetadataType.c_str());
+    nativeMetadata->SetMetadataType(nativeMetadataType.c_str());
 
     // GeoCS.
     Utf8String nativeGeoCS;
@@ -313,20 +321,20 @@ UriNet::!UriNet()
 
 
 //=======================================================================================
-//                               RealityDataSource
+//                               SpatialEntityDataSource
 //=======================================================================================
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ RealityDataSourceNet::Create(UriNet^ uri, String^ type)
+SpatialEntityDataSourceNet^ SpatialEntityDataSourceNet::Create(UriNet^ uri, String^ type)
     {
-    return gcnew RealityDataSourceNet(uri, type);
+    return gcnew SpatialEntityDataSourceNet(uri, type);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-UriNet^ RealityDataSourceNet::GetUri()
+UriNet^ SpatialEntityDataSourceNet::GetUri()
     {    
     return NativeToManagedUri((*m_pSource)->GetUri());
     }
@@ -334,7 +342,7 @@ UriNet^ RealityDataSourceNet::GetUri()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetUri(UriNet^ uri)
+void SpatialEntityDataSourceNet::SetUri(UriNet^ uri)
     {
     (*m_pSource)->SetUri(*ManagedToNativeUri(uri));
     }
@@ -342,43 +350,43 @@ void RealityDataSourceNet::SetUri(UriNet^ uri)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetSourceType()
+String^ SpatialEntityDataSourceNet::GetSourceType()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetType().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetDataType().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetSourceType(String^ type)
+void SpatialEntityDataSourceNet::SetSourceType(String^ type)
     {
     Utf8String typeUtf8;
     BeStringUtilities::WCharToUtf8(typeUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(type).ToPointer()));
 
-    (*m_pSource)->SetType(typeUtf8.c_str());
+    (*m_pSource)->SetDataType(typeUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-bool RealityDataSourceNet::IsStreamed()
+bool SpatialEntityDataSourceNet::IsStreamed()
     {
-    return (*m_pSource)->IsStreamed();
+    return (*m_pSource)->GetServerCP()->IsStreamed();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetStreamed(bool isStreamed)
+void SpatialEntityDataSourceNet::SetStreamed(bool isStreamed)
     {
-    (*m_pSource)->SetStreamed(isStreamed);
+    (*m_pSource)->GetServerP()->SetStreamed(isStreamed);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetId()
+String^ SpatialEntityDataSourceNet::GetId()
     {
     marshal_context ctx;
     return ctx.marshal_as<String^>((*m_pSource)->GetId().c_str());
@@ -387,7 +395,7 @@ String^ RealityDataSourceNet::GetId()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetId(String^ id)
+void SpatialEntityDataSourceNet::SetId(String^ id)
     {
     Utf8String idUtf8;
     BeStringUtilities::WCharToUtf8(idUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(id).ToPointer()));
@@ -398,47 +406,47 @@ void RealityDataSourceNet::SetId(String^ id)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetCopyright()
+String^ SpatialEntityDataSourceNet::GetCopyright()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetCopyright().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetMetadataCP()->GetLegal().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetCopyright(String^ copyright)
+void SpatialEntityDataSourceNet::SetCopyright(String^ copyright)
     {
     Utf8String copyrightUtf8;
     BeStringUtilities::WCharToUtf8(copyrightUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(copyright).ToPointer()));
 
-    (*m_pSource)->SetCopyright(copyrightUtf8.c_str());
+    (*m_pSource)->GetMetadataP()->SetLegal(copyrightUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetTermOfUse()
+String^ SpatialEntityDataSourceNet::GetTermOfUse()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetTermOfUse().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetMetadataCP()->GetTermsOfUse().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetTermOfUse(String^ termOfUse)
+void SpatialEntityDataSourceNet::SetTermOfUse(String^ termOfUse)
     {
     Utf8String termOfUseUtf8;
     BeStringUtilities::WCharToUtf8(termOfUseUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(termOfUse).ToPointer()));
 
-    (*m_pSource)->SetTermOfUse(termOfUseUtf8.c_str());
+    (*m_pSource)->GetMetadataP()->SetTermsOfUse(termOfUseUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetProvider()
+String^ SpatialEntityDataSourceNet::GetProvider()
     {
     marshal_context ctx;
     return ctx.marshal_as<String^>((*m_pSource)->GetProvider().c_str());
@@ -447,7 +455,7 @@ String^ RealityDataSourceNet::GetProvider()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetProvider(String^ provider)
+void SpatialEntityDataSourceNet::SetProvider(String^ provider)
     {
     Utf8String providerUtf8;
     BeStringUtilities::WCharToUtf8(providerUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(provider).ToPointer()));
@@ -458,87 +466,87 @@ void RealityDataSourceNet::SetProvider(String^ provider)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetServerLoginKey()
+String^ SpatialEntityDataSourceNet::GetServerLoginKey()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetServerLoginKey().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerCP()->GetLoginKey().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetServerLoginKey(String^ key)
+void SpatialEntityDataSourceNet::SetServerLoginKey(String^ key)
     {
     Utf8String keyUtf8;
     BeStringUtilities::WCharToUtf8(keyUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(key).ToPointer()));
 
-    (*m_pSource)->SetServerLoginKey(keyUtf8.c_str());
+    (*m_pSource)->GetServerP()->SetLoginKey(keyUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetServerLoginMethod()
+String^ SpatialEntityDataSourceNet::GetServerLoginMethod()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetServerLoginMethod().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerCP()->GetLoginMethod().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetServerLoginMethod(String^ method)
+void SpatialEntityDataSourceNet::SetServerLoginMethod(String^ method)
     {
     Utf8String methodUtf8;
     BeStringUtilities::WCharToUtf8(methodUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(method).ToPointer()));
 
-    (*m_pSource)->SetServerLoginMethod(methodUtf8.c_str());
+    (*m_pSource)->GetServerP()->SetLoginMethod(methodUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetServerRegistrationPage()
+String^ SpatialEntityDataSourceNet::GetServerRegistrationPage()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetServerRegistrationPage().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerCP()->GetRegistrationPage().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetServerRegistrationPage(String^ link)
+void SpatialEntityDataSourceNet::SetServerRegistrationPage(String^ link)
     {
     Utf8String linkUtf8;
     BeStringUtilities::WCharToUtf8(linkUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(link).ToPointer()));
 
-    (*m_pSource)->SetServerRegistrationPage(linkUtf8.c_str());
+    (*m_pSource)->GetServerP()->SetRegistrationPage(linkUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetServerOrganisationPage()
+String^ SpatialEntityDataSourceNet::GetServerOrganisationPage()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetServerOrganisationPage().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetServerCP()->GetOrganisationPage().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetServerOrganisationPage(String^ link)
+void SpatialEntityDataSourceNet::SetServerOrganisationPage(String^ link)
     {
     Utf8String linkUtf8;
     BeStringUtilities::WCharToUtf8(linkUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(link).ToPointer()));
 
-    (*m_pSource)->SetServerOrganisationPage(linkUtf8.c_str());
+    (*m_pSource)->GetServerP()->SetOrganisationPage(linkUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-uint64_t RealityDataSourceNet::GetSize()
+uint64_t SpatialEntityDataSourceNet::GetSize()
     {
     return (uint64_t)(*m_pSource)->GetSize();
     }
@@ -546,7 +554,7 @@ uint64_t RealityDataSourceNet::GetSize()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetSize(uint64_t sizeInKB)
+void SpatialEntityDataSourceNet::SetSize(uint64_t sizeInKB)
     {
     (*m_pSource)->SetSize(sizeInKB);
     }
@@ -554,47 +562,47 @@ void RealityDataSourceNet::SetSize(uint64_t sizeInKB)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetMetadata()
+String^ SpatialEntityDataSourceNet::GetMetadata()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetMetadata().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetMetadataCP()->GetDescription().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetMetadata(String^ metadata)
+void SpatialEntityDataSourceNet::SetMetadata(String^ metadata)
     {
     Utf8String metadataUtf8;
     BeStringUtilities::WCharToUtf8(metadataUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(metadata).ToPointer()));
 
-    (*m_pSource)->SetMetadata(metadataUtf8.c_str());
+    (*m_pSource)->GetMetadataP()->SetDescription(metadataUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetMetadataType()
+String^ SpatialEntityDataSourceNet::GetMetadataType()
     {
     marshal_context ctx;
-    return ctx.marshal_as<String^>((*m_pSource)->GetMetadataType().c_str());
+    return ctx.marshal_as<String^>((*m_pSource)->GetMetadataCP()->GetMetadataType().c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetMetadataType(String^ metadataType)
+void SpatialEntityDataSourceNet::SetMetadataType(String^ metadataType)
     {
     Utf8String metadataTypeUtf8;
     BeStringUtilities::WCharToUtf8(metadataTypeUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(metadataType).ToPointer()));
 
-    (*m_pSource)->SetMetadataType(metadataTypeUtf8.c_str());
+    (*m_pSource)->GetMetadataP()->SetMetadataType(metadataTypeUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetGeoCS()
+String^ SpatialEntityDataSourceNet::GetGeoCS()
     {
     marshal_context ctx;
     return ctx.marshal_as<String^>((*m_pSource)->GetGeoCS().c_str());
@@ -603,7 +611,7 @@ String^ RealityDataSourceNet::GetGeoCS()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetGeoCS(String^ geoCS)
+void SpatialEntityDataSourceNet::SetGeoCS(String^ geoCS)
     {
     Utf8String geoCSUtf8;
     BeStringUtilities::WCharToUtf8(geoCSUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(geoCS).ToPointer()));
@@ -614,7 +622,7 @@ void RealityDataSourceNet::SetGeoCS(String^ geoCS)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetNoDataValue()
+String^ SpatialEntityDataSourceNet::GetNoDataValue()
     {
     marshal_context ctx;
     return ctx.marshal_as<String^>((*m_pSource)->GetNoDataValue().c_str());
@@ -623,7 +631,7 @@ String^ RealityDataSourceNet::GetNoDataValue()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetNoDataValue(String^ nodatavalue)
+void SpatialEntityDataSourceNet::SetNoDataValue(String^ nodatavalue)
     {
     Utf8String nodatavalueUtf8;
     BeStringUtilities::WCharToUtf8(nodatavalueUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(nodatavalue).ToPointer()));
@@ -634,7 +642,7 @@ void RealityDataSourceNet::SetNoDataValue(String^ nodatavalue)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-List<UriNet^>^ RealityDataSourceNet::GetSisterFiles()
+List<UriNet^>^ SpatialEntityDataSourceNet::GetSisterFiles()
     {
     marshal_context ctx;
     List<UriNet^>^ managedSisterFiles = gcnew List<UriNet^>();
@@ -651,7 +659,7 @@ List<UriNet^>^ RealityDataSourceNet::GetSisterFiles()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetSisterFiles(List<UriNet^>^ sisterFiles)
+void SpatialEntityDataSourceNet::SetSisterFiles(List<UriNet^>^ sisterFiles)
     {
     bvector<UriPtr> nativeSisterFiles;
     Utf8String sisterFileUtf8;    
@@ -667,7 +675,7 @@ void RealityDataSourceNet::SetSisterFiles(List<UriNet^>^ sisterFiles)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-String^ RealityDataSourceNet::GetElementName()
+String^ SpatialEntityDataSourceNet::GetElementName()
     {
     marshal_context ctx;
     return ctx.marshal_as<String^>((*m_pSource)->GetElementName());
@@ -676,19 +684,19 @@ String^ RealityDataSourceNet::GetElementName()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet::RealityDataSourceNet(UriNet^ uri, String^ type)
+SpatialEntityDataSourceNet::SpatialEntityDataSourceNet(UriNet^ uri, String^ type)
     {
     // Managed to native reality data source.
     Utf8String typeUtf8;
     BeStringUtilities::WCharToUtf8(typeUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(type).ToPointer()));
 
-    m_pSource = new RealityDataSourcePtr(RealityDataSource::Create(*ManagedToNativeUri(uri), typeUtf8.c_str()));
+    m_pSource = new SpatialEntityDataSourcePtr(SpatialEntityDataSource::Create(*ManagedToNativeUri(uri), typeUtf8.c_str()));
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Christian.Tye-Gingras         	02/2017
 //-------------------------------------------------------------------------------------
-System::IntPtr RealityDataSourceNet::GetPeer()
+System::IntPtr SpatialEntityDataSourceNet::GetPeer()
     { 
         return System::IntPtr((void *) m_pSource); 
     }
@@ -697,26 +705,26 @@ System::IntPtr RealityDataSourceNet::GetPeer()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Christian.Tye-Gingras         	02/2017
 //-------------------------------------------------------------------------------------
-void RealityDataSourceNet::SetPeer(System::IntPtr newRDSN)
+void SpatialEntityDataSourceNet::SetPeer(System::IntPtr newRDSN)
         {
         if (NULL != m_pSource)
             delete m_pSource;
 
-        m_pSource = new RealityDataSourcePtr((*(RealityDataSourcePtr*) newRDSN.ToPointer()));
+        m_pSource = new SpatialEntityDataSourcePtr((*(SpatialEntityDataSourcePtr*) newRDSN.ToPointer()));
         }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet::~RealityDataSourceNet()
+SpatialEntityDataSourceNet::~SpatialEntityDataSourceNet()
     {
-    this->!RealityDataSourceNet();
+    this->!SpatialEntityDataSourceNet();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet::!RealityDataSourceNet()
+SpatialEntityDataSourceNet::!SpatialEntityDataSourceNet()
     {
     if (0 != m_pSource)
         {
@@ -769,7 +777,7 @@ void WmsDataSourceNet::SetMapSettings(String^ mapSettings)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourceNet::WmsDataSourceNet(String^ uri)
-    : RealityDataSourceNet(UriNet::Create(uri), "wms")
+    : SpatialEntityDataSourceNet(UriNet::Create(uri), "wms")
     {
     // Managed to native reality data source.
     Utf8String uriUtf8;
@@ -782,7 +790,7 @@ WmsDataSourceNet::WmsDataSourceNet(String^ uri)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 WmsDataSourceNet::WmsDataSourceNet(UriNet^ uri)
-    : RealityDataSourceNet(uri, "wms")
+    : SpatialEntityDataSourceNet(uri, "wms")
     {
     // Managed to native reality data source.    
     m_pSource = new WmsDataSourcePtr(WmsDataSource::Create(*ManagedToNativeUri(uri)));
@@ -844,7 +852,7 @@ void OsmDataSourceNet::SetOsmResource(String^ osmResource)
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 OsmDataSourceNet::OsmDataSourceNet(String^ uri, double bboxMinX, double bboxMinY, double bboxMaxX, double bboxMaxY)
-    : RealityDataSourceNet(UriNet::Create(uri), "osm")
+    : SpatialEntityDataSourceNet(UriNet::Create(uri), "osm")
     {
     // Managed to native reality data source.
     Utf8String uriUtf8;
@@ -890,72 +898,72 @@ MultiBandSourceNet^ MultiBandSourceNet::Create(UriNet^ uri, System::String^ type
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ MultiBandSourceNet::GetRedBand()
+SpatialEntityDataSourceNet^ MultiBandSourceNet::GetRedBand()
     {
-    return NativeToManagedRealityDataSource(*(*m_pSource)->GetRedBand());
+    return NativeToManagedSpatialEntityDataSource(*(*m_pSource)->GetRedBand());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void MultiBandSourceNet::SetRedBand(RealityDataSourceNet^ band)
+void MultiBandSourceNet::SetRedBand(SpatialEntityDataSourceNet^ band)
     {
-    (*m_pSource)->SetRedBand(*ManagedToNativeRealityDataSource(band));
+    (*m_pSource)->SetRedBand(*ManagedToNativeSpatialEntityDataSource(band));
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ MultiBandSourceNet::GetGreenBand()
+SpatialEntityDataSourceNet^ MultiBandSourceNet::GetGreenBand()
     {
-    return NativeToManagedRealityDataSource(*(*m_pSource)->GetGreenBand());
+    return NativeToManagedSpatialEntityDataSource(*(*m_pSource)->GetGreenBand());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void MultiBandSourceNet::SetGreenBand(RealityDataSourceNet^ band)
+void MultiBandSourceNet::SetGreenBand(SpatialEntityDataSourceNet^ band)
     {
-    (*m_pSource)->SetGreenBand(*ManagedToNativeRealityDataSource(band));
+    (*m_pSource)->SetGreenBand(*ManagedToNativeSpatialEntityDataSource(band));
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ MultiBandSourceNet::GetBlueBand()
+SpatialEntityDataSourceNet^ MultiBandSourceNet::GetBlueBand()
     {
-    return NativeToManagedRealityDataSource(*(*m_pSource)->GetBlueBand());
+    return NativeToManagedSpatialEntityDataSource(*(*m_pSource)->GetBlueBand());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void MultiBandSourceNet::SetBlueBand(RealityDataSourceNet^ band)
+void MultiBandSourceNet::SetBlueBand(SpatialEntityDataSourceNet^ band)
     {
-    (*m_pSource)->SetBlueBand(*ManagedToNativeRealityDataSource(band));
+    (*m_pSource)->SetBlueBand(*ManagedToNativeSpatialEntityDataSource(band));
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityDataSourceNet^ MultiBandSourceNet::GetPanchromaticBand()
+SpatialEntityDataSourceNet^ MultiBandSourceNet::GetPanchromaticBand()
     {
-    return NativeToManagedRealityDataSource(*(*m_pSource)->GetPanchromaticBand());
+    return NativeToManagedSpatialEntityDataSource(*(*m_pSource)->GetPanchromaticBand());
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-void MultiBandSourceNet::SetPanchromaticBand(RealityDataSourceNet^ band)
+void MultiBandSourceNet::SetPanchromaticBand(SpatialEntityDataSourceNet^ band)
     {
-    (*m_pSource)->SetPanchromaticBand(*ManagedToNativeRealityDataSource(band));
+    (*m_pSource)->SetPanchromaticBand(*ManagedToNativeSpatialEntityDataSource(band));
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
 MultiBandSourceNet::MultiBandSourceNet(UriNet^ uri, System::String^ type)
-    : RealityDataSourceNet(uri, type)
+    : SpatialEntityDataSourceNet(uri, type)
     {
     // Managed to native reality data source.
     Utf8String typeUtf8;

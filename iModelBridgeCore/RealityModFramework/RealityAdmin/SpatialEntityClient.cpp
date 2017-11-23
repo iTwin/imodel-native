@@ -186,7 +186,8 @@ SpatialEntityHandlerStatus SpatialEntityClient::GetData() const
         }
 
         // Override source url so that it points to the SpatialEntity repository and not the local one.
-        pExtractedData->GetDataSource(0).SetUrl(m_dataRepositories[i].first.c_str());
+        UriPtr uri = Uri::Create(m_dataRepositories[i].first.c_str());
+        pExtractedData->GetDataSource(0).SetUri(*uri);
         pExtractedData->GetDataSource(0).SetServer(m_pServer.get());
 
         // Set provider.

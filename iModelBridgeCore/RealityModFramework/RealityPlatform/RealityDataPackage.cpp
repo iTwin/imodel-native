@@ -357,13 +357,13 @@ Utf8String RealityDataPackage::BuildCreationDateUTC()
 //                              PackageRealityData
 //=======================================================================================
 
-RealityDataSourceR PackageRealityData::GetSourceR(size_t index) 
+SpatialEntityDataSourceR PackageRealityData::GetSourceR(size_t index)
     {
     BeAssert(index < m_Sources.size());
         
     return *(m_Sources[index]);
     }
-RealityDataSourceCR PackageRealityData::GetSource(size_t index) const 
+SpatialEntityDataSourceCR PackageRealityData::GetSource(size_t index) const
     {
     BeAssert(index < m_Sources.size());
 
@@ -371,9 +371,9 @@ RealityDataSourceCR PackageRealityData::GetSource(size_t index) const
     }
 
 
-void PackageRealityData::AddSource(RealityDataSourceR dataSource)
+void PackageRealityData::AddSource(SpatialEntityDataSourceR dataSource)
     {
-    m_Sources.push_back(RealityDataSourcePtr(&dataSource));
+    m_Sources.push_back(SpatialEntityDataSourcePtr(&dataSource));
     }
 
 //----------------------------------------------------------------------------------------
@@ -384,7 +384,7 @@ size_t PackageRealityData::GetNumSources() const {return m_Sources.size();}
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PackageRealityData::PackageRealityData(RealityDataSourceR dataSource)  {m_Sources.push_back(RealityDataSourcePtr(&dataSource));}
+PackageRealityData::PackageRealityData(SpatialEntityDataSourceR dataSource)  {m_Sources.push_back(SpatialEntityDataSourcePtr(&dataSource));}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -395,7 +395,7 @@ PackageRealityData::~PackageRealityData(){}
 //=======================================================================================
 //                              ImageryData
 //=======================================================================================
-PackageRealityData::PackageRealityData(RealityDataSourceR dataSource, bvector<GeoPoint2d> pCorners):
+PackageRealityData::PackageRealityData(SpatialEntityDataSourceR dataSource, bvector<GeoPoint2d> pCorners):
     PackageRealityData(dataSource)
     {
     SetFootprint(pCorners);
@@ -406,7 +406,7 @@ PackageRealityData::PackageRealityData(RealityDataSourceR dataSource, bvector<Ge
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PackageRealityDataPtr PackageRealityData::CreateImagery(RealityDataSourceR dataSource, bvector<GeoPoint2d> pCorners)
+PackageRealityDataPtr PackageRealityData::CreateImagery(SpatialEntityDataSourceR dataSource, bvector<GeoPoint2d> pCorners)
     {
     // If corners are given they must be valid.
     if (!pCorners.empty() && !HasValidCorners(pCorners))
@@ -418,7 +418,7 @@ PackageRealityDataPtr PackageRealityData::CreateImagery(RealityDataSourceR dataS
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PackageRealityDataPtr PackageRealityData::CreateModel(RealityDataSourceR dataSource)
+PackageRealityDataPtr PackageRealityData::CreateModel(SpatialEntityDataSourceR dataSource)
     {
     PackageRealityDataPtr ptr = new PackageRealityData(dataSource);
     ptr->SetClassification(Classification::MODEL);
@@ -428,7 +428,7 @@ PackageRealityDataPtr PackageRealityData::CreateModel(RealityDataSourceR dataSou
 //=======================================================================================
 //                              PinnedData
 //=======================================================================================
-PackageRealityData::PackageRealityData(RealityDataSourceR dataSource, double longitude, double latitude):PackageRealityData(dataSource)
+PackageRealityData::PackageRealityData(SpatialEntityDataSourceR dataSource, double longitude, double latitude):PackageRealityData(dataSource)
     {
     m_location.Init(longitude, latitude);
     SetClassification(Classification::PINNED);
@@ -438,7 +438,7 @@ PackageRealityData::PackageRealityData(RealityDataSourceR dataSource, double lon
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PackageRealityDataPtr PackageRealityData::CreatePinned(RealityDataSourceR dataSource, double longitude, double latitude)
+PackageRealityDataPtr PackageRealityData::CreatePinned(SpatialEntityDataSourceR dataSource, double longitude, double latitude)
     {
     if (!RealityDataSerializer::IsValidLongLat(longitude, latitude))
         return NULL;
@@ -463,7 +463,7 @@ bool PackageRealityData::SetLocation(GeoPoint2dCR location)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PackageRealityDataPtr PackageRealityData::CreateTerrain(RealityDataSourceR dataSource)
+PackageRealityDataPtr PackageRealityData::CreateTerrain(SpatialEntityDataSourceR dataSource)
     {
     PackageRealityDataPtr ptr = new PackageRealityData(dataSource);
     ptr->SetClassification(Classification::TERRAIN);
@@ -473,7 +473,7 @@ PackageRealityDataPtr PackageRealityData::CreateTerrain(RealityDataSourceR dataS
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Alain.Robert  04/2017
 //----------------------------------------------------------------------------------------
-PackageRealityDataPtr PackageRealityData::CreateUndefined(RealityDataSourceR dataSource)
+PackageRealityDataPtr PackageRealityData::CreateUndefined(SpatialEntityDataSourceR dataSource)
     {
     PackageRealityDataPtr ptr = new PackageRealityData(dataSource);
     ptr->SetClassification(Classification::UNDEFINED_CLASSIF);

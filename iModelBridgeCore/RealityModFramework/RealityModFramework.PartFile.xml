@@ -40,7 +40,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
-        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
@@ -422,7 +422,7 @@
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="RealityDbECPluginC" />
         <Bindings>
-            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages" Required="false">Install\Bentley.RealityDbECPluginC.*.nupkg</Files>
+            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages" Required="false">Install\Bentley.RealityDbECPluginC\Bentley.RealityDbECPluginC.*.nupkg</Files>
         </Bindings>
     </Part>
     

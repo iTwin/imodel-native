@@ -15,42 +15,6 @@
     
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
-struct RealityDataSourceSerializer;
-
-//=====================================================================================
-//! Resource identifier representing a document location. The uri can designate a compound 
-//! document such as a zip file. The uri is then separated in two parts by the presence of a 
-//! hash sign (#). The first part indicates the location and the name of a compound 
-//! document and the later part identify the file(s) within the compound.
-//! @bsiclass                                   Jean-Francois.Cote              9/2016
-//=====================================================================================
-struct Uri : public RefCountedBase
-    {
-    public:
-        friend struct RealityDataSource;
-
-        //! Create a uri with a fully qualified identifier or with separated parts.
-        REALITYDATAPLATFORM_EXPORT static UriPtr Create(Utf8CP resourceIdentifier);
-        REALITYDATAPLATFORM_EXPORT static UriPtr Create(Utf8CP source, Utf8CP fileInCompound);
-
-        //! Get the first part of the identifier e.g. the full path of the document.
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSource() const;
-
-        //! Get the later part of the identifier e.g. the file in the compound document. Null if the source is not a compound document.
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFileInCompound() const;
-
-        //! Get the complete identifier as a string.
-        REALITYDATAPLATFORM_EXPORT Utf8String ToString() const;
-
-    protected:
-        Uri() {}
-        Uri(Utf8CP source, Utf8CP fileInCompound);
-
-    private:
-        Utf8String m_source;
-        Utf8String m_fileInCompound;
-    };
-
 //=====================================================================================
 //! Base class representing a source of data. The data must be of the type of the group 
 //! it belongs to. Different strategy can be used to identify and process compound 
@@ -58,7 +22,7 @@ struct Uri : public RefCountedBase
 //! extension of the URI, the present type and the identification of the provider.
 //! @bsiclass                                   Jean-Francois.Cote              06/2015
 //=====================================================================================
-struct RealityDataSource : public RefCountedBase
+/*struct RealityDataSource : public RefCountedBase
     {
     public:
         friend struct RealityDataSourceSerializer; 
@@ -174,128 +138,7 @@ struct RealityDataSource : public RefCountedBase
         Utf8String m_geocs;
         Utf8String m_nodatavalue;
         bvector<UriPtr> m_sisterFiles;
-    };
-
-//=====================================================================================
-//! This is a descendant of source type that allows specification of wms data. The WMS 
-//! source is fully qualified since in addition to the server URL, it contains the list 
-//! of layers, styles, coordinate system, selected delivery format, transparency setting.
-//! The WMS source can be seen as raster except requests sent to the server require 
-//! variable parameter definition based on content of WMS settings and additional 
-//! location of request.
-//! @bsiclass                                   Jean-Francois.Cote              06/2015
-//=====================================================================================
-struct WmsDataSource : public RealityDataSource
-    {
-    DEFINE_T_SUPER(RealityDataSource)
-
-    public:
-        friend struct RealityDataSourceSerializer; 
-
-        REALITYDATAPLATFORM_EXPORT static WmsDataSourcePtr Create(Utf8CP uri);
-        REALITYDATAPLATFORM_EXPORT static WmsDataSourcePtr Create(UriR uri);
-
-        //! Get/Set the WMS specific map settings.
-        //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
-        //! You can take a look at PublicApi/RealityPlatform/WmsSource.h for more details on the structure of a WmsMapSettings object.
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR  GetMapSettings() const;
-        REALITYDATAPLATFORM_EXPORT void          SetMapSettings(Utf8CP mapSettings);
-
-    protected:
-        WmsDataSource(){}
-        WmsDataSource(UriR uri);
-        virtual ~WmsDataSource();
-
-        virtual Utf8CP _GetElementName() const;
-
-    private:
-        Utf8String m_mapSettings;
-    };
-
-//=====================================================================================
-//! This is a descendant of source type that allows specification of Open Street Map data.
-//! The OSM source is fully qualified since in addition to the server URL it contains
-//! the protocol identifier and the coordinates of the region designated. It fully represents 
-//! an OSM data blob/file. It also allows specification of alternate URLs to alternate OSM 
-//! source representing the same region and the same stream format. Many alternate URLs 
-//! can be specified.
-//! 
-//! This class is deprecated and is only used to serialize or 
-//! deserialized version 1.0 of the package.
-//!
-//! @bsiclass                                   Jean-Francois.Cote              06/2015
-//=====================================================================================
-struct OsmDataSource : public RealityDataSource
-    {
-    DEFINE_T_SUPER(RealityDataSource)
-
-    public:
-        friend struct RealityDataSourceSerializer;
-
-        REALITYDATAPLATFORM_EXPORT static OsmDataSourcePtr Create(Utf8CP uri, DRange2dCP bbox);
-
-        //! Get/Set the OSM specific resources.
-        //! The string used here should represent a xml fragment containing all the nodes/infos required for OSM processing.
-        //! You can take a look at PublicApi/RealityPlatform/OsmSource.h for more details on the structure of an OsmResource object.
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR  GetOsmResource() const;
-        REALITYDATAPLATFORM_EXPORT void          SetOsmResource(Utf8CP osmResource);
-
-    protected:
-        OsmDataSource() {}
-        OsmDataSource(Utf8CP uri);
-        virtual ~OsmDataSource();
-
-        virtual Utf8CP _GetElementName() const;
-
-    private:
-        Utf8String m_osmResource;
-    };
-
-//=====================================================================================
-//! This is a descendant of source type that allows specification of multi band raster 
-//! data. Normally it does not apply to any other type. When the source is of this type 
-//! then the attribute 'uri' of the source should contain either one of the bands, 
-//! ideally the panchromatic if present.
-//! @bsiclass                                   Jean-Francois.Cote              06/2015
-//=====================================================================================
-struct MultiBandSource : public RealityDataSource
-    {
-        DEFINE_T_SUPER(RealityDataSource)
-
-    public:
-        friend struct RealityDataSourceSerializer;
-
-        REALITYDATAPLATFORM_EXPORT static MultiBandSourcePtr Create(UriR uri, Utf8CP type);
-
-        //! Get/Set the red band. A band essentially contains a source for the band data. Required.
-        REALITYDATAPLATFORM_EXPORT RealityDataSourceCP GetRedBand() const;
-        REALITYDATAPLATFORM_EXPORT void SetRedBand(RealityDataSourceR band);
-
-        //! Get/Set the green band. A band essentially contains a source for the band data. Required.
-        REALITYDATAPLATFORM_EXPORT RealityDataSourceCP GetGreenBand() const;
-        REALITYDATAPLATFORM_EXPORT void SetGreenBand(RealityDataSourceR band);
-
-        //! Get/Set the green band. A band essentially contains a source for the band data. Required.
-        REALITYDATAPLATFORM_EXPORT RealityDataSourceCP GetBlueBand() const;
-        REALITYDATAPLATFORM_EXPORT void SetBlueBand(RealityDataSourceR band);
-
-        //! Get/Set the panchromatic band. A band essentially contains a source for the band data. Optional.
-        REALITYDATAPLATFORM_EXPORT RealityDataSourceCP GetPanchromaticBand() const;
-        REALITYDATAPLATFORM_EXPORT void SetPanchromaticBand(RealityDataSourceR band);
-
-    protected:
-        MultiBandSource() {}
-        MultiBandSource(UriR uri, Utf8CP type);
-        virtual ~MultiBandSource();
-
-        virtual Utf8CP _GetElementName() const;
-
-    private:
-        RealityDataSourcePtr m_pRedBand;
-        RealityDataSourcePtr m_pGreenBand;
-        RealityDataSourcePtr m_pBlueBand;
-        RealityDataSourcePtr m_pPanchromaticBand;
-    };
+    };*/
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
 

@@ -15,7 +15,7 @@ namespace RealityPackageNet { ref class ModelDataNet; }
 namespace RealityPackageNet { ref class PinnedDataNet; }
 namespace RealityPackageNet { ref class TerrainDataNet; }
 namespace RealityPackageNet { ref class UndefinedDataNet; }
-namespace RealityPackageNet { ref class RealityDataSourceNet; }
+namespace RealityPackageNet { ref class SpatialEntityDataSourceNet; }
 
 namespace RealityPackageNet
     {   
@@ -107,19 +107,19 @@ namespace RealityPackageNet
             int GetNumSources();
 
             //! Returns the source. index start at 0 up to GetNumSource()-1
-            //RealityDataSourceNet^ GetSourceR(int index);
-            RealityDataSourceNet^ GetSource(int index);
+            //SpatialEntityDataSourceNet^ GetSourceR(int index);
+            SpatialEntityDataSourceNet^ GetSource(int index);
 
             //! Adds an alternate source to the data.
-            void AddSource(RealityDataSourceNet^ dataSource);
+            void AddSource(SpatialEntityDataSourceNet^ dataSource);
 
         protected:
-            RealityDataNet(RealityDataSourceNet^ dataSource);
+            RealityDataNet(SpatialEntityDataSourceNet^ dataSource);
             ~RealityDataNet() {};
             !RealityDataNet() {};
 
         private:
-            System::Collections::Generic::List<RealityDataSourceNet^>^ m_sources;
+            System::Collections::Generic::List<SpatialEntityDataSourceNet^>^ m_sources;
             System::String^ m_id;
             System::String^ m_name;
             System::String^ m_dataset;
@@ -133,7 +133,7 @@ namespace RealityPackageNet
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
             //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
-            static ImageryDataNet^ Create(RealityDataSourceNet^ dataSource, System::Collections::Generic::List<double>^ corners);
+            static ImageryDataNet^ Create(SpatialEntityDataSourceNet^ dataSource, System::Collections::Generic::List<double>^ corners);
 
             //! Imagery corners in lat/long.
             //! May return NULL. In such a case the corners should be read from the file header. The pointer returned is the 
@@ -147,7 +147,7 @@ namespace RealityPackageNet
             static Utf8CP ElementName;
 
         private:
-            ImageryDataNet(RealityDataSourceNet^ dataSource, System::Collections::Generic::List<double>^ corners);
+            ImageryDataNet(SpatialEntityDataSourceNet^ dataSource, System::Collections::Generic::List<double>^ corners);
             ~ImageryDataNet();
             !ImageryDataNet();
 
@@ -162,12 +162,12 @@ namespace RealityPackageNet
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
             //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
-            static ModelDataNet^ Create(RealityDataSourceNet^ dataSource);
+            static ModelDataNet^ Create(SpatialEntityDataSourceNet^ dataSource);
 
             static Utf8CP ElementName;
 
         private:
-            ModelDataNet(RealityDataSourceNet^ dataSource);
+            ModelDataNet(SpatialEntityDataSourceNet^ dataSource);
             ~ModelDataNet();
             !ModelDataNet();
 
@@ -182,7 +182,7 @@ namespace RealityPackageNet
         public:
             //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
             //! the pointer given must point to 4 consecutive GeoPoint2d structures in an array
-            static PinnedDataNet^ Create(RealityDataSourceNet^ dataSource, double longitude, double latitude);
+            static PinnedDataNet^ Create(SpatialEntityDataSourceNet^ dataSource, double longitude, double latitude);
 
             //! Get the object location in long/lat coordinate. 
             System::Collections::Generic::List<double>^ GetLocation();
@@ -208,7 +208,7 @@ namespace RealityPackageNet
             static Utf8CP ElementName;
 
         private:
-            PinnedDataNet(RealityDataSourceNet^ dataSource, double longitude, double latitude);
+            PinnedDataNet(SpatialEntityDataSourceNet^ dataSource, double longitude, double latitude);
             ~PinnedDataNet();
             !PinnedDataNet();
 
@@ -222,12 +222,12 @@ namespace RealityPackageNet
         {
         public:
             //! Create a new TerrainData. 
-            static TerrainDataNet^ Create(RealityDataSourceNet^ dataSource);
+            static TerrainDataNet^ Create(SpatialEntityDataSourceNet^ dataSource);
 
             static Utf8CP ElementName;
 
         private:
-            TerrainDataNet(RealityDataSourceNet^ dataSource);
+            TerrainDataNet(SpatialEntityDataSourceNet^ dataSource);
             ~TerrainDataNet();
             !TerrainDataNet();
 
@@ -241,12 +241,12 @@ namespace RealityPackageNet
         {
         public:
             //! Create a new UndefinedData. 
-            static UndefinedDataNet^ Create(RealityDataSourceNet^ dataSource);
+            static UndefinedDataNet^ Create(SpatialEntityDataSourceNet^ dataSource);
 
             static Utf8CP ElementName;
 
         private:
-            UndefinedDataNet(RealityDataSourceNet^ dataSource);
+            UndefinedDataNet(SpatialEntityDataSourceNet^ dataSource);
             ~UndefinedDataNet();
             !UndefinedDataNet();
 

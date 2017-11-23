@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     if (dsResponse.status != RequestStatus::BADREQ)
     {
         std::cout << "DataSource found for id '100' with Url :" << std::endl;
-        std::cout << dSource->GetUrl() << std::endl << std::endl;
+        std::cout << dSource->GetUri().ToString() << std::endl << std::endl;
     }
     else
         std::cout << "error SpatialEntityDataSourceByIdRequest" << std::endl;

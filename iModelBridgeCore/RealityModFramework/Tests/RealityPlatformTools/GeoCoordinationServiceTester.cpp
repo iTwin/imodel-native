@@ -698,7 +698,7 @@ TEST_F(GeoCoordinationServiceRequestFixture, SpatialEntityDataSourceByIdRequestG
 
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_STREQ(spatialEntitiesDataSource->GetId().c_str(), "MyIdentifier");
-    EXPECT_STREQ(spatialEntitiesDataSource->GetUrl().c_str(), "http://www.example.com");
+    EXPECT_STREQ(spatialEntitiesDataSource->GetUri().ToString().c_str(), "http://www.example.com");
 }
 
 

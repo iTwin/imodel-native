@@ -10,7 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/RealityDataSource.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataObjects.h>
 #include <Bentley/bvector.h>
 #include <Geom/GeomApi.h>
@@ -77,21 +77,21 @@ public:
         UpperRight = 3     // (1,1)
         };
 
-    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateImagery(RealityDataSourceR dataSource, bvector<GeoPoint2d> pCorners);
-    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateModel(RealityDataSourceR dataSource);
-    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreatePinned(RealityDataSourceR dataSource, double longitude, double latitude);
-    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateTerrain(RealityDataSourceR dataSource);
-    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateUndefined(RealityDataSourceR dataSource);
+    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateImagery(SpatialEntityDataSourceR dataSource, bvector<GeoPoint2d> pCorners);
+    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateModel(SpatialEntityDataSourceR dataSource);
+    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreatePinned(SpatialEntityDataSourceR dataSource, double longitude, double latitude);
+    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateTerrain(SpatialEntityDataSourceR dataSource);
+    REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateUndefined(SpatialEntityDataSourceR dataSource);
 
     //! Data can contain many sources (at least one). This returns the number of sources.
     REALITYDATAPLATFORM_EXPORT size_t GetNumSources() const;
 
     //! Returns the source. index start at 0 up to GetNumSource()-1
-    REALITYDATAPLATFORM_EXPORT RealityDataSourceR GetSourceR(size_t index);
-    REALITYDATAPLATFORM_EXPORT RealityDataSourceCR GetSource(size_t index) const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceR GetSourceR(size_t index);
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCR GetSource(size_t index) const;
 
     //! Adds an alternate source to the data.
-    REALITYDATAPLATFORM_EXPORT void AddSource(RealityDataSourceR dataSource);
+    REALITYDATAPLATFORM_EXPORT void AddSource(SpatialEntityDataSourceR dataSource);
 
     //! Get the object location in long/lat coordinate. 
     REALITYDATAPLATFORM_EXPORT GeoPoint2dCR GetLocation() const;
@@ -110,15 +110,15 @@ public:
 
 protected:
     explicit PackageRealityData(){}; // for persistence.
-    PackageRealityData(RealityDataSourceR dataSource);
+    PackageRealityData(SpatialEntityDataSourceR dataSource);
     virtual ~PackageRealityData();
 
-    PackageRealityData(RealityDataSourceR dataSource, bvector<GeoPoint2d> pCorners);
-    PackageRealityData(RealityDataSourceR dataSource, double longitude, double latitude);
+    PackageRealityData(SpatialEntityDataSourceR dataSource, bvector<GeoPoint2d> pCorners);
+    PackageRealityData(SpatialEntityDataSourceR dataSource, double longitude, double latitude);
       
 private:
     static bool HasValidCorners(const bvector<GeoPoint2d>& pCorners);
-    bvector<RealityDataSourcePtr>   m_Sources;
+    bvector<SpatialEntityDataSourcePtr>   m_Sources;
     GeoPoint2d                      m_location;
     };
 

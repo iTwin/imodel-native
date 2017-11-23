@@ -196,7 +196,8 @@ SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
 
     // Url.
     SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
-    newDataSource->SetUrl((fileList[0].GetNameUtf8().c_str()));
+    UriPtr uri = Uri::Create(fileList[0].GetNameUtf8().c_str());
+    newDataSource->SetUri(*uri);
 
     // Compound type.
     BeFileName compoundFilePath(inputDirPath);

@@ -10,12 +10,65 @@
 #include <BeXml/BeXml.h>
 
 #include <RealityPlatform/SpatialEntity.h>
+#include "RealitySerialization.h"
 
 
 #define THUMBNAIL_WIDTH     512
 #define THUMBNAIL_HEIGHT    512
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+
+
+
+//=======================================================================================
+//                                    Uri
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UriPtr Uri::Create(Utf8CP resourceIdentifier)
+    {
+    Utf8String resIdStr(resourceIdentifier);
+    size_t pos = resIdStr.find("#");
+    if (pos == Utf8String::npos)
+        return new Uri(resourceIdentifier, NULL);
+
+    Utf8String source = resIdStr.substr(0, pos);
+    Utf8String fileInCompound = resIdStr.substr(pos + 1);
+    return new Uri(source.c_str(), fileInCompound.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+UriPtr Uri::Create(Utf8CP source, Utf8CP fileInCompound)
+    {
+    return new Uri(source, fileInCompound);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR Uri::GetSource() const { return m_source; }
+Utf8StringCR Uri::GetFileInCompound() const { return m_fileInCompound; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8String Uri::ToString() const
+    {
+    if (m_fileInCompound.empty())
+        return m_source;
+
+    return (m_source + "#" + m_fileInCompound);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Uri::Uri(Utf8CP source, Utf8CP fileInCompound)
+    :m_source(source), m_fileInCompound(fileInCompound)
+    {}
 
 
 //-------------------------------------------------------------------------------------
@@ -27,14 +80,60 @@ SpatialEntityDataSourcePtr SpatialEntityDataSource::Create()
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+SpatialEntityDataSourcePtr SpatialEntityDataSource::Create(UriR uri, Utf8CP type)
+    {
+    if (uri.ToString().empty())
+        return NULL;
+
+    return new SpatialEntityDataSource(uri, type);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+SpatialEntityDataSourcePtr SpatialEntityDataSource::Create(Utf8CP uri, Utf8CP type)
+    {
+    if (Utf8String::IsNullOrEmpty(uri))
+        return NULL;
+
+    return new SpatialEntityDataSource(uri, type);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+SpatialEntityDataSource::SpatialEntityDataSource(UriR uri, Utf8CP type)
+    {
+    BeAssert(!uri.ToString().empty());
+    m_pUri = &uri;
+    m_dataType = type;
+    m_pMetadata = SpatialEntityMetadata::Create();
+    m_pServer = SpatialEntityServer::Create();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+SpatialEntityDataSource::SpatialEntityDataSource(Utf8CP uri, Utf8CP type)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(uri));
+    m_pUri = Uri::Create(uri);
+    m_dataType = type;
+    m_pMetadata = SpatialEntityMetadata::Create();
+    m_pServer = SpatialEntityServer::Create();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                   4/2016
 //-------------------------------------------------------------------------------------
 
 Utf8StringCR SpatialEntityDataSource::GetId() const { return m_id; }
 void SpatialEntityDataSource::SetId(Utf8CP id) { m_id = id; }
 
-Utf8StringCR SpatialEntityDataSource::GetUrl() const { return m_url; }
-void SpatialEntityDataSource::SetUrl(Utf8CP url) { m_url = url; }
+UriCR SpatialEntityDataSource::GetUri() const { return *m_pUri; }
+void SpatialEntityDataSource::SetUri(UriR uri) { m_pUri = &uri; }
 
 Utf8StringCR SpatialEntityDataSource::GetGeoCS() const { return m_geoCS; }
 void SpatialEntityDataSource::SetGeoCS(Utf8CP geoCS) { m_geoCS = geoCS; }
@@ -56,56 +155,237 @@ Utf8StringCR SpatialEntityDataSource::GetLocationInCompound() const { return m_l
 void SpatialEntityDataSource::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
 
 SpatialEntityServerCP SpatialEntityDataSource::GetServerCP() const { return m_pServer.get(); }
-void SpatialEntityDataSource::SetServer(SpatialEntityServerP server) { m_pServer = server; }
+SpatialEntityServerP SpatialEntityDataSource::GetServerP() { return m_pServer.get(); }
+void SpatialEntityDataSource::SetServer(SpatialEntityServerPtr server) { m_pServer = server; }
 
 Utf8StringCR SpatialEntityDataSource::GetCoordinateSystem() const { return m_coordinateSystem; }
 void SpatialEntityDataSource::SetCoordinateSystem(Utf8CP coordSys) { m_coordinateSystem = coordSys; }
 
-bool SpatialEntityDataSource::GetIsMultiband() const { return m_isMultiband; }
-void SpatialEntityDataSource::SetIsMultiband(bool isMultiband) { m_isMultiband = isMultiband; }
+//=======================================================================================
+//                              WmsDataSource
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+WmsDataSourcePtr WmsDataSource::Create(UriR uri)
+    {
+    if (uri.ToString().empty())
+        return NULL;
 
-void SpatialEntityDataSource::GetMultibandUrls(Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl) const 
-    { 
-    redUrl = m_redDownloadUrl;
-    blueUrl = m_blueDownloadUrl;
-    greenUrl = m_greenDownloadUrl;
-    panchromaticUrl = m_panchromaticDownloadUrl;
+    return new WmsDataSource(uri);
     }
 
-void SpatialEntityDataSource::SetMultibandUrls(Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl) 
-    { 
-    m_redDownloadUrl = redUrl;
-    m_blueDownloadUrl = blueUrl;
-    m_greenDownloadUrl = greenUrl;
-    m_panchromaticDownloadUrl = panchromaticUrl;
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+WmsDataSourcePtr WmsDataSource::Create(Utf8CP uri)
+    {
+    if (Utf8String::IsNullOrEmpty(uri))
+        return NULL;
+
+    UriPtr pUri = Uri::Create(uri);
+
+    return new WmsDataSource(*pUri);
     }
 
-uint64_t SpatialEntityDataSource::GetRedBandSize() const { return m_redSize; }
-void SpatialEntityDataSource::SetRedBandSize(uint64_t size) { m_redSize = size; }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  
+//----------------------------------------------------------------------------------------
+Utf8StringCR WmsDataSource::GetMapSettings() const { return m_mapSettings; }
+void WmsDataSource::SetMapSettings(Utf8CP mapSettings) { m_mapSettings = mapSettings; }
 
-uint64_t SpatialEntityDataSource::GetBlueBandSize() const { return m_blueSize; }
-void SpatialEntityDataSource::SetBlueBandSize(uint64_t size) { m_blueSize = size; }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+WmsDataSource::WmsDataSource(UriR uri)
+    :SpatialEntityDataSource(uri, WMS_SOURCE_TYPE)
+    {}
 
-uint64_t SpatialEntityDataSource::GetGreenBandSize() const { return m_greenSize; }
-void SpatialEntityDataSource::SetGreenBandSize(uint64_t size) { m_greenSize = size; }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+WmsDataSource::~WmsDataSource() {}
 
-uint64_t SpatialEntityDataSource::GetPanchromaticBandSize() const { return m_panchromaticSize; }
-void SpatialEntityDataSource::SetPanchromaticBandSize(uint64_t size) { m_panchromaticSize = size; }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+Utf8CP WmsDataSource::_GetElementName() const { return PACKAGE_ELEMENT_WmsSource; }
+
+
+//=======================================================================================
+//                              OsmDataSource
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+OsmDataSourcePtr OsmDataSource::Create(Utf8CP uri, DRange2dCP bbox)
+    {
+    if (Utf8String::IsNullOrEmpty(uri))
+        return NULL;
+
+    // Convert bbox to a comma separated string.
+    Utf8String result;
+    Utf8PrintfString lowPtStr(LATLONG_PRINT_FORMAT_COMMA ",", bbox->low.x, bbox->low.y);
+    result.append(lowPtStr);
+    Utf8PrintfString highPtStr(LATLONG_PRINT_FORMAT_COMMA ",", bbox->high.x, bbox->high.y);
+    result.append(highPtStr);
+
+    // Remove extra comma
+    if (result.size() > 1)
+        result.resize(result.size() - 1);
+
+    // Append bbox to uri.
+    Utf8String fullUri;
+    fullUri.append(uri);
+    fullUri.append("bbox=");
+    fullUri.append(result);
+
+    return new OsmDataSource(fullUri.c_str());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  
+//----------------------------------------------------------------------------------------
+Utf8StringCR OsmDataSource::GetOsmResource() const { return m_osmResource; }
+void OsmDataSource::SetOsmResource(Utf8CP osmResource) { m_osmResource = osmResource; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+OsmDataSource::OsmDataSource(Utf8CP uri)
+    :SpatialEntityDataSource(uri, OSM_SOURCE_TYPE)
+    {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+OsmDataSource::~OsmDataSource() {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+Utf8CP OsmDataSource::_GetElementName() const { return PACKAGE_ELEMENT_OsmSource; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+MultiBandSource::MultiBandSource(UriR uri, Utf8CP type)
+    :SpatialEntityDataSource(uri, type)
+    {}
+
+
+void MultiBandSource::SetMultibandUrls(Utf8StringCR redUrl, Utf8StringCR greenUrl, Utf8StringCR blueUrl, Utf8StringCR panchromaticUrl)
+    {
+    m_pRedBand = SpatialEntityDataSource::Create();
+    UriPtr redUri = Uri::Create(redUrl.c_str());
+    m_pRedBand->SetUri(*redUri);
+
+    m_pGreenBand = SpatialEntityDataSource::Create();
+    UriPtr greenUri = Uri::Create(greenUrl.c_str());
+    m_pGreenBand->SetUri(*greenUri);
+
+    m_pBlueBand = SpatialEntityDataSource::Create();
+    UriPtr blueUri = Uri::Create(blueUrl.c_str());
+    m_pBlueBand->SetUri(*blueUri);
+
+    m_pPanchromaticBand = SpatialEntityDataSource::Create();
+    UriPtr panchromaticUri = Uri::Create(panchromaticUrl.c_str());
+    m_pPanchromaticBand->SetUri(*panchromaticUri);
+    }
+
+void MultiBandSource::GetMultibandUrls(Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl) const
+    { 
+    redUrl = m_pRedBand->GetUri().ToString();
+    blueUrl = m_pBlueBand->GetUri().ToString();
+    greenUrl = m_pGreenBand->GetUri().ToString();
+    panchromaticUrl = m_pPanchromaticBand->GetUri().ToString();
+    }
+
+uint64_t MultiBandSource::GetRedBandSize() const { return m_pRedBand->GetSize(); }
+void MultiBandSource::SetRedBandSize(uint64_t size)
+    {
+    m_pRedBand->SetSize(size);
+    }
+
+uint64_t MultiBandSource::GetBlueBandSize() const { return m_pBlueBand->GetSize(); }
+void MultiBandSource::SetBlueBandSize(uint64_t size)
+    {
+    m_pBlueBand->SetSize(size);
+    }
+
+uint64_t MultiBandSource::GetGreenBandSize() const { return m_pGreenBand->GetSize(); }
+void MultiBandSource::SetGreenBandSize(uint64_t size)
+    {
+    m_pGreenBand->SetSize(size);
+    }
+
+uint64_t MultiBandSource::GetPanchromaticBandSize() const { return m_pPanchromaticBand->GetSize(); }
+void MultiBandSource::SetPanchromaticBandSize(uint64_t size)
+    {
+    m_pPanchromaticBand->SetSize(size);
+    }
+
+MultiBandSourcePtr MultiBandSource::Create()
+    {
+    return new MultiBandSource();
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+MultiBandSourcePtr MultiBandSource::Create(UriR uri, Utf8CP type)
+    {
+    if (uri.ToString().empty())
+        return NULL;
+
+    return new MultiBandSource(uri, type);
+    }
+
+SpatialEntityDataSourceCP MultiBandSource::GetRedBand() const { return m_pRedBand.get(); }
+void MultiBandSource::SetRedBand(SpatialEntityDataSourceR band) { m_pRedBand = &band; }
+
+SpatialEntityDataSourceCP MultiBandSource::GetGreenBand() const { return m_pGreenBand.get(); }
+void MultiBandSource::SetGreenBand(SpatialEntityDataSourceR band) { m_pGreenBand = &band; }
+
+SpatialEntityDataSourceCP MultiBandSource::GetBlueBand() const { return m_pBlueBand.get(); }
+void MultiBandSource::SetBlueBand(SpatialEntityDataSourceR band) { m_pBlueBand = &band; }
+
+SpatialEntityDataSourceCP MultiBandSource::GetPanchromaticBand() const { return m_pPanchromaticBand.get(); }
+void MultiBandSource::SetPanchromaticBand(SpatialEntityDataSourceR band) { m_pPanchromaticBand = &band; }
 
 long int SpatialEntityDataSource::GetServerId() const { return m_serverId; }
 void SpatialEntityDataSource::SetServerId(long int id) const { m_serverId = id; }
+
+const bvector<UriPtr>& SpatialEntityDataSource::GetSisterFiles() const { return m_sisterFiles; }
+void SpatialEntityDataSource::SetSisterFiles(const bvector<UriPtr>& sisterFiles) { m_sisterFiles = sisterFiles; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8CP SpatialEntityDataSource::GetElementName() const
+    {
+    return _GetElementName();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+Utf8CP SpatialEntityDataSource::_GetElementName() const
+    {
+    BeAssert("Child class must override _GetElementName()" && typeid(*this) == typeid(SpatialEntityDataSource));
+    return PACKAGE_ELEMENT_Source;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+Utf8CP MultiBandSource::_GetElementName() const { return PACKAGE_ELEMENT_MultiBandSource; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 SpatialEntityDataSource::SpatialEntityDataSource()
     {
-    m_size = 0;
-    m_redSize = 0;
-    m_blueSize = 0;
-    m_greenSize = 0;
-    m_panchromaticSize = 0;
-
     }
 
 //-------------------------------------------------------------------------------------
@@ -135,11 +415,45 @@ SpatialEntityPtr SpatialEntity::Create(Utf8StringCR identifier, const DateTime& 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR SpatialEntity::GetProvider() const { return m_provider; }
+Utf8StringCR SpatialEntity::GetProvider() const 
+    {
+    if (m_provider.empty())
+        {
+        for (int i = 0; i < m_DataSources.size(); ++i)
+            {
+            m_provider = m_DataSources[i]->GetProvider();
+            if (m_provider.empty())
+                break;
+            }
+        }
+
+    return m_provider;
+    }
+
 void SpatialEntity::SetProvider(Utf8CP provider) { m_provider = provider; }
 
-Utf8StringCR SpatialEntity::GetProviderName() const { return m_providerName; }
+Utf8StringCR SpatialEntityDataSource::GetProvider() const { return m_provider; }
+void SpatialEntityDataSource::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+Utf8StringCR SpatialEntity::GetProviderName() const
+    {
+    if (m_providerName.empty())
+        {
+        for (int i = 0; i < m_DataSources.size(); ++i)
+        {
+            m_providerName = m_DataSources[i]->GetProviderName();
+            if (m_providerName.empty())
+                break;
+            }
+        }
+
+    return m_providerName;
+    }
+
 void SpatialEntity::SetProviderName(Utf8CP providerName) { m_providerName = providerName; }
+
+Utf8StringCR SpatialEntityDataSource::GetProviderName() const { return m_providerName; }
+void SpatialEntityDataSource::SetProviderName(Utf8CP providerName) { m_providerName = providerName; }
 
 Utf8StringCR SpatialEntity::GetThumbnailURL() const { return m_thumbnailURL; }
 void SpatialEntity::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thumbnailURL; }
@@ -153,9 +467,44 @@ void SpatialEntity::SetDataType(Utf8CP type) { m_dataType = type; }
 DateTimeCR SpatialEntity::GetDate() const { return m_date; }
 void SpatialEntity::SetDate(DateTimeCR date) { m_date = date; }
 
-SpatialEntityMetadataCP SpatialEntity::GetMetadataCP() const { return m_pMetadata.get(); }
-SpatialEntityMetadataP SpatialEntity::GetMetadataP()  { return m_pMetadata.get(); }
-void SpatialEntity::SetMetadata(SpatialEntityMetadataP metadata) { m_pMetadata = metadata; }
+SpatialEntityMetadataCP SpatialEntity::GetMetadataCP() const 
+    { 
+    if(m_pMetadata == nullptr)
+        {
+        for(int i = 0; i < m_DataSources.size(); ++i)
+            {
+            m_pMetadata = m_DataSources[i]->GetMetadataP();
+            if(m_pMetadata != nullptr)
+                break;
+            }
+        }
+
+    return m_pMetadata.get();   
+    }
+
+SpatialEntityMetadataP SpatialEntity::GetMetadataP() 
+    {
+    if (m_pMetadata == nullptr)
+        {
+        for (int i = 0; i < m_DataSources.size(); ++i)
+            {
+            m_pMetadata = m_DataSources[i]->GetMetadataP();
+            if (m_pMetadata != nullptr)
+                break;
+            }
+        }
+
+    return m_pMetadata.get(); 
+    }
+
+void SpatialEntity::SetMetadata(SpatialEntityMetadataPtr metadata) { m_pMetadata = metadata; }
+
+SpatialEntityMetadataCP SpatialEntityDataSource::GetMetadataCP() const { return m_pMetadata.get(); }
+SpatialEntityMetadataPtr SpatialEntityDataSource::GetMetadataP()  { return m_pMetadata.get(); }
+void SpatialEntityDataSource::SetMetadata(SpatialEntityMetadataPtr metadata) { m_pMetadata = metadata; }
+
+Utf8StringCR SpatialEntityMetadata::GetMetadataType() const { return m_metadataType; }
+void SpatialEntityMetadata::SetMetadataType(Utf8CP type) { m_metadataType = type; }
 
 SpatialEntityDataSourceCR SpatialEntity::GetDataSource(size_t index) const { return *m_DataSources[index]; }
 SpatialEntityDataSourceR SpatialEntity::GetDataSource(size_t index) { return *m_DataSources[index]; }

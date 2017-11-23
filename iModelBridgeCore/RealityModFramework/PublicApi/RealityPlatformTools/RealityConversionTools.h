@@ -89,7 +89,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package);
 
 private:
-    static RealityDataDownload::sisterFileVector RealityDataToSisterVector(RealityPlatform::RealityDataSourceCR dataSource);
+    static RealityDataDownload::sisterFileVector RealityDataToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource);
     static RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToMirrorVector(const RealityPlatform::PackageRealityData& realityData);
     static StatusInt JsonToObjectBase(Utf8CP data, Json::Value& json);
     };

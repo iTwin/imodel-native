@@ -333,7 +333,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityDataSourceBasicTest)
     ASSERT_TRUE(mySpatialEntityDataSource.IsValid());
     ASSERT_TRUE(!mySpatialEntityDataSource.IsNull());
 
-    EXPECT_STREQ(mySpatialEntityDataSource->GetUrl().c_str(), "");
+    EXPECT_STREQ(mySpatialEntityDataSource->GetUri().ToString().c_str(), "");
 
     EXPECT_STREQ(mySpatialEntityDataSource->GetGeoCS().c_str(), "");
 
@@ -347,10 +347,10 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityDataSourceBasicTest)
 
     EXPECT_STREQ(mySpatialEntityDataSource->GetLocationInCompound().c_str(), "");
 
-    ASSERT_TRUE(!mySpatialEntityDataSource->GetIsMultiband());
+    //ASSERT_TRUE(!mySpatialEntityDataSource->GetIsMultiband());
 
 
-    Utf8String redUrl;
+    /*Utf8String redUrl;
     Utf8String greenUrl;
     Utf8String blueUrl;
     Utf8String panchromaticUrl;
@@ -367,11 +367,12 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityDataSourceBasicTest)
 
     ASSERT_TRUE(mySpatialEntityDataSource->GetBlueBandSize() == 0);
 
-    ASSERT_TRUE(mySpatialEntityDataSource->GetPanchromaticBandSize() == 0);
+    ASSERT_TRUE(mySpatialEntityDataSource->GetPanchromaticBandSize() == 0);*/
 
     // Set test
-    mySpatialEntityDataSource->SetUrl("http:\\\\somewhere.com\\SomeLocation");
-    EXPECT_STREQ(mySpatialEntityDataSource->GetUrl().c_str(), "http:\\\\somewhere.com\\SomeLocation");
+    UriPtr uri = Uri::Create("http:\\\\somewhere.com\\SomeLocation");
+    mySpatialEntityDataSource->SetUri(*uri);
+    EXPECT_STREQ(mySpatialEntityDataSource->GetUri().ToString().c_str(), "http:\\\\somewhere.com\\SomeLocation");
 
     mySpatialEntityDataSource->SetGeoCS("EPSG:4326;NAVD88");
     EXPECT_STREQ(mySpatialEntityDataSource->GetGeoCS().c_str(), "EPSG:4326;NAVD88");
@@ -391,7 +392,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityDataSourceBasicTest)
     mySpatialEntityDataSource->SetLocationInCompound(".\\a.tif");
     EXPECT_STREQ(mySpatialEntityDataSource->GetLocationInCompound().c_str(), ".\\a.tif");
 
-    mySpatialEntityDataSource->SetIsMultiband(true);
+    /*mySpatialEntityDataSource->SetIsMultiband(true);
     ASSERT_TRUE(mySpatialEntityDataSource->GetIsMultiband());
 
     mySpatialEntityDataSource->SetMultibandUrls("red.tif", "green.tif", "blue.tif", "pan.tif");
@@ -411,7 +412,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityDataSourceBasicTest)
     ASSERT_TRUE(mySpatialEntityDataSource->GetBlueBandSize() == 453);
 
     mySpatialEntityDataSource->SetPanchromaticBandSize(2345);
-    ASSERT_TRUE(mySpatialEntityDataSource->GetPanchromaticBandSize() == 2345);
+    ASSERT_TRUE(mySpatialEntityDataSource->GetPanchromaticBandSize() == 2345);*/
     }
 
 //-------------------------------------------------------------------------------------
@@ -590,19 +591,20 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     // Create and add a spatial data source
     SpatialEntityDataSourcePtr mySpatialEntityDataSource = SpatialEntityDataSource::Create();
 
-    mySpatialEntityDataSource->SetUrl("http:\\\\somewhere.com\\SomeLocation");
+    UriPtr uri = Uri::Create("http:\\\\somewhere.com\\SomeLocation");
+    mySpatialEntityDataSource->SetUri(*uri);
     mySpatialEntityDataSource->SetGeoCS("EPSG:4326;NAVD88");
     mySpatialEntityDataSource->SetCompoundType("zip");
     mySpatialEntityDataSource->SetSize(12345);
     mySpatialEntityDataSource->SetNoDataValue("0:0:0");
     mySpatialEntityDataSource->SetDataType("tif");
     mySpatialEntityDataSource->SetLocationInCompound(".\\a.tif");
-    mySpatialEntityDataSource->SetIsMultiband(true);
+    /*mySpatialEntityDataSource->SetIsMultiband(true);
     mySpatialEntityDataSource->SetMultibandUrls("red.tif", "green.tif", "blue.tif", "pan.tif");
     mySpatialEntityDataSource->SetRedBandSize(324);
     mySpatialEntityDataSource->SetGreenBandSize(321);
     mySpatialEntityDataSource->SetBlueBandSize(453);
-    mySpatialEntityDataSource->SetPanchromaticBandSize(2345);
+    mySpatialEntityDataSource->SetPanchromaticBandSize(2345);*/
 
     // Create a server.
     SpatialEntityServerPtr mySpatialEntityServer = SpatialEntityServer::Create();

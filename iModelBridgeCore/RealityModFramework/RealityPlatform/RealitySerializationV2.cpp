@@ -11,7 +11,7 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/RealityDataPackage.h>
-#include <RealityPlatform/RealityDataSource.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include <BeXml/BeXml.h>
 #include "RealitySerialization.h"
 
@@ -130,10 +130,10 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
             return RealityPackageStatus::MissingSourceAttribute;
 
         // Source.
-        bvector<RealityDataSourcePtr> pSources;
+        bvector<SpatialEntityDataSourcePtr> pSources;
         for (BeXmlNodeP const& pSourceNode : sourceNodes)
             {
-            RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+            SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
             if (status != RealityPackageStatus::Success)
                 return status;
 
@@ -257,10 +257,10 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
         BeXmlDom::IterableNodeSet sourceNodes;
         pSourcesNode->SelectChildNodes(sourceNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Source);
 
-        bvector<RealityDataSourcePtr> pSources;
+        bvector<SpatialEntityDataSourcePtr> pSources;
         for (BeXmlNodeP const& pSourceNode : sourceNodes)
             {
-            RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+            SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
             if (status != RealityPackageStatus::Success)
                 return status;
 
@@ -334,10 +334,10 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
         BeXmlDom::IterableNodeSet sourceNodes;
         pSourcesNode->SelectChildNodes(sourceNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Source);
 
-        bvector<RealityDataSourcePtr> pSources;
+        bvector<SpatialEntityDataSourcePtr> pSources;
         for (BeXmlNodeP const& pSourceNode : sourceNodes)
             {
-            RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+            SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
             if (status != RealityPackageStatus::Success)
                 return status;
 
@@ -433,10 +433,10 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
         BeXmlDom::IterableNodeSet sourceNodes;
         pSourcesNode->SelectChildNodes(sourceNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Source);
 
-        bvector<RealityDataSourcePtr> pSources;
+        bvector<SpatialEntityDataSourcePtr> pSources;
         for (BeXmlNodeP const& pSourceNode : sourceNodes)
             {
-            RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+            SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
             if (status != RealityPackageStatus::Success)
                 return status;
 
@@ -510,10 +510,10 @@ RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPac
         BeXmlDom::IterableNodeSet sourceNodes;
         pSourcesNode->SelectChildNodes(sourceNodes, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Source);
 
-        bvector<RealityDataSourcePtr> pSources;
+        bvector<SpatialEntityDataSourcePtr> pSources;
         for (BeXmlNodeP const& pSourceNode : sourceNodes)
             {
-            RealityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
+            SpatialEntityDataSourcePtr pDataSource = ReadSource(status, pSourceNode);
             if (status != RealityPackageStatus::Success)
                 return status;
 
@@ -891,11 +891,11 @@ RealityPackageStatus RealityDataSerializerV2::_WriteUndefinedGroup(BeXmlNodeR no
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016
 //-------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, RealityDataSourceCR source) const
+RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, SpatialEntityDataSourceCR source) const
     {
     // Required fields.
     UriCR uri = source.GetUri();
-    Utf8String type = source.GetType();
+    Utf8String type = source.GetDataType();
     if (uri.ToString().empty() || type.empty())
         return RealityPackageStatus::MissingSourceAttribute;
 
@@ -904,14 +904,14 @@ RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, Real
     pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, type.c_str());
 
     // Optional fields.
-    if (source.IsStreamed())
-        pSourceNode->AddAttributeBooleanValue(PACKAGE_SOURCE_ATTRIBUTE_Streamed, source.IsStreamed());
+    if (source.GetServerCP() != nullptr && source.GetServerCP()->IsStreamed())
+        pSourceNode->AddAttributeBooleanValue(PACKAGE_SOURCE_ATTRIBUTE_Streamed, source.GetServerCP()->IsStreamed());
 
-    if (!source.GetCopyright().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetCopyright().c_str());
+    if (source.GetMetadataCP() != nullptr && !source.GetMetadataCP()->GetLegal().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, source.GetMetadataCP()->GetLegal().c_str());
 
-    if (!source.GetTermOfUse().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetTermOfUse().c_str());
+    if (source.GetMetadataCP() != nullptr && !source.GetMetadataCP()->GetTermsOfUse().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_TermOfUse, source.GetMetadataCP()->GetTermsOfUse().c_str());
 
     if (!source.GetId().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Id, source.GetId().c_str());
@@ -919,27 +919,27 @@ RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, Real
     if (!source.GetProvider().empty())
         pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Provider, source.GetProvider().c_str());
 
-    if (!source.GetServerLoginKey().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginKey, source.GetServerLoginKey().c_str());
+    if (source.GetServerCP() != nullptr && !source.GetServerCP()->GetLoginKey().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginKey, source.GetServerCP()->GetLoginKey().c_str());
 
-    if (!source.GetServerLoginMethod().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginMethod, source.GetServerLoginMethod().c_str());
+    if (source.GetServerCP() != nullptr && !source.GetServerCP()->GetLoginMethod().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerLoginMethod, source.GetServerCP()->GetLoginMethod().c_str());
 
-    if (!source.GetServerRegistrationPage().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerRegPage, source.GetServerRegistrationPage().c_str());
+    if (source.GetServerCP() != nullptr && !source.GetServerCP()->GetRegistrationPage().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerRegPage, source.GetServerCP()->GetRegistrationPage().c_str());
 
-    if (!source.GetServerOrganisationPage().empty())
-        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerOrgPage, source.GetServerOrganisationPage().c_str());
+    if (source.GetServerCP() != nullptr && !source.GetServerCP()->GetOrganisationPage().empty())
+        pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_ServerOrgPage, source.GetServerCP()->GetOrganisationPage().c_str());
 
     if (0 != source.GetSize())
         pSourceNode->AddElementUInt64Value(PACKAGE_ELEMENT_Size, source.GetSize());
 
-    if (!source.GetMetadata().empty())
+    if (source.GetMetadataCP() != nullptr && !source.GetMetadataCP()->GetDescription().empty())
         {
-        BeXmlNodeP pMetadataNode = pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadata().c_str());
+        BeXmlNodeP pMetadataNode = pSourceNode->AddElementStringValue(PACKAGE_ELEMENT_Metadata, source.GetMetadataCP()->GetDescription().c_str());
 
-        if(!source.GetMetadataType().empty())
-            pMetadataNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, source.GetMetadataType().c_str());
+        if(source.GetMetadataCP() != nullptr && !source.GetMetadataCP()->GetMetadataType().empty())
+            pMetadataNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, source.GetMetadataCP()->GetMetadataType().c_str());
         }
 
     if (!source.GetGeoCS().empty())

@@ -165,7 +165,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         bvector<bvector<RealityDataDownload::url_file_pair>> wSisters;
         for (auto& realityData : DownloadList)
             {
-            RealityDataSourceCP pSource = dynamic_cast<RealityDataSourceCP>(&realityData->GetSource(0));
+            SpatialEntityDataSourceCP pSource = dynamic_cast<SpatialEntityDataSourceCP>(&realityData->GetSource(0));
             if (NULL == pSource)
                 continue;
 

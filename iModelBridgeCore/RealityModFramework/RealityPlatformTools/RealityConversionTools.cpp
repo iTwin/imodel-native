@@ -770,7 +770,10 @@ SpatialEntityDataSourcePtr RealityConversionTools::JsonToSpatialEntityDataSource
 
     // Main Url
     if (properties.isMember("MainURL") && !properties["MainURL"].isNull())
-        data->SetUrl(Utf8CP(properties["MainURL"].asString().c_str()));
+        {
+        UriPtr uri = Uri::Create(Utf8CP(properties["MainURL"].asString().c_str()));
+        data->SetUri(*uri);
+        }
 
     // Parametrized URL
     /*if (properties.isMember("ParametrizedURL") && !properties["ParametrizedURL"].isNull())
@@ -984,7 +987,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                           11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSisterVector(RealityPlatform::RealityDataSourceCR dataSource)
+RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource)
     {
     bvector<RealityPlatform::UriPtr> sisters;
     RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
@@ -1028,7 +1031,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
         for (size_t i = 0; i < mirrorCount; ++i)
             {
-            RealityPlatform::RealityDataSourceR mirror = file->GetSourceR(i);
+            RealityPlatform::SpatialEntityDataSourceR mirror = file->GetSourceR(i);
 
             RealityPlatform::MultiBandSource* mbSource = dynamic_cast<RealityPlatform::MultiBandSource*>(&mirror);
             

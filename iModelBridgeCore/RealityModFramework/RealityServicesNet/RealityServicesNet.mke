@@ -31,7 +31,7 @@ assemDirToSearch = $(o)
 %include cincapnd.mki
 
 objList = $(o)RealityDataPackageNet$(oext) \
-          $(o)RealityDataSourceNet$(oext) \
+          $(o)SpatialEntityDataSourceNet$(oext) \
           $(o)WmsSourceNet$(oext) \
           $(o)OsmSourceNet$(oext)
 
@@ -42,7 +42,7 @@ objList = $(o)RealityDataPackageNet$(oext) \
 
 $(o)RealityDataPackageNet$(oext):       $(baseDir)RealityPackageNet\RealityDataPackageNet.cpp  $(baseDir)RealityPackageNet\RealityDataPackageNet.h
 
-$(o)RealityDataSourceNet$(oext):        $(baseDir)RealityPackageNet\RealityDataSourceNet.cpp  $(baseDir)RealityPackageNet\RealityDataSourceNet.h
+$(o)SpatialEntityDataSourceNet$(oext):        $(baseDir)RealityPackageNet\SpatialEntityDataSourceNet.cpp  $(baseDir)RealityPackageNet\SpatialEntityDataSourceNet.h
 
 $(o)OsmSourceNet$(oext):                $(baseDir)RealityPackageNet\OsmSourceNet.cpp  $(baseDir)RealityPackageNet\OsmSourceNet.h
 

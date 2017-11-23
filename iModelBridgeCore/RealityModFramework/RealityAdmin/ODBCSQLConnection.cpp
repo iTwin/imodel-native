@@ -580,7 +580,7 @@ ODBCConnectionStatus ServerConnection::SaveDataSource(SpatialEntityDataSourceCR 
         if (dataId != 0)
             sourceQuery += ", [SpatialEntity_Id]";
 
-        sourceQuery += ") VALUES ('" + source.GetUrl() + "'";
+        sourceQuery += ") VALUES ('" + source.GetUri().ToString() + "'";
 
         if (source.GetCompoundType().size() != 0)
             sourceQuery += ", '" + source.GetCompoundType() + "'";
@@ -639,8 +639,8 @@ ODBCConnectionStatus ServerConnection::SaveDataSource(SpatialEntityDataSourceCR 
         ReleaseStmt();
 
 
-        // Paragraph that deals with multiband sources
-        if(source.GetIsMultiband())
+        // Paragraph that deals with multiband sources TODO
+        /*if(source.GetIsMultiband())
             {
             Utf8String blueUrl;
             Utf8String greenUrl;
@@ -667,7 +667,7 @@ ODBCConnectionStatus ServerConnection::SaveDataSource(SpatialEntityDataSourceCR 
 
             ExecuteSQL(multiBQuery);
             ReleaseStmt();
-            }
+            }*/
         }
 
     return ODBCConnectionStatus::Success;
@@ -1050,8 +1050,8 @@ ODBCConnectionStatus ServerConnection::UpdateDataSource(SpatialEntityDataSourceC
 
 
 
-    // Check if the datasource is a multiband
-    if (dataSource.GetIsMultiband())
+    // Check if the datasource is a multiband TODO
+    /*if (dataSource.GetIsMultiband())
         {
         // Check if any value needs update
         Utf8String blueUrl;
@@ -1096,7 +1096,7 @@ ODBCConnectionStatus ServerConnection::UpdateDataSource(SpatialEntityDataSourceC
 
         ExecuteSQL(finalMultiBandQuery);
         ReleaseStmt();
-        }
+        }*/
 
 
     return ODBCConnectionStatus::Success;
@@ -1430,9 +1430,9 @@ ODBCConnectionStatus ServerConnection::Update(SpatialEntityCR data)
         {
         // Check if data source already exists
         if (data.GetDataSource(index).GetLocationInCompound().size() == 0)
-            retCode = FetchIdentityFromStringVal(dataSourceId, "SpatialDataSources", "MainURL", data.GetDataSource(index).GetUrl().c_str(), len);
+            retCode = FetchIdentityFromStringVal(dataSourceId, "SpatialDataSources", "MainURL", data.GetDataSource(index).GetUri().ToString().c_str(), len);
         else
-            retCode = FetchIdentityFromDualStringVal(dataSourceId, "SpatialDataSources", "MainURL", data.GetDataSource(index).GetUrl().c_str(), "LocationInCompound", data.GetDataSource(index).GetLocationInCompound().c_str(), len);
+            retCode = FetchIdentityFromDualStringVal(dataSourceId, "SpatialDataSources", "MainURL", data.GetDataSource(index).GetUri().ToString().c_str(), "LocationInCompound", data.GetDataSource(index).GetLocationInCompound().c_str(), len);
 
 
         if (ODBCConnectionStatus::Success == result && dataSourceId > 0)
