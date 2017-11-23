@@ -52,6 +52,7 @@ class ScalableMeshAnalysis : public IScalableMeshAnalysis
 
         bool _convertTo3SMSpace(const bvector<DPoint3d>& polygon, bvector<DPoint3d>& area);
         bool _convert3SMToWorld(IScalableMesh* _3sm, DPoint3d& pt);
+        bool _convert3SMToWorldDir(IScalableMesh* _3sm, const DPoint3d& pt, DVec3d& dir);
         bool _convertWorldTo3SM(IScalableMesh* _3sm, DPoint3d& pt);
         bool _convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* ewgs84, DPoint3d& pt);
         bool _convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* ewgs84, const bvector<RayIntersection>& Hits,

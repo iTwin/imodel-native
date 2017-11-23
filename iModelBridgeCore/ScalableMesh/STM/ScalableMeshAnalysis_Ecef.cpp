@@ -141,8 +141,8 @@ double degree2radian(double deg)
     }
 
 // Returns the WSG84 ellipsoid from a given Ecef center, 
-// and computes the local direction
-Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCenter, DVec3d &dirW)
+// and computes the local direction in ecef
+Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCenter, DVec3d &dir_ecef)
     {
     Ellipsoid ewgs84 = Ellipsoid::WGS84();
     GeoCoordinates::BaseGCSPtr myBase = m_scmPtr->GetBaseGCS();
@@ -155,8 +155,8 @@ Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCent
     latlongUp.elevation += 100;
     DPoint3d ecefup;
     myBase->XYZFromLatLong(ecefup, latlongUp);
-    dirW = (ecefup - smCenter);
-    dirW.Normalize();
+    dir_ecef = (ecefup - smCenter);
+    dir_ecef.Normalize();
 
     return ewgs84;
     }
@@ -219,9 +219,32 @@ bool ScalableMeshAnalysis::_convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* 
         _convertWorldToEnu(scmPtr, ewgs84, convert);
         newhit.point = convert; // convert only the hit point
         ///newhit.fraction = ??? ;  // fractions are already in meter and kept in meter
-        // normals ???
+        // normals
+        if (h.hasNormal)
+        {
+            DPoint3d hup = h.point + h.normal;
+            _convertWorldToEnu(scmPtr, ewgs84, hup);
+            DVec3d newnormal = (hup - convert);
+            newnormal.Normalize();
+            newhit.normal = newnormal;
+        }
         Hits_enu.push_back(newhit);
     }
+    return true;
+}
+
+bool ScalableMeshAnalysis::_convert3SMToWorldDir(IScalableMesh* _3sm, const DPoint3d& _center, DVec3d& _dir)
+{
+    if (_3sm == nullptr)
+        return false;
+
+    DPoint3d smUp = _center + 1.0 * _dir;
+    DPoint3d smCenter = _center;
+    _convert3SMToWorld(_3sm, smCenter);
+    _convert3SMToWorld(_3sm, smUp);
+    _dir = (smUp - smCenter);
+    _dir.Normalize();
+
     return true;
 }
 
@@ -320,12 +343,15 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
         return DTMStatusInt::DTM_ERROR; //User abort
 
     DVec3d directionEnu = DVec3d::From(0, 0, 1);
-    DVec3d directionWorld;
+    DVec3d directionEcef;
     DRange3d rangeMesh;
     m_scmPtr->GetRange(rangeMesh);
     DPoint3d smCenter = DPoint3d::From(rangeMesh.low.x + rangeMesh.XLength() / 2, rangeMesh.low.y + rangeMesh.YLength() / 2, rangeMesh.low.z + rangeMesh.ZLength() / 2);
-    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionWorld);
-    
+    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionEcef);
+
+    DVec3d directionWorld = directionEcef;
+    _convert3SMToWorldDir(m_scmPtr, smCenter, directionWorld); // get the world dir eqivalent to (0,0,1) in ENU
+
     DRange3d rangeEnu;
     bvector<DPoint3d> polygonEnu;
     if ( _GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, nullptr) == false )
@@ -368,10 +394,10 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     clock_t timer = clock();
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
-#pragma omp parallel num_threads(numProcs)
+//SNU #pragma omp parallel num_threads(numProcs)
     {
 
-#pragma omp for
+//SNU #pragma omp for
     for (int i = 0; i < m_xSize; i++)
         {
         std::thread::id t_id = std::this_thread::get_id(); // Get the id of the current Thread
@@ -406,12 +432,12 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
             bvector<RayIntersection> Hits;
             bool bret = draping1->IntersectRay(Hits, directionWorld, sourceW);
 
-            // Convert Hits in Enu
-            bvector<RayIntersection> Hits_enu;
-            _convertWorldToEnu(m_scmPtr, &ewgs84, Hits, Hits_enu);
-
             if (bret && Hits.size() > 0)
                 {
+                // Convert Hits in Enu
+                bvector<RayIntersection> Hits_enu;
+                _convertWorldToEnu(m_scmPtr, &ewgs84, Hits, Hits_enu);
+
                         {
                         DRay3d ray = DRay3d::FromOriginAndVector(sourceEnu, directionEnu);
                         DPoint3d polyHit; polyHit.Zero();
@@ -512,11 +538,15 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
         return DTMStatusInt::DTM_ERROR; //User abort
 
     DVec3d directionEnu = DVec3d::From(0, 0, 1);
-    DVec3d directionWorld;
+    DVec3d directionEcef;
     DRange3d rangeMesh;
     m_scmPtr->GetRange(rangeMesh);
     DPoint3d smCenter = DPoint3d::From(rangeMesh.low.x + rangeMesh.XLength() / 2, rangeMesh.low.y + rangeMesh.YLength() / 2, rangeMesh.low.z + rangeMesh.ZLength() / 2);
-    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionWorld);
+    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionEcef);
+
+    DVec3d directionWorld = directionEcef;
+    _convert3SMToWorldDir(m_scmPtr, smCenter, directionWorld); // get the world dir eqivalent to (0,0,1) in ENU
+
     DRange3d rangeEnu;
     bvector<DPoint3d> polygonEnu;
     if (_GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, diffMesh) == false)
