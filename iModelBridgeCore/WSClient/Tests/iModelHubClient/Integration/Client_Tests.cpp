@@ -36,17 +36,6 @@ struct ClientTests : public IntegrationTestsBase
         return IntegrationTestsBase::CreateTestDb("ClientTest");
         }
 
-    void DeleteiModels()
-        {
-        auto result = m_client->GetiModels(m_projectId)->GetResult();
-        EXPECT_SUCCESS(result);
-
-        for (auto imodel : result.GetValue())
-            {
-            DeleteiModel(m_projectId, *m_client, *imodel);
-            }
-        }
-
     iModelInfoPtr CreateNewiModel()
         {
         return IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");
@@ -173,19 +162,6 @@ TEST_F(ClientTests, UnsuccessfulGetiModels)
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
     DeleteiModel(m_projectId, *m_client, *imodel);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                              Algirdas.Mikoliunas    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClientTests, EmptyGetiModels)
-    {
-    DeleteiModels();
-
-    auto result = m_client->GetiModels(m_projectId)->GetResult();
-
-    EXPECT_SUCCESS(result);
-    EXPECT_TRUE(result.GetValue().empty());
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -45,6 +45,8 @@ private:
     bool operator==(iModelInfoCR rhs) const {return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL();}
     static iModelInfoPtr Parse(WSObjectsReader::Instance instance, Utf8StringCR url);
     static iModelInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, UserInfoPtr ownerInfo, Utf8StringCR url);
+    static iModelResult ReadFromLocalValues(Dgn::DgnDbCR db);
+    BeSQLite::DbResult WriteiModelProperties(Dgn::DgnDbR db) const;
     static iModelInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id) { return iModelInfoPtr(new iModelInfo(serverUrl, id)); }
 public:
     IMODELHUBCLIENT_EXPORT static iModelResult ReadiModelInfo(Dgn::DgnDbCR db);

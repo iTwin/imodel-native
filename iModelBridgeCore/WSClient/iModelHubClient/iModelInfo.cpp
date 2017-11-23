@@ -21,24 +21,54 @@ Utf8String iModelInfo::GetWSRepositoryName() const
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//@bsimethod                                     Karolis.Dziedzelis             11/2017
+//---------------------------------------------------------------------------------------
+iModelResult iModelInfo::ReadFromLocalValues(Dgn::DgnDbCR db)
+    {
+    Utf8String serverUrl;
+    Utf8String id;
+    BeSQLite::DbResult status;
+    status = db.QueryBriefcaseLocalValue(serverUrl, Db::Properties::iModelURL);
+    if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
+        status = db.QueryBriefcaseLocalValue(id, Db::Properties::iModelId);
+    if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
+        {
+        return iModelResult::Success(iModelInfo::Create(serverUrl, id));
+        }
+    auto error = Error(db, status);
+    return iModelResult::Error(error);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             11/2017
 //---------------------------------------------------------------------------------------
 iModelResult iModelInfo::ReadiModelInfo(Dgn::DgnDbCR db)
     {
     const Utf8String methodName = "iModelInfo::ReadiModelInfo";
-    Utf8String serverUrl;
     Utf8String id;
-    BeSQLite::DbResult status;
-    status = db.QueryBriefcaseLocalValue(serverUrl, Db::Local::iModelURL);
-    if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
-        status = db.QueryBriefcaseLocalValue(id, Db::Local::iModelId);
-    if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
+    DbResult status = db.QueryProperty(id, iModelHubProperties::iModelId());
+    if (BeSQLite::DbResult::BE_SQLITE_ROW != status)
         {
-        return iModelResult::Success(Create(serverUrl, id));
+        return ReadFromLocalValues(db);
+        }
+    Utf8String serverUrl;
+    if (BeSQLite::DbResult::BE_SQLITE_ROW == db.QueryProperty(serverUrl, iModelHubProperties::iModelURL()))
+        {
+        return iModelResult::Success(iModelInfo::Create(serverUrl, id));
         }
     auto error = Error(db, status);
-    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
     return iModelResult::Error(error);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+BeSQLite::DbResult iModelInfo::WriteiModelProperties(Dgn::DgnDbR db) const
+    {
+    BeSQLite::DbResult status = db.SavePropertyString(iModelHubProperties::iModelURL(), GetServerURL());
+    if (BeSQLite::DbResult::BE_SQLITE_OK == status)
+        status = db.SavePropertyString(iModelHubProperties::iModelId(), GetId());
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -53,12 +83,10 @@ StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId
 
     //Write the iModelInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::iModelURL, GetServerURL());
-    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::iModelId, GetId());
+        status = WriteiModelProperties(db);
 
     //ParentChangeSetId is reset when changing briefcase Id
-    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
+    if (BeSQLite::DbResult::BE_SQLITE_OK == status)
         status = db.SaveBriefcaseLocalValue(Db::Local::ParentChangeSetId, parentChangeSetId);
 
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
