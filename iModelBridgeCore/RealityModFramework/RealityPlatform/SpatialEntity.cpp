@@ -386,6 +386,8 @@ Utf8CP MultiBandSource::_GetElementName() const { return PACKAGE_ELEMENT_MultiBa
 //-------------------------------------------------------------------------------------
 SpatialEntityDataSource::SpatialEntityDataSource()
     {
+    m_pUri = Uri::Create("");
+    m_pMetadata = SpatialEntityMetadata::Create();
     }
 
 //-------------------------------------------------------------------------------------

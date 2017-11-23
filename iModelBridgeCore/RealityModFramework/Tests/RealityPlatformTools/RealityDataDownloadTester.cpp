@@ -66,6 +66,7 @@ TEST_F(RealityDataDownloadTestFixture, SimpleDownload)
     ASSERT_TRUE(pDownload != nullptr);
     pDownload->SetCertificatePath(GetPemLocation());
 
+    pDownload->SetTimeout(30L);
     pDownload->Perform();
     
     ASSERT_TRUE(BeFileName::DoesPathExist(filename.c_str()));
@@ -110,6 +111,7 @@ TEST_F(RealityDataDownloadTestFixture, SisterDownload)
     ASSERT_TRUE(pDownload != nullptr);
     pDownload->SetCertificatePath(GetPemLocation());
 
+    pDownload->SetTimeout(30L);
     pDownload->Perform();
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[0].m_filePath.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].m_filePath.c_str()));
@@ -153,6 +155,7 @@ TEST_F(RealityDataDownloadTestFixture, MirrorDownload)
     ASSERT_TRUE(pDownload != nullptr);
     pDownload->SetCertificatePath(GetPemLocation());
 
+    pDownload->SetTimeout(30L);
     pDownload->Perform();
     ASSERT_TRUE(!BeFileName::DoesPathExist(ufPair[0].m_filePath.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(ufPair[1].m_filePath.c_str()));
@@ -220,6 +223,7 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     ASSERT_TRUE(pDownload != nullptr);
     pDownload->SetCertificatePath(GetPemLocation());
 
+    pDownload->SetTimeout(30L);
     RealityDataDownload::DownloadReport* report = pDownload->Perform();
     ASSERT_TRUE(BeFileName::DoesPathExist(filename1.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(filename2.c_str()));
@@ -288,6 +292,7 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     ASSERT_TRUE(pDownload != nullptr);
     pDownload->SetCertificatePath(GetPemLocation());
 
+    pDownload->SetTimeout(30L);
     pDownload->Perform();
     ASSERT_TRUE(BeFileName::DoesPathExist(filename1.c_str()));
     ASSERT_TRUE(BeFileName::DoesPathExist(filename2.c_str()));

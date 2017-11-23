@@ -568,7 +568,7 @@ protected:
     UriPtr m_pUri;
     Utf8String m_geoCS;
     Utf8String m_compoundType;
-    uint64_t m_size;
+    uint64_t m_size = 0;
     Utf8String m_dataType;
     Utf8String m_locationInCompound;
     SpatialEntityServerPtr m_pServer;

@@ -326,6 +326,9 @@ public:
     //! Start the download progress for all links.
     REALITYDATAPLATFORM_EXPORT DownloadReport* Perform();
 
+    //! Set the timeout to cancel a download, if it hangs
+    REALITYDATAPLATFORM_EXPORT void SetTimeout(long timeInS) { m_timeout = timeInS; }
+
 private:
     RealityDataDownload();
     RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName);
@@ -348,6 +351,7 @@ private:
     size_t                      m_nbEntry;
     size_t                      m_curEntry;
     FileTransfer                *m_pEntries;
+    long                        m_timeout = 0L;
 
     WString                                 m_certPath;
     Utf8String                              m_proxyUrl;

@@ -659,7 +659,7 @@ SetupRequestStatus RealityDataDownload::SetupRequestandFile(FileTransfer* ft, bo
         else if (!m_proxyUrl.empty())
             SetProxy(pCurl, m_proxyUrl, m_proxyCreds);
 
-        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
+        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, m_timeout);
         curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
 
         /* Define our callback to get called when there's data to be written */
