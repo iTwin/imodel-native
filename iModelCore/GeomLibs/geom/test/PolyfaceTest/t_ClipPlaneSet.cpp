@@ -240,10 +240,10 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
     {
     double a = 30.0;
     double b = 5.0;
-    double bc = 7.5;
+    //unusued: double bc = 7.5;
     double c = 15.0;
-    double h1 = 16.0;
-    double h = 15;
+    //unusued: double h1 = 16.0;
+    //unusued: double h = 15;
 
     double shift = 200.0;
     bvector<DPoint3d> outerBox {
