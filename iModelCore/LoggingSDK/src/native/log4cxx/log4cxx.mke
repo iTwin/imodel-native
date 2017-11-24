@@ -80,7 +80,7 @@ LINKER_LIBRARIES   +   ws2_32.lib odbc32.lib advapi32.lib mswsock.lib Rpcrt4.lib
 # Cannot use libsmtp in DgnDb due to licensing concerns.
 #                        $(BuildContextSubParts)libs/libsmtp08.lib \
 
-%include linklibrary.mki
+%include $(sharedMki)linklibrary.mki
 
 #-----------------------------------------------------------------------
 #   Copy the files required for the SDK
