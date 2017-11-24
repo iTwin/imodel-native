@@ -192,7 +192,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         sqliteFile->GetHandleR().CloseDb();
 
         std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode)))
             {
             session.SetFile(std::move(ecdbFile));
             if (isBimFile)
