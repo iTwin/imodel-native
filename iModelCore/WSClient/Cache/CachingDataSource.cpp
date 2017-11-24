@@ -183,13 +183,14 @@ ICancellationTokenPtr ct
             cacheEnvironment.persistentFileCacheDir.c_str(),
             cacheEnvironment.temporaryFileCacheDir.c_str());
 
-        ECDb::CreateParams params;
-        params.SetStartDefaultTxn(DefaultTxn::No); // Allow concurrent multiple connection access
+        const DefaultTxn defaultTxnMode = DefaultTxn::No;// Allow concurrent multiple connection access
 
         std::unique_ptr<DataSourceCache> cache(new DataSourceCache());
         if (cacheFilePath.DoesPathExist())
             {
             LOG.infov(L"Found existing cache at %ls", cacheFilePath.c_str());
+            ECDb::OpenParams params(Db::OpenMode::ReadWrite);
+            params.SetStartDefaultTxn(defaultTxnMode);
             if (SUCCESS != cache->Open(cacheFilePath, cacheEnvironment, params))
                 {
                 openResult->SetError(Status::InternalCacheError);
@@ -199,6 +200,8 @@ ICancellationTokenPtr ct
         else
             {
             LOG.infov(L"Creating new cache at %ls", cacheFilePath.c_str());
+            ECDb::CreateParams params;
+            params.SetStartDefaultTxn(defaultTxnMode); 
             if (SUCCESS != cache->Create(cacheFilePath, cacheEnvironment, params))
                 {
                 openResult->SetError(Status::InternalCacheError);
