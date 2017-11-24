@@ -13,17 +13,23 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+iModelManager::iModelManager(iModelConnectionPtr connection) : m_connection(connection) 
+    { 
+    SetCancellationToken([]()->ICancellationTokenPtr { return nullptr; });
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, JsonValueCR deniedCodes)
+void SetCodesLocksStates(IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, 
+                         JsonValueCR deniedCodes)
     {
     if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::LockState & options))
         {
         for (auto const& lockJson : deniedLocks)
             {
             auto rapidJson = ToRapidJson(lockJson);
-            if (!AddLockInfoToListFromErrorJson (response.LockStates(), rapidJson))
+            if (!AddLockInfoToListFromErrorJson(response.LockStates(), rapidJson))
                 continue;//NEEDSWORK: log an error
             }
         }
@@ -89,7 +95,8 @@ IBriefcaseManager::Response iModelManager::HandleError(Request const& request, R
         {
         response.SetResult(responseStatus);
         JsonValueCR errorData = error.GetExtendedData();
-        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], errorData[ServerSchema::Property::CodesRequiresPull]);
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], 
+                            errorData[ServerSchema::Property::CodesRequiresPull]);
         }
     else if (RepositoryStatus::InvalidRequest == responseStatus || RepositoryStatus::RepositoryIsLocked == responseStatus)
         {
@@ -117,44 +124,46 @@ IBriefcaseManager::Response iModelManager::HandleError(Request const& request, R
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response iModelManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
+IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
     {
     auto purpose = queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire;
 
-    if (req.Locks ().IsEmpty () && req.Codes().empty())
-        return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
+    if (req.Locks().IsEmpty() && req.Codes().empty())
+        return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
 
     if (m_connection.IsNull())
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
-    Utf8String lastChangeSetId = db.Revisions ().GetParentRevisionId ();
+    Utf8String lastChangeSetId = db.Revisions().GetParentRevisionId();
 
     StatusResultPtr result;
     if (queryOnly)
-        result = ExecuteAsync(m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
+        result = ExecuteAsync(m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), db.GetDbGuid(), 
+                                                                        lastChangeSetId, req.Options(), m_cancellationToken()));
     else
         // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-        result = ExecuteAsync(m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, req.Options(), m_cancellationToken));
+        result = ExecuteAsync(m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), db.GetDbGuid(), lastChangeSetId, 
+                                                               req.Options(), m_cancellationToken()));
     if (result->IsSuccess ())
         {
-        return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
+        return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
         }
-    
+
     return HandleError(req, *result, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus iModelManager::_Demote (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
+RepositoryStatus iModelManager::_Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
     {
-    if (locks.empty () && codes.empty())
+    if (locks.empty() && codes.empty())
         return RepositoryStatus::Success;
 
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = ExecuteAsync(m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken));
+    auto result = ExecuteAsync(m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), db.GetDbGuid(), ResponseOptions::None, m_cancellationToken()));
     if (result->IsSuccess ())
         {
         return RepositoryStatus::Success;
@@ -168,15 +177,15 @@ RepositoryStatus iModelManager::_Demote (DgnLockSet const& locks, DgnCodeSet con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus iModelManager::_Relinquish (Resources which, DgnDbR db)
+RepositoryStatus iModelManager::_Relinquish(Resources which, DgnDbR db)
     {
-    if (Resources::None == which) 
+    if (Resources::None == which)
         return RepositoryStatus::Success;
 
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
-    auto result = ExecuteAsync(m_connection->RelinquishCodesLocksInternal(which, db.GetBriefcaseId(), ResponseOptions::None, m_cancellationToken));
+    auto result = ExecuteAsync(m_connection->RelinquishCodesLocksInternal(which, db.GetBriefcaseId(), ResponseOptions::None, m_cancellationToken()));
     if (result->IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
@@ -190,13 +199,15 @@ RepositoryStatus iModelManager::_Relinquish (Resources which, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus iModelManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
+RepositoryStatus iModelManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, 
+                                                    DgnDbR db)
     {
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
-    auto availableTask = m_connection->QueryCodesLocks(db.GetBriefcaseId(), m_cancellationToken);
-    auto unavailableTask = m_connection->QueryUnavailableCodesLocks(db.GetBriefcaseId(), db.Revisions().GetParentRevisionId(), m_cancellationToken);
+    auto availableTask = m_connection->QueryCodesLocks(db.GetBriefcaseId(), m_cancellationToken());
+    auto unavailableTask = m_connection->QueryUnavailableCodesLocks(db.GetBriefcaseId(), db.Revisions().GetParentRevisionId(), 
+                                                                    m_cancellationToken());
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(availableTask);
     tasks.insert(unavailableTask);
@@ -221,15 +232,16 @@ RepositoryStatus iModelManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus iModelManager::_QueryStates (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
+RepositoryStatus iModelManager::_QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, 
+                                             DgnCodeSet const& codes)
     {
-    if (locks.empty () && codes.empty())
+    if (locks.empty() && codes.empty())
         return RepositoryStatus::Success;
 
     if (m_connection.IsNull())
         return RepositoryStatus::ServerUnavailable;
 
-    auto result = ExecuteAsync(m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken));
+    auto result = ExecuteAsync(m_connection->QueryCodesLocksById(codes, locks, m_cancellationToken()));
 
     if (result->IsSuccess ())
         {

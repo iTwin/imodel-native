@@ -57,8 +57,10 @@ ChangeSetInfoPtr ChangeSetInfo::ParseRapidJson(RapidJsonValueCR properties)
 
     uint64_t index = ParseInt(properties, ServerSchema::Property::Index, -1);
     uint64_t fileSize = ParseInt(properties, ServerSchema::Property::FileSize, -1);
-    auto briefcaseId = properties.HasMember(ServerSchema::Property::BriefcaseId) ? BeBriefcaseId(properties[ServerSchema::Property::BriefcaseId].GetInt64()) : BeBriefcaseId(-1);
-    auto pushDate = properties.HasMember(ServerSchema::Property::PushDate) ? BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::PushDate].GetString()) : DateTime();
+    auto briefcaseId = properties.HasMember(ServerSchema::Property::BriefcaseId) ? 
+        BeBriefcaseId(properties[ServerSchema::Property::BriefcaseId].GetInt64()) : BeBriefcaseId(-1);
+    auto pushDate = properties.HasMember(ServerSchema::Property::PushDate) ? 
+        BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::PushDate].GetString()) : DateTime();
     ChangeSetInfo::ContainingChanges containingChanges = properties.HasMember(ServerSchema::Property::ContainingChanges) ?
         static_cast<ChangeSetInfo::ContainingChanges>(properties[ServerSchema::Property::ContainingChanges].GetInt()) :
         static_cast<ChangeSetInfo::ContainingChanges>(0);

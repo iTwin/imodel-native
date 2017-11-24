@@ -23,20 +23,22 @@ typedef RefCountedPtr<struct iModelManager> iModelManagerPtr;
 struct EXPORT_VTABLE_ATTRIBUTE iModelManager : public IRepositoryManager, RefCountedBase
 {
 private:
-    iModelConnectionPtr m_connection;
-    ICancellationTokenPtr        m_cancellationToken;
+    iModelConnectionPtr                     m_connection;
+    std::function<ICancellationTokenPtr()>  m_cancellationToken;
 
     Response                     HandleError(Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose);
     static RepositoryStatus      GetResponseStatus(Result<void> result);
 
 protected:
-    iModelManager (iModelConnectionPtr connection) : m_connection(connection) {}
+    iModelManager(iModelConnectionPtr connection);
 
     Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
     RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
-    RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
+    RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, 
+                                         DgnDbR db) override;
+    RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, 
+                                  DgnCodeSet const& codes) override;
 
 public:
     static iModelManagerPtr Create(iModelConnectionPtr connection) {return new iModelManager(connection);}
@@ -45,7 +47,6 @@ public:
     //! @returns iModelConnection
     iModelConnectionPtr GetiModelConnectionPtr() const {return m_connection;}
 
-    void SetCancellationToken(ICancellationTokenPtr cancellationToken) {m_cancellationToken = cancellationToken;}
+    void SetCancellationToken(std::function<ICancellationTokenPtr()> cancellationToken) { m_cancellationToken = cancellationToken; };
 };
-
 END_BENTLEY_IMODELHUB_NAMESPACE

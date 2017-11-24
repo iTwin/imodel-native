@@ -73,22 +73,22 @@ Error::Id Error::ErrorIdFromWSError(WebServices::WSErrorCR error)
     if (WSError::Status::ReceivedError == error.GetStatus())
         switch (error.GetId())
             {
-                case WSError::Id::LoginFailed:
-                    return Id::LoginFailed;
-                case WSError::Id::SslRequired:
-                    return Id::SslRequired;
-                case WSError::Id::NotEnoughRights:
-                    return Id::NotEnoughRights;
-                case WSError::Id::NoServerLicense:
-                    return Id::NoServerLicense;
-                case WSError::Id::NoClientLicense:
-                    return Id::NoClientLicense;
-                case WSError::Id::TooManyBadLoginAttempts:
-                    return Id::TooManyBadLoginAttempts;
-                case WSError::Id::ServerError:
-                    return Id::InternalServerError;
-                default:
-                    return Id::WebServicesError;
+            case WSError::Id::LoginFailed:
+                return Id::LoginFailed;
+            case WSError::Id::SslRequired:
+                return Id::SslRequired;
+            case WSError::Id::NotEnoughRights:
+                return Id::NotEnoughRights;
+            case WSError::Id::NoServerLicense:
+                return Id::NoServerLicense;
+            case WSError::Id::NoClientLicense:
+                return Id::NoClientLicense;
+            case WSError::Id::TooManyBadLoginAttempts:
+                return Id::TooManyBadLoginAttempts;
+            case WSError::Id::ServerError:
+                return Id::InternalServerError;
+            default:
+                return Id::WebServicesError;
             }
     else if (WSError::Status::Canceled == error.GetStatus())
         return Id::Canceled;
@@ -102,15 +102,15 @@ bool Error::RequiresExtendedData(Id id)
     {
     switch (id)
         {
-            case Id::LockOwnedByAnotherBriefcase:
-            case Id::iModelAlreadyExists:
-            case Id::FileAlreadyExists:
-            case Id::PullIsRequired:
-            case Id::CodeStateInvalid:
-            case Id::CodeReservedByAnotherBriefcase:
-                return true;
-            default:
-                return false;
+        case Id::LockOwnedByAnotherBriefcase:
+        case Id::iModelAlreadyExists:
+        case Id::FileAlreadyExists:
+        case Id::PullIsRequired:
+        case Id::CodeStateInvalid:
+        case Id::CodeReservedByAnotherBriefcase:
+            return true;
+        default:
+            return false;
         }
     }
 
@@ -125,7 +125,7 @@ Error::Error(WebServices::WSErrorCR error)
     m_message = error.GetMessage();
     m_description = error.GetDescription();
     Utf8StringCR customId = error.GetData()["errorId"].asString();
-    if (customId.StartsWith ("iModelHub."))
+    if (customId.StartsWith("iModelHub."))
         {
         m_id = ErrorIdFromString(customId);
         if (RequiresExtendedData(m_id))
@@ -204,6 +204,7 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
         map[Id::PullIsRequired] = ErrorLocalizedString(MESSAGE_PullIsRequired);
         map[Id::TrackingNotEnabled] = ErrorLocalizedString(MESSAGE_TrackingNotEnabled);
         map[Id::FileAlreadyExists] = ErrorLocalizedString(MESSAGE_FileAlreadyExists);
+
         map[Id::FileIsNotBriefcase] = ErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
 
         map[Id::MergeError] = ErrorLocalizedString(MESSAGE_MergeError);

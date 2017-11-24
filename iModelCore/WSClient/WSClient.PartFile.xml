@@ -98,7 +98,7 @@
         <SubPart PartName="WSClient-PublishedAPI"/>
         <SubPart PartName="WSClient_en_L10N"/>
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient\WebServicesClient.*.nupkg</Files>
         </Bindings>
     </Part>
 
@@ -170,7 +170,7 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache\WebServicesCache.*.nupkg</Files>
         </Bindings>
     </Part>
 
@@ -199,7 +199,6 @@
         <SubPart PartName="iModelHubClient-Library-Android-Shim"/>
         <SubPart PartName="WSClient-Xliffs" />
         <SubPart PartName="iModelHubClient-Xliffs" />
-        <SubProduct ProductName="iModelHubNativeTests" />
     </Part>
 
     <Part Name="iModelHubClient-PublicAPI" BentleyBuildMakeFile="iModelHubClientPrewire.mke">
@@ -231,7 +230,7 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="iModelHubClient" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\iModelHubClient.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\iModelHubClient\iModelHubClient.*.nupkg</Files>
         </Bindings>
     </Part>
 
@@ -803,7 +802,7 @@
         <SubPart PartName="WSClientCompatibilityTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool\WSClientCompatibilityTestTool.*.nupkg</Files>
         </Bindings>
     </Part>
 
