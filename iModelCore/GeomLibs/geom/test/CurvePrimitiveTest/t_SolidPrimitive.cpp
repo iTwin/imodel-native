@@ -2694,3 +2694,70 @@ TEST(SolidPrimitive,EdgeChains)
     Check::ClearGeometry ("SolidPrimitive.EdgeChains");
 
     }
+
+void showEyePoint (DPoint4dCR eyePoint)
+    {
+    static double s_vectorScale = 20.0;
+    auto w = eyePoint.w;
+    if (w == 0.0)
+        Check::SaveTransformed (DSegment3d::From (0,0,0, s_vectorScale * eyePoint.x, s_vectorScale * eyePoint.y, s_vectorScale * eyePoint.z));
+    else
+        {
+
+        Check::SaveTransformed (DSegment3d::From (0,0,0, eyePoint.x / w, eyePoint.y / w , eyePoint.z / w));
+        }
+    }
+
+void testSilhouette (IGeometryPtr &g, DPoint4dCR eyePoint)
+    {
+    static bool s_doFlat = true;
+    static bool s_doEye = true;
+    ISolidPrimitivePtr s = g->GetAsISolidPrimitive ();
+    DPoint4d eyePoint0 = eyePoint;
+    eyePoint0.w = 0.0;
+    if (s.IsValid ())
+        {
+        Check::SaveTransformed (*s);
+        showEyePoint (eyePoint);
+        CurveVectorPtr silhouettes, silhouettes0;
+
+
+        if (s_doFlat && s->SilhouetteCurves (eyePoint0, silhouettes0))
+            if (silhouettes0.IsValid ())
+                Check::SaveTransformed (*silhouettes0);
+
+        if (s_doEye && s->SilhouetteCurves (eyePoint, silhouettes))
+            if (silhouettes.IsValid ())
+                Check::SaveTransformed (*silhouettes);
+
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive,Silhouette)
+    {
+    Check::QuietFailureScope scoper;
+    DPoint4d eyePointA = DPoint4d::From (0,-1,2, 1);
+    DPoint4d eyePointB = DPoint4d::From (0,-3,2, 1);
+    DPoint4d eyePointC = DPoint4d::From (0,0,20, 1);
+    DPoint4d eyePointD = DPoint4d::From (20,0,0, 1);
+
+
+    bvector<IGeometryPtr> geometry;
+//    SampleGeometryCreator::AddSimplestSolidPrimitives (geometry, true);
+//    SampleGeometryCreator::AddAllSolidTypes (geometry);
+    SampleGeometryCreator::AddTorusPipes (geometry, 1, 0.1, true);
+    for (size_t i = 0; i < geometry.size (); i++)
+        {
+        SaveAndRestoreCheckTransform shifter (30,0,0);
+        testSilhouette (geometry[i], eyePointA);
+        Check::Shift (0,40,0);
+        testSilhouette (geometry[i], eyePointB);
+        Check::Shift (0,40,0);
+        testSilhouette (geometry[i], eyePointC);
+        Check::Shift (0,40,0);
+        testSilhouette (geometry[i], eyePointD);
+        }
+    Check::ClearGeometry ("SolidPrimitive.Silhouette");
+    }

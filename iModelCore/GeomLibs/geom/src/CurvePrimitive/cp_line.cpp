@@ -591,4 +591,10 @@ ICurvePrimitive* CurvePrimitiveLine::Create (DSegment3dCR segment) {return new C
 ICurvePrimitivePtr ICurvePrimitive::CreateLine (DSegment3dCR segment)
     {return CurvePrimitiveLine::Create (segment);}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+ICurvePrimitivePtr ICurvePrimitive::CreateLine (DPoint3dCR point0, DPoint3dCR point1)
+    {return CurvePrimitiveLine::Create (DSegment3d::From (point0, point1));}
+
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -917,6 +917,28 @@ int sideSelect
         }
     return isCCW ? 1 : -1;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvexClipPlaneSet::AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const
+    {
+    for (auto &plane: *this)
+        {
+        plane.AppendCrossings (curves, crossings);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvexClipPlaneSet::AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const
+    {
+    for (auto &plane: *this)
+        {
+        plane.AppendCrossings (curve, crossings);
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1009,5 +1031,169 @@ bool    ClipPlaneSet::GetRange (DRange3dR range, TransformCP transform) const
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlaneSet::AppendCrossings (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings) const
+    {
+    for (ConvexClipPlaneSetCR planeSet: *this)
+        {
+        planeSet.AppendCrossings (curves, crossings);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlaneSet::AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings) const
+    {
+    for (ConvexClipPlaneSetCR planeSet: *this)
+        {
+        planeSet.AppendCrossings (curve, crossings);
+        }
+    }
+
+static void AppendPrimitiveStartEnd (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AppendPrimitiveStartEnd (CurveVectorCR curves, bvector<CurveLocationDetailPair> &crossings)
+    {
+    for (auto &cp : curves)
+        AppendPrimitiveStartEnd (*cp, crossings);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AppendPrimitiveStartEnd (ICurvePrimitiveCR curve, bvector<CurveLocationDetailPair> &crossings)
+    {
+    auto cv = curve.GetChildCurveVectorCP ();
+    if (cv)
+        {
+        AppendPrimitiveStartEnd (*cv, crossings);
+        }
+    else
+        {
+        DPoint3d xyz0, xyz1;
+        curve.GetStartEnd (xyz0, xyz1);
+        crossings.push_back (CurveLocationDetailPair::CurveLocationDetailPair (&curve, 0.0, xyz0));
+        crossings.push_back (CurveLocationDetailPair::CurveLocationDetailPair (&curve, 1.0, xyz1));
+        }
+    }
+bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPair dataA, CurveLocationDetailPair dataB)
+    {
+    ptrdiff_t a = dataA.detailA.curve - dataB.detailB.curve;
+    if (a != 0)
+        return a < 0;
+    if (dataA.detailA.fraction < dataB.detailA.fraction)
+        return true;
+    if (dataA.detailA.fraction > dataB.detailA.fraction)
+        return false;
+    if (dataA.detailB.fraction < dataB.detailB.fraction)
+        return true;
+    if (dataA.detailB.fraction > dataB.detailB.fraction)
+        return false;
+    return false;        
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static ClipPlaneContainment ClassifyCrossings
+(
+bvector<CurveLocationDetailPair> &crossings,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCR maskSet,
+bool considerRegions
+)
+    {
+    std::sort (crossings.begin (), crossings.end (), CurveLocationDetailPair::cb_compareCurveFraction);
+    size_t numIn = 0;
+    size_t numOut = 0;
+    bvector<double>fractions;
+    if (crossings.size () > 0)
+        {
+        for (size_t i0 = 0;
+                i0 < crossings.size () && (numIn == 0 || numOut == 0);)
+            {
+            auto curve = crossings[i0].detailA.curve;
+            fractions.clear ();
+            fractions.push_back (crossings[i0].detailA.fraction);
+            size_t i1;
+            for (i1 = i0 + 1; i1 < crossings.size () && crossings[i1].detailA.curve == curve;)
+                {
+                fractions.push_back (crossings[i1].detailA.fraction);
+                i1++;
+                }
+            size_t numInterval = fractions.size () - 1;
+            for (size_t i = 0; i < numInterval; i++)
+                {
+                double fraction0 = fractions[i];
+                double fraction1 = fractions[i + 1];
+                if (!DoubleOps::AlmostEqualFraction (fraction0, fraction1))
+                    {
+                    double midFraction = 0.5 * (fraction0 + fraction1);
+                    DPoint3d xyz;
+                    curve->FractionToPoint (midFraction, xyz);
+                    auto inClip = clipSet.IsPointInside (xyz);
+                    auto inMask= maskSet.IsPointInside (xyz);
+                    if (inClip && !inMask)
+                        {
+                        numIn++;
+                        }
+                    else
+                        {
+                        numOut++;
+                        }
+                    }
+                }
+            //  advance to next block !!!
+            i0 = i1;
+            }
+        }
+    if (numIn == 0 && numOut > 0)
+        return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+    if (numIn > 0 && numOut == 0)
+        return ClipPlaneContainment::ClipPlaneContainment_StronglyInside;
+    return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP ClipPlaneContainment ClipPlaneSet::ClassifyCurveVectorInSetDifference
+(
+CurveVectorCR curves,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCR maskSet,
+bool treatRegions
+)
+    {
+    bvector<CurveLocationDetailPair> crossings;
+    clipSet.AppendCrossings (curves, crossings);
+    maskSet.AppendCrossings (curves, crossings);
+    AppendPrimitiveStartEnd (curves, crossings);
+    return ClassifyCrossings (crossings, clipSet, maskSet, treatRegions);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP ClipPlaneContainment ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference
+(
+ICurvePrimitiveCR curve,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCR maskSet
+)
+    {
+    bvector<CurveLocationDetailPair> crossings;
+    clipSet.AppendCrossings (curve, crossings);
+    maskSet.AppendCrossings (curve, crossings);
+    AppendPrimitiveStartEnd (curve, crossings);
+    return ClassifyCrossings (crossings, clipSet, maskSet, false);
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

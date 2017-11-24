@@ -222,6 +222,83 @@ static void AddStepLinestrings (bvector<ICurvePrimitivePtr> &data, int stepCycle
         data.push_back (ICurvePrimitive::CreateLineString (stepPoints));
         }
     }
+// evaluate points at regular fraction spacing on each of two curvs.
+// construct lines between all such pairs.
+static void AddLinesBetweenFractions (bvector<IGeometryPtr> &data, ICurvePrimitiveCR curveA, size_t numA, ICurvePrimitiveCR curveB, size_t numB, double setBackFraction = 0.03)
+    {
+    DPoint3d xyzA, xyzB;
+    for (double i = 0; i < numA; i++)
+        {
+        curveA.FractionToPoint (i / numA, xyzA);
+        for (double j = 0; j < numB; j++)
+            {
+            curveB.FractionToPoint (j / numB, xyzB);
+            auto lineAB = ICurvePrimitive::CreateLine (DSegment3d::From (
+                DPoint3d::FromInterpolate (xyzA, setBackFraction, xyzB),
+                DPoint3d::FromInterpolate (xyzB, setBackFraction, xyzA)
+                ));
+            data.push_back (IGeometry::Create (lineAB));
+            }
+        }
+    }
+
+// for each line segment in lines, create an elliptic arc with:
+// 1) line ends are the opposite ends of major axis points
+// 2) the perpendicular radius is specified fraction (perpendicularFraction) of the major radius.
+// 3) specified start and sweep angles
+static void AddArcsFromMajorAxisLines (bvector<IGeometryPtr> &data, bvector<IGeometryPtr> &geometry, double perpendicularFraction, Angle angle0, Angle sweep)
+    {
+    DSegment3d segment;
+    for (auto & g : geometry)
+        {
+        auto line = g->GetAsICurvePrimitive ();
+        if (line.IsValid () && line->TryGetLine (segment))
+            {
+            DPoint3d center = segment.FractionToPoint (0.5);
+            DPoint3d minorPoint = DPoint3d::FromInterpolateAndPerpendicularXY (
+                    segment.point[0], 0.5, segment.point[1], 0.5 * perpendicularFraction);
+            auto arc = DEllipse3d::FromPoints (center, segment.point[1], minorPoint, angle0.Radians (), sweep.Radians ());
+            data.push_back (IGeometry::Create (ICurvePrimitive::CreateArc (arc)));
+            }
+        }
+    }
+
+// for each line segment in lines, create a filleted rectangle with
+// 1) base line (to corner outside fillet) is given line.
+// 2) perpendicular size is given fraction of the base line.
+// 2) fillet radius is given fraction of the base line.
+static void AddFilletedBoxesOnLines(bvector<IGeometryPtr> &data, bvector<IGeometryPtr> &geometry, double perpendicularFraction, double radiusFraction = 0.25)
+    {
+    DSegment3d segment;
+    for (auto & g : geometry)
+        {
+        auto line = g->GetAsICurvePrimitive ();
+        if (line.IsValid () && line->TryGetLine (segment))
+            {
+            DPoint3d point00 = segment.point[0];
+            DPoint3d point10 = segment.point[1];
+            double r = radiusFraction * point00.Distance (point10);
+            CurveOffsetOptions options (r);
+            options.SetArcAngle (Angle::DegreesToRadians (40.0));
+            DPoint3d point01 = DPoint3d::FromInterpolateAndPerpendicularXY (point00, 0.0, point10, perpendicularFraction);
+            DPoint3d point11 = DPoint3d::FromInterpolateAndPerpendicularXY (point00, 1.0, point10, perpendicularFraction);
+            CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+            cv->push_back (ICurvePrimitive::CreateLine (point00, point10));
+            cv->push_back (ICurvePrimitive::CreateLine (point10, point11));
+            cv->push_back (ICurvePrimitive::CreateLine (point11, point01));
+            cv->push_back (ICurvePrimitive::CreateLine (point01, point00));
+            if (radiusFraction != 0.0)
+                {
+                auto cv1 = cv->CloneOffsetCurvesXY (options);
+                data.push_back (IGeometry::Create (cv1));
+                }
+            else
+                {
+                data.push_back (IGeometry::Create (cv));
+                }
+            }
+        }
+    }
 
 static void AddUnitArcSweepVariety (bvector<ICurvePrimitivePtr> &data, size_t numStartAngle, size_t numSweepAngle)
     {

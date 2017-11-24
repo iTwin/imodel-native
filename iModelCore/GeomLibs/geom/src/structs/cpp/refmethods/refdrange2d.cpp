@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdrange2d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -915,6 +915,24 @@ DRange2dCR minMax
             );
     }
 
+/*-----------------------------------------------------------------*//**
+* @description scale a range about its center point.
+* @param [out]pResultRange  scaled range.
+* @param [in] rangeIn  original range
+* @param [in] scale  scale factor
+* @bsimethod                                                    EarlinLutz      12/97
++----------------------------------------------------------------------*/
+void DRange2d::ScaleAboutCenter (DRange2dCR rangeIn, double scale)
+    {
+    DRange2d result = rangeIn;
+    if (!result.IsNull())
+        {
+        double f = 0.5 * (1.0 + scale);
+        result.high.Interpolate (rangeIn.low, f, rangeIn.high);
+        result.low.Interpolate (rangeIn.high, f, rangeIn.low);
+        }
+    *this = result;
+    }
 
 /*-----------------------------------------------------------------*//**
 *

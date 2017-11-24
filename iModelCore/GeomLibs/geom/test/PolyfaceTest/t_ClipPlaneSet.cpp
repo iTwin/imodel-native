@@ -198,3 +198,155 @@ TEST(ClipPlaneSet,MingagusDoubleVertexHit)
     Check::Near (0.5 * PolygonOps::AreaXY (poly1), PolygonOps::AreaXY (clippedRegion), "Diamond cut in half");
     Check::ClearGeometry ("ClipPlaneSet.MingaagusDoubleVertexHit");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClassifyCurveVectorInSetDifference)
+    {
+    double a = 20.0;
+    double b = 5.0;
+    double bc = 7.5;
+    double c = 10.0;
+    double h1 = 16.0;
+    double h = 15;
+
+    auto convexOuterClip = ConvexClipPlaneSet::FromXYBox (0,0,a,a);
+    auto convexInnerClip = ConvexClipPlaneSet::FromXYBox (b,b,c,c);
+
+    ClipPlaneSet outerClip (convexOuterClip);
+    ClipPlaneSet innerClip (convexInnerClip);
+
+    auto outsideLine = ICurvePrimitive::CreateLine (DSegment3d::From (-10,h,0, -5,h,0));
+    auto insideLine = ICurvePrimitive::CreateLine (DSegment3d::From (2,h,0, 10,h,0));
+    auto crossingLine = ICurvePrimitive::CreateLine (DSegment3d::From (-2,h1,0, 10,h1,0));
+    auto holeLine = ICurvePrimitive::CreateLine (DSegment3d::From (b+1, bc, 0, c-1, bc, 0));
+
+    auto cOut =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*outsideLine, outerClip, innerClip);
+    auto cIn =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*insideLine, outerClip, innerClip);
+    auto cCrossing =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*crossingLine, outerClip, innerClip);
+    auto cHole =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*holeLine, outerClip, innerClip);
+
+    Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyOutside, (int)cOut, "Expect OUT");
+    Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyInside, (int)cIn, "Expect IN");
+    Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_Ambiguous, (int)cCrossing, "Expect CROSSING");
+    Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyOutside, (int)cHole, "Expect OUT(hole)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
+    {
+    double a = 30.0;
+    double b = 5.0;
+    //unusued: double bc = 7.5;
+    double c = 15.0;
+    //unusued: double h1 = 16.0;
+    //unusued: double h = 15;
+
+    double shift = 200.0;
+    bvector<DPoint3d> outerBox {
+        DPoint3d::From (0,0),
+        DPoint3d::From (a,0),
+        DPoint3d::From (a,a),
+        DPoint3d::From (0,a),
+        DPoint3d::From (0,0),
+        };
+    bvector<DPoint3d> innerBox {
+        DPoint3d::From (b,b),
+        DPoint3d::From (c,b),
+        DPoint3d::From (c,c),
+        DPoint3d::From (b,c),
+        DPoint3d::From (b,b),
+        };
+    
+    ConvexClipPlaneSet convexOuterClip, convexInnerClip;
+    convexOuterClip.AddSweptPolyline (outerBox, DVec3d::From (0,0,1), Angle::FromDegrees (0.0));
+    convexInnerClip.AddSweptPolyline (innerBox, DVec3d::From (0,0,1), Angle::FromDegrees (0.0));
+
+    // Make curves that dance in and out ....
+    auto traceA = ICurvePrimitive::CreateArc (DEllipse3d::From (b, b, 0, 1.5 * a, 0, 0, 0, b, 0, 0.0, Angle::TwoPi ()));
+    auto traceB = ICurvePrimitive::CreateArc (DEllipse3d::From (c, c, 0, 2.0 *c, 0, 0, 0,  0.55 * c, 0, -0.75 * Angle::Pi (), Angle::Pi ()));
+    auto traceC = ICurvePrimitive::CreateArc (DEllipse3d::From (b, b, 0, 1.5 * c, 0, 0, 0, 1.2 * c, 0, -0.75 * Angle::Pi (), Angle::Pi ()));
+
+#define NumGeometrySet 3
+    Transform transforms[NumGeometrySet][4];
+    for (int pass = 0; pass < NumGeometrySet; pass++)
+        {
+        // output gridd has a column for each variety of geometry (lines, arcs, filleted boxes ...)
+        // In each column the blocks are:
+        // 0) clipper boxes and trace geometry
+        // 1) "inside" geometry
+        // 2) "mixed" geometry
+        // 3) "outside" geometry
+        for (size_t i = 0; i < 4; i++)
+            {
+            transforms[pass][i] = Transform::From (shift * pass, shift * i, 0);
+            Check::SetTransform (transforms[pass][i]);
+            Check::SaveTransformed (outerBox);
+            Check::SaveTransformed (innerBox);
+            }
+        }
+    ClipPlaneSet outerClip (convexOuterClip);
+    ClipPlaneSet innerClip (convexInnerClip);
+
+    // Make lines that join them in all combinations.
+    // test in/out for each.
+    // output with shift driven by the in out:
+    bvector<IGeometryPtr> lines, testCurves;
+
+    size_t numSample0 = 10;
+    size_t numSample1 = 10;
+    size_t numSample2 = 10;
+    for (int pass = 0; pass < NumGeometrySet; pass++)
+        {
+        testCurves.clear ();
+        lines.clear ();
+        Check::SetTransform (transforms[pass][0]);
+        if (pass == 1)
+            {
+            Check::SaveTransformed (*traceA);
+            Check::SaveTransformed (*traceB);
+            SampleGeometryCreator::AddLinesBetweenFractions (lines, *traceA, numSample1, *traceB, numSample1 * 2, 0.03);
+            SampleGeometryCreator::AddArcsFromMajorAxisLines (testCurves, lines,
+                    0.2, Angle::FromDegrees (10.0), Angle::FromDegrees (60.0));
+            }
+        else if (pass == 2)
+            {
+            Check::SaveTransformed (*traceA);
+            Check::SaveTransformed (*traceC);
+            SampleGeometryCreator::AddLinesBetweenFractions (lines, *traceA, numSample2, *traceC, numSample2, 0.03);
+            SampleGeometryCreator::AddFilletedBoxesOnLines(testCurves, lines, 0.5, 0.25);
+            }
+        else
+            {
+            Check::SaveTransformed (*traceA);
+            Check::SaveTransformed (*traceB);
+            SampleGeometryCreator::AddLinesBetweenFractions (lines, *traceA, numSample0, *traceB, numSample0, 0.03);
+            testCurves = lines;
+            }
+        size_t i0 = 0;
+        size_t i1 = testCurves.size ();  // assign outside for easy debugger reset to target specific lines.
+        for (size_t i = i0; i < i1; i++)
+            {
+            auto testGeometry = testCurves[i];
+            ICurvePrimitivePtr testCurve = testGeometry->GetAsICurvePrimitive ();
+            CurveVectorPtr     testCV    = testGeometry->GetAsCurveVector ();
+            ClipPlaneContainment classification;
+            if (testCurve.IsValid ())
+                classification = ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*testCurve, outerClip, innerClip);
+            else if (testCV.IsValid ())
+                classification = ClipPlaneSet::ClassifyCurveVectorInSetDifference (*testCV, outerClip, innerClip, true);    // BUT as of now we know that it ignores the region condition.
+            else
+                continue;
+
+            uint32_t index = (uint32_t)classification;
+            if (index > 3) index = 0;       // should not happen --- classifications are 1,2,3
+            Check::SetTransform (transforms[pass][index]);
+            Check::SaveTransformed (testGeometry);
+            }
+        }
+
+    Check::ClearGeometry ("ClipPlaneSet.ClassifySetDifference_ManyLines");
+    }

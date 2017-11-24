@@ -344,7 +344,7 @@ GEOMDLLIMPEXP bool  TryGetPartialCurveData (double &fractionA, double &fractionB
 
 //flex!! Geometric Construction
 
-//flex || Create a line segment || outPrim = CurvePrimitive::CreateLine (DSegment3dCR inSegment) ||
+//flex || Create a line segment || outPrim = CurvePrimitive::CreateLine (DSegment3dCR inSegment) || outPrim = CurvePrimitive::CreateLine (DPoint3dCR point0, DPoint3dCR point1) 
 //flex || Create an elliptic arc || outPrim = CurvePrimtiive::CreateArc (DEllipse3DCR inArc) ||
 //flex || Create a polyline || outPrim = CurvePrimitive::CreateLineString (bvector<DPoint3d> &points) ||
 //flex ||  || outPrim = CurvePrimitive::CreateLineString (DPoint3dCP points, int n) ||
@@ -361,6 +361,12 @@ GEOMDLLIMPEXP bool  TryGetPartialCurveData (double &fractionA, double &fractionB
 //! Allocate and fill a new line segemnt.
 //! @param [in] segment source segment.
 GEOMDLLIMPEXP static ICurvePrimitivePtr CreateLine (DSegment3dCR segment);
+
+//! Allocate and fill a new line segemnt.
+//! @param [in] point0 start point.
+//! @param [in] point1 end point.
+GEOMDLLIMPEXP static ICurvePrimitivePtr CreateLine (DPoint3dCR point0, DPoint3dCR point1);
+
 
 //! Allocate and fill a new linestring
 //! @param [in] points source coordinates.
