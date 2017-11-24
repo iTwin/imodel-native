@@ -42,7 +42,14 @@ struct CachingDataSource :
         typedef AsyncResult<CachingDataSourcePtr, Error> OpenResult;
 
     private:
-        typedef AsyncResult<DataOrigin, Error> DataOriginResult;
+        struct DataOriginStatus
+            {
+            DataOrigin origin;
+            SyncStatus syncStatus;
+            };
+
+    private:
+        typedef AsyncResult<DataOriginStatus, Error> DataOriginResult;
 
     private:
         bool                                        m_isOpen = false;
@@ -59,6 +66,10 @@ struct CachingDataSource :
         NavigationCachingOptions                    m_cachingOptions;
 
         std::deque<std::shared_ptr<AsyncTask>>      m_syncLocalChangesQueue;
+        bool                                        m_enableSkipTokens = false;
+
+        size_t                                      m_maxParalelDownloads = 10;
+        uint64_t                                    m_minTimeBetweenProgressCallsMs = 250;
 
     private:
         CachingDataSource
@@ -100,6 +111,15 @@ struct CachingDataSource :
             ICancellationTokenPtr ct
             );
 
+        void CacheObjectsInBackgroundIfNeeded
+            (
+            CachedResponseKeyCR responseKey,
+            WSQueryCR query,
+            RetrieveOptions retrieveOptions,
+            DataOriginResult result,
+            ICancellationTokenPtr ct
+            );
+
         AsyncTaskPtr<DataOriginResult> CacheNavigationChildren
             (
             ObjectIdCR parentId,
@@ -111,7 +131,7 @@ struct CachingDataSource :
         AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             std::shared_ptr<bset<ECInstanceKey>> instancesToSync,
-            SyncProgressCallback onProgress,
+            ProgressCallback onProgress,
             ICancellationTokenPtr ct,
             SyncOptions options
             );
@@ -120,9 +140,11 @@ struct CachingDataSource :
             (
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
-            CachingDataSource::LabeledProgressCallback onProgress,
+            CachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
+
+        Utf8String GetInitialSkipToken() const;
 
     public:
         virtual ~CachingDataSource() override;
@@ -172,6 +194,12 @@ struct CachingDataSource :
 
         WSCACHE_EXPORT AsyncTaskPtr<void> CancelAllTasks() override;
 
+        WSCACHE_EXPORT void EnableSkipTokens(bool enable) override;
+        //! Configure maximum paralel file download limit in one operation. Default is 10.
+        WSCACHE_EXPORT void SetMaxParalelFileDownloadLimit(size_t maxParalelDownloads);
+        //! Configure minimum time limit between progress callbacks in milliseconds. Default is 250 ms.
+        WSCACHE_EXPORT void SetMinTimeBetweenProgressCalls(uint64_t minTimeBetweenProgressCallsMs);
+
         WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) override;
 
         WSCACHE_EXPORT CacheTransaction StartCacheTransaction() override;
@@ -210,7 +238,7 @@ struct CachingDataSource :
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
-            DataOrigin origin,
+            RetrieveOptions retrieveOptions,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -234,7 +262,7 @@ struct CachingDataSource :
             (
             ObjectIdCR fileId,
             DataOrigin origin,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -243,7 +271,7 @@ struct CachingDataSource :
             const bvector<ObjectId>& filesIds,
             bool skipCachedFiles = false,
             FileCache fileCacheLocation = FileCache::Auto,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -255,7 +283,7 @@ struct CachingDataSource :
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) override;
@@ -263,7 +291,7 @@ struct CachingDataSource :
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& instancesToSync,
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) override;
@@ -273,7 +301,7 @@ struct CachingDataSource :
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -282,7 +310,7 @@ struct CachingDataSource :
             const bvector<ObjectId>& persistenceNavigationTrees,
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerSelectProvider,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
     };

@@ -18,6 +18,10 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Brad.Hadden    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+//! UrlProvider is a class that allows getting remotely configured service URLs based on 
+//! initialized environment (DEV, QA or PROD/RELEASE). Environment is set of services working
+//! in isolated system. Switching between environments is only needed for testing.
+//! All released software should point to PROD/RELEASE environment services by default.
 struct UrlProvider
     {
     public:
@@ -97,6 +101,7 @@ struct UrlProvider
             {
             WSCLIENT_EXPORT static const UrlDescriptor BIMReviewShare;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectTermsOfServiceUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
@@ -105,6 +110,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPunchList;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgRepositoryFederation;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectForms;
             WSCLIENT_EXPORT static const UrlDescriptor iModelHubApi;
             WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
@@ -117,7 +123,6 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor UsageLoggingServicesLocation;
             WSCLIENT_EXPORT static const UrlDescriptor EntitlementPolicyService;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
-            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgRepositoryFederation;
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveSTSHelperService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsPassiveAuthUrl;
             };

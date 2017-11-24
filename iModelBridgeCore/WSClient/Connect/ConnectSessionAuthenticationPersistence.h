@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Connect/ConnectSessionAuthenticationPersistence.h $
+|     $Source: Connect/ConnectSessionAuthenticationPersistence.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -31,13 +31,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectSessionAuthenticationPersistence : public 
     public:
         virtual ~ConnectSessionAuthenticationPersistence() {}
 
-        WSCLIENT_EXPORT void SetCredentials(CredentialsCR credentials) override;
-        WSCLIENT_EXPORT Credentials GetCredentials() const override;
+        void SetCredentials(CredentialsCR credentials) override;
+        Credentials GetCredentials() const override;
 
-        WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;
-        WSCLIENT_EXPORT SamlTokenPtr GetToken() const override;
+        void SetToken(SamlTokenPtr token) override;
+        SamlTokenPtr GetToken() const override;
 
-        WSCLIENT_EXPORT DateTime GetTokenSetTime() const override;
+        DateTime GetTokenSetTime() const override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

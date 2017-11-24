@@ -2,19 +2,20 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <iostream>
-#include <Bentley/bmap.h>
-#include <Bentley/Tasks/AsyncError.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
+#include <WebServices/Client/WebServicesClient.h>
 #include <BeHttp/HttpError.h>
 #include <BeHttp/HttpResponse.h>
-#include <WebServices/Client/WebServicesClient.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <Bentley/bmap.h>
+#include <Bentley/Tasks/AsyncError.h>
+#include <iostream>
+#include <rapidjson/BeRapidJson.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -44,7 +45,7 @@ struct WSError : public AsyncError
             // Could not verify HTTPS certificate
             CertificateError,
 
-            // See error id for more information
+            // See WSError::Id for more information
             ReceivedError
             };
 
@@ -53,7 +54,7 @@ struct WSError : public AsyncError
             // Server did not return enough information or not WSError::Status::ReceivedError
             Unknown,
 
-            // Server error ids
+            // Server returned error ids
             LoginFailed,
             SslRequired,
             NotEnoughRights,
@@ -71,22 +72,30 @@ struct WSError : public AsyncError
             // Additional error ids for handling specific errors
             ServerError,
             BadRequest,
-            Conflict
+            Conflict,
+            ProxyAuthenticationRequired
             };
 
     private:
         Status m_status = Status::None;
         Id m_id = Id::Unknown;
-        JsonValueCPtr       m_data;
+        JsonValueCPtr m_data;
 
     private:
-        static bool IsValidErrorJson(JsonValueCR jsonError);
+        static bool DoesStringFieldExist(JsonValueCR json, Utf8CP name);
+        static bool DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name);
+        static Utf8CP GetOptionalString(RapidJsonValueCR json, Utf8CP name);
+        static int GetOptionalInt(RapidJsonValueCR json, Utf8CP name);
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
+        static Id GetErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
         BentleyStatus ParseBody(Http::ResponseCR httpResponse);
         BentleyStatus ParseJsonError(Http::ResponseCR httpResponse);
+        BentleyStatus ParseJsonError(JsonValueCR jsonError, HttpStatus status);
+        BentleyStatus ParseJsonError(RapidJsonValueCR jsonError, HttpStatus status);
         BentleyStatus ParseXmlError(Http::ResponseCR httpResponse);
+        BentleyStatus ParseXmlAzureError(Http::ResponseCR httpResponse, struct BeXmlDom& xmlDom);
 
         void SetStatusServerNotSupported();
         void SetStatusReceivedError
@@ -95,25 +104,36 @@ struct WSError : public AsyncError
             Id errorId,
             Utf8StringCR errorMessage,
             Utf8StringCR errorDescription,
-            JsonValueCPtr errorData = nullptr
+            JsonValueCP errorData
             );
 
     public:
+        //! Create error with WSError::Status::None
         WSCLIENT_EXPORT WSError();
         //! Handle supported server response
         WSCLIENT_EXPORT WSError(Http::ResponseCR httpResponse);
+        //! Handle $changeset error. Requires httpStatusCode field or will map to not supported error.
+        WSCLIENT_EXPORT WSError(JsonValueCR jsonError);
+        //! Handle $changeset error. Requires httpStatusCode field or will map to not supported error.
+        WSCLIENT_EXPORT WSError(RapidJsonValueCR jsonError);
         //! Handle generic HttpError, unknow error will map to Id::Unknown
         WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
-        //! Do not use in production code, this is for testing purposes only
+        //! Do not use in production code, this is for testing purposes only.
+        //! Create error with WSError::Status::ReceivedError and specified Id.
         WSCLIENT_EXPORT WSError(Id errorId);
 
         WSCLIENT_EXPORT static WSError CreateServerNotSupportedError();
         WSCLIENT_EXPORT static WSError CreateFunctionalityNotSupportedError();
 
-        WSCLIENT_EXPORT Status       GetStatus() const;
-        WSCLIENT_EXPORT Id           GetId() const;
+        //! Get error status describing origin of error
+        WSCLIENT_EXPORT Status GetStatus() const;
+        //! Get error id returned from server when GetStatus() returns WSError::Status::ReceivedError
+        WSCLIENT_EXPORT Id GetId() const;
+        //! Get server reported data
         WSCLIENT_EXPORT JsonValueCR  GetData() const;
+        //! DEPRECATED! Use GetMessage()
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
+        //! DEPRECATED! Use GetDescription()
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };
 

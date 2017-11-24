@@ -516,11 +516,20 @@ BentleyStatus CachedResponseManager::InsertInfo(CachedResponseInfoR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::UpdatePageCachedDate(ResponseKeyCR responseKey, uint64_t page)
+CacheStatus CachedResponseManager::UpdatePageCachedDate(ResponseKeyCR responseKey, uint64_t page)
     {
     auto info = ReadInfo(responseKey);
+    if (!info.IsCached())
+        return CacheStatus::DataNotCached;
+
     ECInstanceKey pageKey = FindPage(info, page);
-    return UpdatePageCacheDate(pageKey.GetInstanceId());
+    if (!pageKey.IsValid())
+        return CacheStatus::DataNotCached;
+
+    if (SUCCESS != UpdatePageCacheDate(pageKey.GetInstanceId()))
+        return CacheStatus::Error;
+
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -564,6 +573,7 @@ const InstanceCacheHelper::CachedInstances& instances
     bset<CachedInstanceKey> oldCached;
 
     if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultClass, oldCached) ||
+        SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultWeakClass, oldCached) ||
         SUCCESS != m_relationshipInfoManager.ReadCachedRelationshipsFromHolder(pageKey, m_responsePageToResultClass, oldCached))
         {
         return ERROR;
@@ -602,7 +612,8 @@ const InstanceCacheHelper::CachedInstances& instances
         }
 
     if (SUCCESS != m_hierarchyManager.RelateCachedInstancesToHolder(pageKey, m_responsePageToResultClass, instancesToAdd) ||
-        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultClass, instancesToRemove))
+        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultClass, instancesToRemove) ||
+        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultWeakClass, instancesToRemove))
         {
         return ERROR;
         }

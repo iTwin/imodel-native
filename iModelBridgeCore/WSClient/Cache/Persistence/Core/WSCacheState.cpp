@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/WSCacheState.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment) :
+WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys) :
 dbAdapter(db),
 statementCache(db),
 environment(environment),
@@ -36,7 +36,7 @@ navigationBaseManager(dbAdapter, statementCache),
 changeInfoManager(dbAdapter, statementCache, hierarchyManager, objectInfoManager, relationshipInfoManager, fileInfoManager),
 fileStorage(dbAdapter, statementCache, environment),
 changeManager(dbAdapter, instanceCacheHelper, hierarchyManager, responseManager, objectInfoManager, relationshipInfoManager,
-fileInfoManager, changeInfoManager, fileStorage, rootManager),
+fileInfoManager, changeInfoManager, fileStorage, rootManager, syncKeys),
 
 extendedDataDelegate(dbAdapter, objectInfoManager, relationshipInfoManager),
 extendedDataAdapter(db, extendedDataDelegate)
@@ -59,8 +59,7 @@ ECSchemaCP WSCacheState::Core::GetCacheSchema()
 +--------------------------------------------------------------------------------------*/
 WSCacheState::WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment) :
 m_db(db),
-m_environment(environment),
-m_isSyncActive(false)
+m_environment(environment)
     {
     m_db.RegisterSchemaChangeListener(this);
     }
@@ -86,7 +85,6 @@ void WSCacheState::OnSchemaChanged()
 +--------------------------------------------------------------------------------------*/
 void WSCacheState::ClearRuntimeCaches()
     {
-    m_isSyncActive = m_core ? m_core->changeManager.IsSyncActive() : m_isSyncActive;
     m_core = nullptr;
     }
 
@@ -107,12 +105,5 @@ WSCacheState::Core& WSCacheState::GetCore()
 +--------------------------------------------------------------------------------------*/
 void WSCacheState::ResetCore()
     {
-    if (m_core)
-        {
-        m_isSyncActive = m_core->changeManager.IsSyncActive();
-        }
-
-    m_core = std::make_shared<Core>(m_db, m_environment);
-
-    m_core->changeManager.SetSyncActive(m_isSyncActive);
+    m_core = std::make_shared<Core>(m_db, m_environment, m_activeSyncKeys);
     }

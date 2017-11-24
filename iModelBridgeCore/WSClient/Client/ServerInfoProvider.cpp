@@ -119,30 +119,46 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
             return;
             }
 
-        // WSG R2 - R3.5
-        GetInfoFromPage("/v1.2/Info", ct)->Then([=] (WSInfoHttpResult& result)
+        GetInfoByPokingWSG (7, ct)->Then ([=] (WSInfoHttpResult& result)
             {
-            if (result.IsSuccess())
+            if (result.IsSuccess ())
                 {
-                finalResult->SetSuccess(result.GetValue());
-                return;
-                }
-            if (result.GetError().GetHttpStatus() != HttpStatus::NotFound)
-                {
-                finalResult->SetError(result.GetError());
+                finalResult->SetSuccess (result.GetValue ());
                 return;
                 }
 
-            // WSG R1
-            GetInfoFromPage("/Pages/About.aspx", ct)->Then([=] (WSInfoHttpResult& result)
+            WSError error (result.GetError ());
+            if (error.GetStatus () != WSError::Status::ServerNotSupported)
                 {
-                if (result.IsSuccess())
+                finalResult->SetError (error);
+                return;
+                }
+
+            // WSG R2 - R3.5
+            GetInfoFromPage ("/v1.2/Info", ct)->Then ([=] (WSInfoHttpResult& result)
+                {
+                if (result.IsSuccess ())
                     {
-                    finalResult->SetSuccess(result.GetValue());
+                    finalResult->SetSuccess (result.GetValue ());
+                    return;
+                    }
+                if (result.GetError ().GetHttpStatus () != HttpStatus::NotFound)
+                    {
+                    finalResult->SetError (result.GetError ());
                     return;
                     }
 
-                finalResult->SetError(result.GetError());
+                // WSG R1
+                GetInfoFromPage ("/Pages/About.aspx", ct)->Then ([=] (WSInfoHttpResult& result)
+                    {
+                    if (result.IsSuccess ())
+                        {
+                        finalResult->SetSuccess (result.GetValue ());
+                        return;
+                        }
+
+                    finalResult->SetError (result.GetError ());
+                    });
                 });
             });
         })
@@ -168,6 +184,68 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR 
             return WSInfoHttpResult::Success(info);
             }
         return WSInfoHttpResult::Error(response);
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Arturas.Januska   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoByPokingWSG (int apiSubVersion, ICancellationTokenPtr ct) const
+    {
+    auto finalResult = std::make_shared<WSInfoHttpResult> ();
+
+    Utf8String versionUrlSuffix = Utf8PrintfString ("/v2.%d/repositories", apiSubVersion);
+    
+    return PokeWSG (versionUrlSuffix, ct)->Then ([=] (WSInfoHttpResult& result)
+        {
+        if (result.IsSuccess ())
+            {
+            finalResult->SetSuccess (result.GetValue ());
+            return;
+            }
+
+        if (result.GetError ().GetHttpStatus () != HttpStatus::NotFound || apiSubVersion == 1)
+            {
+            finalResult->SetError (result.GetError ());
+            return;
+            }
+
+        GetInfoByPokingWSG (apiSubVersion - 1, ct)->Then ([=] (WSInfoHttpResult& result)
+            {
+            if (result.IsSuccess ())
+                {
+                finalResult->SetSuccess (result.GetValue ());
+                return;
+                }
+
+            finalResult->SetError (result.GetError ());
+            return;
+            });
+        })->Then<WSInfoHttpResult> ([=]
+            {
+            return *finalResult;
+            });
+    }
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Arturas.Januska   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::PokeWSG (Utf8StringCR versionUrlSuffix, ICancellationTokenPtr ct) const
+    {
+    Http::Request request = m_configuration->GetHttpClient ().CreateGetRequest (m_configuration->GetServerUrl () + versionUrlSuffix);
+    request.SetCancellationToken (ct);
+
+    return request.PerformAsync ()->Then<WSInfoHttpResult> ([=] (Http::Response& response)
+        {
+        if (response.IsSuccess ())
+            {
+            BeVersion version(versionUrlSuffix.c_str (), "/v%d.%d/repositories");
+            WSInfo info(version, version, WSInfo::Type::BentleyWSG);
+
+            return WSInfoHttpResult::Success (info);
+            }
+        return WSInfoHttpResult::Error (response);
         });
     }
 

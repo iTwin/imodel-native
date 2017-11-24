@@ -207,10 +207,10 @@ WCharCP ProjectGuid
     instance["instanceId"] = Utf8String(ProjectGuid);
     instance["schemaName"] = "GlobalSchema";
     instance["className"] = "ProjectFavorite_V4";
+    instance["changeState"] = "new";
 
     Json::Value objectCreationJson;
     objectCreationJson["instance"] = instance;
-    ObjectId objectId("GlobalSchema", "ProjectFavorite_V4", "");
 
     Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
     if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
@@ -223,7 +223,7 @@ WCharCP ProjectGuid
         }
 
     auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
-    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();
     if (!result.IsSuccess())
         return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
 

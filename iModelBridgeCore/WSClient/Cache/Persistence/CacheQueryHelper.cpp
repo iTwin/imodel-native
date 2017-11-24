@@ -133,7 +133,7 @@ bool* pInfoNeedsSelecting
                 selectClause += ", ";
                 }
 
-            selectClause += Utf8PrintfString("%s.[ECInstanceId]", classAlias);
+            selectClause += Utf8PrintfString("%s.[ECInstanceId], %s.[ECClassId]", classAlias, classAlias);
             }
         }
 
