@@ -19,13 +19,7 @@ ClassMap const* DbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
     ClassMapLoadContext ctx;
     ClassMap const* classMap = nullptr;
-    if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    if (classMap == nullptr)
+    if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass) || classMap == nullptr)
         return nullptr;
 
     return classMap;
@@ -114,16 +108,10 @@ BentleyStatus DbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext&
         }
 
     if (ClassMappingStatus::Error == AddClassMap(classMapTmp))
-        {
-        BeAssert(false);
         return ERROR;
-        }
 
     if (SUCCESS != classMapTmp->Load(ctx, classMapLoadContext))
-        {
-        BeAssert(false);
         return ERROR;
-        }
 
     classMap = classMapTmp;
     return SUCCESS;

@@ -93,6 +93,73 @@ public:
 
     static BentleyStatus SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
     static BentleyStatus DeserializeKoqPresentationUnits(ECN::KindOfQuantityR, Utf8CP jsonStr);
+
+    //!Safe method to cast an integer value to the ECClassType enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::ECClassType> ToClassType(int val)
+        {
+        if (val == Enum::ToInt(ECN::ECClassType::CustomAttribute) || val == Enum::ToInt(ECN::ECClassType::Entity) ||
+            val == Enum::ToInt(ECN::ECClassType::Relationship) || val == Enum::ToInt(ECN::ECClassType::Struct))
+            return Enum::FromInt<ECN::ECClassType>(val);
+
+        return Nullable<ECN::ECClassType>();
+        };
+
+    //!Safe method to cast an integer value to the ECClassModifier enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::ECClassModifier> ToClassModifier(int val)
+        {
+        if (val == Enum::ToInt(ECN::ECClassModifier::Abstract) || val == Enum::ToInt(ECN::ECClassModifier::None) || val == Enum::ToInt(ECN::ECClassModifier::Sealed))
+            return Enum::FromInt<ECN::ECClassModifier>(val);
+
+        return Nullable<ECN::ECClassModifier>();
+        };
+
+    //!Safe method to cast an integer value to the PropertyKind enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<PropertyKind> ToPropertyKind(int val)
+        {
+        if (val >= 0 && val <= 4)
+            return Enum::FromInt<PropertyKind>(val);
+
+        return Nullable<PropertyKind>();
+        };
+
+    //!Safe method to cast an integer value to the PrimitiveType enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::PrimitiveType> ToPrimitiveType(int val)
+        {
+        if (val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Binary) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Boolean) ||
+            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_DateTime) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Double) ||
+            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_IGeometry) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Integer) ||
+            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Long) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Point2d) ||
+            val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_Point3d) || val == Enum::ToInt(ECN::PrimitiveType::PRIMITIVETYPE_String))
+            return Enum::FromInt<ECN::PrimitiveType>(val);
+
+        return Nullable<ECN::PrimitiveType>();
+        };
+
+    //!Safe method to cast an integer value to the StrengthType enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::StrengthType> ToStrengthType(int val)
+        {
+        if (val == Enum::ToInt(ECN::StrengthType::Embedding) || val == Enum::ToInt(ECN::StrengthType::Holding) || val == Enum::ToInt(ECN::StrengthType::Referencing))
+            return Enum::FromInt<ECN::StrengthType>(val);
+
+        return Nullable<ECN::StrengthType>();
+        };
+
+    //!Safe method to cast an integer value to the ECRelatedInstanceDirection enum.
+    //!It makes sure the integer is a valid value for the enum.
+    static Nullable<ECN::ECRelatedInstanceDirection> ToECRelatedInstanceDirection(int val)
+        {
+        if (val == Enum::ToInt(ECN::ECRelatedInstanceDirection::Backward) || val == Enum::ToInt(ECN::ECRelatedInstanceDirection::Forward))
+            return Enum::FromInt<ECN::ECRelatedInstanceDirection>(val);
+
+        return Nullable<ECN::ECRelatedInstanceDirection>();
+        };
+
+ 
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

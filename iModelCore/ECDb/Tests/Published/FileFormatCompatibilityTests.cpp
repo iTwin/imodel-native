@@ -1225,6 +1225,571 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_UpgradedFile)
     EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn, CompareOptions::DoNotComparePk));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="A">
+                    <ECProperty propertyName="Prop1" typeName="string" />
+                    <ECProperty propertyName="Prop2" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="B">
+                   <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                             <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00">
+                            <MaxSharedColumnsBeforeOverflow>100</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                        <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00" />
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubB">
+                    <BaseClass>B</BaseClass>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="None" strengthDirection="Backward">
+                  <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                      <Class class ="B" />
+                  </Target>
+               </ECRelationshipClass>
+         </ECSchema>)xml")));
+
+    ECClassId aClassId = m_ecdb.Schemas().GetClassId("TestSchema", "A");
+    ASSERT_TRUE(aClassId.IsValid());
+    ECClassId bClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B");
+    ASSERT_TRUE(bClassId.IsValid());
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "AHasB");
+    ASSERT_TRUE(relClassId.IsValid());
+
+    //Now modify some entries in the ec tables that mimick the scenario where new ECClass types, ECProperty types, MapStrategies would
+    //get added in future versions of ECDb.
+
+    //Missing table
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP TABLE ts_A"));
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for missing table";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.A")) << "Preparing ECSQL against class with missing table is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    //Missing joined table
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("DROP TABLE ts_SubB"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "B");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for missing table";
+
+    testClass = m_ecdb.Schemas().GetClass("TestSchema", "SubB");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for missing table";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.B")) << "Preparing ECSQL against class with missing table is expected to fail";
+    stmt.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SubB")) << "Preparing ECSQL against class with missing table is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    //Unknown MapStrategy
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=5 WHERE ClassId=%s", aClassId.ToString().c_str()).c_str()));
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown MapStrategy";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown MapStrategy is expected to fail";
+    stmt.Finalize();
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+               <ECEntityClass typeName="SubB2">
+                    <BaseClass>ts.B</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown ShareColumnsMode
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("UPDATE ec_ClassMap SET ShareColumnsMode=100 WHERE ClassId=%s", bClassId.ToString().c_str()).c_str()));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "B");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown ShareColumnsMode";
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.B")) << "Preparing ECSQL against class with unknown ShareColumnsMode is expected to fail";
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.SubB")) << "Preparing ECSQL against class with unknown ShareColumnsMode is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubB2">
+                    <BaseClass>ts.B</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown JoinedTableInfo
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(Utf8PrintfString("UPDATE ec_ClassMap SET JoinedTableInfo=100 WHERE ClassId=%s", bClassId.ToString().c_str()).c_str()));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "B");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown JoinedTableInfo";
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.B")) << "Preparing ECSQL against class with unknown JoinedTableInfo is expected to fail";
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.SubB")) << "Preparing ECSQL against class with unknown JoinedTableInfo is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubB2">
+                    <BaseClass>ts.B</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown TableType
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Table SET Type=100 WHERE Name='ts_B'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "B");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown TableType";
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.B")) << "Preparing ECSQL against class with unknown TableType is expected to fail";
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.SubB")) << "Preparing ECSQL against class with unknown TableType is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubB2">
+                    <BaseClass>ts.B</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown ColumnKind
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Column SET ColumnKind=-1 WHERE Name='Prop2'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown ColumnKind";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown ColumnKind is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown column data type
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Column SET Type=1000 WHERE Name='Prop2'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown column data type";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown column data type is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown column collation
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Column SET CollationConstraint=1000 WHERE Name='Prop2'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    ASSERT_TRUE(testClass != nullptr) << "GetClass should be possible for unknown collation";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown collation is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    bvector<ECClassId> classIds;
+    classIds.push_back(testClass->GetId());
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown ECClassType
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Class SET Type=100 WHERE Name='A'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown ECClassType";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown ECClassType is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown ECClassModifier
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Class SET Modifier=100 WHERE Name='A'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown ECClassModifier";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown ECClassModifier is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown relationship strength
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Class SET RelationshipStrength=100 WHERE Name='AHasB'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "AHasB");
+    EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown relationship strength";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.AHasB")) << "Preparing ECSQL against class with unknown relationship strength is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECRelationshipClass typeName="SubAHasB" strength="Referencing" modifier="None" strengthDirection="Backward">
+                    <BaseClass>ts.AHasB</BaseClass>
+                  <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                      <Class class ="B" />
+                  </Target>
+               </ECRelationshipClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown relationship strength direction
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Class SET RelationshipStrengthDirection=100 WHERE Name='AHasB'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "AHasB");
+    EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown relationship strength direction";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.AHasB")) << "Preparing ECSQL against class with unknown relationship strength direction is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECRelationshipClass typeName="SubAHasB" strength="Referencing" modifier="None" strengthDirection="Backward">
+                    <BaseClass>ts.AHasB</BaseClass>
+                  <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                      <Class class ="B" />
+                  </Target>
+               </ECRelationshipClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown property kind type
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Property SET Kind=1000 WHERE Name='Prop2'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown property kind";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop2 FROM ts.A")) << "Preparing ECSQL against class with unknown property kind is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+
+    {
+    //Unknown primitive type
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Property SET PrimitiveType=-1 WHERE Name='Prop2'"));
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "A");
+    EXPECT_TRUE(testClass == nullptr) << "GetClass should not be possible for unknown property primitive type";
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop2 FROM ts.A")) << "Preparing ECSQL against class with unknown property primitive type is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema import
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                <ECEntityClass typeName="SubA">
+                    <BaseClass>ts.A</BaseClass>
+                    <ECProperty propertyName="NewProp" typeName="string" />
+                </ECEntityClass>
+                </ECSchema>)xml")));
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    }
+    }
+
 //*****************************************************************************************
 // FileFormatCompatibilityTests
 //*****************************************************************************************

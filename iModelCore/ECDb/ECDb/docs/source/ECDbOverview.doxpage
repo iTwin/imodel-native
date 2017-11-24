@@ -449,8 +449,8 @@
     The schema import fails for the ECRelationshipClass, if
         - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
           (see @ref ClassMapCustomAttributeDescription) and 
-            - the relationship strength is @b Embedding
-            - in the navigation property's @b ForeignKeyConstraint custom attribute @b OnDeleteAction is set to @b Cascade or
+            - the relationship strength is @b Embedding or
+            - in the navigation property's @b ForeignKeyConstraint custom attribute @b OnDeleteAction is set to @b Cascade
         - at least one, but not all constraint classes on the <i>foreign key end</i> define a navigation property
         - The constraint classes' navigation property names differ
         - a navigation property for this relationship class is defined on a class other than the constraint classes (including
