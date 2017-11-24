@@ -2136,9 +2136,9 @@ public:
     {
         mutable OpenMode m_openMode;
         DefaultTxn     m_startDefaultTxn;
-        mutable bool  m_forProfileUpgrade;
-        bool          m_rawSQLite;
-        BusyRetry*    m_busyRetry;
+        mutable bool  m_forProfileUpgrade = false;
+        bool          m_rawSQLite = false;
+        BusyRetry*    m_busyRetry = nullptr;
 
         BE_SQLITE_EXPORT virtual bool _ReopenForProfileUpgrade(Db&) const;
 
@@ -2171,6 +2171,12 @@ public:
         //! will be started on the Db after it is opened. This applies only to the connection returned by
         //! Db::CreateNewDb or Db::OpenBeSQLiteDb; it is not a persistent property of the Db.
         void SetStartDefaultTxn(DefaultTxn val) {m_startDefaultTxn = val;}
+
+        //! Sets a BusyRetry handler
+        //! @param[in] retry A BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
+        //!                  The default is to not attempt retries. Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
+        //!                  to the database and do not permit sharing.
+        void SetBusyRetry(BusyRetry* retry) { m_busyRetry = retry; }
     };
 
     //=======================================================================================
@@ -2227,10 +2233,45 @@ public:
     };
 
 protected:
+
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   02/17
+    //=======================================================================================
+    struct AppDataCollection
+    {
+        using AppData = Db::AppData;
+    private:
+        typedef bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> Map;
+
+        BeMutex     m_mutex;
+        Map         m_map;
+
+        BE_SQLITE_EXPORT void AddInternal(AppData::Key const& key, AppData* data);
+        BE_SQLITE_EXPORT AppData* FindInternal(AppData::Key const& key);
+    public:
+        void Add(AppData::Key const& key, AppData* data) { BeMutexHolder lock(m_mutex); return AddInternal(key, data); }
+        StatusInt Drop(AppData::Key const& key);
+        AppData* Find(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
+        template<typename T> AppData* FindOrAdd(AppData::Key const& key, T createAppData)
+            {
+            BeMutexHolder lock(m_mutex);
+            AppData* data = FindInternal(key);
+            if (nullptr == data)
+                {
+                data = createAppData();
+                AddInternal(key, data);
+                }
+
+            return data;
+            }
+
+        void Clear() { m_map.clear(); }
+    };
+
     DbFile* m_dbFile;
     StatementCache m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
-    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+    mutable AppDataCollection m_appData;
 
     //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
@@ -2458,11 +2499,11 @@ public:
     //! the ATTACH sql statement is executed and restarted afterwards.
     //! @param[in] filename The name of the file holding the SQLite database to be attached.
     //! @param[in] alias The alias by which the database is attached.
-    BE_SQLITE_EXPORT DbResult AttachDb(Utf8CP filename, Utf8CP alias);
+    BE_SQLITE_EXPORT DbResult AttachDb(Utf8CP filename, Utf8CP alias) const;
 
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
-    BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias);
+    BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
@@ -2692,16 +2733,30 @@ public:
     //! every session. But that's OK, the only thing important about \c key is that it be unique.
     //! If AppData with this key already exists on this Db, it is dropped and replaced with \a appData.
     //! @param[in] appData The application's instance of a subclass of AppData to store on this Db.
+    //! @note This function is thread-safe.
     BE_SQLITE_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
 
     //! Remove a Db::AppData object from this Db by its key.
     //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
     //! @return SUCCESS if a AppData object with \c key was found and was dropped. ERROR if no AppData with \c key exists.
+    //! @note This function is thread-safe.
     BE_SQLITE_EXPORT StatusInt DropAppData(AppData::Key const& key) const;
 
     //! Search for the Db::AppData on this Db with \c key. See discussion of keys in AddAppData.
     //! @return A pointer to the AppData object with \c key. nullptr if not found.
+    //! @note This function is thread-safe.
     BE_SQLITE_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+
+    //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
+    //! will be invoked to create it, and the returned AppData* will be added to the Db.
+    //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
+    //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
+    //! @return The existing or newly-added Db::AppData*
+    //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
+    template<typename T> AppData* FindOrAddAppData(AppData::Key const& key, T createAppData) const
+        {
+        return m_appData.FindOrAdd(key, createAppData);
+        }
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);

@@ -1664,10 +1664,7 @@ BeGuid Db::QueryProjectGuid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry)
-    : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_forProfileUpgrade(false), m_rawSQLite(false), m_busyRetry(retry)
-    {
-    }
+Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry) : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_busyRetry(retry) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -1776,7 +1773,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
+DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const
     {
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (txn!= nullptr) && (BE_SQLITE_OK == txn->Commit(nullptr));
@@ -1799,7 +1796,7 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::DetachDb(Utf8CP alias)
+DbResult Db::DetachDb(Utf8CP alias) const
     {
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr));
@@ -2296,7 +2293,7 @@ void Db::DoCloseDb()
     if (!IsDbOpen())
         return;
 
-    m_appData.clear();
+    m_appData.Clear();
 
     m_statements.Empty();
     DELETE_AND_CLEAR(m_dbFile);
@@ -2312,11 +2309,33 @@ void Db::CloseDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt Db::AppDataCollection::Drop(AppData::Key const& key)
+    {
+    BeMutexHolder lock(m_mutex);
+    return 0 == m_map.erase(&key) ? ERROR : SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Db::DropAppData(AppData::Key const& key) const
     {
-    return 0==m_appData.erase(&key) ? ERROR : SUCCESS;
+    return m_appData.Drop(key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Db::AppDataCollection::AddInternal(AppData::Key const& key, AppData* data)
+    {
+    auto entry = m_map.Insert(&key, data);
+    if (!entry.second)
+        {
+        // we already had appdata for this key. Clean up old and save new.
+        entry.first->second = data;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2324,12 +2343,16 @@ StatusInt Db::DropAppData(AppData::Key const& key) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::AddAppData(AppData::Key const& key, AppData* appData) const
     {
-    auto entry = m_appData.Insert(&key, appData);
-    if (entry.second)
-        return;
+    m_appData.Add(key, appData);
+    }
 
-    // we already had appdata for this key. Clean up old and save new.
-    entry.first->second = appData;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Db::AppData* Db::AppDataCollection::FindInternal(AppData::Key const& key)
+    {
+    auto entry = m_map.find(&key);
+    return m_map.end() == entry ? nullptr : entry->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2337,8 +2360,7 @@ void Db::AddAppData(AppData::Key const& key, AppData* appData) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Db::AppData* Db::FindAppData(AppData::Key const& key) const
     {
-    auto entry = m_appData.find(&key);
-    return entry==m_appData.end() ? nullptr : entry->second.get();
+    return m_appData.Find(key);
     }
 
 /*---------------------------------------------------------------------------------**//**
