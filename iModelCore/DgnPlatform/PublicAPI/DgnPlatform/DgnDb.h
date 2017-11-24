@@ -161,7 +161,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! @param[in] schemaUpgradeOptions Options to upgrade the ECSchema-s in the database from registered domains, or revisions. 
         explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) : ECDb::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions)
             {
-            Set(BeSQLite::EC::ECDb::OpenParams::ChangeSummaryCacheMode::AttachIfExists);
+            Set(BeSQLite::EC::ECDb::ChangeSummaryCacheMode::AttachIfExists);
             }
 
         SchemaUpgradeOptions& GetSchemaUpgradeOptionsR() { return m_schemaUpgradeOptions; }
