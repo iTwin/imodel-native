@@ -10,7 +10,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsDesktop\RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="B02">
+    <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsComplete\RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="B02">
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
@@ -25,7 +25,7 @@
     </Part>
     
     <!-- depending on the target platform, use either the RealityPlatformTools definition above or below, comment out the other -->
-    <!--<Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsConnect\RealityPlatformToolsConnect.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
+    <!--<Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsLight\RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>

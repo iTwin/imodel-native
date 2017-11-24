@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsDesktop/WSGServices.cpp $
+|     $Source: RealityPlatformToolsComplete/WSGServices.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -60,7 +60,6 @@ RequestStatus RawServerResponse::ValidateJSONResponse(Json::Value& instances, Ut
 
     return status;
     }
-
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017

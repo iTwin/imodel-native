@@ -507,10 +507,18 @@ public:
     REALITYDATAPLATFORM_EXPORT void RefreshToken() const;
 
 private:
-    mutable Utf8String              m_token;
-    mutable time_t                  m_tokenRefreshTimer;
-    RequestConstructor_TokenCallBack   m_tokenCallback;
+    mutable Utf8String                  m_token;
+    mutable time_t                      m_tokenRefreshTimer;
+    RequestConstructor_TokenCallBack    m_tokenCallback;
     };
+
+//! Callback function to execute a request
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @param[in] wsgRequest       Structure containing the url/header/body of the request
+//! @param[out] response        the response returned by the server
+//! @param[in] verifyPeer       determines whether the tool should validate the server's certificate
+//! @param[out] file            pointer to a file that will receive the body of the response (can be null if you don't need to write to a file)
+typedef std::function<void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file)> RequestConstructor_RequestCallback;
 
 //=====================================================================================
 //! @bsiclass                                  Spencer.Mason               01/2017
@@ -534,12 +542,15 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) const;
     REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) const;
 
+    REALITYDATAPLATFORM_EXPORT void SetRequestCallback(RequestConstructor_RequestCallback pi_func) { m_requestCallback = pi_func; }
+
     REALITYDATAPLATFORM_EXPORT RequestConstructor();
     REALITYDATAPLATFORM_EXPORT virtual ~RequestConstructor(){}
 protected:
     REALITYDATAPLATFORM_EXPORT void* PrepareRequestBase(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const;
 
-    BeFileName                      m_certificatePath;
+    BeFileName                         m_certificatePath;
+    RequestConstructor_RequestCallback m_requestCallback;
     };
 
 //=====================================================================================

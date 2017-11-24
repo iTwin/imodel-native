@@ -342,6 +342,12 @@ private:
 //! @param[in] rawResponse  the raw server response
 typedef std::function<void(Utf8String basicMessage, const RawServerResponse& rawResponse)> GeoCoordinationService_ErrorCallBack;
 
+//! Callback function to perform a request
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @param[in] request             Structure containing the parameters of the request
+//! @param[out] rawResponse        the response returned by the server
+typedef std::function<void(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse)> GeoCoordinationService_RequestCallback;
+
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
 //! GeoCoordinationService
@@ -441,6 +447,8 @@ public:
     //! and return on last page with appropriate status.
     REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicPagedRequest(const GeoCoordinationServicePagedRequest* request, Utf8StringCR keyword = "instances");
 
+    REALITYDATAPLATFORM_EXPORT static void SetRequestCallback(GeoCoordinationService_RequestCallback pi_func) { s_requestCallback = pi_func; }
+
     static Utf8String s_geoCoordinationServer;
     static Utf8String s_geoCoordinationWSGProtocol;
     static Utf8String s_geoCoordinationRepoName;
@@ -462,6 +470,8 @@ public:
 
 private:
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> SpatialEntityRequestBase(const GeoCoordinationServiceRequest* request, RawServerResponse& rawResponse);
+
+    static GeoCoordinationService_RequestCallback s_requestCallback;
     };
 
 

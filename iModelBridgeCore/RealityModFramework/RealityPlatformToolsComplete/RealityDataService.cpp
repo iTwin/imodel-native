@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsDesktop/RealityDataService.cpp $
+|     $Source: RealityPlatformToolsComplete/RealityDataService.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -162,27 +162,6 @@ const TransferReport& RealityDataServiceTransfer::Perform()
         } while (still_running);
 
     return m_report;
-    }
-
-//=====================================================================================
-//! @bsimethod                                   Spencer.Mason              02/2017
-//=====================================================================================
-bool RealityDataServiceTransfer::SetupNextEntry()
-    {
-    if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
-        return false;
-
-    if (m_curEntry < (int)m_filesToTransfer.size())
-        {
-        RealityDataFileTransfer* fTrans = (RealityDataFileTransfer*)m_filesToTransfer[m_curEntry];
-        fTrans->ReadyFile();
-        SetupRequestforFile((RealityDataUrl*)(fTrans), 0);
-        ++m_curEntry;
-        }
-    else
-        return false;
-
-    return true;
     }
 
 //=====================================================================================

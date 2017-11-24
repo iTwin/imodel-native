@@ -1,3 +1,11 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityPlatformToolsLight/SimpleRDSApi.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
 #include "../RealityPlatform/SimpleRDSApi.cpp"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM

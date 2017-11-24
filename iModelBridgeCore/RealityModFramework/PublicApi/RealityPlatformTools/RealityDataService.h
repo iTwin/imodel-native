@@ -683,6 +683,18 @@ struct TransferReport
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;
     };
 
+//! Callback function to prep a request, if necessary
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @param[in] request          Structure containing the url/header/body of the request
+//! @param[in] verifyPeer       determines whether the tool should validate the server's certificate
+typedef std::function<void(RealityDataUrl* request, bool verifyPeer)> RealityDataServiceTransfer_SetupCallback;
+
+//! Callback function to prep a request, if necessary
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @param[in] filesToTransfer  Structures containing the url/header/body of the requests to execute
+//! @param[in] progressFunc     Progress callback function to update, during download
+typedef std::function<void(bvector<RealityDataFileTransfer*>& filesToTransfer, RealityDataServiceTransfer_ProgressCallBack& progressFunc)> RealityDataServiceTransfer_MultiRequestCallback;
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason 02/2017
 //! The base class to upload/download classes. This class defines the interface
@@ -713,6 +725,10 @@ struct RealityDataServiceTransfer : public RequestConstructor
 
     //! Set callback to know to status, upload done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceTransfer_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
+
+    REALITYDATAPLATFORM_EXPORT void SetSetupCallback(RealityDataServiceTransfer_SetupCallback pi_func) { m_setupCallback = pi_func; }
+
+    REALITYDATAPLATFORM_EXPORT void SetMultiRequestCallback(RealityDataServiceTransfer_MultiRequestCallback pi_func) { m_multiRequestCallback = pi_func; }
 
     //! Start the upload progress for all links.
     //! Returns a reference to the internal transfer report structure.
@@ -770,6 +786,9 @@ protected:
     bool                        m_onlyReportErrors;
     uint64_t                    m_fullTransferSize;
     uint64_t                    m_currentTransferedAmount;
+
+    RealityDataServiceTransfer_SetupCallback        m_setupCallback;
+    RealityDataServiceTransfer_MultiRequestCallback m_multiRequestCallback;
     };
 
 //=====================================================================================

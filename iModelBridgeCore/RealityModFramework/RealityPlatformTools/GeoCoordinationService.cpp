@@ -375,6 +375,8 @@ const Utf8String GeoCoordinationService::s_USGSInformationSourceKey = "usgsapi";
 const Utf8String GeoCoordinationService::s_PublicIndexInformationSourceKey = "index";
 const Utf8String GeoCoordinationService::s_AllInformationSourceKey = "all";
 
+GeoCoordinationService_RequestCallback GeoCoordinationService::s_requestCallback = nullptr;
+
 Utf8StringCR GeoCoordinationService::GetServerName() { return s_geoCoordinationServer; }
 Utf8StringCR GeoCoordinationService::GetWSGProtocol() { return s_geoCoordinationWSGProtocol; }
 Utf8StringCR GeoCoordinationService::GetRepoName() { return s_geoCoordinationRepoName; }
