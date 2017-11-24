@@ -480,8 +480,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeed
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
-    Credentials creds("admin", "admin");
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3AMobile_ATP_2";
+    Credentials creds("itest", "itest");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -552,8 +552,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://mobilevm6.bentley.com/ws";
-    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
-    Credentials creds("admin", "admin");
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3AMobile_ATP_2";
+    Credentials creds("itest", "itest");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
