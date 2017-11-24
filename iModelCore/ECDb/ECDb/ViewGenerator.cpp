@@ -69,9 +69,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         if (classMap == nullptr)
             return ERROR;
 
-        //skip temp tables if owned by ECDb because they will not exist if the file is not opened with ECDb.
-        //In case of ExistingTable, it is up to the owner to deal with temp tables
-        if (classMap->GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable && classMap->GetPrimaryTable().GetTableSpace().IsTemp())
+        if (!classMap->GetPrimaryTable().GetTableSpace().IsMain())
             continue;
 
         if (CreateECClassView(ecdb, *classMap) != SUCCESS)
@@ -111,11 +109,10 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
             return ERROR;
             }
 
-        if (mapStrategy != MapStrategy::ExistingTable && classMap->GetPrimaryTable().GetTableSpace().IsTemp())
+        if (!classMap->GetPrimaryTable().GetTableSpace().IsMain())
             {
-            //only fail if tables are owned by ECDb. In case of ExistingTable, it is up to the owner to deal with temp tables
-            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is mapped to the TEMP table space.",
-                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
+            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is mapped to the table space '%s'. ECClassViews can only be created for classes mapped to the MAIN table space.",
+                                           classMap->GetClass().GetFullName(), classId.ToString().c_str(), classMap->GetPrimaryTable().GetTableSpace().GetName().c_str());
             return ERROR;
             }
 
@@ -254,7 +251,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     if (instanceChangeClassMap == nullptr)
         return ERROR;
 
-    Utf8StringCR instanceChangeTableName = instanceChangeClassMap->GetPrimaryTable().GetName();
+    DbTable const& instanceChangeTable = instanceChangeClassMap->GetPrimaryTable();
     Utf8StringCR summaryIdColumnName = instanceChangeClassMap->GetPropertyMaps().Find("Summary.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
     Utf8StringCR changeIdColumnName = instanceChangeClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName();
     Utf8StringCR opCodeColumnName = instanceChangeClassMap->GetPropertyMaps().Find("OpCode")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
@@ -307,7 +304,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         }
 
     viewSql.AppendParenLeft();
-    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM ").Append(instanceChangeTableName).Append(" ic ");
+    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM ").Append(instanceChangeTable.GetTableSpace().GetName()).AppendDot().Append(instanceChangeTable.GetName()).Append(" ic ");
 
     if (ctx.IsPolymorphicQuery())
         viewSql.AppendFormatted(" INNER JOIN " TABLE_ClassHierarchyCache " ch ON ic.%s=ch.ClassId AND ch.BaseClassId=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
@@ -565,15 +562,21 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     if (RenderPropertyMaps(viewSql, ctx, requireJoinTo, classMap, contextTable, castAs, PropertyMap::Type::Data | PropertyMap::Type::ECInstanceId | PropertyMap::Type::ECClassId) != SUCCESS)
         return ERROR;
 
-    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName().c_str());
+    viewSql.Append(" FROM ");
+    
+    if (!contextTable.GetTableSpace().IsMain())
+        viewSql.AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot();
+
+    viewSql.AppendEscaped(contextTable.GetName());
+
     //Join necessary table for table 
     for(DbTable const* to : requireJoinTo)
         {
         DbColumn const* primaryKey = contextTable.FindFirst(DbColumn::Kind::ECInstanceId);
         DbColumn const* fkKey = to->FindFirst(DbColumn::Kind::ECInstanceId);
-        viewSql.Append(" INNER JOIN ").AppendEscaped(to->GetName().c_str());
-        viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
-        viewSql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).AppendEscaped(to->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
+        viewSql.Append(" INNER JOIN ").AppendEscaped(to->GetName());
+        viewSql.Append(" ON ").AppendEscaped(contextTable.GetName()).AppendDot().AppendEscaped(primaryKey->GetName());
+        viewSql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).AppendEscaped(to->GetName()).AppendDot().AppendEscaped(fkKey->GetName());
         }
 
     return SUCCESS;
@@ -600,9 +603,9 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& 
             viewSql.AppendComma();
 
         if (propertyMap->IsSystem())
-            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAccessString().c_str());
+            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAccessString());
         else
-            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName().c_str());
+            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName());
 
         if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
@@ -1067,7 +1070,11 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         viewSql.AppendComma().Append(dataPropertySql);
         }
 
-    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName());
+    viewSql.Append(" FROM ");
+    if (!contextTable.GetTableSpace().IsMain())
+        viewSql.AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot();
+
+    viewSql.AppendEscaped(contextTable.GetName());
     return SUCCESS;
     }
 
@@ -1296,7 +1303,6 @@ BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpres
     if (partition->NeedsECClassIdFilter())
         {
         Utf8String cacheTableAlias = "[CHC_" + table.GetName() + "]";
-        //filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
         filterSqlExpression.append("INNER JOIN " TABLE_ClassHierarchyCache " ").append(cacheTableAlias)
             .append(" ON ").append(cacheTableAlias).append(".[ClassId]").append("=").append(classIdColSql)
             .append(" AND ").append(cacheTableAlias).append(".[BaseClassId]").append("=").append(classIdStr);

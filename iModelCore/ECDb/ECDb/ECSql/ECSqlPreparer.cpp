@@ -1305,10 +1305,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         nativeSql.AppendParenRight();
 
     nativeSqlSnippets.push_back(nativeSql);
-
-    if (functionName.EqualsIAscii(SQLFUNC_ChangedValue))
-        ctx.SetMustRecreateChangeSummaryCache();
-
     return ECSqlStatus::Success;
     }
 

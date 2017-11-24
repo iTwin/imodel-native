@@ -2340,10 +2340,9 @@ std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan Khan                        12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertECClassViews(bmap<Utf8String, bset<Utf8String>>& ecclassViewInfo, bool& validationFailed, ECDbCR ecdb)
+DbResult PrepareECClassViews(bmap<Utf8String, bset<Utf8String>>& ecclassViewInfo, ECDbCR ecdb)
     {
     ecclassViewInfo.clear();
-    validationFailed = false;
 
     Statement stmt;
     stmt.Prepare(ecdb, "select  substr (name, 1,  instr (name,'.') - 1), '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')");
@@ -2356,10 +2355,11 @@ void AssertECClassViews(bmap<Utf8String, bset<Utf8String>>& ecclassViewInfo, boo
         sql.append(viewName);
         Statement validStmt;
         DbResult stat = validStmt.TryPrepare(ecdb, sql.c_str());
-        ASSERT_EQ(BE_SQLITE_OK, stat) << "ECClassView " << viewName << " has invalid DDL: " << ecdb.GetLastError().c_str();
         if (BE_SQLITE_OK != stat)
-            validationFailed = true;
+            return stat;
         }
+
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2372,9 +2372,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     m_ecdb.SaveChanges();
     bmap<Utf8String, bset<Utf8String>> schemasWithECClassViews;
-    bool validationFailed = false;
-    AssertECClassViews(schemasWithECClassViews, validationFailed, m_ecdb);
-    ASSERT_FALSE(validationFailed);
+    ASSERT_EQ(BE_SQLITE_OK, PrepareECClassViews(schemasWithECClassViews, m_ecdb));
 
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
@@ -2382,8 +2380,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     m_ecdb.SaveChanges();
-    AssertECClassViews(schemasWithECClassViews, validationFailed, m_ecdb);
-    ASSERT_FALSE(validationFailed);
+    ASSERT_EQ(BE_SQLITE_OK, PrepareECClassViews(schemasWithECClassViews, m_ecdb));
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
     ASSERT_EQ(26, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
@@ -2410,9 +2407,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     m_ecdb.SaveChanges();
 
     bmap<Utf8String, bset<Utf8String>> schemasWithECClassViews;
-    bool validationFailed = false;
-    AssertECClassViews(schemasWithECClassViews, validationFailed, m_ecdb);
-    ASSERT_FALSE(validationFailed);
+    ASSERT_EQ(BE_SQLITE_OK, PrepareECClassViews(schemasWithECClassViews, m_ecdb));
 
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     auto it = schemasWithECClassViews.find("ecdbf");
@@ -2504,13 +2499,11 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
             "    <ECProperty propertyName='PropC' typeName='Boolean' />"
             "  </ECEntityClass>"
             "</ECSchema>")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
+    ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     bmap<Utf8String, bset<Utf8String>> classViewInfo;
-    bool validationFailed = false;
-    AssertECClassViews(classViewInfo, validationFailed, m_ecdb);
-    ASSERT_FALSE(validationFailed);
+    ASSERT_EQ(BE_SQLITE_OK, PrepareECClassViews(classViewInfo, m_ecdb));
     }
 
 //---------------------------------------------------------------------------------------

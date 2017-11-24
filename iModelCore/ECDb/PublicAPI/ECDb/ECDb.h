@@ -63,7 +63,47 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
     //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      02/2017
+    //! Options that control what to do with the ChangeSummary cache file when opening an ECDb file
+    //! @see ECDb::OpenParams @see ECDb::AttachChangeSummaryCache  @see @ref ECDbChangeSummaries
+    // @bsienum                                                    11/17
+    //=======================================================================================
+    enum class ChangeSummaryCacheMode
+        {
+        AttachAndCreateIfNotExists,
+        AttachIfExists,
+        DoNotAttach
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    11/17
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
+        {
+        private:
+            ChangeSummaryCacheMode m_changeSummaryCacheMode = ChangeSummaryCacheMode::AttachAndCreateIfNotExists;
+
+        public:
+            explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
+            OpenParams(OpenMode openMode, ChangeSummaryCacheMode changeSummaryCacheMode) : Db::OpenParams(openMode, BeSQLite::DefaultTxn::Yes), m_changeSummaryCacheMode(changeSummaryCacheMode) {}
+            virtual ~OpenParams() {}
+
+            //! Sets the ChangeSummaryCacheMode in the params
+            //!@note If a profile upgrade has to be performed while opening a file,
+            //!the specified mode is ignored and ChangeSummaryCacheMode::AttachAndCreateIfNotExists is used.
+            //! @param[in] mode ChangeSummaryCacheMode to set
+            //! @return the params object itself for fluid API calls
+            OpenParams& Set(ChangeSummaryCacheMode mode) { m_changeSummaryCacheMode = mode; return *this; }
+
+            //! Gets the ChangeSummaryCacheMode
+            //!@note If a profile upgrade has to be performed while opening a file,
+            //!the specified mode is ignored and ChangeSummaryCacheMode::AttachAndCreateIfNotExists is used.
+            //! @return ChangeSummaryCacheMode
+            ChangeSummaryCacheMode GetChangeSummaryCacheMode() const { return m_changeSummaryCacheMode; }
+        };
+
+    //=======================================================================================
+    //! Compile-time Settings that subclasses can set.
+    // @bsiclass                                                    02/2017
     //+===============+===============+===============+===============+===============+======
     struct Settings final
         {
@@ -106,8 +146,7 @@ public:
         };
 
     //=======================================================================================
-    //! Modes for the ECDb::Purge method.
-    // @bsiclass                                                Krischan.Eberle      11/2015
+    // @bsiclass                                                                11/2017
     //+===============+===============+===============+===============+===============+======
     struct ChangeSummaryExtractOptions final
         {
@@ -121,7 +160,7 @@ public:
 
     //=======================================================================================
     //! Modes for the ECDb::Purge method.
-    // @bsiclass                                                Krischan.Eberle      11/2015
+    // @bsiclass                                                        11/2015
     //+===============+===============+===============+===============+===============+======
     enum class PurgeMode
         {
@@ -133,7 +172,7 @@ public:
     //! Allows clients to be notified of error messages.
     //! @remarks ECDb cares for logging any error sent to listeners via BentleyApi::NativeLogging. 
     //! So implementors don't have to do that anymore.
-    // @bsiclass                                                Krischan.Eberle      09/2015
+    // @bsiclass                                                        09/2015
     //+===============+===============+===============+===============+===============+======
     struct IIssueListener
         {
@@ -167,7 +206,7 @@ protected:
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
-    ECDB_EXPORT DbResult _OnDbOpened(OpenParams const&) override;
+    ECDB_EXPORT DbResult _OnDbOpened(Db::OpenParams const&) override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT DbResult _OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;
@@ -249,20 +288,41 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
+    //! Attaches the change summary cache file to this %ECDb file (if it isn't attached already).
+    //! If it does not exist, a new one is created and attached.
+    //! @note Attaching a file means that any open transactions are committed first (see BentleyApi::BeSQLite::Db::AttachDb).
+    //! 
+    //! Alternatively you can specify a corresponding ECDb::ChangeSummaryCacheMode so that the cache
+    //! is attached at opening time already.
+    //!
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    ECDB_EXPORT DbResult AttachChangeSummaryCache() const;
+
+    //! Gets the file path to the ChangeSummary cache file for this %ECDb file.
+    //! @return Path to ChangeSummary cache file
+    ECDB_EXPORT BeFileName GetChangeSummaryCachePath() const;
+
+    //! Gets the file path to the ChangeSummary cache file for the specified %ECDb path.
+    //! @param[in] ecdbPath Path to %ECDb file for which ChangeSummary cache path is returned
+    //! @return Path to ChangeSummary cache file
+    ECDB_EXPORT static BeFileName GetChangeSummaryCachePath(BeFileNameCR ecdbPath);
+
     //! Extracts and generates the change summary from the specified change set.
     //! @remarks The change summary is persisted as as instance of the ECClass @b ECDbChangeSummaries.ChangeSummary and its related classes
     //! @b ECDbChangeSummaries.InstanceChange and @b ECDbChangeSummaries.PropertyValueChange.
-    //! The method returns the ECInstanceId of the generated ChangeSummary which serves as input to any query into the changes
+    //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
     //! using the @b ECDbChangeSummary ECClasses or using the ECSQL function @b ChangeSummary.
     //!
-    //! @note the Change summaries are only available for the lifetime of this ECDb connection. Closing the connection deletes any change summaries.
+    //! @note The change summaries are persisted in a separate cache file. Before extracting you must make sure
+    //! the cache exists and has been attached. Either call ECDb::AttachChangeSummaryCache first or specify the appropriate ECDb::ChangeSummaryCacheMode
+    //! when opening the %ECDb file. If the cache is not attached, the method returns ERROR.
     //!
-    //! @param[out] changeSummaryId ECInstanceId of the generated change summary (of the ECClass @b ECDbChangeSummaries.ChangeSummary)
+    //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChangeSummaries.ChangeSummary)
     //! @param[in] changeSet Change set to generate the summary from
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
-    
+    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+
     //! Deletes orphaned ECInstances left over from operations specified by @p mode.
     //! @param[in] mode Purge mode
     //! @return SUCCESS or ERROR

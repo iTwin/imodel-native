@@ -249,13 +249,16 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     m_ecdb.CloseDb();
     }
 
+    ECDb::OpenParams openParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No);
     ECDb ecdb1;
-    DbResult result = ecdb1.OpenBeSQLiteDb(testECDbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No));
+    DbResult result = ecdb1.OpenBeSQLiteDb(testECDbPath, openParams);
     ASSERT_EQ(BE_SQLITE_OK, result);
     TestBusyRetry retry(3);
     retry.AddRef();
     ECDb ecdb2;
-    result = ecdb2.OpenBeSQLiteDb(testECDbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No, &retry));
+    openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No);
+    openParams.SetBusyRetry(&retry);
+    result = ecdb2.OpenBeSQLiteDb(testECDbPath, openParams);
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     {
@@ -376,11 +379,11 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
                                         {briefcaseAId.GetValue(), 0}, {briefcaseBId.GetValue(), 0}};
 
     ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
-    sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(55);
+    sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(40);
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(briefcaseAId));
     ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
-    sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(55);
+    sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(40);
 
     m_ecdb.CloseDb();
 

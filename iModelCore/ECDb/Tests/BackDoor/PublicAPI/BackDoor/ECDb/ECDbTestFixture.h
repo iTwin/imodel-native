@@ -93,7 +93,8 @@ protected:
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult OpenECDb(BeFileNameCR filePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     void CloseECDb();
-    DbResult ReopenECDb(ECDb::OpenParams const* openParams = nullptr);
+    DbResult ReopenECDb();
+    DbResult ReopenECDb(ECDb::OpenParams const&);
     DbResult CloneECDb(Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) { return CloneECDb(m_ecdb, cloneFileName, seedFilePath, openParams); }
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);

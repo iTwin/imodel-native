@@ -15,28 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    10/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
-    {
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " BEDB_TABLE_Local " WHERE Name NOT LIKE 'ec_instanceidsequence' COLLATE NOCASE AND NAME LIKE 'ec_%sequence' COLLATE NOCASE"))
-        {
-        LOG.errorv("ECDb profile upgrade failed: Deleting ECDb profile table id sequences from table '" BEDB_TABLE_Local "' failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    const int actualModifiedRowCount = ecdb.GetModifiedRowCount();
-    if (17 != actualModifiedRowCount)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Expected to delete 17 ECDb profile table id sequences from table '" BEDB_TABLE_Local "'. %d were deleted though.", actualModifiedRowCount);
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    LOG.debug("ECDb profile upgrade: Deleted ECDb profile table id sequences from table '" BEDB_TABLE_Local "'.");
-    return BE_SQLITE_OK;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    10/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     {
     if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE " TABLE_TableSpace
@@ -70,10 +48,33 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         LOG.errorv("ECDb profile upgrade failed: Adding index ix_ec_Table_Type on table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     LOG.debug("ECDb profile upgrade: Created table ' " TABLE_TableSpace "' and Added column TableSpaceId to table ' " TABLE_Table "'.");
     return BE_SQLITE_OK;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    10/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " BEDB_TABLE_Local " WHERE Name NOT LIKE 'ec_instanceidsequence' COLLATE NOCASE AND NAME LIKE 'ec_%sequence' COLLATE NOCASE"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Deleting ECDb profile table id sequences from table '" BEDB_TABLE_Local "' failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    const int actualModifiedRowCount = ecdb.GetModifiedRowCount();
+    if (17 != actualModifiedRowCount)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Expected to delete 17 ECDb profile table id sequences from table '" BEDB_TABLE_Local "'. %d were deleted though.", actualModifiedRowCount);
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Deleted ECDb profile table id sequences from table '" BEDB_TABLE_Local "'.");
+    return BE_SQLITE_OK;
+    }
+
 
 //*************************************** ProfileSchemaUpgrader *********************************
 //-----------------------------------------------------------------------------------------

@@ -14,18 +14,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId& summaryId, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const& options) const
+BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const& options) const
     {
-    if (InsertSummary(summaryId) != SUCCESS)
+    if (InsertSummary(summaryKey) != SUCCESS)
         return ERROR;
 
     // Pass 1
-    if (SUCCESS != Extract(summaryId, changeSet, ExtractMode::InstancesOnly))
+    if (SUCCESS != Extract(summaryKey.GetInstanceId(), changeSet, ExtractMode::InstancesOnly))
         return ERROR;
 
     // Pass 2
     if (options.IncludeRelationshipInstances())
-        return Extract(summaryId, changeSet, ExtractMode::RelationshipInstancesOnly);
+        return Extract(summaryKey.GetInstanceId(), changeSet, ExtractMode::RelationshipInstancesOnly);
 
     return SUCCESS;
     }
@@ -262,7 +262,7 @@ ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Affan.Khan           11/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceId& summaryId) const
+BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey) const
     {
     CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_ChangeSummary "(ECInstanceId) VALUES(NULL)");
     if (stmt == nullptr)
@@ -271,11 +271,9 @@ BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceId& summaryId) con
         return ERROR;
         }
 
-    ECInstanceKey instanceKey;
-    if (stmt->Step(instanceKey) != BE_SQLITE_DONE)
+    if (stmt->Step(summaryKey) != BE_SQLITE_DONE)
         return ERROR;
 
-    summaryId = instanceKey.GetInstanceId();
     return SUCCESS;
     }
 

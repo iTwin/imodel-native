@@ -70,6 +70,8 @@ struct TestHelper final
         //! Retrieves a mapped table. This is not equivalent to the physical tables in the ECDb file.
         Table GetMappedTable(Utf8StringCR tableName) const;
 
+        bool TableSpaceExists(Utf8CP dbTableSpace) const;
+
         //! Checks whether a physical table with the specified name exists in the ECDb file
         bool TableExists(Utf8CP dbTableName) const { return m_ecdb.TableExists(dbTableName); }
         //! Checks whether a physical column with the specified name exists in the ECDb file

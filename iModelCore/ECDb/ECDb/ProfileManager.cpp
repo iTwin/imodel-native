@@ -96,11 +96,19 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForProfileUpgrade(ecdb))
         {
-        LOG.errorv("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
+        LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
         }
 
     BeAssert(!ecdb.IsReadonly());
+
+    //Upgrading would reimport ChangeSummaries ECSchema, so make sure the cache is there
+    if (BE_SQLITE_OK != ecdb.GetImpl().GetChangeSummaryManager().AttachChangeSummaryCacheFile(true))
+        {
+        LOG.error("Upgrade of file's " PROFILENAME " profile failed because the ChangeSummaries cache file could not be attached.");
+        ecdb.AbandonChanges();
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
     //let upgraders incrementally upgrade the profile
     //to the latest state

@@ -27,6 +27,10 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    stat = m_changeSummaryManager.OnCreatingECDb();
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     return ProfileManager::CreateProfile(m_ecdb);
     }
 
@@ -43,9 +47,26 @@ DbResult ECDb::Impl::OnDbOpening() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbOpened(ECDb::OpenParams const& params) const
+DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
     {
+    ECDb::OpenParams const* ecdbParams = dynamic_cast<ECDb::OpenParams const*> (&params);
+    ChangeSummaryCacheMode changeSummaryCacheMode = ChangeSummaryCacheMode::AttachAndCreateIfNotExists;
+    if (ecdbParams != nullptr)
+        changeSummaryCacheMode = ecdbParams->GetChangeSummaryCacheMode();
+
+    if (changeSummaryCacheMode != ChangeSummaryCacheMode::DoNotAttach)
+        {
+        PERFLOG_START("ECDb", "Open> Attach ChangeSummary cache file");
+        //attach before a potential profile upgrade happens, so that the profile upgrade can update tables in the change summary cache file as well
+        const DbResult r = m_changeSummaryManager.AttachChangeSummaryCacheFile(changeSummaryCacheMode == ChangeSummaryCacheMode::AttachAndCreateIfNotExists);
+        if (BE_SQLITE_OK != r)
+            return r;
+        PERFLOG_FINISH("ECDb", "Open> Attach ChangeSummary cache file");
+        }
+
+
     PERFLOG_START("ECDb", "Open> Recreate Temp Tables");
+
     //this must happen after potential profile upgrades, so cannot do it in OnDbOpening
     bool hasTempTables = false;
     if (SUCCESS != Schemas().GetDbMap().GetDbSchema().RecreateTempTables(hasTempTables))

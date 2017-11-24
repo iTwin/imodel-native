@@ -90,7 +90,7 @@ struct ChangeSummaryExtractor final : NonCopyableClass
         bool ContainsChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(summaryId, keyOfChangedInstance).IsValid(); }
 
 
-        BentleyStatus InsertSummary(ECInstanceId& summaryId) const;
+        BentleyStatus InsertSummary(ECInstanceKey& summaryKey) const;
         DbResult InsertOrUpdate(InstanceChange const&) const;
         DbResult Delete(ECInstanceId summaryId, ECInstanceKey const&) const;
 
@@ -104,7 +104,7 @@ struct ChangeSummaryExtractor final : NonCopyableClass
     public:
         explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(15) {}
 
-        BentleyStatus Extract(ECInstanceId& changeSummaryId, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
+        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
 
         void ClearCache() { m_stmtCache.Empty(); }
     };

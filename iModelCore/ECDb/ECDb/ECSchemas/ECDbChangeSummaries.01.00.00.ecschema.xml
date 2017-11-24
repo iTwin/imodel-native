@@ -5,7 +5,7 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.01">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <TableSpace>temp</TableSpace>
+                <TableSpace>changesummaries</TableSpace>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -25,7 +25,7 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.01">
                 <MapStrategy>TablePerHierarchy</MapStrategy>                 
-                <TableSpace>temp</TableSpace>
+                <TableSpace>changesummaries</TableSpace>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.01">
                 <Indexes>
@@ -42,11 +42,11 @@
             </DbIndexList>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryContainsInstanceChanges" direction="backward" >
-   <!--         <ECCustomAttributes>
+            <ECCustomAttributes>
                 <ForeignKeyConstraint xmlns="ECDbMap.02.01">
                     <OnDeleteAction>Cascade</OnDeleteAction>
                 </ForeignKeyConstraint>
-            </ECCustomAttributes>-->
+            </ECCustomAttributes>
         </ECNavigationProperty> 
         <ECStructProperty propertyName="ChangedInstance" typeName="InstanceKey" description="Key of the change instance"/>
         <ECProperty propertyName="OpCode" typeName="OpCode"/>
@@ -57,7 +57,7 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.01">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <TableSpace>temp</TableSpace>
+                <TableSpace>changesummaries</TableSpace>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.01">
                 <Indexes>
@@ -73,11 +73,11 @@
             </DbIndexList>            
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="InstanceChange" relationshipName="InstanceChangeOwnsPropertyValueChanges" direction="backward">
-  <!--          <ECCustomAttributes>
+            <ECCustomAttributes>
                 <ForeignKeyConstraint xmlns="ECDbMap.02.01">
                     <OnDeleteAction>Cascade</OnDeleteAction>
                 </ForeignKeyConstraint>
-            </ECCustomAttributes> -->
+            </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="AccessString" typeName="string"/>
         <ECProperty propertyName="RawOldValue" typeName="binary" description="Untyped old value"/>

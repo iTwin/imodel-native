@@ -312,6 +312,22 @@ Column TestHelper::GetColumnFromCurrentRow(Utf8StringCR tableName, Statement& st
                   checkConstraint, defaultConstraint, collation, kind, ordinalInPk);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestHelper::TableSpaceExists(Utf8CP tableSpace) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("pragma database_list");
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (BeStringUtilities::StricmpAscii(tableSpace, stmt->GetValueText(1)) == 0)
+            return true;
+        }
+
+    return false;
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------

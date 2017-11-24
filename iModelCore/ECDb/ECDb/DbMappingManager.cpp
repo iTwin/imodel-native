@@ -1090,10 +1090,6 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
     bool makeFkColNotNull = false;
     if (mappingInfo.IsPhysicalForeignKey())
         {
-        //WIP_CLEANUP This can be simplified a lot once we create this from the nav prop map because then we know the constraint class already:
-        //const bool isNavPropClassExclusiveRootClass = idCol.GetTable().HasExclusiveRootECClass() && idCol.GetTable().GetExclusiveRootECClassId() == propMap.GetClassMap().GetClass().GetId();
-        //bool makeFkColNotNull = propMap.CardinalityImpliesNotNull() && isNavPropClassExclusiveRootClass;
-
         bset<ECClassId> foreignEndConstraintClassIds;
         for (ECClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
             foreignEndConstraintClassIds.insert(constraintClass->GetId());
@@ -1186,9 +1182,19 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
                 }
             }
 
-        if (referencedTable.GetTableSpace().IsTemp() || fkTable.GetTableSpace().IsTemp())
+        if (referencedTable.GetTableSpace() != fkTable.GetTableSpace())
             {
-            ctx.Issues().Report("Failed to map ECRelationshipClass %s. Its navigation property has the ForeignKeyConstraint custom attribute which is not supported as either the source or target class maps to the TEMP table space.",
+            ctx.Issues().Report("Failed to map ECRelationshipClass %s. Its navigation property has the ForeignKeyConstraint custom attribute which is not supported as the source or target classes map to different table spaces. Foreign keys across table spaces is not supported.",
+                                relClass.GetFullName());
+
+            return ERROR;
+            }
+
+        //WIP: This is currently unsupported because we cannot recreate FKs (yet) when recreating the temp tables, because
+        //ECDb doesn't persist the FK infos in the ec_ tables
+        if (fkTable.GetTableSpace().IsTemp())
+            {
+            ctx.Issues().Report("Failed to map ECRelationshipClass %s. Its navigation property has the ForeignKeyConstraint custom attribute which is not supported as source and target classes map to the TEMP table spaces. Foreign keys in the TEMP table space are not supported.",
                                 relClass.GetFullName());
 
             return ERROR;

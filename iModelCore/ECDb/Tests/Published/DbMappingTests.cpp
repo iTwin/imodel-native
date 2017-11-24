@@ -2925,7 +2925,7 @@ TEST_F(DbMappingTestFixture, RecreateTempTablesOnOpen)
         </ECSchema>)xml")));
 
     ECDb::OpenParams openParams(ECDb::OpenMode::Readonly);
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(&openParams));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(openParams));
 
     ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
 
@@ -2936,14 +2936,14 @@ TEST_F(DbMappingTestFixture, RecreateTempTablesOnOpen)
 
     //now open without default txn
     openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly, DefaultTxn::No);
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(&openParams));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(openParams));
     ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
     {
     Savepoint sp(m_ecdb, "");
     sp.Cancel();
     }
     openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No);
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(&openParams));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(openParams));
     ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
     {
     Savepoint sp(m_ecdb, "");
@@ -2960,16 +2960,16 @@ TEST_F(DbMappingTestFixture, TempTableSpace)
     ASSERT_EQ(SUCCESS, SetupECDb("TempTableSpace.ecdb",SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                         <TableSpace>temp</TableSpace>
                     </ClassMap>
-                    <DbIndexList xmlns="ECDbMap.02.00">
+                    <DbIndexList xmlns="ECDbMap.02.01">
                        <Indexes>
                            <DbIndex>
                                 <Name>uix_sessionsetting_name</Name>
@@ -3001,9 +3001,12 @@ TEST_F(DbMappingTestFixture, TempTableSpace)
            </ECRelationshipClass>
            <ECRelationshipClass typeName="LinkTableRel" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                        <TableSpace>temp</TableSpace>
                      </ClassMap>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                       <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                     </LinkTableRelationshipMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="Foo" />
@@ -3095,6 +3098,9 @@ TEST_F(DbMappingTestFixture, TempTableSpace_LinkTables)
                     <ClassMap xmlns="ECDbMap.02.01">
                        <TableSpace>temp</TableSpace>
                     </ClassMap>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                        <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="A" />
@@ -3108,6 +3114,9 @@ TEST_F(DbMappingTestFixture, TempTableSpace_LinkTables)
                     <ClassMap xmlns="ECDbMap.02.01">
                        <TableSpace>temp</TableSpace>
                     </ClassMap>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                        <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="A" />
@@ -3121,6 +3130,9 @@ TEST_F(DbMappingTestFixture, TempTableSpace_LinkTables)
                     <ClassMap xmlns="ECDbMap.02.01">
                        <TableSpace>temp</TableSpace>
                     </ClassMap>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                        <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="ATemp" />
@@ -3134,6 +3146,9 @@ TEST_F(DbMappingTestFixture, TempTableSpace_LinkTables)
                     <ClassMap xmlns="ECDbMap.02.01">
                        <TableSpace>temp</TableSpace>
                     </ClassMap>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                        <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
                 </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="ATemp" />
@@ -3194,10 +3209,10 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.01' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
         "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "            <ClassMap xmlns='ECDbMap.02.01'>"
         "                <TableSpace>temp</TableSpace>"
         "                <TableName>Foo</TableName>"
         "            </ClassMap>"
@@ -3209,10 +3224,10 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.01' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
         "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "            <ClassMap xmlns='ECDbMap.02.01'>"
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "                <TableSpace>temp</TableSpace>"
         "                <TableName>Foo</TableName>"
@@ -3225,7 +3240,7 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
@@ -3237,7 +3252,7 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
                     <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.01"/>
                     </ECCustomAttributes>
                 </ECNavigationProperty>
                 <ECProperty propertyName="Name" typeName="string" />
@@ -3256,10 +3271,10 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                       <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
@@ -3268,7 +3283,7 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
                     <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.01"/>
                     </ECCustomAttributes>
                 </ECNavigationProperty>
                 <ECProperty propertyName="Name" typeName="string" />
@@ -3287,10 +3302,10 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                       <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
@@ -3298,13 +3313,13 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
             </ECEntityClass>
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                       <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
                     <ECCustomAttributes>
-                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.01"/>
                     </ECCustomAttributes>
                 </ECNavigationProperty>
                 <ECProperty propertyName="Name" typeName="string" />
@@ -3323,10 +3338,10 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                       <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
@@ -3334,7 +3349,7 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
             </ECEntityClass>
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
+                    <ClassMap xmlns="ECDbMap.02.01">
                       <TableSpace>temp</TableSpace>"
                     </ClassMap>
                 </ECCustomAttributes>
@@ -3342,6 +3357,11 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
                 <ECProperty propertyName="Val" typeName="binary" />
             </ECEntityClass>
            <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                      <TableSpace>temp</TableSpace>"
+                    </ClassMap>
+                </ECCustomAttributes>
               <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
                   <Class class ="Foo" />
               </Source>
@@ -3349,7 +3369,478 @@ TEST_F(DbMappingTestFixture, TempTableSpace_InvalidCases)
                   <Class class="SessionSetting" />
               </Target>
            </ECRelationshipClass>
-        </ECSchema>)xml"))) << "Link tables between classes with temp table mapping";
+        </ECSchema>)xml"))) << "Link tables with FK constraint with temp table mapping";
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, AttachedTableSpace)
+    {
+    BeFileName settingsDbPath;
+
+    {
+    //attach settings file
+    BeTest::GetHost().GetOutputRoot(settingsDbPath);
+    settingsDbPath.AppendToPath(L"AttachedTableSpace.ecdb.settings");
+    if (settingsDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, settingsDbPath.BeDeleteFile());
+
+    Db settingsDb;
+    ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
+    settingsDb.CloseDb();
+
+    }
+
+    auto attachSettingsDb = [this, &settingsDbPath] ()
+        {
+        return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings");
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                        <TableSpace>settings</TableSpace>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.01">
+                       <Indexes>
+                           <DbIndex>
+                                <Name>uix_sessionsetting_name</Name>
+                                <IsUnique>True</IsUnique>
+                                <Properties>
+                                    <string>Name</string>
+                                </Properties>
+                           </DbIndex>
+                           <DbIndex>
+                                <Name>ix_sessionsetting_val</Name>
+                                <Properties>
+                                    <string>Val</string>
+                                </Properties>
+                           </DbIndex>
+                       </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward"/>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+           <ECRelationshipClass typeName="LinkTableRel" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                       <TableSpace>settings</TableSpace>
+                     </ClassMap>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                        <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey fooKey, settingKey, linkTableRel;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging1',true)",
+                                                                                          fooKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                                            fooKey.GetInstanceId().ToString().c_str(), settingKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    EXPECT_TRUE(GetHelper().GetIndexNamesForTable("ts_Foo").empty());
+    EXPECT_EQ(std::vector<Utf8String>({"ix_sessionsetting_val", "uix_sessionsetting_name"}), GetHelper().GetIndexNamesForTable("ts_SessionSetting", "settings"));
+
+    m_ecdb.SaveChanges();
+
+    auto assertSelectSettings = [this, &fooKey] (int expectedRowCount)
+        {
+        ECSqlStatus expectedStat = expectedRowCount >= 0 ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
+        Utf8String assertMessage = expectedRowCount >= 0 ? Utf8PrintfString("TableSpace is attached (%d expected rows)", expectedRowCount) : Utf8String("TableSpace not attached");
+        ECSqlStatement stmt;
+        ASSERT_EQ(expectedStat, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ts.SessionSetting")) << assertMessage;
+        if (expectedStat != ECSqlStatus::Success)
+            return;
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << assertMessage;
+        ASSERT_EQ(expectedRowCount, stmt.GetValueInt(0)) << stmt.GetECSql() << assertMessage;
+        };
+
+    auto assertSelectLinkTable = [this, &fooKey, &settingKey, &linkTableRel] (int expectedRowCount)
+        {
+        ECSqlStatus expectedStat = expectedRowCount >= 0 ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
+        Utf8String assertMessage = expectedRowCount >= 0 ? Utf8PrintfString("TableSpace is attached (%d expected rows)", expectedRowCount) : Utf8String("TableSpace not attached");
+        ECSqlStatement stmt;
+        ASSERT_EQ(expectedStat, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ts.LinkTableRel")) << assertMessage;
+        if (expectedStat != ECSqlStatus::Success)
+            return;
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << assertMessage;
+        ASSERT_EQ(expectedRowCount, stmt.GetValueInt(0)) << stmt.GetECSql() << assertMessage;
+        };
+
+    //expected to fail prepare as file is not attached yet
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    assertSelectSettings(-1);
+    assertSelectLinkTable(-1);
+
+
+    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
+    assertSelectSettings(1);
+    assertSelectLinkTable(1);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Debugging',false)",
+                                                                                          fooKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+                                                                                            fooKey.GetInstanceId().ToString().c_str(), settingKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    assertSelectSettings(2);
+    assertSelectLinkTable(2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
+    {
+    BeFileName settingsDbPath;
+
+        {
+        //attach settings file
+        BeTest::GetHost().GetOutputRoot(settingsDbPath);
+        settingsDbPath.AppendToPath(L"AttachedTableSpace_PhysicalForeignKey.ecdb.settings");
+        if (settingsDbPath.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, settingsDbPath.BeDeleteFile());
+
+        Db settingsDb;
+        ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
+        settingsDb.CloseDb();
+
+        }
+
+    auto attachSettingsFile = [this, &settingsDbPath] () { return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings"); };
+
+    auto getRelCount = [this] ()
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT count(*) FROM ts.Rel") || BE_SQLITE_ROW != stmt.Step())
+            return -1;
+
+        return stmt.GetValueInt(0);
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace_PhysicalForeignKey.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
+    ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                        <TableSpace>settings</TableSpace>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                        <TableSpace>settings</TableSpace>
+                    </ClassMap>
+                </ECCustomAttributes>
+              <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.02.01">
+                        <OnDeleteAction>Cascade</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+              </ECNavigationProperty>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Embedding" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
+    ASSERT_EQ(0, getRelCount()) << "After schema import";
+
+    ECInstanceKey fooKey, settingKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging1',true)",
+                                                                                            fooKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(1, getRelCount()) << "After one insert";
+    m_ecdb.SaveChanges();
+
+   //expected to fail prepare as file is not attached yet
+   ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+   ASSERT_FALSE(GetHelper().TableSpaceExists("settings"));
+   ASSERT_EQ(-1, getRelCount()) << "After reopening without attaching";
+   ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
+   ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
+   ASSERT_EQ(1, getRelCount()) << "After reattaching and reopening";
+
+   ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Debugging',false)",
+                                                                                              fooKey.GetInstanceId().ToString().c_str()).c_str()));
+   ASSERT_EQ(2, getRelCount()) << "After second insert";
+   ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+   ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+   ASSERT_FALSE(GetHelper().TableSpaceExists("settings"));
+   ASSERT_EQ(-1, getRelCount()) << "After reopening without attaching";
+   ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
+   ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
+   ASSERT_EQ(2, getRelCount()) << "After reattaching and reopening";
+
+   ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Foo"));
+   ASSERT_EQ(0, getRelCount()) << "Cascading delete after deleting Foo";
+   }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, AttachedTableSpace_InvalidCases)
+    {
+    BeFileName settingsDbPath;
+
+    {
+    //attach settings file
+    BeTest::GetHost().GetOutputRoot(settingsDbPath);
+    settingsDbPath.AppendToPath(L"AttachedTableSpace_InvalidCases.ecdb.settings");
+    if (settingsDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, settingsDbPath.BeDeleteFile());
+
+    Db settingsDb;
+    ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
+    settingsDb.CloseDb();
+
+    }
+
+    auto attachSettingsDb = [this, &settingsDbPath] ()
+        {
+        return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings");
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace_InvalidCases.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
+
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.01'>"
+        "                <TableSpace>settings</TableSpace>"
+        "                <TableName>Foo</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "ClassMap::TableName not allowed if strategy is not existing even if table space is temp.";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.01'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "                <TableSpace>settings</TableSpace>"
+        "                <TableName>Foo</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "ClassMap::TableName not allowed if strategy is not existing even if table space is temp.";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward"/>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                      <TableSpace>settings</TableSpace>"
+                    </ClassMap>
+                </ECCustomAttributes>
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "ClassMap CA on FK rel not supported unless NotMapped and only NotMapped is specified";
+
+    {
+    Utf8CP schemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    %s
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECCustomAttributes>
+                    %s
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    %s
+                    %s
+                </ECCustomAttributes>
+              <Source multiplicity="(0..*)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    Utf8CP attachedCA = R"xml(<ClassMap xmlns="ECDbMap.02.01">
+                                  <TableSpace>settings</TableSpace>
+                              </ClassMap>)xml";
+    for (Utf8CP createFkConstraint : {"unset", "true", "false"})
+        {
+        for (bool fooIsAttached : {true, false})
+            {
+            for (bool settingsIsAttached : {true, false})
+                {
+                for (bool relIsAttached : {true, false})
+                    {
+                    Utf8CP fooCA = fooIsAttached ? attachedCA : "";
+                    Utf8CP settingsCA = settingsIsAttached ? attachedCA : "";
+                    Utf8CP relCA = relIsAttached ? attachedCA : "";
+
+                    Utf8CP createFkConstraintCA = "";
+                    if (BeStringUtilities::StricmpAscii(createFkConstraint, "false") == 0)
+                        createFkConstraintCA = R"xml(<LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                                                    <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
+                                                    </LinkTableRelationshipMap>)xml";
+                    else if (BeStringUtilities::StricmpAscii(createFkConstraint, "true") == 0)
+                        createFkConstraintCA = R"xml(<LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                                                    <CreateForeignKeyConstraints>true</CreateForeignKeyConstraints>
+                                                    </LinkTableRelationshipMap>)xml";
+
+                    Utf8String schemaXml;
+                    schemaXml.Sprintf(schemaTemplate, fooCA, settingsCA, relCA, createFkConstraintCA);
+
+                    BentleyStatus expectedStat = BeStringUtilities::StricmpAscii(createFkConstraint, "false") == 0 || (fooIsAttached == settingsIsAttached && fooIsAttached == relIsAttached) ? SUCCESS : ERROR;
+                    Savepoint sp(m_ecdb, "");
+                    BentleyStatus actualStat = GetHelper().ImportSchema(SchemaItem(schemaXml));
+                    sp.Cancel();
+                    ASSERT_EQ(expectedStat, actualStat) << "Foo attached: " << fooIsAttached << " Settings attached: " << settingsIsAttached << " Rel attached: " << relIsAttached << " Rel FK constraint CA: " << createFkConstraint;
+                    }
+                }
+            }
+        }
+    }
+
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                      <TableSpace>settings</TableSpace>"
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.01"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "Physical ForeignKey across table spaces not valid";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SessionSetting" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.01">
+                      <TableSpace>settings</TableSpace>"
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.01"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Val" typeName="binary" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Foo" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="SessionSetting" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "Physical ForeignKey across table spaces not valid";
     }
 
 

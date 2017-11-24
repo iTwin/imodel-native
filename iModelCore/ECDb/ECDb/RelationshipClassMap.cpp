@@ -430,19 +430,37 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     DbTable const* sourceTable = *sourceTables.begin();
     DbTable const* targetTable = *targetTables.begin();
 
-    const bool sourceIsTemp = sourceTable->GetTableSpace().IsTemp();
-    const bool targetIsTemp = targetTable->GetTableSpace().IsTemp();
+    const bool allTablesInSameTableSpace = sourceTable->GetTableSpace() == targetTable->GetTableSpace() && sourceTable->GetTableSpace() == GetPrimaryTable().GetTableSpace();
 
-    if (!GetPrimaryTable().GetTableSpace().IsTemp())
+    bool createFkConstraints = true; // default
+    if (ca.IsValid())
         {
-        if (sourceIsTemp == true || targetIsTemp == true)
+        Nullable<bool> createFkConstraintsVal;
+        if (SUCCESS != ca.TryGetCreateForeignKeyConstraints(createFkConstraintsVal))
+            return ClassMappingStatus::Error;
+
+        if (!createFkConstraintsVal.IsNull())
+            createFkConstraints = createFkConstraintsVal.Value();
+        }
+
+    if (createFkConstraints)
+        {
+        if (!allTablesInSameTableSpace)
             {
-            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as a link table. As its source or target class are mapped to the TEMP table space, the ECRelationshipClass must also map to the TEMP table space.",
+            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as a link table with FK constraints. The relationship class and its constraint class map to different table spaces. FK constraints across tables spaces is not supported.",
+                            GetClass().GetFullName());
+            return ClassMappingStatus::Error;
+            }
+
+        //WIP: This is currently unsupported because we cannot recreate FKs (yet) when recreating the temp tables, because
+        //ECDb doesn't persist the FK infos in the ec_ tables
+        if (GetPrimaryTable().GetTableSpace().IsTemp())
+            {
+            Issues().Report("Failed to map ECRelationshipClass %s. It is mapped as a link table with FK constraints. It is mapped to the TEMP table space though for which foreign key constraints are not supported.",
                             GetClass().GetFullName());
             return ClassMappingStatus::Error;
             }
         }
-
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
     DetermineConstraintClassIdColumnHandling(addSourceECClassIdColumnToTable, sourceConstraint);
@@ -459,27 +477,26 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
 
     //only create constraints on TPH root or if not TPH and not existing table
-    if (GetPrimaryTable().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
+    if (createFkConstraints && GetPrimaryTable().GetType() != DbTable::Type::Existing && (!GetMapStrategy().IsTablePerHierarchy() || GetTphHelper()->DetermineTphRootClassId() == GetClass().GetId()))
         {
-        Nullable<bool> createFkConstraints;
-        ca.TryGetCreateForeignKeyConstraints(createFkConstraints);
-        if (createFkConstraints.IsNull() || //if CreateFkConstraint was not specified, it defaults to true
-            createFkConstraints.Value())
-            {
-            //Create FK from Source-Primary to LinkTable
-            DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-            DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
-            GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
+        //Create FK from Source-Primary to LinkTable
+        DbColumn const* fkColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
+        DbColumn const* referencedColumn = sourceTable->FindFirst(DbColumn::Kind::ECInstanceId);
+        GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
 
-            //Create FK from Target-Primary to LinkTable
-            fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-            referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
-            GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
-            }
+        //Create FK from Target-Primary to LinkTable
+        fkColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
+        referencedColumn = targetTable->FindFirst(DbColumn::Kind::ECInstanceId);
+        GetPrimaryTable().AddForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
         }
 
     Nullable<bool> allowDuplicateRelationships;
-    ca.TryGetAllowDuplicateRelationships(allowDuplicateRelationships);
+    if (ca.IsValid())
+        {
+        if (SUCCESS != ca.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
+            return ClassMappingStatus::Error;
+        }
+
     AddIndices(ctx.GetImportCtx(), GetAllowDuplicateRelationshipsFlag(allowDuplicateRelationships));
     return ClassMappingStatus::Success;
     }
@@ -553,6 +570,9 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImpo
     size_t foreignEndTableCount = GetDbMap().GetRelationshipConstraintTableCount(ctx, foreignEndConstraint);
 
     Utf8String columnName = DetermineConstraintECClassIdColumnName(ca, relationshipEnd);
+    if (columnName.empty())
+        return nullptr;
+
     if (GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr &&
         !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
@@ -763,7 +783,12 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Source:
             {
             Nullable<Utf8String> sourceIdColName;
-            ca.TryGetSourceECInstanceIdColumn(sourceIdColName);
+            if (ca.IsValid())
+                {
+                if (SUCCESS != ca.TryGetSourceECInstanceIdColumn(sourceIdColName))
+                    return Utf8String();
+                }
+
             if (sourceIdColName.IsNull())
                 colName.assign(COL_DEFAULTNAME_SourceId);
             else
@@ -774,7 +799,12 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Target:
             {
             Nullable<Utf8String> targetIdColName;
-            ca.TryGetTargetECInstanceIdColumn(targetIdColName);
+            if (ca.IsValid())
+                {
+                if (SUCCESS != ca.TryGetTargetECInstanceIdColumn(targetIdColName))
+                    return Utf8String();
+                }
+
             if (targetIdColName.IsNull())
                 colName.assign(COL_DEFAULTNAME_TargetId);
             else
@@ -804,7 +834,11 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
         {
             case ECRelationshipEnd_Source:
             {
-            ca.TryGetSourceECInstanceIdColumn(idColName);
+            if (ca.IsValid())
+                {
+                if (SUCCESS != ca.TryGetSourceECInstanceIdColumn(idColName))
+                    return Utf8String();
+                }
 
             if (idColName.IsNull())
                 colName.assign(COL_SourceECClassId);
@@ -814,7 +848,11 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
 
             case ECRelationshipEnd_Target:
             {
-            ca.TryGetTargetECInstanceIdColumn(idColName);
+            if (ca.IsValid())
+                {
+                if (SUCCESS != ca.TryGetTargetECInstanceIdColumn(idColName))
+                    return Utf8String();
+                }
 
             if (idColName.IsNull())
                 colName.assign(COL_TargetECClassId);

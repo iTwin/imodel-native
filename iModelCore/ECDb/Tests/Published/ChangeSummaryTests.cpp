@@ -87,7 +87,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
             return stmt.Step() == BE_SQLITE_ROW;
             }
 
-    void DumpChangeSummary(ECInstanceId changeSummaryId, Utf8CP label) const
+    void DumpChangeSummary(ECInstanceKey const& changeSummaryKey, Utf8CP label) const
         {
 #ifdef DUMP_CHANGE_SUMMARY
         printf("%s\r\n", label);
@@ -118,11 +118,13 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
 
         ECSqlStatement instanceChangeStmt;
         ASSERT_EQ(ECSqlStatus::Success, instanceChangeStmt.Prepare(m_ecdb, "SELECT ECInstanceId, ChangedInstance.Id, ChangedInstance.ClassId, OpCode, IsIndirect FROM change.InstanceChange WHERE Summary.Id=?"));
-        instanceChangeStmt.BindId(1, changeSummaryId);
+        instanceChangeStmt.BindId(1, changeSummaryKey.GetInstanceId();
 
         ECSqlStatement propValueChangeStmt;
         ASSERT_EQ(ECSqlStatus::Success, propValueChangeStmt.Prepare(m_ecdb, "SELECT AccessString,RawOldValue,RawNewValue,TYPEOF(RawOldValue),TYPEOF(RawNewValue) FROM change.PropertyValueChange WHERE InstanceChange.Id=?"));
 
+        printf("ChangeSummary (Id: %s, ClassId: %s\r\n)", changeSummaryKey.GetInstanceId().ToString().c_str(), changeSummaryKey.GetClassId().ToString().c_str());
+        printf("-----------------------------------\r\n");
         printf("ChangedInstance Id|ChangedInstance Class|ChangedInstance ClassId|OpCode|IsIndirect\r\n");
 
         while (BE_SQLITE_ROW == instanceChangeStmt.Step())
@@ -245,19 +247,58 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ChangeSummaryTestFixture, LoadTempTablesOnOpen)
+TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("openreadonly.ecdb"));
+    auto getChangeSummaryCount = [] (ECDbCR ecdb)
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT count(*) from change.ChangeSummary") ||
+            BE_SQLITE_ROW != stmt.Step())
+            return -1;
+
+        return stmt.GetValueInt(0);
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryCacheMode.ecdb"));
 
     BeFileName fileName(m_ecdb.GetDbFileName());
-    CloseECDb();
+    BeFileName cachePath = m_ecdb.GetChangeSummaryCachePath();
+    ASSERT_TRUE(cachePath.DoesPathExist()) << "After creating ECDb, change summary cache is expected to have been created as well";
+    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "After creating ECDb, change summary cache is expected to have been created as well";
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "After creating ECDb, change summary cache is expected to have been created as well";
+    ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "After creating ECDb, change summary cache is expected to have been created as well";
 
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::DoNotAttach)));
+    ASSERT_TRUE(cachePath.DoesPathExist());
+    ASSERT_FALSE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::DoNotAttach";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::DoNotAttach";
 
-    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
-    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary"));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
+    ASSERT_TRUE(cachePath.DoesPathExist());
+    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO change.ChangeSummary(ECInstanceId) VALUES(NULL)")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
+    ASSERT_TRUE(cachePath.DoesPathExist());
+    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+
+    ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachIfExists))) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_FALSE(cachePath.DoesPathExist()) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(-1, getChangeSummaryCount(m_ecdb)) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
+    ASSERT_TRUE(cachePath.DoesPathExist()) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
@@ -358,10 +399,9 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange)
     result = changeSet.FromChangeTrack(tracker);
     ASSERT_EQ(BE_SQLITE_OK, result);
 
-    ECInstanceId summaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryId, changeSet));
+    ECInstanceKey summaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, changeSet, ECDb::ChangeSummaryExtractOptions(false)));
 
-    // Test2: Change to ec_ tables - should cause an error creating a change summary
     tracker.Restart();
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?> "
@@ -370,7 +410,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange)
 
     changeSet.Free();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryId, changeSet));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, changeSet, ECDb::ChangeSummaryExtractOptions(false)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -494,14 +534,14 @@ TEST_F(ChangeSummaryTestFixture, Crud)
     TestChangeSet rev1;
     ASSERT_EQ(BE_SQLITE_OK, rev1.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, rev1));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, rev1));
     m_ecdb.SaveChanges();
 
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
-    stmt.BindId(1, changeSummaryId);
+    stmt.BindId(1, changeSummaryKey.GetInstanceId());
     stmt.BindInt(2, (int) ChangedValueState::BeforeUpdate);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
@@ -626,15 +666,15 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
     m_ecdb.SaveChanges();
     {
     ECSqlStatement stmt;
     //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2 FROM ts.Element.ChangeSummary(?1, ?2)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Element.ChangeSummary(?,?)"));
 
-    stmt.BindId(1, changeSummaryId);
+    stmt.BindId(1, changeSummaryKey.GetInstanceId());
     stmt.BindInt(2, 1); //1: Insert TODO: Replace by OpCode enum
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
@@ -682,8 +722,8 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
     /*
     BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
@@ -697,9 +737,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     L;NULL;12345
     S;NULL;"Str"
     */
-    DumpChangeSummary(changeSummaryId, "Overflow_PrimitiveProperties");
+    DumpChangeSummary(changeSummaryKey, "Overflow_PrimitiveProperties");
 
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(7, GetPropertyValueChangeCount());
     }
 
@@ -752,8 +792,8 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
         TestChangeSet changeset;
         ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-        ECInstanceId changeSummaryId;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+        ECInstanceKey changeSummaryKey;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
         /*
         Code:"C1"
@@ -761,7 +801,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
         SP.I:123
         */
 
-        EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+        EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
         EXPECT_EQ(3, GetPropertyValueChangeCount());
         }
 
@@ -812,14 +852,14 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
     /*
     Code:"C1"
     ArrayProp: { 123.3434, 345.223,-532.123 }
     */
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(2, GetPropertyValueChangeCount());
     }
 
@@ -878,8 +918,8 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
     /*
     Code:"C1"
@@ -891,7 +931,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     Bin: { 'H', 'e', 'l','l', 'o' }
     Geom: null
     */
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(8, GetPropertyValueChangeCount());
     }
 
@@ -955,10 +995,10 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(3, GetPropertyValueChangeCount());
     }
 
@@ -1031,10 +1071,10 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(2, GetPropertyValueChangeCount());
     }
 
@@ -1058,10 +1098,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
-    DumpChangeSummary(changeSummaryId, "ChangeSummary after inserting instances");
+    DumpChangeSummary(changeSummaryKey, "ChangeSummary after inserting instances");
 
     /*
     ChangeSummary after inserting instances:
@@ -1081,12 +1121,12 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     Make;NULL;"Toyota"
     Model;NULL;"Prius"
     */
-    EXPECT_EQ(5, GetInstanceChangeCount(changeSummaryId));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", ChangeOpCode::Insert));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(companyKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", ChangeOpCode::Insert));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(companyKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", ChangeOpCode::Insert));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(hardwareKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", ChangeOpCode::Insert));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(hardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", ChangeOpCode::Insert));
+    EXPECT_EQ(5, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(employeeKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", ChangeOpCode::Insert));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(companyKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", ChangeOpCode::Insert));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(companyKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", ChangeOpCode::Insert));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(hardwareKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", ChangeOpCode::Insert));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(hardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", ChangeOpCode::Insert));
 
     m_ecdb.SaveChanges();
     tracker.Restart();
@@ -1104,9 +1144,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     changeset.Free();
 
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
-    DumpChangeSummary(changeSummaryId, "ChangeSummary after inserting relationships");
+    DumpChangeSummary(changeSummaryKey, "ChangeSummary after inserting relationships");
 
     /*
     ChangeSummary after inserting relationships:
@@ -1118,8 +1158,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     TargetECClassId;NULL;StartupCompany:Hardware:75
     TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
 
     m_ecdb.SaveChanges();
     tracker.Restart();
@@ -1144,9 +1184,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     changeset.Free();
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
-    DumpChangeSummary(changeSummaryId, "ChangeSummary after updating (deleting and inserting different) relationships");
+    DumpChangeSummary(changeSummaryKey, "ChangeSummary after updating (deleting and inserting different) relationships");
 
     /*
     ChangeSummary after updating (deleting and inserting different) relationships:
@@ -1163,9 +1203,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     TargetECClassId;NULL;StartupCompany:Hardware:75
     TargetECInstanceId;NULL;0:5
     */
-    EXPECT_EQ(2, GetInstanceChangeCount(changeSummaryId));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Delete));
-    EXPECT_TRUE(ContainsChange(changeSummaryId, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
+    EXPECT_EQ(2, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Delete));
+    EXPECT_TRUE(ContainsChange(changeSummaryKey.GetInstanceId(), ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", ChangeOpCode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1239,8 +1279,8 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
 
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    ECInstanceId changeSummaryId;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryId, changeset));
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
 
     /*
     BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
@@ -1267,8 +1307,8 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
     S;NULL;"S"
     T;NULL;"T"
     */
-    DumpChangeSummary(changeSummaryId, "OverflowTables");
-    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryId));
+    DumpChangeSummary(changeSummaryKey, "OverflowTables");
+    EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(20, GetPropertyValueChangeCount());
     }
 

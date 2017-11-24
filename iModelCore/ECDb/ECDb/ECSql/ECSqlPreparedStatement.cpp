@@ -129,16 +129,6 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         return ECSqlStatus::Success;
         }
 
-    if (ctx.MustRecreateChangeSummaryCache())
-        {
-        if (SUCCESS != m_ecdb.GetImpl().GetChangeSummaryManager().SetupChangeSummaryCache())
-            {
-            m_ecdb.GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. The ECSQL targets ChangeSummary ECClasses, but recreating the change summary tables failed. [Generated SQLite SQL: %s]", GetECSql(),
-                                             nativeSql.c_str());
-            return ECSqlStatus::Error;
-            }
-        }
-
     //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
     DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
     if (nativeSqlStat != BE_SQLITE_OK)

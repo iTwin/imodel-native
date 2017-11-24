@@ -66,7 +66,7 @@ DbResult ECDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnDbOpened(OpenParams const& params)
+DbResult ECDb::_OnDbOpened(Db::OpenParams const& params)
     {
     DbResult stat = Db::_OnDbOpened(params);
     if (stat != BE_SQLITE_OK)
@@ -164,9 +164,25 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ExtractChangeSummary(ECInstanceId& changeSummaryId, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options) const 
-    { 
-    return m_pimpl->GetChangeSummaryManager().GetExtractor().Extract(changeSummaryId, changeSet, options); 
+DbResult ECDb::AttachChangeSummaryCache() const { return m_pimpl->GetChangeSummaryManager().AttachChangeSummaryCacheFile(true); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BeFileName ECDb::GetChangeSummaryCachePath() const { return ChangeSummaryManager::DetermineCachePath(*this); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+BeFileName ECDb::GetChangeSummaryCachePath(BeFileNameCR ecdbPath) { return ChangeSummaryManager::DetermineCachePath(ecdbPath); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options) const
+    {
+    return m_pimpl->GetChangeSummaryManager().Extract(changeSummaryKey, changeSet, options);
     }
 
 //--------------------------------------------------------------------------------------
