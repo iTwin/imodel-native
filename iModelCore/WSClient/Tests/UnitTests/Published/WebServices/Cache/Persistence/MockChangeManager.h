@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/MockChangeManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,10 +25,13 @@ struct MockChangeManager : public IChangeManager
             return std::make_shared<MockChangeManager> ();
             }
 
-        MOCK_CONST_METHOD0 (IsSyncActive,
-            bool ());
-        MOCK_METHOD1 (SetSyncActive,
-            void (bool active));
+        MOCK_CONST_METHOD1 (IsUploadActive,
+            bool(ECInstanceKeyCR));
+        MOCK_METHOD2 (SetUploadActive,
+            void(ECInstanceKeyCR, bool active));
+        MOCK_CONST_METHOD0(GetUploadingInstances,
+            const ECInstanceKeyMultiMap&());
+
         MOCK_METHOD3 (GetLegacyParentRelationshipClass,
             ECRelationshipClassCP(ECClassId, ECClassId, bool));
         MOCK_METHOD3 (CreateObject,

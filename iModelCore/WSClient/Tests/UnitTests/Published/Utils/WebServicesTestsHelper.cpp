@@ -227,6 +227,11 @@ Http::Response StubWSInfoHttpResponseWebApi24()
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 4));
     }
 
+Http::Response StubWSInfoHttpResponseWebApi25()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 5));
+    }
+
 Http::Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
     {
     auto info = StubWSInfoWebApi(webApiVersion);

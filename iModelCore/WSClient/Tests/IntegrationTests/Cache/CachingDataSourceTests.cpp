@@ -17,6 +17,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ImsClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
+#include <BeHttp/HttpConfigurationHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
@@ -226,12 +227,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
 +---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: eB schema incomaptible to BIM02
 // SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectSyncServiceShare_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0";
+    Utf8String serverUrl = "https://qa-connect-wsg20.bentley.com";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0"; // QA project "MOBILE-ATP-06-Shares"
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -248,12 +248,11 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://qa-projectsharestorage-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectShareV2--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0";
+    Utf8String serverUrl = "https://qa-connect-projectsharestorage.bentley.com";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectShareV2--be34a3c3-e1df-4540-85a9-e39a2095225a"; // QA project "MOBILE-ATP-06-Shares"
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -273,7 +272,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeed
 // FAIL: 
 // BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
 // SOLUTION: "IssuePlugin--default" is only used in Graphite generation, no fix
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds_KnowIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -299,7 +298,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
 // BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
 // BIM02: ECClass 'ClashDetection:ResultBase' has invalid base class : An abstract class must not have a non - abstract base class.
 // SOLUTION: Need IssuePluginV1.2 with changes
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -390,12 +389,13 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectBIMReviewShare_Succeed
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
+// ERROR    ECDb                 JsonInserter failure. The JSON member '$id' does not match with a property in ECClass 'WSCacheMetaSchema:ECSchemaDef'
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds_KnownIssue_MaybeClientFixPossible)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
-    Utf8String repositoryId = "eB.viltest2-7.bentley.com,eB_Mobile_15.4";
+    Utf8String serverUrl = "https://mobilevm1.bentley.com/ws";
+    Utf8String repositoryId = "eB.MobileVM2.bentley.com,eB_15.4_CR";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -409,12 +409,13 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Succeeds)
+// ERROR    ECDb                 JsonInserter failure. The JSON member '$id' does not match with a property in ECClass 'WSCacheMetaSchema:ECSchemaDef'.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Succeeds_KnownIssue_MaybeClientFixPossible)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
-    Utf8String repositoryId = "pw.PW_Egde_10.00.01.71";
+    Utf8String serverUrl = "https://mobilevm5.bentley.com/ws";
+    Utf8String repositoryId = "pw.Mobile_ATP_2";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -430,13 +431,14 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
 +---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL:
 // BIM02: Invalid property in ECClass 'Bentley_SP:Field': The property 'ID' has a name of an ECSQL system property which is not allowed.
+// ERROR    ECDb                 JsonInserter failure. The JSON member '$id' does not match with a property in ECClass 'WSCacheMetaSchema:ECSchemaDef'.
 // SOLUTION: bim02 added this constraing, share point plugin is deprecated, no fix
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succeeds_KnowIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-10.bentley.com/ws";
-    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fpw_edge_sp_2013.bentley.com~2F";
+    Utf8String serverUrl = "https://mobilevm1.bentley.com/ws";
+    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fpw_edge_sp_2013.bentley.com";
     Credentials creds("ps_edge_sp_2013.bentley.com\\Administrator", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
@@ -452,12 +454,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
 +---------------+---------------+---------------+---------------+---------------+------*/
 // FAIL: eB schema incomaptible to BIM02
 // SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
-    Utf8String repositoryId = "Bentley.eB--viltest2-7.bentley.com~2CeB_Mobile_15.4";
+    Utf8String serverUrl = "https://mobilevm3.bentley.com/ws22";
+    Utf8String repositoryId = "Bentley.eB--MobileVM2.bentley.com~2CeB_15.4_CR";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -471,14 +473,15 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-// FAIL: server down
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWiseRepository_Succeeds)
+// FAIL: 
+// ERROR    ECDb                 ECClass 'PW_WSG:Set' has invalid base class: An abstract class must not have a non-abstract base class.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
-    Credentials creds("admin", "admin");
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3AMobile_ATP_2";
+    Credentials creds("itest", "itest");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -491,50 +494,20 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWiseRepository_Succeed
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepository_Succeeds)
+// FAIL:
+// ERROR    ECDb                 ECClass 'PW_WSG:Set' has invalid base class: An abstract class must not have a non-abstract base class.
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithImsUser_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
+    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState);
+    proxy = std::shared_ptr<HttpConfigurationHandler>(new HttpConfigurationHandler([] (Http::Request& request)
+        {
+        request.SetValidateCertificate(false);
+        }, proxy));
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-7.bentley.com~3AMobile_10_00_02_92";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepositoryWithImsUser_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-7.bentley.com~3AMobile_10_00_02_92";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -551,12 +524,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseCERepositoryWithIm
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseNonCERepositoryWithImsUser_ErrorLoginFailed)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInvalidImsUser_ErrorLoginFailed)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--PWDIVM4.bentley.com~3APW_10.00.03.10";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -574,17 +547,14 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseNonCERepositoryWit
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG262xProjectWise100003xxRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://geo-demo-ws.bentley.com/ws";
-    Utf8String repositoryId = "Bentley.PW--geo-demo.bentley.com~3AGeo-Demo";
-    Credentials creds("twc", "admin");
+    Utf8String serverUrl = "https://mobilevm6.bentley.com/ws";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3AMobile_ATP_2";
+    Credentials creds("itest", "itest");
     BeFileName cachePath = GetTestCachePath();
-
-    auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5, 4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb",
-        "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -596,14 +566,13 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-// WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.FK_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3AMobile_ATP";
-    Credentials creds("admin", "admin");
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3AMobile_ATP_2";
+    Credentials creds("itest", "itest");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -613,9 +582,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository
     ASSERT_FALSE(nullptr == ds);
     BentleyStatus status;
 
-    /* pw:\\VILTEST2-5.bentley.com:Mobile_ATP\Documents\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
-    ObjectId uploadsFolderId{"PW_WSG", "Project", "62042ee9-c2de-4f0d-b80d-d8492702a70d"};
-    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "StandardDisplayItemTypes--PW_WSG.02.02-Project-62042ee9--c2de--4f0d--b80d--d8492702a70d"};
+    /* pw:\\MobileVM1.bentley.com:Mobile_ATP_2\Documents\WSClientIntegrationTests_DO_NOT_DELETE\CachingDataSourceTests\Uploads\ */
+    ObjectId uploadsFolderId{"PW_WSG", "Project", "a934340b-f7f8-4c78-a9fa-cc13cd80679e"};
+    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "StandardDisplayItemTypes--PW_WSG.02.03-Project-a934340b--f7f8--4c78--a9fa--cc13cd80679e"};
 
     if (true)
         {
@@ -725,12 +694,12 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 // WIP06: Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
-TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, GetObjects_WSG250ProjectWiseSpatialQuery_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
-    Utf8String repositoryId = "Bentley.PW--viltest2-10.bentley.com~3APW_Mobile_Geo";
+    Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
+    Utf8String repositoryId = "Bentley.PW--MobileVM1.bentley.com~3APW_Mobile_10.00.02.265";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
 
@@ -767,7 +736,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds_
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 // BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version, need IssuePluginV1.2--default
-TEST_F(CachingDataSourceTests, GetObjects_PunchlistV11Queries_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, GetObjects_PunchlistV11Queries_Succeeds_KnownIssue_NeedsServerFix)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 

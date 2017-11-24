@@ -35,8 +35,11 @@
     <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
     <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
     <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Cache\ChangeGraphTests.h" />
@@ -49,6 +52,7 @@
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\SyncNotifierTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockChangeManager.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockDataSourceCache.h" />
@@ -90,6 +94,8 @@
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationPersistence.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectAuthenticationProvider.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockConnectionClientInterface.h" />
     <ClInclude Include="Published\WebServices\Connect\MockConnectTokenProvider.h" />
     <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
@@ -193,6 +199,7 @@
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
@@ -204,6 +211,7 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\SyncNotifierTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
@@ -217,6 +225,7 @@
     <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ProgressFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
@@ -323,7 +332,7 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <IntDir>$(OutDir)</IntDir>
-    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -360,9 +369,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb $(BB2N0) -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb $(XXXXX) -ax64 -r WSClient -f WSClient -p WSClient-Gtest b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb $(BB2N0) -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -N0 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb         -ax64 -r WSClient -f WSClient -p WSClient-Gtest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 -ax64 -r WSClient -f WSClient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\WSClient-Gtest\WSClientTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

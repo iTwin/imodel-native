@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileStorage.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@ struct FileStorage
         static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
 
         //! Remove file and do parent folder cleanup
-        BentleyStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath = nullptr) const;
+        CacheStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath = nullptr) const;
 
         //! Remove directory relative paths if they don't contain any files.
         static void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
@@ -58,7 +58,7 @@ struct FileStorage
 
         BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath);
 
-        BentleyStatus RemoveStoredFile(FileInfoCR info);
+        CacheStatus RemoveStoredFile(FileInfoCR info);
         BentleyStatus RenameCachedFile(FileInfoR info, Utf8String newFileName);
     };
 

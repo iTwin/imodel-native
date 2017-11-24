@@ -12,6 +12,7 @@
 #include <BeHttp/HttpClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <WebServices/Connect/ConnectSignInManager.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -49,10 +50,10 @@ ImsClient::ImsClient(ClientInfoPtr clientInfo, IHttpHandlerPtr httpHandler) :
 m_clientInfo(clientInfo),
 m_httpHandler(httpHandler)
     {
-	//this "username:apikey" is hardcoded into CONNECTION Client source code, so we have it here as well
-	//it can be overriden by the client application by calling SetImsActiveSTSHelperServiceAuthKey
-	SetImsActiveSTSHelperServiceAuthKey("BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
-	}
+    //this "username:apikey" is hardcoded into CONNECTION Client source code, so we have it here as well
+    //it can be overriden by the client application by calling SetImsActiveSTSHelperServiceAuthKey
+    SetImsActiveSTSHelperServiceAuthKey("BentleyConnectAppServiceUser@bentley.com", "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj");
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
@@ -78,7 +79,7 @@ AsyncTaskPtr<SamlTokenResult> ImsClient::RequestToken(CredentialsCR creds, Utf8S
 
     Utf8String stsUrl = UrlProvider::Urls::ImsStsAuth.Get();
 
-    return RequestToken(authorization, params, rpUri, stsUrl, lifetime);
+    return RequestToken(authorization, params, rpUri, stsUrl, lifetime, creds.GetUsername());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -100,8 +101,9 @@ AsyncTaskPtr<SamlTokenResult> ImsClient::RequestToken(SamlTokenCR parentToken, U
     params["AppliesToBootstrapToken"] = rpUri;
 
     Utf8String stsUrl = UrlProvider::Urls::ImsActiveStsDelegationService.Get() + "/json/IssueEx";
+    Utf8String username = ConnectSignInManager::GetUserInfo(parentToken).username;
 
-    return RequestToken(authorization, params, rpUri, stsUrl, lifetime);
+    return RequestToken(authorization, params, rpUri, stsUrl, lifetime, username);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -113,7 +115,8 @@ Utf8StringCR authorization,
 JsonValueR params,
 Utf8StringCR rpUri,
 Utf8StringCR stsUrl,
-uint64_t lifetime
+uint64_t lifetime,
+Utf8StringCR pastUsername
 )
     {
     params["TokenType"] = "";
@@ -135,7 +138,7 @@ uint64_t lifetime
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
     request.SetValidateCertificate(true); // Ensure secure connection when passing authentication information
 
-    return request.PerformAsync()->Then<SamlTokenResult>([rpUri, stsUrl] (Http::ResponseCR response)
+    return request.PerformAsync()->Then<SamlTokenResult>([rpUri, stsUrl, pastUsername] (Http::ResponseCR response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)
             return SamlTokenResult::Error({response});
@@ -156,6 +159,10 @@ uint64_t lifetime
 
         auto tokenStr = body["RequestedSecurityToken"].asString();
         auto token = std::make_shared<SamlToken>(tokenStr);
+
+        Utf8String newUsername = ConnectSignInManager::GetUserInfo(*token).username;
+        if (pastUsername.empty() || !newUsername.EqualsI(pastUsername))
+            return SamlTokenResult::Error({});
 
         if (!token->IsSupported())
             {

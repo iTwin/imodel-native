@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectAuthenticationHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -22,13 +22,15 @@ ConnectAuthenticationHandler::ConnectAuthenticationHandler
 Utf8String urlBaseToAuth,
 std::shared_ptr<IConnectTokenProvider> customTokenProvider,
 IHttpHandlerPtr customHttpHandler,
-bool shouldUseSAMLAuthorization
+bool shouldUseSAMLAuthorization,
+bool legacyMode
 ) :
 AuthenticationHandler(customHttpHandler),
 m_urlBaseToAuth(urlBaseToAuth),
 m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>(ImsClient::GetShared())),
 m_thread(WorkerThread::Create("ConnectAuthenticationHandler")),
-m_shouldUseSAMLAuthorization(shouldUseSAMLAuthorization)
+m_shouldUseSAMLAuthorization(shouldUseSAMLAuthorization),
+m_legacyMode(legacyMode)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -107,10 +109,12 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
         return true;
         }
 
+    unsigned int expiredTokenRetryCount = m_legacyMode ? 1 : 0;
+
     if (IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
-        previousAttempt.GetAttemptNumber() > 1)
+        previousAttempt.GetAttemptNumber() > expiredTokenRetryCount)
         {
-        // Used new token and it did not work
+        // Used token and it did not work, try updating token
         return true;
         }
 
@@ -122,10 +126,8 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectAuthenticationHandler::IsTokenAuthorization(Utf8StringCR auth) const
     {
-    static const Utf8String prefix = "token ";
-    if (0 == auth.compare(0, prefix.size(), prefix))
-        {
-        return true;
-        }
+    Utf8CP prefix = m_shouldUseSAMLAuthorization ? "SAML " : "token ";
+    if (0 == auth.compare(0, strlen(prefix), prefix))
+        return true; 
     return false;
     }
