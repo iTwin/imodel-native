@@ -27,6 +27,7 @@
     <ClCompile Include="Published\AuthenticationChallengeValueTests.cpp" />
     <ClCompile Include="Published\HttpErrorTests.cpp" />
     <ClCompile Include="Published\HttpResponseTests.cpp" />
+    <ClCompile Include="Published\TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\BaseMockHttpHandlerTest.h" />

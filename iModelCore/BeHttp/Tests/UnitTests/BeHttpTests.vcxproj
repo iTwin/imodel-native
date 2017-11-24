@@ -38,6 +38,7 @@
     <ClCompile Include="Published\MockHttpHandler.cpp" />
     <ClCompile Include="Published\ProxyHttpHandlerTests.cpp" />
     <ClCompile Include="Published\TestIntegration\Http\HttpRequestTests.cpp" />
+    <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\ValuePrinter.cpp" />
     <ClCompile Include="Published\WebTestsHelper.cpp" />
   </ItemGroup>

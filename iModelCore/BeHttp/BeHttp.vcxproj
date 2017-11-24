@@ -55,9 +55,6 @@
     <None Include="Http.mki" />
     <None Include="l10n-BeHttp.mke" />
     <None Include="prewire.mke" />
-    <None Include="Tests\IntegrationTests\IntegrationTests.mke" />
-    <None Include="Tests\UnitTests\BuildTests.mke" />
-    <None Include="Tests\UnitTests\Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BeHttp\AuthenticationHandler.cpp" />
@@ -82,26 +79,6 @@
     <ClCompile Include="BeHttp\HttpResponse.cpp" />
     <ClCompile Include="BeHttp\HttpStatusHelper.cpp" />
     <ClCompile Include="BeHttp\ProxyHttpHandler.cpp" />
-    <ClCompile Include="Tests\IntegrationTests\BeHttp\HttpRequestTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\AuthenticationChallengeValueTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\AuthenticationHandlerTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\BaseMockHttpHandlerTest.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\FSTest.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpBinaryBodyTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpCompressedBodyTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpFileBodyTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpMultipartBodyTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpRangeBodyTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpBody\HttpStringBodyTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpClientTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpErrorTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpHeadersTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\HttpResponseTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\MockHttpHandler.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\ProxyHttpHandlerTests.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\TestsHelper.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\ValuePrinter.cpp" />
-    <ClCompile Include="Tests\UnitTests\Published\WebTestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BeHttp\Backdoor.h" />
@@ -138,10 +115,7 @@
     <ClInclude Include="PublicAPI\BeHttp\IHttpHeaderProvider.h" />
     <ClInclude Include="PublicAPI\BeHttp\ProxyHttpHandler.h" />
     <ClInclude Include="Tests\IntegrationTests\BeHttp\HttpRequestTests.h" />
-    <ClInclude Include="Tests\IntegrationTests\BeHttp\Tests.h" />
     <ClInclude Include="Tests\UnitTests\Published\AuthenticationHandlerTests.h" />
-    <ClInclude Include="Tests\UnitTests\Published\BaseMockHttpHandlerTest.h" />
-    <ClInclude Include="Tests\UnitTests\Published\FSTest.h" />
     <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpBinaryBodyTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpCompressedBodyTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpFileBodyTests.h" />
@@ -150,21 +124,12 @@
     <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpStringBodyTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\HttpClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\HttpHeadersTests.h" />
-    <ClInclude Include="Tests\UnitTests\Published\MockAuthenticationHandler.h" />
-    <ClInclude Include="Tests\UnitTests\Published\MockHttpHandler.h" />
     <ClInclude Include="Tests\UnitTests\Published\ProxyHttpHandlerTests.h" />
-    <ClInclude Include="Tests\UnitTests\Published\StubAuthenticationHandler.h" />
-    <ClInclude Include="Tests\UnitTests\Published\TestsHelper.h" />
-    <ClInclude Include="Tests\UnitTests\Published\ValuePrinter.h" />
-    <ClInclude Include="Tests\UnitTests\Published\WebTestsHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="BeHttp.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Tests\UnitTests\ignore_list.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
