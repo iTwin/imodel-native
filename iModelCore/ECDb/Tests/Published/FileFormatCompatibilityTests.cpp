@@ -1285,6 +1285,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     //ECSQL
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.B")) << "Preparing ECSQL against class with missing table is expected to fail";
+    stmt.Finalize();
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SubB")) << "Preparing ECSQL against class with missing table is expected to fail";
 
     //ECClass views
@@ -1319,6 +1320,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     //ECSQL
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown MapStrategy is expected to fail";
+    stmt.Finalize();
 
     //ECClass views
     Savepoint sp(m_ecdb, "");
