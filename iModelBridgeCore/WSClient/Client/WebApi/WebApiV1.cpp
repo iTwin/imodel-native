@@ -440,7 +440,8 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
-    BeAssert(!objectId.IsEmpty() && "<Error> DataSource is not object");
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::CreateFunctionalityNotSupportedError()));
 
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
@@ -1014,6 +1015,9 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     if (!filePath.empty())
         {
         BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
@@ -1047,6 +1051,9 @@ ObjectIdCR objectId,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSDeleteObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
 
@@ -1073,6 +1080,9 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
 
