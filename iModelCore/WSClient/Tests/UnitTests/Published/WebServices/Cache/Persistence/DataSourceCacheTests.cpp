@@ -93,7 +93,7 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
     ASSERT_EQ(0, cache.GetECDb().GetCurrentSavepointDepth()); // No default txn
     cache.Close();
 
-    EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), params));
+    EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,7 +487,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     DataSourceCache cache2;
 
     ASSERT_EQ(SUCCESS, cache1.Create(path, StubCacheEnvironemnt(), params));
-    ASSERT_EQ(SUCCESS, cache2.Open(path, StubCacheEnvironemnt(), params));
+    ASSERT_EQ(SUCCESS, cache2.Open(path, StubCacheEnvironemnt(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
 
     cache1.RegisterSchemaChangeListener(&listener1);
     cache2.RegisterSchemaChangeListener(&listener2);
