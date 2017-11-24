@@ -41,7 +41,8 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error({Error::Id::FileNotFound, 
+                                                                                  ErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_imodelConnection.IsNull())
         {
@@ -58,13 +59,15 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::TrackingNotEnabled));
         }
-    CheckCreatingChangeSet();
+    CheckCreatingChangeSet(cancellationToken);
 
     Utf8String lastChangeSetId = GetLastChangeSetPulled();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastChangeSetId.c_str()) ? "No changeSets pulled yet" : "Downloading changeSets after changeSet ", lastChangeSetId.c_str());
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", 
+                   Utf8String::IsNullOrEmpty(lastChangeSetId.c_str()) ? "No changeSets pulled yet" : "Downloading changeSets after changeSet ", 
+                   lastChangeSetId.c_str());
 
     return m_imodelConnection->DownloadChangeSetsAfterId(lastChangeSetId, GetDgnDb().GetDbGuid(), callback, cancellationToken)
-        ->Then<ChangeSetsResult>([=] (ChangeSetsResultCR result)
+        ->Then<ChangeSetsResult>([=](ChangeSetsResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -73,7 +76,7 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "ChangeSets pulled successfully.");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "ChangeSets pulled successfully.");
         return result;
         });
     }
@@ -81,7 +84,7 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
+StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::Merge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -107,14 +110,14 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::TrackingNotEnabled));
         }
-    CheckCreatingChangeSet();
+    CheckCreatingChangeSet(cancellationToken);
 
-    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets);
+    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets, cancellationToken);
 
     if (RevisionStatus::Success == mergeStatus)
         {
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "ChangeSets merged successfully.");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "ChangeSets merged successfully.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
         }
 
@@ -125,7 +128,13 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr Briefcase::Push
+(
+Utf8CP description, 
+bool relinquishCodesLocks, 
+Http::Request::ProgressCallbackCR uploadCallback, 
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Briefcase::Push";
     // unused - double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -151,7 +160,7 @@ StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Htt
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::TrackingNotEnabled));
         }
-    CheckCreatingChangeSet();
+    CheckCreatingChangeSet(cancellationToken);
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::BeforeStartCreateChangeSet);
@@ -188,7 +197,7 @@ StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Htt
     BreakHelper::HitBreakpoint(Breakpoints::BeforePushChangeSetToServer);
 #endif
     return m_imodelConnection->Push(changeSet, *m_db, relinquishCodesLocks, uploadCallback, cancellationToken)
-        ->Then<StatusResult>([=] (StatusResultCR pushResult)
+        ->Then<StatusResult>([=](StatusResultCR pushResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)
         BreakHelper::HitBreakpoint(Breakpoints::AfterPushChangeSetToServer);
@@ -237,7 +246,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
-        BreakHelper::HitBreakpoint(Breakpoints::AfterDownloadChangeSets);
+    BreakHelper::HitBreakpoint(Breakpoints::AfterDownloadChangeSets);
 #endif
     if (!result.IsSuccess())
         {
@@ -246,7 +255,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
         }
 
     auto pulledChangeSets = result.GetValue();
-    auto mergeResult = Merge(pulledChangeSets)->GetResult();
+    auto mergeResult = Merge(pulledChangeSets, cancellationToken)->GetResult();
 
     if (!mergeResult.IsSuccess())
         {
@@ -255,7 +264,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "ChangeSets merged successfully.");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "ChangeSets merged successfully.");
     return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(pulledChangeSets));
 
     }
@@ -264,7 +273,8 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
-                                                                 Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
+                                              Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, 
+                                              int attemptsCount)
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPush";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -274,13 +284,13 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquis
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-void Briefcase::WaitForChangeSetEvent() const
+void Briefcase::WaitForChangeSetEvent(ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Briefcase::WaitForChangeSetEvent";
     int iterationsLeft = 100;
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to wait.");
 
-    while (iterationsLeft > 0)
+    while (iterationsLeft > 0 && (cancellationToken == nullptr || !cancellationToken->IsCanceled()))
         {
         if (Event::EventType::ChangeSetPostPushEvent == m_lastPullMergeAndPushEvent)
             {
@@ -293,7 +303,7 @@ void Briefcase::WaitForChangeSetEvent() const
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Finishing wait.");
     }
-    
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
@@ -334,8 +344,16 @@ void Briefcase::UnsubscribeChangeSetEvents()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
-                                                                     ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
+ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated
+(
+Utf8CP description, bool relinquishCodesLocks, 
+Http::Request::ProgressCallbackCR downloadCallback, 
+Http::Request::ProgressCallbackCR uploadCallback,
+ICancellationTokenPtr cancellationToken, 
+int attemptsCount, 
+int attempt, 
+int delay
+)
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushRepeated";
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
@@ -377,7 +395,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool r
         }
 
     if (m_eventsAvailable)
-        WaitForChangeSetEvent();
+        WaitForChangeSetEvent(cancellationToken);
     else
         {
         int sleepTime = rand() % 5000;
@@ -385,13 +403,14 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated(Utf8CP description, bool r
         }
 
     m_lastPullMergeAndPushEvent = Event::EventType::UnknownEventType;
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, 0);
+    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, 
+                                    attempt + 1, 0);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2015
 //---------------------------------------------------------------------------------------
-void Briefcase::CheckCreatingChangeSet() const
+void Briefcase::CheckCreatingChangeSet(ICancellationTokenPtr cancellationToken) const
     {
     if (m_db->Revisions().IsCreatingRevision())
         {
@@ -399,7 +418,7 @@ void Briefcase::CheckCreatingChangeSet() const
         if (Utf8String::IsNullOrEmpty(creatingChangeSetId.c_str()))
             return;
 
-        auto creatingChangeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetById(creatingChangeSetId));
+        auto creatingChangeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetById(creatingChangeSetId, cancellationToken));
         if (creatingChangeSetResult->IsSuccess())
             {
             m_db->Revisions().FinishCreateRevision();
@@ -410,14 +429,21 @@ void Briefcase::CheckCreatingChangeSet() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
-    Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
+ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal
+(
+ Utf8CP description, 
+ bool relinquishCodesLocks, 
+ Http::Request::ProgressCallbackCR downloadCallback,
+ Http::Request::ProgressCallbackCR uploadCallback, 
+ ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushInternal";
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error({Error::Id::FileNotFound, 
+                                                                                  ErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_imodelConnection.IsNull())
         {
@@ -430,7 +456,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool r
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::BriefcaseIsReadOnly));
         }
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
-    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (ChangeSetsResultCR result)
+    return PullAndMerge(downloadCallback, cancellationToken)->Then([=](ChangeSetsResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -438,7 +464,7 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool r
             finalResult->SetError(result.GetError());
             return;
             }
-        
+
         // This sleep waits for events from other clients who just started a push
         int sleepTime = rand() % 200;
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, sleepTime, "Sleeping.");
@@ -450,8 +476,8 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool r
             finalResult->SetError(Error::Id::PullIsRequired);
             return;
             }
-        
-        Push(description, relinquishCodesLocks, uploadCallback, cancellationToken)->Then([=] (StatusResultCR pushResult)
+
+        Push(description, relinquishCodesLocks, uploadCallback, cancellationToken)->Then([=](StatusResultCR pushResult)
             {
             if (!pushResult.IsSuccess())
                 {
@@ -464,10 +490,10 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal(Utf8CP description, bool r
                 }
             });
 
-        })->Then<ChangeSetsResult>([=] ()
-        {
-        return *finalResult;
-        });
+        })->Then<ChangeSetsResult>([=]()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -481,18 +507,19 @@ BoolTaskPtr Briefcase::IsBriefcaseUpToDate(ICancellationTokenPtr cancellationTok
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<BoolResult> (BoolResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
+        return CreateCompletedAsyncTask<BoolResult>(BoolResult::Error({Error::Id::FileNotFound, ErrorLocalizedString(MESSAGE_FileNotOpen)}));
         }
     if (m_imodelConnection.IsNull())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid iModel connection.");
-        return CreateCompletedAsyncTask<BoolResult> (BoolResult::Error(Error::Id::InvalidiModelConnection));
+        return CreateCompletedAsyncTask<BoolResult>(BoolResult::Error(Error::Id::InvalidiModelConnection));
         }
 
     //Needswork: think how to optimize this so that we would not need to download all changeSets
     auto lastPulledChangeSet = GetLastChangeSetPulled();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting changeSets after changeSet %s.", lastPulledChangeSet.c_str());
-    return m_imodelConnection->GetChangeSetsAfterId(lastPulledChangeSet, GetDgnDb().GetDbGuid(), cancellationToken)->Then<BoolResult> ([=](ChangeSetsInfoResultCR result)
+    return m_imodelConnection->GetChangeSetsAfterId(lastPulledChangeSet, GetDgnDb().GetDbGuid(), cancellationToken)
+        ->Then<BoolResult>([=](ChangeSetsInfoResultCR result)
         {
         if (result.IsSuccess())
             {
@@ -501,7 +528,8 @@ BoolTaskPtr Briefcase::IsBriefcaseUpToDate(ICancellationTokenPtr cancellationTok
             if (pendingChangeSets <= 0)
                 LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "No pending changeSets. Briefcase is up to date.");
             else
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "There are %d pending changeSet(s). Briefcase is not up to date.", pendingChangeSets);
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), 
+                               "There are %d pending changeSet(s). Briefcase is not up to date.", pendingChangeSets);
 
             return BoolResult::Success(pendingChangeSets <= 0); //If there are not pending changeSets we are up to date
             }
@@ -554,7 +582,12 @@ StatusTaskPtr Briefcase::UnsubscribeEventsCallback(EventCallbackPtr callback) co
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr Briefcase::UpdateToVersion
+(
+Utf8String versionId, 
+Http::Request::ProgressCallbackCR callback, 
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Briefcase::UpdateToVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -599,7 +632,12 @@ StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::Pr
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr Briefcase::UpdateToChangeSet
+(
+Utf8String changeSetId, 
+Http::Request::ProgressCallbackCR callback, 
+ICancellationTokenPtr cancellationToken
+) const
     {
     const Utf8String methodName = "Briefcase::UpdateToChangeSet";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -611,7 +649,8 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
         }
 
     ChangeSetsInfoResultPtr changeSetResult;
-    changeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken));
+    changeSetResult = ExecuteAsync(m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), 
+                                                                            cancellationToken));
 
     if (!changeSetResult->IsSuccess())
         {
@@ -628,7 +667,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
         }
     auto changeSets = changeSetsResult.GetValue();
 
-    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets);
+    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets, cancellationToken);
 
     if (RevisionStatus::Success == mergeStatus)
         {
@@ -643,7 +682,7 @@ StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) const
+RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, ICancellationTokenPtr cancellationToken) const
     {
     /*
     So, there are four main use cases:
@@ -670,7 +709,8 @@ RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) co
         {
         auto changeSetIterator = changeSets.begin();
         //reinstation step
-        while (changeSetIterator != changeSets.end() && m_db->Revisions().HasReversedRevisions())
+        while (changeSetIterator != changeSets.end() && m_db->Revisions().HasReversedRevisions() && 
+                  (cancellationToken == nullptr || !cancellationToken->IsCanceled()))
             {
             mergeStatus = m_db->Revisions().ReinstateRevision(**changeSetIterator);
             changeSetIterator++;
@@ -693,6 +733,11 @@ RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) co
 
             if (mergeStatus != RevisionStatus::Success)
                 break;
+
+            if (cancellationToken != nullptr && cancellationToken->IsCanceled())
+                {
+                mergeStatus = RevisionStatus::MergeError;
+                }
             }
         }
     else
@@ -705,6 +750,12 @@ RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) co
             mergeStatus = m_db->Revisions().ReverseRevision(*changeSet);
             if (mergeStatus != RevisionStatus::Success)
                 break;
+
+            if (cancellationToken != nullptr && cancellationToken->IsCanceled())
+                {
+                mergeStatus = RevisionStatus::MergeError;
+                }
+
             }
         }
 

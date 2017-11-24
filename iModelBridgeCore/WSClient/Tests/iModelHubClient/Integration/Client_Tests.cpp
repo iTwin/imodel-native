@@ -36,17 +36,6 @@ struct ClientTests : public IntegrationTestsBase
         return IntegrationTestsBase::CreateTestDb("ClientTest");
         }
 
-    void DeleteiModels()
-        {
-        auto result = m_client->GetiModels(m_projectId)->GetResult();
-        EXPECT_SUCCESS(result);
-
-        for (auto imodel : result.GetValue())
-            {
-            DeleteiModel(m_projectId, *m_client, *imodel);
-            }
-        }
-
     iModelInfoPtr CreateNewiModel()
         {
         return IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");
@@ -162,63 +151,6 @@ TEST_F(ClientTests, UnsuccessfulCreateiModel)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Algirdas.Mikoliunas    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClientTests, SuccessfulGetiModels)
-    {
-    DeleteiModels();
-    auto imodel1 = CreateNewiModel();
-    auto imodel2 = CreateNewiModel();
-
-    auto result = m_client->GetiModels(m_projectId)->GetResult();
-    EXPECT_SUCCESS(result);
-    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
-
-    bvector<iModelInfoPtr>& imodels = result.GetValue();
-    EXPECT_EQ(2, imodels.size());
-    DateTime compareDate (DateTime::Kind::Utc, 2017, 1, 1, 0, 0, 0, 0);
-    for (iModelInfoPtr imodel : imodels)
-        {
-        EXPECT_FALSE(imodel->GetServerURL().empty());
-        EXPECT_FALSE(imodel->GetId().empty());
-        EXPECT_FALSE(imodel->GetName().empty());
-
-        DateTimeCR createdDate = imodel->GetCreatedDate();
-        EXPECT_TRUE(createdDate.IsValid());
-        EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(compareDate, createdDate));
-        }
-    DeleteiModel(m_projectId, *m_client, *imodel1);
-    DeleteiModel(m_projectId, *m_client, *imodel2);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                              Algirdas.Mikoliunas    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClientTests, SuccessfulGetiModelByName)
-    {
-    DeleteiModels();
-    auto imodel = IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");
-    
-    auto result1 = m_client->GetiModelByName(m_projectId, imodel->GetName())->GetResult();
-    EXPECT_SUCCESS(result1);
-
-    imodel = result1.GetValue();
-    EXPECT_EQ(imodel->GetUserCreated(), imodel->GetOwnerInfo()->GetId());
-
-    DateTime compareDate(DateTime::Kind::Utc, 2017, 1, 1, 0, 0, 0, 0);
-        
-    EXPECT_FALSE(imodel->GetServerURL().empty());
-    EXPECT_FALSE(imodel->GetId().empty());
-    EXPECT_FALSE(imodel->GetName().empty());
-
-    DateTimeCR createdDate = imodel->GetCreatedDate();
-    EXPECT_TRUE(createdDate.IsValid());
-    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(compareDate, createdDate));
-
-    DeleteiModel(m_projectId, *m_client, *imodel);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                              Algirdas.Mikoliunas    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientTests, UnsuccessfulGetiModels)
     {
     auto imodel = CreateNewiModel();
@@ -230,19 +162,6 @@ TEST_F(ClientTests, UnsuccessfulGetiModels)
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
     DeleteiModel(m_projectId, *m_client, *imodel);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                              Algirdas.Mikoliunas    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClientTests, EmptyGetiModels)
-    {
-    DeleteiModels();
-
-    auto result = m_client->GetiModels(m_projectId)->GetResult();
-
-    EXPECT_SUCCESS(result);
-    EXPECT_TRUE(result.GetValue().empty());
     }
 
 /*--------------------------------------------------------------------------------------+

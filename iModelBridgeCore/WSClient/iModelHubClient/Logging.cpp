@@ -33,27 +33,28 @@ void LogHelper::LogInternal(SEVERITY severity, const Utf8String methodName, floa
     else
         timeFormatted.Sprintf("%.2f ms.", timeSpent);
 
-    logItem.Sprintf("%-*s %-*s %-*s %s", DATETIME_COLUMN_WIDTH, DateTime::GetCurrentTimeUtc().ToString().c_str(), METHOD_NAME_COLUMN_WIDTH, methodName.c_str(), TIME_COLUMN_WIDTH, timeFormatted.c_str(), message.c_str());
+    logItem.Sprintf("%-*s %-*s %-*s %s", DATETIME_COLUMN_WIDTH, DateTime::GetCurrentTimeUtc().ToString().c_str(), METHOD_NAME_COLUMN_WIDTH, 
+                    methodName.c_str(), TIME_COLUMN_WIDTH, timeFormatted.c_str(), message.c_str());
 
     switch (severity)
         {
-            case SEVERITY::LOG_DEBUG:
-                LogHelper::logger->debug(logItem.c_str());
-                break;
-            case SEVERITY::LOG_ERROR:
-                LogHelper::logger->error(logItem.c_str());
-                break;
-            case SEVERITY::LOG_FATAL:
-                LogHelper::logger->fatal(logItem.c_str());
-                break;
-            case SEVERITY::LOG_INFO:
-                LogHelper::logger->info(logItem.c_str());
-                break;
-            case SEVERITY::LOG_TRACE:
-                LogHelper::logger->trace(logItem.c_str());
-                break;
-            case SEVERITY::LOG_WARNING:
-                LogHelper::logger->warning(logItem.c_str());
+        case SEVERITY::LOG_DEBUG:
+            LogHelper::logger->debug(logItem.c_str());
+            break;
+        case SEVERITY::LOG_ERROR:
+            LogHelper::logger->error(logItem.c_str());
+            break;
+        case SEVERITY::LOG_FATAL:
+            LogHelper::logger->fatal(logItem.c_str());
+            break;
+        case SEVERITY::LOG_INFO:
+            LogHelper::logger->info(logItem.c_str());
+            break;
+        case SEVERITY::LOG_TRACE:
+            LogHelper::logger->trace(logItem.c_str());
+            break;
+        case SEVERITY::LOG_WARNING:
+            LogHelper::logger->warning(logItem.c_str());
         }
     }
 

@@ -39,9 +39,9 @@ private:
 	static UserInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
     static UserInfoPtr ParseFromRelated(WebServices::WSObjectsReader::Instance *instance);
 public:
-	Utf8String GetId() const { return m_id; }
-	Utf8String GetName() const { return m_name; }
-	Utf8String GetSurname() const { return m_surname; }
-	Utf8String GetEmail() const { return m_email; }
+	Utf8String GetId() const {return m_id;}
+	Utf8String GetName() const {return m_name;}
+	Utf8String GetSurname() const {return m_surname;}
+	Utf8String GetEmail() const {return m_email;}
 };
 END_BENTLEY_IMODELHUB_NAMESPACE
