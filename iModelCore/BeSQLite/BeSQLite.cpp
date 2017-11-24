@@ -1664,10 +1664,7 @@ BeGuid Db::QueryProjectGuid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry)
-    : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_forProfileUpgrade(false), m_rawSQLite(false), m_busyRetry(retry)
-    {
-    }
+Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry) : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_busyRetry(retry) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10

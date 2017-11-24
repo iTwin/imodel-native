@@ -2136,9 +2136,9 @@ public:
     {
         mutable OpenMode m_openMode;
         DefaultTxn     m_startDefaultTxn;
-        mutable bool  m_forProfileUpgrade;
-        bool          m_rawSQLite;
-        BusyRetry*    m_busyRetry;
+        mutable bool  m_forProfileUpgrade = false;
+        bool          m_rawSQLite = false;
+        BusyRetry*    m_busyRetry = nullptr;
 
         BE_SQLITE_EXPORT virtual bool _ReopenForProfileUpgrade(Db&) const;
 
@@ -2171,6 +2171,12 @@ public:
         //! will be started on the Db after it is opened. This applies only to the connection returned by
         //! Db::CreateNewDb or Db::OpenBeSQLiteDb; it is not a persistent property of the Db.
         void SetStartDefaultTxn(DefaultTxn val) {m_startDefaultTxn = val;}
+
+        //! Sets a BusyRetry handler
+        //! @param[in] retry A BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
+        //!                  The default is to not attempt retries. Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
+        //!                  to the database and do not permit sharing.
+        void SetBusyRetry(BusyRetry* retry) { m_busyRetry = retry; }
     };
 
     //=======================================================================================
