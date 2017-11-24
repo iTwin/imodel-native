@@ -25,6 +25,7 @@ public:
 #else
 private:
 #endif
+    
     //! outward normal to plane
     DVec3d          m_normal;
     //! distance from origin to (closest) point on plane.
@@ -180,7 +181,10 @@ public:
         ClipPlaneCR plane1, //!< [in] second plane
         double tolerance    //!< [in] tolerance for "on" decision
         );
-
+    // Return the counter of the number of clip plane evaluations that
+    // have been done.
+    // optionally clear the count.
+    GEOMDLLIMPEXP static size_t GetEvaluationCount (bool clear = false);
     };
 
 

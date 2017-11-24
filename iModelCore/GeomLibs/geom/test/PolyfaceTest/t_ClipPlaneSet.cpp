@@ -350,3 +350,345 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
 
     Check::ClearGeometry ("ClipPlaneSet.ClassifySetDifference_ManyLines");
     }
+
+void PushIfDistinct (bvector<DPoint3d> &points, DPoint3dCR xyz)
+    {
+    static double s_tolerance = 1.0e-12;
+    if (points.size () == 0 || points.back ().DistanceXY (xyz) > s_tolerance)
+        points.push_back (xyz);
+    }
+
+// On the line from pointA to pointB, evaluate each coordinate in lineCoordinates as interpolateAndPerpendicular.
+// Append to points.
+void appendToFractal (bvector<DPoint3d> &points, DPoint3dCR pointA, DPoint3dCR pointB, bvector<DPoint2d> &pattern, int numRecursion)
+    {
+    DPoint3d point0 = pointA;
+    PushIfDistinct (points, pointA);
+
+    for (auto &uv : pattern)
+        {
+        DPoint3d point1 = DPoint3d::FromInterpolateAndPerpendicularXY (pointA, uv.x, pointB, uv.y);
+        if (numRecursion > 0)
+            appendToFractal (points, point0, point1, pattern, numRecursion - 1);
+        PushIfDistinct (points, point1);
+        point0 = point1;
+        }
+    PushIfDistinct (points, pointB);
+    }
+
+void appendToFractal (bvector<DPoint3d> &points, bvector<DPoint3d> &poles, bvector<DPoint2d> &pattern, int numRecursion)
+    {
+    PushIfDistinct (points, poles[0]);
+    for (size_t i = 0; i + 1 < poles.size (); i++)
+        {
+        if (numRecursion > 0)
+            appendToFractal (points, poles[i], poles[i+1], pattern, numRecursion - 1);
+        PushIfDistinct (points, poles[i+1]);
+        }
+    }
+struct ClipTreeNode
+{
+bvector<DPoint3d> m_points;
+ConvexClipPlaneSet m_planes;
+bvector<ClipTreeNode> m_children;
+bool m_isPositiveArea;
+size_t m_startIndex;  // first index in master array (not the local m_points)
+size_t m_numPoints;   // number of points used from master array, possibly wrapping)
+friend struct AlternatingRecursiveClipBuilder;
+
+void SetIndices (size_t index0, size_t numPoint, bool isPositiveArea)
+    {
+    m_startIndex = index0;
+    m_numPoints = numPoint;
+    m_isPositiveArea = isPositiveArea;
+    m_children.clear ();
+    }
+void AddEmptyChild (size_t index0, size_t numPoint)
+    {
+    m_children.push_back (ClipTreeNode ());
+    m_children.back ().SetIndices (index0, numPoint, !m_isPositiveArea);
+    }
+void AddPlane (ClipPlaneCR plane)
+    {
+    m_planes.Add (plane);
+    }
+// Recursive search with alternating in and out semantics.
+bool IsPointOnOrInside (DPoint3d xyz) const
+    {
+    bool inRoot = m_planes.IsPointOnOrInside (xyz, 0.0);
+    if (!inRoot)
+        return false;
+
+    for (auto &child : m_children)
+        if (child.IsPointOnOrInside (xyz))
+            return false;
+    return true;
+    }
+};
+struct AlternatingRecursiveClipBuilder
+{
+
+bvector<DPoint3d> m_points;
+bvector<size_t> m_stack;
+size_t m_numPoints;
+
+void PushIndex (size_t primaryPointIndex)
+    {
+    m_stack.push_back (primaryPointIndex);
+    }
+
+bool IsInsideTurn (DPoint3dCR xyzA, DPoint3dCR xyzB, DPoint3dCR xyzC, double sign)
+    {
+    return sign * Cross(xyzA, xyzB, xyzC) > 0;
+    }
+double Cross (DPoint3dCR xyzA, DPoint3dCR xyzB, DPoint3dCR xyzC)
+    {
+    return xyzA.CrossProductToPointsXY (xyzB, xyzC);
+    }
+size_t Period () const { return m_points.size ();}
+DPoint3d CyclicStackPoint (int32_t cyclicIndex)  // SIGNED index -- but negatives must be in first 10 periods?
+    {
+    size_t stackIndex;
+    if (cyclicIndex > 0)
+        {
+        stackIndex = cyclicIndex;
+        }
+    else
+        stackIndex = (size_t)(cyclicIndex + 10 * m_stack.size ());
+    stackIndex = stackIndex % m_stack.size ();
+    return m_points[m_stack[stackIndex]];
+    }
+double SignFromStackTip (size_t pointIndex, double sign) {
+    DPoint3d xyzA = CyclicStackPoint (-2);
+    DPoint3d xyzB = CyclicStackPoint (-1);
+    DPoint3d xyzC = m_points[pointIndex];
+    return sign * Cross (xyzA, xyzB, xyzC) >= 0.0 ? 1.0 : -1.0;
+    }
+
+// Test of xyz is in the convex region bounded by stack points:
+//   polygon[i0]..polygon[i1]
+//   polygon[j0]..polygon[j1]
+//   polygon[i0]..polygon[i1]
+// with "inside" controlled by sign multiplier.
+bool IsConvexContinuation (DPoint3dCR xyz, size_t i0, size_t i1, size_t j0, size_t j1, double sign)
+    {
+    return IsInsideTurn (m_points[m_stack[i0]], m_points[m_stack[i1]], xyz, sign)
+        && IsInsideTurn (m_points[m_stack[i0]], m_points[m_stack[j0]], xyz, sign)
+        && IsInsideTurn (m_points[m_stack[j1]], m_points[m_stack[i1]], xyz, sign);
+    }
+
+size_t IndexAfter (size_t i) {return (i + 1) % m_numPoints;}
+size_t IndexBefore (size_t i) {return (i + m_numPoints - 1) % m_numPoints;}
+AlternatingRecursiveClipBuilder (bvector<DPoint3d> const &points)
+    {
+    m_points = points;
+    m_numPoints = points.size ();
+    }
+
+size_t IndexOfMaxX ()
+    {
+    size_t k = 0;
+    for (size_t i = 1; i < m_numPoints; i++)
+        if (m_points[i].x > m_points[k].x)
+            k = i;
+    return k;
+    }
+
+// pop from the stack until sign condition is satisfied.
+void ExtendHullChain (size_t k, double sign, bool pushAfterPops)
+    {
+    while (m_stack.size () > 1 && SignFromStackTip (k, sign) < 0.0)
+        m_stack.pop_back ();
+    if (pushAfterPops)
+        PushIndex (k);
+    }
+
+void CollectHullChain (size_t kStart, size_t numK, double sign)
+    {
+    m_stack.clear ();
+    if (numK > 2)
+        {
+        for (size_t i = 0, k = kStart; i < numK; i++, k = IndexAfter (k))
+            ExtendHullChain (k, sign, true);
+        }
+    }
+// Input a ClipTreeRoot that has start and count data.
+// Build the hull for that data range.
+// Store the hull points in the root.
+// Add children with start and count data.
+// Recurse to children.
+void BuildHullTree_go (ClipTreeNode &root)
+    {
+    CollectHullChain (root.m_startIndex, root.m_numPoints, root.m_isPositiveArea ? 1.0 : -1.0);
+    root.m_points.clear ();
+    for (size_t i = 0; i < m_stack.size (); i++)
+        {
+        size_t k0 = m_stack[i];
+        root.m_points.push_back (m_points[k0]);
+        if (i + 1 < m_stack.size ())
+            {
+            size_t k1 = m_stack[i + 1];
+            if (k1 == IndexAfter (k0))
+                {
+                // two original points in sequence -- need a clip plane right here!!!
+                auto plane = ClipPlane::FromEdgeAndUpVector (m_points[k0], m_points[k1], DVec3d::From (0,0,1), Angle::FromRadians (0));
+                if (plane.IsValid ())
+                    {
+                    auto p = plane.Value ();
+                    if (root.m_isPositiveArea)  // Why is the clip plane backwards?
+                        p.Negate ();
+                    root.AddPlane (p);
+                    }
+                }
+            else
+                {
+                if (k1 < k0)
+                    k1 += Period ();
+                root.AddEmptyChild (k0, k1 - k0 + 1);
+                }
+            }
+        }
+    for (auto &child : root.m_children)
+        {
+        BuildHullTree_go (child);
+        }
+    }
+
+public:
+void BuildHullTree (ClipTreeNode &root)
+    {
+    root.SetIndices (IndexOfMaxX (), Period () + 1, true);
+    BuildHullTree_go (root);
+    }
+
+};
+
+void SaveTree (ClipTreeNode const &root)
+    {
+    Check::SaveTransformed (root.m_points);
+    for (auto &child: root.m_children)
+        SaveTree (child);
+    }
+
+// outputLevel = (0 none, 1 diagonals, 2 all)
+void TestClipper (bvector<DPoint3d> const &points, ClipTreeNode &root, int outputLevel = 1)
+    {
+    bvector<double> fractions;
+    auto range = DRange3d::From (points);
+    int halfCount = 20;
+    double df = 0.8 / halfCount;
+    for (int i = -halfCount; i <= halfCount; i++)
+        fractions.push_back (0.5 - i * df);
+    auto a = range.XLength () * 0.004;
+    ClipPlane::GetEvaluationCount (true);
+    UsageSums inSum, outSum;
+    size_t id = 0;
+    static size_t s_idPeriod = 29;
+    for (auto fx : fractions)
+        {
+        for (auto fy : fractions)
+            {
+            id++;
+            auto xyz = range.LocalToGlobal (fx, fy, 0);
+            bool doOutput = outputLevel == 2
+                || (outputLevel == 1 &&
+                    DoubleOps::AlmostEqual (fabs(fx - 0.5), fabs (fy - 0.5)))
+                || (outputLevel == 1 && (id % s_idPeriod) == 0);
+            if (root.IsPointOnOrInside (xyz))
+                {
+                if (doOutput)
+                    Check::SaveTransformedMarker (xyz, a);
+                inSum.Accumulate (ClipPlane::GetEvaluationCount (true));
+                }
+            else
+                {
+                if (doOutput)
+                    Check::SaveTransformedMarker (xyz, -a);
+                outSum.Accumulate (ClipPlane::GetEvaluationCount (true));
+                }
+            }
+        }
+    size_t numTest = fractions.size () * fractions.size ();
+    printf (" ClipperTest  (polygonPoints %d) (TestPoint %d) (IN %lf avg %lf max %lf) (OUT %lf avg %lf max %lf)\n",
+            (int)points.size (),
+            (int)numTest,
+            inSum.Count (), inSum.Mean (), inSum.Max (),
+            outSum.Count (), outSum.Mean (), inSum.Max ());    
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RecursveClipSets, Test1)
+    {
+    for (size_t numPoints : bvector<size_t>{5, 8, 12, 15, 23, 37, 67})
+        {
+        SaveAndRestoreCheckTransform shifter(10,0,0);
+        bvector<DPoint3d> points;
+        SampleGeometryCreator::StrokeUnitCircle (points, numPoints);
+        points.pop_back ();
+        double f0 = 0.4;
+        double f = 0.3;
+        double af = 1.4;
+        for (size_t i = 1; i < numPoints;)
+            {
+            points[i].Scale (f0);
+            if (numPoints > 10 && i + 2 < numPoints)
+                {
+                auto vector = points[i+1] - points[i];
+                points[i+1] = points[i+1] + f * vector;
+                f *= af;
+                points[i+2] = points[i+2] + f * vector;
+                if (f > 2.0)
+                    f = 0.1;
+                i += 4;
+                }
+            else
+                i += 3;
+            }
+        Check::SaveTransformed (points);
+        Check::Shift (0,5,0);
+        AlternatingRecursiveClipBuilder clipper (points);
+        ClipTreeNode root;
+        clipper.BuildHullTree (root);
+        Check::Shift (0,5,0);
+        SaveTree (root);
+        TestClipper (points, root);
+        }
+    Check::ClearGeometry ("RecursiveClipSets.Test1");
+    }
+
+void Fractal0 (bvector<DPoint3d> &points, int numRecursion)
+    {
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0),
+        DPoint2d::From (0.5, 0.2),
+        DPoint2d::From (0.75, -0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion);
+    }
+TEST (RecursiveClipSets,Test2)
+    {
+    for (int numRecursion = 0; numRecursion < 4; numRecursion++)
+        {
+        SaveAndRestoreCheckTransform shifter(5,0,0);
+        bvector<DPoint3d> points;
+        Fractal0 (points, numRecursion);
+        Check::SaveTransformed (points);
+        Check::Shift (0,5,0);
+        AlternatingRecursiveClipBuilder clipper (points);
+        ClipTreeNode root;
+        clipper.BuildHullTree (root);
+        SaveTree (root);
+        TestClipper (points, root);
+        }
+    Check::ClearGeometry ("RecursiveClipSets.Test2");
+    }
