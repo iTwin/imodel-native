@@ -331,7 +331,7 @@ RealityPackageStatus RealityDataSerializerV1::_WriteImageryGroup(BeXmlNodeR node
 
         // Write base first.
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_ImageryData);
-        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pImgData->GetSource(0)))
+        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pImgData->GetDataSource(0)))
             {
             pGroupNode->RemoveChildNode(pDataNode);
             continue;
@@ -378,7 +378,7 @@ RealityPackageStatus RealityDataSerializerV1::_WriteModelGroup(BeXmlNodeR node, 
 
         // Write base first.
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_ModelData);
-        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pModelData->GetSource(0)))
+        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pModelData->GetDataSource(0)))
             {
             pGroupNode->RemoveChildNode(pDataNode);
             continue;
@@ -410,7 +410,7 @@ RealityPackageStatus RealityDataSerializerV1::_WritePinnedGroup(BeXmlNodeR node,
 
         // Write base first.
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_PinnedData);
-        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pPinnedData->GetSource(0)))
+        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pPinnedData->GetDataSource(0)))
             {
             pGroupNode->RemoveChildNode(pDataNode);
             continue;
@@ -447,7 +447,7 @@ RealityPackageStatus RealityDataSerializerV1::_WriteTerrainGroup(BeXmlNodeR node
 
         // Write base first.
         BeXmlNodeP pDataNode = pGroupNode->AddEmptyElement(PACKAGE_ELEMENT_TerrainData);
-        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pTerrainData->GetSource(0)))
+        if (RealityPackageStatus::Success != WriteSource(*pDataNode, pTerrainData->GetDataSource(0)))
             {
             pGroupNode->RemoveChildNode(pDataNode);
             continue;

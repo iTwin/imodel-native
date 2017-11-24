@@ -64,7 +64,7 @@ private:
 //! Abstract class for classified reality data.
 //! @bsiclass
 //=======================================================================================
-struct PackageRealityData : public RealityDataBase
+struct PackageRealityData : public SpatialEntity
     {
 public:
     friend RealityDataSerializer;
@@ -82,17 +82,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreatePinned(SpatialEntityDataSourceR dataSource, double longitude, double latitude);
     REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateTerrain(SpatialEntityDataSourceR dataSource);
     REALITYDATAPLATFORM_EXPORT static PackageRealityDataPtr CreateUndefined(SpatialEntityDataSourceR dataSource);
-
-    //! Data can contain many sources (at least one). This returns the number of sources.
-    REALITYDATAPLATFORM_EXPORT size_t GetNumSources() const;
-
-    //! Returns the source. index start at 0 up to GetNumSource()-1
-    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceR GetSourceR(size_t index);
-    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCR GetSource(size_t index) const;
-
-    //! Adds an alternate source to the data.
-    REALITYDATAPLATFORM_EXPORT void AddSource(SpatialEntityDataSourceR dataSource);
-
+    
     //! Get the object location in long/lat coordinate. 
     REALITYDATAPLATFORM_EXPORT GeoPoint2dCR GetLocation() const;
 
@@ -118,7 +108,6 @@ protected:
       
 private:
     static bool HasValidCorners(const bvector<GeoPoint2d>& pCorners);
-    bvector<SpatialEntityDataSourcePtr>   m_Sources;
     GeoPoint2d                      m_location;
     };
 

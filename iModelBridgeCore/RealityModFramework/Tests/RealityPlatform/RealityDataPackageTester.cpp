@@ -421,9 +421,9 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON), pPackage->GetBoundingPolygon().ToString().c_str());
 
     // Imagery
-    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_JPEG, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("image/jpeg", pPackage->GetImageryGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_JPEG, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("image/jpeg", pPackage->GetImageryGroup()[0]->GetDataSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetFootprint()[PackageRealityData::Corners::LowerLeft].longitude, RPACKAGE_JPEG_LL_x, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetFootprint()[PackageRealityData::Corners::LowerLeft].latitude, RPACKAGE_JPEG_LL_y, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetFootprint()[PackageRealityData::Corners::LowerRight].longitude, RPACKAGE_JPEG_LR_x, LONGLAT_EPSILON);
@@ -433,36 +433,36 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetFootprint()[PackageRealityData::Corners::UpperRight].longitude, RPACKAGE_JPEG_UR_x, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetFootprint()[PackageRealityData::Corners::UpperRight].latitude, RPACKAGE_JPEG_UR_y, LONGLAT_EPSILON);
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_WMS_URI, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("wms", pPackage->GetImageryGroup()[1]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_WMS_URI, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("wms", pPackage->GetImageryGroup()[1]->GetDataSource(0).GetDataType().c_str());
 
     // Model
-    ASSERT_TRUE(pPackage->GetModelGroup()[0]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_ROAD_URI, pPackage->GetModelGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("shapefile", pPackage->GetModelGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetModelGroup()[0]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_ROAD_URI, pPackage->GetModelGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("shapefile", pPackage->GetModelGroup()[0]->GetDataSource(0).GetDataType().c_str());
 
     // Pinned
-    ASSERT_TRUE(pPackage->GetPinnedGroup()[0]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("image/jpeg", pPackage->GetPinnedGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetPinnedGroup()[0]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("image/jpeg", pPackage->GetPinnedGroup()[0]->GetDataSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().longitude, RPACKAGE_HOUSE_LONG, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().latitude, RPACKAGE_HOUSE_LAT, LONGLAT_EPSILON);
 
-    ASSERT_TRUE(pPackage->GetPinnedGroup()[1]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_TRAFFIC_URI, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("video/avi", pPackage->GetPinnedGroup()[1]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetPinnedGroup()[1]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_TRAFFIC_URI, pPackage->GetPinnedGroup()[1]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("video/avi", pPackage->GetPinnedGroup()[1]->GetDataSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().longitude, RPACKAGE_TRAFFIC_LONG, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().latitude, RPACKAGE_TRAFFIC_LAT, LONGLAT_EPSILON);
 
     // Terrain
-    ASSERT_TRUE(pPackage->GetTerrainGroup()[0]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_CANADA_POD_URI, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("pod", pPackage->GetTerrainGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetTerrainGroup()[0]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_CANADA_POD_URI, pPackage->GetTerrainGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("pod", pPackage->GetTerrainGroup()[0]->GetDataSource(0).GetDataType().c_str());
 
-    ASSERT_TRUE(pPackage->GetTerrainGroup()[1]->GetNumSources() == 1);
-    ASSERT_STREQ(RPACKAGE_CANADA_DTM_URI, pPackage->GetTerrainGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ("dtm", pPackage->GetTerrainGroup()[1]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetTerrainGroup()[1]->GetDataSourceCount() == 1);
+    ASSERT_STREQ(RPACKAGE_CANADA_DTM_URI, pPackage->GetTerrainGroup()[1]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ("dtm", pPackage->GetTerrainGroup()[1]->GetDataSource(0).GetDataType().c_str());
     }
 
 
@@ -1753,264 +1753,264 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_TRUE(pPackage->GetImageryGroup().size() == 9);
 
     // image data 1
-    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_A_ID, pPackage->GetImageryGroup()[0]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_NAME, pPackage->GetImageryGroup()[0]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_DATASET, pPackage->GetImageryGroup()[0]->GetDataset().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_RESOLUTION, pPackage->GetImageryGroup()[0]->GetResolution().c_str());
 
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[0]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART1, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[0]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[0]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[0]->GetSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_ID, pPackage->GetImageryGroup()[0]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_PROVIDER, pPackage->GetImageryGroup()[0]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_A_SRC_1_SIZE, pPackage->GetImageryGroup()[0]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART1, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_ID, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_PROVIDER, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_A_SRC_1_SIZE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART2, pPackage->GetImageryGroup()[0]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_METADATA, pPackage->GetImageryGroup()[0]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_METTYPE, pPackage->GetImageryGroup()[0]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART2, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_METADATA, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_METTYPE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[0]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[0]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[0]->GetDataSource(0).GetSisterFiles().size() == 0);
 
 
     // image data 2
-    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetNumSources() == 2);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetDataSourceCount() == 2);
     ASSERT_STREQ(RPACKAGE_IMDATA_B_ID, pPackage->GetImageryGroup()[1]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_NAME, pPackage->GetImageryGroup()[1]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_DATASET, pPackage->GetImageryGroup()[1]->GetDataset().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_RESOLUTION, pPackage->GetImageryGroup()[1]->GetResolution().c_str());
 
         // 2A
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART1, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[1]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[1]->GetSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_ID, pPackage->GetImageryGroup()[1]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_PROVIDER, pPackage->GetImageryGroup()[1]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_1_SIZE, pPackage->GetImageryGroup()[1]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART1, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_ID, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_PROVIDER, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_1_SIZE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART2, pPackage->GetImageryGroup()[1]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_METADATA, pPackage->GetImageryGroup()[1]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_METTYPE, pPackage->GetImageryGroup()[1]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART2, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_METADATA, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_METTYPE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetDataSource(0).GetSisterFiles().size() == 0);
 
         // 2B
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetSource(1).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART1, pPackage->GetImageryGroup()[1]->GetSource(1).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[1]->GetSource(1).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_ID, pPackage->GetImageryGroup()[1]->GetSource(1).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_PROVIDER, pPackage->GetImageryGroup()[1]->GetSource(1).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_2_SIZE, pPackage->GetImageryGroup()[1]->GetSource(1).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART1, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_ID, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_PROVIDER, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_2_SIZE, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART2, pPackage->GetImageryGroup()[1]->GetSource(1).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_METADATA, pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetSource(1).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART2, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_METADATA, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[1]->GetDataSource(1).GetMetadataCP()->GetMetadataType().c_str());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_GEOCS, pPackage->GetImageryGroup()[1]->GetSource(1).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_GEOCS, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetSource(1).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[1]->GetDataSource(1).GetSisterFiles().size() == 0);
 
     // image data 3
-    ASSERT_TRUE(pPackage->GetImageryGroup()[2]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[2]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_C_ID, pPackage->GetImageryGroup()[2]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_NAME, pPackage->GetImageryGroup()[2]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_DATASET, pPackage->GetImageryGroup()[2]->GetDataset().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_C_RESOLUTION, pPackage->GetImageryGroup()[2]->GetResolution().c_str());
 
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[2]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART1, pPackage->GetImageryGroup()[2]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[2]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[2]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[2]->GetSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_ID, pPackage->GetImageryGroup()[2]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_PROVIDER, pPackage->GetImageryGroup()[2]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_C_SRC_1_SIZE, pPackage->GetImageryGroup()[2]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART1, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_ID, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_PROVIDER, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_C_SRC_1_SIZE, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART2, pPackage->GetImageryGroup()[2]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_METADATA, pPackage->GetImageryGroup()[2]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_METTYPE, pPackage->GetImageryGroup()[2]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_URI_PART2, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_METADATA, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_C_SRC_1_METTYPE, pPackage->GetImageryGroup()[2]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[2]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[2]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[2]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[2]->GetDataSource(0).GetSisterFiles().size() == 0);
 
     // image data 4
-    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_D_ID, pPackage->GetImageryGroup()[3]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_NAME, pPackage->GetImageryGroup()[3]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_DATASET, pPackage->GetImageryGroup()[3]->GetDataset().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_D_RESOLUTION, pPackage->GetImageryGroup()[3]->GetResolution().c_str());
 
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[3]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART1, pPackage->GetImageryGroup()[3]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[3]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[3]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_ID, pPackage->GetImageryGroup()[3]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_PROVIDER, pPackage->GetImageryGroup()[3]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_D_SRC_1_SIZE, pPackage->GetImageryGroup()[3]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART1, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_ID, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_PROVIDER, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_D_SRC_1_SIZE, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART2, pPackage->GetImageryGroup()[3]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_METADATA, pPackage->GetImageryGroup()[3]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_METTYPE, pPackage->GetImageryGroup()[3]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_URI_PART2, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_METADATA, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_METTYPE, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[3]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[3]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetSource(0).GetSisterFiles().size() == 1);
-    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_SIS1, pPackage->GetImageryGroup()[3]->GetSource(0).GetSisterFiles()[0]->GetSource().c_str());
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[3]->GetSource(0).GetSisterFiles()[0]->GetFileInCompound().c_str());
+    ASSERT_TRUE(pPackage->GetImageryGroup()[3]->GetDataSource(0).GetSisterFiles().size() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_D_SRC_1_SIS1, pPackage->GetImageryGroup()[3]->GetDataSource(0).GetSisterFiles()[0]->GetSource().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[3]->GetDataSource(0).GetSisterFiles()[0]->GetFileInCompound().c_str());
 
     // image data 5
-    ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_E_ID, pPackage->GetImageryGroup()[4]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_E_NAME, pPackage->GetImageryGroup()[4]->GetName().c_str());
 
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[4]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART1, pPackage->GetImageryGroup()[4]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[4]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[4]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_ID, pPackage->GetImageryGroup()[4]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_PROVIDER, pPackage->GetImageryGroup()[4]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_E_SRC_1_SIZE, pPackage->GetImageryGroup()[4]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART1, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_ID, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_PROVIDER, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_E_SRC_1_SIZE, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART2, pPackage->GetImageryGroup()[4]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_METADATA, pPackage->GetImageryGroup()[4]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_METTYPE, pPackage->GetImageryGroup()[4]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_URI_PART2, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_METADATA, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_E_SRC_1_METTYPE, pPackage->GetImageryGroup()[4]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[4]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[4]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[4]->GetDataSource(0).GetSisterFiles().size() == 0);
 
     // image data 6
-    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetNumSources() == 3);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetDataSourceCount() == 3);
     ASSERT_STREQ(RPACKAGE_IMDATA_F_ID, pPackage->GetImageryGroup()[5]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_NAME, pPackage->GetImageryGroup()[5]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_F_DATASET, pPackage->GetImageryGroup()[5]->GetDataset().c_str());
 
         // 6A
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_ID, pPackage->GetImageryGroup()[5]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_PROVIDER, pPackage->GetImageryGroup()[5]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_1_SIZE, pPackage->GetImageryGroup()[5]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART1, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_ID, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_PROVIDER, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_1_SIZE, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METADATA, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_GEOCS, pPackage->GetImageryGroup()[5]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_URI_PART2, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METADATA, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_METTYPE, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_1_GEOCS, pPackage->GetImageryGroup()[5]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetDataSource(0).GetSisterFiles().size() == 0);
 
         // 6B
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetSource(1).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(1).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(1).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_TERMOFUSE, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_ID, pPackage->GetImageryGroup()[5]->GetSource(1).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_PROVIDER, pPackage->GetImageryGroup()[5]->GetSource(1).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_2_SIZE, pPackage->GetImageryGroup()[5]->GetSource(1).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART1, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_TYPE, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_TERMOFUSE, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_ID, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_PROVIDER, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_2_SIZE, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(1).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METADATA, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(1).GetMetadataCP()->GetMetadataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_GEOCS, pPackage->GetImageryGroup()[5]->GetSource(1).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_URI_PART2, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METADATA, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_METTYPE, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_2_GEOCS, pPackage->GetImageryGroup()[5]->GetDataSource(1).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(1).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetDataSource(1).GetSisterFiles().size() == 0);
 
         // 6C
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetSource(2).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART1, pPackage->GetImageryGroup()[5]->GetSource(2).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_TYPE, pPackage->GetImageryGroup()[5]->GetSource(2).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_TERMOFUSE, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_ID, pPackage->GetImageryGroup()[5]->GetSource(2).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_PROVIDER, pPackage->GetImageryGroup()[5]->GetSource(2).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_3_SIZE, pPackage->GetImageryGroup()[5]->GetSource(2).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART1, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_TYPE, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_COPYRIGHT, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_TERMOFUSE, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_ID, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_PROVIDER, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_F_SRC_3_SIZE, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART2, pPackage->GetImageryGroup()[5]->GetSource(2).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METADATA, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METTYPE, pPackage->GetImageryGroup()[5]->GetSource(2).GetMetadataCP()->GetMetadataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_GEOCS, pPackage->GetImageryGroup()[5]->GetSource(2).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_URI_PART2, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METADATA, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_METTYPE, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_GEOCS, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetSource(2).GetSisterFiles().size() == 1);
-    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_SIS1, pPackage->GetImageryGroup()[5]->GetSource(2).GetSisterFiles()[0]->GetSource().c_str());
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetSource(2).GetSisterFiles()[0]->GetFileInCompound().c_str());
+    ASSERT_TRUE(pPackage->GetImageryGroup()[5]->GetDataSource(2).GetSisterFiles().size() == 1);
+    ASSERT_STREQ(RPACKAGE_IMDATA_F_SRC_3_SIS1, pPackage->GetImageryGroup()[5]->GetDataSource(2).GetSisterFiles()[0]->GetSource().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[5]->GetDataSource(2).GetSisterFiles()[0]->GetFileInCompound().c_str());
 
 
 
     // image data 7
-    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_G_ID, pPackage->GetImageryGroup()[6]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_G_NAME, pPackage->GetImageryGroup()[6]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_G_DATASET, pPackage->GetImageryGroup()[6]->GetDataset().c_str());
 
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[6]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART1, pPackage->GetImageryGroup()[6]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[6]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_ID, pPackage->GetImageryGroup()[6]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_PROVIDER, pPackage->GetImageryGroup()[6]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_G_SRC_1_SIZE, pPackage->GetImageryGroup()[6]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART1, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_TYPE, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_COPYRIGHT, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_ID, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_PROVIDER, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_G_SRC_1_SIZE, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART2, pPackage->GetImageryGroup()[6]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METADATA, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METTYPE, pPackage->GetImageryGroup()[6]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_GEOCS, pPackage->GetImageryGroup()[6]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_URI_PART2, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METADATA, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_METTYPE, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_GEOCS, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles().size() == 2);
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles()[0]->GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_SIS1, pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles()[0]->GetFileInCompound().c_str());
+    ASSERT_TRUE(pPackage->GetImageryGroup()[6]->GetDataSource(0).GetSisterFiles().size() == 2);
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[6]->GetDataSource(0).GetSisterFiles()[0]->GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_SIS1, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetSisterFiles()[0]->GetFileInCompound().c_str());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles()[1]->GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_SIS2, pPackage->GetImageryGroup()[6]->GetSource(0).GetSisterFiles()[1]->GetFileInCompound().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[6]->GetDataSource(0).GetSisterFiles()[1]->GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_G_SRC_1_SIS2, pPackage->GetImageryGroup()[6]->GetDataSource(0).GetSisterFiles()[1]->GetFileInCompound().c_str());
 
     // image data 8
-    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_ID, pPackage->GetImageryGroup()[7]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_NAME, pPackage->GetImageryGroup()[7]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_DATASET, pPackage->GetImageryGroup()[7]->GetDataset().c_str());
 
-    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[7]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_URI, pPackage->GetImageryGroup()[7]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_URI_TYPE, pPackage->GetImageryGroup()[7]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_TERMOFUSE, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_ID, pPackage->GetImageryGroup()[7]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER, pPackage->GetImageryGroup()[7]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE, pPackage->GetImageryGroup()[7]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_URI, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_URI_TYPE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_TERMOFUSE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_ID, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetSource(0).GetUri().GetFileInCompound().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METADATA, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE, pPackage->GetImageryGroup()[7]->GetSource(0).GetMetadataCP()->GetMetadataType().c_str());
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_GEOCS, pPackage->GetImageryGroup()[7]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METADATA, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_GEOCS, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetImageryGroup()[7]->GetDataSource(0).GetSisterFiles().size() == 0);
 
     // Now cast as a multiband and extract information
     MultiBandSourcePtr pMultiBandSource;
-    ASSERT_TRUE((pMultiBandSource = dynamic_cast<MultiBandSourceP>(&(pPackage->GetImageryGroup()[7]->GetSourceR(0)))) != NULL);
+    ASSERT_TRUE((pMultiBandSource = dynamic_cast<MultiBandSourceP>(&(pPackage->GetImageryGroup()[7]->GetDataSource(0)))) != NULL);
 
     ASSERT_TRUE(pMultiBandSource->GetRedBand() != NULL);
     ASSERT_TRUE(pMultiBandSource->GetBlueBand() != NULL);
@@ -2079,68 +2079,68 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     //ASSERT_STREQ("wms", pPackage->GetImageryGroup()[1]->GetSource(0).GetDataType().c_str());
 
     // Model
-    ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_PART1, pPackage->GetModelGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_TYPE, pPackage->GetModelGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_PART1, pPackage->GetModelGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_MODDATA_A_SRC_1_URI_TYPE, pPackage->GetModelGroup()[0]->GetDataSource(0).GetDataType().c_str());
 
     // Pinned
     ASSERT_TRUE(pPackage->GetPinnedGroup().size() == 4);
 
-    ASSERT_TRUE(pPackage->GetPinnedGroup()[0]->GetNumSources() == 2);
+    ASSERT_TRUE(pPackage->GetPinnedGroup()[0]->GetDataSourceCount() == 2);
     ASSERT_STREQ(RPACKAGE_PINDATA_A_ID, pPackage->GetPinnedGroup()[0]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_A_NAME, pPackage->GetPinnedGroup()[0]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_PINDATA_A_DATASET, pPackage->GetPinnedGroup()[0]->GetDataset().c_str());
 
-    ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_PINDATA_A_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_PINDATA_A_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[0]->GetDataSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().longitude, RPACKAGE_PINDATA_A_LONG, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().latitude, RPACKAGE_PINDATA_A_LAT, LONGLAT_EPSILON);
     ASSERT_STREQ(RPACKAGE_PINDATA_B_RESOLUTION, pPackage->GetPinnedGroup()[1]->GetResolution().c_str());
-    ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_PART1, pPackage->GetPinnedGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[1]->GetSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_PART1, pPackage->GetPinnedGroup()[1]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_PINDATA_B_SRC_1_URI_TYPE, pPackage->GetPinnedGroup()[1]->GetDataSource(0).GetDataType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().longitude, RPACKAGE_PINDATA_B_LONG, LONGLAT_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().latitude, RPACKAGE_PINDATA_B_LAT, LONGLAT_EPSILON);
 
     // Terrain
     ASSERT_TRUE(pPackage->GetTerrainGroup().size() == 2);
 
-    ASSERT_TRUE(pPackage->GetTerrainGroup()[0]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetTerrainGroup()[0]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_TERDATA_A_ID, pPackage->GetTerrainGroup()[0]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_NAME, pPackage->GetTerrainGroup()[0]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_DATASET, pPackage->GetTerrainGroup()[0]->GetDataset().c_str());
     ASSERT_STREQ(RPACKAGE_TERDATA_A_RESOLUTION, pPackage->GetTerrainGroup()[0]->GetResolution().c_str());
 
-    ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[0]->GetSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_A_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[0]->GetDataSource(0).GetDataType().c_str());
 
-    ASSERT_TRUE(pPackage->GetTerrainGroup()[1]->GetNumSources() == 4);
-    ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[1]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[1]->GetSource(0).GetDataType().c_str());
+    ASSERT_TRUE(pPackage->GetTerrainGroup()[1]->GetDataSourceCount() == 4);
+    ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_PART1, pPackage->GetTerrainGroup()[1]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_TERDATA_B_SRC_1_URI_TYPE, pPackage->GetTerrainGroup()[1]->GetDataSource(0).GetDataType().c_str());
 
 
     // Undefined group
     ASSERT_TRUE(pPackage->GetUndefinedGroup().size() == 1);
 
     // image data 1
-    ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetNumSources() == 1);
+    ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetDataSourceCount() == 1);
     ASSERT_STREQ(RPACKAGE_UNDDATA_A_ID, pPackage->GetUndefinedGroup()[0]->GetIdentifier().c_str());
     ASSERT_STREQ(RPACKAGE_UNDDATA_A_NAME, pPackage->GetUndefinedGroup()[0]->GetName().c_str());
     ASSERT_STREQ(RPACKAGE_UNDDATA_A_DATASET, pPackage->GetUndefinedGroup()[0]->GetDataset().c_str());
 
-    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetElementName());
+    ASSERT_STREQ(RPACKAGE_SOURCE, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetElementName());
 
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_URI_PART1, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetUri().GetSource().c_str());
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_URI_TYPE, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetDataType().c_str());
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_COPYRIGHT, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-    ASSERT_STREQ("", pPackage->GetUndefinedGroup()[0]->GetSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_ID, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetId().c_str());
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_PROVIDER, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetProvider().c_str());
-    ASSERT_EQ(RPACKAGE_UNDDATA_A_SRC_1_SIZE, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_URI_PART1, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_URI_TYPE, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_COPYRIGHT, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ("", pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_ID, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_PROVIDER, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_EQ(RPACKAGE_UNDDATA_A_SRC_1_SIZE, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetSize());
 
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_METADATA, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_METADATA, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
 
-    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_GEOCS, pPackage->GetUndefinedGroup()[0]->GetSource(0).GetGeoCS().c_str());
+    ASSERT_STREQ(RPACKAGE_UNDDATA_A_SRC_1_GEOCS, pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetGeoCS().c_str());
 
-    ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetSource(0).GetSisterFiles().size() == 0);
+    ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetDataSource(0).GetSisterFiles().size() == 0);
     }
 
 
@@ -2282,14 +2282,14 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
         PackageRealityDataPtr pLeft = pPackage->GetImageryGroup()[index];
         PackageRealityDataPtr pRight = pReadPackage->GetImageryGroup()[index];
 
-        ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetDataType().c_str(), pRight->GetSource(0).GetDataType().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetUri().GetSource().c_str(), pRight->GetDataSource(0).GetUri().GetSource().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetDataType().c_str(), pRight->GetDataSource(0).GetDataType().c_str());
 
-        ASSERT_STREQ(pLeft->GetSource(0).GetMetadataCP()->GetLegal().c_str(), pRight->GetSource(0).GetMetadataCP()->GetLegal().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetId().c_str(), pRight->GetSource(0).GetId().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetProvider().c_str(), pRight->GetSource(0).GetProvider().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetMetadataCP()->GetDescription().c_str(), pRight->GetSource(0).GetMetadataCP()->GetDescription().c_str());
-        ASSERT_EQ(pLeft->GetSource(0).GetSize(), pRight->GetSource(0).GetSize());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetMetadataCP()->GetLegal().c_str(), pRight->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetId().c_str(), pRight->GetDataSource(0).GetId().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetProvider().c_str(), pRight->GetDataSource(0).GetProvider().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetMetadataCP()->GetDescription().c_str(), pRight->GetDataSource(0).GetMetadataCP()->GetDescription().c_str());
+        ASSERT_EQ(pLeft->GetDataSource(0).GetSize(), pRight->GetDataSource(0).GetSize());
         
         ASSERT_EQ((pLeft->GetFootprint().size()), (pRight->GetFootprint().size()));
         if(!pLeft->GetFootprint().empty())
@@ -2312,8 +2312,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
         PackageRealityDataPtr pLeft = pPackage->GetModelGroup()[index];
         PackageRealityDataPtr pRight = pReadPackage->GetModelGroup()[index];
 
-        ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetDataType().c_str(), pRight->GetSource(0).GetDataType().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetUri().GetSource().c_str(), pRight->GetDataSource(0).GetUri().GetSource().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetDataType().c_str(), pRight->GetDataSource(0).GetDataType().c_str());
         }
 
     // *** Pinned data
@@ -2323,8 +2323,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
         PackageRealityDataPtr pLeft = pPackage->GetPinnedGroup()[index];
         PackageRealityDataPtr pRight = pReadPackage->GetPinnedGroup()[index];
 
-        ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetDataType().c_str(), pRight->GetSource(0).GetDataType().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetUri().GetSource().c_str(), pRight->GetDataSource(0).GetUri().GetSource().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetDataType().c_str(), pRight->GetDataSource(0).GetDataType().c_str());
         ASSERT_NEAR(pLeft->GetLocation().longitude, pRight->GetLocation().longitude, LONGLAT_EPSILON);
         ASSERT_NEAR(pLeft->GetLocation().latitude, pRight->GetLocation().latitude, LONGLAT_EPSILON);
         }
@@ -2336,8 +2336,8 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
         PackageRealityDataPtr pLeft = pPackage->GetTerrainGroup()[index];
         PackageRealityDataPtr pRight = pReadPackage->GetTerrainGroup()[index];
 
-        ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
-        ASSERT_STREQ(pLeft->GetSource(0).GetDataType().c_str(), pRight->GetSource(0).GetDataType().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetUri().GetSource().c_str(), pRight->GetDataSource(0).GetUri().GetSource().c_str());
+        ASSERT_STREQ(pLeft->GetDataSource(0).GetDataType().c_str(), pRight->GetDataSource(0).GetDataType().c_str());
         }
     }
 

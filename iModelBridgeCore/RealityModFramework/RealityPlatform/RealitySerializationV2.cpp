@@ -187,7 +187,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
 
             for (size_t i = 1; i < pSources.size(); ++i)
                 {
-                pImgData->AddSource(*pSources[i]);
+                pImgData->AddDataSource(*pSources[i]);
                 }
             }
         if(!pMultiBandSources.empty())
@@ -204,7 +204,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
                 }
             for (size_t i = start; i < pMultiBandSources.size(); ++i)
                 {
-                pImgData->AddSource(*pMultiBandSources[i]);
+                pImgData->AddDataSource(*pMultiBandSources[i]);
                 }
             }
         
@@ -289,7 +289,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadModelGroup(RealityDataPackage
         pModelData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
-            pModelData->AddSource(*pSources[i]);
+            pModelData->AddDataSource(*pSources[i]);
             }
 
         // Add data to group.
@@ -394,7 +394,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadPinnedGroup(RealityDataPackag
         pPinnedData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
-            pPinnedData->AddSource(*pSources[i]);
+            pPinnedData->AddDataSource(*pSources[i]);
             }
         pPinnedData->SetFootprint(pPolygon->GetFootprint());
 
@@ -479,7 +479,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadTerrainGroup(RealityDataPacka
         pTerrainData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
-            pTerrainData->AddSource(*pSources[i]);
+            pTerrainData->AddDataSource(*pSources[i]);
             }
 
         // Add data to group.
@@ -563,7 +563,7 @@ RealityPackageStatus RealityDataSerializerV2::_ReadUndefinedGroup(RealityDataPac
         pUndefinedData->SetResolution(resolution.c_str());
         for (size_t i = 1; i < pSources.size(); ++i)
             {
-            pUndefinedData->AddSource(*pSources[i]);
+            pUndefinedData->AddDataSource(*pSources[i]);
             }
 
         // Add data to group.
@@ -668,13 +668,13 @@ RealityPackageStatus RealityDataSerializerV2::_WriteImageryGroup(BeXmlNodeR node
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pImgData->GetResolution().c_str());  
 
         // Sources.
-        if (0 != pImgData->GetNumSources())
+        if (0 != pImgData->GetDataSourceCount())
             { 
             BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
 
-            for (size_t sourceIndex = 0; sourceIndex < pImgData->GetNumSources(); ++sourceIndex)
+            for (size_t sourceIndex = 0; sourceIndex < pImgData->GetDataSourceCount(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pImgData->GetSource(sourceIndex)))
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pImgData->GetDataSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;
@@ -741,13 +741,13 @@ RealityPackageStatus RealityDataSerializerV2::_WriteModelGroup(BeXmlNodeR node, 
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pModelData->GetResolution().c_str());
 
         // Sources.
-        if (0 != pModelData->GetNumSources())
+        if (0 != pModelData->GetDataSourceCount())
             {
             BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
 
-            for (size_t sourceIndex = 0; sourceIndex < pModelData->GetNumSources(); ++sourceIndex)
+            for (size_t sourceIndex = 0; sourceIndex < pModelData->GetDataSourceCount(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pModelData->GetSource(sourceIndex)))
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pModelData->GetDataSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;
@@ -799,13 +799,13 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pPinnedData->GetResolution().c_str());
 
         // Sources.
-        if (0 != pPinnedData->GetNumSources())
+        if (0 != pPinnedData->GetDataSourceCount())
             {
             BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
 
-            for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetNumSources(); ++sourceIndex)
+            for (size_t sourceIndex = 0; sourceIndex < pPinnedData->GetDataSourceCount(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pPinnedData->GetSource(sourceIndex)))
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pPinnedData->GetDataSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;
@@ -867,13 +867,13 @@ RealityPackageStatus RealityDataSerializerV2::_WriteTerrainGroup(BeXmlNodeR node
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pTerrainData->GetResolution().c_str());
 
         // Sources.
-        if (0 != pTerrainData->GetNumSources())
+        if (0 != pTerrainData->GetDataSourceCount())
             {
             BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
 
-            for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetNumSources(); ++sourceIndex)
+            for (size_t sourceIndex = 0; sourceIndex < pTerrainData->GetDataSourceCount(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pTerrainData->GetSource(sourceIndex)))
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pTerrainData->GetDataSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;
@@ -926,13 +926,13 @@ RealityPackageStatus RealityDataSerializerV2::_WriteUndefinedGroup(BeXmlNodeR no
             pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Resolution, pUndefinedData->GetResolution().c_str());
 
         // Sources.
-        if (0 != pUndefinedData->GetNumSources())
+        if (0 != pUndefinedData->GetDataSourceCount())
             {
             BeXmlNodeP pSourcesNode = pDataNode->AddEmptyElement(PACKAGE_ELEMENT_Sources);
 
-            for (size_t sourceIndex = 0; sourceIndex < pUndefinedData->GetNumSources(); ++sourceIndex)
+            for (size_t sourceIndex = 0; sourceIndex < pUndefinedData->GetDataSourceCount(); ++sourceIndex)
                 {
-                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pUndefinedData->GetSource(sourceIndex)))
+                if (RealityPackageStatus::Success != WriteSource(*pSourcesNode, pUndefinedData->GetDataSource(sourceIndex)))
                     {
                     pGroupNode->RemoveChildNode(pDataNode);
                     continue;

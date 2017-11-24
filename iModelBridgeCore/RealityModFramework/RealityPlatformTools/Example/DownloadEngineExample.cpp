@@ -165,11 +165,11 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         bvector<bvector<RealityDataDownload::url_file_pair>> wSisters;
         for (auto& realityData : DownloadList)
             {
-            SpatialEntityDataSourceCP pSource = dynamic_cast<SpatialEntityDataSourceCP>(&realityData->GetSource(0));
+            SpatialEntityDataSourceCP pSource = dynamic_cast<SpatialEntityDataSourceCP>(&realityData->GetDataSource(0));
             if (NULL == pSource)
                 continue;
 
-            WString filename = createDirWithHash(pSource->GetUri().GetSource(), sOutputFolder, realityData->GetSource(0).GetSize());
+            WString filename = createDirWithHash(pSource->GetUri().GetSource(), sOutputFolder, realityData->GetDataSource(0).GetSize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri().GetSource());
             wMirrors = bvector<RealityDataDownload::url_file_pair>();
             wMirrors.push_back(RealityDataDownload::url_file_pair(pSource->GetUri().GetSource(), filename));

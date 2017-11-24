@@ -184,11 +184,11 @@ PackageRealityDataPtr ManagedToNativeImageryData(ImageryDataNet^ managedData)
         MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
         if (nullptr != pMultiBandSource)
             {
-            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            pData->AddDataSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
             }
         else
             {
-            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
+            pData->AddDataSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }        
         }    
 
@@ -236,11 +236,11 @@ PackageRealityDataPtr ManagedToNativeModelData(ModelDataNet^ managedData)
         MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
         if (nullptr != pMultiBandSource)
             {
-            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            pData->AddDataSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
             }
         else
             {
-            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
+            pData->AddDataSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -306,11 +306,11 @@ PackageRealityDataPtr ManagedToNativePinnedData(PinnedDataNet^ managedData)
         MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
         if (nullptr != pMultiBandSource)
             {
-            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            pData->AddDataSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
             }
         else
             {
-            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
+            pData->AddDataSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -358,11 +358,11 @@ PackageRealityDataPtr ManagedToNativeTerrainData(TerrainDataNet^ managedData)
         MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
         if (nullptr != pMultiBandSource)
             {
-            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            pData->AddDataSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
             }
         else
             {
-            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
+            pData->AddDataSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 
@@ -412,11 +412,11 @@ PackageRealityDataPtr ManagedToNativeUndefinedData(UndefinedDataNet^ managedData
         MultiBandSourceNet^ pMultiBandSource = dynamic_cast<MultiBandSourceNet^>(managedData->GetSource(i));
         if (nullptr != pMultiBandSource)
             {
-            pData->AddSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
+            pData->AddDataSource(*ManagedToNativeMultiBandSource(pMultiBandSource));
             }
         else
             {
-            pData->AddSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
+            pData->AddDataSource(*ManagedToNativeSpatialEntityDataSource3(managedData->GetSource(i)));
             }
         }
 

@@ -328,8 +328,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     ASSERT_TRUE(consoleOutput.ContainsI("Description        : CHANGE PROP TEST")) << "properties weren't properly changed";
     ASSERT_TRUE(consoleOutput.ContainsI("FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'")) << "FileAccess didn't return url";
     ASSERT_TRUE(consoleOutput.ContainsI("?sv=")) << "FileAccess didn't return url";
-    ASSERT_TRUE(consoleOutput.ContainsI("ProjectId          : 72524420-7d48-4f4e-8b0f-144e5fa0aa22")) << "didn't list relationship";
-    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no projects attached to this RealityData")) << "didn't unlink RD from project";
+    ASSERT_TRUE(consoleOutput.ContainsI("RelatedId          : 72524420-7d48-4f4e-8b0f-144e5fa0aa22")) << "didn't list relationship";
+    ASSERT_TRUE(consoleOutput.ContainsI("There seems to be no relation attached to this RealityData")) << "didn't unlink RD from project";
     Utf8String outRoot = dummyRoot.GetNameUtf8();
     ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummyRootDocument.json", outRoot)))) << "a document failed to download";
     ASSERT_TRUE(BeFileName::DoesPathExist(BeFileName(Utf8PrintfString("%s/DummySubFolder/smallfile1.txt", outRoot)))) << "a document failed to download";

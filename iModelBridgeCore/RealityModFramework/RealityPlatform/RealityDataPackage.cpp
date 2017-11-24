@@ -356,35 +356,10 @@ Utf8String RealityDataPackage::BuildCreationDateUTC()
 //=======================================================================================
 //                              PackageRealityData
 //=======================================================================================
-
-SpatialEntityDataSourceR PackageRealityData::GetSourceR(size_t index)
-    {
-    BeAssert(index < m_Sources.size());
-        
-    return *(m_Sources[index]);
-    }
-SpatialEntityDataSourceCR PackageRealityData::GetSource(size_t index) const
-    {
-    BeAssert(index < m_Sources.size());
-
-    return *(m_Sources[index]);
-    }
-
-
-void PackageRealityData::AddSource(SpatialEntityDataSourceR dataSource)
-    {
-    m_Sources.push_back(SpatialEntityDataSourcePtr(&dataSource));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Alain.Robert  3/2016
-//----------------------------------------------------------------------------------------
-size_t PackageRealityData::GetNumSources() const {return m_Sources.size();}
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PackageRealityData::PackageRealityData(SpatialEntityDataSourceR dataSource)  {m_Sources.push_back(SpatialEntityDataSourcePtr(&dataSource));}
+PackageRealityData::PackageRealityData(SpatialEntityDataSourceR dataSource)  { m_DataSources.push_back(SpatialEntityDataSourcePtr(&dataSource));}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015

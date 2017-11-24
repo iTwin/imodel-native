@@ -1025,13 +1025,13 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
         {
         RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
 
-        size_t mirrorCount = file->GetNumSources();
+        size_t mirrorCount = file->GetDataSourceCount();
         
         RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
 
         for (size_t i = 0; i < mirrorCount; ++i)
             {
-            RealityPlatform::SpatialEntityDataSourceR mirror = file->GetSourceR(i);
+            RealityPlatform::SpatialEntityDataSourceR mirror = file->GetDataSource(i);
 
             RealityPlatform::MultiBandSource* mbSource = dynamic_cast<RealityPlatform::MultiBandSource*>(&mirror);
             
@@ -1090,13 +1090,13 @@ RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToM
     {
     RealityDataDownload::mirrorWSistersVector mVector = RealityDataDownload::mirrorWSistersVector();
 
-    size_t mirrorCount = realityData.GetNumSources();
+    size_t mirrorCount = realityData.GetDataSourceCount();
 
     RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
 
     for (size_t i = 0; i < mirrorCount; ++i)
         {
-        mVector.push_back(RealityDataToSisterVector(realityData.GetSource(i)));
+        mVector.push_back(RealityDataToSisterVector(realityData.GetDataSource(i)));
         }
     return mVector;
     }
