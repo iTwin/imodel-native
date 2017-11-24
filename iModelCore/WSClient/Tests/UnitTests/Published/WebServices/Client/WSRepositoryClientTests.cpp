@@ -823,6 +823,34 @@ R"(<?xml version="1.0" encoding="utf-8"?><Error><Code>BlobNotFound</Code><Messag
 //    }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV1AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendGetObjectRequest(ObjectId("", "Foo", ""))->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendGetObjectRequest(ObjectId("", "Foo", ""))->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2_SendsCorrectUrl)
@@ -2188,6 +2216,34 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Suc
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendUpdateObjectRequest(ObjectId("", "Foo", ""), ToJson(R"({"TestProperty" : "TestValue" })"))->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendUpdateObjectRequest(ObjectId("", "Foo", ""), ToJson(R"({"TestProperty" : "TestValue" })"))->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostRequest)
@@ -2385,6 +2441,34 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndFileETagSentB
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendDeleteObjectRequest(ObjectId("", "Foo", ""))->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendDeleteObjectRequest(ObjectId("", "Foo", ""))->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequest)
@@ -2450,6 +2534,34 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2ResponseIsOK_Suc
 
     auto result = client->SendDeleteObjectRequest({"TestSchema.TestClass", "TestId"})->GetResult();
     EXPECT_TRUE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV1AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendUpdateFileRequest(ObjectId("", "Foo", ""), StubFile())->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendUpdateFileRequest(ObjectId("", "Foo", ""), StubFile())->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2896,6 +3008,34 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchema
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_TRUE(result.GetValue().IsModified());
     EXPECT_EQ("TestETag", result.GetValue().GetETag());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendGetFileRequest(ObjectId("", "Foo", ""), StubFilePath())->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndInvalidObjectId_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendGetFileRequest(ObjectId("", "Foo", ""), StubFilePath())->GetResult();
+    EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
     }
 
 /*--------------------------------------------------------------------------------------+

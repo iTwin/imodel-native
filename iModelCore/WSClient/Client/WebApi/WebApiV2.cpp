@@ -325,6 +325,9 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
 
@@ -654,6 +657,9 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     if (!filePath.empty() && GetMaxWebApiVersion() < BeVersion(2, 4))
         {
         BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
@@ -700,6 +706,9 @@ ObjectIdCR objectId,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSDeleteObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
 
@@ -726,6 +735,9 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
     BeFile beFile;
