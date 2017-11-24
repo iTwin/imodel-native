@@ -11,7 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshRDSProvider.h"
-#include <ConnectClientWrapperNative\ConnectClientWrapper.h>
+#include <CCApi\CCPublic.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -173,19 +173,23 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-    WString serverUrl;
-
-    try {
-        Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-        std::wstring buddiUrl;
-        connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
-        serverUrl.assign(buddiUrl.c_str());
-        }
-    catch (...)
-        {
-        BeAssert(!"Could not retrieve buddi url from Connect Client");
-        }
-
+	WString serverUrl;
+	UINT32 bufLen;
+	CallStatus status = APIERR_SUCCESS;
+	try
+		{
+		CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+		wchar_t* buffer;
+		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
+		bufLen++;
+		buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
+		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
+		serverUrl.assign(buffer);
+		CCApi_FreeApi(api);
+		}
+	catch (...)
+		{
+		}
     return Utf8String(serverUrl.c_str());
     }
 

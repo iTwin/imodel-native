@@ -16,9 +16,9 @@
     </Part>
 
   <Part Name="ScalableMeshRDSDependencies" >
-    <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
-    <SubPart PartName="RealityPlatformTools"                        PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
-    <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
+    <SubPart PartName="RealityPlatform"         PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+    <SubPart PartName="RealityPlatformTools"    PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+    <SubPart PartName="CCApi"                   PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
   </Part>
 
     <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="B02" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->

@@ -492,7 +492,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib\
+    $(ContextSubpartsLibs)CCApi.lib\
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
