@@ -77,13 +77,9 @@ CurveVectorPtr AlignmentPairIntersection::ConstructDoubleFillet (
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPairIntersection::ComputePotentialFillets (const double& primaryOffset, const double & secondaryOffset, const double& radius, bvector<CurveCurve::FilletDetail> &arcs)
     {
-    CurveVectorPtr primaryHzAlignment = m_primaryRoad->HorizontalCurveVector ();
-    if (!primaryHzAlignment.IsValid ()) return false;
-    CurveVectorPtr secondaryHzAlignment = m_secondaryRoad->HorizontalCurveVector ();
-    if (!secondaryHzAlignment.IsValid ()) return false;
-
-    CurveCurve::CollectFilletArcs (*primaryHzAlignment, *secondaryHzAlignment, radius, false, arcs);
-    if (arcs.size () <= 0) return false;
+    CurveCurve::CollectFilletArcs (m_primaryRoad->GetHorizontalCurveVector(), m_secondaryRoad->GetHorizontalCurveVector(), radius, false, arcs);
+    if (arcs.empty())
+        return false;
 
     return true;
     }
@@ -164,20 +160,17 @@ bool AlignmentPairIntersection::ComputeIntersectionPoint(DPoint3dR pt, double * 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPairIntersection::ComputeOffsetFillet (const double& offsetDist, const double& radius, bvector<CurveCurve::FilletDetail> &arcs)
     {
-    CurveVectorPtr primaryHZ = m_primaryRoad->HorizontalCurveVector ();
-    CurveVectorPtr secondaryHZ = m_secondaryRoad->HorizontalCurveVector ();
+    CurveVectorCR primaryHZ = m_primaryRoad->GetHorizontalCurveVector();
+    CurveVectorCR secondaryHZ = m_secondaryRoad->GetHorizontalCurveVector();
 
-    if (primaryHZ.IsValid () && secondaryHZ.IsValid ())
+    CurveOffsetOptions offsetOptions (offsetDist);
+    CurveVectorPtr offsetCurve = primaryHZ.CloneOffsetCurvesXY(offsetOptions); // need to figure out left and right
+
+    if (offsetCurve.IsValid())
         {
-        CurveOffsetOptions offsetOptions (offsetDist);
-        CurveVectorPtr offsetCurve = primaryHZ->CloneOffsetCurvesXY (offsetOptions); // need to figure out left and right
-
-        if (offsetCurve.IsValid ())
-            {
-            CurveCurve::CollectFilletArcs (*offsetCurve, *secondaryHZ, radius, false, arcs);
-            if (arcs.size () > 0)
-                return true;
-            }
+        CurveCurve::CollectFilletArcs(*offsetCurve, secondaryHZ, radius, false, arcs);
+        if (!arcs.empty())
+            return true;
         }
 
     return false;
@@ -199,14 +192,12 @@ AlignmentPairIntersectionPtr AlignmentPairIntersection::Create (AlignmentPairCP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t AlignmentIntersection::_ComputeExplicitIntersections (bvector<AlignmentIntersectionInfo>& potentialIntersections)
     { 
-    CurveVectorPtr primaryHZ = m_primaryRoad->HorizontalCurveVector ();
-    CurveVectorPtr secondaryHZ = m_secondaryRoad->HorizontalCurveVector ();
-    if (primaryHZ.IsNull () || secondaryHZ.IsNull ())
-        return 0;
+    CurveVectorCR primaryHZ = m_primaryRoad->GetHorizontalCurveVector();
+    CurveVectorCR secondaryHZ = m_secondaryRoad->GetHorizontalCurveVector();
 
-    CurveVectorPtr  intersectionA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-    CurveVectorPtr  intersectionB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-    CurveCurve::IntersectionsXY (*intersectionA, *intersectionB, *primaryHZ, *secondaryHZ, nullptr);
+    CurveVectorPtr intersectionA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    CurveVectorPtr intersectionB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    CurveCurve::IntersectionsXY(*intersectionA, *intersectionB, const_cast<CurveVectorR>(primaryHZ), const_cast<CurveVectorR>(secondaryHZ), nullptr);
     for (int i = 0; i < intersectionA->size (); i++)
         {
         DPoint3d pointA, pointB;
@@ -243,8 +234,8 @@ size_t AlignmentIntersection::_ComputeExplicitIntersections (bvector<AlignmentIn
     if (m_computeIntersectionsAtAlignmentEndPoints && potentialIntersections.empty())
         {
         DPoint3d primStart, primEnd, secStart, secEnd;
-        primaryHZ->GetStartEnd(primStart, primEnd);
-        secondaryHZ->GetStartEnd(secStart, secEnd);
+        primaryHZ.GetStartEnd(primStart, primEnd);
+        secondaryHZ.GetStartEnd(secStart, secEnd);
 
         bool hit = true;
         bool isPrimStart = false;
@@ -295,12 +286,15 @@ size_t AlignmentIntersection::_ComputeExplicitIntersections (bvector<AlignmentIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t AlignmentIntersection::_ComputeExtendedIntersections (bvector<AlignmentIntersectionInfo>& potentialExtendedIntersections)
     {
-    if (m_secondaryRoad->HorizontalCurveVector ().IsNull () || m_primaryRoad->HorizontalCurveVector ().IsNull ())
+    CurveVectorCR primaryHz = m_primaryRoad->GetHorizontalCurveVector();
+    CurveVectorCR secondaryHz = m_secondaryRoad->GetHorizontalCurveVector();
+    if (primaryHz.empty() || secondaryHz.empty())
         return 0;
-    ICurvePrimitivePtr primitivePStart = m_primaryRoad->HorizontalCurveVector ()->at (0);
-    ICurvePrimitivePtr primitivePEnd = m_primaryRoad->HorizontalCurveVector ()->at (m_primaryRoad->HorizontalCurveVector ()->size () - 1);
-    ICurvePrimitivePtr primitiveSStart = m_secondaryRoad->HorizontalCurveVector ()->at (0);
-    ICurvePrimitivePtr primitiveSEnd = m_secondaryRoad->HorizontalCurveVector ()->at (m_secondaryRoad->HorizontalCurveVector ()->size () - 1);
+
+    ICurvePrimitivePtr primitivePStart = primaryHz.front();
+    ICurvePrimitivePtr primitivePEnd = primaryHz.back();
+    ICurvePrimitivePtr primitiveSStart = secondaryHz.front();
+    ICurvePrimitivePtr primitiveSEnd = secondaryHz.back();
     if (primitivePStart.IsNull () || primitivePEnd.IsNull () || primitiveSStart.IsNull () || primitiveSEnd.IsNull ())
         return 0;
 
@@ -321,9 +315,7 @@ size_t AlignmentIntersection::_ComputeExtendedIntersections (bvector<AlignmentIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t AlignmentIntersection::_ComputePrimaryEndProjection (ICurvePrimitiveR primitiveToProject, bvector<AlignmentIntersectionInfo>& potentialExtendedIntersections)
     {
-    CurveVectorPtr secondaryHz = m_secondaryRoad->HorizontalCurveVector ();
-    if (secondaryHz.IsNull ())return 0;
-    for (auto testPrimitive : *secondaryHz)
+    for (auto testPrimitive : m_secondaryRoad->GetHorizontalCurveVector())
         {
         CurveVectorPtr intersectionA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         CurveVectorPtr intersectionB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
@@ -370,9 +362,7 @@ size_t AlignmentIntersection::_ComputePrimaryEndProjection (ICurvePrimitiveR pri
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t AlignmentIntersection::_ComputePrimaryStartProjection (ICurvePrimitiveR primitiveToProject, bvector<AlignmentIntersectionInfo>& potentialExtendedIntersections)
     {
-    CurveVectorPtr secondaryHz = m_secondaryRoad->HorizontalCurveVector ();
-    if (secondaryHz.IsNull ())return 0;
-    for (auto testPrimitive : *secondaryHz)
+    for (auto testPrimitive : m_secondaryRoad->GetHorizontalCurveVector())
         {
         CurveVectorPtr intersectionA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         CurveVectorPtr intersectionB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
@@ -420,9 +410,7 @@ size_t AlignmentIntersection::_ComputePrimaryStartProjection (ICurvePrimitiveR p
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t AlignmentIntersection::_ComputeSecondaryStartProjection (ICurvePrimitiveR primitiveToProject, bvector<AlignmentIntersectionInfo>& potentialExtendedIntersections)
     {
-    CurveVectorPtr primaryHz = m_primaryRoad->HorizontalCurveVector ();
-    if (primaryHz.IsNull ())return 0;
-    for (auto testPrimitive : *primaryHz)
+    for (auto testPrimitive : m_primaryRoad->GetHorizontalCurveVector())
         {
         CurveVectorPtr intersectionA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         CurveVectorPtr intersectionB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
@@ -470,9 +458,7 @@ size_t AlignmentIntersection::_ComputeSecondaryStartProjection (ICurvePrimitiveR
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t AlignmentIntersection::_ComputeSecondaryEndProjection (ICurvePrimitiveR primitiveToProject, bvector<AlignmentIntersectionInfo>& potentialExtendedIntersections)
     {
-    CurveVectorPtr primaryHz = m_primaryRoad->HorizontalCurveVector ();
-    if (primaryHz.IsNull ())return 0;
-    for (auto testPrimitive : *primaryHz)
+    for (auto testPrimitive : m_primaryRoad->GetHorizontalCurveVector())
         {
         CurveVectorPtr intersectionA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         CurveVectorPtr intersectionB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);

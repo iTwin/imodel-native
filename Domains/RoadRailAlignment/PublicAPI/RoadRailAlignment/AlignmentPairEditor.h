@@ -189,7 +189,7 @@ protected:
     bool _StationCompare (DPoint3d x, DPoint3d x1);
     bool _StationCompare (double x, double x1);
     bvector<AlignmentPVI> _GetPVIs ();
-    bvector<AlignmentPVI> _GetPVIs (CurveVectorR vt);
+    bvector<AlignmentPVI> _GetPVIs (CurveVectorCR vt);
     CurveVectorPtr _BuildVectorFromPVIS (bvector<AlignmentPVI> pvis, double matchLen = -1.0);
     CurveVectorPtr _RemovePVIs (const double& startStation, const double& endStation);
     bool _SolvePVI (AlignmentPVI& pviToSolve, const AlignmentPVI& prevPVI, const AlignmentPVI& nextPVI, bool forceFit = true);
@@ -211,8 +211,6 @@ public:
     // this overridden version will "force" the vertical to match the exact station end of the HZ length (no fuzz)
     ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr GetPartialAlignment (double startStation, double endStation) const override;
 
-    // check if horizontal is valid
-    ROADRAILALIGNMENT_EXPORT virtual bool IsHorizontalValid ();
     //////////// Horizontal Editing ////////////////////////////
     // Editing Tools
     // Allow the move pi, will return invalid if appropriate
@@ -256,8 +254,6 @@ public:
 
 
     //////////// Vertical Editing /////////////////////////////
-    // check if the alignment has a valid vertical
-    ROADRAILALIGNMENT_EXPORT virtual bool IsVerticalValid ();
     // return a vector of points in X,Z format for high and low points on a profile
     ROADRAILALIGNMENT_EXPORT virtual bvector<DPoint3d> CrestAndSagPointsXZ(ZeroSlopePoints zsType = ZeroSlopePoints::BothSagAndCrest);
     // return a vector of station values for high and low points

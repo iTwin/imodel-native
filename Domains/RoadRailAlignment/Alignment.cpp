@@ -306,13 +306,10 @@ AlignmentPairPtr Alignment::QueryMainPair() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDbStatus* stat)
     {
-    if (alignmentPair.HorizontalCurveVector().IsNull())
-        return nullptr;
-
     auto retVal = Insert(stat);
     if (retVal.IsValid())
         {
-        auto horizAlignmPtr = HorizontalAlignment::Create(*this, *alignmentPair.HorizontalCurveVector());
+        auto horizAlignmPtr = HorizontalAlignment::Create(*this, alignmentPair.GetHorizontalCurveVector());
         horizAlignmPtr->GenerateElementGeom();
         if (horizAlignmPtr->Insert(stat).IsNull())
             return nullptr;

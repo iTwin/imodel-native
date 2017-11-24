@@ -66,11 +66,9 @@ RoadAlignmentPairEditorPtr RoadAlignmentPairEditor::CreateFromSingleCurveVector 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadAlignmentPairEditorPtr RoadAlignmentPairEditor::Create (AlignmentPairCR roadAlignment)
+RoadAlignmentPairEditorPtr RoadAlignmentPairEditor::Create (AlignmentPairCR pair)
     {
-    CurveVectorPtr hz = roadAlignment.HorizontalCurveVector ();
-    CurveVectorPtr vt = roadAlignment.VerticalCurveVector ();
-    return new RoadAlignmentPairEditor (*hz, vt.get ());
+    return new RoadAlignmentPairEditor(pair.GetHorizontalCurveVector(), pair.GetVerticalCurveVector());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,9 +110,9 @@ bool RoadAlignmentPairEditor::RebuildRampApproachRoadAtEnd (bvector<CurveVectorP
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStartWithAuxiliary (AlignmentPairR primaryRoad, CurveVectorR newHZ)
     {
-    if (!this->VerticalCurveVector ().IsValid ())
+    if (nullptr == GetVerticalCurveVector())
         {
-        return AlignmentPair::Create (*newHZ.Clone().get(), nullptr);
+        return AlignmentPair::Create(newHZ, nullptr);
         }
 
     DPoint3d testPt, testPtOnPrimary;
@@ -190,9 +188,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStartWithAuxili
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEndWithAuxiliary (AlignmentPairR primaryRoad, CurveVectorR newHZ)
     {
-    if (!this->VerticalCurveVector ().IsValid ())
+    if (nullptr == GetVerticalCurveVector())
         {
-        return AlignmentPair::Create (*newHZ.Clone().get(), nullptr);
+        return AlignmentPair::Create(newHZ, nullptr);
         }
 
     DPoint3d testPt, testPtOnPrimary;
@@ -263,9 +261,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEndWithAuxiliar
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStart (AlignmentPairR primaryRoad, CurveVectorR newHZ)
     {
-    if (!this->VerticalCurveVector ().IsValid ())
+    if (nullptr == GetVerticalCurveVector())
         {
-        return AlignmentPair::Create (*newHZ.Clone ().get (), nullptr);
+        return AlignmentPair::Create (newHZ, nullptr);
         }
 
     StationRangeEdit rangeEdit = ComputeHorizontalEditRange (newHZ);
@@ -280,9 +278,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStart (Alignmen
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEnd (AlignmentPairR primaryRoad, CurveVectorR newHZ)
     {
-    if (!this->VerticalCurveVector ().IsValid ())
+    if (nullptr == GetVerticalCurveVector())
         {
-        return AlignmentPair::Create (*newHZ.Clone ().get (), nullptr);
+        return AlignmentPair::Create (newHZ, nullptr);
         }
 
     StationRangeEdit rangeEdit = ComputeHorizontalEditRange (newHZ);

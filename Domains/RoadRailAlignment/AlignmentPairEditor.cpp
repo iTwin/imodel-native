@@ -63,11 +63,9 @@ AlignmentPairEditorPtr AlignmentPairEditor::CreateFromSingleCurveVector (CurveVe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditorPtr AlignmentPairEditor::Create (AlignmentPairCR roadAlignment)
+AlignmentPairEditorPtr AlignmentPairEditor::Create (AlignmentPairCR pair)
     {
-    CurveVectorPtr hz = roadAlignment.HorizontalCurveVector ();
-    CurveVectorPtr vt = roadAlignment.VerticalCurveVector ();
-    return new AlignmentPairEditor (*hz, vt.get ());
+    return new AlignmentPairEditor(pair.GetHorizontalCurveVector(), pair.GetVerticalCurveVector());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,16 +139,6 @@ bool AlignmentPairEditor::_GenerateFromSingleVector (CurveVectorCR curveVector)
     UpdateCurveVectors(*hzAlign, vtAlign.get ());
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AlignmentPairEditor::IsHorizontalValid ()
-    {
-    if (HorizontalCurveVector ().IsValid () && HorizontalCurveVector ()->Length () > 0.0)
-        return true;
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,14 +514,19 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
     {
     bvector<AlignmentPI> pis;
     DPoint3d startPt, endPt;
-    HorizontalCurveVector()->GetStartEnd (startPt, endPt);
+    GetHorizontalCurveVector().GetStartEnd(startPt, endPt);
     startPt.z = 0.0; endPt.z = 0.0;
     AlignmentPI startPI (startPt);
     pis.push_back (startPI);
     bool addEndPI = true;
-    for (int i = 0; i < HorizontalCurveVector()->size (); i++)
+
+    CurveVectorCR hzCurve = GetHorizontalCurveVector();
+
+    for (int i = 0; i < hzCurve.size(); i++)
         {
-        switch (HorizontalCurveVector()->at (i)->GetCurvePrimitiveType ())
+        ICurvePrimitivePtr primitive = hzCurve[i];
+
+        switch (primitive->GetCurvePrimitiveType())
             {
             // unless should be that only Arcs have PIs,
             // will be a simple PI unless, we have an SCS
@@ -542,12 +535,12 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
             // 9/30 we need to support PIs that were inserted
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
                     // only in a line/line situation
-                    if (i < HorizontalCurveVector ()->size () - 1) // Not last
+                    if (i < hzCurve.size() - 1) // Not last
                         {
-                        if (HorizontalCurveVector ()->at (i + 1)->GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
+                        if (hzCurve[i + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
                             {
                             DPoint3d start, end;
-                            HorizontalCurveVector ()->at (i)->GetStartEnd (start, end);
+                            primitive->GetStartEnd(start, end);
                             start.z = 0.0; end.z = 0.0;
                             AlignmentPI piPt;
                             piPt.curveType = AlignmentPI::HorizontalPIType::NONE;
@@ -561,7 +554,7 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                     {
                     DPoint3d start, end;
                     DVec3d startTangent, endTangent;
-                    HorizontalCurveVector()->at (i)->GetStartEnd (start, end, startTangent, endTangent);
+                    primitive->GetStartEnd (start, end, startTangent, endTangent);
                     start.z = 0.0; end.z = 0.0;
                     DRay3d rayA = DRay3d::FromOriginAndVector (start, startTangent);
                     DRay3d rayB = DRay3d::FromOriginAndVector (end, endTangent);
@@ -573,8 +566,8 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                     AlignmentPI piPt (pi);
                     piPt.curveType = AlignmentPI::HorizontalPIType::ARC;
 
-                    HorizontalCurveVector()->at (i)->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
-                    DEllipse3dCP arc = HorizontalCurveVector()->at (i)->GetArcCP ();
+                    primitive->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
+                    DEllipse3dCP arc = primitive->GetArcCP ();
                     piPt.arc.centerPoint = arc->center;
                     piPt.arc.centerPoint.z = 0.0;
                     double startAng;
@@ -595,16 +588,16 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
                     {
                     // see if it's ss or SCS
-                    if (i >= HorizontalCurveVector ()->size () - 1) break; //ack!
-                    if (HorizontalCurveVector ()->at (i + 1)->GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral)
+                    if (i >= hzCurve.size() - 1) break; //ack!
+                    if (hzCurve[i + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral)
                         {
                         AlignmentPI piPt;
                         piPt.curveType = AlignmentPI::HorizontalPIType::SS;
-                        _LoadSpiralData (( HorizontalCurveVector ()->at (i) ).get (), piPt.spiral1);
-                        auto placementSpiral = HorizontalCurveVector ()->at (i)->GetSpiralPlacementCP ();
+                        _LoadSpiralData(primitive.get(), piPt.spiral1);
+                        auto placementSpiral = primitive->GetSpiralPlacementCP ();
                         DSpiral2dBaseP spiral = placementSpiral->spiral;
                         i++;
-                        _LoadSpiralData (( HorizontalCurveVector ()->at (i) ).get (), piPt.spiral2);
+                        _LoadSpiralData(primitive.get(), piPt.spiral2);
                         // compute the "overall" PI
                         DRay3d rayA = DRay3d::FromOriginAndVector (piPt.spiral1.beginSpiralPt, piPt.spiral1.startVector);
                         DRay3d rayB = DRay3d::FromOriginAndVector (piPt.spiral2.endSpiralPt, piPt.spiral2.endVector);
@@ -628,16 +621,16 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         AlignmentPI piPt;
                         piPt.curveType = AlignmentPI::HorizontalPIType::SCS;
 
-                        _LoadSpiralData (( HorizontalCurveVector ()->at (i) ).get (), piPt.spiral1);
+                        _LoadSpiralData(primitive.get(), piPt.spiral1);
                         i++;
-                        HorizontalCurveVector ()->at (i)->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
-                        DEllipse3dCP arc = HorizontalCurveVector ()->at (i)->GetArcCP ();
+                        primitive->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
+                        DEllipse3dCP arc = primitive->GetArcCP ();
                         BeAssert(arc != nullptr);
                         piPt.arc.centerPoint = arc->center;
                         double startAng;
                         arc->GetSweep (startAng, piPt.arc.sweep);
                         i++;
-                        _LoadSpiralData (( HorizontalCurveVector ()->at (i) ).get (), piPt.spiral2);
+                        _LoadSpiralData(primitive.get(), piPt.spiral2);
 
                         // compute the "overall" PI
                         DRay3d rayA = DRay3d::FromOriginAndVector (piPt.spiral1.beginSpiralPt, piPt.spiral1.startVector);
@@ -827,7 +820,7 @@ DPoint3d AlignmentPairEditor::_GetZeroSlopePoint (MSBsplineCurveCP vcurve, doubl
         {
         pt.x = x + runningLength;
         pt.y = 0.0;
-        pt.z = GeometryHelper::GetVerticalElevationAtStation (*VerticalCurveVector(), pt.x);
+        pt.z = GetVerticalElevationAt(pt.x);
         }
     return pt;
     }
@@ -930,16 +923,17 @@ bool AlignmentPairEditor::_StationCompare (double x, double x1)
 bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs ()
     {
     bvector<AlignmentPVI> pvis;
-    CurveVectorPtr vt = VerticalCurveVector ();
-    if (!vt.IsValid ())
+    CurveVectorCP pVertical = GetVerticalCurveVector();
+    if (nullptr == pVertical)
         return pvis;
-    return _GetPVIs (*vt);
+
+    return _GetPVIs(*pVertical);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs (CurveVectorR vt)
+bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs (CurveVectorCR vt)
     {
     bvector<AlignmentPVI> pvis;
     int count = 0;
@@ -1555,20 +1549,12 @@ StatusInt AlignmentPairEditor::GetPIPoints (bvector<DPoint3d>& pts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AlignmentPairEditor::IsVerticalValid ()
-    {
-    return ( VerticalCurveVector().IsValid () );
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DPoint3d> AlignmentPairEditor::CrestAndSagPointsXZ (ZeroSlopePoints zsType)
     {
-    BeAssert (this->IsVerticalValid ());
+    BeAssert (this->IsValidVertical ());
     double runningLength = 0.0;
     bvector<DPoint3d> returnVector;
-    for (auto primitive : *VerticalCurveVector())
+    for (auto primitive : *GetVerticalCurveVector())
         {
         DPoint3d start, end;
         primitive->GetStartEnd (start, end);
@@ -1634,9 +1620,9 @@ bool AlignmentPairEditor::HasSag ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::MaximumGradeInPercent ()
     {
-    BeAssert (this->IsVerticalValid ());
+    BeAssert (this->IsValidVertical ());
     double maxGrade = 0.0;
-    for (auto primitive : *VerticalCurveVector())
+    for (auto primitive : *GetVerticalCurveVector())
         {
         DPoint3d start, end;
         primitive->GetStartEnd (start, end);
@@ -1685,10 +1671,10 @@ double AlignmentPairEditor::MaximumGradeInPercent ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::MaximumGradeChangeInPercent ()
     {
-    BeAssert (this->IsVerticalValid ());
+    BeAssert (this->IsValidVertical());
     double G1 = 0.0, G2 = 0.0;
     double maxGradeChange = 0.0;
-    for (auto primitive : *VerticalCurveVector())
+    for (auto primitive : *GetVerticalCurveVector())
         {
         DPoint3d start, end;
         primitive->GetStartEnd (start, end);
@@ -1968,7 +1954,7 @@ CurveVectorPtr AlignmentPairEditor::MoveVerticalTangent (DPoint3d fromPt, DPoint
         // and the delta Z is what matters here.
         if (fromPt.x > pvis[i].poles[PVI].x && fromPt.x < pvis[i + 1].poles[PVI].x)
             {
-            AlignmentPairEditorPtr vGeom = AlignmentPairEditor::Create (*HorizontalCurveVector(), VerticalCurveVector().get());
+            AlignmentPairEditorPtr vGeom = AlignmentPairEditor::Create (GetHorizontalCurveVector(), GetVerticalCurveVector());
             // move the two pvis vertically and update the corresponding curves if necessary
             DPoint3d newPVILocation = DPoint3d::From (pvis[i].poles[PVI].x, 0.0, pvis[i].poles[PVI].z + deltaZ);
             CurveVectorPtr newVertical;
@@ -2251,7 +2237,7 @@ CurveVectorPtr AlignmentPairEditor::ModifyVerticalRange (StationRangeEditR editR
     double newrange = editRange.postEditRange.Distance ();
     double delta = editRange.Delta ();
     if (delta == 0.0)
-        return VerticalCurveVector(); // no reason to change
+        return CloneVerticalCurveVector(); // no reason to change
 
     bvector<AlignmentPVI> pvis = _GetPVIs ();
     if (pvis.size () <= 0)
@@ -2325,7 +2311,7 @@ CurveVectorPtr AlignmentPairEditor::ModifyVerticalRange (bvector<StationRangeEdi
         double newrange = editRange.postEditRange.Distance ();
         double delta = editRange.Delta ();
         if (delta == 0.0)
-            return VerticalCurveVector (); // no reason to change
+            return CloneVerticalCurveVector (); // no reason to change
 
 
         bool startSet = false;
@@ -2829,9 +2815,6 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
     toPt.z = 0.0;
 
     CurveVectorPtr newHz;
-    CurveVectorPtr rangeHorizontal = HorizontalCurveVector ();
-    CurveVectorWithDistanceIndexPtr originalPath = CurveVectorWithDistanceIndex::Create ();
-    originalPath->SetPath (rangeHorizontal);
 
     AlignmentPI calcedPI;
     StationRangeEdit rangeEdit;
@@ -2883,7 +2866,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
     CurveVectorPtr newVertical = ModifyVerticalRange (rangeEdit, modifiedAlign->LengthXY());
 
 #ifndef NDEBUG
-    if (VerticalCurveVector().IsValid())
+    if (nullptr != GetVerticalCurveVector())
         {
         BeAssert(newVertical.IsValid());    // I don't think we should ever end up with an invalid vert if we had a valid one to start with (but if I'm wrong remove this)
         }
@@ -2920,11 +2903,9 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr AlignmentPairEditor::FlipAlignment ()
     {
-    CurveVectorPtr hzAlign = HorizontalCurveVector ();
-    if (!hzAlign.IsValid ()) return nullptr;
-
+    CurveVectorPtr hzAlign = CloneHorizontalCurveVector();
     hzAlign->ReverseCurvesInPlace ();
-    if (VerticalCurveVector ().IsValid ())
+    if (nullptr != GetVerticalCurveVector())
         {
         CurveVectorPtr vtAlign = _ReverseVertical ();
         if (vtAlign.IsValid ())
@@ -2971,7 +2952,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
 
     DPoint3d start, end;
     DPoint3d newStart, newEnd;
-    HorizontalCurveVector ()->GetStartEnd (start, end);
+    GetHorizontalCurveVector().GetStartEnd (start, end);
     newHorizontal.GetStartEnd (newStart, newEnd);
     if (!start.AlmostEqualXY (newStart))
         isStart = true;
@@ -3013,10 +2994,6 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         }
     else
         {
-        CurveVectorPtr rangeHorizontal = HorizontalCurveVector ();
-        CurveVectorWithDistanceIndexPtr originalPath = CurveVectorWithDistanceIndex::Create ();
-        originalPath->SetPath (rangeHorizontal);
-
         CurveVectorWithDistanceIndexPtr newPath = CurveVectorWithDistanceIndex::Create ();
         CurveVectorPtr newHz = newHorizontal.Clone ();
         newPath->SetPath (newHz);
@@ -3024,7 +3001,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         bvector<PathLocationDetailPair> pathAIntervals;
         bvector<PathLocationDetailPair> pathBIntervals;
 
-        GeometryDebug::Announce (*originalPath, "FindCommonPaths.C");
+        GeometryDebug::Announce (*HorizontalIndexVector(), "FindCommonPaths.C");
         GeometryDebug::Announce (*newPath, "FindCommonPaths.B");
 
 
@@ -3032,7 +3009,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         // http://bsw-wiki.bentley.com/bin/view.pl/Main/CurveVectorWithDistanceIndex
         // effectively we want to compare the original alignment with new or current dynamic one and see 
         // where the changes have occured.
-        CurveVectorWithDistanceIndex::FindCommonSubPaths (*originalPath, *newPath, pathAIntervals, pathBIntervals, true, true);
+        CurveVectorWithDistanceIndex::FindCommonSubPaths (*HorizontalIndexVector(), *newPath, pathAIntervals, pathBIntervals, true, true);
         GeometryDebug::Announce (pathAIntervals, pathBIntervals, "CommonSubPaths");
         // with these edits, we should only get one item in each vector.
         // the PathAIntervals A and B cover the original location/station of the edit, 
@@ -3081,7 +3058,7 @@ AlignmentPairPtr AlignmentPairEditor::GetPartialAlignment (double startStation, 
     {
     CurveVectorPtr hz = GetPartialHorizontalAlignment (startStation, endStation);
     if (!hz.IsValid ()) return nullptr;
-    if (VerticalCurveVector ().IsValid ())
+    if (nullptr != GetVerticalCurveVector())
         {
         CurveVectorPtr vt = GetPartialVerticalAlignment (startStation, endStation);
         AlignmentPairEditorPtr returnAlignment = AlignmentPairEditor::Create (*hz, vt.get ());

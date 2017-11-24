@@ -46,7 +46,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     auto alignmentPairPtr = alignmentPtr->QueryMainPair();
     ASSERT_TRUE(alignmentPairPtr != nullptr);
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
-    ASSERT_TRUE(alignmentPairPtr->VerticalCurveVector().IsValid());
+    ASSERT_TRUE(alignmentPairPtr->IsValidVertical());
 
     // ISpatialLinearElement
     DPoint3d point = alignmentPtr->ToDPoint3d(DistanceExpression(75.0, 10.0, 5.0));
@@ -140,7 +140,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     auto alignmentPairPtr = alignmentPtr->QueryMainPair();
     ASSERT_TRUE(alignmentPairPtr != nullptr);
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
-    ASSERT_TRUE(alignmentPairPtr->VerticalCurveVector().IsValid());  
+    ASSERT_TRUE(alignmentPairPtr->IsValidVertical());
 
     // Setting up default views
     auto displayStyle2dPtr = CreateDisplayStyle2d(projectPtr->GetDictionaryModel());
