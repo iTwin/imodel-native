@@ -78,33 +78,6 @@ BentleyStatus GridPortion::InsertGridMapElements(GridAxisMap elements)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-void GridPortion::TranslateToPoint(GridElementVector& grid, DPoint3d point)
-    {
-    if (grid.empty())
-        return;
-
-    DVec3d translation = DVec3d::FromStartEnd(grid.front()->GetPlacement().GetOrigin(), point);
-
-    for (GridSurfacePtr gridElement : grid)
-        gridElement->Translate(translation);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-void GridPortion::RotateToAngleXY(GridElementVector& grid, double theta)
-    {
-    if (grid.empty())
-        return;
-
-    for (GridSurfacePtr gridElement : grid)
-        gridElement->RotateXY(theta);
-    }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     09/17
 //---------------------------------------------------------------------------------------
 DPlane3d GridPortion::GetPlane 

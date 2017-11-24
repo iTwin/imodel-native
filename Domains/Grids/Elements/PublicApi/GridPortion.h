@@ -69,57 +69,66 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPortion, GRIDELEMENTS_EXPORT)
 
-
+    //---------------------------------------------------------------------------------------
+    // Getters and setters
+    //---------------------------------------------------------------------------------------
     //! gets the surfaces model
     //! @return                 the surfaces model
-    GRIDELEMENTS_EXPORT Dgn::SpatialLocationModelPtr    GetSurfacesModel () const;
-
-    //! Translates grid to given point
-    //! @param[in] grid     grid to translate
-    //! @param[in] point    point to translate to
-    GRIDELEMENTS_EXPORT static void TranslateToPoint(GridElementVector& grid, DPoint3d point);
-
-    //! Rotates grid to given angle
-    //! @param[in] grid     grid to rotate
-    //! @param[in] theta    angle to rotate to
-    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridElementVector& grid, double theta);
+    GRIDELEMENTS_EXPORT Dgn::SpatialLocationModelPtr    GetSurfacesModel() const;
 
     //! gets the perpendicularity plane of this Grid
     //! @return             perpendicularity plane of this Grid
-    GRIDELEMENTS_EXPORT DPlane3d    GetPlane () const;
-
-    //! Translates grid to given point, 
-    //! @param[in] point    point to translate to
-    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus TranslateToPoint (DPoint3d point);
-
-    //! Rotates grid to given angle
-    //! @param[in] theta    angle to rotate to
-    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY (double theta);
+    GRIDELEMENTS_EXPORT DPlane3d    GetPlane() const;
 
     //! Returns an angle the grid elements have rotated to
     //! @param[out] angle   angle that the grid elements have rotated to 
     //! @return BentleyStatus::ERROR if grid has no elements
     GRIDELEMENTS_EXPORT BentleyStatus GetGridRotationAngleXY(double& angle) const;
 
-    //! intersects this grid with the given surface, creates gridcurves
-    //! @param[in] surface      surface to intersect
-    //! @param[in] targetModel  model to create gridcurves in
-    //! @return BentleyStatus for the operation result
-    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface (GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
-
-    //! Make an iterator over gridSurfaces that compose this Grid
-    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
-
-    //! Make an iterator over gridAxis that compose this Grid
-    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeAxesIterator () const;
-    
     //! Returns name of this grid
     //! @return name of model this grid is in
     GRIDELEMENTS_EXPORT Utf8CP  GetName() const;
 
+    //---------------------------------------------------------------------------------------
+    // Geometry modification
+    //---------------------------------------------------------------------------------------
+    //! Translates grid to given point, 
+    //! @param[in] point    point to translate to
+    //! @returuns           Dgn::RepositoryStatus::Success if no error has occured when translating grid
+    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus TranslateToPoint(DPoint3d point);
+
+    //! Rotates grid to given angle
+    //! @param[in] theta    angle to rotate to
+    //! @returns            Dgn::RepositoryStatus::Success if no error has occured when rotating grid
+    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta);
+
+    //---------------------------------------------------------------------------------------
+    // Queries
+    //---------------------------------------------------------------------------------------
+    //! Make an iterator over gridSurfaces that compose this Grid
+    //! @returns            an iterator over grid surfaces this grid portion owns
+    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator() const;
+
+    //! Make an iterator over gridAxis that compose this Grid
+    //! @returns            an iterator over axes this grid portion owns
+    GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeAxesIterator() const;
+
     //! Returns a grid portion with given parent element and name
+    //! @param[in]  db          db to try get grid portion from
+    //! @param[in]  parentId    id of parent of grid portion
+    //! @param[in]  gridName    name of grid portion
+    //! @return                 if grid portion has been found, returns a ptr to it
+    //!                         otherwise a nullptr is returned
     GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
 
+    //---------------------------------------------------------------------------------------
+    // Other
+    //---------------------------------------------------------------------------------------
+    //! intersects this grid with the given surface, creates gridcurves
+    //! @param[in] surface      surface to intersect
+    //! @param[in] targetModel  model to create gridcurves in
+    //! @return BentleyStatus for the operation result
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
     };
 
 END_GRIDS_NAMESPACE

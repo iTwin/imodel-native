@@ -30,7 +30,14 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (SurfaceSet, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
+    //! Creates surface set in given model
+    //! @param[in] model    model to create surface set in
+    //! @return             a ptr to created surface set
     GRIDELEMENTS_EXPORT static SurfaceSetPtr Create (Dgn::DgnModelCR model);
+
 };
 
 END_GRIDS_NAMESPACE

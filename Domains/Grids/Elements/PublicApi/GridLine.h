@@ -35,6 +35,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridLine, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates a grid line
     //! @param[in]  model   model for the gridline
     //! @param[in]  curve   curve geometry

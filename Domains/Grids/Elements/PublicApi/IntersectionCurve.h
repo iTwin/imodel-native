@@ -38,13 +38,38 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (IntersectionCurve, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
+    //! Creates intersection curve from given curve primitive
+    //! @param[in]  model   model to create intersection curve in
+    //! @param[in]  curve   geometry as curve primitive
+    //! @returns            a ptr to created intersection curve
+    GRIDELEMENTS_EXPORT static IntersectionCurvePtr Create(Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+
+    //! Creates intersection curve from given curve vector
+    //! @param[in]  model   model to create intersection curve in
+    //! @param[in]  curve   geometry as curve vector
+    //! @returns            a ptr to created intersection curve
+    GRIDELEMENTS_EXPORT static IntersectionCurvePtr Create(Dgn::DgnModelCR model, CurveVectorPtr curve);
+    
+    //---------------------------------------------------------------------------------------
+    // Setters and getters
+    //---------------------------------------------------------------------------------------
+    //! Returns curve's geometry as curve primitive
+    //! @return             a ptr to curve's geometry as curve primitive
     GRIDELEMENTS_EXPORT ICurvePrimitivePtr      GetCurve () const;
 
+    //---------------------------------------------------------------------------------------
+    // Geometry modification
+    //---------------------------------------------------------------------------------------
+    //! Sets geometry for intersection curve as curve vector
+    //! @param[in]  curve   new geometry as curve vector
     GRIDELEMENTS_EXPORT void    SetCurve (CurveVectorPtr curve);
-    GRIDELEMENTS_EXPORT void    SetCurve (ICurvePrimitivePtr curve);
 
-    GRIDELEMENTS_EXPORT static IntersectionCurvePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
-    GRIDELEMENTS_EXPORT static IntersectionCurvePtr Create (Dgn::DgnModelCR model, CurveVectorPtr curve);
+    //! Sets geometry for intersection curve as curve primitive
+    //! @param[in]  curve   new geometry as curve primitive
+    GRIDELEMENTS_EXPORT void    SetCurve (ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE

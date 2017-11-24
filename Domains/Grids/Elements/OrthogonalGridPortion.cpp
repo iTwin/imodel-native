@@ -312,35 +312,6 @@ GridElementVector OrthogonalGridPortion::CreateGridElements (StandardCreateParam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGridPortion::CreateAndInsert (GridAxisMap& grid, StandardCreateParams const& params, DVec3d normal)
-    {
-    GridElementVector horizontalElements = CreateGridElements(params, params.m_model, true);
-    GridElementVector verticalElements = CreateGridElements(params, params.m_model, false);
-
-    grid[HORIZONTAL_AXIS] = horizontalElements;
-    grid[VERTICAL_AXIS] = verticalElements;
-
-    for (bpair<Utf8String, GridElementVector> pair : grid)
-        {
-        GridSurfacePtr lastElement;
-        double distance = (0 == strcmp(pair.first.c_str(), HORIZONTAL_AXIS) ? params.m_horizontalInterval : params.m_verticalInterval);
-
-        for (GridSurfacePtr gridSurface : pair.second)
-            {
-            if (BentleyStatus::ERROR == BuildingUtils::InsertElement(gridSurface))
-                return BentleyStatus::ERROR;
-
-            AddDimensionsToOrthogonalGrid(lastElement, gridSurface, distance);
-            lastElement = gridSurface;
-            }
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
 double getIntervalBetweenElements(GridElementVector elements)
     {
     if (elements.size() >= 2)
@@ -388,55 +359,6 @@ void rotateAxisToAngleXY(GridElementVector& axis, double theta)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-void OrthogonalGridPortion::RotateToAngleXY(GridAxisMap& grid, double theta, bool updateDimensions)
-    {
-    GridElementVector newHorizontalAxis = grid[HORIZONTAL_AXIS];
-    rotateAxisToAngleXY(newHorizontalAxis, theta);
-    grid[HORIZONTAL_AXIS] = newHorizontalAxis;
-
-    GridElementVector newVerticalAxis = grid[VERTICAL_AXIS];
-    rotateAxisToAngleXY(newVerticalAxis, theta);
-    grid[VERTICAL_AXIS] = newVerticalAxis;
-
-    RotMatrix rotMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
-
-    if (updateDimensions)
-        for (bpair<Utf8String, GridElementVector> axis : grid)
-            {
-            if (grid[axis.first].empty())
-                continue;
-
-            DgnDbR db = axis.second.front()->GetDgnDb();
-
-            for (GridSurfacePtr gridSurface : axis.second)
-                {
-                bvector<BeSQLite::EC::ECInstanceId> relationships = DimensionHandler::GetDimensioningRelationshipInstances(db, gridSurface->GetElementId());
-                for (BeSQLite::EC::ECInstanceId instance : relationships)
-                    DimensionHandler::RotateDirection(db, instance, rotMatrix);
-                }
-            }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-void OrthogonalGridPortion::RotateToAngleXY(GridElementVector& grid, double theta, bool updateDimensions)
-    {
-    GridAxisMap axisMap;
-    if (BentleyStatus::ERROR == ElementVectorToAxisMap(axisMap, grid))
-        return;
-
-    RotateToAngleXY(axisMap, theta, updateDimensions);
-
-    grid = axisMap[HORIZONTAL_AXIS];
-    grid.insert(grid.end(), axisMap[VERTICAL_AXIS].begin(), axisMap[VERTICAL_AXIS].end());
-
-
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
 Dgn::RepositoryStatus OrthogonalGridPortion::RotateToAngleXY(double theta, bool updateDimensions)
@@ -480,86 +402,6 @@ Dgn::RepositoryStatus OrthogonalGridPortion::RotateToAngleXY(double theta, bool 
         }
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGridPortion::ElementVectorToAxisMap(GridAxisMap& axisMap, GridElementVector elements)
-    {
-    axisMap = GridAxisMap();
-
-    DVec3d horizontalNormal = DVec3d::From(0, 0, 0);
-    DVec3d verticalNormal = DVec3d::From(0, 0, 0);
-
-    // Cast all elements to grid planes
-    bvector<GridPlaneSurfacePtr> planes;
-    for (GridSurfacePtr surface : elements)
-        {
-        GridPlaneSurfacePtr plane = dynamic_cast<GridPlaneSurface *>(surface.get());
-        if (!plane.IsValid())
-            return BentleyStatus::ERROR;
-
-        planes.push_back(plane);
-        }
-
-    // Find such normals that if you rotate horizontal normal by msGeomConst_pi / 2 you get vertical normal
-    for (GridPlaneSurfacePtr plane : planes)
-        {
-        DVec3d normal = plane->GetPlane().normal;
-
-        if (normal.IsZero()) // no plane normal can be zero
-            return BentleyStatus::ERROR;
-
-        if (horizontalNormal.IsZero()) // assign first normal as horizontal
-            horizontalNormal = normal;
-        else
-            {
-            if (normal.IsPositiveParallelTo(horizontalNormal))
-                continue;
-            
-            if (!normal.IsPerpendicularTo(horizontalNormal)) // all normals must be either perpendicular or parallel to each other
-                return BentleyStatus::ERROR;
-
-            verticalNormal = normal;
-            break;
-            }
-        }
-
-    if (!verticalNormal.IsZero()) // If no normal perpendicular to horizontal normal has been found all planes will be under horizontal axis
-        {
-        // Check if horizontal and vertical normals are correct
-        DVec3d testHorizontalNormal = horizontalNormal;
-        testHorizontalNormal.RotateXY(msGeomConst_pi / 2);
-        if (!testHorizontalNormal.IsPositiveParallelTo(verticalNormal)) // If rotated horizontal normal is not positive parallel to vertical normal, they probably need to be swapped
-            {
-            DVec3d testVerticalNormal = verticalNormal; // Check rotating current vertical normal by msGeomConst_pi / 2 we get horizontal normal
-            testVerticalNormal.RotateXY(msGeomConst_pi / 2);
-
-            if (!testVerticalNormal.IsPositiveParallelTo(horizontalNormal))
-                return BentleyStatus::ERROR;
-
-            // Swap normals
-            DVec3d temp = horizontalNormal;
-            horizontalNormal = verticalNormal;
-            verticalNormal = temp;
-            }
-        }
-
-    // Check every plane normal and put it under corresponding axis
-    for (GridPlaneSurfacePtr plane : planes)
-        {
-        DVec3d normal = plane->GetPlane().normal;
-
-        if (normal.IsPositiveParallelTo(horizontalNormal))
-            axisMap[HORIZONTAL_AXIS].push_back(plane);
-        else if (normal.IsPositiveParallelTo(verticalNormal))
-            axisMap[VERTICAL_AXIS].push_back(plane);
-        else
-            return BentleyStatus::ERROR;
-        }
-
-    return BentleyStatus::SUCCESS;
     }
 
 END_GRIDS_NAMESPACE

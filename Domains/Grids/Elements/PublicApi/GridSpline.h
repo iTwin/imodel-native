@@ -33,6 +33,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSpline, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates a grid spline
     //! @param[in]  model   model for the grid spline
     //! @param[in]  curve   curve geometry

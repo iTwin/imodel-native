@@ -48,6 +48,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates an empty grid axis
     //! @param[in]  model   model for the axis
     //! @param[in]  grid    grid this axis belongs to
@@ -60,14 +63,22 @@ public:
     //! @return             sketch grid
     GRIDELEMENTS_EXPORT static GridAxisPtr CreateAndInsert (Dgn::DgnModelCR model, GridPortionCR grid);
 
+    //---------------------------------------------------------------------------------------
+    // Getters and setters
+    //---------------------------------------------------------------------------------------
     //! Sets gridAxis grid Id value
     //! @param gridId a value to set
     void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridPortionHasAxes)); };
 
+    //! Gets grid's that contains this axis id
     //! @return element id of the grid
     Dgn::DgnElementId GetGridId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Grid ()); };
 
+    //---------------------------------------------------------------------------------------
+    // Queries
+    //---------------------------------------------------------------------------------------
     //! Make an iterator over gridSurfaces that compose this GridAxis
+    //! @returns an iterator over grid surfaces that this grid axis contains
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeIterator () const;
 };
 

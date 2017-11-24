@@ -55,6 +55,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSurface, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Geometry modification
+    //---------------------------------------------------------------------------------------
     //! Rotates grid by given angle in radians
     //! @param[in] theta            angle in radians
     GRIDELEMENTS_EXPORT void RotateXY(double theta);
@@ -76,14 +79,22 @@ public:
     //! @param[in] translation   vector to translate by
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
 
-    //! @return axis id of the surface
+    //! Sets geometry for this grid surface
+    //! @param[in]  surface     new geometry for the surface
+    //! @returns BentleyStatus::SUCCESS if geometry is valid for the surface and there has been no error in setting surface geometry
+    //! For specifications of geometry validation see derived grid surface elements' creation documentation
+    GRIDELEMENTS_EXPORT BentleyStatus SetGeometry(ISolidPrimitivePtr surface);
+
+    //---------------------------------------------------------------------------------------
+    // Setters and getters
+    //---------------------------------------------------------------------------------------
+    //! Returns id of grid that has this surface
+    //! @return grid id of the surface
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetGridId () const;
 
+    //!Returns id of axis that has this surface
     //! @return axis id of the surface
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
-
-    //! Sets geometry for this grid surface
-    GRIDELEMENTS_EXPORT BentleyStatus SetGeometry(ISolidPrimitivePtr surface);
 
     //! Returns base curve of this surface
     //! @return a ptr to a curve vector of this surface
@@ -91,6 +102,7 @@ public:
 
     //! Tries to return height of this surface which is essencially the magnitude of its extrusion vector
     //! @param[out] height height of this surface
+    //! @return     BentleyStatus::ERROR if error occured when trying to get surface height
     GRIDELEMENTS_EXPORT BentleyStatus   TryGetHeight (double& height) const;
 
     //! Tries to return length of this surface which is essencially the length of its base curve
@@ -98,7 +110,11 @@ public:
     //! @return     BentleyStatus::ERROR if error occured when trying to get surface length
     GRIDELEMENTS_EXPORT BentleyStatus   TryGetLength (double& length) const;
 
+    //---------------------------------------------------------------------------------------
+    // Queries
+    //---------------------------------------------------------------------------------------
     //! Returns an iterator over created intersection grid curves
+    //! @return     ElementIterator over this grid surface's grid curves
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeCreatedCurvesIterator() const;
 };
 

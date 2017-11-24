@@ -35,16 +35,21 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArcSurface, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates a gridarc surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridarc surface
+    //! Note: Only solid primitives with DgnExtrusionDetails with arcs as base curves pass as valid geometry
     GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
 
     //! Creates a gridarc surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridarc surface
+    //! Note: Only DgnExtrusionDetails with arcs as base curves pass as valid geometry
     GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, DgnExtrusionDetail extDetail);
 };
 

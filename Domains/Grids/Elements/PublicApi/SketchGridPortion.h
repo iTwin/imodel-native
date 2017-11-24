@@ -30,13 +30,24 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchGridPortion, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates an empty sketch grid
     //! @param[in]  model   model for the radialgridportion
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             sketch grid
     GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal, Utf8CP name);
 
+    //---------------------------------------------------------------------------------------
+    // Queries
+    //---------------------------------------------------------------------------------------
     //! Returns a sketch grid portion with given parent element and name
+    //! @param[in]  db          db to try get sketch grid portion from
+    //! @param[in]  parentId    id of parent element for grid portion
+    //! @param[in]  gridName    name for grid portion
+    //! @return                 if grid portion is found, returns a ptr to it
+    //!                         else nullptr is returned
     GRIDELEMENTS_EXPORT static SketchGridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
 };
 

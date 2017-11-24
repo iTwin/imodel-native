@@ -32,6 +32,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArc, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates a grid arc
     //! @param[in]  model   model for the grid arc
     //! @param[in]  curve   curve geometry

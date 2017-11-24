@@ -42,33 +42,45 @@ public:
 
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPlaneSurface, GRIDELEMENTS_EXPORT)
 
-
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  surfaceVector   surface geometry
     //! @return                     gridplane surface
+    //! Note: Only planar curve vectors pass as valid geometry
     GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
 
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  surface         surface geometry
     //! @return                     gridplane surface
+    //! @Note: Only solid primitives from DgnExtrusionDetails with LineString, PointString or Line as base curve pass as valid geometry
     GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, ISolidPrimitivePtr  surface);
 
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridplane surface
+    //! Note: Only DgnExtrusionDetails with LineString, PointString or Line as base curve pass as valid geometry
     GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, DgnExtrusionDetail  extDetail);
 
+    //---------------------------------------------------------------------------------------
+    // Getters and setters
+    //---------------------------------------------------------------------------------------
+    //! gets the plane of this gridplanesurface
+    //! @return     plane of this gridplanesurface
+    GRIDELEMENTS_EXPORT         DPlane3d            GetPlane() const;
 
+    //---------------------------------------------------------------------------------------
+    // Geometry modification
+    //---------------------------------------------------------------------------------------
     //! sets curveVector for this gridPlane
     //! @param[in]  newShape        new curvevector shape for the GridPlaneSurface
     GRIDELEMENTS_EXPORT void    SetCurveVector (CurveVectorR newShape);
 
-    //! gets the plane of this gridplanesurface
-    //! @return     plane of this gridplanesurface
-    GRIDELEMENTS_EXPORT         DPlane3d            GetPlane () const;
+    
 };
 
 END_GRIDS_NAMESPACE

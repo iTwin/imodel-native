@@ -82,6 +82,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (RadialGridPortion, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
     //! Creates an empty radial grid
     //! @param[in]  model   model for the radialgridportion
     //! @param[in]  normal  perpendicularity plane of this Grid
@@ -89,8 +92,7 @@ public:
     GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
 
     //! Creates an empty radial grid
-    //! @param[in]  model   model for the radialgridportion
-    //! @param[in]  normal  perpendicularity plane of this Grid
+    //! @param[in]  params  create params for this grid portion. See CreateParams
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPortionPtr CreateAndInsert (CreateParams params);
 

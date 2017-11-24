@@ -36,33 +36,42 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridCurve, GRIDELEMENTS_EXPORT)
 
+    //---------------------------------------------------------------------------------------
+    // Creation
+    //---------------------------------------------------------------------------------------
+    //! Creates a gridcurve
+    //! @param[in]  model   model for the gridcurve
+    //! @param[in]  curve   curve geometry
+    //! @return             GridCurve
+    GRIDELEMENTS_EXPORT static GridCurvePtr Create(Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+
+    //! Creates a gridcurve
+    //! @param[in]  model   model for the gridcurve
+    //! @param[in]  curve   curve geometry
+    //! @return             GridCurve
+    GRIDELEMENTS_EXPORT static GridCurvePtr Create(Dgn::DgnModelCR model, CurveVectorPtr curve);
+    
+    //---------------------------------------------------------------------------------------
+    // Getters and setters
+    //---------------------------------------------------------------------------------------
     //! gets curve geometry of the gridcurve
     //! @return             GridCurve geometry
     GRIDELEMENTS_EXPORT ICurvePrimitivePtr      GetCurve () const;
 
+    //! gets the intersecting GridSurface which creates this GridCurve (not the baseSurface)
+    //! @return             gridsurface, if exists
+    GRIDELEMENTS_EXPORT GridSurfacePtr GetIntersectingSurface() const;
+
+    //---------------------------------------------------------------------------------------
+    // Geometry modification
+    //---------------------------------------------------------------------------------------
     //! sets curve geometry of the gridcurve
     //! @param[in]  curve   model for the gridcurve
     GRIDELEMENTS_EXPORT void    SetCurve (CurveVectorPtr curve);
 
     //! sets curve geometry of the gridcurve
     //! @param[in]  curve   model for the gridcurve
-    GRIDELEMENTS_EXPORT void    SetCurve (ICurvePrimitivePtr curve);
-
-    //! gets the intersecting GridSurface which creates this GridCurve (not the baseSurface)
-    //! @return             gridsurface, if exists
-    GRIDELEMENTS_EXPORT GridSurfacePtr GetIntersectingSurface () const;
-
-    //! Creates a gridcurve
-    //! @param[in]  model   model for the gridcurve
-    //! @param[in]  curve   curve geometry
-    //! @return             GridCurve
-    GRIDELEMENTS_EXPORT static GridCurvePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
-
-    //! Creates a gridcurve
-    //! @param[in]  model   model for the gridcurve
-    //! @param[in]  curve   curve geometry
-    //! @return             GridCurve
-    GRIDELEMENTS_EXPORT static GridCurvePtr Create (Dgn::DgnModelCR model, CurveVectorPtr curve);
+    GRIDELEMENTS_EXPORT void    SetCurve (ICurvePrimitivePtr curve);    
 };
 
 END_GRIDS_NAMESPACE
