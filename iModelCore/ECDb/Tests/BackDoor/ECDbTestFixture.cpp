@@ -140,7 +140,7 @@ DbResult ECDbTestFixture::ReopenECDb()
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     const bool isReadonly = m_ecdb.IsReadonly();
     CloseECDb();
-    return OpenECDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+    return OpenECDb(ecdbFileName, ECDb::OpenParams(isReadonly ? ECDb::OpenMode::Readonly : ECDb::OpenMode::ReadWrite));
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
             return stat;
         }
 
-    return CloneECDb(ecdb, effectiveFileName.c_str(), seedFilePath, Db::OpenParams(Db::OpenMode::ReadWrite));
+    return CloneECDb(ecdb, effectiveFileName.c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     }
 
 
