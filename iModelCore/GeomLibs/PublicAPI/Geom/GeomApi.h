@@ -959,6 +959,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 
 #include <Geom/ClipPlane.h>
 #include <Geom/ClipPlaneSet.h>
+#include <Geom/AlternatingConvexClipTree.h>
 #ifndef SmallGeomLib
 
 #include <Geom/CurvePrimitiveId.h>
