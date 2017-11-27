@@ -160,9 +160,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database
         //! @param[in] schemaUpgradeOptions Options to upgrade the ECSchema-s in the database from registered domains, or revisions. 
         explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) : ECDb::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions)
-            {
-            Set(BeSQLite::EC::ECDb::ChangeSummaryCacheMode::AttachIfExists);
-            }
+            {}
 
         SchemaUpgradeOptions& GetSchemaUpgradeOptionsR() { return m_schemaUpgradeOptions; }
         SchemaUpgradeOptions const& GetSchemaUpgradeOptions() const { return m_schemaUpgradeOptions; }
