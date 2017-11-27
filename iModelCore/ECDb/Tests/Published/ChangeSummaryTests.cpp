@@ -273,7 +273,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
     ASSERT_FALSE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::DoNotAttach";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::DoNotAttach";
 
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
     ASSERT_TRUE(cachePath.DoesPathExist());
     ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
     ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
@@ -284,11 +284,12 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
     ASSERT_TRUE(cachePath.DoesPathExist());
     ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
     ASSERT_EQ(1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    CloseECDb();
 
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachIfExists))) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDb(fileName, ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachIfExists))) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
     ASSERT_FALSE(cachePath.DoesPathExist()) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";
     ASSERT_EQ(-1, getChangeSummaryCount(m_ecdb)) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachIfExists";

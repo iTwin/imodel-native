@@ -22,7 +22,7 @@ BentleyStatus ChangeSummaryManager::Extract(ECInstanceKey& summaryKey, BeSQLite:
     {
     BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
 
-    if (!DbSchemaPersistenceManager::TableSpaceExists(m_ecdb, Utf8String(TABLESPACE_ChangeSummaries)))
+    if (!IsChangeSummaryCacheAttached())
         {
         m_ecdb.GetImpl().Issues().Report("Failed to extract ChangeSummary. ChangeSummary cache hasn't been attached yet.");
         return ERROR;
@@ -36,7 +36,7 @@ BentleyStatus ChangeSummaryManager::Extract(ECInstanceKey& summaryKey, BeSQLite:
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryManager::OnCreatingECDb() const
     {
-    BeAssert(!DbSchemaPersistenceManager::TableSpaceExists(m_ecdb, Utf8String(TABLESPACE_ChangeSummaries)));
+    BeAssert(!IsChangeSummaryCacheAttached());
 
     BeFileName cachePath = DetermineCachePath(m_ecdb);
     if (cachePath.DoesPathExist())
@@ -79,6 +79,9 @@ DbResult ChangeSummaryManager::OnCreatingECDb() const
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExists) const
     {
+    if (IsChangeSummaryCacheAttached())
+        return BE_SQLITE_OK;
+
     BeFileName cachePath = DetermineCachePath(m_ecdb);
     if (!cachePath.DoesPathExist())
         {
@@ -184,7 +187,7 @@ DbResult ChangeSummaryManager::AddMetadataToChangeSummaryCacheFile(Db& cacheFile
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryManager::DoAttachChangeSummaryCacheFile(BeFileNameCR cachePath) const
     {
-    BeAssert(!DbSchemaPersistenceManager::TableSpaceExists(m_ecdb, Utf8String(TABLESPACE_ChangeSummaries)));
+    BeAssert(!IsChangeSummaryCacheAttached());
 
     if (!cachePath.DoesPathExist())
         return BE_SQLITE_OK;

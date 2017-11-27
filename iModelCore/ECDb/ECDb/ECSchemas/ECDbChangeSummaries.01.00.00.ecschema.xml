@@ -84,7 +84,7 @@
         <ECProperty propertyName="RawNewValue" typeName="binary" description="Untyped new value"/>
     </ECEntityClass>
     
-    <ECRelationshipClass typeName="ChangeSummaryContainsInstanceChanges" modifier="None" strength="embedding">
+    <ECRelationshipClass typeName="ChangeSummaryContainsInstanceChanges" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
             <Class class="ChangeSummary"/>
         </Source>
@@ -93,7 +93,7 @@
         </Target>
     </ECRelationshipClass>
     
-    <ECRelationshipClass typeName="InstanceChangeOwnsPropertyValueChanges" modifier="None" strength="embedding">
+    <ECRelationshipClass typeName="InstanceChangeOwnsPropertyValueChanges" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
             <Class class="InstanceChange"/>
         </Source>

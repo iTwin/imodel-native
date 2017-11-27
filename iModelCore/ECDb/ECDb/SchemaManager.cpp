@@ -245,7 +245,10 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (SUCCESS != ctx.GetSchemaPoliciesR().ReadPolicies(m_ecdb))
         return ERROR;
 
-    if (SUCCESS != ViewGenerator::DropECClassViews(GetECDb()))
+    if (BE_SQLITE_OK != m_ecdb.GetImpl().GetChangeSummaryManager().AttachChangeSummaryCacheFile(true))
+        return ERROR;
+
+    if (SUCCESS != ViewGenerator::DropECClassViews(m_ecdb))
         return ERROR;
 
     return GetDbMap().MapSchemas(ctx, schemasToMap);

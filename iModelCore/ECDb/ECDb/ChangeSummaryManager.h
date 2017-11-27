@@ -9,6 +9,7 @@
 //_BENTLEY_INTERNAL_ONLY_
 #include "ChangeSummaryExtractor.h"
 #include "ECDbSqlFunctions.h"
+#include "DbSchemaPersistenceManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -72,6 +73,7 @@ struct ChangeSummaryManager final : NonCopyableClass
 
         DbResult OnCreatingECDb() const;
 
+        bool IsChangeSummaryCacheAttached() const { return DbSchemaPersistenceManager::TableSpaceExists(m_ecdb, Utf8String(TABLESPACE_ChangeSummaries)); }
         DbResult AttachChangeSummaryCacheFile(bool createIfNotExists) const;
 
         ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }

@@ -288,7 +288,10 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
-    //! Attaches the change summary cache file to this %ECDb file (if it isn't attached already).
+    //! Determines whether the ChangeSummary cache file is attached to this %ECDb file or not.
+    ECDB_EXPORT bool IsChangeSummaryCacheAttached() const;
+
+    //! Attaches the ChangeSummary cache file to this %ECDb file (if it isn't attached already).
     //! If it does not exist, a new one is created and attached.
     //! @note Attaching a file means that any open transactions are committed first (see BentleyApi::BeSQLite::Db::AttachDb).
     //! 
