@@ -363,16 +363,16 @@ void PushIfDistinct (bvector<DPoint3d> &points, DPoint3dCR xyz)
 * Append to points.
 * @bsimethod                                                     Earlin.Lutz  11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void appendToFractal (bvector<DPoint3d> &points, DPoint3dCR pointA, DPoint3dCR pointB, bvector<DPoint2d> &pattern, int numRecursion)
+void appendToFractal (bvector<DPoint3d> &points, DPoint3dCR pointA, DPoint3dCR pointB, bvector<DPoint2d> &pattern, int numRecursion, double perpendicularFactor)
     {
     DPoint3d point0 = pointA;
     PushIfDistinct (points, pointA);
 
     for (auto &uv : pattern)
         {
-        DPoint3d point1 = DPoint3d::FromInterpolateAndPerpendicularXY (pointA, uv.x, pointB, uv.y);
+        DPoint3d point1 = DPoint3d::FromInterpolateAndPerpendicularXY (pointA, uv.x, pointB, perpendicularFactor * uv.y);
         if (numRecursion > 0)
-            appendToFractal (points, point0, point1, pattern, numRecursion - 1);
+            appendToFractal (points, point0, point1, pattern, numRecursion - 1, perpendicularFactor);
         PushIfDistinct (points, point1);
         point0 = point1;
         }
@@ -383,13 +383,13 @@ void appendToFractal (bvector<DPoint3d> &points, DPoint3dCR pointA, DPoint3dCR p
 * Map the pattern onto each line segment in poles.
 * @bsimethod                                                     Earlin.Lutz  11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void appendToFractal (bvector<DPoint3d> &points, bvector<DPoint3d> &poles, bvector<DPoint2d> &pattern, int numRecursion)
+void appendToFractal (bvector<DPoint3d> &points, bvector<DPoint3d> &poles, bvector<DPoint2d> &pattern, int numRecursion, double perpendicularFactor)
     {
     PushIfDistinct (points, poles[0]);
     for (size_t i = 0; i + 1 < poles.size (); i++)
         {
         if (numRecursion > 0)
-            appendToFractal (points, poles[i], poles[i+1], pattern, numRecursion - 1);
+            appendToFractal (points, poles[i], poles[i+1], pattern, numRecursion - 1, perpendicularFactor);
         PushIfDistinct (points, poles[i+1]);
         }
     }
@@ -495,7 +495,7 @@ TEST(RecursveClipSets, Test1)
     Check::ClearGeometry ("RecursiveClipSets.Test1");
     }
 
-void Fractal0 (bvector<DPoint3d> &points, int numRecursion)
+void Fractal0 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
     {
     bvector<DPoint2d> pattern {
         DPoint2d::From (0, 0),
@@ -511,10 +511,10 @@ void Fractal0 (bvector<DPoint3d> &points, int numRecursion)
         DPoint3d::From (0,1,0),
         DPoint3d::From (0,0,0)
         };
-    appendToFractal (points, poles, pattern, numRecursion);
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
     }
 
-void Fractal1 (bvector<DPoint3d> &points, int numRecursion)
+void Fractal1 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
     {
     bvector<DPoint2d> pattern {
         DPoint2d::From (0, 0),
@@ -532,25 +532,51 @@ void Fractal1 (bvector<DPoint3d> &points, int numRecursion)
         DPoint3d::From (0,3,0),
         DPoint3d::From (0,0,0)
         };
-    appendToFractal (points, poles, pattern, numRecursion);
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
     }
+
+// A fractal with fewer concavity changes...
+void Fractal2 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0.1),
+        DPoint2d::From (0.5, 0.15),
+        DPoint2d::From (0.75, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (2,2,0),
+        DPoint3d::From (2,3,0),
+        DPoint3d::From (0,3,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
 
 TEST (RecursiveClipSets,Test2)
     {
-    for (auto generatorFunction : {Fractal0, Fractal1})
+    for (auto perpendicularFactor : {-1.0, 1.0})
         {
-        SaveAndRestoreCheckTransform shifter(0,20,0);
-        for (int numRecursion = 0; numRecursion < 4; numRecursion++)
+        for (auto generatorFunction : {Fractal0, Fractal1, Fractal2})
             {
-            SaveAndRestoreCheckTransform shifter(10,0,0);
-            bvector<DPoint3d> points;
-            generatorFunction (points, numRecursion);
-            Check::SaveTransformed (points);
-            Check::Shift (0,5,0);
-            AlternatingConvexClipTreeNode root;
-            AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
-            SaveTree (root);
-            TestClipper (points, root);
+            SaveAndRestoreCheckTransform shifter(0,20,0);
+            for (int numRecursion = 0; numRecursion < 4; numRecursion++)
+                {
+                SaveAndRestoreCheckTransform shifter(10,0,0);
+                bvector<DPoint3d> points;
+                generatorFunction (points, numRecursion, perpendicularFactor);
+                Check::SaveTransformed (points);
+                Check::Shift (0,5,0);
+                AlternatingConvexClipTreeNode root;
+                AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+                SaveTree (root);
+                TestClipper (points, root);
+                }
             }
         }
     Check::ClearGeometry ("RecursiveClipSets.Test2");
