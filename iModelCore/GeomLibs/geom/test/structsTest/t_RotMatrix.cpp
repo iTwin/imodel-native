@@ -1626,3 +1626,95 @@ TEST(RotMatrix,RotationFromStanadardView)
         Check::EndScope ();
         }
     }
+
+static double ModifyPitchAngleToPreventInversion (double radians) { return radians;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mark.Dane                       06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static void NavigateMotion__GenerateRotationTransform_fromDgnPlatform(
+TransformR transform,
+double yawRate,
+double pitchRate,
+DPoint3dCR eyePoint,
+RotMatrixCR viewRotation,
+double deltaTime
+)
+    {
+    double yawAngle = yawRate * deltaTime;
+    double pitchAngle = ModifyPitchAngleToPreventInversion(pitchRate * deltaTime);
+
+    RotMatrix   rotation, verticalRotation, horizontalRotation, invViewRotation;
+
+    invViewRotation.InverseOf(viewRotation); // m_viewport->GetRotMatrix());
+    verticalRotation.InitFromPrincipleAxisRotations(
+        viewRotation, //m_viewport->GetRotMatrix(),
+        pitchAngle, 0.0, 0.0);
+    Check::Print (verticalRotation, "VInv * Pitch");
+    verticalRotation.InitProduct(invViewRotation, verticalRotation);
+
+
+    horizontalRotation.InitFromAxisAndRotationAngle(2, yawAngle);
+    Check::Print (horizontalRotation, "yaw matrix");
+    rotation.InitProduct(horizontalRotation, verticalRotation);
+    Check::Print (rotation, "matrix product");
+
+    transform.InitFromMatrixAndFixedPoint(rotation, eyePoint); /// m_viewport->GetCamera().GetEyePoint());
+    Check::Print (transform, "transform");
+    }
+
+static void NavigateMotion__GenerateRotationTransform_forImodelJS(
+TransformR transform,
+double yawRate,
+double pitchRate,
+DPoint3dCR eyePoint,
+RotMatrixCR viewRotation,
+double deltaTime
+)
+    {
+    double yawAngle = yawRate * deltaTime;
+    double pitchAngle = ModifyPitchAngleToPreventInversion(pitchRate * deltaTime);
+
+    RotMatrix invViewRotation;
+    invViewRotation.InverseOf(viewRotation); // m_viewport->GetRotMatrix());
+    Check::Print (viewRotation, "******************viewRotation");
+    RotMatrix pitchRotation;
+    pitchRotation.InitFromAxisAndRotationAngle (0, pitchAngle);
+    Check::Print (pitchRotation, "Pitch");
+    RotMatrix verticalRotationA, verticalRotationB;
+    verticalRotationA.InitProduct(pitchRotation, viewRotation);
+    verticalRotationB.InitProduct (invViewRotation, verticalRotationA);
+    Check::Print (verticalRotationB, "VInv*Pitch");
+
+    RotMatrix horizontalRotation, rotation;
+    horizontalRotation.InitFromAxisAndRotationAngle (2, yawAngle);
+    Check::Print (horizontalRotation, "yaw matrix");
+
+    rotation.InitProduct (horizontalRotation, verticalRotationB);
+    Check::Print (rotation, "matrix product");
+    transform.InitFromMatrixAndFixedPoint(rotation, eyePoint); /// m_viewport->GetCamera().GetEyePoint());
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Earlin.Lutz               11/17
+//---------------------------------------------------------------------------------------
+TEST(RotMatrix, NavigationMatrix)
+    {
+    int volume = Check::SetMaxVolume (1000);
+    auto eyePoint = DPoint3d::From (10,15,23);
+    auto viewRotation = RotMatrix::FromVectorAndRotationAngle (DVec3d::From (1,2,3), 0.23);
+    double yawRate = 0.5;
+    double pitchRate = 0.25;
+    double time = 0.1;
+    Transform transformA, transformB;
+    NavigateMotion__GenerateRotationTransform_fromDgnPlatform (transformA, yawRate, pitchRate, eyePoint, viewRotation, time);
+    NavigateMotion__GenerateRotationTransform_forImodelJS(transformB, yawRate, pitchRate, eyePoint, viewRotation, time);
+    Check::Near (transformA, transformB, "NavigateMotion__GenerateRotationTransform_forImodelJS"); 
+
+    Check::Print (transformA, "NavigateMotion__GenerateRotationTransform_fromDgnPlatform");
+    Check::Print (transformB, "NavigateMotion__GenerateRotationTransform_forImodelJS");
+
+    Check::SetMaxVolume (volume);
+    }

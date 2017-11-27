@@ -558,11 +558,32 @@ void Fractal2 (bvector<DPoint3d> &points, int numRecursion, double perpendicular
     }
 
 
+// A diamond with simple wave fractal
+void FractalA (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.3, 0.1),
+        DPoint2d::From (0.5, 0.15),
+        DPoint2d::From (0.7, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,-1,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (-1,0,0),
+        DPoint3d::From (0,-1,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+
 TEST (RecursiveClipSets,Test2)
     {
     for (auto perpendicularFactor : {-1.0, 1.0})
         {
-        for (auto generatorFunction : {Fractal0, Fractal1, Fractal2})
+        for (auto generatorFunction : {FractalA, Fractal0, Fractal1, Fractal2})
             {
             SaveAndRestoreCheckTransform shifter(0,20,0);
             for (int numRecursion = 0; numRecursion < 4; numRecursion++)
