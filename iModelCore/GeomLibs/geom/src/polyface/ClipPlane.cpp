@@ -8,7 +8,17 @@
 #include <bsibasegeomPCH.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
+static size_t s_numEvaluations = 0;
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      11/2017
++--------------------------------------------------------------------------------------*/
+size_t ClipPlane::GetEvaluationCount (bool clear)
+    {
+    size_t numEvaluations = s_numEvaluations;
+    if (clear)
+        s_numEvaluations = 0;
+    return numEvaluations;
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -173,6 +183,7 @@ void ClipPlane::SetDPlane4d (DPoint4dCR plane)
 +--------------------------------------------------------------------------------------*/
 double ClipPlane::EvaluatePoint (DPoint3dCR point) const
     {
+    s_numEvaluations++;
     return point.x * m_normal.x +  point.y * m_normal.y +  point.z * m_normal.z - m_distance;
     }
 

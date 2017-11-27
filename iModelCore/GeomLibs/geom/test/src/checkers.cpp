@@ -1477,7 +1477,9 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data)
     }
 void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
     {
-    auto cp = ICurvePrimitive::CreateLineString
+    ICurvePrimitivePtr cp;
+    if (markerSize > 0)
+        cp = ICurvePrimitive::CreateLineString
             (
             bvector<DPoint3d>
                 {
@@ -1487,6 +1489,8 @@ void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
                 DPoint3d::From (xyz.x , xyz.y - markerSize, xyz.z)
                 }
             );
+    else
+        cp = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (xyz, fabs (markerSize)));
 
     SaveTransformed (IGeometry::Create (cp));
     }

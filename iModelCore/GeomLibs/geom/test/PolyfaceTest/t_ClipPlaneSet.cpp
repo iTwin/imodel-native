@@ -350,3 +350,270 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
 
     Check::ClearGeometry ("ClipPlaneSet.ClassifySetDifference_ManyLines");
     }
+
+void PushIfDistinct (bvector<DPoint3d> &points, DPoint3dCR xyz)
+    {
+    static double s_tolerance = 1.0e-12;
+    if (points.size () == 0 || points.back ().DistanceXY (xyz) > s_tolerance)
+        points.push_back (xyz);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* On the line from pointA to pointB, evaluate each coordinate in lineCoordinates as interpolateAndPerpendicular.
+* Append to points.
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void appendToFractal (bvector<DPoint3d> &points, DPoint3dCR pointA, DPoint3dCR pointB, bvector<DPoint2d> &pattern, int numRecursion, double perpendicularFactor)
+    {
+    DPoint3d point0 = pointA;
+    PushIfDistinct (points, pointA);
+
+    for (auto &uv : pattern)
+        {
+        DPoint3d point1 = DPoint3d::FromInterpolateAndPerpendicularXY (pointA, uv.x, pointB, perpendicularFactor * uv.y);
+        if (numRecursion > 0)
+            appendToFractal (points, point0, point1, pattern, numRecursion - 1, perpendicularFactor);
+        PushIfDistinct (points, point1);
+        point0 = point1;
+        }
+    PushIfDistinct (points, pointB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Map the pattern onto each line segment in poles.
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void appendToFractal (bvector<DPoint3d> &points, bvector<DPoint3d> &poles, bvector<DPoint2d> &pattern, int numRecursion, double perpendicularFactor)
+    {
+    PushIfDistinct (points, poles[0]);
+    for (size_t i = 0; i + 1 < poles.size (); i++)
+        {
+        if (numRecursion > 0)
+            appendToFractal (points, poles[i], poles[i+1], pattern, numRecursion - 1, perpendicularFactor);
+        PushIfDistinct (points, poles[i+1]);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save the polyline data at each level of the tree.
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SaveTree (AlternatingConvexClipTreeNode const &root)
+    {
+    Check::SaveTransformed (root.m_points);
+    for (auto &child: root.m_children)
+        SaveTree (child);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* outputLevel = (0 none, 1 diagonals and scatter samples, 2 all)
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestClipper (bvector<DPoint3d> const &points, AlternatingConvexClipTreeNode &root, int outputLevel = 1)
+    {
+    bvector<double> fractions;
+    auto range = DRange3d::From (points);
+    int halfCount = 20;
+    double df = 0.8 / halfCount;
+    for (int i = -halfCount; i <= halfCount; i++)
+        fractions.push_back (0.5 - i * df);
+    auto a = range.XLength () * 0.004;
+    ClipPlane::GetEvaluationCount (true);
+    UsageSums inSum, outSum;
+    size_t id = 0;
+    static size_t s_idPeriod = 29;
+    for (auto fx : fractions)
+        {
+        for (auto fy : fractions)
+            {
+            id++;
+            auto xyz = range.LocalToGlobal (fx, fy, 0);
+            bool doOutput = outputLevel == 2
+                || (outputLevel == 1 &&
+                    DoubleOps::AlmostEqual (fabs(fx - 0.5), fabs (fy - 0.5)))
+                || (outputLevel == 1 && (id % s_idPeriod) == 0);
+            if (root.IsPointOnOrInside (xyz))
+                {
+                if (doOutput)
+                    Check::SaveTransformedMarker (xyz, a);
+                inSum.Accumulate (ClipPlane::GetEvaluationCount (true));
+                }
+            else
+                {
+                if (doOutput)
+                    Check::SaveTransformedMarker (xyz, -a);
+                outSum.Accumulate (ClipPlane::GetEvaluationCount (true));
+                }
+            }
+        }
+    size_t numTest = fractions.size () * fractions.size ();
+    printf (" ClipperTest  (polygonPoints %d) (TestPoint %d) (IN %lf avg %lf max %lf) (OUT %lf avg %lf max %lf)\n",
+            (int)points.size (),
+            (int)numTest,
+            inSum.Count (), inSum.Mean (), inSum.Max (),
+            outSum.Count (), outSum.Mean (), inSum.Max ());    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RecursveClipSets, Test1)
+    {
+    for (size_t numPoints : bvector<size_t>{5, 8, 12, 15, 23, 37, 67})
+        {
+        SaveAndRestoreCheckTransform shifter(10,0,0);
+        bvector<DPoint3d> points;
+        SampleGeometryCreator::StrokeUnitCircle (points, numPoints);
+        points.pop_back ();
+        double f0 = 0.4;
+        double f = 0.3;
+        double af = 1.4;
+        for (size_t i = 1; i < numPoints;)
+            {
+            points[i].Scale (f0);
+            if (numPoints > 10 && i + 2 < numPoints)
+                {
+                auto vector = points[i+1] - points[i];
+                points[i+1] = points[i+1] + f * vector;
+                f *= af;
+                points[i+2] = points[i+2] + f * vector;
+                if (f > 2.0)
+                    f = 0.1;
+                i += 4;
+                }
+            else
+                i += 3;
+            }
+        Check::SaveTransformed (points);
+        Check::Shift (0,5,0);
+        AlternatingConvexClipTreeNode root;
+        AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+        Check::Shift (0,5,0);
+        SaveTree (root);
+        TestClipper (points, root);
+        }
+    Check::ClearGeometry ("RecursiveClipSets.Test1");
+    }
+
+void Fractal0 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0),
+        DPoint2d::From (0.5, 0.2),
+        DPoint2d::From (0.75, -0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+void Fractal1 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0),
+        DPoint2d::From (0.5, 0.2),
+        DPoint2d::From (0.75, -0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (2,2,0),
+        DPoint3d::From (2,3,0),
+        DPoint3d::From (0,3,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+// A fractal with fewer concavity changes...
+void Fractal2 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0.1),
+        DPoint2d::From (0.5, 0.15),
+        DPoint2d::From (0.75, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (2,2,0),
+        DPoint3d::From (2,3,0),
+        DPoint3d::From (0,3,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+
+TEST (RecursiveClipSets,Test2)
+    {
+    for (auto perpendicularFactor : {-1.0, 1.0})
+        {
+        for (auto generatorFunction : {Fractal0, Fractal1, Fractal2})
+            {
+            SaveAndRestoreCheckTransform shifter(0,20,0);
+            for (int numRecursion = 0; numRecursion < 4; numRecursion++)
+                {
+                SaveAndRestoreCheckTransform shifter(10,0,0);
+                bvector<DPoint3d> points;
+                generatorFunction (points, numRecursion, perpendicularFactor);
+                Check::SaveTransformed (points);
+                Check::Shift (0,5,0);
+                AlternatingConvexClipTreeNode root;
+                AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+                SaveTree (root);
+                TestClipper (points, root);
+                }
+            }
+        }
+    Check::ClearGeometry ("RecursiveClipSets.Test2");
+    }
+
+TEST (RecursiveClipSets,Test3)
+    {
+    // A diamond, but with the diagonals pushed inward so no full edge of the polygon is on the hull.
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (5,0,0),
+        DPoint3d::From (2,1,0),
+        DPoint3d::From (1,2,0),
+
+        DPoint3d::From (0,5,0),
+
+        DPoint3d::From (-1,2,0),
+        DPoint3d::From (-2,1,0),
+
+        DPoint3d::From (-5,0,0),
+
+        DPoint3d::From (-2,-1,0),
+        DPoint3d::From (-1,-2,0),
+
+        DPoint3d::From (0,-5,0),
+
+        DPoint3d::From (1,-2,0),
+        DPoint3d::From (2,-1,0)
+
+        //DPoint3d::From (5,0,0),
+        };
+
+    Check::SaveTransformed (points);
+    Check::Shift (0,25,0);
+    AlternatingConvexClipTreeNode root;
+    AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+    SaveTree (root);
+    TestClipper (points, root);
+    Check::ClearGeometry ("RecursiveClipSets.Test3");
+    }
