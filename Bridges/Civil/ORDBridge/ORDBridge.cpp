@@ -134,14 +134,16 @@ SubjectCPtr ORDBridge::_InitializeJob()
     if (!jobSubject.IsValid())
         return nullptr;
 
+    // IMODELBRIDGE REQUIREMENT: Store information about the source document
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
     auto repositoryLinkId = docLink.m_element->GetElementId();
 
     AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_AlignmentModelName);
     RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_PhysicalModelName);
 
+    // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
     auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*jobSubject, ORDBRIDGE_PhysicalModelName);
-    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
+    InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
 
     return jobSubject;
     }
@@ -181,11 +183,18 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
+    // IMODELBRIDGE REQUIREMENT: Keep information about the source document up to date.
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName());
     auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
 
+    ORDConverter::Params params(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr, fileScopeId);
+
+    // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
+    Transform _old, _new;
+    params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
+
     ORDConverter converter;
-    converter.ConvertORDData(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr, fileScopeId);
+    converter.ConvertORDData(params);
 
     auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
