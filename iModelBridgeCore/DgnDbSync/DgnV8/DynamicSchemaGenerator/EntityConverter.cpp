@@ -790,7 +790,7 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         Utf8String msg;
         msg.Sprintf("ECRelationshipClass '%s' contains 'AnyClass' as a constraint.  AnyClass is no longer supported and will be replaced with '%s.'",
                     relClass.GetFullName(), defaultConstraintClass->GetName().c_str());
-        context.ReportIssue(Converter::IssueSeverity::Warning, msg.c_str());
+        context.ReportIssue(Converter::IssueSeverity::Info, msg.c_str());
         }
     
     if (0 == constraint.GetConstraintClasses().size())
@@ -1086,7 +1086,8 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
         auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName](Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
         if (found != reservedNames.end())
             {
-            ecClass.RenameConflictProperty(prop, true);
+            ECN::ECPropertyP renamedProperty = nullptr;
+            ecClass.RenameConflictProperty(prop, true, renamedProperty);
             }
         BECN::ECClassCP structType = nullptr;
 

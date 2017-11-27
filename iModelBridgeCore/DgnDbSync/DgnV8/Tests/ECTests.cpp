@@ -1149,7 +1149,7 @@ TEST_F(ECConversionTests, CellWithInstance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            06/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpec)
+TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
     {
     LineUpFiles(L"Calculated.ibim", L"Test3d.dgn", false);
 
@@ -1162,7 +1162,7 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpec)
         "    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
         "        <ECProperty propertyName=\"MyString\" typeName=\"string\" />"
         "        <ECProperty propertyName=\"MyNum\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"MyCalc\" typeName=\"string\" >"
+        "        <ECProperty propertyName=\"MyCalc\" typeName=\"string\" readOnly=\"True\">"
         "            <ECCustomAttributes>"
         "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.13\">"
         "                    <ECExpression>this.MyString &amp; \"-\" &amp; this.MyNum</ECExpression>"

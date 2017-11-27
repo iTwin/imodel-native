@@ -78,7 +78,7 @@ struct DwgHelper : NonCopyableClass
     DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbPolylineCR polyline, TransformCP transform = nullptr);
     DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDb2dPolylineCR polyline2d, TransformCP transform = nullptr);
     DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDb3dPolylineCR polyline3d, TransformCP transform = nullptr);
-    DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform = nullptr);
+    DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbSplineCR spline, TransformCP transform = nullptr, bool makeLinestring = false);
     DGNDBSYNC_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbObjectId entityId, TransformCP transform = nullptr);
     DGNDBSYNC_EXPORT static ClipVectorPtr    CreateClipperFromEntity (DwgDbObjectId entityId, double* frontClip = nullptr, double* backClip = nullptr, TransformCP entityToClipper = nullptr, TransformCP clipperToModel = nullptr);
     DGNDBSYNC_EXPORT static DwgFileVersion   CheckDwgVersionString (Utf8StringCR versionString);
