@@ -831,23 +831,23 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
             {
             if (!classMap.GetClass().IsRelationshipClass())
                 {
-                for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : m_dbMap.GetLightweightCache().GetRelationshipClassesForConstraintClass(classMap.GetClass().GetId()))
+                CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT 1 FROM " TABLE_RelationshipConstraint " rc "
+                                                                                       "INNER JOIN " TABLE_ClassMap " relmap on rc.RelationshipClassId = relmap.ClassId "
+                                                                                       "INNER JOIN " TABLE_RelationshipConstraintClass " rcc ON rcc.ConstraintId = rc.Id "
+                                                                                       "WHERE rcc.ClassId=? and relMap.MapStrategy<>" SQLVAL_MapStrategy_NotMapped);
+                if (stmt == nullptr)
                     {
-                    ECClassCP relClass = GetECDb().Schemas().GetClass(kvPair.first);
-                    if (relClass == nullptr)
-                        {
-                        BeAssert(false);
-                        return ERROR;
-                        }
+                    BeAssert(false);
+                    return ERROR;
+                    }
 
-                    ClassMap const* relClassMap = m_dbMap.GetClassMap(*relClass);
-                    if (relClassMap == nullptr || relClassMap->GetMapStrategy().GetStrategy() != MapStrategy::NotMapped)
-                        {
-                        Issues().Report("The class '%s' has the map strategy 'NotMapped' but is used as constraint class in the ECRelationshipClass '%s' which has the map strategy '%s'. If a constraint class is not mapped, the relationship must also have the strategy 'NotMapped'.",
-                                        classMap.GetClass().GetFullName(),
-                                        relClass->GetFullName(), MapStrategyExtendedInfo::ToString(relClassMap->GetMapStrategy().GetStrategy()));
-                        return ERROR;
-                        }
+                stmt->BindId(1, classMap.GetClass().GetId());
+
+                if (BE_SQLITE_DONE != stmt->Step())
+                    {
+                    Issues().Report("The class '%s' has the map strategy 'NotMapped' but is used as constraint class in a ECRelationshipClass with a different MapStrategy. If a constraint class is not mapped, the relationship must also have the strategy 'NotMapped'.",
+                                    classMap.GetClass().GetFullName());
+                    return ERROR;
                     }
                 }
 

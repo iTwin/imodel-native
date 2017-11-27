@@ -39,6 +39,24 @@ Column const& Table::GetColumn(Utf8StringCR name) const
     }
 
 // GTest Format customizations for types not handled by GTest
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool operator==(Table::Type lhs, Nullable<Table::Type> rhs) { return rhs == lhs; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(Nullable<Table::Type> type, std::ostream* os)
+    {
+    if (type.IsNull())
+        {
+        *os << "<unset>";
+        return;
+        }
+
+    PrintTo(type.Value(), os);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                  05/17
