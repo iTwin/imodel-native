@@ -622,3 +622,6 @@ ECInstancesCompatibility.ReadInstances
     # F:\Bim0200Dev\src\BeGTest\gtest\BeGTestExe.cpp(370): error: Failed
     # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
     # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
+
+# Fails in Release
+MeshBuilderTest.RoundTripMeshBuilders
