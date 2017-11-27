@@ -62,6 +62,9 @@
     <ClCompile Include="src\Formatting\FormatParsing.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
+    <ClCompile Include="src\Formatting\FormattingIO.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".\mki\Units.mki">
