@@ -107,6 +107,8 @@ struct DynamicSchemaGenerator
     void CheckECSchemasForModel(DgnV8ModelR, bmap<Utf8String, uint32_t>& syncInfoChecksums);
     BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel);
     BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel, DgnV8Api::ECSchemaPersistence persistence);
+    BentleyStatus ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model);
+    BentleyStatus ProcessReferenceSchemasFromExternal(ECObjectsV8::ECSchemaCR schema, DgnV8ModelR v8Model);
     static bool IsDynamicSchema(ECObjectsV8::ECSchemaCR schema);
     static bool IsWellKnownDynamicSchema(Bentley::Utf8StringCR schemaName);
     static bool IsDynamicSchema(Bentley::Utf8StringCR schemaName, Bentley::Utf8StringCR schemaXml);

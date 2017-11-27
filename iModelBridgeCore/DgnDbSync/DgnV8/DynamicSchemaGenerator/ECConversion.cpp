@@ -2180,7 +2180,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
     constSchemas.erase(removeAt, constSchemas.end());
 
-#define EXPORT_BISIFIEDECSCHEMAS 1
+//#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {
     BeFileName bimFileName = GetDgnDb().GetFileName();
@@ -2257,10 +2257,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
         ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
         if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
             LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
-            v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
-            v8SchemaInfo.GetLocation(),
-            v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
-            v8SchemaInfo.GetProviderName());
+                       v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
+                       v8SchemaInfo.GetLocation(),
+                       v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
+                       v8SchemaInfo.GetProviderName());
 
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
 
@@ -2293,7 +2293,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
             //TBD: DgnECManager doesn't seem to allow to just return the schema xml (Is this possible somehow?)
             //So we need to get the ECSchema and then serialize it to a string.
             //(we need the string anyways as this is the only way to marshal the schema from v8 to Graphite)
-            auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact);
+            auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_LatestCompatible);
             if (externalSchema == nullptr)
                 {
                 Utf8PrintfString error("Could not locate external v8 ECSchema %s.  Instances of classes from this schema will not be converted.", schemaName.c_str());
@@ -2309,81 +2309,118 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
                 ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::Message(), nullptr, error.c_str());
                 continue;
                 }
+            if (BSIERROR == ProcessReferenceSchemasFromExternal(*externalSchema, v8Model))
+                return BSIERROR;
             }
 
-        BECN::SchemaKey existingSchemaKey;
-        SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
-        if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
-            {
-            //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
-            //and also check whether the existing one and the new one are compatible.
-
-            if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
-                {
-                if (!isDynamicSchema)
-                    {
-                    Utf8String error;
-                    error.Sprintf("Dynamic ECSchema %s already found in the V8 file. Copy in model %s is not dynamic and therefore ignored.",
-                                  schemaName.c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
-                    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                    continue;
-                    }
-                }
-            else
-                {
-                if (isDynamicSchema)
-                    {
-                    Utf8String error;
-                    error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
-                                  Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
-                    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                    continue;
-                    }
-
-                const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
-                const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
-                const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
-
-                if (existingToNewVersionDiff >= 0)
-                    {
-                    if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
-                        {
-                        Utf8String error;
-                        error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                      existingSchemaKey.GetFullSchemaName().c_str(), existingSchemaKey.m_checkSum,
-                                      Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
-                        ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                        }
-                    else
-                        continue;
-                    }
-                }
-            }
-
-        ECN::ECSchemaId schemaId;
-        if (BE_SQLITE_OK != GetSyncInfo().InsertECSchema(schemaId, *v8Model.GetDgnFileP(),
-                                                 schemaName.c_str(),
-                                                 schemaKey.GetVersionMajor(),
-                                                 schemaKey.GetVersionMinor(),
-                                                 isDynamicSchema,
-                                                 schemaKey.m_checkSum))
-            {
-            BeAssert(false && "Failed to insert ECSchema sync info");
+        if (BSIERROR == ProcessSchemaXml(schemaKey, schemaXml.c_str(), isDynamicSchema, v8Model))
             return BSIERROR;
-            }
-
-        BeAssert(schemaId.IsValid());
-
-        if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml.c_str()))
-            {
-            BeAssert(false && "Could not insert foreign schema xml");
-            return BSIERROR;
-            }
-
-        m_skipECContent = false;
         }
+    m_skipECContent = false;
 
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObjectsV8::ECSchemaCR schema, DgnV8ModelR v8Model)
+    {
+
+    ECObjectsV8::ECSchemaReferenceListCR referencedSchemas = schema.GetReferencedSchemas();
+    for (ECObjectsV8::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        ECObjectsV8::ECSchemaPtr refSchema = it->second;
+        Bentley::Utf8String refSchemaXml;
+        if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != refSchema->WriteToXmlString(refSchemaXml))
+            {
+            Utf8PrintfString error("Could not serialize externally referenced v8 ECSchema %s.  Instances of classes from this schema will not be converted.", refSchema->GetName().c_str());
+            ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::Message(), nullptr, error.c_str());
+            return BSIERROR;
+            }
+        if (BSISUCCESS != ProcessSchemaXml(refSchema->GetSchemaKey(), refSchemaXml.c_str(), IsDynamicSchema(*refSchema), v8Model))
+            return BSIERROR;
+        ProcessReferenceSchemasFromExternal(*refSchema, v8Model);
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
+    {
+    Bentley::Utf8String schemaName(schemaKey.GetName());
+    BECN::SchemaKey existingSchemaKey;
+    SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
+        {
+        //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
+        //and also check whether the existing one and the new one are compatible.
+
+        if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
+            {
+            if (!isDynamicSchema)
+                {
+                Utf8String error;
+                error.Sprintf("Dynamic ECSchema %s already found in the V8 file. Copy in model %s is not dynamic and therefore ignored.",
+                              schemaName.c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                return BSISUCCESS;
+                }
+            }
+        else
+            {
+            if (isDynamicSchema)
+                {
+                Utf8String error;
+                error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
+                              Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                return BSISUCCESS;
+                }
+
+            const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
+            const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
+            const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
+
+            if (existingToNewVersionDiff >= 0)
+                {
+                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                    {
+                    Utf8String error;
+                    error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
+                                  existingSchemaKey.GetFullSchemaName().c_str(), existingSchemaKey.m_checkSum,
+                                  Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
+                    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                    }
+                else
+                    return BSISUCCESS;
+                }
+            }
+        }
+
+    ECN::ECSchemaId schemaId;
+    if (BE_SQLITE_OK != GetSyncInfo().InsertECSchema(schemaId, *v8Model.GetDgnFileP(),
+                                                     schemaName.c_str(),
+                                                     schemaKey.GetVersionMajor(),
+                                                     schemaKey.GetVersionMinor(),
+                                                     isDynamicSchema,
+                                                     schemaKey.m_checkSum))
+        {
+        BeAssert(false && "Failed to insert ECSchema sync info");
+        return BSIERROR;
+        }
+
+    BeAssert(schemaId.IsValid());
+
+    if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml))
+        {
+        BeAssert(false && "Could not insert foreign schema xml");
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
