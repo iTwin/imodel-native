@@ -518,7 +518,7 @@ CurveVectorPtr AlignmentPair::CloneVerticalCurveVector(Dgn::StandardUnit unit) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ben.Bartholomew                 03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AlignmentPair::ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, ICurvePrimitive::CurvePrimitiveType* pType) const
+bool AlignmentPair::ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, bool extendVertical, ICurvePrimitive::CurvePrimitiveType* pType) const
     {
     CurveLocationDetail location;
     const DPoint3d atPoint = DPoint3d::From(referencePoint.x, referencePoint.y, 0.0);
@@ -528,7 +528,7 @@ bool AlignmentPair::ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePo
 
     locationPoint = location.point;
     const double distanceAlongFromStart = DistanceAlongFromStart(location);
-    locationPoint.z = GetVerticalElevationAt(distanceAlongFromStart);
+    locationPoint.z = GetVerticalElevationAt(distanceAlongFromStart, extendVertical);
     
     if (nullptr != pType)
         *pType = location.curve->GetCurvePrimitiveType();
@@ -782,7 +782,7 @@ ValidatedDPoint3d AlignmentPair::GetPointAtWithZ(double distanceAlongFromStart, 
     {
     ValidatedDPoint3d returnPoint = GetPointAt(distanceAlongFromStart);
     if (returnPoint.IsValid())
-        returnPoint.Value().z = GetVerticalElevationAt(distanceAlongFromStart);
+        returnPoint.Value().z = GetVerticalElevationAt(distanceAlongFromStart, extendVertical);
 
     return returnPoint;
     }
@@ -824,6 +824,46 @@ bvector<DPoint3d> AlignmentPair::GetStrokedAlignment(double maxEdgeLength) const
         }
 
     return strokes;
+    }
+
+BEGIN_UNNAMED_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        10/2017
+//---------------------------------------------------------------------------------------
+double computeMinimumRadius(CurveVectorCR hz, bool wantsCCW)
+    {
+    double minRadius = CS_SPI_INFINITY;
+
+    for (auto const& primitive : hz)
+        {
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != primitive->GetCurvePrimitiveType())
+            continue;
+
+        const DEllipse3dCP pArc = primitive->GetArcCP();
+        if (wantsCCW != pArc->IsCCWSweepXY())
+            continue;
+
+        const double minArcRadius = sqrt(MIN(pArc->vector0.MagnitudeSquaredXY(), pArc->vector90.MagnitudeSquaredXY()));
+        if (minArcRadius < minRadius)
+            minRadius = minArcRadius;
+        }
+
+    return minRadius;
+    }
+END_UNNAMED_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        10/2017
+//---------------------------------------------------------------------------------------
+double AlignmentPair::ComputeLeftMinimumRadius() const
+    {
+    return computeMinimumRadius(GetHorizontalCurveVector(), true);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        10/2017
+//---------------------------------------------------------------------------------------
+double AlignmentPair::ComputeRightMinimumRadius() const
+    {
+    return computeMinimumRadius(GetHorizontalCurveVector(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**

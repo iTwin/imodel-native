@@ -13,6 +13,7 @@
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
+#define CS_SPI_INFINITY ((double)1.0E+38)
 //=======================================================================================
 // @bsiclass
 // Access queries for alignment geometry.
@@ -100,9 +101,10 @@ public:
     ROADRAILALIGNMENT_EXPORT bvector<DPoint3d> GetStrokedAlignment(double maxStrokeLength = DefaultMaxStrokeLength) const;
 
     //! Return a point on the alignment relative to the reference point if there is one
+    //! @param[in] extendVertical - If true and outside the vertical alignment, returns the closest valid elevation
     //! @remarks UNBOUNDED. If referencePoint is before or after alignment, returns start or end point
     //! @remarks optionally returns the CurvePrimitiveType
-    ROADRAILALIGNMENT_EXPORT bool ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, ICurvePrimitive::CurvePrimitiveType* pType = nullptr) const;
+    ROADRAILALIGNMENT_EXPORT bool ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, bool extendVertical = true, ICurvePrimitive::CurvePrimitiveType* pType = nullptr) const;
 
     //! Return a point on the alignment relative to the reference point if there is one
     //! @remarks UNBOUNDED. If referencePoint is before or after alignment, returns start or end point
@@ -133,6 +135,13 @@ public:
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr CloneHorizontalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
     //! Returns a deep copy of the Vertical, optionally converted in a different unit
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr CloneVerticalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
+
+    //! Returns the radius of the smallest arc primitive that turns left on the horizontal alignment
+    //! @remarks offsetting the alignment to the left with a value greater than this radius will result in invalid geometry
+    ROADRAILALIGNMENT_EXPORT double ComputeLeftMinimumRadius() const;
+    //! Returns the radius of the smallest arc primitive that turns right on the horizontal alignment
+    //! @remarks offsetting the alignment to the right with a value greater than this radius will result in invalid geometry
+    ROADRAILALIGNMENT_EXPORT double ComputeRightMinimumRadius() const;
 
     // Find intersection of two alignments in XY. Optionally returns distanceAlong of the intersect. Also optionally locates the intersection
     // closest to the given point if there are multiple intersects (otherwise it will return the first intersect it finds)

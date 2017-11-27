@@ -80,6 +80,12 @@ public:
 
 typedef RoadRailAlignmentTestsFixture RoadRailAlignmentTests;
 
+//---------------------------------------------------------------------------------------
+//! Toleranced asserts
+//---------------------------------------------------------------------------------------
+#define EXPECT_EQ_DPOINT3D(expected, actual) EXPECT_TRUE(expected.AlmostEqual(actual));
+#define EXPECT_VALID_CURVE(curvePtr) EXPECT_TRUE(curvePtr.IsValid() && !curvePtr->empty());
+#define EXPECT_EQ_DOUBLE(expected, actual) EXPECT_TRUE(DoubleOps::AlmostEqual(expected, actual));
 
 END_BENTLEY_ROADRAILALIGNMENT_UNITTESTS_NAMESPACE
 
