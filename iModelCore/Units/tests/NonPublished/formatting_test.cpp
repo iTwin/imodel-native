@@ -281,12 +281,15 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitProxyJsonTest("ARC_MINUTE", "'");
     FormattingTestFixture::UnitProxyJsonTest("ARC_SECOND", "\"");
 
+    LOG.info("\n============ UnitSynonymMapTest ==================");
+
     FormattingTestFixture::UnitSynonymMapTest("FT", "feet");
     FormattingTestFixture::UnitSynonymMapTest("ARC_DEG", u8"°");
     FormattingTestFixture::UnitSynonymMapTest("ARC_SECOND", "\"");
     FormattingTestFixture::UnitSynonymMapTest("FT", u8"фут");
-
-    LOG.infov(L"Unicode text:  %ls = %ls", L"foot", L"фут");
+    FormattingTestFixture::UnitSynonymMapTest(u8"FT,фут");
+    FormattingTestFixture::UnitSynonymMapTest(u8"{\"synonym\":\"фут\", \"unitName\" : \"FT\"}");
+    LOG.info("============ UnitSynonymMapTest(end) ==================\n");
 
     bvector<BEU::UnitSynonymMap> mapV;
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "feet");
@@ -497,7 +500,7 @@ TEST(FormattingTest, PhysValues)
 
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
     //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
-    EXPECT_STREQ ("74 15/32FT", fusYF.FormatQuantity(len, nullptr).c_str());
+    EXPECT_STREQ ("74 15/32FT", fusYF.FormatQuantity(len, "").c_str());
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -537,43 +540,53 @@ TEST(FormattingTest, PhysValues)
     LOG.infov("DMS-90 %s", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang90).c_str());
 
     // Temperature
-    EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue("real4u", 36.6, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", 100, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    Utf8CP ems = FormatConstant::EmptyString();
+    EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue("real4u", 36.6, "CELSIUS", "FAHRENHEIT",  u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"212.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", 100, "CELSIUS", "FAHRENHEIT",   u8"°F", ems).c_str());
 
-    EXPECT_STREQ (u8"-40.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -40.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-35.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -31.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-30.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -22.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-25.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -13.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-20.0°C", NumericFormatSpec::StdFormatPhysValue("real4u",  -4.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-15.0°C", NumericFormatSpec::StdFormatPhysValue("real4u",   5.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-10.0°C", NumericFormatSpec::StdFormatPhysValue("real4u",  14.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
-    EXPECT_STREQ (u8"-5.0°C",  NumericFormatSpec::StdFormatPhysValue("real4u",  23.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-40.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -40.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-35.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -31.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-30.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -22.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-25.0°C", NumericFormatSpec::StdFormatPhysValue("real4u", -13.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-20.0°C", NumericFormatSpec::StdFormatPhysValue("real4u",  -4.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-15.0°C", NumericFormatSpec::StdFormatPhysValue("real4u",   5.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-10.0°C", NumericFormatSpec::StdFormatPhysValue("real4u",  14.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
+    EXPECT_STREQ (u8"-5.0°C",  NumericFormatSpec::StdFormatPhysValue("real4u",  23.0, "FAHRENHEIT", "CELSIUS", u8"°C", ems).c_str());
 
-    EXPECT_STREQ (u8"-40.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -40.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"-31.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -35.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"-22.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -30.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"-13.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -25.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"-4.0°F",  NumericFormatSpec::StdFormatPhysValue("real4u", -20.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"5.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -15.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"14.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -10.0, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
-    EXPECT_STREQ (u8"23.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -5.0,  "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    // using default UOM spacer
+
+    EXPECT_STREQ (u8"97.88 °F", NumericFormatSpec::StdFormatPhysValue("real4u", 36.6, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
+    EXPECT_STREQ (u8"212.0 °F", NumericFormatSpec::StdFormatPhysValue("real4u", 100, "CELSIUS", "FAHRENHEIT", u8"°F",  nullptr).c_str());
+
+    EXPECT_STREQ (u8"-40.0 °C", NumericFormatSpec::StdFormatPhysValue("real4u", -40.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+    EXPECT_STREQ (u8"-35.0 °C", NumericFormatSpec::StdFormatPhysValue("real4u", -31.0, "FAHRENHEIT", "CELSIUS", u8"°C", nullptr).c_str());
+
+    EXPECT_STREQ (u8"-40.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -40.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"-31.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -35.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"-22.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -30.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"-13.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -25.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"-4.0°F",  NumericFormatSpec::StdFormatPhysValue("real4u", -20.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"5.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -15.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"14.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -10.0, "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
+    EXPECT_STREQ (u8"23.0°F", NumericFormatSpec::StdFormatPhysValue("real4u", -5.0,  "CELSIUS", "FAHRENHEIT", u8"°F", ems).c_str());
     
-    EXPECT_STREQ (u8"415.53°R", NumericFormatSpec::StdFormatPhysValue("real4u", -42.3, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"450.27°R", NumericFormatSpec::StdFormatPhysValue("real4u", -23.0, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"468.27°R", NumericFormatSpec::StdFormatPhysValue("real4u", -13.0, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"481.77°R", NumericFormatSpec::StdFormatPhysValue("real4u", -5.5,  "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"491.67°R", NumericFormatSpec::StdFormatPhysValue("real4u", 0.0, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"498.996°R", NumericFormatSpec::StdFormatPhysValue("real4u", 4.07, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"524.07°R", NumericFormatSpec::StdFormatPhysValue("real4u", 18.0, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
-    EXPECT_STREQ (u8"557.604°R", NumericFormatSpec::StdFormatPhysValue("real4u", 36.63, "CELSIUS", "RANKINE", u8"°R", nullptr).c_str());
+    EXPECT_STREQ (u8"415.53°R", NumericFormatSpec::StdFormatPhysValue("real4u", -42.3, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"450.27°R", NumericFormatSpec::StdFormatPhysValue("real4u", -23.0, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"468.27°R", NumericFormatSpec::StdFormatPhysValue("real4u", -13.0, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"481.77°R", NumericFormatSpec::StdFormatPhysValue("real4u", -5.5,  "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"491.67°R", NumericFormatSpec::StdFormatPhysValue("real4u", 0.0, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"498.996°R", NumericFormatSpec::StdFormatPhysValue("real4u", 4.07, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"524.07°R", NumericFormatSpec::StdFormatPhysValue("real4u", 18.0, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
+    EXPECT_STREQ (u8"557.604°R", NumericFormatSpec::StdFormatPhysValue("real4u", 36.63, "CELSIUS", "RANKINE", u8"°R", ems).c_str());
 
     // Velocity
-    EXPECT_STREQ ("10.0 m/s", NumericFormatSpec::StdFormatPhysValue("real4u", 36.0, "KM/HR", "M/SEC", " m/s", nullptr).c_str());
-    EXPECT_STREQ ("2905.76 cm/s", NumericFormatSpec::StdFormatPhysValue("real4u", 65.0, "MPH", "CM/SEC", " cm/s", nullptr).c_str());
-    EXPECT_STREQ ("40.3891 mph", NumericFormatSpec::StdFormatPhysValue("real4u", 65.0, "KM/HR", "MPH", " mph", nullptr).c_str()); 
+    EXPECT_STREQ ("10.0 m/s", NumericFormatSpec::StdFormatPhysValue("real4u", 36.0, "KM/HR", "M/SEC", " m/s", ems).c_str());
+    EXPECT_STREQ ("2905.76 cm/s", NumericFormatSpec::StdFormatPhysValue("real4u", 65.0, "MPH", "CM/SEC", " cm/s", ems).c_str());
+    EXPECT_STREQ ("40.3891 mph", NumericFormatSpec::StdFormatPhysValue("real4u", 65.0, "KM/HR", "MPH", " mph", ems).c_str()); 
 
     // Volumes
     EXPECT_STREQ ("405.0 CFT", NumericFormatSpec::StdFormatPhysValue("real4u", 15.0, "CUB.YRD", "CUB.FT", "CFT", " ").c_str());
+
     EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4u", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
     EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4u", 543.6700, "GALLON", "LITRE", "L", " ").c_str());
 

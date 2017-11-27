@@ -373,7 +373,29 @@ void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
 //----------------------------------------------------------------------------------------
 UnitSynonymMap::UnitSynonymMap(Utf8CP unitName, Utf8CP synonym)
     {
-    Init(unitName, synonym);
+    Init(nullptr, nullptr);
+    if (!Utf8String::IsNullOrEmpty(unitName))  //if first argument is empty the map will be empty as well
+        {
+        if (Utf8String::IsNullOrEmpty(synonym)) // only first argument is passed
+            {
+            while (isspace(*unitName)) unitName++; // skip blanks
+            if ('{' == *unitName) // indicator of the Json string
+                {
+                Json::Value jval (Json::objectValue);
+                Json::Reader::Parse(unitName, jval);
+                LoadJson(jval);
+                }
+            else
+                {
+                bvector<Utf8String> tokens;
+                BeStringUtilities::Split(unitName, ", ", nullptr, tokens);
+                if (tokens.size() == 2)
+                    Init(tokens[0].c_str(), tokens[1].c_str());
+                }
+            }
+        else
+            Init(unitName, synonym);
+        }
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
@@ -382,27 +404,27 @@ UnitSynonymMap::UnitSynonymMap(Utf8CP unitName, Utf8CP synonym)
 //    this function attempts to parse the string into a Json-object that will be used for
 //     populating the instance
 //----------------------------------------------------------------------------------------
-UnitSynonymMap::UnitSynonymMap(Utf8CP descr)
-    {
-    Init(nullptr, nullptr);
-    if (nullptr != descr && *descr != '\0')
-        {
-        while (isspace(*descr)) descr++; // skip blanks
-        if ('{' == *descr) // indicator of the Json string
-            {
-            Json::Value jval (Json::objectValue);
-            Json::Reader::Parse(descr, jval);
-            LoadJson(jval);
-            }
-        else
-            {
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(descr, ", ", nullptr, tokens);
-            if (tokens.size() == 2)
-                Init(tokens[0].c_str(), tokens[1].c_str());
-            }
-        }
-    }
+//UnitSynonymMap::UnitSynonymMap(Utf8CP descr)
+//    {
+//    Init(nullptr, nullptr);
+//    if (nullptr != descr && *descr != '\0')
+//        {
+//        while (isspace(*descr)) descr++; // skip blanks
+//        if ('{' == *descr) // indicator of the Json string
+//            {
+//            Json::Value jval (Json::objectValue);
+//            Json::Reader::Parse(descr, jval);
+//            LoadJson(jval);
+//            }
+//        else
+//            {
+//            bvector<Utf8String> tokens;
+//            BeStringUtilities::Split(descr, ", ", nullptr, tokens);
+//            if (tokens.size() == 2)
+//                Init(tokens[0].c_str(), tokens[1].c_str());
+//            }
+//        }
+//    }
 
 void UnitSynonymMap::LoadJson(Json::Value jval)
     {
@@ -556,10 +578,11 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName)
 //----------------------------------------------------------------------------------------
 void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     {
-    UnitCP un = FindSynonym(synonym);
-    if (nullptr != un)
-        return;
     UnitSynonymMap map = UnitSynonymMap(unitName, synonym);
+    UnitCP un = FindSynonym(map.GetSynonym());
+
+    if (nullptr != un) // synonym is found - we don't add duplicate
+        return;
     m_altNames.push_back(map);
     }
 //----------------------------------------------------------------------------------------

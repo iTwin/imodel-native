@@ -1030,7 +1030,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
             return "";
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
         if(fmtP->IsAppendUnit())
-           majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
+           majT = Utils::AppendUnitName(majT.c_str(), uomName, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
         /*if (nullptr != uomName)
         {
         if (!Utils::IsNameNullOrEmpty(space))

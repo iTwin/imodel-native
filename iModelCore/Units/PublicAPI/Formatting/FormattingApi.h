@@ -287,7 +287,7 @@ public:
     Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
     Utf8CP   SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); return m_uomSeparator.c_str(); }
-    Utf8CP   GetUomSeparator(Utf8CP def=nullptr) { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
+    Utf8CP   GetUomSeparator(Utf8CP def=nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
     Utf8Char SetStopSeparator(Utf8Char sep) { return m_statSeparator = sep; }
     Utf8Char GetStopSeparator() const { return m_statSeparator; }
     FractionBarType  GetFractionalBarType() const { return m_barType; }
@@ -303,7 +303,7 @@ public:
     
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit=nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0); 
-    UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(FormatUnitSetCR fus, BEU::QuantityCR qty);
 
     UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
