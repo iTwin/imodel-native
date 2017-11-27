@@ -187,6 +187,14 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
         m_categoryId = geomParams->GetCategoryId();
         m_subCategoryId = geomParams->GetSubCategoryId();
         m_class = geomParams->GetGeometryClass();
+
+        if (!geomParams->IsResolved())
+            {
+            // TFS#786614: BRep with multiple face attachments - params may no longer be resolved.
+            // Doesn't matter - we will create GeometryParams for each of the face attachments - only need the
+            // class, category, and sub-category here.
+            geomParams = nullptr;
+            }
         }
 
     switch (type)
