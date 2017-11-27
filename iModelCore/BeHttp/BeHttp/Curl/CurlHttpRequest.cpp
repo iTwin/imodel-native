@@ -440,8 +440,8 @@ void CurlHttpRequest::SetupCurl()
         }
     else
         {
-        curl_easy_setopt(m_curl, CURLOPT_USERNAME, nullptr);
-        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, nullptr);
+        curl_easy_setopt(m_curl, CURLOPT_USERNAME, NULL);
+        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, NULL);
         }
 
     // Request method
@@ -530,7 +530,7 @@ void CurlHttpRequest::SetupCurl()
         {
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
+        curl_easy_setopt(m_curl, CURLOPT_CAINFO, NULL);
         }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
