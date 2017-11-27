@@ -758,7 +758,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     AddDefaultScene(partData);
     AddMeshes (partData, part->Meshes());
 
-#ifdef DO_QUANTIZE_INSTANC#E_TRANSLATION
+#ifdef DO_QUANTIZE_INSTANCE_TRANSLATION
     // Quantizing the instance translation would seem to be a reasonable optimization...however
     // in some I-Models (area234 from Hatch) the instance origins are far from the parts and therefore
     // quantization can produce excessive error.
