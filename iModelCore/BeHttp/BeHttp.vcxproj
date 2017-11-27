@@ -50,7 +50,7 @@
     <None Include="BeHttp.mke" />
     <None Include="BeHttpCompileOptions.mki" />
     <None Include="BeHttpXliffs.mke" />
-    <None Include="BeHttp\ApplicationEvents.mm" />
+    <None Include="BeHttp\ApplicationEventsIos.mm" />
     <None Include="BeHttp\Curl\cabundle.pem" />
     <None Include="Http.mki" />
     <None Include="l10n-BeHttp.mke" />
