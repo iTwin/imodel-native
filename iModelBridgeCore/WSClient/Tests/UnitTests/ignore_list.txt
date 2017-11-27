@@ -28,6 +28,9 @@ CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFil
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
 WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString
 
+#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
+*ConnectWebServicesClientCTests*
+
 #--------------------------------------------------------------------------------
 # BREAKAGES caused by recent changes in dependencies
 #--------------------------------------------------------------------------------
@@ -62,6 +65,7 @@ DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdat
     #[  FAILED  ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue (129 ms)
 
 #TFS 733272
+CachingDataSourceTests.CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads
 CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
 CachingDataSourceTests.GetFile_CalledMultipleTimes*
     # bim0200, NDEBUG, x64 and x86
@@ -119,9 +123,6 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     #          Expected: to be called once
     #            Actual: called twice - over-saturated and active
     # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
-
-#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
-*ConnectWebServicesClientCTests*
 
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 # bim0200dev, x64, DEBUG
@@ -203,5 +204,3 @@ DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
 
-# Even after Julius' recent push, firebug still hangs randomly
-CachingDataSourceTests.CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads
