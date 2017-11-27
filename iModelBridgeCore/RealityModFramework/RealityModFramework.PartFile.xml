@@ -7,13 +7,24 @@
             <PublicAPI Domain="RealityPlatformTools" />
             <PublicAPI Domain="RealityPlatform" />
             <PublicAPI Domain="RealityAdmin" />
+            <PublicAPI Domain="SpatioTemporalSelector" />
+        </Bindings>
+    </Part>
+    
+    <Part Name="SpatioTemporalSelector" BentleyBuildMakeFile="SpatioTemporalSelector\SpatioTemporalSelector.mke" OnlyPlatforms="x64" ApiNumber="B02">
+        <SubPart PartName="RealityPlatform" />
+        <SubPart PartName="RealityPlatformTools" />
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)SpatioTemporalSelector$(stlibext)</Libs>
+            <Assemblies>delivery/$(shlibprefix)SpatioTemporalSelector$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
     <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsComplete\RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="B02">
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
@@ -46,6 +57,7 @@
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPlatformTools"/>
+        <SubPart PartName="SpatioTemporalSelector"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityAdmin$(stlibext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(ApiNumber)$(shlibext)</Assemblies>
@@ -252,6 +264,7 @@
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="SpatioTemporalSelector"/>
         <Bindings>
             <Assemblies>Delivery/GeoCoordinationServiceExample.exe</Assemblies>
         </Bindings>

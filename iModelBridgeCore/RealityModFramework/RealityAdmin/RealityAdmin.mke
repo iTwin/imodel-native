@@ -98,6 +98,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatformTools$(libext) \
                        $(ContextSubpartsLibs)CCApi$(libext) \
+                       $(ContextSubPartsLibs)SpatioTemporalSelector$(libext) \
                        odbc32$(libext)
                        #$(ContextSubpartsLibs)WebServicesClient$(libext) \
 

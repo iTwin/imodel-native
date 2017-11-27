@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatformTools/SpatioTemporalSelector.h $
+|     $Source: PublicApi/SpatioTemporalSelector/SpatioTemporalSelector.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

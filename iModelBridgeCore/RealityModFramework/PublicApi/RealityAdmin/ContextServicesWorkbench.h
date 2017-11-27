@@ -9,7 +9,7 @@
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <RealityPlatformTools/SpatioTemporalSelector.h>
+#include <SpatioTemporalSelector/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 #include <RealityPlatformTools/WSGServices.h>
 

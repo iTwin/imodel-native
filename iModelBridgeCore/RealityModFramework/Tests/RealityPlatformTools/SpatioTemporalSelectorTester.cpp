@@ -8,7 +8,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTest.h>
-#include <RealityPlatformTools/SpatioTemporalSelector.h>
+#include <SpatioTemporalSelector/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include "../Common/RealityModFrameworkTestsCommon.h"

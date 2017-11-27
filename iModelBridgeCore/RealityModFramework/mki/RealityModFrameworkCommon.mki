@@ -16,6 +16,7 @@
 RealityPlatformPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatform/
 RealityPlatformToolsPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatformTools/
 RealityAdminPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityAdmin/
+SpatioTemporalSelectorPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/SpatioTemporalSelector/
 
 #----------------------------------------------------------
 # outdirs

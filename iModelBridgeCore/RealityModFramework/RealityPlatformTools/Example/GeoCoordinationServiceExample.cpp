@@ -10,7 +10,7 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatformTools/GeoCoordinationService.h>
-#include <RealityPlatformTools/SpatioTemporalSelector.h>
+#include <SpatioTemporalSelector/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 #include <curl/curl.h>
 

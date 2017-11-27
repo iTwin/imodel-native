@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsComplete/SpatioTemporalSelector.cpp $
+|     $Source: SpatioTemporalSelector/SpatioTemporalSelector.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,7 @@
 #include "StdAfx.h"
 
 #include <RealityPlatform/SpatialEntity.h>
-#include <RealityPlatformTools/SpatioTemporalSelector.h>
+#include <SpatioTemporalSelector/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM

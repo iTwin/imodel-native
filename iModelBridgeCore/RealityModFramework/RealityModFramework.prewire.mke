@@ -19,3 +19,4 @@ always:
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatformTools=$(RealityPlatformToolsPublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityAdmin=$(RealityAdminPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)SpatioTemporalSelector=$(SpatioTemporalSelectorPublicAPISrc)"
