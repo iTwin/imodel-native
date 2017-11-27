@@ -1014,7 +1014,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
 
         modeledElementId = partition->GetElementId();
 
-        iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDb(), partition->GetElementId(), GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
+        iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), partition->GetElementId(), GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
         }
     else
         {
@@ -1439,7 +1439,7 @@ static void dumpElement(DgnElementCR el)
 static void dumpPartitionRepositoryLink(DgnElementCR el)
     {
     BeSQLite::EC::ECSqlStatement stmt;
-    stmt.Prepare(el.GetDgnDb(), "SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_PartitionOriginatesFromRepository) " WHERE SourceECInstanceId=?");
+    stmt.Prepare(el.GetDgnDb(), "SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE SourceECInstanceId=?");
     stmt.BindId(1, el.GetElementId());
     while (BE_SQLITE_ROW == stmt.Step())
         {

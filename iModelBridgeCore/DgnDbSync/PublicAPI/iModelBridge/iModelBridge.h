@@ -73,7 +73,7 @@ Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 
 - @ref ANCHOR_TrackingDocuments "Track source document GUIDs".
 
-- Relate all models created from document to a RepositoryLink that captures the document's properties. See @ref ANCHOR_PartitionOriginatesFromRepository "PartitionOriginatesFromRepository".
+- Relate all models created from document to a RepositoryLink that captures the document's properties. See @ref ANCHOR_ElementHasLinks "ElementHasLinks".
 
 - Track all document content, scoped to document. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic" and @ref ANCHOR_ScopeItemsToDocuments "scope items to documents".
 
@@ -306,11 +306,11 @@ Utf8String ToyTileBridge::ComputeJobSubjectName()
 An iModelBridge is responsible for storing provenance data that relates elements in the iModel to information in the source documents.
 Currently, provenance for model elements is required. Provenance for other kinds of elements is optional.
 
-@anchor ANCHOR_PartitionOriginatesFromRepository
-<h3>PartitionOriginatesFromRepository</h3>
+@anchor ANCHOR_ElementHasLinks
+<h3>ElementHasLinks</h3>
 A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
-Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
-to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
+Specifically, each bridge must create a ElementHasLinks ECRelationship from the InformationContentElement element that represents the model
+to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertElementHasLinksRelationship.
 
 When you create a physical partition model, link it to the RepositoryLink that corresponds to the source document. For example:
 
@@ -335,7 +335,7 @@ PhysicalModelPtr ToyTileBridge::CreatePhysicalModel(SubjectCR parentSubject, Utf
     PhysicalModelPtr model = PhysicalModel::Create(*partition);
 ...
     // IMODELBRIDGE PROVENANCE REQUIREMENT: Relate this model to the source document
-    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), model->GetModeledElementId(), repositoryLinkId);
+    InsertElementHasLinksRelationship(GetDgnDbR(), model->GetModeledElementId(), repositoryLinkId);
 
     return model;
     }
@@ -827,14 +827,14 @@ public:
     //! Utility to create an instance of an ECRelationship (for non-Navigation relationships).
     IMODEL_BRIDGE_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
 
-    //! Create a "PartitionOriginatesFromRepository" relationship between a partition model and a RepositoryLink element.
+    //! Create a "ElementHasLinks" relationship between a partition model and a RepositoryLink element.
     //! @param db               The briefcase.
     //! @param informationPartitionElementId  The element that represents the partition model.
     //! @param repoLinkElementId The RepositoryLinkElement
     //! @return non-zero status if the relationship instance could not be inserted in the briefcase.
-    static DgnDbStatus InsertPartitionOriginatesFromRepositoryRelationship(DgnDbR db, DgnElementId informationPartitionElementId, DgnElementId repoLinkElementId)
+    static DgnDbStatus InsertElementHasLinksRelationship(DgnDbR db, DgnElementId informationPartitionElementId, DgnElementId repoLinkElementId)
         {
-        return InsertLinkTableRelationship(db, BIS_REL_PartitionOriginatesFromRepository, informationPartitionElementId, repoLinkElementId);
+        return InsertLinkTableRelationship(db, BIS_REL_ElementHasLinks, informationPartitionElementId, repoLinkElementId);
         }
 
     //! @}
