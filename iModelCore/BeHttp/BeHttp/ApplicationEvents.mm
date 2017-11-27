@@ -10,10 +10,8 @@
     #error This file is only intended for iOS compilands!
 #endif
 
-#include <BeHttp/Http.h>
+#include "ApplicationEvents.h"
 #include <queue>
-#include "CurlHttpHandler.h"
-
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 

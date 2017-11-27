@@ -91,7 +91,7 @@ $(o)ThreadCurlHttpHandler$(oext)    : $(BeHttpSourceDir)Curl/ThreadCurlHttpHandl
 
     # Recipes for .m and .mm don't put the objs to MultiCompileObjectList so do that manually
     MultiCompileObjectList + $(o)ApplicationEvents$(oext)
-
+     
 %endif
 
 #---------------------------------------------------------------------------------------+
