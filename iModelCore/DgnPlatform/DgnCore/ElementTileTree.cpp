@@ -672,7 +672,7 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::World(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::Scene(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -817,7 +817,7 @@ TileContext::TileContext(GeometryList& geometries, RootR root, DRange3dCR range,
     SetViewFlags(GetDefaultViewFlags());
 
     // These are reused...
-    m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams::World(root.GetDgnDb()));
+    m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams::Scene(root.GetDgnDb()));
     m_subGraphic = new TileSubGraphic(*this);
     }
 
@@ -1731,7 +1731,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     if (!wantRange && !wantContentRange)
         return (m_debugGraphics.m_graphic = nullptr);
 
-    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams::World(GetElementRoot().GetDgnDb()));
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams::Scene(GetElementRoot().GetDgnDb()));
     GraphicParams params;
     params.SetWidth(0);
     if (wantRange)

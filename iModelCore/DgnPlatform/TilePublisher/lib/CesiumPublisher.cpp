@@ -151,7 +151,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (TilesetPublisher::Status::Success == TilesetHistoryPublisher::PublishHistory(revisionsJson, params, *this))
         json["revisions"] = std::move(revisionsJson);
 
-    if (Status::Success != (status = WriteAppJson (json)))
+    if (Status::Success != (status = WriteAppJson(json)))
         return status;
 
     return WriteStandaloneHtmlFile(params);

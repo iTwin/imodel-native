@@ -310,6 +310,7 @@ protected:
     //  Override and forward the methods that trigger a query.
     void _OnCategoryChange(bool singleEnabled) override;
     void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
+    void _SetViewedModels(DgnModelIdSet const&) override;
 
     //ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
     void _OnAttachedToViewport(DgnViewportR) override;

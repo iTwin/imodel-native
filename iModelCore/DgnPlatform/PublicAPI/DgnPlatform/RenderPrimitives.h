@@ -67,15 +67,23 @@ enum class NormalMode
 //=======================================================================================
 struct GeometryOptions
 {
-    enum class SurfacesOnly { Yes, No };
+    enum class SurfacesOnly { Yes, No }; //!< Yes indicates polylines will not be generated, only meshes.
+    enum class PreserveOrder { Yes, No }; //!< Yes indicates primitives will not be merged, and the order in which they were added to the GraphicBuilder will be preserved.
+    enum class GenerateEdges { Yes, No }; //!< Yes indicates edges will be generated for surfaces.
 
     NormalMode          m_normalMode;
     SurfacesOnly        m_surfaces;
+    PreserveOrder       m_preserveOrder;
+    GenerateEdges       m_generateEdges;
 
-    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No)
-        : m_normalMode(normals), m_surfaces(surfaces) { }
+    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No, PreserveOrder preserveOrder=PreserveOrder::No, GenerateEdges edges=GenerateEdges::Yes)
+        : m_normalMode(normals), m_surfaces(surfaces), m_preserveOrder(preserveOrder), m_generateEdges(edges) { }
+    explicit GeometryOptions(GraphicBuilder::CreateParams const& params, NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No)
+        : GeometryOptions(normals, surfaces, (params.IsOverlay() || params.IsViewBackground()) ? PreserveOrder::Yes : PreserveOrder::No, params.IsSceneGraphic() ? GenerateEdges::Yes : GenerateEdges::No) { }
 
     bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
+    bool WantPreserveOrder() const { return PreserveOrder::Yes == m_preserveOrder; }
+    bool WantEdges() const { return GenerateEdges::Yes == m_generateEdges; }
 };
 
 //=======================================================================================
@@ -519,6 +527,7 @@ struct MeshBuilderMap
         friend struct MeshBuilderMap;
     private:
         DisplayParamsCP     m_params;
+        uint16_t            m_order;
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
         bool                m_isPlanar;
@@ -529,9 +538,14 @@ struct MeshBuilderMap
         explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
         Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar) : Key(&params, type, hasNormals, isPlanar) { }
 
+        void SetOrder(uint16_t order) { m_order = order; }
+
         bool operator<(Key const& rhs) const
             {
-            BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+            // NB: This *must* be tested first.
+            if (m_order != rhs.m_order)
+                return m_order < rhs.m_order;
+
             if (m_type != rhs.m_type)
                 return m_type < rhs.m_type;
 
@@ -541,6 +555,7 @@ struct MeshBuilderMap
             if (m_hasNormals != rhs.m_hasNormals)
                 return !m_hasNormals;
 
+            BeAssert(nullptr != m_params && nullptr != rhs.m_params);
             return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
             }
     };
