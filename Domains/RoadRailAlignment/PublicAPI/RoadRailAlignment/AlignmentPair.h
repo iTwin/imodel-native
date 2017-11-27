@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //=======================================================================================
 // @bsiclass
 // Access queries for alignment geometry.
-// An AlignmentPair combines the horizontal and vertical of an alignment
+// An AlignmentPair combines the horizontal and vertical geometry of an alignment
 //=======================================================================================
 struct AlignmentPair : NonCopyableClass, RefCountedBase
 {
@@ -39,8 +39,8 @@ protected:
     CurveVectorWithDistanceIndexPtr VerticalIndexVector() const;
     CurveVectorWithXIndexPtr VerticalXIndexVector() const;
 
-    //! Returns a transformed CurveVector
-    CurveVectorPtr GetConvertedCurveVector(CurveVectorCR cv, double convFactor) const;
+    //! Returns a scaled deep copy of a curve vector
+    CurveVectorPtr GetScaledCurveVector(CurveVectorCR cv, double scale) const;
 
     //! Returns the distance along the alignment to the referencePoint
     double DistanceAlongFromStart(CurveLocationDetailCR location) const;

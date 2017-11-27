@@ -110,17 +110,17 @@ protected:
     explicit HorizontalAlignment(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit HorizontalAlignment(CreateParams const& params, AlignmentCR alignment, CurveVectorR geometry);
+    explicit HorizontalAlignment(CreateParams const& params, AlignmentCR alignment, CurveVectorCR geometry);
 
     ROADRAILALIGNMENT_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(HorizontalAlignment)
-    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentPtr Create(AlignmentCR alignment, CurveVectorR horizontalGeometry);
+    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentPtr Create(AlignmentCR alignment, CurveVectorCR horizontalGeometry);
 
     ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const;
-    ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
+    ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorCR);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateElementGeom();
 
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr QueryAlignment() const;
@@ -143,17 +143,17 @@ protected:
     explicit VerticalAlignment(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit VerticalAlignment(CreateParams const& params, CurveVectorR geometry);
+    explicit VerticalAlignment(CreateParams const& params, CurveVectorCR geometry);
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(VerticalAlignment)
-    ROADRAILALIGNMENT_EXPORT static VerticalAlignmentPtr Create(VerticalAlignmentModelCR model, CurveVectorR verticalGeometry);
+    ROADRAILALIGNMENT_EXPORT static VerticalAlignmentPtr Create(VerticalAlignmentModelCR model, CurveVectorCR verticalGeometry);
 
     ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr InsertAsMainVertical(Dgn::DgnDbStatus* stat = nullptr);
 
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetGeometry() const;
-    ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
+    ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorCR);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateElementGeom();
 
     AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), GetModel()->GetModeledElementId()); }

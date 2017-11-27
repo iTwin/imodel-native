@@ -301,10 +301,10 @@ CurveVectorWithXIndexPtr AlignmentPair::VerticalXIndexVector() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        10/2016
 //---------------------------------------------------------------------------------------
-CurveVectorPtr AlignmentPair::GetConvertedCurveVector(CurveVectorCR cv, double convFactor) const
+CurveVectorPtr AlignmentPair::GetScaledCurveVector(CurveVectorCR cv, double scale) const
     {
     CurveVectorPtr returnVector = cv.Clone();
-    Transform trans = Transform::FromScaleFactors(convFactor, convFactor, convFactor);
+    Transform trans = Transform::FromScaleFactors(scale, scale, scale);
     TransformCurveWithPartialCurves(*returnVector, trans);
     return returnVector;
     }
@@ -476,10 +476,10 @@ CurveVectorPtr AlignmentPair::CloneHorizontalCurveVector(Dgn::StandardUnit unit)
             return m_horizontalCurveVector->Clone();
 
         case StandardUnit::EnglishFeet:
-            return GetConvertedCurveVector(*m_horizontalCurveVector, MetersToEnglishFeet);
+            return GetScaledCurveVector(*m_horizontalCurveVector, MetersToEnglishFeet);
 
         case StandardUnit::EnglishSurveyFeet:
-            return GetConvertedCurveVector(*m_horizontalCurveVector, MetersToEnglishSurveyFeet);
+            return GetScaledCurveVector(*m_horizontalCurveVector, MetersToEnglishSurveyFeet);
 
         default:
             {
@@ -502,10 +502,10 @@ CurveVectorPtr AlignmentPair::CloneVerticalCurveVector(Dgn::StandardUnit unit) c
             return m_verticalCurveVector->Clone();
 
         case StandardUnit::EnglishFeet:
-            return GetConvertedCurveVector(*m_verticalCurveVector, MetersToEnglishFeet);
+            return GetScaledCurveVector(*m_verticalCurveVector, MetersToEnglishFeet);
 
         case StandardUnit::EnglishSurveyFeet:
-            return GetConvertedCurveVector(*m_verticalCurveVector, MetersToEnglishSurveyFeet);
+            return GetScaledCurveVector(*m_verticalCurveVector, MetersToEnglishSurveyFeet);
 
         default:
             {
