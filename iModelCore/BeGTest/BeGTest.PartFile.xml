@@ -81,6 +81,11 @@
         <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
 		<ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false"/>
         <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false" LibType="static"/>
+
+        <!-- WSClient depends on CCApi.dll -->
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="Assemblies" />
     </ProductDirectoryList>
 
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
