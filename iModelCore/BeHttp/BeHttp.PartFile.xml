@@ -364,7 +364,13 @@
         <SubPart PartName="Integration-Gtest"/>
         <SubPart PartName="BeHttpSqlang-en" />
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="BeHttp-IntegrationGtest-Dirs"/>
     </Product>
+
+    <ProductDirectoryList ListName="BeHttp-IntegrationGtest-Dirs">
+        <!-- I don't know what this is... but this is equivalent to "living with" the warning anyway. -->
+        <ProductDirectory Name="sqlang" Deliver="false"/>
+    </ProductDirectoryList>
 
     <Part Name="Integration-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeHttpIntegrationTests -dTEST_COLLECTION_PRODUCT=BeHttp-IntegrationTests" OnlyPlatforms="x64">
         <SubProduct ProductName="BeHttp-IntegrationTests"/>
