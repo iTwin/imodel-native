@@ -401,4 +401,24 @@ Json::Value KindOfQuantity::ToJson(bool useAlias) const
     return jval;
     }
 
+BEU::T_UnitSynonymVector* KindOfQuantity::GetSynonymVector() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? nullptr : php->GetSynonymVector();
+    }
+
+size_t KindOfQuantity::GetSynonymCount() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? 0 : php->GetSynonymCount();
+    }
+
+BEU::PhenomenonCP KindOfQuantity::GetPhenomenon() const
+    {
+    Formatting::FormatUnitSet fus = GetPersistenceUnit();
+    BEU::UnitCP un = fus.GetUnit();
+    BEU::PhenomenonCP php = (nullptr == un)? nullptr : un->GetPhenomenon();
+    return php;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

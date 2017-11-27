@@ -154,19 +154,19 @@ private:
     //! Gives name to enumeration, based on className and propertyName 
     //! Usually is (baseClassName+propertyName)
     //! returns rootClass i.e. baseclass
-    static Utf8String CreateEnumerationName(bvector<ECClassP>& rootClasses, ECPropertyP& ecProperty);
+    Utf8String CreateEnumerationName(bvector<ECClassP>& rootClasses, ECPropertyP& ecProperty);
 
     //! Append number to string : returns name_number
-    static Utf8String AppendNumberToString(Utf8CP name, int number);
+    Utf8String AppendNumberToString(Utf8CP name, int number);
 
     //! Attempts to merge the StandardValueInfo into the ECEnumeration
-    static ECObjectsStatus MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
+    ECObjectsStatus MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
 
     //! Finds enumeration in schema that matches sdInfo
-    static ECObjectsStatus FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
+    ECObjectsStatus FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
 
     //! Creates enumeration in schema : given enumName, sdInfo
-    static ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
+    ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
 
     //! Converts all derived class's properties to the given enum
     //! @param[in] rootClass                The class started with for conversion
@@ -174,13 +174,13 @@ private:
     //! @param[in] propName                 The name of the property to be converted
     //! @param[in] enumeration              The enumeration to be converted to.
     //! @param[in] sdInfo                   The standard value info of the enumeration
-    static ECObjectsStatus ConvertToEnum (ECClassP rootClass, ECClassP currentClass, Utf8CP propName, ECEnumerationP enumeration, StandardValueInfo sdInfo);
+    ECObjectsStatus ConvertToEnum (ECClassP rootClass, ECClassP currentClass, Utf8CP propName, ECEnumerationP enumeration, StandardValueInfo sdInfo);
 
     //! Tries to merge the current property's StandardValue info with the existing enumeration/sdInfo
     //! @param[in] ecProperty               The property with the standard value to merge
     //! @param[in] sdInfo                   The standard value info to of the enumeration to merge with
     //! @param[in] enumeration              The enumeration to merge with
-    static ECObjectsStatus Merge(ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
+    ECObjectsStatus Merge(ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
     };
 
 //+===============+===============+===============+===============+===============+======

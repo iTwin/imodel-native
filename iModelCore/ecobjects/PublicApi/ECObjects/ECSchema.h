@@ -248,11 +248,14 @@ protected:
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;
     virtual CustomAttributeContainerType _GetContainerType() const = 0;
+    virtual Utf8CP                      _GetContainerName() const = 0;
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
 public:
     ECOBJECTS_EXPORT ECSchemaP                           GetContainerSchema();
+    Utf8CP                              GetContainerName() const { return _GetContainerName(); }
+
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
@@ -771,7 +774,8 @@ protected:
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
-    
+    Utf8CP _GetContainerName() const override;
+
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const {return NULL;}
     virtual bool                                _IsCalculated() const {return false;}
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) {return false;}
@@ -1411,7 +1415,7 @@ private:
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
-    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, Utf8String newName);
+    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, ECPropertyP& renamedProperty, Utf8String newName);
     void RenameDerivedProperties(Utf8String newName);
 
     // Adds the ECv3ConversionAttributes:RenamedPropertiesMapping Custom Attribute with the original name provided.
@@ -1452,6 +1456,7 @@ protected:
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     ECSchemaCP _GetContainerSchema() const override;
+    Utf8CP _GetContainerName() const override { return GetFullName(); }
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
     // schemas index class by name so publicly name can not be reset
@@ -1597,7 +1602,8 @@ public:
     //! Note: This does not do any checks to determine if the give property's name does actually conflict.  It will always rename the property.
     //! @param[in]  conflictProperty    The property whose name conflicts with either a base class property or a reserved system property name
     //! @param[in]  renameDerivedProperties Whether to also rename derived properties
-    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties);
+    //! @param[out] renamedProperty         The renamed property
+    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties, ECPropertyP& renamedProperty);
 
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
@@ -2046,7 +2052,9 @@ public:
     ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
     bool IsUnitComparable(Utf8CP unitName) {return Utf8String::IsNullOrEmpty(unitName) ? false : m_persistenceFUS.IsUnitComparable(unitName);}
     ECOBJECTS_EXPORT Json::Value ToJson(bool useAlias) const;
-
+    ECOBJECTS_EXPORT  BEU::T_UnitSynonymVector* GetSynonymVector() const;
+    ECOBJECTS_EXPORT  size_t GetSynonymCount() const;
+    ECOBJECTS_EXPORT  BEU::PhenomenonCP GetPhenomenon() const;
     //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
@@ -2293,6 +2301,7 @@ private:
 
 protected:
     ECSchemaCP _GetContainerSchema() const override;
+    Utf8CP _GetContainerName() const override;
     CustomAttributeContainerType _GetContainerType() const override {return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint;}
 
 public:
@@ -3253,6 +3262,7 @@ private:
 
 protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
+    Utf8CP _GetContainerName() const override { return GetName().c_str(); }
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
 public:

@@ -439,7 +439,8 @@ void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
             auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
             if (found != reservedNames.end())
                 {
-                nonConstClass->RenameConflictProperty(ecProp, true);
+                ECPropertyP newProperty;
+                nonConstClass->RenameConflictProperty(ecProp, true, newProperty);
                 }
             }
         }
@@ -655,7 +656,27 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
     for (auto const& derivedClass : currentClass->GetDerivedClasses())
         {
         if (ECObjectsStatus::Success != (status = ConvertToEnum(rootClass, derivedClass, propName, enumeration, sdInfo)))
-            return status;
+            {
+            if (ECObjectsStatus::DataTypeMismatch == status)
+                {
+                ECClassP nonConstClass = const_cast<ECClassP>(derivedClass);
+                ECPropertyP derivedProperty = nonConstClass->GetPropertyP(propName);
+                ECPropertyP renamedProperty = nullptr;
+                if (ECObjectsStatus::Success != derivedClass->RenameConflictProperty(derivedProperty, true, renamedProperty))
+                    return status;
+                else
+                    {
+                    IECInstancePtr renamedPropInstance = renamedProperty->GetCustomAttributeLocal(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+                    if (!renamedPropInstance.IsValid())
+                        return ECObjectsStatus::Success;
+
+                    if (ECObjectsStatus::Success != (status = Convert(nonConstClass->GetSchemaR(), *renamedProperty, *renamedPropInstance)))
+                        return status;
+                    }
+                }
+            else
+                return status;
+            }
         }
     
     if (nullptr != prop && ECObjectsStatus::Success == status)
@@ -690,7 +711,7 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (nullptr == prop)
         {
-        LOG.warning("StandardValues custom attribute applied to a container which is not a property.  Removing Custom Attribute and skipping.");
+        LOG.warningv("StandardValues custom attribute applied to a container which is not a property.  Removing Custom Attribute from %s and skipping.", container.GetContainerName());
         container.RemoveCustomAttribute(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         return ECObjectsStatus::Success;
         }
@@ -988,14 +1009,6 @@ ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQ
     return createNewKindOfQuantity(schema, newKOQ, baseKOQ, newUnit, newDisplayUnit, persistenceUnitChanged, newKoqNameWithClassAndProperty.c_str());
     }
 
-void removePropertyUnitCustomAttributes(IECCustomAttributeContainerR container)
-    {
-    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
-    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
-    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1004,9 +1017,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
-        removePropertyUnitCustomAttributes(container);
+        LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is %s.", container.GetContainerName());
+        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
@@ -1015,7 +1027,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
-        removePropertyUnitCustomAttributes(container);
+        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
@@ -1024,7 +1036,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.warningv("The property %s:%s.%s has an old unit '%s' that does not resolve to a new unit.  Dropping unit to continue", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
-        removePropertyUnitCustomAttributes(container);
+        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
@@ -1048,7 +1060,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
-        removePropertyUnitCustomAttributes(container);
+        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return status;
         }
 
@@ -1060,7 +1072,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         LOG.warningv("Unable to convert KindOfQuantity '%s' on property %s.%s because it conflicts with another KindOfQuantity in the base class hierarchy.", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
         }
 
-    removePropertyUnitCustomAttributes(container);
+    container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
     return ECObjectsStatus::Success;
     }
 
@@ -1069,8 +1081,7 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
     ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
     if (containerAsSchema == nullptr)
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.warningv("Found a 'UnitSpecifications' custom attribute on a container which is not an ECSchema, removing.  Container is in schema %s", fullName.c_str());
+        LOG.warningv("Found a 'UnitSpecifications' custom attribute on a container which is not an ECSchema, removing.  Container is %s", container.GetContainerName());
         container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
         return ECObjectsStatus::Success;
         }
@@ -1351,8 +1362,7 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.warningv("Found PropertyPriority custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        LOG.warningv("Found PropertyPriority custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
         container.RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
         container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
         return ECObjectsStatus::Success;
@@ -1394,7 +1404,7 @@ PropertyCategoryP getExistingCategory(ECSchemaR schema, ECPropertyP prop, IECIns
         ECValue value;
         if (ECObjectsStatus::Success == categoryCA.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString() &&
             !existingCategory->GetDisplayLabel().Equals(value.GetUtf8CP()))
-            LOG.warningv("Found a Category custom attribute on '%s.%s' with a name that matches an existing category '%s' but the attributes of the existing category and the custom attribute done match, using the existing category anyway.",
+            LOG.warningv("Found a Category custom attribute on '%s.%s' with a name that matches an existing category '%s' but the attributes of the existing category and the custom attribute don't match, using the existing category anyway.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str(), existingName);
         // TODO: Do we need to handle this better?
         }
@@ -1425,8 +1435,7 @@ ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeC
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.warningv("Found Category custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        LOG.warningv("Found Category custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
         container.RemoveCustomAttribute(BECA_SCHEMANAME, CATEGORY);
         container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, CATEGORY);
         return ECObjectsStatus::Success;
@@ -1493,8 +1502,7 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.warningv("Found HideProperty custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        LOG.warningv("Found HideProperty custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
         container.RemoveCustomAttribute(BECA_SCHEMANAME, HIDE_PROPERTY);
         container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, HIDE_PROPERTY);
         return ECObjectsStatus::Success;
@@ -1567,8 +1575,7 @@ ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttr
     if (nullptr != ecSchema)
         return ConvertSchemaDisplayOptions(schema, instance);
 
-    Utf8String fullName = schema.GetFullSchemaName();
-    LOG.warningv("Found DisplayOptions custom attribute on a container which is not a schema or class, removing.  Container is in schema %s", fullName.c_str());
+    LOG.warningv("Found DisplayOptions custom attribute on a container which is not a schema or class, removing.  Container is %s", container.GetContainerName());
     container.RemoveCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);
     container.RemoveSupplementedCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);
     return ECObjectsStatus::Success;
