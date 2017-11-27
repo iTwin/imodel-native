@@ -393,6 +393,14 @@ void SpatialRedlineViewController::_ChangeModelDisplay(DgnModelId modelId, bool 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialRedlineViewController::_SetViewedModels(DgnModelIdSet const& models)
+    {
+    m_subjectView.SetViewedModels(models);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialRedlineViewController::_DrawView(ViewContextR context)
@@ -1041,7 +1049,7 @@ void RedlineViewController::_DrawDecorations(DecorateContextR context)
     params.SetIsFilled(true);
     params.SetIsBlankingRegion(true);
 
-    auto graphic = context.CreateViewGraphic();
+    auto graphic = context.CreateViewBackground();
     graphic->ActivateGraphicParams(params);
     graphic->AddShape(5, pts, true);
 

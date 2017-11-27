@@ -239,6 +239,7 @@ public:
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     DgnCategoryIdSet const& GetViewedCategories() const {return m_definition->GetCategorySelector().GetCategories();}
+    DGNPLATFORM_EXPORT void SetViewedCategories(DgnCategoryIdSet const&);
 
     //! Get the axis-aliged extent of all of the possible elements visible in this view. For physical views, this is the "project extents".
     AxisAlignedBox3d GetViewedExtents(DgnViewportCR vp) const {return _GetViewedExtents(vp);}
@@ -566,6 +567,7 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
+    DGNPLATFORM_EXPORT virtual void _SetViewedModels(DgnModelIdSet const&);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
@@ -598,6 +600,7 @@ public:
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
 
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
+    void SetViewedModels(DgnModelIdSet const& models) { _SetViewedModels(models); }
     
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
 
