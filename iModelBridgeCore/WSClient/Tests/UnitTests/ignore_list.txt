@@ -202,3 +202,6 @@ DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
+
+# Even after Julius' recent push, firebug still hangs randomly in these areas
+CachingDataSourceTests.*
