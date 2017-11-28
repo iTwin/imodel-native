@@ -93,9 +93,8 @@ void    SubjectViewController::ToggleVisibility(DgnModelId modelId, bool isVisib
     {
     if (m_subjectColors.find(modelId) == m_subjectColors.end())
         return;
-    
-    m_subjectColors[modelId].SetAlpha(isVisible ? 0 : 255);
-    SetFeatureOverridesDirty();
+
+    ChangeModelDisplay(modelId, isVisible);
     }
 
 //-------------------------------------------------------------------------------------------
@@ -109,7 +108,6 @@ bool     SubjectViewController::IsVisible(DgnModelId modelId) const
         return false;
         }
     
-    SubjectColorMap::const_iterator iter = m_subjectColors.find(modelId);
-    Byte alpha = iter->second.GetAlpha();
-    return alpha == 0;
+    auto& models = GetSpatialViewDefinition().GetModelSelector().GetModelsR();
+    return models.Contains(modelId);
     }
