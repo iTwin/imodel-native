@@ -50,8 +50,8 @@
     </Part>
 
     <Part Name="LoggingManagedLog4net" BMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="B02">
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <NuGetPackage>log4net</NuGetPackage>
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
             <Assemblies>
