@@ -71,7 +71,7 @@ struct Table final
     private:
         Utf8String m_name;
         Utf8String m_tableSpace;
-        Type m_type = Type::Primary;
+        Nullable<Type> m_type;
         Utf8String m_parentTableName;
         ECN::ECClassId m_exclusiveRootClassId;
         std::vector<Column> m_columns;
@@ -108,7 +108,7 @@ struct Table final
 
         Utf8StringCR GetTableSpace() const { return m_tableSpace; }
         Utf8StringCR GetName() const { return m_name; }
-        Type GetType() const { return m_type; }
+        Nullable<Type> GetType() const { return m_type; }
         Utf8StringCR GetParentTable() const { return m_parentTableName; }
         ECN::ECClassId GetExclusiveRootClassId() const { return m_exclusiveRootClassId; }
 
@@ -117,6 +117,10 @@ struct Table final
     };
 
 // GTest Format customizations for types not handled by GTest
+
+bool operator==(Table::Type lhs, Nullable<Table::Type> rhs);
+
+void PrintTo(Nullable<Table::Type>, std::ostream*);
 void PrintTo(Table::Type, std::ostream*);
 
 

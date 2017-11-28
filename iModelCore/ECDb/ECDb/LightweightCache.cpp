@@ -20,15 +20,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 LightweightCache::LightweightCache(ECDb const& ecdb) : m_ecdb(ecdb) { Reset(); }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintClassId) const
-    {
-    return LoadRelationshipConstraintClasses(constraintClassId);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 08/2015
 //---------------------------------------------------------------------------------------
@@ -156,52 +147,6 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::LoadRelationshipConstraintClasses(ECN::ECClassId constraintClassId) const
-    {
-    auto itor = m_relationshipClassIdsPerConstraintClassIds.find(constraintClassId);
-    if (itor != m_relationshipClassIdsPerConstraintClassIds.end())
-        return itor->second;
-
-    bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-        "SELECT rc.RelationshipClassId, rc.RelationshipEnd "
-        "FROM ec_RelationshipConstraint rc "
-        "INNER JOIN ec_RelationshipConstraintClass rcc ON rcc.ConstraintId=rc.Id "
-        "LEFT JOIN " TABLE_ClassHierarchyCache " ch ON ch.BaseClassId=rcc.ClassId AND rc.IsPolymorphic= " SQLVAL_True " "
-        "WHERE COALESCE(ch.ClassId,rcc.ClassId)=?");
-
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return relClassIds;
-        }
-
-    if (BE_SQLITE_OK != stmt->BindId(1, constraintClassId))
-        {
-        BeAssert(false);
-        return relClassIds;
-        }
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
-        BeAssert(!stmt->IsColumnNull(1));
-        const ECRelationshipEnd ecRelEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
-        RelationshipEnd end = ecRelEnd == ECRelationshipEnd_Source ? RelationshipEnd::Source : RelationshipEnd::Target;
-
-        auto relIt = relClassIds.find(relationshipId);
-        if (relIt == relClassIds.end())
-            relClassIds[relationshipId] = end;
-        else
-            relClassIds[relationshipId] = (RelationshipEnd) ((int) (relIt->second) | (int) (end));
-        }
-
-    return relClassIds;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
 bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::LoadConstraintClassesForRelationships(ECN::ECClassId relationshipId) const
     {
     auto itor = m_constraintClassIdsPerRelClassIds.find(relationshipId);
@@ -307,7 +252,6 @@ void LightweightCache::Reset()
     {
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
-    m_relationshipClassIdsPerConstraintClassIds.clear();
     m_constraintClassIdsPerRelClassIds.clear();
     m_storageDescriptions.clear();
     m_relationshipPerTable.clear();
