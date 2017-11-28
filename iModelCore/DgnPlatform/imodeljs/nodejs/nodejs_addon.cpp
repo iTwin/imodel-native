@@ -125,7 +125,7 @@ struct NodeUtils
     static Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg, Napi::Env env)
         {
         Napi::Object retObj = Napi::Object::New(env);
-        retObj.Set(Napi::String::New(env, "error"), CreateErrorObject0(errCode, msg, nullptr));
+        retObj.Set(Napi::String::New(env, "error"), CreateErrorObject0(errCode, msg, env));
         return retObj;
         }
     };
@@ -763,10 +763,16 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         void OnOK() override 
             {
+            if (Env().IsExceptionPending())
+                {
+                printf ("got here\n");
+                return;
+                }
+
             if (_HadError())
-                Callback().MakeCallback(Receiver().Value(), {m_addondb->CreateBentleyReturnErrorObject(m_status, _GetErrorDescription())});
+                Callback().MakeCallback(Receiver().Value(), {NodeUtils::CreateErrorObject0(m_status, _GetErrorDescription(), Env())});
             else
-                Callback().MakeCallback(Receiver().Value(), {m_addondb->CreateBentleyReturnSuccessObject(_GetSuccessValue())});
+                Callback().MakeCallback(Receiver().Value(), {Env().Undefined(), _GetSuccessValue()});
             }
 
         void OnError(const Napi::Error& e) override
@@ -775,19 +781,12 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             auto dgnErrMsg = _GetErrorDescription();
             if (dgnErrMsg)
                 msg.append(dgnErrMsg);
-            Callback().MakeCallback(Receiver().Value(), {m_addondb->CreateBentleyReturnErrorObject(m_status, msg.c_str())});
+            Callback().MakeCallback(Receiver().Value(), {NodeUtils::CreateErrorObject0(m_status, msg.c_str(), Env())});
             }
 
         virtual Utf8CP _GetErrorDescription() {return nullptr;}
         virtual Napi::Value _GetSuccessValue() = 0;
         virtual bool _HadError() {return (STATUSTYPE)0 != m_status;}
-
-        void CreateBentleyReturnObject()
-            {
-            if (_HadError())
-                m_dgnDb->CreateBentleyReturnErrorObject(m_status);
-            m_dgnDb->CreateBentleyReturnSuccessObject(_GetSuccessValue());
-            }
 
         };
 
@@ -809,6 +808,11 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
                 m_addondb->SetupPresentationManager();
             }
 
+        void OnOK() override 
+            {
+            Callback().MakeCallback(Receiver().Value(), {Napi::Number::New(Env(), (int)m_status)}); // just return the status value, since there is other "success" value.
+            }
+
         Napi::Value _GetSuccessValue() override {return Env().Undefined();}
         };
 
@@ -828,7 +832,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION_SYNC
         auto status = IModelJs::OpenDgnDb(m_dgndb, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
-        return CreateBentleyReturnObject(status);
+        return Napi::Number::New(Env(), (int)status);
         }
 
     //=======================================================================================
@@ -952,7 +956,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         if (BE_SQLITE_OK == result)
             SetupPresentationManager();
             
-        return CreateBentleyReturnObject(result);
+        return Napi::Number::New(Env(), (int)result);
         }
 
     //=======================================================================================
@@ -998,7 +1002,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         auto status = IModelJs::UpdateElement(GetDgnDb(), elemProps);
-        return CreateBentleyReturnObject(status);
+        return Napi::Number::New(Env(), (int)status);
         }
 
     //=======================================================================================
@@ -1008,12 +1012,11 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     Napi::Value DeleteElementSync(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN_SYNC
-        REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
+        REQUIRE_ARGUMENT_STRING(0, elemIdStr);
         RETURN_IF_HAD_EXCEPTION_SYNC
 
-        Json::Value elemId = Json::Value::From(elemPropsJsonStr);
-        auto status = IModelJs::DeleteElement(GetDgnDb(), elemId);
-        return CreateBentleyReturnObject(status);
+        auto status = IModelJs::DeleteElement(GetDgnDb(), elemIdStr);
+        return Napi::Number::New(Env(), (int)status);
         }
 
     //=======================================================================================
@@ -1033,6 +1036,9 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         void Execute() override
             {
             REQUIRE_DB_TO_BE_OPEN;
+
+            if (Env().IsExceptionPending())
+                printf ("got here\n");
 
             ECInstanceId elemId(ECInstanceId::FromString(m_elementIdStr.c_str()).GetValueUnchecked());
             if (!elemId.IsValid())
@@ -1146,7 +1152,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     void StartExecuteQueryWorker(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, ecsql);
-        OPTIONAL_ARGUMENT_STRING(1, strBindings);
+        REQUIRE_ARGUMENT_STRING(1, strBindings);
         REQUIRE_ARGUMENT_FUNCTION(2, callback);
         RETURN_IF_HAD_EXCEPTION
         auto work = new ExecuteQueryWorker(this, callback, ecsql, strBindings);
@@ -1164,7 +1170,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_DB_TO_BE_OPEN_SYNC
         RETURN_IF_HAD_EXCEPTION_SYNC
         auto stat = GetDgnDb().SaveChanges();
-        return CreateBentleyReturnObject(stat);
+        return Napi::Number::New(Env(), (int)stat);
         }
 
     Napi::Value ImportSchema(const Napi::CallbackInfo& info)
@@ -1174,14 +1180,13 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         RETURN_IF_HAD_EXCEPTION_SYNC
         BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
         auto stat = IModelJs::ImportSchema(GetDgnDb(), schemaPathname);
-        return CreateBentleyReturnObject(stat);
+        return Napi::Number::New(Env(), (int)stat);
         }
 
-    Napi::Value CloseDgnDb(const Napi::CallbackInfo& info)
+    void CloseDgnDb(const Napi::CallbackInfo& info)
         {
         IModelJs::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
-        return CreateBentleyReturnObject(BE_SQLITE_OK);
         }
 
     Napi::Value SetBriefcaseId(const Napi::CallbackInfo& info)
@@ -1192,15 +1197,14 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         BeFileName name(m_dgndb->GetFileName());
 
-        DbResult result;
-        result = m_dgndb->SetAsBriefcase(BeBriefcaseId(idvalue));
+        DbResult result = m_dgndb->SetAsBriefcase(BeBriefcaseId(idvalue));
         if (BE_SQLITE_OK == result)
             result = m_dgndb->SaveChanges();
         if (BE_SQLITE_OK == result)
             m_dgndb->CloseDb();
         if (BE_SQLITE_OK == result)
             m_dgndb = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        return CreateBentleyReturnObject(result);
+        return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value GetBriefcaseId(const Napi::CallbackInfo& info)
@@ -1208,15 +1212,16 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_DB_TO_BE_OPEN_SYNC
         RETURN_IF_HAD_EXCEPTION_SYNC
         auto bid = m_dgndb->GetBriefcaseId();
-        return CreateBentleyReturnSuccessObject(Napi::Number::New(Env(), bid.GetValue()));
+        return Napi::Number::New(Env(), bid.GetValue());
         }
     
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "DgnDb", {
+        Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
             InstanceMethod("openDgnDb", &StartOpenDgnDb),
+            InstanceMethod("openDgnDbSync", &OpenDgnDbSync),
             InstanceMethod("closeDgnDb", &CloseDgnDb),
             InstanceMethod("setBriefcaseId", &SetBriefcaseId),
             InstanceMethod("getBriefcaseId", &GetBriefcaseId),
@@ -1235,7 +1240,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getCachedBriefcaseInfosSync", &GetCachedBriefcaseInfosSync),
         });
 
-        target.Set("DgnDb", t);
+        target.Set("NodeAddonDgnDb", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -1262,19 +1267,6 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         {
         }
 
-    Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NodeUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
-
-    Napi::Object CreateBentleyReturnErrorObject(int errCode, Utf8CP msg = nullptr) {return NodeUtils::CreateBentleyReturnErrorObject(errCode, msg, Env());}
-
-    Napi::Object CreateBentleyReturnObject(int errCode, Napi::Value goodValue)
-        {
-        if (BE_SQLITE_OK != errCode)
-            return CreateBentleyReturnErrorObject(errCode);
-        return CreateBentleyReturnSuccessObject(goodValue);
-        }
-
-    Napi::Object CreateBentleyReturnObject(int errCode) {return CreateBentleyReturnObject(errCode, Env().Undefined());}
-
     static bool HasInstance(Napi::Value val) {
         Napi::Env env = val.Env();
         Napi::HandleScope scope(env);
@@ -1288,7 +1280,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "ECSqlStatement", {
+        Napi::Function t = DefineClass(env, "NodeAddonECSqlStatement", {
           InstanceMethod("prepare", &Prepare),
           InstanceMethod("reset", &Reset),
           InstanceMethod("dispose", &Dispose),
@@ -1298,7 +1290,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
           InstanceMethod("getRow", &GetRow),
         });
 
-        target.Set("ECSqlStatement", t);
+        target.Set("NodeAddonECSqlStatement", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -1309,23 +1301,24 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         REQUIRE_ARGUMENT_OBJ(0, NodeAddonDgnDb, db);    // contract pre-conditions
         REQUIRE_ARGUMENT_STRING(1, ecsqlStr);
 
-        if (!db->IsOpen()) {return CreateBentleyReturnErrorObject(BE_SQLITE_NOTADB);}
+        if (!db->IsOpen())
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
 
         BeSqliteDbMutexHolder serializeAccess(db->GetDgnDb()); // hold mutex, so that we have a chance to get last ECDb error message
 
         auto status = m_stmt->Prepare(db->GetDgnDb(), ecsqlStr.c_str());
         if (!status.IsSuccess())
-            return CreateBentleyReturnObject(GetECSqlStatus(status));
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str(), Env());
             
         MUST_HAVE_M_STMT;                           // success post-condition
-        return CreateBentleyReturnObject(BE_SQLITE_OK);
+        return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
         }
 
     Napi::Value Reset(const Napi::CallbackInfo& info)
         {
         MUST_HAVE_M_STMT;
         auto status = m_stmt->Reset();
-        return CreateBentleyReturnObject(GetECSqlStatus(status));
+        return Napi::Number::New(Env(), (int)GetECSqlStatus(status));
         }
 
     void Dispose(const Napi::CallbackInfo& info)
@@ -1338,7 +1331,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         {
         MUST_HAVE_M_STMT;
         auto status = m_stmt->ClearBindings();
-        return CreateBentleyReturnObject(GetECSqlStatus(status));
+        return Napi::Number::New(Env(), (int)GetECSqlStatus(status));
         }
 
     Napi::Value BindValues(const Napi::CallbackInfo& info)
@@ -1351,16 +1344,16 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         auto status = IModelJs::JsonBinder::BindValues(*m_stmt, Json::Value::From(valuesStr));
 
         if (BSISUCCESS != status)
-            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str());
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str(), Env());
          
-        return CreateBentleyReturnObject(BE_SQLITE_OK);
+        return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
         }
 
     Napi::Value Step(const Napi::CallbackInfo& info)
         {
         MUST_HAVE_M_STMT;
         auto status = m_stmt->Step();
-        return CreateBentleyReturnObject(status);
+        return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value GetRow(const Napi::CallbackInfo& info)
@@ -1369,7 +1362,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         Json::Value rowJson(Json::objectValue);
         IModelJs::GetRowAsJson(rowJson, *m_stmt);
         // *** NEEDS WORK: Get the adapter to set the js object's properties directly
-        return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), rowJson.ToString().c_str()));
+        return Napi::String::New(Env(), rowJson.ToString().c_str());
         }
 };
 

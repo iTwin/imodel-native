@@ -15,14 +15,15 @@ import sys
 import re
 import shutil
 
-def setMacros(packagefile, versionCode, platform):
+def setMacros(packagefile, nodeVersionCode, platform, packageVersion):
     str = ''
     with open(packagefile, 'r') as pf:
         str = pf.read()
 
     with open(packagefile, 'w') as pf:
-        str = str.replace(r'${VERSION_CODE}', versionCode.lower())
+        str = str.replace(r'${NODE_VERSION_CODE}', nodeVersionCode.lower())
         str = str.replace(r'${PLATFORM}', platform.lower())
+        str = str.replace(r'${PACKAGE_VERSION}', packageVersion.lower())
         pf.write(str)
 
 # Tell copytree to ignore binary files that should not be in the addon
@@ -34,16 +35,17 @@ def filterOutUnwantedFiles(dirname, files):
 # Copy a version-specific addon into place
 # @param indir The path to the Product.  E.g.,
 # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows
-# @param versionCode The node version that this addon is for.  E.g., N_8_2
+# @param nodeVersionCode The node version that this addon is for.  E.g., N_8_2
 # @param platformandarch The target platform and achitecture. E.g., WinX64 or LinuxX64
-def doCopy(productdir, localpackagedir, versionCode, platformandarch):
+def doCopy(productdir, localpackagedir, nodeVersionCode, platformandarch, packageVersion):
     # The product's directory structure should look like this:
     # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Addon\N_8_2\imodeljs.node
     # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Support
 
     srcsupportdir = os.path.join(productdir, "Support");
-    srcnodefile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), versionCode), "imodeljs.node")
-    srcpackagefile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), versionCode), "package.json")
+    srcnodefile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), nodeVersionCode), "imodeljs.node")
+    srcpackagefile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), nodeVersionCode), "package.json")
+    srcdeclsfile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), nodeVersionCode), "iModelJsNodeAddon.d.ts")
 
     if not os.path.exists(srcnodefile) or not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
         print '***'
@@ -53,11 +55,14 @@ def doCopy(productdir, localpackagedir, versionCode, platformandarch):
         if not os.path.exists(srcsupportdir):
             print ' ***   not found: ' + srcsupportdir 
         if not os.path.exists(srcpackagefile):
-            print ' ***   not found: ' + srcpackagefile 
+            print ' ***   not found: ' + srcpackagefile
+        if not os.path.exists(srcdeclsfile):
+            print ' ***   not found: ' + srcdeclsfile
         print('***')
         exit(1)
 
     dstpackagefile = os.path.join(localpackagedir, 'package.json')
+    dstdeclsfile = os.path.join(localpackagedir, 'iModelJsNodeAddon.d.ts')
     dstaddondir = os.path.join(localpackagedir, 'addon')
     dstnodefile = os.path.join(dstaddondir, 'imodeljs.node')
 
@@ -68,19 +73,22 @@ def doCopy(productdir, localpackagedir, versionCode, platformandarch):
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
 
-    setMacros(dstpackagefile, versionCode, platformandarch)
+    shutil.copyfile(srcdeclsfile, dstdeclsfile)
+
+    setMacros(dstpackagefile, nodeVersionCode, platformandarch, packageVersion)
 
 #
 #   main
 #
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
-        print "Syntax: ", sys.argv[0], " inputproductdir outputpackageparentdir platformandarch"
+    if len(sys.argv) < 5:
+        print "Syntax: ", sys.argv[0], " inputproductdir outputpackageparentdir platformandarch packageversion"
         exit(1)
 
     productdir = sys.argv[1]
     outdirParent = sys.argv[2]
     platformandarch = sys.argv[3]
+    packageVersion = sys.argv[4]
 
     if outdirParent.endswith ('/') or outdirParent.endswith ('\\'):
         outdirParent = outdirParent[0:len(outdirParent)-1]
@@ -118,7 +126,7 @@ if __name__ == '__main__':
         if os.path.exists(localpackagedir):
             shutil.rmtree(localpackagedir)
 
-        doCopy(productdir, localpackagedir, versionsubdir, platformandarch)
+        doCopy(productdir, localpackagedir, versionsubdir, platformandarch, packageVersion)
 
         #mkiFile.write('always:\n')
         #mkiFile.write('    npm publish ' + localpackagedir + '\n\n')
