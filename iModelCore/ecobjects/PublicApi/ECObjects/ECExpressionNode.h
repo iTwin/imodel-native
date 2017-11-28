@@ -239,7 +239,7 @@ private:
             case PRIMITIVETYPE_Integer:     return TOKEN_IntegerConstant;
             case PRIMITIVETYPE_Long:        return TOKEN_IntegerConstant;
             case PRIMITIVETYPE_Double:      return TOKEN_FloatConst;
-            case PRIMITIVETYPE_Boolean:     return TOKEN_True;
+            case PRIMITIVETYPE_Boolean:     return m_value.GetBoolean() ? TOKEN_True : TOKEN_False;
             case PRIMITIVETYPE_DateTime:    return TOKEN_DateTimeConst;
             default:                        BeAssert (false); return TOKEN_Null;
             }
