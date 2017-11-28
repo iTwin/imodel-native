@@ -21,7 +21,6 @@ void ECProperty::SetErrorHandling (bool doAssert)
     s_noAssert = !doAssert; 
     }
 
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -418,7 +417,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
     PRECONDITION (NULL != isReadOnly, ECObjectsStatus::PreconditionViolated);
 
     bool bReadOnly;
-    ECObjectsStatus status = ECXml::ParseBooleanString (bReadOnly, isReadOnly);
+    ECObjectsStatus status = SchemaParseUtils::ParseBooleanString (bReadOnly, isReadOnly);
     if (ECObjectsStatus::Success != status)
         LOG.errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
     else
@@ -441,6 +440,14 @@ bool ECProperty::GetIsDisplayLabelDefined () const
 Utf8String ECProperty::GetTypeName () const
     {
     return this->_GetTypeName();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                    11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECProperty::GetTypeFullName() const
+    {
+    return this->_GetTypeName(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -664,6 +671,14 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
     return &(m_class.GetSchema());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ECProperty::_GetContainerName() const
+    {
+    return Utf8String(Utf8String(GetClass().GetFullName()) + ":" + GetName()).c_str();
+    }
+
 ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
     {
     // typeName may potentially be qualified so we must parse into an alias and short class name
@@ -696,7 +711,7 @@ ECObjectsStatus resolvePropertyCategory(PropertyCategoryCP& propertyCategory, Ut
     // typeName may potentially be qualified so we must parse into an alias and short class name
     Utf8String alias;
     Utf8String propertyCategoryName;
-    if (ECObjectsStatus::Success != ECXml::ParseFullyQualifiedName(alias, propertyCategoryName, typeName))
+    if (ECObjectsStatus::Success != SchemaParseUtils::ParseFullyQualifiedName(alias, propertyCategoryName, typeName))
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return ECObjectsStatus::ParseError;
@@ -731,12 +746,12 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         SetPriority(priority);
         }
 
-    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     ECObjectsStatus setterStatus;
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, READONLY_ATTRIBUTE,            this, IsReadOnly)
+    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, READONLY_ATTRIBUTE, this, IsReadOnly)
 
     if (BEXML_Success == propertyNode.GetAttributeStringValue(value, KIND_OF_QUANTITY_ATTRIBUTE))
         {
@@ -890,7 +905,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
     if(IsReadOnlyFlagSet())
         xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, true);
     if (IsMinimumValueDefined())
@@ -901,7 +916,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
             if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
                 xmlWriter.WriteAttribute("MinimumValue", minValue.c_str());
             else
-                xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
+                xmlWriter.WriteAttribute(ECXML_MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
             }
         }
         
@@ -913,18 +928,18 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
             if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
                 xmlWriter.WriteAttribute("MaximumValue", maxValue.c_str());
             else
-                xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
+                xmlWriter.WriteAttribute(ECXML_MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
             }
         }
 
     if (IsMaximumLengthDefined())
         {
-        xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
+        xmlWriter.WriteAttribute(ECXML_MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
         }
 
     if (IsMinimumLengthDefined())
         {
-        xmlWriter.WriteAttribute(MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
+        xmlWriter.WriteAttribute(ECXML_MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
         }
 
     // Only serialize for 3.1 or newer
@@ -936,7 +951,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         if (IsPriorityLocallyDefined())
             xmlWriter.WriteAttribute(PRIORITY_ATTRIBUTE, GetPriority());
         }
-    
+
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {
         for (auto& attribute : *additionalAttributes)
@@ -946,7 +961,75 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     WriteCustomAttributes (xmlWriter);
     xmlWriter.WriteElementEnd();
 
-    return status;    
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue) const
+    {
+    return _WriteJson(outValue, bvector<bpair<Utf8String, Json::Value>>());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+    {
+    // If this property was created during supplementation as a local property on the class, then don't serialize it
+    if (m_forSupplementation)
+        return SchemaWriteStatus::Success;
+
+    outValue[ECJSON_ECPROPERTY_NAME] = GetName();
+
+    Utf8String propertyType;
+    if (GetIsPrimitive())
+        propertyType = ECJSON_ECPROPERTY_PRIMITIVE;
+    else if (GetIsStruct())
+        propertyType = ECJSON_ECPROPERTY_STRUCT;
+    else if (GetIsPrimitiveArray())
+        propertyType = ECJSON_ECPROPERTY_PRIMITIVEARRAY;
+    else if (GetIsStructArray())
+        propertyType = ECJSON_ECPROPERTY_STRUCTARRAY;
+    else if (GetIsNavigation())
+        propertyType = ECJSON_ECPROPERTY_NAVIGATION;
+    else
+        return SchemaWriteStatus::FailedToCreateJson;
+    outValue[ECJSON_ECPROPERTY_TYPE] = propertyType;
+
+    if (GetInvariantDescription().length() != 0)
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    if (GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+
+    if (IsReadOnlyFlagSet()) // Only need to specify this property if it's true.
+        outValue[READONLY_ATTRIBUTE] = true;
+
+    if (IsCategoryDefinedLocally())
+        outValue[CATEGORY_ATTRIBUTE] = ECJsonUtilities::FormatPropertyCategoryName(*GetCategory());
+
+    if (IsPriorityLocallyDefined())
+        outValue[PRIORITY_ATTRIBUTE] = GetPriority();
+
+    if (GetIsArray())
+        {
+        ArrayECPropertyCP propArr = GetAsArrayProperty();
+        outValue[MIN_OCCURS_ATTRIBUTE] = propArr->GetMinOccurs();
+        if (propArr->GetStoredMaxOccurs() != UINT_MAX)
+            outValue[MAX_OCCURS_ATTRIBUTE] = propArr->GetStoredMaxOccurs();
+        }
+
+    Json::Value customAttributesArr;
+    WriteCustomAttributes(customAttributesArr);
+    if (!customAttributesArr.empty())
+        outValue[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
+
+    for (auto const& attribute : additionalAttributes)
+        outValue[attribute.first] = attribute.second;
+
+    return SchemaWriteStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -983,29 +1066,81 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     return status;
     }
 
-void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECPropertyCP ecProperty, ECVersion ecXmlVersion)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpair<Utf8String, Json::Value>>& attributes, ECPropertyCP ecProperty)
     {
     PrimitiveArrayECPropertyCP primArrProp = ecProperty->GetAsPrimitiveArrayProperty();
     PrimitiveECPropertyCP primProp = ecProperty->GetAsPrimitiveProperty();
 
     if (nullptr == primArrProp && nullptr == primProp)
-        return;
+        return SchemaWriteStatus::FailedToCreateJson;
 
-    if ((nullptr == primArrProp) ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
+    attributes.push_back(bpair<Utf8String, Json::Value>(
+        TYPE_NAME_ATTRIBUTE,
+        primProp ? primProp->GetTypeName() : primArrProp->GetTypeName()
+        ));
+    if (primProp ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
+        attributes.push_back(bpair<Utf8String, Json::Value>(
+            EXTENDED_TYPE_NAME_ATTRIBUTE,
+            primProp ? primProp->GetExtendedTypeName() : primArrProp->GetExtendedTypeName()
+            ));
+
+    ECObjectsStatus status;
+
+    if (primProp ? primProp->IsMinimumValueDefined() : primArrProp->IsMinimumValueDefined())
         {
-        Utf8String extendedTypeName = (nullptr == primArrProp) ? primProp->GetExtendedTypeName() : primArrProp->GetExtendedTypeName();
-        attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, extendedTypeName.c_str()));
+        ECValue minVal;
+        Json::Value tmpJson;
+        if (ECObjectsStatus::Success != (status = primProp ? primProp->GetMinimumValue(minVal) : primArrProp->GetMinimumValue(minVal)))
+            return SchemaWriteStatus::FailedToCreateJson;
+        if (minVal.IsInteger())
+            tmpJson = minVal.GetInteger();
+        else if (minVal.IsLong())
+            tmpJson = minVal.GetLong();
+        else if (minVal.IsDouble())
+            tmpJson = minVal.GetDouble();
+        else
+            return SchemaWriteStatus::FailedToCreateJson;
+        attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MINIMUM_VALUE_ATTRIBUTE, tmpJson));
         }
 
-    bool isKindOfQuantityDefined = (nullptr == primArrProp) ? primProp->IsKindOfQuantityDefinedLocally() : primArrProp->IsKindOfQuantityDefinedLocally();
-    if (ecXmlVersion >= ECVersion::V3_0 && isKindOfQuantityDefined)
+    if (primProp ? primProp->IsMaximumValueDefined() : primArrProp->IsMaximumValueDefined())
         {
-        auto kindOfQuantity = (nullptr == primArrProp) ? primProp->GetKindOfQuantity() : primArrProp->GetKindOfQuantity();
-        if (kindOfQuantity != nullptr)
-            {
-            attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, kindOfQuantity->GetQualifiedName(ecProperty->GetClass().GetSchema()).c_str()));
-            }
+        ECValue maxVal;
+        Json::Value tmpJson;
+        if (ECObjectsStatus::Success != (status = primProp ? primProp->GetMaximumValue(maxVal) : primArrProp->GetMaximumValue(maxVal)))
+            return SchemaWriteStatus::FailedToCreateJson;
+        if (maxVal.IsInteger())
+            tmpJson = maxVal.GetInteger();
+        else if (maxVal.IsLong())
+            tmpJson = maxVal.GetLong();
+        else if (maxVal.IsDouble())
+            tmpJson = maxVal.GetDouble();
+        else
+            return SchemaWriteStatus::FailedToCreateJson;
+        attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_MAXIMUM_VALUE_ATTRIBUTE, tmpJson));
         }
+    if (primProp ? primProp->IsMinimumLengthDefined() : primArrProp->IsMinimumLengthDefined())
+        attributes.push_back(bpair<Utf8String, Json::Value>(
+            ECJSON_MINIMUM_LENGTH_ATTRIBUTE,
+            primProp ? primProp->GetMinimumLength() : primArrProp->GetMinimumLength()
+            ));
+
+    if (primProp ? primProp->IsMaximumLengthDefined() : primArrProp->IsMaximumLengthDefined())
+        attributes.push_back(bpair<Utf8String, Json::Value>(
+            ECJSON_MAXIMUM_LENGTH_ATTRIBUTE,
+            primProp ? primProp->GetMaximumLength() : primArrProp->GetMaximumLength()
+            ));
+
+    if (primProp ? primProp->IsKindOfQuantityDefinedLocally() : primArrProp->IsKindOfQuantityDefinedLocally())
+        {
+        Json::Value koqStr = ECJsonUtilities::FormatKindOfQuantityName(*(primProp ? primProp->GetKindOfQuantity() : primArrProp->GetKindOfQuantity()));
+        attributes.push_back(bpair<Utf8String, Json::Value>(KIND_OF_QUANTITY_ATTRIBUTE, koqStr));
+        }
+
+    return SchemaWriteStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1014,9 +1149,28 @@ void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& 
 SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
-    getExtendedTypeAndKindOfQuantityAttributes(attributes, this, ecXmlVersion);
+
+    if (IsExtendedTypeDefinedLocally())
+        attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
+
+    Utf8String koqQualifiedName;
+    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally()) 
+        {
+        koqQualifiedName = GetKindOfQuantity()->GetQualifiedName(GetClass().GetSchema());
+        attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, koqQualifiedName.c_str()));
+        }
 
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus PrimitiveECProperty::_WriteJson(Json::Value& outValue) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+    WriteCommonPrimitivePropertyJsonAttributes(attributes, this);
+    return T_Super::_WriteJson(outValue, attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1046,8 +1200,8 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR e
     if (basePrimitiveType != m_primitiveType)
         {
         errMsg.Sprintf("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
-                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), ECXml::GetPrimitiveTypeName(basePrimitiveType),
-                   ECXml::GetPrimitiveTypeName(m_primitiveType), GetClass().GetFullName(), GetName().c_str());
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), SchemaParseUtils::PrimitiveTypeToString(basePrimitiveType),
+                       SchemaParseUtils::PrimitiveTypeToString(m_primitiveType), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
 
@@ -1057,11 +1211,12 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PrimitiveECProperty::_GetTypeName () const
+Utf8String PrimitiveECProperty::_GetTypeName (bool useFullName) const
     {
     if(m_enumeration == nullptr)
-        return ECXml::GetPrimitiveTypeName (m_primitiveType);
-
+        return SchemaParseUtils::PrimitiveTypeToString (m_primitiveType);
+    if (useFullName)
+        return ECJsonUtilities::FormatEnumerationName(*m_enumeration);
     return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
     }
 
@@ -1107,7 +1262,7 @@ ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringC
 ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     PrimitiveType primitiveType;
-    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
+    ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType (primitiveType, typeName);
     if (ECObjectsStatus::Success == status)
         {            
         if (PRIMITIVETYPE_IGeometry == primitiveType)
@@ -1302,6 +1457,16 @@ SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion
     return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersion);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus StructECProperty::_WriteJson(Json::Value& outValue) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, GetTypeFullName()));
+    return T_Super::_WriteJson(outValue, attributes);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1337,10 +1502,12 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StructECProperty::_GetTypeName () const
+Utf8String StructECProperty::_GetTypeName (bool useFullName) const
     {
     if (!EXPECTED_CONDITION (NULL != m_structType))
         return EMPTY_STRING;
+    if (useFullName)
+        return ECJsonUtilities::FormatClassName(*m_structType);
     return ECClass::GetQualifiedClassName (this->GetClass().GetSchema(), *m_structType);
     }
 
@@ -1457,7 +1624,7 @@ ECObjectsStatus StructECProperty::SetType (ECStructClassCR structType)
 SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
     {
     uint32_t minLength;
-    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+    if (propertyNode.GetAttributeUInt32Value(minLength, ECXML_MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
         {
         if (ECObjectsStatus::Success != SetMinimumLength(minLength) && GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
             {
@@ -1468,7 +1635,7 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
         }
 
     uint32_t maxLength;
-    if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+    if (propertyNode.GetAttributeUInt32Value(maxLength, ECXML_MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
         {
         if (ECObjectsStatus::Success != SetMaximumLength(maxLength) && GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
             {
@@ -1483,7 +1650,7 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
     if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
         status = propertyNode.GetAttributeStringValue(minValue, "MinimumValue");
     else
-        status = propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE);
+        status = propertyNode.GetAttributeStringValue(minValue, ECXML_MINIMUM_VALUE_ATTRIBUTE);
 
     if (BEXML_Success == status)
         {
@@ -1504,7 +1671,7 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
     if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
         status = propertyNode.GetAttributeStringValue(maxValue, "MaximumValue");
     else
-        status = propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE);
+        status = propertyNode.GetAttributeStringValue(maxValue, ECXML_MAXIMUM_VALUE_ATTRIBUTE);
 
     if (BEXML_Success == status)
         {
@@ -1577,6 +1744,9 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
         additionalAttributes.push_back(make_bpair(MAX_OCCURS_ATTRIBUTE, "unbounded"));
         }
 
+    // This is needed to keep the qualified name in scope for calling the super class below....
+    Utf8String koqQualifiedName;
+
     Utf8CP elementName = EC_ARRAYPROPERTY_ELEMENT;
     if (m_arrayKind == ARRAYKIND_Struct)
         {
@@ -1586,7 +1756,16 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
     else // ARRAYKIND_Primitive
-        getExtendedTypeAndKindOfQuantityAttributes(additionalAttributes, this, ecXmlVersion);
+        {
+        if (this->GetAsPrimitiveArrayProperty()->IsExtendedTypeDefinedLocally())
+            additionalAttributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str()));
+
+        if (ecXmlVersion >= ECVersion::V3_0 && this->GetAsPrimitiveArrayProperty()->IsKindOfQuantityDefinedLocally())
+            {
+            koqQualifiedName = this->GetAsPrimitiveArrayProperty()->GetKindOfQuantity()->GetQualifiedName(GetClass().GetSchema()).c_str();
+            additionalAttributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, koqQualifiedName.c_str()));
+            }
+        }
 
     SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersion, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
@@ -1714,7 +1893,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8Stri
         {
         errMsg.Sprintf("The ECProperty %s:%s cannot override the base property %s:%s as they have differing types (%s vs. %s).",
                    GetClass().GetFullName(), GetName().c_str(), baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(),
-                   ECXml::GetPrimitiveTypeName(m_primitiveType), ECXml::GetPrimitiveTypeName(basePrimitiveType));
+                       SchemaParseUtils::PrimitiveTypeToString(m_primitiveType), SchemaParseUtils::PrimitiveTypeToString(basePrimitiveType));
         return false;
         }
 
@@ -1724,11 +1903,12 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PrimitiveArrayECProperty::_GetTypeName () const
+Utf8String PrimitiveArrayECProperty::_GetTypeName (bool useFullName) const
     {    
     if (nullptr == m_enumeration)
-        return ECXml::GetPrimitiveTypeName (m_primitiveType);
-
+        return SchemaParseUtils::PrimitiveTypeToString (m_primitiveType);
+    if (useFullName)
+        return ECJsonUtilities::FormatEnumerationName(*m_enumeration);
     return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
     }
 
@@ -1749,7 +1929,7 @@ Utf8String PrimitiveArrayECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) 
 ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     PrimitiveType primitiveType;
-    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
+    ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType (primitiveType, typeName);
     if (ECObjectsStatus::Success == status)
         return SetPrimitiveElementType (primitiveType);
     
@@ -1878,6 +2058,16 @@ SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(BeXmlNodeR propertyNode, ECS
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus PrimitiveArrayECProperty::_WriteJson(Json::Value& outValue) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+    WriteCommonPrimitivePropertyJsonAttributes(attributes, this);
+    return T_Super::_WriteJson(outValue, attributes);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errMsg) const
@@ -1929,10 +2119,22 @@ ECObjectsStatus StructArrayECProperty::_SetTypeName(Utf8StringCR typeName)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus StructArrayECProperty::_WriteJson(Json::Value& outValue) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, GetTypeFullName()));
+    return T_Super::_WriteJson(outValue, attributes);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String StructArrayECProperty::_GetTypeName() const
+Utf8String StructArrayECProperty::_GetTypeName(bool useFullName) const
     {
+    if (useFullName)
+        return ECJsonUtilities::FormatClassName(*m_structType);
     return ECClass::GetQualifiedClassName(this->GetClass().GetSchema(), *m_structType);
     }
 
@@ -2020,7 +2222,7 @@ ECObjectsStatus NavigationECProperty::SetDirection(Utf8CP direction)
     {
     PRECONDITION(nullptr != direction, ECObjectsStatus::PreconditionViolated);
 
-    ECObjectsStatus status = ECXml::ParseDirectionString(m_direction, direction);
+    ECObjectsStatus status = SchemaParseUtils::ParseDirectionString(m_direction, direction);
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to parse the ECRelatedInstanceDirection string '%s' for NavigationECProperty '%s'.", direction, GetName().c_str());
 
@@ -2133,15 +2335,31 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVers
 
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
     additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
-    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_direction)));
+    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(m_direction)));
 
     return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus NavigationECProperty::_WriteJson(Json::Value& outValue) const
+    {
+    bvector<bpair<Utf8String, Json::Value>> attributes;
+
+    attributes.push_back(bpair<Utf8String, Json::Value>(RELATIONSHIP_NAME_ATTRIBUTE, ECJsonUtilities::FormatClassName(*GetRelationshipClass())));
+
+    ECRelatedInstanceDirection direction = GetDirection();
+    Utf8String directionString;
+    attributes.push_back(bpair<Utf8String, Json::Value>(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(direction)));
+    
+    return T_Super::_WriteJson(outValue, attributes);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(m_type); }
+Utf8String NavigationECProperty::_GetTypeName(bool useFullName) const { return SchemaParseUtils::PrimitiveTypeToString(m_type); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
@@ -2197,21 +2415,6 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
 
     SetCachedTypeAdapter(nullptr);
     InvalidateClassLayout();
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus NavigationECProperty::SetType(PrimitiveType type)
-    {
-    if (m_type != type)
-        {
-        m_type = type;
-        SetCachedTypeAdapter(nullptr);
-        InvalidateClassLayout();
-        }
 
     return ECObjectsStatus::Success;
     }

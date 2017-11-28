@@ -2,9 +2,6 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
-#Navigation properties are being reworked and only support the long primitive type at the moment
-NavigationPropertyValueTests.InstanceWithNavProp_String
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -13,5 +10,3 @@ SchemaDeserializationTest.CanLoadCaInstanceWhichAppearsBeforeCaDefinition
 
 #JsonEcInstanceWriter needs to take a class locater in order to resolve a rel class id into a rel class name in the JSON wire format
 NavigationPropertyValueTests.InstanceWithNavProp_Long
-
-

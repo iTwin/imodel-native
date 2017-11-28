@@ -41,6 +41,18 @@ ECClassCP ECJsonUtilities::GetClassFromClassNameJson(JsonValueCR json, IECClassL
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus)
+    {
+    Json::Value val(Json::objectValue);
+    val[ECJSON_UNIT_FORMAT_UNIT] = fus.GetUnitName();
+    val[ECJSON_UNIT_FORMAT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
+    return val;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -70,6 +82,7 @@ BentleyStatus ECJsonUtilities::IdToJson(Json::Value& json, BeInt64Id id)
     json = id.ToHexStr();
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
@@ -123,13 +136,16 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& int64Val, JsonValueCR json)
         return SUCCESS;
         }
 
-    if (json.isConvertibleTo(Json::ValueType::intValue))
+    if (json.isNumeric())
         {
-        int64Val = json.asInt64();
+        if (json.isUInt())
+            int64Val = json.asUInt64();
+        else
+            int64Val = json.asInt64();
+
         return SUCCESS;
         }
 
-    BeAssert(false);
     return ERROR;
     }
 
@@ -377,7 +393,7 @@ void ECJsonUtilities::Int64ToJson(RapidJsonValueR json, int64_t val, rapidjson::
             case ECJsonInt64Format::AsDecimalString:
             {
             char str[32];
-            const int len = sprintf(str, "%" PRId64, val);
+            const int len = sprintf(str, "%" PRIi64, val);
             json.SetString(str, len, allocator);
             return;
             }
@@ -407,7 +423,15 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
 
     if (json.IsNumber())
         {
-        val = json.GetInt64();
+        if (json.IsInt() || json.IsInt64())
+            val = json.GetInt64();
+        else if (json.IsUint() || json.IsUint64())
+            val = json.GetUint64();
+        else if (json.IsFloat() || json.IsDouble())
+            val = (int64_t) json.GetDouble();
+        else
+            return ERROR;
+
         return SUCCESS;
         }
 
@@ -425,7 +449,6 @@ BentleyStatus ECJsonUtilities::JsonToInt64(int64_t& val, RapidJsonValueCR json)
         return SUCCESS;
         }
 
-    BeAssert(false);
     return ERROR;
     }
 
@@ -1499,7 +1522,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
         {
         ECPropertyCP  primitiveProperty = arrayProperty.GetAsPrimitiveArrayProperty();
         PrimitiveType   memberType = arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        Utf8CP          typeString = ECXml::GetPrimitiveTypeName(memberType);
+        Utf8CP          typeString = SchemaParseUtils::PrimitiveTypeToString(memberType);
 
         KindOfQuantityCP koq = nullptr;
         if (writeFormattedQuanties)
@@ -1690,7 +1713,7 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECJSON_ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, false, serializeNullValues);
@@ -1702,6 +1725,19 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
     else
         valueToPopulate[className.c_str()] = instanceObj;
 
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECOBJECTS_EXPORT StatusInt JsonEcInstanceWriter::WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance)
+    {
+    ECClassCR ecClass = ecInstance.GetClass();
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(valueToPopulate, ecClass, ecInstance, nullptr, true);
+    if (BSISUCCESS != status)
+        return status;
+    valueToPopulate[ECJsonSystemNames::ClassName()] = ECJsonUtilities::FormatClassName(ecClass);
     return BSISUCCESS;
     }
 
@@ -1720,7 +1756,7 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToPresentationJson(Json::Value&
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate[ECINSTANCE_INSTANCEID_JSON_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECJSON_ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, true);

@@ -1,3 +1,4 @@
+#include "TestFixture.h"
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: test/TestFixture/TestFixture.cpp $
@@ -172,6 +173,22 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFil
     file.Close();
 
     return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
+    }
+
+bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
+    {
+    return a.ToString() == b.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECTestUtility::JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema)
+    {
+    return "Created Schema   (minified): " + createdSchema.ToString() + '\n' +
+           "Test Data Schema (minified): " + testDataSchema.ToString() + '\n' +
+           "Created Schema   (pretty):\n"  + createdSchema.toStyledString() + '\n' +
+           "Test Data Schema (pretty):\n"  + testDataSchema.toStyledString();
     }
 
 /*---------------------------------------------------------------------------------**//**

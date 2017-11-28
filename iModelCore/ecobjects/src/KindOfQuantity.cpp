@@ -191,7 +191,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
     auto& displayLabel = GetInvariantDisplayLabel();
     if (!displayLabel.empty())
-        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
 
     if (GetPersistenceUnit().HasProblem())
         {
@@ -202,7 +202,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
     double relError = GetRelativeError();
-    xmlWriter.WriteAttribute(RELATIVE_ERROR_ATTRIBUTE, relError);
+    xmlWriter.WriteAttribute(ECXML_RELATIVE_ERROR_ATTRIBUTE, relError);
 
     bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
     if (presentationUnits.size() > 0)
@@ -229,8 +229,60 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        }
+
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = KIND_OF_QUANTITY_ELEMENT;
+
+    if (GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (0 != GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // KindOfQuantity Properties
+    if (GetPersistenceUnit().HasProblem())
+        {
+        LOG.errorv("Failed to write schema because persistance UNIT for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), GetPersistenceUnit().GetProblemDescription().c_str());
+        return SchemaWriteStatus::FailedToCreateJson;
+        }
+
+    outValue[PERSISTENCE_UNIT_ATTRIBUTE] = ECJsonUtilities::FormatUnitSetToUnitFormatJson(GetPersistenceUnit());
+
+    outValue[ECJSON_RELATIVE_ERROR_ATTRIBUTE] = GetRelativeError();
+
+    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    if (0 != presentationUnits.size())
+        {
+        Json::Value presentationUnitArr(Json::ValueType::arrayValue);
+        for (auto const& fus : presentationUnits)
+            {
+            if (fus.HasProblem())
+                {
+                LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
+                return SchemaWriteStatus::FailedToCreateJson;
+                }
+            presentationUnitArr.append(ECJsonUtilities::FormatUnitSetToUnitFormatJson(fus));
+            }
+        outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
+        }
+
+    return SchemaWriteStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context)
     {
@@ -239,7 +291,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     if (GetName().length() == 0)
         READ_REQUIRED_XML_ATTRIBUTE(kindOfQuantityNode, TYPE_NAME_ATTRIBUTE, this, Name, kindOfQuantityNode.GetName())
 
-    READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
     READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
     if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
@@ -255,9 +307,9 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     SetPersistenceUnit(persistenceFUS);
 
     double relError;
-    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, RELATIVE_ERROR_ATTRIBUTE))
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, ECXML_RELATIVE_ERROR_ATTRIBUTE))
         {
-        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), RELATIVE_ERROR_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     SetRelativeError(relError);
@@ -347,6 +399,26 @@ Json::Value KindOfQuantity::ToJson(bool useAlias) const
     jval[Formatting::json_persistFUS()] = m_persistenceFUS.ToJson(useAlias);
     jval[Formatting::json_relativeErr()] = GetPresentationsJson(useAlias);
     return jval;
+    }
+
+BEU::T_UnitSynonymVector* KindOfQuantity::GetSynonymVector() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? nullptr : php->GetSynonymVector();
+    }
+
+size_t KindOfQuantity::GetSynonymCount() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? 0 : php->GetSynonymCount();
+    }
+
+BEU::PhenomenonCP KindOfQuantity::GetPhenomenon() const
+    {
+    Formatting::FormatUnitSet fus = GetPersistenceUnit();
+    BEU::UnitCP un = fus.GetUnit();
+    BEU::PhenomenonCP php = (nullptr == un)? nullptr : un->GetPhenomenon();
+    return php;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -37,7 +37,7 @@ ECEnumeration::~ECEnumeration()
 //---------------+---------------+---------------+---------------+---------------+-------
 void ECEnumeration::SetDisplayLabel(Utf8CP displayLabel) {m_validatedName.SetDisplayLabel(displayLabel);}
 Utf8StringCR ECEnumeration::GetDescription() const {return GetSchema().GetLocalizedStrings().GetEnumerationDescription(*this, GetInvariantDescription());}
-Utf8String ECEnumeration::GetTypeName() const {return ECXml::GetPrimitiveTypeName(m_primitiveType);}
+Utf8String ECEnumeration::GetTypeName() const {return SchemaParseUtils::PrimitiveTypeToString(m_primitiveType);}
 Utf8StringCR ECEnumeration::GetDisplayLabel() const {return GetSchema().GetLocalizedStrings().GetEnumerationDisplayLabel(*this, GetInvariantDisplayLabel());}
 
 //---------------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ ECObjectsStatus ECEnumeration::SetType(PrimitiveType value)
 ECObjectsStatus ECEnumeration::SetTypeName(Utf8CP typeName)
     {
     PrimitiveType primitiveType;
-    ECObjectsStatus status = ECXml::ParsePrimitiveType(primitiveType, typeName);
+    ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType(primitiveType, typeName);
     if (ECObjectsStatus::Success != status)
         return status;
 
@@ -146,7 +146,7 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
     if (ecXmlVersion < ECVersion::V3_0) //Enumerations will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;
 
-    Utf8CP elementName = EC_ENUMERATION_ELEMENT;
+    Utf8CP elementName = ECXML_ENUMERATION_ELEMENT;
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     
     xmlWriter.WriteElementStart(elementName);
@@ -155,14 +155,14 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
     xmlWriter.WriteAttribute(BACKING_TYPE_NAME_ATTRIBUTE, GetTypeName().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
     xmlWriter.WriteAttribute(IS_STRICT_ATTRIBUTE, this->GetIsStrict());
 
     bool isIntType = GetType() == PrimitiveType::PRIMITIVETYPE_Integer;
     for (auto enumerator : m_enumeratorList)
         {
-        xmlWriter.WriteElementStart(EC_ENUMERATOR_ELEMENT);
+        xmlWriter.WriteElementStart(ECXML_ENUMERATOR_ELEMENT);
         Utf8StringCR displayLabel = enumerator->GetInvariantDisplayLabel();
         if(isIntType)
             xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetInteger());
@@ -170,13 +170,58 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
             xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetString().c_str());
 
         if(enumerator->m_hasExplicitDisplayLabel)
-            xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
+            xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
 
         xmlWriter.WriteElementEnd();
         }
 
     xmlWriter.WriteElementEnd();
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman              11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        }
+
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = ECJSON_ENUMERATION_ELEMENT;
+
+    if (this->GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (0 != this->GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // ECEnumeration Properties
+    outValue[BACKING_TYPE_NAME_ATTRIBUTE] = GetTypeName();
+    outValue[IS_STRICT_ATTRIBUTE] = GetIsStrict();
+
+    Json::Value enumeratorArr = Json::Value(Json::ValueType::arrayValue);
+    for (const auto enumerator : GetEnumerators())
+        {
+        Json::Value enumeratorObj = Json::Value(Json::ValueType::objectValue);
+        if (enumerator->GetIsDisplayLabelDefined())
+            enumeratorObj[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = enumerator->GetInvariantDisplayLabel();
+        if (GetTypeName() == EC_PRIMITIVE_TYPENAME_INTEGER)
+            enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetInteger());
+        else if (GetTypeName() == EC_PRIMITIVE_TYPENAME_STRING)
+            enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetString());
+        else
+            return SchemaWriteStatus::FailedToCreateJson;
+        enumeratorArr.append(enumeratorObj);
+        }
+    outValue[ECJSON_ENUMERATOR_ELEMENT] = enumeratorArr;
+
+    return SchemaWriteStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -191,7 +236,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
     if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DESCRIPTION_ATTRIBUTE))
         SetDescription(value.c_str());
 
-    if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DISPLAY_LABEL_ATTRIBUTE))
+    if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, ECXML_DISPLAY_LABEL_ATTRIBUTE))
         SetDisplayLabel(value.c_str());
     
     // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
@@ -217,7 +262,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
     for (BeXmlNodeP childNode = enumerationNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
         {
         Utf8CP childNodeName = childNode->GetName();
-        if (0 != strcmp(childNodeName, EC_ENUMERATOR_ELEMENT))
+        if (0 != strcmp(childNodeName, ECXML_ENUMERATOR_ELEMENT))
             continue;
 
         ECEnumeratorP enumerator;
@@ -255,7 +300,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
             }
 
         Utf8String displayLabel;
-        if (childNode->GetAttributeStringValue(displayLabel, DISPLAY_LABEL_ATTRIBUTE) == BeXmlStatus::BEXML_Success)
+        if (childNode->GetAttributeStringValue(displayLabel, ECXML_DISPLAY_LABEL_ATTRIBUTE) == BeXmlStatus::BEXML_Success)
             enumerator->SetDisplayLabel(displayLabel.c_str());
         }
 

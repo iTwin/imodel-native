@@ -175,11 +175,30 @@ private:
     static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
 
 public:
-
     //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
     //! @return Fully qualified class name for the ECJSON format
-    static Utf8String FormatClassName(ECClassCR ecClass) { return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str()); }
+    static Utf8String FormatClassName(ECClassCR ecClass) {return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());}
+
+    //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;
+    //! @param[in] ecPropertyCategory PropertyCategory
+    //! @return Fully qualified property category name for the ECJSON format
+    static Utf8String FormatPropertyCategoryName(PropertyCategoryCR ecPropertyCategory) {return Utf8PrintfString("%s.%s", ecPropertyCategory.GetSchema().GetName().c_str(), ecPropertyCategory.GetName().c_str());}
+
+    //! Generates the fully qualified name of an ECEnumeration as used in the ECJSON format: &lt;schema name&gt;.&lt;Enumeration name&gt;
+    //! @param[in] ecEnumeration ECEnumeration
+    //! @return Fully qualified enumeration name for the ECJSON format
+    static Utf8String FormatEnumerationName(ECEnumerationCR ecEnumeration) {return Utf8PrintfString("%s.%s", ecEnumeration.GetSchema().GetName().c_str(), ecEnumeration.GetName().c_str());}
+
+    //! Generates the fully qualified name of a KindOfQuantity as used in the ECJSON format: &lt;schema name&gt;.&lt;KindOfQuantity name&gt;
+    //! @param[in] koq KindOfQuantity
+    //! @return Fully qualified KindOfQuantity name for the ECJSON format
+    static Utf8String FormatKindOfQuantityName(KindOfQuantityCR koq) {return Utf8PrintfString("%s.%s", koq.GetSchema().GetName().c_str(), koq.GetName().c_str());}
+
+    //! Generates a Json object in the ECJSON Unit Format from a FormatUnitSet.
+    //! @param [in] fus FormatUnitSet
+    //! @return Json object for a FormatUnitSet in the ECJSON Unit Format 
+    static Json::Value FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus);
 
     //! Lowers the first char of the specified string.
     //! @remarks Use this method to make a name, e.g. an ECProperty name a JSON member name.
@@ -216,25 +235,21 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus IdToJson(Json::Value& json, BeInt64Id id);
 
     //! Converts an id from a JSON value to a BeInt64Id
-    //! @remarks Because JavaScript has issues with Int64 values, the id in the JSON value must have been
-    //! serialized as <b>hex string</b> (@see BentleyApi::BeInt64Id::ToHexStr)
-    //! @param[in] json JSON value containing the id as <b>hex string</b>
+    //! @remarks The JSON must contain the Id value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
+    //! @param[in] json JSON value containing the id
     //! @return Resulting BeInt64Id. In case of error, an invalid BeInt64Id will be returned.
     template<class TBeInt64Id>
     static TBeInt64Id JsonToId(Json::Value const& json)
         {
-        TBeInt64Id invalidId;
-        invalidId.Invalidate();
-
-        if (json.isNull() || !json.isString())
+        int64_t val = 0;
+        if (SUCCESS != JsonToInt64(val, json))
+            {
+            TBeInt64Id invalidId;
+            invalidId.Invalidate();
             return invalidId;
+            }
 
-        BentleyStatus parseStat = SUCCESS;
-        uint64_t idVal = BeStringUtilities::ParseHex(json.asCString(), &parseStat);
-        if (SUCCESS != parseStat)
-            return invalidId;
-
-        return TBeInt64Id(idVal);
+        return TBeInt64Id((uint64_t) val);
         }
 
     //! Converts an Int64 into a JSON value.
@@ -366,25 +381,21 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus IdToJson(RapidJsonValueR json, BeInt64Id id, rapidjson::MemoryPoolAllocator<>& allocator);
 
     //! Converts an id from a JSON value to a BeInt64Id
-    //! @remarks Because JavaScript has issues with Int64 values, the id in the JSON value must have been
-    //! serialized as <b>hex string</b> (@see BentleyApi::BeInt64Id::ToHexStr)
-    //! @param[in] json JSON value containing the id as <b>hex string</b>
+    //! @remarks The JSON must contain the Id value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
+    //! @param[in] json JSON value containing the id
     //! @return Resulting BeInt64Id. In case of error, an invalid BeInt64Id will be returned.
     template<class TBeInt64Id>
     static TBeInt64Id JsonToId(RapidJsonValueCR json)
         {
-        TBeInt64Id invalidId;
-        invalidId.Invalidate();
-
-        if (json.IsNull() || !json.IsString())
+        int64_t val = 0;
+        if (SUCCESS != JsonToInt64(val, json))
+            {
+            TBeInt64Id invalidId;
+            invalidId.Invalidate();
             return invalidId;
+            }
 
-        BentleyStatus parseStat = SUCCESS;
-        uint64_t idVal = BeStringUtilities::ParseHex(json.GetString(), &parseStat);
-        if (SUCCESS != parseStat)
-            return invalidId;
-
-        return TBeInt64Id(idVal);
+        return TBeInt64Id((uint64_t) val);
         }
 
     //! Converts the specified DateTime to a JSON value as ISO8601 string
@@ -550,6 +561,11 @@ struct JsonEcInstanceWriter final
         //! @param[in] serializeNullValues If true all values, even null values, of the IECInstance will be serialized.
         //! @return SUCCESS or error status.
         ECOBJECTS_EXPORT static StatusInt     WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues = false);
+
+        //! Write the supplied instance in the ECSchemaJSON format
+        //! @param[out] valueToPopulate the JSON object to populate
+        //! @param[in] ecInstance the IEInstance containing the property values
+        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance);
 
         //! Write the supplied instance as JSON and include presentation data such as KOQ info in the Json
         //! @param[out] valueToPopulate the JSON object to populate

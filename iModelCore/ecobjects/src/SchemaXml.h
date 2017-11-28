@@ -33,7 +33,7 @@ public:
 struct SchemaXmlWriter
     {
     private:
-        struct  ECSchemaWriteContext
+        struct ECSchemaWriteContext
             {
             public:
             bset<Utf8CP> m_alreadyWrittenClasses;
@@ -45,18 +45,17 @@ struct SchemaXmlWriter
         ECVersion m_ecXmlVersion;
 
     protected:
-        SchemaWriteStatus                   WriteSchemaReferences ();
-        SchemaWriteStatus                   WriteClass (ECClassCR ecClass);
+        SchemaWriteStatus                   WriteSchemaReferences();
+        SchemaWriteStatus                   WriteClass(ECClassCR ecClass);
         SchemaWriteStatus                   WriteEnumeration(ECEnumerationCR ecEnumeration);
         SchemaWriteStatus                   WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity);
         SchemaWriteStatus                   WritePropertyCategory(PropertyCategoryCR propertyCategory);
-        SchemaWriteStatus                   WriteCustomAttributeDependencies (IECCustomAttributeContainerCR container);
-        SchemaWriteStatus                   WritePropertyDependencies (ECClassCR ecClass);
+        SchemaWriteStatus                   WriteCustomAttributeDependencies(IECCustomAttributeContainerCR container);
+        SchemaWriteStatus                   WritePropertyDependencies(ECClassCR ecClass);
 
     public:
         SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, ECVersion ecXmlVersion = ECVersion::V2_0);
         virtual SchemaWriteStatus Serialize(bool utf16 = false);
     };
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE

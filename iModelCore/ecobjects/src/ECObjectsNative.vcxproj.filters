@@ -51,9 +51,6 @@
     <ClCompile Include="ECValue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ecxml.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StandaloneECInstance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -138,12 +135,15 @@
     <ClCompile Include="SchemaComparer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SchemaJson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaConversionUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ecxml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h">
@@ -252,6 +252,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SchemaComparer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaJson.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PrivateApi\ECObjects\SchemaConversionUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

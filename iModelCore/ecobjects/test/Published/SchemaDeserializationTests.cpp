@@ -1264,4 +1264,20 @@ TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinitio
     EXPECT_EQ(49, doubleSillyDouble.GetDouble());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Robert.Schili                          01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
+TEST_F(SchemaDeserializationTest, DeserializeComprehensiveSchemaWithUnknowns)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"ComprehensiveSchemaWithUnknowns.01.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load ComprehensiveSchemaWithUnknowns for test";
+
+    EXPECT_EQ(6, schema->GetClassCount());
+    EXPECT_EQ(1, schema->GetEnumerationCount());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

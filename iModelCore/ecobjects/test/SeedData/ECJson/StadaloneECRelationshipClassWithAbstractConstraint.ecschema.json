@@ -1,0 +1,29 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaChildType": "RelationshipClass",
+  "name": "ExampleRelationshipClass",
+  "modifier": "none",
+  "baseClass": "ExampleSchema.RelationshipClassBase",
+  "strength": "referencing",
+  "strengthDirection": "forward",
+  "source": {
+    "multiplicity": "(0..1)",
+    "roleLabel": "SourceRoleLabel",
+    "polymorphic": true,
+    "abstractConstraint": "ExampleSchema.ClassB",
+    "constraintClasses": [
+      "ExampleSchema.ClassB",
+      "ExampleSchema.ClassC"
+    ]
+  },
+  "target": {
+    "multiplicity": "(0..1)",
+    "roleLabel": "TargetRoleLabel",
+    "polymorphic": true,
+    "constraintClasses": [
+      "ExampleSchema.ClassA"
+    ]
+  }
+}

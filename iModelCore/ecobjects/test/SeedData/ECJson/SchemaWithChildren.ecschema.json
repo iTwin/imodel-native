@@ -1,0 +1,149 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema",
+  "name": "ExampleSchema",
+  "version": "03.01.00",
+  "alias": "ex",
+  "label": "Example Schema",
+  "description": "The quick brown fox jumps over the lazy dog.",
+  "references": [
+    {
+      "name" : "CoreCustomAttributes",
+      "version" : "01.00.00"
+    },
+    {
+      "name": "refSchemaA",
+      "version": "03.01.00"
+    },
+    {
+      "name": "refSchemaB",
+      "version": "03.01.00"
+    }
+  ],
+  "customAttributes": [
+    {
+    "className": "refSchemaA.SomeCustomAttributeClass"
+    },
+    {
+    "className": "refSchemaB.AnotherCustomAttributeClass"
+    }
+  ],
+  "children": {
+    "ExampleBaseEntity": {
+      "schemaChildType": "EntityClass"
+    },
+    "ExampleEntity": {
+      "schemaChildType": "EntityClass",
+      "modifier": "sealed",
+      "label": "ExampleEntity",
+      "description": "An example entity class.",
+      "baseClass": "ExampleSchema.ExampleBaseEntity",
+      "mixins": [
+        "ExampleSchema.ExampleMixinA",
+        "ExampleSchema.ExampleMixinB"
+      ]
+    },
+    "ExampleMixinA": {
+      "schemaChildType": "Mixin",
+      "appliesTo": "ExampleSchema.ExampleEntity"
+    },
+    "ExampleMixinB": {
+      "schemaChildType": "Mixin",
+      "appliesTo": "ExampleSchema.ExampleEntity"
+    },
+    "ExampleStruct": {
+      "schemaChildType": "StructClass",
+      "modifier": "sealed",
+      "properties": [
+        {
+          "propertyType": "PrimitiveArrayProperty",
+          "name": "ExamplePrimitiveArray",
+          "label": "ExPrimitiveArray",
+          "typeName": "int",
+          "extendedTypeName": "FooBar",
+          "minValue": 7,
+          "maxValue": 20,
+          "minOccurs": 10,
+          "maxOccurs": 25
+        }
+      ]
+    },
+    "ExampleSource": {
+      "schemaChildType": "EntityClass"
+    },
+    "ExampleTarget": {
+      "schemaChildType": "EntityClass"
+    },
+    "ExampleRelationship": {
+      "schemaChildType": "RelationshipClass",
+      "modifier": "sealed",
+      "strength": "embedding",
+      "strengthDirection": "forward",
+      "source": {
+        "multiplicity": "(0..1)",
+        "roleLabel": "source roleLabel",
+        "polymorphic": true,
+        "constraintClasses": [
+          "ExampleSchema.ExampleSource"
+        ]
+      },
+      "target": {
+        "multiplicity": "(0..1)",
+        "roleLabel": "target roleLabel",
+        "polymorphic": true,
+        "constraintClasses": [
+          "ExampleSchema.ExampleTarget"
+        ]
+      }
+    },
+    "ExampleCustomAttribute": {
+        "schemaChildType": "CustomAttributeClass",
+        "modifier": "sealed",
+        "appliesTo": "Schema, AnyProperty"
+    },
+    "ExampleKoQ": {
+      "schemaChildType": "KindOfQuantity",
+      "persistenceUnit": {
+        "unit": "MM",
+        "format": "DefaultReal"
+      },
+      "precision": 3.0,
+      "presentationUnits": [
+        {
+          "unit": "IN",
+          "format": "DefaultReal"
+        },
+        {
+          "unit": "MM",
+          "format": "DefaultReal"
+        },
+        {
+          "unit": "CM",
+          "format": "DefaultReal"
+        }
+      ]
+    },
+    "ExampleEnumeration": {
+      "schemaChildType": "Enumeration",
+      "backingTypeName": "int",
+      "isStrict": true,
+      "enumerators": [
+        {
+          "value": 1,
+          "label": "None"
+        },
+        {
+           "value": 2,
+           "label": "SomeVal"
+        },
+        {
+          "value": 3,
+          "label": "AnotherVal"
+        }
+      ]
+    },
+    "ExamplePropertyCategory": {
+      "schemaChildType": "PropertyCategory",
+      "priority": 5
+    }
+  }
+}
