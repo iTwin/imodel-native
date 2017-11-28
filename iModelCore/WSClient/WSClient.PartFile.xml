@@ -70,7 +70,7 @@
 
     <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="BentleyDesktopClient" />
+        <SubPart PartName="BentleyDesktopClientCCApi"     PartFile="SdkSources"  Repository="bsicommon" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
         <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
         <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
@@ -367,14 +367,6 @@
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
-    </Part>
-
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // CCApi binding                                                          // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    
-    <Part Name="BentleyDesktopClient" OnlyPlatforms="x64,x86">
-        <SubPart PartName="CCApi" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
