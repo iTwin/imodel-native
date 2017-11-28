@@ -14,6 +14,7 @@
       <ProductDirectory Name="GridsIncludes" Path="Grids" />
       <ProductDirectory Name="TestsBackdoorIncludes" Path="TestsBackdoor" />
       <ProductDirectory Name="ConstraintSystemIncludes" Path="ConstraintSystem" />
+      <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="GridsGTestDirectories">
