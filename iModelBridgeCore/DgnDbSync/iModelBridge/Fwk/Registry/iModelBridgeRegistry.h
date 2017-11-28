@@ -41,6 +41,7 @@ struct iModelBridgeRegistry : RefCounted<IModelBridgeRegistry>
     struct AssignCmdLineArgs
         {
         BeFileName m_stagingDir;
+        BeFileName m_loggingConfigFileName;
         Utf8String m_repositoryName;
 
         int ParseCommandLine(int argc, WCharCP argv[]);
