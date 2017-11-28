@@ -614,23 +614,49 @@ TEST_F(ECSchemaTests, ExternalSchema)
     ScopedExternalSchemaLocator locator(GetOutputDir().c_str());
     ASSERT_TRUE(SUCCESS == locator.Status());
 
+    Utf8CP refSchemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"RefSchema\" nameSpacePrefix=\"ref\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECClass typeName=\"Base\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"FederationGuid\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"Status\" typeName=\"string\" />"
+        "    </ECClass>"
+        "</ECSchema>";
+
+    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECSchemaReference name =\"RefSchema\" version =\"01.01\" prefix =\"ref\" />"
+        "    <ECClass typeName=\"Foo\" isDomainClass=\"True\">"
+        "        <BaseClass>ref:Base</BaseClass>"
+        "        <ECProperty propertyName=\"Code\" typeName=\"string\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Goo\" >"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName=\"code\" typeName=\"int\" />"
+        "        <ECProperty propertyName=\"status\" typeName=\"int\" />"
+        "    </ECClass>"
+        "</ECSchema>";
+
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr schema, refSchema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *schemaContext));
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+
     DgnV8Api::ElementId eid;
     {
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
-    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
     BentleyApi::BeFileName schemaFileName = GetOutputFileName(L"TestSchema.01.01.ecschema.xml   ");
+    BentleyApi::BeFileName refSchemaFileName = GetOutputFileName(L"RefSchema.01.01.ecschema.xml   ");
 
     ASSERT_TRUE(ECObjectsV8::SCHEMA_WRITE_STATUS_Success == schema->WriteToXmlFile(schemaFileName.c_str()));
-    DgnV8Api::SchemaInfo info(schema->GetSchemaKey(), *v8editor.m_file);
-    ECObjectsV8::ECSchemaPtr externalSchema = RegisteExternalSchema(schemaFileName.c_str(), info);
-    EXPECT_TRUE(externalSchema.IsValid());
-    EXPECT_TRUE(DgnV8Api::SCHEMAIMPORT_Success == DgnV8Api::DgnECManager::GetManager().ImportSchema(*externalSchema, *v8editor.m_file, true));
+    ASSERT_TRUE(ECObjectsV8::SCHEMA_WRITE_STATUS_Success == refSchema->WriteToXmlFile(refSchemaFileName.c_str()));
+    EXPECT_TRUE(DgnV8Api::SCHEMAIMPORT_Success == DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *v8editor.m_file, true));
 
     v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
     DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, externalSchema->GetName().c_str(), L"ClassA");
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"Foo");
     }
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
@@ -638,7 +664,7 @@ TEST_F(ECSchemaTests, ExternalSchema)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(NULL != ecSchema);
-    VerifyElement(*db, eid, "ClassA", true);
+    VerifyElement(*db, eid, "Foo", true);
     }
 
 /*---------------------------------------------------------------------------------**//**
