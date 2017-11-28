@@ -94,6 +94,7 @@
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityAdmin"/>
+        <SubPart PartName="BentleyDesktopClientCCApi"         PartFile="SdkSources"                Repository="bsicommon" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)LoadTestBase$(stlibext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)LoadTestBase$(shlibext)</Assemblies>
@@ -307,7 +308,7 @@
         <SubPart PartName="RealityDataServiceConsole"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
-        <SubPart PartName="UsageDataExtractor"/>
+        <!--<SubPart PartName="UsageDataExtractor"/>-->
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <!--<SubPart PartName="DataHandlerTool" />-->
@@ -769,8 +770,8 @@
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="RealityModFramework-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="BentleyDesktopClient-Api" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest"  PartFile="BeGTest"/>
+        <SubPart PartName="BentleyDesktopClientCCApi"         PartFile="SdkSources"                Repository="bsicommon" />
         <SubPart PartName="RealityFrameworkTestsData"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModFrameworkTest/Assemblies/*</Files>
