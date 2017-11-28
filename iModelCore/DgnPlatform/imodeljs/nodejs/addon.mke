@@ -31,6 +31,19 @@ o = $(OutputRootDir)Build/iModelJsNodeAddon_$(NODE_GYP_VER)/
 always:
     !~@mkdir $(o)
 
+
+# 
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+always:
+    >$(o)imodeljsnode_addon_package_version.h
+\#define PACKAGE_VERSION "$(PACKAGE_VERSION)"
+    <
+ 
+cIncs + -I$(o)
+
 # DLM_NAME and CCompPDBName must be the same.
 DLM_NAME        =% $(appName)
 CCompPDBName    =% $(appName)

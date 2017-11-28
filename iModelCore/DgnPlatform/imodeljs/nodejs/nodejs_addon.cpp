@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <memory>
 #include "suppress_warnings.h"
+#include <imodeljsnode_addon_package_version.h>
 
 #include <node-addon-api/napi.h>
 #include <uv/uv.h>
@@ -29,7 +30,9 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_EC
 
-        //NodeAddonDgnDb* db = NodeAddonDgnDb::Unwrap(info.This().As<Napi::Object>());
+#define DEFINE_CONSTANT_STRING_INTEGER(name, constant)                        \
+    Napi::PropertyDescriptor::Value(#name, Napi::String::New(env, constant),   \
+        static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)),
 
 #define RETURN_IF_HAD_EXCEPTION if (Env().IsExceptionPending()) return;
 #define RETURN_IF_HAD_EXCEPTION_SYNC if (Env().IsExceptionPending()) return Env().Undefined();
@@ -1394,6 +1397,11 @@ static void registerModule(Napi::Env env, Napi::Object exports, Napi::Object mod
     NodeAddonDgnDb::Init(env, exports, module);
     // NodeAddonECDb::Init(env, exports, module);
     NodeAddonECSqlStatement::Init(env, exports, module);
+
+    exports.DefineProperties(
+        {
+        DEFINE_CONSTANT_STRING_INTEGER(version, PACKAGE_VERSION)
+        });
     }
 
 Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;

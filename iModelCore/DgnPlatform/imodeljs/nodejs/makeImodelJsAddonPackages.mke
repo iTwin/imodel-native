@@ -26,7 +26,7 @@ baseDir = $(_MakeFilePath)
 
 # NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
 
-PACKAGE_VERSION=1.1.0
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
     always:
