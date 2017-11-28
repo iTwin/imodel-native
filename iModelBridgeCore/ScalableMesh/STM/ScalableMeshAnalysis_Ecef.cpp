@@ -141,8 +141,8 @@ double degree2radian(double deg)
     }
 
 // Returns the WSG84 ellipsoid from a given Ecef center, 
-// and computes the local direction
-Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCenter, DVec3d &dirW)
+// and computes the local direction in ecef
+Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCenter, DVec3d &dir_ecef)
     {
     Ellipsoid ewgs84 = Ellipsoid::WGS84();
     GeoCoordinates::BaseGCSPtr myBase = m_scmPtr->GetBaseGCS();
@@ -155,8 +155,8 @@ Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCent
     latlongUp.elevation += 100;
     DPoint3d ecefup;
     myBase->XYZFromLatLong(ecefup, latlongUp);
-    dirW = (ecefup - smCenter);
-    dirW.Normalize();
+    dir_ecef = (ecefup - smCenter);
+    dir_ecef.Normalize();
 
     return ewgs84;
     }
@@ -171,10 +171,11 @@ void DumpGrid(std::string filename, ISMGridVolume& grid)
     f.open(filename, ios_base::app);
     f << setprecision(12);
     f << "Dump Grid ====================== :: " << endl;
-    f << "Grid Size :: " << m_xSize << " , " << m_ySize << endl;
-    f << "Grid Resolution :: " << grid.m_resolution << endl;
-    f << "Grid Range :: low :" << grid.m_range.low.x << " , " << grid.m_range.low.y << " , " << grid.m_range.low.z << endl;
-    f << "Grid Range :: high :" << grid.m_range.high.x << " , " << grid.m_range.high.y << " , " << grid.m_range.high.z << endl;
+    f << "Grid Size        :: " << m_xSize << " , " << m_ySize << endl;
+    f << "Grid Resolution  :: " << grid.m_resolution << endl;
+    f << "Grid Range :: low : " << grid.m_range.low.x << " , " << grid.m_range.low.y << " , " << grid.m_range.low.z << endl;
+    f << "Grid Range :: high: " << grid.m_range.high.x << " , " << grid.m_range.high.y << " , " << grid.m_range.high.z << endl;
+    f << "Grid Corner       : " << grid.m_gridOrigin.x << " , " << grid.m_gridOrigin.y << " , " << grid.m_gridOrigin.z << endl;
     f.close();
 #endif
     }
@@ -219,9 +220,32 @@ bool ScalableMeshAnalysis::_convertWorldToEnu(IScalableMesh *scmPtr, Ellipsoid* 
         _convertWorldToEnu(scmPtr, ewgs84, convert);
         newhit.point = convert; // convert only the hit point
         ///newhit.fraction = ??? ;  // fractions are already in meter and kept in meter
-        // normals ???
+        // normals
+        if (h.hasNormal)
+        {
+            DPoint3d hup = h.point + h.normal;
+            _convertWorldToEnu(scmPtr, ewgs84, hup);
+            DVec3d newnormal = (hup - convert);
+            newnormal.Normalize();
+            newhit.normal = newnormal;
+        }
         Hits_enu.push_back(newhit);
     }
+    return true;
+}
+
+bool ScalableMeshAnalysis::_convert3SMToWorldDir(IScalableMesh* _3sm, const DPoint3d& _center, DVec3d& _dir)
+{
+    if (_3sm == nullptr)
+        return false;
+
+    DPoint3d smUp = _center + 1.0 * _dir;
+    DPoint3d smCenter = _center;
+    _convert3SMToWorld(_3sm, smCenter);
+    _convert3SMToWorld(_3sm, smUp);
+    _dir = (smUp - smCenter);
+    _dir.Normalize();
+
     return true;
 }
 
@@ -320,12 +344,15 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
         return DTMStatusInt::DTM_ERROR; //User abort
 
     DVec3d directionEnu = DVec3d::From(0, 0, 1);
-    DVec3d directionWorld;
+    DVec3d directionEcef;
     DRange3d rangeMesh;
     m_scmPtr->GetRange(rangeMesh);
     DPoint3d smCenter = DPoint3d::From(rangeMesh.low.x + rangeMesh.XLength() / 2, rangeMesh.low.y + rangeMesh.YLength() / 2, rangeMesh.low.z + rangeMesh.ZLength() / 2);
-    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionWorld);
-    
+    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionEcef);
+
+    DVec3d directionWorld = directionEcef;
+    _convert3SMToWorldDir(m_scmPtr, smCenter, directionWorld); // get the world dir eqivalent to (0,0,1) in ENU
+
     DRange3d rangeEnu;
     bvector<DPoint3d> polygonEnu;
     if ( _GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, nullptr) == false )
@@ -406,12 +433,12 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
             bvector<RayIntersection> Hits;
             bool bret = draping1->IntersectRay(Hits, directionWorld, sourceW);
 
-            // Convert Hits in Enu
-            bvector<RayIntersection> Hits_enu;
-            _convertWorldToEnu(m_scmPtr, &ewgs84, Hits, Hits_enu);
-
             if (bret && Hits.size() > 0)
                 {
+                // Convert Hits in Enu
+                bvector<RayIntersection> Hits_enu;
+                _convertWorldToEnu(m_scmPtr, &ewgs84, Hits, Hits_enu);
+
                         {
                         DRay3d ray = DRay3d::FromOriginAndVector(sourceEnu, directionEnu);
                         DPoint3d polyHit; polyHit.Zero();
@@ -470,13 +497,22 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
 
     // Convert the range from Enu to World ???
     // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
-    DRange3d _range = grid.m_range;
-    grid.m_range = ewgs84.enu2ecef(_range);
-    _range = grid.m_range;
+
+#ifdef SM_ANALYSIS_DEBUG
+    DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
+#endif
+
+    DPoint3d lowEnu = grid.m_range.low; // Convert the lower range point into world coord
+    DPoint3d lowEcef = ewgs84.enu2ecef(lowEnu);
+    _convert3SMToWorld(m_scmPtr, lowEcef);
+    grid.m_gridOrigin = lowEcef;
+
+    DRange3d _range = ewgs84.enu2ecef(grid.m_range);
     grid.m_range = _ConvertToWorldRange(m_scmPtr, _range);
     double resUOR = grid.m_resolution / m_unit2meter;
     grid.m_resolution = resUOR;
     grid.m_isWorld = true;
+    grid.m_isEcef = true;
 
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
@@ -512,11 +548,15 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
         return DTMStatusInt::DTM_ERROR; //User abort
 
     DVec3d directionEnu = DVec3d::From(0, 0, 1);
-    DVec3d directionWorld;
+    DVec3d directionEcef;
     DRange3d rangeMesh;
     m_scmPtr->GetRange(rangeMesh);
     DPoint3d smCenter = DPoint3d::From(rangeMesh.low.x + rangeMesh.XLength() / 2, rangeMesh.low.y + rangeMesh.YLength() / 2, rangeMesh.low.z + rangeMesh.ZLength() / 2);
-    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionWorld);
+    Ellipsoid ewgs84 = GetEllipsoidFromWorldLocation(m_scmPtr, smCenter, directionEcef);
+
+    DVec3d directionWorld = directionEcef;
+    _convert3SMToWorldDir(m_scmPtr, smCenter, directionWorld); // get the world dir eqivalent to (0,0,1) in ENU
+
     DRange3d rangeEnu;
     bvector<DPoint3d> polygonEnu;
     if (_GetComputationParamsInEnu(rangeEnu, polygonEnu, &ewgs84, polygon, diffMesh) == false)
@@ -657,13 +697,17 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
 
     // Convert the range from Enu to World ???
     // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
-    DRange3d _range = grid.m_range;
-    grid.m_range = ewgs84.enu2ecef(_range);
-    _range = grid.m_range;
+    DPoint3d lowEnu = grid.m_range.low; // Convert the lower range point into world coord
+    DPoint3d lowEcef = ewgs84.enu2ecef(lowEnu);
+    _convert3SMToWorld(m_scmPtr, lowEcef);
+    grid.m_gridOrigin = lowEcef;
+
+    DRange3d _range = ewgs84.enu2ecef(grid.m_range);
     grid.m_range = _ConvertToWorldRange(m_scmPtr, _range);
     double resUOR = grid.m_resolution / m_unit2meter;
     grid.m_resolution = resUOR;
     grid.m_isWorld = true;
+    grid.m_isEcef = true;
 
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);

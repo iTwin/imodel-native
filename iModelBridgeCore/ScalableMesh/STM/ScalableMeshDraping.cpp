@@ -782,9 +782,21 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
             }
         }
 
-    // transform and sort the hits
+    // transform back to world and sort the hits
     for (auto &hit : AllHits)
+    {
+        // transform the normals in world
+        if (hit.hasNormal)
+        {
+            DPoint3d startDir = hit.point;
+            DPoint3d endDir = DPoint3d::FromSumOf(startDir, hit.normal);
+            m_transform.Multiply(startDir);
+            m_transform.Multiply(endDir);
+            hit.normal = DVec3d::FromStartEndNormalize(startDir, endDir);
+        }
+        // transform the hit point
         m_transform.Multiply(hit.point);
+    }
 
     // Sort by fraction
     DTMIntersectionCompare Comparator;

@@ -88,6 +88,7 @@ void IScalableMeshAnalysis::SetUnitToMeter(double val)
 ISMGridVolume::ISMGridVolume() 
     {
     m_direction = DVec3d::From(0, 0, 1); // fixed to Z for now
+    m_gridOrigin = DPoint3d::From(0, 0, 0);
     m_resolution = 1.0; // 1 meter
     m_gridSizeLimit = 5000;
     m_totalVolume = m_cutVolume = m_fillVolume = 0;
@@ -463,6 +464,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume3SM(const bvector<DPoin
 
     // Sum the discrete volumes
     _FillGridVolumes(grid, intersected, m_unit2meter); // Sum the discrete volumes
+    grid.m_gridOrigin = grid.m_range.low; // the computation & range are in World
+
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
 #endif
@@ -905,6 +908,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
         }
 
     _FillGridVolumes(grid, intersected, m_unit2meter); // Sum the discrete volumes
+    grid.m_gridOrigin = grid.m_range.low; // the computation & range are in World
+
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
 #endif
