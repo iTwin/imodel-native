@@ -236,112 +236,112 @@
         <SubPart PartName="UnitsDll"/>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-cs" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
+    <Part Name="L10N-UnitsXliffs-cs" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/Units_cs.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-de" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+    <Part Name="L10N-UnitsXliffs-de" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/Units_de.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-es" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+    <Part Name="L10N-UnitsXliffs-es" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/Units_es.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-fi" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
+    <Part Name="L10N-UnitsXliffs-fi" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/Units_fi.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-fr" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
+    <Part Name="L10N-UnitsXliffs-fr" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/Units_fr.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-it" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+    <Part Name="L10N-UnitsXliffs-it" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/Units_it.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-ja" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+    <Part Name="L10N-UnitsXliffs-ja" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/Units_ja.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-ko" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
+    <Part Name="L10N-UnitsXliffs-ko" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/Units_ko.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-nl" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
+    <Part Name="L10N-UnitsXliffs-nl" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/Units_nl.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-pl" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
+    <Part Name="L10N-UnitsXliffs-pl" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/Units_pl.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-pt" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
+    <Part Name="L10N-UnitsXliffs-pt" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/Units_pt.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-ru" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+    <Part Name="L10N-UnitsXliffs-ru" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/Units_ru.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-sv" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
+    <Part Name="L10N-UnitsXliffs-sv" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/Units_sv.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-tr" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
+    <Part Name="L10N-UnitsXliffs-tr" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/Units_tr.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-zh-cn" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+    <Part Name="L10N-UnitsXliffs-zh-cn" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/Units_zh-cn.xliff</Files>
         </Bindings>
     </Part>
 
-    <Part Name="L10N-UnitsXliffs-zh-tw" BentleyBuildMakeFile="l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+    <Part Name="L10N-UnitsXliffs-zh-tw" BentleyBuildMakeFile="Localization/l10N-Units.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
         <RequiredRepository>l10N-Units</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="L10N-UnitsXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/Units_zh-tw.xliff</Files>

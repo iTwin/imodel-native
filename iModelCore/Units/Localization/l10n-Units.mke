@@ -11,8 +11,8 @@
     %error Expected L10N_LANGUAGE_TAG to be set to es, fr, etc...
 %endif
 
-xliffDir = $(SrcRoot)l10n/l10n-Units/$(L10N_LANGUAGE_TAG)/ 
+xliffDir = $(SrcRoot)l10n/l10n-Units/$(L10N_LANGUAGE_TAG)/
 
-$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/UnitsL10N_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)UnitsL10N_$(L10N_LANGUAGE_TAG).xliff
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/Units_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)Units_$(L10N_LANGUAGE_TAG).xliff
     $(LinkFirstDepToFirstTarget)
 
