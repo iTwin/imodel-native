@@ -739,12 +739,37 @@ int iModelBridgeRegistry::AssignCmdLineArgs::ParseCommandLine(int argc, WCharCP 
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-logging-config-file="))
+            {
+            m_loggingConfigFileName.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
+
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized assign argument\n", argv[iArg]);
         return BSIERROR;
         }
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void initLoggingForAssignMain(BeFileNameCR loggingConfigFileName)
+    {
+    if (!loggingConfigFileName.empty() && loggingConfigFileName.DoesPathExist())
+        {
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFileName);
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        return;
+        }
+
+    fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeRegistry", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridge", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeFwk", NativeLogging::LOG_TRACE);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -764,6 +789,8 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
         fwprintf(stderr, L"syntax: %ls --server-repository=<reponame> --fwk-staging-dir=<dirname>\n", argv[0]);
         return -1;
         }
+
+    initLoggingForAssignMain(args.m_loggingConfigFileName);
 
     auto dbname = MakeDbName(args.m_stagingDir, args.m_repositoryName);
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
