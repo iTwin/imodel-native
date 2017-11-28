@@ -62,6 +62,23 @@ GEOMDLLIMPEXP bool IsPointOnOrInside (DPoint3d xyz) const;
 //! </ul>
 GEOMDLLIMPEXP static bool CreateTreeForPolygon (bvector<DPoint3d> const &points, AlternatingConvexClipTreeNode &rootNode);
 
+//! Append start-end positions for curve intervals classified as inside or outside.
+GEOMDLLIMPEXP void AppendCurvePrimitiveClipIntervals
+(
+ICurvePrimitiveCR curve,
+bvector<CurveLocationDetailPair> *insideIntervals,
+bvector<CurveLocationDetailPair> *outsideIntervals
+);
+
+//! Append start-end positions for curve intervals classified as inside or outside.
+GEOMDLLIMPEXP void AppendCurveVectorClipIntervals
+(
+CurveVectorCR curves,
+bvector<CurveLocationDetailPair> *insideIntervals,
+bvector<CurveLocationDetailPair> *outsideIntervals
+);
+
+
 };
 
 

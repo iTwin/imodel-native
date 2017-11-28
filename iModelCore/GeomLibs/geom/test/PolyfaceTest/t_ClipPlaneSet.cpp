@@ -495,8 +495,29 @@ TEST(RecursveClipSets, Test1)
     Check::ClearGeometry ("RecursiveClipSets.Test1");
     }
 
+// Primary shape is a "triangle" with lower edge pushed in so it becomes a mild nonconvex quad.
+// Fractal effects are gentle.
+void NonConvexQuadSimpleFractal(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    points.clear ();
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.5, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0.6,0.1,0),
+        DPoint3d::From (1,0.1,0),
+        DPoint3d::From (0.6,1,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
 void Fractal0 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
     {
+    points.clear ();
     bvector<DPoint2d> pattern {
         DPoint2d::From (0, 0),
         DPoint2d::From (0.25, 0),
@@ -516,6 +537,7 @@ void Fractal0 (bvector<DPoint3d> &points, int numRecursion, double perpendicular
 
 void Fractal1 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
     {
+    points.clear ();
     bvector<DPoint2d> pattern {
         DPoint2d::From (0, 0),
         DPoint2d::From (0.25, 0),
@@ -538,6 +560,7 @@ void Fractal1 (bvector<DPoint3d> &points, int numRecursion, double perpendicular
 // A fractal with fewer concavity changes...
 void Fractal2 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
     {
+    points.clear ();
     bvector<DPoint2d> pattern {
         DPoint2d::From (0, 0),
         DPoint2d::From (0.25, 0.1),
@@ -561,6 +584,7 @@ void Fractal2 (bvector<DPoint3d> &points, int numRecursion, double perpendicular
 // A diamond with simple wave fractal
 void FractalA (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
     {
+    points.clear ();
     bvector<DPoint2d> pattern {
         DPoint2d::From (0, 0),
         DPoint2d::From (0.3, 0.1),
@@ -579,6 +603,9 @@ void FractalA (bvector<DPoint3d> &points, int numRecursion, double perpendicular
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (RecursiveClipSets,Test2)
     {
     for (auto perpendicularFactor : {-1.0, 1.0})
@@ -602,7 +629,9 @@ TEST (RecursiveClipSets,Test2)
         }
     Check::ClearGeometry ("RecursiveClipSets.Test2");
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (RecursiveClipSets,Test3)
     {
     // A diamond, but with the diagonals pushed inward so no full edge of the polygon is on the hull.
@@ -638,3 +667,119 @@ TEST (RecursiveClipSets,Test3)
     TestClipper (points, root);
     Check::ClearGeometry ("RecursiveClipSets.Test3");
     }
+
+
+void ClipPathA (DVec3dCR shift, double scale, bvector<DPoint3d> &points)
+    {
+    points.clear ();
+    bvector<DPoint3d> clipPathA {
+        DPoint3d::From (-1,-1),
+        DPoint3d::From (0.5,-1),
+        DPoint3d::From (0.5,0.5),
+        DPoint3d::From (0.6,0.6),
+        DPoint3d::From (1.3,0.8),
+        DPoint3d::From (0.9, 1.4)
+    };
+    for (auto &xyz : clipPathA)
+        {
+        points.push_back (xyz + scale * shift);
+        }
+    }
+
+void ClipAndSave (AlternatingConvexClipTreeNode &root, ICurvePrimitiveCR curve)
+    {
+    bvector<CurveLocationDetailPair> inside, outside;
+    root.AppendCurvePrimitiveClipIntervals (curve, &inside, &outside);
+    for (auto &pair : inside)
+        {
+        auto r = curve.CloneBetweenFractions (pair.detailA.fraction, pair.detailB.fraction, true);
+        if (r.IsValid ())
+            Check::SaveTransformed (*r);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RecursiveClipSets,LineClip0)
+    {
+    bvector<DPoint3d> polygon;
+    bvector<DPoint3d> linesToClip;
+    DVec3d baseShift = DVec3d::From (-0.1, -0.1, 0);
+    for (auto perpendicularFactor : {-1.0, 1.0})
+        {
+        for (auto generatorFunction : {NonConvexQuadSimpleFractal, FractalA, Fractal0, Fractal1, Fractal2})
+            {
+            SaveAndRestoreCheckTransform shifter(50,0,0);
+            for (int depth = 0; depth < 3; depth++)
+                {
+                SaveAndRestoreCheckTransform shifter(5,0,0);
+                generatorFunction (polygon, depth, perpendicularFactor);
+                AlternatingConvexClipTreeNode root;
+                AlternatingConvexClipTreeNode::CreateTreeForPolygon (polygon, root);
+                SaveTree (root);
+
+                ClipPathA (baseShift, 0.0, linesToClip);
+                Check::SaveTransformed (linesToClip);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                for (double s : {0.0, 1.1, 2.3})
+                    {
+                    ClipPathA (baseShift, s, linesToClip);
+
+                    for (size_t i0 = 0; i0 + 1 < linesToClip.size (); i0++)
+                        {
+                        auto lineSegment = ICurvePrimitive::CreateLine (DSegment3d::From (linesToClip[i0], linesToClip[i0+1]));
+                        ClipAndSave (root, *lineSegment);
+                        }
+                    }
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                ClipPathA (baseShift, 0.0, linesToClip);
+                Check::SaveTransformed (linesToClip);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *ICurvePrimitive::CreateLineString (linesToClip));
+
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                DEllipse3d arc0 = DEllipse3d::From (
+                    0.5, 0.5, 0,
+                    0.5, 1,0,
+                    -0.2, 0.2, 0,
+                    Angle::DegreesToRadians (-120),
+                    Angle::DegreesToRadians (240));
+                auto cpArc = ICurvePrimitive::CreateArc (arc0);
+                Check::SaveTransformed (*cpArc);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *cpArc);
+
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+                        bvector<DPoint3d>{
+                        DPoint3d::From (0, -0.2),
+                        DPoint3d::From (1,0.3),
+                        DPoint3d::From (1.2, 0.8),
+                        DPoint3d::From (0.5,1.0),
+                        //DPoint3d::From (-0.1, 0.1),   // some plane cuts missed with sharp cusp?
+                        DPoint3d::From (-0.3, 0.1),
+                        //DPoint3d::From (0, 0.5),
+                        DPoint3d::From (0, 0.8),
+                        DPoint3d::From (0.5,1.3)
+                            },
+                        nullptr, nullptr,
+                        4, false, true);
+                auto cpBCurve = ICurvePrimitive::CreateBsplineCurve (bcurve);
+                Check::SaveTransformed (*cpBCurve);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *cpBCurve);
+
+
+                }
+            }
+        }
+    Check::ClearGeometry ("RecursiveClipSets.LineClip0");
+    }
+

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/drange1d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -526,6 +526,7 @@ static void AdvanceIntervalDifference (DRange1dCR rangeA, bvector <DRange1d> &da
 //! @description Intersect intervals in two pre-sorted sets.  Output may NOT be the same as either input.
 void DRange1d::DifferenceSorted (bvector <DRange1d> &dataA, bvector <DRange1d> &dataB, bvector <DRange1d> &dataOut)
     {
+    dataOut.clear ();
     size_t nA = dataA.size ();
     size_t iB = 0;
     for (size_t iA = 0; iA < nA; iA++)

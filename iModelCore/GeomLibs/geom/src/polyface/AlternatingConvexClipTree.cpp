@@ -269,4 +269,194 @@ AlternatingConvexClipTreeNode &root
     return builder.BuildHullTree (root);
     }
 
+struct AlternatingConvexClipTreeNode__CurveClipper
+{
+public:
+AlternatingConvexClipTreeNode__CurveClipper ()
+    {
+    m_stackDepth = 0;
+    }
+private:
+ICurvePrimitiveCP m_curve;
+void SetCurve (ICurvePrimitiveCP curve) {m_curve = curve;}
+// the interval stack can have multiple segments at each level.
+// when reused over multiple curves, do NOT "clear" the stack -- that would deallocate all the memory.
+// instead, set the stack counter to zero.  Each level can then "clear" and reuse on later curves.
+bvector<bvector<DRange1d> >m_intervalStack;
+bvector<DRange1d> m_work;
+size_t m_stackDepth;
+
+
+void PopSegmentFrame ()
+    {
+    BeAssert (m_stackDepth > 0);
+    if (m_stackDepth > 0)
+        {
+        TopOfStack().clear ();        // formality.
+        m_stackDepth -= 1;
+        }
+    }
+
+void ClearSegmentStack (){
+    while (m_stackDepth > 0)
+        PopSegmentFrame ();       // and that will reduce stack depth.
+    }
+
+void PushEmptySegmentFrame ()
+    {
+    m_stackDepth += 1;
+    while (m_intervalStack.size () < m_stackDepth)
+        m_intervalStack.push_back (bvector<DRange1d> ());
+    TopOfStack ().clear ();
+    }
+
+bvector<DRange1d> &TopOfStack () {return m_intervalStack[m_stackDepth - 1];}
+// access enry [TopOfStack() - numSkip}
+bvector<DRange1d> &StackEntry (size_t numSkip)
+    {
+    BeAssert (numSkip <= m_stackDepth);
+    return m_intervalStack[m_stackDepth - 1 - numSkip];
+    }
+bool IsTopOfStackEmpty () { return TopOfStack ().size () == 0;}
+
+bvector<DSegment1d> m_fractionIntervals;  // for reuse in AppendSingleClipToStack (which is not recursive)
+bool AppendSingleClipToStack(ConvexClipPlaneSet const &planes, bvector<DRange1d> &insideSegments)
+    {
+    DSegment3d segment;
+    DEllipse3d arc;
+    bvector<DPoint3d> const *ls;
+    if (m_curve->TryGetLine (segment))
+        {
+        double f0, f1;
+        if (planes.ClipBoundedSegment (segment.point[0], segment.point[1], f0, f1, -1.0))
+            insideSegments.push_back (DRange1d (f0, f1));
+        }
+    else if (m_curve->TryGetArc (arc))
+        {
+        m_fractionIntervals.clear ();
+        planes.AppendIntervals (arc, &m_fractionIntervals, -1.0);
+        for (auto &s : m_fractionIntervals)
+            insideSegments.push_back (DRange1d (s.GetStart (), s.GetEnd ()));
+        }
+    else if ((ls = m_curve->GetLineStringCP ()) != nullptr
+        && ls->size () > 1)
+        {
+        double df = 1.0 / (double)(ls->size () - 1);
+        for (int i = 0; m_curve->TryGetSegmentInLineString (segment, i); i++)
+            {
+            double f0, f1;
+            if (planes.ClipBoundedSegment (segment.point[0], segment.point[1], f0, f1, -1.0))
+                insideSegments.push_back (DRange1d ((i + f0) * df, (i + f1) * df));
+            }
+        }
+    else
+        {
+        auto bcurve = m_curve->GetProxyBsplineCurveCP ();
+        if (bcurve != nullptr)
+            {
+            m_fractionIntervals.clear ();
+            planes.AppendIntervals (*bcurve, &m_fractionIntervals);
+            for (auto &s : m_fractionIntervals)
+                insideSegments.push_back (DRange1d (s.GetStart (), s.GetEnd ()));
+            }
+        }
+    return false;
+    }
+// run one level or recursion.  On return, the stack is one level deeper than at entry and the new top of stack has clip for this node.
+void Recurse (AlternatingConvexClipTreeNode const &node)
+    {
+    PushEmptySegmentFrame ();
+    AppendSingleClipToStack (node.m_planes, TopOfStack ());
+    DRange1d::SortLowInPlace (TopOfStack());
+    if (IsTopOfStackEmpty ())
+        return;
+    for (auto &child : node.m_children)
+        {
+        Recurse (child);
+        if (!IsTopOfStackEmpty ())
+            {
+            DRange1d::DifferenceSorted (StackEntry (1), StackEntry (0), m_work);
+            PopSegmentFrame ();
+            TopOfStack ().swap (m_work);
+            }
+        else
+            PopSegmentFrame ();
+        if (IsTopOfStackEmpty ())
+            break;
+        }
+    }
+public:
+void AppendSinglePrimitiveClip (
+AlternatingConvexClipTreeNode const &root,
+ICurvePrimitiveCR curve, 
+bvector<CurveLocationDetailPair> *insideIntervals,
+bvector<CurveLocationDetailPair> *outsideIntervals
+)
+    {
+    SetCurve (&curve);
+    ClearSegmentStack ();
+    Recurse (root);
+    BeAssert (m_stackDepth == 1);
+
+    if (insideIntervals)
+        {
+        auto & intervals = TopOfStack ();
+        for (auto &interval : intervals)
+            {
+            DPoint3d xyz0, xyz1;
+            double f0 = interval.low;
+            double f1 = interval.high;
+            curve.FractionToPoint (f0, xyz0);
+            curve.FractionToPoint (f1, xyz1);
+            insideIntervals->push_back (
+                CurveLocationDetailPair (
+                    CurveLocationDetail (&curve, f0, xyz0),
+                    CurveLocationDetail (&curve, f1, xyz1)
+                    )); 
+            }
+        }
+    PopSegmentFrame ();
+    }
+
+void AppendCurveVectorClip
+(
+AlternatingConvexClipTreeNode const &root,
+CurveVectorCR curves,
+bvector<CurveLocationDetailPair> *insideIntervals,
+bvector<CurveLocationDetailPair> *outsideIntervals
+)
+    {
+    for (auto &cp : curves)
+        {
+        auto child = cp->GetChildCurveVectorCP ();
+        if (child != nullptr)
+            AppendCurveVectorClip (root, *child, insideIntervals, outsideIntervals);
+        else
+            AppendSinglePrimitiveClip (root, *cp, insideIntervals, outsideIntervals);
+        }
+    }
+};
+
+void AlternatingConvexClipTreeNode::AppendCurvePrimitiveClipIntervals
+(
+ICurvePrimitiveCR curve,
+bvector<CurveLocationDetailPair> *insideIntervals,
+bvector<CurveLocationDetailPair> *outsideIntervals
+)
+    {
+    AlternatingConvexClipTreeNode__CurveClipper clipper;
+    clipper.AppendSinglePrimitiveClip (*this, curve, insideIntervals, outsideIntervals);
+    }
+//! Append start-end positions for curve intervals classified as inside or outside.
+void AlternatingConvexClipTreeNode::AppendCurveVectorClipIntervals
+(
+CurveVectorCR curves,
+bvector<CurveLocationDetailPair> *insideIntervals,
+bvector<CurveLocationDetailPair> *outsideIntervals
+)
+    {
+    AlternatingConvexClipTreeNode__CurveClipper clipper;
+    clipper.AppendCurveVectorClip (*this, curves, insideIntervals, outsideIntervals);
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE
