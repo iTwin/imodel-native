@@ -48,7 +48,12 @@ bool PresentationQueryContract::IsAggregating() const
 bool PresentationQueryContract::IsGettingUniqueValues() const
     {
     bvector<PresentationQueryContractFieldCPtr> fields = GetFields();
-    return fields.size() == 1 && fields[0]->IsDistinct();
+    for (PresentationQueryContractFieldCPtr field : fields)
+        {
+        if (field->IsDistinct())
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -981,7 +986,10 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
         {
         PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetECInstanceDisplayLabel, 
             CreateList("ECClassId", "ECInstanceId", "NULL", "NULL"), true, isDistinct);
+
         field->SetPrefixOverride(prefix);
+        if (isDistinct)
+            field->SetGroupingClause(field->GetSelectClause(prefix, true));      
         return field;
         }
     PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str(), true, isDistinct);

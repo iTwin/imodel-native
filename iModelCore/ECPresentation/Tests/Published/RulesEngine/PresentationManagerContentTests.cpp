@@ -8085,3 +8085,52 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
     EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProperties)
+    {
+    // prepare dataset
+    ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget);
+
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetDistinctNavigationProperties", 1, 0, false, "", "", "", true);
+    m_locater->AddRuleSet(*ruleSet);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ruleSet->AddPresentationRule(*rule);
+    ContentInstancesOfSpecificClassesSpecificationP gadgetSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", true);
+    gadgetSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Widget", 1500, true));
+    rule->AddSpecification(*gadgetSpec);
+
+    RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
+
+    // validate content descriptor
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // modify content descriptor
+    ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
+    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    // request for content
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
+    EXPECT_STREQ("Widget", jsonValues["Gadget_Widget"].GetString());
+    }
+

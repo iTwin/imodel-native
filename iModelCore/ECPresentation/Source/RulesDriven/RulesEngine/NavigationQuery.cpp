@@ -830,14 +830,18 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::GroupByContrac
 template<typename TBase>
 Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
     {
-    if (m_groupingContract.IsNull() || (!m_groupingContract->IsAggregating() && !m_groupingContract->IsGettingUniqueValues()))
+    if (m_groupingContract.IsNull())
+        return "";
+
+    bool isContractAggregating = m_groupingContract->IsAggregating();
+    if (!isContractAggregating && !m_groupingContract->IsGettingUniqueValues())
         return "";
 
     Utf8String groupByClause;
     bvector<PresentationQueryContractFieldCPtr> fields = m_groupingContract->GetFields();
     for (PresentationQueryContractFieldCPtr const& field : fields)
         {
-        if (field->IsAggregateField() || FieldVisibility::Both != field->GetVisibility())
+        if (field->IsAggregateField() || FieldVisibility::Both != field->GetVisibility() || (!isContractAggregating && !field->IsDistinct()))
             continue;
 
         if (!groupByClause.empty())

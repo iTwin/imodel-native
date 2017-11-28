@@ -775,7 +775,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateAndDistinctFields
     query->GroupByContract(*contract);
 
     ASSERT_TRUE(contract->IsAggregating());
-    ASSERT_FALSE(contract->IsGettingUniqueValues());
+    ASSERT_TRUE(contract->IsGettingUniqueValues());
     Utf8String expected(
         "SELECT GetGeneralField() AS [GeneralField], GetDistinctField() AS [DistinctField], GetAggregateField() AS [AggregateField]"
         " GROUP BY GeneralField, DistinctField");
