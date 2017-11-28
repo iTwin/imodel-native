@@ -164,6 +164,16 @@ enum class SMTextureType
     Embedded,
     Streaming
     };
+
+
+struct SMRasterTile
+    {
+    size_t m_posX;          //In pixels
+    size_t m_posY;          //In pixels
+    size_t m_sizeX;         //In pixels
+    size_t m_sizeY;         //In pixels
+    size_t m_resolutionInd; 
+    };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 

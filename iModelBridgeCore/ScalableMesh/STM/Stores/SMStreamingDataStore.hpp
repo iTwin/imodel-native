@@ -1121,6 +1121,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     // assert(!"No implemented yet");
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges)
+    {    
+    assert(!"Only for streaming texture (e.g. BingMap), which are not supported by the streaming store.");
+    }
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::IsTextureAvailable()
     {    
     return true;
