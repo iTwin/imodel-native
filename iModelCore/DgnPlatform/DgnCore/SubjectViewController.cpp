@@ -82,77 +82,34 @@ SubjectCPtr SubjectViewController::GetParentJobSubject(DgnElementCP element)
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
-#if defined(TODO_SUBJECT_OVERRIDES)
-    // This basically boils down to resymbolizing every element based on its subject model...don't want to populate a huge map of element IDs for that.
-    if (source == nullptr)
-        return;
-    
-    // Find the job subject of the element and colorize based on it
-    DgnElementCP element = source->ToElement();
-    if (element == nullptr)
-        return;
-    
-    m_elementToSubjectStmt->Reset();
-    m_elementToSubjectStmt->BindId(1, element->GetElementId());
-    m_elementToSubjectStmt->Step();
-    DgnElementId subjectId = m_elementToSubjectStmt->GetValueId<DgnElementId>(0);
-    if (!subjectId.IsValid())
-        return;
-    
-    // TODO: Cache these job subjects
-    // Get to the Job Subject if there's any
-    SubjectCPtr jobSubject = m_db->Elements().Get<Subject>(subjectId);
-    while (jobSubject.IsValid() && !JobSubjectUtils::IsJobSubject(*jobSubject))
-        {
-        subjectId = jobSubject->GetParentId();
-        jobSubject = m_db->Elements().Get<Subject>(subjectId);
-        }
-    
-    if (!jobSubject.IsValid())
-        return;
-    
-    if (m_subjectColors.find(jobSubject->GetElementId()) == m_subjectColors.end())
-        {
-        BeAssert(false && "All Job Subjects should have an assigned color.");
-        return;
-        }
-
-    ovr = m_subjectColors[jobSubject->GetElementId()];
-#endif
+    for (auto mapping : m_subjectColors)
+        ovrs.OverrideModel(mapping.first, mapping.second);
     }
 
 //-------------------------------------------------------------------------------------------
 // @bsimethod 												Diego.Pinate 	10/17
 //-------------------------------------------------------------------------------------------
-void    SubjectViewController::ToggleVisibility(DgnElementId subjectId, bool isVisible)
+void    SubjectViewController::ToggleVisibility(DgnModelId modelId, bool isVisible)
     {
-    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+    if (m_subjectColors.find(modelId) == m_subjectColors.end())
         return;
     
-    m_subjectColors[subjectId].SetLineTransparency(isVisible ? 0 : 255);
-    m_subjectColors[subjectId].SetFillTransparency(isVisible ? 0 : 255);
+    m_subjectColors[modelId].SetAlpha(isVisible ? 0 : 255);
+    SetFeatureOverridesDirty();
     }
 
 //-------------------------------------------------------------------------------------------
 // @bsimethod 												Diego.Pinate 	11/17
 //-------------------------------------------------------------------------------------------
-bool     SubjectViewController::IsVisible(DgnElementId subjectId) const
+bool     SubjectViewController::IsVisible(DgnModelId modelId) const
     {
-    if (m_subjectColors.find(subjectId) == m_subjectColors.end())
+    if (m_subjectColors.find(modelId) == m_subjectColors.end())
         {
         BeAssert(false && "Subject not found in View Controller.");
         return false;
         }
     
-    SubjectColorMap::const_iterator iter = m_subjectColors.find(subjectId);
-    Byte alpha = iter->second.GetFillColor().GetAlpha();
+    SubjectColorMap::const_iterator iter = m_subjectColors.find(modelId);
+    Byte alpha = iter->second.GetAlpha();
     return alpha == 0;
-    }
-
-//-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	10/17
-//-------------------------------------------------------------------------------------------
-void    SubjectViewController::SetOverrides(DgnElementId subjectId, Render::OvrGraphicParamsR overrides)
-    {
-    m_subjectColors[subjectId] = overrides;
     }

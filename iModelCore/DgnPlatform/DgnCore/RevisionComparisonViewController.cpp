@@ -103,6 +103,24 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
         m_transientOpcodeCache[state.m_element->GetElementId()] = state.m_opcode;
     }
 
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     11/17
+//-------------------------------------------------------------------------------------------
+void RevisionComparison::Controller::SetModelDisplay(DgnModelIdSet& modelIds, bool visible)
+    {
+    for (DgnModelId modelId : modelIds)
+        ChangeModelDisplay(modelId, visible);
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     11/17
+//-------------------------------------------------------------------------------------------
+void RevisionComparison::Controller::SetCategoryDisplay(DgnCategoryIdSet& categories, bool visible)
+    {
+    for (DgnCategoryId category : categories)
+        ChangeCategoryDisplay(category, visible);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    07/17
 +---------------+---------------+---------------+---------------+---------------+------*/

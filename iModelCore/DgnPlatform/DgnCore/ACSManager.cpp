@@ -469,7 +469,7 @@ GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDi
     rMatrix.ScaleRows(rMatrix, scale, scale / exagg, scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
-    auto graphic = context.CreateWorldGraphic(transform);
+    auto graphic = context.CreateWorldOverlay(transform);
 
     DgnViewportR vp = *context.GetViewport();
     _AddAxis(*graphic, 0, options, vp);
@@ -505,7 +505,7 @@ void AuxCoordSystem::_Pick(PickContextR context) const
     pickGeom->_SetHitPriorityOverride((HitPriority) (static_cast<int>(HitPriority::TextBox) - 1)); // Make lower priority than edge hits but higher priority than interior hits...
 
     DPoint3d origin = _GetOrigin();
-    auto graphic = context.CreateWorldGraphic();
+    auto graphic = context.CreateSceneGraphic();
 
     graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 1); // Doesn't matter...
     graphic->AddPointString(1, &origin);

@@ -210,6 +210,7 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
     DGNVIEW_EXPORT bool RenderFrame(Render::Task::Priority priority, UpdatePlan const& plan, TileTree::TileRequestsR requests); // Generally, this should not be called directly
+    DGNVIEW_EXPORT void RenderSynchronousFrame(bool wantDecorators);
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
@@ -234,6 +235,7 @@ public:
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
+    DGNVIEW_EXPORT void OnResized();
 
     void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
     bool IsUndoActive() {return m_undoActive;}
