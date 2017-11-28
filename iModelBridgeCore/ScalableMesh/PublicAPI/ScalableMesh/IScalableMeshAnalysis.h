@@ -69,6 +69,7 @@ class ISMGridVolume
         double m_fillVolume;
         SMVolumeSegment* m_VolSegments; // table of segments ; one per grid element
         DRange3d m_range;               // range of the 3D grid volume
+        DPoint3d m_gridOrigin;     // the grid origin (lower left corner) in world
 
         bool m_isWorld;     // The grid values are in World coordinates (not in 3SM coords)
         bool m_isEcef;      // The grid values are in Ecef coordinates

@@ -171,10 +171,11 @@ void DumpGrid(std::string filename, ISMGridVolume& grid)
     f.open(filename, ios_base::app);
     f << setprecision(12);
     f << "Dump Grid ====================== :: " << endl;
-    f << "Grid Size :: " << m_xSize << " , " << m_ySize << endl;
-    f << "Grid Resolution :: " << grid.m_resolution << endl;
-    f << "Grid Range :: low :" << grid.m_range.low.x << " , " << grid.m_range.low.y << " , " << grid.m_range.low.z << endl;
-    f << "Grid Range :: high :" << grid.m_range.high.x << " , " << grid.m_range.high.y << " , " << grid.m_range.high.z << endl;
+    f << "Grid Size        :: " << m_xSize << " , " << m_ySize << endl;
+    f << "Grid Resolution  :: " << grid.m_resolution << endl;
+    f << "Grid Range :: low : " << grid.m_range.low.x << " , " << grid.m_range.low.y << " , " << grid.m_range.low.z << endl;
+    f << "Grid Range :: high: " << grid.m_range.high.x << " , " << grid.m_range.high.y << " , " << grid.m_range.high.z << endl;
+    f << "Grid Corner       : " << grid.m_gridOrigin.x << " , " << grid.m_gridOrigin.y << " , " << grid.m_gridOrigin.z << endl;
     f.close();
 #endif
     }
@@ -394,10 +395,10 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
     clock_t timer = clock();
     std::thread::id main_id = std::this_thread::get_id(); // Get the id of the main Thread
 
-//SNU #pragma omp parallel num_threads(numProcs)
+#pragma omp parallel num_threads(numProcs)
     {
 
-//SNU #pragma omp for
+#pragma omp for
     for (int i = 0; i < m_xSize; i++)
         {
         std::thread::id t_id = std::this_thread::get_id(); // Get the id of the current Thread
@@ -496,13 +497,22 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
 
     // Convert the range from Enu to World ???
     // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
-    DRange3d _range = grid.m_range;
-    grid.m_range = ewgs84.enu2ecef(_range);
-    _range = grid.m_range;
+
+#ifdef SM_ANALYSIS_DEBUG
+    DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
+#endif
+
+    DPoint3d lowEnu = grid.m_range.low; // Convert the lower range point into world coord
+    DPoint3d lowEcef = ewgs84.enu2ecef(lowEnu);
+    _convert3SMToWorld(m_scmPtr, lowEcef);
+    grid.m_gridOrigin = lowEcef;
+
+    DRange3d _range = ewgs84.enu2ecef(grid.m_range);
     grid.m_range = _ConvertToWorldRange(m_scmPtr, _range);
     double resUOR = grid.m_resolution / m_unit2meter;
     grid.m_resolution = resUOR;
     grid.m_isWorld = true;
+    grid.m_isEcef = true;
 
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
@@ -687,13 +697,17 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeEcef(const bvector<DPoi
 
     // Convert the range from Enu to World ???
     // SN: this does not convert perfectly ranges as they are Axis oriented !!!!
-    DRange3d _range = grid.m_range;
-    grid.m_range = ewgs84.enu2ecef(_range);
-    _range = grid.m_range;
+    DPoint3d lowEnu = grid.m_range.low; // Convert the lower range point into world coord
+    DPoint3d lowEcef = ewgs84.enu2ecef(lowEnu);
+    _convert3SMToWorld(m_scmPtr, lowEcef);
+    grid.m_gridOrigin = lowEcef;
+
+    DRange3d _range = ewgs84.enu2ecef(grid.m_range);
     grid.m_range = _ConvertToWorldRange(m_scmPtr, _range);
     double resUOR = grid.m_resolution / m_unit2meter;
     grid.m_resolution = resUOR;
     grid.m_isWorld = true;
+    grid.m_isEcef = true;
 
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
