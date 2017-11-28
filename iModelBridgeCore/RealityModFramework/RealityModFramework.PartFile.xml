@@ -27,8 +27,8 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
-        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"                Repository="bsicommon" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformTools$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformTools$(ApiNumber)$(shlibext)</Assemblies>
@@ -53,8 +53,8 @@
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
-        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"                Repository="bsicommon" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="SpatioTemporalSelector"/>
@@ -94,7 +94,6 @@
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityAdmin"/>
-        <SubPart PartName="BentleyDesktopClient-Api"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)LoadTestBase$(stlibext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)LoadTestBase$(shlibext)</Assemblies>
@@ -105,7 +104,6 @@
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityAdmin"/>
-        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <SubPart PartName="LoadTestBase"/>
         <Bindings>
             <Assemblies>Delivery/GCSLoadTest.exe</Assemblies>
@@ -116,7 +114,6 @@
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityAdmin"/>
-        <SubPart PartName="BentleyDesktopClient-Api"/>
         <SubPart PartName="LoadTestBase"/>
         <Bindings>
             <Assemblies>Delivery/RDSLoadTest.exe</Assemblies>
@@ -127,7 +124,6 @@
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityAdmin"/>
-        <SubPart PartName="BentleyDesktopClient-Api"/>
         <SubPart PartName="LoadTestBase"/>
         <Bindings>
             <Assemblies>Delivery/3CSLoadTest.exe</Assemblies>
@@ -351,7 +347,7 @@
     
     <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
         <RequiredRepository>BCC-IdentityModel</RequiredRepository>
-        <SubPart PartName="ConnectClientAPI" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
+        <SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />
         <SubPart PartName="RequiredNugets" />
         <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
         <Bindings>
@@ -360,16 +356,16 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityDbECPluginNuGetPackages">
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>       
-        
-        <!--<NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
+    <Part Name="RealityDbECPluginNuGetPackages">     
+        <!--
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>-->
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>
+        -->
         
         <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
@@ -378,7 +374,10 @@
         <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
         <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
 
-        <!--<SubPart PartName="LoggingManaged"  PartFile="LoggingSDK"   Repository="loggingsdk" />
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>  
+
+        <!--
+        <SubPart PartName="LoggingManaged"  PartFile="LoggingSDK"   Repository="loggingsdk" />
         <SubPart PartName="Exceptions"           PartFile="platformtech"       Repository="platformtech" />
         <SubPart PartName="ExtensionDiscovery"   PartFile="platformtech"       Repository="platformtech" />
         <SubPart PartName="Platform"             PartFile="platformtech"       Repository="platformtech" />
@@ -386,16 +385,19 @@
         <SubPart PartName="GeometryStructsNET"   PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
         <SubPart PartName="BentleyGeometryNETFB" PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
         <SubPart PartName="GeometryCommon"       PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
-        <SubPart PartName="UI"                   PartFile="platformtech"       Repository="platformtech" />-->
+        <SubPart PartName="UI"                   PartFile="platformtech"       Repository="platformtech" />
+        -->
         
         <!-- The following subparts have been added because BentleyDesktopClient already has a part for it. We have to get 
         this dll from that particular subpart, or else we have a conflict when building with RealityModFramework BuildStrategy 
         when using the commented lines below instead. If we do not get it from any source, we have a problem building 
         RealityContextServices BuildStrategy. If we ever get rid of BentleyDesktopClient from our other parts, 
         we'll be able to remove these subparts below and use the commented lines instead.-->
-        
+        <!--
         <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        -->
+        <SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />
         
         <Bindings>
             <Assemblies>NuGet\net40\Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
@@ -756,15 +758,6 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
         <Directories DirectoryListName="RealityModFrameworkTestsDir"/>
     </Product>
-
-   <!-- Create this part only to be able ccapi.dll in the product RealityModFramework-Gtest -->
-   <!-- Don't understand the reason.                                                        -->
-    <Part Name="BentleyDesktopClient-Api" BentleyBuildMakeFile="RealityModFrameworkBentleyDesktopClient.prewire.mke" OnlyPlatforms="x64">
-        <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
-        <Bindings>
-            <Assemblies>Delivery/*.dll</Assemblies>
-        </Bindings>
-    </Part>
 
     <Part Name="RealityFrameworkTestsData" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
