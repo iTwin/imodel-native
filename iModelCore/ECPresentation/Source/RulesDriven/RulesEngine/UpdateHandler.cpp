@@ -93,7 +93,6 @@ struct RemapNodeIdsTask : IUpdateTask
 {
 private:
     NodesCache& m_cache;
-    SelectionManagerP m_selectionManager;
     bmap<uint64_t, uint64_t> const& m_remapInfo;
 
 protected:
@@ -122,8 +121,8 @@ protected:
         return str;
         }
 public:
-    RemapNodeIdsTask(NodesCache& cache, SelectionManagerP selectionManager, bmap<uint64_t, uint64_t> const& remapInfo) 
-        : m_cache(cache), m_selectionManager(selectionManager), m_remapInfo(remapInfo)
+    RemapNodeIdsTask(NodesCache& cache, SelectionManagerP, bmap<uint64_t, uint64_t> const& remapInfo) 
+        : m_cache(cache), m_remapInfo(remapInfo)
         {}
 };
 
