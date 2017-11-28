@@ -114,18 +114,20 @@ private:
     static BentleyStatus            ValidateBySurfacesParams (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
     static bool                     AreSurfacesCoplanar (bvector<CurveVectorPtr> const& surfaces);
 
-protected:
-    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
-    friend struct OrthogonalGridPortionHandler;
-
     //! Creates horizontal and vertical orthogonal grid surfaces and inserts them
     //! @param[in] params               parameters for creating the grid portion
     //! @param[in] model                model to create grid surfaces in
     //! @param[in] horizontalGridAxis   axis for horizontal elements
     //! @param[in] verticalGridAxis     axis for vertical elements
     //! @return                         BentleyStatus::SUCCESS if no error has occured when creating and inserting elements
-    static BentleyStatus CreateAndInsertSurfaces (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis);
+    static BentleyStatus CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis);
+
+    static BentleyStatus CreateSurfaces(bvector<GridSurfacePtr>& allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal);
+
+protected:
+    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
+    friend struct OrthogonalGridPortionHandler;
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
     //! @param[in] elementIndex     index of the grid plane

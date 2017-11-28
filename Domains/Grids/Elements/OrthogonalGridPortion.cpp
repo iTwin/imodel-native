@@ -248,7 +248,32 @@ double distance
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
+// @bsimethod                                    Haroldas.Vitunskas                  11/17
+//---------------------------------------------------------------------------------------
+BentleyStatus OrthogonalGridPortion::CreateSurfaces(bvector<GridSurfacePtr> & allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal)
+    {
+    for (int i = 0; i < count; ++i)
+        {
+        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(length + 2 * extendTranslation.Magnitude(), height);
+        extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
+        extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
+
+        if (extendHeight)
+            extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
+
+        GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, gridAxis, extDetail);
+        if (!baseGridPlane.IsValid())
+            return BentleyStatus::ERROR;
+
+        baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
+        allSurfaces.push_back(baseGridPlane);
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
 BentleyStatus OrthogonalGridPortion::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis)
     {
@@ -261,32 +286,32 @@ BentleyStatus OrthogonalGridPortion::CreateAndInsertSurfaces(StandardCreateParam
 
     BentleyStatus status = BentleyStatus::SUCCESS;
 
-    auto createElements = [&](int count, double interval, double rotAngle, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal)
-        {
-        for (int i = 0; i < count; ++i)
-            {
-            DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length + 2 * extendTranslation.Magnitude(), height);
-            extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
-            extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
+    // Create horizontal elements
+    if (BentleyStatus::SUCCESS != CreateSurfaces(surfaces,
+                                                 model,
+                                                 params.m_horizontalCount,
+                                                 params.m_horizontalInterval,
+                                                 0,
+                                                 params.m_length,
+                                                 height,
+                                                 params.m_extendHeight,
+                                                 params.m_horizontalExtendTranslation,
+                                                 horizontalGridAxis,
+                                                 true))
+        return status;
 
-            if (params.m_extendHeight)
-                extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
-
-            GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, gridAxis, extDetail);
-            if (!baseGridPlane.IsValid())
-                {
-                status = BentleyStatus::ERROR;
-                return;
-                }
-
-            baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
-            surfaces.push_back(baseGridPlane);
-            }
-        };
-
-    createElements(params.m_horizontalCount, params.m_horizontalInterval, 0, params.m_horizontalExtendTranslation, horizontalGridAxis, true);     // Create horizontal elements
-    createElements(params.m_verticalCount, params.m_verticalInterval, msGeomConst_pi / 2, params.m_verticalExtendTranslation, verticalGridAxis, false); // Create vertical elements
-    if (BentleyStatus::SUCCESS != status)
+    // Create vertical elements
+    if (BentleyStatus::SUCCESS != CreateSurfaces(surfaces,
+                                                 model,
+                                                 params.m_verticalCount,
+                                                 params.m_verticalInterval,
+                                                 msGeomConst_pi / 2,
+                                                 params.m_length,
+                                                 height,
+                                                 params.m_extendHeight,
+                                                 params.m_verticalExtendTranslation,
+                                                 verticalGridAxis,
+                                                 false))
         return status;
 
     // insert elements
