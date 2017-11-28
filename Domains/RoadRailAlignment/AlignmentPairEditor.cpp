@@ -512,21 +512,18 @@ StatusInt AlignmentPairEditor::GetAlignmentPI (size_t index, AlignmentPI& pi)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
     {
+    CurveVectorCR hzCurve = GetHorizontalCurveVector();
+
     bvector<AlignmentPI> pis;
     DPoint3d startPt, endPt;
-    GetHorizontalCurveVector().GetStartEnd(startPt, endPt);
+    hzCurve.GetStartEnd(startPt, endPt);
     startPt.z = 0.0; endPt.z = 0.0;
     AlignmentPI startPI (startPt);
     pis.push_back (startPI);
     bool addEndPI = true;
-
-    CurveVectorCR hzCurve = GetHorizontalCurveVector();
-
     for (int i = 0; i < hzCurve.size(); i++)
         {
-        ICurvePrimitivePtr primitive = hzCurve[i];
-
-        switch (primitive->GetCurvePrimitiveType())
+        switch (hzCurve[i]->GetCurvePrimitiveType())
             {
             // unless should be that only Arcs have PIs,
             // will be a simple PI unless, we have an SCS
@@ -540,7 +537,7 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         if (hzCurve[i + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
                             {
                             DPoint3d start, end;
-                            primitive->GetStartEnd(start, end);
+                            hzCurve[i]->GetStartEnd(start, end);
                             start.z = 0.0; end.z = 0.0;
                             AlignmentPI piPt;
                             piPt.curveType = AlignmentPI::HorizontalPIType::NONE;
@@ -554,7 +551,7 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                     {
                     DPoint3d start, end;
                     DVec3d startTangent, endTangent;
-                    primitive->GetStartEnd (start, end, startTangent, endTangent);
+                    hzCurve[i]->GetStartEnd(start, end, startTangent, endTangent);
                     start.z = 0.0; end.z = 0.0;
                     DRay3d rayA = DRay3d::FromOriginAndVector (start, startTangent);
                     DRay3d rayB = DRay3d::FromOriginAndVector (end, endTangent);
@@ -566,8 +563,8 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                     AlignmentPI piPt (pi);
                     piPt.curveType = AlignmentPI::HorizontalPIType::ARC;
 
-                    primitive->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
-                    DEllipse3dCP arc = primitive->GetArcCP ();
+                    hzCurve[i]->GetStartEnd(piPt.arc.startPoint, piPt.arc.endPoint);
+                    DEllipse3dCP arc = hzCurve[i]->GetArcCP();
                     piPt.arc.centerPoint = arc->center;
                     piPt.arc.centerPoint.z = 0.0;
                     double startAng;
@@ -593,11 +590,11 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         {
                         AlignmentPI piPt;
                         piPt.curveType = AlignmentPI::HorizontalPIType::SS;
-                        _LoadSpiralData(primitive.get(), piPt.spiral1);
-                        auto placementSpiral = primitive->GetSpiralPlacementCP ();
+                        _LoadSpiralData(hzCurve[i].get(), piPt.spiral1);
+                        auto placementSpiral = hzCurve[i]->GetSpiralPlacementCP();
                         DSpiral2dBaseP spiral = placementSpiral->spiral;
                         i++;
-                        _LoadSpiralData(primitive.get(), piPt.spiral2);
+                        _LoadSpiralData(hzCurve[i].get(), piPt.spiral2);
                         // compute the "overall" PI
                         DRay3d rayA = DRay3d::FromOriginAndVector (piPt.spiral1.beginSpiralPt, piPt.spiral1.startVector);
                         DRay3d rayB = DRay3d::FromOriginAndVector (piPt.spiral2.endSpiralPt, piPt.spiral2.endVector);
@@ -621,16 +618,16 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         AlignmentPI piPt;
                         piPt.curveType = AlignmentPI::HorizontalPIType::SCS;
 
-                        _LoadSpiralData(primitive.get(), piPt.spiral1);
+                        _LoadSpiralData(hzCurve[i].get(), piPt.spiral1);
                         i++;
-                        primitive->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
-                        DEllipse3dCP arc = primitive->GetArcCP ();
+                        hzCurve[i]->GetStartEnd(piPt.arc.startPoint, piPt.arc.endPoint);
+                        DEllipse3dCP arc = hzCurve[i]->GetArcCP();
                         BeAssert(arc != nullptr);
                         piPt.arc.centerPoint = arc->center;
                         double startAng;
                         arc->GetSweep (startAng, piPt.arc.sweep);
                         i++;
-                        _LoadSpiralData(primitive.get(), piPt.spiral2);
+                        _LoadSpiralData(hzCurve[i].get(), piPt.spiral2);
 
                         // compute the "overall" PI
                         DRay3d rayA = DRay3d::FromOriginAndVector (piPt.spiral1.beginSpiralPt, piPt.spiral1.startVector);
@@ -923,17 +920,16 @@ bool AlignmentPairEditor::_StationCompare (double x, double x1)
 bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs ()
     {
     bvector<AlignmentPVI> pvis;
-    CurveVectorCP pVertical = GetVerticalCurveVector();
-    if (nullptr == pVertical)
+    if (!IsValidVertical())
         return pvis;
 
-    return _GetPVIs(*pVertical);
+    return _GetPVIs(*GetVerticalCurveVector());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs (CurveVectorCR vt)
+bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs(CurveVectorCR vt)
     {
     bvector<AlignmentPVI> pvis;
     int count = 0;
@@ -1551,7 +1547,7 @@ StatusInt AlignmentPairEditor::GetPIPoints (bvector<DPoint3d>& pts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DPoint3d> AlignmentPairEditor::CrestAndSagPointsXZ (ZeroSlopePoints zsType)
     {
-    BeAssert (this->IsValidVertical ());
+    BeAssert (IsValidVertical());
     double runningLength = 0.0;
     bvector<DPoint3d> returnVector;
     for (auto primitive : *GetVerticalCurveVector())
@@ -1620,7 +1616,7 @@ bool AlignmentPairEditor::HasSag ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::MaximumGradeInPercent ()
     {
-    BeAssert (this->IsValidVertical ());
+    BeAssert (IsValidVertical());
     double maxGrade = 0.0;
     for (auto primitive : *GetVerticalCurveVector())
         {
@@ -1671,7 +1667,7 @@ double AlignmentPairEditor::MaximumGradeInPercent ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::MaximumGradeChangeInPercent ()
     {
-    BeAssert (this->IsValidVertical());
+    BeAssert (IsValidVertical());
     double G1 = 0.0, G2 = 0.0;
     double maxGradeChange = 0.0;
     for (auto primitive : *GetVerticalCurveVector())
@@ -2904,6 +2900,8 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
 AlignmentPairPtr AlignmentPairEditor::FlipAlignment ()
     {
     CurveVectorPtr hzAlign = CloneHorizontalCurveVector();
+    if (!hzAlign.IsValid ()) return nullptr;
+
     hzAlign->ReverseCurvesInPlace ();
     if (nullptr != GetVerticalCurveVector())
         {
@@ -2952,7 +2950,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
 
     DPoint3d start, end;
     DPoint3d newStart, newEnd;
-    GetHorizontalCurveVector().GetStartEnd (start, end);
+    GetStartEnd (start, end);
     newHorizontal.GetStartEnd (newStart, newEnd);
     if (!start.AlmostEqualXY (newStart))
         isStart = true;
