@@ -337,13 +337,27 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     if (onOff)
         {
         models.insert(modelId);
+        m_allRootsLoaded = false;
         }
     else
         {
         models.erase(modelId);
-        m_roots.erase(m_roots.find(modelId));
+        auto rootIter = m_roots.find(modelId);
+        if (m_roots.end() != rootIter)
+            m_roots.erase(rootIter);
         }
 
+    if (nullptr != m_vp)
+        m_vp->InvalidateScene();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_SetViewedModels(DgnModelIdSet const& models)
+    {
+    GetSpatialViewDefinition().GetModelSelector().GetModelsR() = models;
+    m_roots.clear();
     m_allRootsLoaded = false;
     if (nullptr != m_vp)
         m_vp->InvalidateScene();

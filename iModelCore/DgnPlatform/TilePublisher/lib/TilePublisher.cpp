@@ -754,6 +754,14 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         invalidIdsPresent |= !isValidId;
         }
 
+    AddExtensions(partData);
+    AddDefaultScene(partData);
+    AddMeshes (partData, part->Meshes());
+
+#ifdef DO_QUANTIZE_INSTANCE_TRANSLATION
+    // Quantizing the instance translation would seem to be a reasonable optimization...however
+    // in some I-Models (area234 from Hatch) the instance origins are far from the parts and therefore
+    // quantization can produce excessive error.
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
     double              range = (double) (0xffff);
@@ -765,14 +773,11 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         instance.GetTransform().GetTranslation(translation);
 
-        quantizedPosition.push_back((uint16_t) (.5 + range * (translation.x - positionRange.low.x) / positionScale.x));
-        quantizedPosition.push_back((uint16_t) (.5 + range * (translation.y - positionRange.low.y) / positionScale.y));
-        quantizedPosition.push_back((uint16_t) (.5 + range * (translation.z - positionRange.low.z) / positionScale.z));
+        quantizedPosition.push_back((uint16_t) (.5 + (range * (translation.x - positionRange.low.x) / positionScale.x)));
+        quantizedPosition.push_back((uint16_t) (.5 + (range * (translation.y - positionRange.low.y) / positionScale.y)));
+        quantizedPosition.push_back((uint16_t) (.5 + (range * (translation.z - positionRange.low.z) / positionScale.z)));
         }
 
-    AddExtensions(partData);
-    AddDefaultScene(partData);
-    AddMeshes (partData, part->Meshes());
 
     featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
     featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
@@ -783,6 +788,19 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     featureTableData.m_json["POSITION_QUANTIZED"]["byteOffset"] = featureTableData.BinaryDataSize();
     featureTableData.AddBinaryData(quantizedPosition.data(), quantizedPosition.size()*sizeof(uint16_t));
+#else
+    bvector<FPoint3d>       positions;
+    for (auto& instance : part->Instances())
+        {
+        DPoint3d        translation;
+
+        instance.GetTransform().GetTranslation(translation);
+        positions.push_back(FPoint3d::From(translation));
+        }
+
+    featureTableData.m_json["POSITION"]["byteOffset"] = featureTableData.BinaryDataSize();
+    featureTableData.AddBinaryData(positions.data(), positions.size()*sizeof(FPoint3d));
+#endif
 
     if (validIdsPresent)
         {

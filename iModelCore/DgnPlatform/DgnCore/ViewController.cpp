@@ -131,6 +131,16 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::SetViewedCategories(DgnCategoryIdSet const& categories)
+    {
+    GetViewDefinitionR().GetCategorySelector().SetCategories(categories);
+    SetFeatureOverridesDirty();
+    _OnCategoryChange(false); // boolean indicates a single category was enabled; false means a category was disabled or multiple changes were made
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::ViewController(ViewDefinitionCR def, SkipClone skipClone)
