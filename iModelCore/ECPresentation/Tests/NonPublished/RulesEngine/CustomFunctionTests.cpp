@@ -1118,8 +1118,8 @@ TEST_F(CustomFunctionTests, Are3dPointsEqualByValue_ReturnsTrue)
         });
 
     CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
-    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.512,\"y\":1.512,\"z\":1.512}', h.PointProperty)"
-                   "  FROM RET.ClassH h";
+    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.512,\"y\":1.512,\"z\":1.512}', [PointProperty].x, [PointProperty].y, [PointProperty].z)"
+                   "  FROM RET.ClassH";
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
@@ -1139,8 +1139,8 @@ TEST_F(CustomFunctionTests, Are3dPointsEqualByValue_ReturnsFalse)
         });
 
     CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
-    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512,\"z\":1.512}', h.PointProperty)"
-                   "  FROM RET.ClassH h";
+    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512,\"z\":1.512}', [PointProperty].x, [PointProperty].y, [PointProperty].z)"
+                   "  FROM RET.ClassH";
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
@@ -1160,8 +1160,8 @@ TEST_F(CustomFunctionTests, Are2dPointsEqualByValue_ReturnsTrue)
         });
 
     CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
-    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.512,\"y\":1.512}', h.Point2dProperty)"
-                   "  FROM RET.ClassH h";
+    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.512,\"y\":1.512}', [Point2dProperty].x, [Point2dProperty].y)"
+                   "  FROM RET.ClassH";
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
@@ -1181,8 +1181,8 @@ TEST_F(CustomFunctionTests, Are2dPointsEqualByValue_ReturnsFalse)
         });
 
     CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
-    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512}', h.Point2dProperty)"
-                   "  FROM RET.ClassH h";
+    Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512}', [Point2dProperty].x, [Point2dProperty].y)"
+                   "  FROM RET.ClassH";
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
