@@ -336,3 +336,29 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_DoesntSplitRecursiveQu
         << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
         << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue)
+    {
+    ECClassCP ecClass = GetECClass("RulesEngineTest", "ClassD");
+    ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassH");
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
+        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
+        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
+    }

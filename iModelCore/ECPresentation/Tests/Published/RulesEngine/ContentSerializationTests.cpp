@@ -17,7 +17,7 @@
             <ECEnumerator value="2" displayLabel="B" />
             <ECEnumerator value="3" displayLabel="C" />
         </ECEnumeration>
-        <KindOfQuantity typeName="TestKOQ" displayLabel="Test" persistenceUnit="MM" relativeError="0" presentationUnits="MM;CM"/>
+        <KindOfQuantity typeName="TestKOQ" displayLabel="Test" persistenceUnit="MM(real)" relativeError="0"/>
         <ECEntityClass typeName="ClassA">
             <ECProperty propertyName="String" typeName="string" />
             <ECProperty propertyName="EnumProperty" typeName="TestEnum" />
@@ -212,8 +212,7 @@ TEST_F(ContentSerializationTests, ECPropertiesFieldWithKOQProperty)
                     "Name": "TestSchema:TestKOQ",
                     "DisplayLabel": "Test",
                     "PersistenceUnit": "MM(real)",
-                    "CurrentUnit": "MM(real)",
-                    "PresentationUnits": ["MM(real)", "CM(real)"]
+                    "CurrentFusId": "MM(real)"
                     }
                 },
             "RelatedClassPath": []

@@ -37,6 +37,9 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_ECInstanceKeysArray           "ECInstanceKeysArray"
 #define FUNCTION_NAME_AggregateJsonArray            "AggregateJsonArray"
 #define FUNCTION_NAME_GetPointAsJsonString          "GetPointAsJsonString"
+#define FUNCTION_NAME_ArePointsEqualByValue         "ArePointsEqualByValue"
+#define FUNCTION_NAME_AreDoublesEqualByValue        "AreDoublesEqualByValue"
+#define FUNCTION_NAME_GetPropertyDisplayValue       "GetPropertyDisplayValue"
 
 struct JsonNavNodesFactory;
 struct ILocalizationProvider;
@@ -82,10 +85,11 @@ private:
     rapidjson::Value const* m_extendedData;
     bvector<FunctionCache> m_caches;
     bset<ICustomFunctionsContextListener*> m_listeners;
+    IECPropertyFormatter const* m_propertyFormatter;
     
 public:
     ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, PresentationRuleSetCR, IUserSettings const&, IUsedUserSettingsListener*,
-        ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, NavNodeCP parentNode, rapidjson::Value const* queryExtendedData);
+        ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, NavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr);
     ECPRESENTATION_EXPORT ~CustomFunctionsContext();
 
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
@@ -101,6 +105,7 @@ public:
     IUsedClassesListener* GetUsedClassesListener() const {return m_usedClassesListener;}
     NavNodeCP GetParentNode() const {return m_parentNode;}
     rapidjson::Value const* GetQueryExtendedData() const {return m_extendedData;}
+    IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
 
     void* GetCache(Utf8CP id) const;
     void InsertCache(Utf8CP id, void* cache);

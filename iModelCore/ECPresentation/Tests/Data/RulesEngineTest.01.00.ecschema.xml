@@ -195,6 +195,7 @@
     <ECEntityClass typeName="ClassH">
         <BaseClass>ClassF</BaseClass>
         <ECProperty propertyName="PointProperty" typeName="point3d" />
+        <ECProperty propertyName="Point2dProperty" typeName="point2d" />		
     </ECEntityClass>
 
     <!-- Struct properties -->

@@ -261,3 +261,27 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimila
     EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
     EXPECT_EQ(1, fields[1]->AsPropertiesField()->GetProperties().size());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue)
+    {
+    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:ClassH", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
+        << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
+        << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
+    }
