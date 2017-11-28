@@ -308,7 +308,7 @@
         <SubPart PartName="RealityDataServiceConsole"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
-        <!--<SubPart PartName="UsageDataExtractor"/>-->
+        <SubPart PartName="UsageDataExtractor"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <!--<SubPart PartName="DataHandlerTool" />-->
@@ -489,6 +489,7 @@
         <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
         <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+		<ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot" LibType="static"/>
 
         <!--notices/ review if notices need to be delivered--> 
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
