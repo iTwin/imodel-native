@@ -1628,10 +1628,7 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 
     if (nullptr != classifiers)
         model->SetClassifiers(*classifiers);
-
-    //After Insert model pointer is handled by DgnModels.
-    model->Insert();
-
+    
     if (openFile)
         {
         model->OpenFile(smFilename, db);
@@ -1641,6 +1638,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
         model->SetFileNameProperty(smFilename);
         }
 
+    //After Insert model pointer is handled by DgnModels.
+    model->Insert();
     model->Update();
 
     if (model->IsTerrain())
