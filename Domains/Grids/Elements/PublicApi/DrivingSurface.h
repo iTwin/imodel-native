@@ -36,21 +36,6 @@ public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (DrivingSurface, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
-    // Creation
-    //---------------------------------------------------------------------------------------
-    //! Creates driving surface from a curve vector
-    //! @param[in] model            model to create surface in
-    //! @param[in] surfaceVector    a curve vector to create surface from
-    //! @return a ptr to created surface
-    GRIDELEMENTS_EXPORT static DrivingSurfacePtr Create(Dgn::DgnModelCR model, CurveVectorPtr surfaceVector);
-
-    //! Creates driving surface from a solid primitive (extrusion detail)
-    //! @param[in]  model           model to create surface in
-    //! @param[in]  surface         solid primitive to create surface from
-    //! @return a ptr to created surface
-    GRIDELEMENTS_EXPORT static DrivingSurfacePtr Create(Dgn::DgnModelCR model, ISolidPrimitivePtr surface);
-
-    //---------------------------------------------------------------------------------------
     // Getters and setters
     //---------------------------------------------------------------------------------------
     //! Returns base curve of this surface

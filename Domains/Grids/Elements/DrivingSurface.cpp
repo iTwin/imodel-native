@@ -128,30 +128,6 @@ DgnClassId classId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrivingSurfacePtr                 DrivingSurface::Create 
-(
-Dgn::DgnModelCR model,
-CurveVectorPtr  surfaceVector
-)
-    {
-    return new DrivingSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surfaceVector);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Haroldas.Vitunskas              03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DrivingSurfacePtr                 DrivingSurface::Create 
-(
-Dgn::DgnModelCR model,
-ISolidPrimitivePtr surface
-)
-    {
-    return new DrivingSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr DrivingSurface::GetSurfaceVector
 (
 ) const
