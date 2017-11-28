@@ -35,6 +35,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitGroup)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
 
 // Json presentation
 BE_JSON_NAME(roundFactor)
@@ -91,6 +92,76 @@ BE_JSON_NAME(persistFUS)
 BE_JSON_NAME(presentFUS)
 BE_JSON_NAME(relativeErr)
 BE_JSON_NAME(schemaName)
+
+
+//=======================================================================================
+//
+// Class used to pass available values and their localized labels for use in UI.
+//
+// @bsiclass                                     		Bill.Steinbock  11/2017
+//=======================================================================================
+struct UIListEntry
+    {
+    protected:
+        Json::Value m_json;
+
+    public:
+        UIListEntry() : m_json(Json::objectValue) {}
+        UIListEntry(Json::Value const& j) : m_json(j) {}
+        UIListEntry& operator=(UIListEntry const& rhs) { m_json = rhs.m_json; return *this; }
+
+        void SetLabel(Utf8CP n) { m_json["label"] = n; }
+        Utf8CP GetLabel() const { return m_json["label"].asCString(); }
+
+        void SetValue(int n) { m_json["value"] = n; }
+        int GetValue() const { return m_json["value"].asInt(); }
+
+        UIListEntry(int value, Utf8CP label) : m_json(Json::objectValue)
+            {
+            SetLabel(label);
+            SetValue(value);
+            }
+
+        Json::Value const& GetJson() const { return m_json; }
+    };
+
+//=======================================================================================
+//
+// Class used to pass available values and their localized labels for use in UI.
+//
+// @bsiclass                                     		Bill.Steinbock  11/2017
+//=======================================================================================
+struct UIList
+    {
+    protected:
+        Json::Value m_json;
+
+    public:
+        UIList() : m_json(Json::arrayValue) {}
+        UIList(Json::Value const& j) : m_json(j) {}
+        UIList& operator=(UIList const& rhs) { m_json = rhs.m_json; return *this; }
+
+        Json::ArrayIndex GetSize() { return m_json.size(); }
+        void AddListEntry(UIListEntryCR n) { m_json.append(n.GetJson()); }
+        UIListEntry GetListEntry(Json::ArrayIndex i) { return UIListEntry(m_json[i]); }
+
+        bool IsNull() const { return m_json.isNull(); }
+        Json::Value const& GetJson() const { return m_json; }
+    };
+
+//=======================================================================================
+//
+// Class containing static methods used to populate UI.
+//
+// @bsiclass                                     		Bill.Steinbock  11/2017
+//=======================================================================================
+struct UIUtils
+    {
+    UNITS_EXPORT static UIList GetAvailableDecimalPercisions();
+    UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
+    UNITS_EXPORT static UIList GetAvailableSignOption();
+    };
+
 
 struct FactorPower
     {

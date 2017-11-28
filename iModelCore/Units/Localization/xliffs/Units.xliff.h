@@ -228,8 +228,41 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(PHENOMENON_LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION)     // =="Linear Coefficient Of Thermal Expansion"==     
     L10N_STRING(PHENOMENON_AREA_COEFFICIENT_OF_THERMAL_EXPANSION)       // =="Area Coefficient Of Thermal Expansion"==       
     L10N_STRING(PHENOMENON_VOLUMETRIC_COEFFICIENT_OF_THERMAL_EXPANSION) // =="Volumetric Coefficient Of Thermal Expansion"== 
-    L10N_STRING(PHENOMENON_VOLUME_RATIO)                                // =="Volume Ratio"==                                
+    L10N_STRING(PHENOMENON_VOLUME_RATIO)                                // =="Volume Ratio"==     
+
+    L10N_STRING(DecimalPrecision_0)                                     // =="0"==
+    L10N_STRING(DecimalPrecision_1)                                     // =="0.0"==
+    L10N_STRING(DecimalPrecision_2)                                     // =="0.00"==
+    L10N_STRING(DecimalPrecision_3)                                     // =="0.000"==
+    L10N_STRING(DecimalPrecision_4)                                     // =="0.0000"==
+    L10N_STRING(DecimalPrecision_5)                                     // =="0.00000"==
+    L10N_STRING(DecimalPrecision_6)                                     // =="0.000000"==
+    L10N_STRING(DecimalPrecision_7)                                     // =="0.0000000"==
+    L10N_STRING(DecimalPrecision_8)                                     // =="0.00000000"==
+    L10N_STRING(DecimalPrecision_9)                                     // =="0.000000000"==
+    L10N_STRING(DecimalPrecision_10)                                    // =="0.0000000000"==
+    L10N_STRING(DecimalPrecision_11)                                    // =="0.00000000000"==
+    L10N_STRING(DecimalPrecision_12)                                    // =="0.000000000000"==
+
+    L10N_STRING(FractionalPrecision_Whole)                               // =="Whole"==
+    L10N_STRING(FractionalPrecision_Half)                                // =="1/2"==
+    L10N_STRING(FractionalPrecision_Quarter)                             // =="1/4"==
+    L10N_STRING(FractionalPrecision_Eighth)                              // =="1/8"==
+    L10N_STRING(FractionalPrecision_Sixteenth)                           // =="1/16"==
+    L10N_STRING(FractionalPrecision_Over_32)                             // =="1/32"==
+    L10N_STRING(FractionalPrecision_Over_64)                             // =="1/64"==
+    L10N_STRING(FractionalPrecision_Over_128)                            // =="1/128"==
+    L10N_STRING(FractionalPrecision_Over_256)                            // =="1/256"==
+
+    L10N_STRING(ShowSignOption_NoSign)                                   // =="Never"==
+    L10N_STRING(ShowSignOption_OnlyNegative)                             // =="Only Negative Values"==
+    L10N_STRING(ShowSignOption_SignAlways)                               // =="All Values"==
+    L10N_STRING(ShowSignOption_NegativeParentheses)                      // =="Use Parentheses for Negative Values"==
 BENTLEY_TRANSLATABLE_STRINGS_END
+
+//m_displayLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(stringId.c_str()));
+
+#define UNITSL10N_GETSTRING(K)  BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), UnitsL10N::K())
 
 END_BENTLEY_UNITS_NAMESPACE
 
