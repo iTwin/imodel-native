@@ -1725,7 +1725,7 @@ static void outputPolygon (Render::GraphicBuilderR output, int nPts, DPoint3dCP 
         else
             {
             createTristrip (outsidePts, nPts, pts, widths, joints, widthMode);
-            output.AddTriStrip (nPts*2, outsidePts, 1);
+            output.AddTriStrip (nPts*2, outsidePts, Render::GraphicBuilder::AsThickenedLine::Yes);
 
             if (capMode > 2)
                 {

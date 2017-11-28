@@ -445,8 +445,8 @@ Schedule (Planning::Plan::Entry const& planEntry, Planning::Plan const& plan, Pl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  PublisherContext::ExtractSchedules()
     {
-    DgnDomains::RegisterDomain(PlanningDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(MarkupDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(PlanningDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(MarkupDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     DgnDb::OpenParams       openParams(Db::OpenMode::Readonly);
     WString                 device, directory, name;

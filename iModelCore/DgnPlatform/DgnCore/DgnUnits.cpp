@@ -98,6 +98,8 @@ void DgnGeoLocation::Save()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     {
+    DgnDb::VerifyClientThread();
+
     if (newExtents.IsEmpty())
         {
         BeAssert(false);
@@ -108,6 +110,13 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
+
+    for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
+        {
+        auto spatialModel = kvp.second->ToSpatialModelP();
+        if (nullptr != spatialModel)
+            spatialModel->OnProjectExtentsChanged(newExtents);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

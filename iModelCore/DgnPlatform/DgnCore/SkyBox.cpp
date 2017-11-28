@@ -91,10 +91,10 @@ void SpatialViewController::DrawGroundPlane(DecorateContextR context)
     params.SetFillColor(ColorDef::White()); // Fill should be set to opaque white for gradient texture...
     params.SetGradient(gradient.get());
 
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic();
+    Render::GraphicBuilderPtr graphic = context.CreateWorldGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddShape(5, pts, true);
-    context.AddWorldDecoration(*graphic);
+    context.AddWorldDecoration(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,7 +120,7 @@ Render::TexturePtr SpatialViewController::LoadTexture(Utf8CP fileName, Render::S
         return nullptr;
 
     ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
-    return system._CreateTexture(jpeg, Image::Format::Rgba, Image::BottomUp::No);
+    return system._CreateTexture(jpeg, Image::BottomUp::No);
     }
 
 static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
@@ -186,10 +186,10 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     matParams.SetShadows(false);
     m_skybox = system._CreateMaterial(matParams);
 
-    Material::TextureMapParams mapParams;
-    Material::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+    TextureMapping::Params mapParams;
+    TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     mapParams.SetTransform(&transform);
-    m_skybox->_MapTexture(*texture, mapParams);
+    m_skybox->MapTexture(TextureMapping(*texture, mapParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,7 +237,8 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
     bvector<DPoint3d> meshPoints;
     bvector<DPoint2d> meshParams; 
     bvector<int> indices;
-    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->GetSpatialViewDefinition().ComputeEyePoint(viewport.GetFrustum());
+    Frustum frustum = viewport.GetFrustum();
+    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->GetSpatialViewDefinition().ComputeEyePoint(frustum);
 
     for (int row = 1; row < MESH_DIMENSION;  ++row)
         {
@@ -248,22 +249,19 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 
             DPoint2d params[4];
             DPoint3d points[4];
+            DPoint3d worldPoints[4];
 
-            points[0].Init(low.x,  low.y);
-            points[1].Init(low.x,  high.y);
-            points[2].Init(high.x, high.y);
-            points[3].Init(high.x, low.y);
+            double npcZ = 0.5;
+            points[0].Init(low.x,  low.y, npcZ);
+            points[1].Init(low.x,  high.y, npcZ);
+            points[2].Init(high.x, high.y, npcZ);
+            points[3].Init(high.x, low.y, npcZ);
 
-            viewport.NpcToWorld(points, points, 4);
+            viewport.NpcToWorld(worldPoints, points, 4);
             for (int i=0; i<4; ++i)
                 {
-                DVec3d direction = DVec3d::FromStartEnd(cameraPos, points[i]);
+                DVec3d direction = DVec3d::FromStartEnd(cameraPos, worldPoints[i]);
                 params[i] = getUVForDirection(direction, rotation, zOffset);
-
-                // We need to move the point off the back plane slightly so it won't be clipped. Move it 1/10000 of the distance to the eye.
-                // That should keep it behind any geomtery of interest, but at least one value in zbuffer resolution inside the frustum.
-                double len = direction.Normalize();
-                points[i].SumOf(points[i], direction, -len/10000.);
                 }
 
             // Avoid seam discontinuities by eliminating cycles.
@@ -281,6 +279,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
                     while (params[i].y < .5) params[i].y += 1.0;
                 }
 
+            viewport.WorldToView(points, worldPoints, 4);
             for (int i=0; i<4; ++i)
                 {
                 meshPoints.push_back(points[i]);
@@ -302,7 +301,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::DrawSkyBox(TerrainContextR context)
+void SpatialViewController::DrawSkyBox(DecorateContextR context)
     {
     auto& style3d = GetSpatialViewDefinition().GetDisplayStyle3d();
     if (!style3d.IsSkyBoxEnabled())
@@ -315,7 +314,7 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
     BeAssert(m_skybox.IsValid());
 
     // create a graphic for the skybox, and assign the sky material to it.
-    Render::GraphicBuilderPtr skyGraphic = context.CreateGraphic();
+    Render::GraphicBuilderPtr skyGraphic = context.CreateViewGraphic();
     GraphicParams params;
     params.SetMaterial(m_skybox.get());
     skyGraphic->ActivateGraphicParams(params);
@@ -323,24 +322,7 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates
     drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().GeoLocation().GetGlobalOrigin().z);
 
-    // we want to control the rendermode, lighting, and edges for the mesh. To do that we have to create a GraphicBranch with the appropriate ViewFlags
-    ViewFlags flags = context.GetViewFlags();
-    flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.SetShowTextures(true);
-    flags.SetShowVisibleEdges(false);
-    flags.SetShowMaterials(true);
-    flags.SetShowShadows(false);
-    flags.SetShowSourceLights(false);
-    flags.SetShowCameraLights(false);
-    flags.SetShowSolarLight(false);
-    flags.SetMonochrome(false);
-
-    GraphicBranch branch;
-    branch.Add(*skyGraphic); // put the mesh into the branch
-    branch.SetViewFlags(flags); // and set its Viewflags
-
-    // now add the skybox branch to the terrain context.
-    context.GetList()->Add(*context.CreateBranch(branch), nullptr, 0);
+    context.SetViewBackground(*skyGraphic->Finish());
     }
 
 //=======================================================================================

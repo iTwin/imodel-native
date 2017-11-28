@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
@@ -81,18 +82,60 @@ Json::Value ViewFlags::ToJson() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewFlagsOverrides::ViewFlagsOverrides(ViewFlags base) : m_present(0xffffffff), m_values(base)
+    {
+    // NB: A handful of flags (grid, acs) cannot be overridden on a per-branch basis...ignore.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewFlagsOverrides::Apply(ViewFlags& base) const
+    {
+    if (!AnyOverridden())
+        return;
+
+    if (IsPresent(kDimensions)) base.SetShowDimensions(m_values.ShowDimensions());
+    if (IsPresent(kPatterns)) base.SetShowPatterns(m_values.ShowPatterns());
+    if (IsPresent(kWeights)) base.SetShowWeights(m_values.ShowWeights());
+    if (IsPresent(kStyles)) base.SetShowStyles(m_values.ShowStyles());
+    if (IsPresent(kTransparency)) base.SetShowTransparency(m_values.ShowTransparency());
+    if (IsPresent(kFill)) base.SetShowFill(m_values.ShowFill());
+    if (IsPresent(kTextures)) base.SetShowTextures(m_values.ShowTextures());
+    if (IsPresent(kMaterials)) base.SetShowMaterials(m_values.ShowMaterials());
+    if (IsPresent(kSolarLight)) base.SetShowSolarLight(m_values.ShowSolarLight());
+    if (IsPresent(kCameraLights)) base.SetShowCameraLights(m_values.ShowCameraLights());
+    if (IsPresent(kSourceLights)) base.SetShowSourceLights(m_values.ShowSourceLights());
+    if (IsPresent(kVisibleEdges)) base.SetShowVisibleEdges(m_values.ShowVisibleEdges());
+    if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
+    if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
+    if (IsPresent(kClipVolume)) base.SetShowClipVolume(m_values.ShowClipVolume());
+    if (IsPresent(kConstructions)) base.SetShowConstructions(m_values.ShowConstructions());
+    if (IsPresent(kMonochrome)) base.SetMonochrome(m_values.IsMonochrome());
+    if (IsPresent(kGeometryMap)) base.SetIgnoreGeometryMap(m_values.IgnoreGeometryMap());
+    if (IsPresent(kHlineMaterialColors)) base.SetUseHlineMaterialColors(m_values.UseHlineMaterialColors());
+    if (IsPresent(kEdgeMask)) base.SetEdgeMask(m_values.GetEdgeMask());
+    if (IsPresent(kRenderMode)) base.SetRenderMode(m_values.GetRenderMode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
-    GetViewDefinition().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
+    GetViewDefinitionR().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
+    SetFeatureOverridesDirty();
     _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController(ViewDefinitionCR def, SkipClone skipClone) : m_dgndb(def.GetDgnDb()), m_definition((skipClone == SkipClone::Yes) ? const_cast<ViewDefinitionP>(&def) : def.MakeCopy<ViewDefinition>())
+ViewController::ViewController(ViewDefinitionCR def, SkipClone skipClone)
+    : m_dgndb(def.GetDgnDb()), m_definition((skipClone == SkipClone::Yes) ? const_cast<ViewDefinitionP>(&def) : def.MakeCopy<ViewDefinition>()),
+    m_selectionSetDirty(!m_dgndb.Elements().GetSelectionSet().empty())
     {
     DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
 
@@ -132,7 +175,6 @@ void ViewController::_StoreState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::InvalidateScene()
     {
-    RequestAbort(false); 
     BeMutexHolder lock(m_mutex);
     m_readyScene = nullptr;
     }
@@ -346,7 +388,7 @@ bool SpatialViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, G
     if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
-    auto& camera = *GetViewDefinition().ToView3dP();
+    auto& camera = *GetViewDefinitionR().ToView3dP();
     if (!camera.IsCameraOn())
         {
         // If there's no perspective, just center the current location in the view.
@@ -618,7 +660,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
 #else
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
-    GraphicBuilderPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateWorldGraphic();
 
     graphic->SetSymbology(color, colorFill, 1);
     graphic->AddArc(ellipse, true, true);
@@ -636,7 +678,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
     graphic->AddLineString(2, segment.point);
-    context.AddWorldOverlay(*graphic);
+    context.AddWorldOverlay(*graphic->Finish());
 #endif
     }
 
@@ -654,7 +696,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
-    GraphicBuilderPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateViewGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 
@@ -669,7 +711,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     white.SetAlpha(20);
     graphic->SetSymbology(white, white, 1);
     graphic->AddArc2d(ellipse, false, false, 0.0);
-    context.AddViewOverlay(*graphic);
+    context.AddViewOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -884,33 +926,32 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
     return CloseMe::No;
     }
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/16
-//=======================================================================================
-struct SingleModelSceneContext : ViewContext
-{
-    ViewController::QueryResults& m_results;
-    SingleModelSceneContext(DgnViewportR vp, DrawPurpose purpose, ViewController::QueryResults& results) : m_results(results) {Attach(&vp, purpose);}
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {BeAssert(false); return nullptr;}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override {BeAssert(false); return nullptr;}
-    ScanCriteria::Stop _OnRangeElementFound(DgnElementId id) override {m_results.m_scores.Insert(0.0, id); return ScanCriteria::Stop::No;}
-};
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
+BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
-    QueryResults results;
-    auto model = GetViewedModel();
-
-    if (nullptr != model)
+    if (nullptr == m_root)
         {
-        SingleModelSceneContext context(vp, DrawPurpose::CreateScene, results);
-        context.VisitDgnModel(*model);
+        auto model = GetViewedModel();
+        if (nullptr == model)
+            return ERROR;
+
+        m_root = model->GetTileTree(&context.GetTargetR().GetSystem());
+        if (nullptr == m_root)
+            return ERROR;
         }
 
-    return results;
+    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
+        {
+        auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
+        m_root->SelectTiles(context);
+        m_root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
+        m_root->CancelAllTileLoads();
+        }
+
+    m_root->DrawInView(context);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -939,20 +980,27 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/17
+* @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults TemplateViewController3d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
+BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
-    QueryResults results;
-    GeometricModelP model = GetViewedModel();
-
-    if (nullptr != model)
+    if (nullptr == m_root)
         {
-        SingleModelSceneContext context(vp, DrawPurpose::CreateScene, results);
-        context.VisitDgnModel(*model);
+        auto model = GetViewedModel();
+        if (nullptr == model || nullptr == (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())))
+            return ERROR;
         }
 
-    return results;
+    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
+        {
+        auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
+        m_root->SelectTiles(context);
+        m_root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
+        m_root->CancelAllTileLoads();
+        }
+
+    m_root->DrawInView(context);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -982,7 +1030,6 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
     if (m_viewedModelId == viewedModelId)
         return DgnDbStatus::Success;
 
-    RequestAbort(true);
     m_viewedModelId = viewedModelId;
     GeometricModel3dP model = GetViewedModel();
     if (!model || !model->IsTemplate())
@@ -991,6 +1038,6 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
         return DgnDbStatus::WrongModel;
         }
 
-    GetViewDefinition().LookAtVolume(model->QueryModelRange());
+    GetViewDefinitionR().LookAtVolume(model->QueryModelRange());
     return DgnDbStatus::Success;
     }

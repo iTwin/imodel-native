@@ -11,9 +11,9 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/AutoRestore.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/ModelSpatialClassifier.h>
+#include <DgnPlatform/TileIO.h>
 #include <stdio.h>
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
@@ -260,6 +260,7 @@ struct PublisherContext : TileGenerator::ITileCollector
         CantOpenBriefcase,
         CantExtractHistory,
         CantFindDefaultView,
+        NoHistoryFound,
         };
 
     struct  Statistics
@@ -311,7 +312,7 @@ protected:
     TextureMode                                 m_textureMode;
     bmap<DgnModelId, T_ClassifierInfos>         m_classifierMap;
     bmap<DgnModelId, Utf8String>                m_directUrls;
-    AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    AxisAlignedBox3d                            m_projectExtents; 
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
     bool                                        m_isGeoLocated;
     ITileGenerationFilterP                      m_generationFilter;
@@ -322,7 +323,7 @@ protected:
     GlobeMode                                   m_globeMode = GlobeMode::FromDisplayStyle;
 
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded, GlobeMode = GlobeMode::FromDisplayStyle);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, AxisAlignedBox3dCR projectExtents, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded, GlobeMode = GlobeMode::FromDisplayStyle);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
 
@@ -377,6 +378,7 @@ public:
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     TextureMode GetTextureMode() const { return m_textureMode; }
     bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
+    AxisAlignedBox3dCR GetProjectExtents() const { return m_projectExtents; }
     WString GetTileExtension (TileNodeCR tile) const;
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
     T_ScheduleEntryMaps& GetScheduleEntryMaps() { return m_scheduleEntryMaps; }
@@ -449,7 +451,7 @@ private:
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
     static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
-    static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
+    static void AddShader(Json::Value&, Utf8CP name, int32_t type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
     void WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud);
@@ -497,7 +499,7 @@ public:
     TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
     static WCharCP GetBinaryDataFileExtension(bool containsParts) { return containsParts ? L"cmpt" : L"b3dm"; }
 
-    static void AddTechniqueParameter(Json::Value&, Utf8CP name, int type, Utf8CP semantic);
+    static void AddTechniqueParameter(Json::Value&, Utf8CP name, TileTree::IO::Gltf::DataType type, Utf8CP semantic);
     static void AppendProgramAttribute(Json::Value&, Utf8CP);
 };
 

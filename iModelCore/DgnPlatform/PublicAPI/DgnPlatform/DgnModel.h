@@ -22,6 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
+namespace TileTree {struct Root;}
 namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct Geometric2d; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
@@ -242,6 +243,7 @@ protected:
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
+    virtual void _Destroy() { }
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
 
@@ -864,17 +866,18 @@ public:
 protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     Formatter m_displayInfo;
+    RefCountedPtr<TileTree::Root> m_root;
+    BeAtomic<uint64_t> m_lastModifiedTime;
 
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
-    
-    //! Add "terrain" graphics for this DgnModel. Terrain graphics are drawn with the scene graphics every time the camera moves. The difference between terrain and element graphics
-    //! is that this method is called every frame whereas _AddGraphicsToScreen is only called when the query thread completes. Terrain graphics must 
-    //! be re-added every time this method is called or they will disappear.
-    //! An implementation of _AddTerrain is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
-    //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
-    virtual void _AddTerrainGraphics(TerrainContextR) const {}
+
+    DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
+
+    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
+    DGNPLATFORM_EXPORT void ReleaseTileTree();
+    void _Destroy() override { ReleaseTileTree(); }
 
     virtual void _PickTerrainGraphics(PickContextR) const {}
 
@@ -882,18 +885,19 @@ protected:
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
-    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
-    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
-    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
-    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element);}
-    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
-    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original);}
+    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
+    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
+    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element); UpdateLastElementModifiedTime();}
+    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element); UpdateLastElementModifiedTime();}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original); UpdateLastElementModifiedTime();}
+    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original); UpdateLastElementModifiedTime();}
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
     
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
+    
 public:
     BE_JSON_NAME(formatter)
 
@@ -910,6 +914,12 @@ public:
 
     //! Get the Formatter for this model.
     Formatter const& GetFormatter() const {return m_displayInfo;}
+
+    DGNPLATFORM_EXPORT TileTree::Root* GetTileTree(Render::SystemP system);
+
+    //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
+    DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;
+    void InitLastElementModifiedTime(); //!< @private
 };
 
 //=======================================================================================
@@ -927,6 +937,7 @@ protected:
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
+    ~GeometricModel3d() { ReleaseTileTree(); }
 };
 
 //=======================================================================================
@@ -945,6 +956,7 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
+    ~GeometricModel2d() { ReleaseTileTree(); }
 };
 
 //=======================================================================================
@@ -975,9 +987,13 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 protected:
     SpatialModelCP _ToSpatialModel() const override final {return this;}
     explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
+    virtual BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 
 public:
     DGNPLATFORM_EXPORT void AddLights(Render::SceneLightsR, Render::TargetR) const;
+
+    BentleyStatus GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return _GetSpatialClassifiers(classifiers); }
+    void OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents);
 };
 
 //=======================================================================================

@@ -134,6 +134,7 @@ public:
         Override() {Init();}
         explicit Override(JsonValueCR val) {Init(); FromJson(val);}
         void Init() {m_flags.m_int32 = 0; m_value.Init();}
+
         void SetInvisible(bool val) {m_flags.m_invisible=true; m_value.SetInvisible(val);}
         void SetColor(ColorDef val) {m_flags.m_color=true; m_value.SetColor(val);}
         void SetWeight(uint32_t val) {m_flags.m_weight=true; m_value.SetWeight(val);}
@@ -141,10 +142,21 @@ public:
         void SetDisplayPriority(int32_t val) {m_flags.m_priority=true; m_value.SetDisplayPriority(val);}
         void SetRenderMaterial(RenderMaterialId val) {m_flags.m_material=true; m_value.SetRenderMaterial(val);}
         void SetTransparency(double val) {m_flags.m_transparency=true; m_value.SetTransparency(val);}
+
         void ToJson(JsonValueR outValue) const;
         void FromJson(JsonValueCR inValue);
         void ApplyTo(Appearance&) const;
-    };
+
+        bool GetInvisible(bool& val) const { if (m_flags.m_invisible) val = m_value.IsInvisible(); return m_flags.m_invisible; }
+        bool GetColor(ColorDef& val) const { if (m_flags.m_color) val = m_value.GetColor(); return m_flags.m_color; }
+        bool GetWeight(uint32_t& val) const { if (m_flags.m_weight) val = m_value.GetWeight(); return m_flags.m_weight; }
+        bool GetStyle(DgnStyleId& val) const { if (m_flags.m_style) val = m_value.GetStyle(); return m_flags.m_style; }
+        bool GetDisplayPriority(int32_t& val) const { if (m_flags.m_priority) val = m_value.GetDisplayPriority(); return m_flags.m_priority; }
+        bool GetMaterial(RenderMaterialId& val) const { if (m_flags.m_material) val = m_value.GetRenderMaterial(); return m_flags.m_material; }
+        bool GetTransparency(double& val) const { if (m_flags.m_transparency) val = m_value.GetTransparency(); return m_flags.m_transparency; }
+
+        bool IsAnyOverridden() const { return 0 != m_flags.m_int32; }
+    }; // Override
 
     //! Holds the data which describes a sub-category
     struct Data

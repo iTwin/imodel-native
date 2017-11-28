@@ -9,14 +9,15 @@
 #include <ThreeMx/ThreeMxApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <TilePublisher/CesiumPublisher.h>
+#include <TilePublisher/CesiumTilePublisher.h>
 #include <Raster/RasterApi.h>
 #include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include <ScalableMesh/ScalableMeshLib.h>
-#include <RealityPlatform/RealityDataService.h>
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+#include <RealityPlatformTools/RealityDataService.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#include <Logging/bentleylogging.h>
 
-#define HISTORY_SUPPORT
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -56,6 +57,8 @@ enum class ParamId
     Repository,
     GlobeOn,
     GlobeOff,
+    OnlyHistory,
+    AddHistory,
     Invalid,
 };
 
@@ -99,6 +102,8 @@ static CommandParam s_paramTable[] =
         { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
         { L"gl1", L"globeOn", L"Force globe on in all views", false, true },
         { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
+        { L"hi",  L"historyOnly", L"Publish only history", false, true },
+        { L"h+",  L"history", L"Publish history and TIP", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -175,7 +180,7 @@ DgnDbPtr Params::OpenDgnDb() const
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
     DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, m_inputFileName, openParams);
     if (db.IsNull())
-        printf("Failed to open file %ls\n", m_inputFileName.c_str());
+        LOG.errorv("Failed to open file %ls\n", m_inputFileName.c_str());
 
     return db;
     }
@@ -210,7 +215,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GroundPoint:
                if (3 != swscanf (arg.m_value.c_str(), L"%lf,%lf,%lf", &m_groundPoint.x, &m_groundPoint.y, &m_groundPoint.z))
                     {
-                    printf ("Unrecognized ground point: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized ground point: %ls\n", av[i]);
                     return false;
                     }
                 m_groundMode = GroundMode::FixedPoint;
@@ -219,7 +224,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GroundHeight:
                 if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_groundHeight))
                     {
-                    printf ("Unrecognized ground height: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized ground height: %ls\n", av[i]);
                     return false;
                     }
                 m_groundMode = GroundMode::FixedHeight;
@@ -227,7 +232,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::Depth:
                 if (1 != swscanf (arg.m_value.c_str(), L"%u", &m_depth))
                     {
-                    printf ("Expected unsigned integer for depth parameter\n");
+                    LOG.error ("Expected unsigned integer for depth parameter\n");
                     return false;
                     }
                 break;
@@ -240,7 +245,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             case ParamId::GeographicLocation:
                 if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
                     {
-                    printf ("Unrecognized geographic location: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized geographic location: %ls\n", av[i]);
                     return false;
                     }
                 m_geoLocated = true;
@@ -257,12 +262,12 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
 
                 if (1 != swscanf (arg.m_value.c_str(), L"%lf", &m_tolerance))
                     {
-                    printf ("Unrecognized tolerance value: %ls\n", av[i]);
+                    LOG.errorv ("Unrecognized tolerance value: %ls\n", av[i]);
                     return false;
                     }
                 if (m_tolerance < s_minTolerance || s_maxTolerance > s_maxTolerance)
                     {
-                    printf ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
+                    LOG.errorv ("Invalid tolerance: %lf (must be between %lf and %lf)\n", m_tolerance, s_minTolerance, s_maxTolerance);
                     return false;
                     }
                 break;
@@ -283,16 +288,12 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                     m_textureMode = PublisherContext::TextureMode::Compressed;
                 else
                     {
-                    printf ("Unrecognized texture mode: %ls\n", arg.m_value.c_str());
+                    LOG.errorv ("Unrecognized texture mode: %ls\n", arg.m_value.c_str());
                     return false;
                     }
                     
                 break;
                 }
-
-            case ParamId::History:
-                m_wantHistory = true;
-                break;
 
             case ParamId::UserName:
                 m_userName = Utf8String(arg.m_value.c_str());
@@ -323,18 +324,25 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_globeMode = PublisherContext::GlobeMode::Off;
                 break;
 
+            case ParamId::OnlyHistory:
+                m_historyMode = HistoryMode::OnlyHistory;
+                break;
+
+            case ParamId::AddHistory:
+                m_historyMode = HistoryMode::AddHistory;
+
             default:
-                printf("Unrecognized command option %ls\n", av[i]);
+                LOG.errorv("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
 
 
-    if (m_wantHistory)
+    if (HistoryMode::OmitHistory != m_historyMode)
         {
         if (m_userName.empty() || m_password.empty())
             {
-            printf ("Username and password are reaquired for history publishing\n");
+            LOG.error ("Username and password are reaquired for history publishing\n");
             return false;
             }
         if (!m_repository.empty())
@@ -344,7 +352,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
     
     if (!haveInput)
         {
-        printf("Input filename is required\n");
+        LOG.error("Input filename is required\n");
         return false;
         }
 
@@ -370,33 +378,13 @@ static void printUsage(WCharCP exePath)
     {
     WString exeName = BeFileName::GetFileNameAndExtension(exePath);
 
-    printf("Publish the contents of a DgnDb view as a Cesium tileset viewable in a web browser.\n\n");
-    printf("Usage: %ls -i|--input= [OPTIONS...]\n\n", exeName.c_str());
+    LOG.info("Publish the contents of a DgnDb view as a Cesium tileset viewable in a web browser.\n\n");
+    LOG.infov("Usage: %ls -i|--input= [OPTIONS...]\n\n", exeName.c_str());
     
     for (auto const& cmdArg : s_paramTable)
-        printf("  --%ls=|-%ls=\t(%ls)\t%ls\n", cmdArg.m_verbose, cmdArg.m_abbrev, cmdArg.m_required ? L"required" : L"optional", cmdArg.m_descr);
+        LOG.infov("  --%ls=|-%ls=\t(%ls)\t%ls\n", cmdArg.m_verbose, cmdArg.m_abbrev, cmdArg.m_required ? L"required" : L"optional", cmdArg.m_descr);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void printStatus(PublisherContext::Status status)
-    {
-    static const Utf8CP s_msg[] =
-        {
-        "Publishing succeeded",
-        "No geometry to publish",
-        "Publishing aborted",
-        "Failed to write to base directory",
-        "Failed to create subdirectory",
-        "Failed to write scene",
-        "Failed to write node"
-        };
-
-    auto index = static_cast<uint32_t>(status);
-    Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
-    printf("Result: %hs.\n", msg);
-    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -415,7 +403,7 @@ private:
 
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
-        printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
+        LOG.errorv("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
         }
 public:
     Host() { EnsureAssertHandler(); }
@@ -479,6 +467,9 @@ int wmain(int ac, wchar_t const** av)
     _getch();
 #endif
 
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity(L"TilePublisher", NativeLogging::LOG_TRACE);
+
     Params createParams;
     if (!createParams.ParseArgs(ac, av))
         {
@@ -498,13 +489,6 @@ int wmain(int ac, wchar_t const** av)
 
     Host::EnsureAssertHandler();
 
-#ifdef HISTORY_SUPPORT
-    if (createParams.WantHistory())
-        {
-        return static_cast<int> (TilesetHistoryPublisher::PublishTilesetWithHistory (createParams));
-        }
-#endif
-
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;
@@ -516,26 +500,45 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-    TilesetPublisher publisher(*db, createParams, viewsToPublish, defaultView, s_maxTilesetDepth);
+//#define DIRECT_CESIUM_PUBLISH
+#ifdef DIRECT_CESIUM_PUBLISH
+    CesiumDirect::DirectPublisher publisher(*db, createParams, viewsToPublish, defaultView);
+#else
+    TilesetPublisher publisher(*db, db->GeoLocation().ComputeProjectExtents(), createParams, viewsToPublish, defaultView, s_maxTilesetDepth);
+#endif
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {
         BeFileName  outputFile (nullptr, createParams.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), L".html");
         if (outputFile.DoesPathExist())
             {
-            printf ("Output file: %ls aready exists and \"No Replace\" option is specified\n", outputFile.c_str());
+            LOG.errorv ("Output file: %ls aready exists and \"No Replace\" option is specified\n", outputFile.c_str());
             return 1;
             }
         }
 
-    printf("Publishing:\n"
+    LOG.debugv("Publishing:\n"
            "\tInput: View %s from %ls\n"
            "\tOutput: %ls%ls.html\n"
            "\tData: %ls\n",
             createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
             
     auto status = publisher.Publish (createParams);
-    printStatus(status);
+
+    static const Utf8CP s_msg[] =
+        {
+        "Publishing succeeded",
+        "No geometry to publish",
+        "Publishing aborted",
+        "Failed to write to base directory",
+        "Failed to create subdirectory",
+        "Failed to write scene",
+        "Failed to write node"
+        };
+
+    auto index = static_cast<uint32_t>(status);
+    Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
+    printf("Result: %hs.\n", msg);
 
     return static_cast<int>(status);
     }

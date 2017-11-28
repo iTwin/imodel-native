@@ -16,6 +16,14 @@ USING_NAMESPACE_BENTLEY_DGN
 static int s_parasolidInitialized = 0;
 static bool s_usingExternalFrustrum = false;
 
+struct FrustrumOutput
+{
+IParasolidWireOutput*   m_wireOutput;
+IParasolidHLineOutput*  m_hlineOutput;
+};
+
+static FrustrumOutput s_frustrumOutput;
+
 #define PARTITION_ROLLBACK_REQUIRED     // Using parasolid from multiple threads (as in tilepublishing) requires partitioned rollback for error handling.
 #if defined (PARTITION_ROLLBACK_REQUIRED)
 
@@ -2417,6 +2425,425 @@ int*            pFailureCodeOut     // <= outputs failure code if error, else 0
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/94
++---------------+---------------+---------------+---------------+---------------+------*/
+static ICurvePrimitivePtr curveFromParams
+(
+double const*   geomArrayP,
+bool            rational,
+int             nPoles,
+int             order
+)
+    {
+    if (nPoles < order)
+        return nullptr;
+
+    if (2 == order)
+        {
+        bvector<DPoint3d> points;
+
+        for (int i = 0; i < nPoles; i++)
+            {
+            DPoint3d pole;
+
+            pole.x = *geomArrayP++;
+            pole.y = *geomArrayP++;
+            pole.z = *geomArrayP++;
+
+            if (rational)
+                *geomArrayP++;
+
+            points.push_back(pole);
+            }
+
+        return ICurvePrimitive::CreateLineString(points);
+        }
+
+    MSBsplineCurve  bcurve;
+    
+    bcurve.Zero();
+    bcurve.rational = rational;
+    bcurve.params.order = order;
+    bcurve.params.numPoles = nPoles;
+    bcurve.params.numKnots = nPoles - order;
+    bcurve.display.polygonDisplay = false;
+    bcurve.display.curveDisplay = true;
+    bcurve.Allocate();
+
+    int         i;
+    double*     weightP;
+    DPoint3d*   poleP;
+
+    for (i = 0, poleP = bcurve.poles, weightP = bcurve.weights; i < nPoles; i++, poleP++)
+        {
+        poleP->x = *geomArrayP++;
+        poleP->y = *geomArrayP++;
+        poleP->z = *geomArrayP++;
+
+        if (rational)
+            poleP->Scale(*poleP, *weightP++ = *geomArrayP++);
+        }
+
+    memcpy(bcurve.knots, geomArrayP, (bcurve.params.numPoles + bcurve.params.order) * sizeof(double));
+    bspknot_normalizeKnotVector(bcurve.knots, bcurve.params.numPoles, bcurve.params.order, bcurve.params.closed);
+
+    return ICurvePrimitive::CreateBsplineCurveSwapFromSource(bcurve);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/94
++---------------+---------------+---------------+---------------+---------------+------*/
+static ICurvePrimitivePtr curveFromPoints
+(
+DPoint3dCP  pointsP,
+int         nPoints
+)
+    {
+    if (nPoints < 2)
+        return nullptr;
+
+    return ICurvePrimitive::CreateLineString(pointsP, nPoints);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/98
++---------------+---------------+---------------+---------------+---------------+------*/
+static double ellipseAngle
+(
+DPoint3dCP      centerP,
+RotMatrixCP     rMatrixP,
+double          major,
+double          minor,
+DPoint3dCP      pointP
+)
+    {
+    DPoint3d delta;
+
+    delta.DifferenceOf(*pointP, *centerP);
+    rMatrixP->MultiplyTranspose(delta);
+
+    if (delta.x == 0.0 && delta.y == 0.0)
+        return 0.0;
+    else
+        return atan2(major * delta.y, minor * delta.x);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/98
++---------------+---------------+---------------+---------------+---------------+------*/
+static DEllipse3d ellipseFromParams
+(
+DPoint3dCP      centerP,
+DVec3dCP        normalP,
+DVec3dCP        majorDirectionP,
+DVec3dCP        minorDirectionP,
+double          major,
+double          minor,
+DPoint3dCP      startP,
+DPoint3dCP      endP
+)
+    {
+    DPoint3d    center = *centerP;
+    double      rX = major;
+    double      rY = minor;
+    RotMatrix   rMatrix;
+
+    if (NULL != normalP && NULL == majorDirectionP)
+        {
+        LegacyMath::RMatrix::FromNormalVector(&rMatrix, normalP);
+        rMatrix.InverseOf(rMatrix);
+        }
+    else if (NULL != normalP && NULL != majorDirectionP)
+        {
+        DVec3d minorDirection;
+
+        minorDirection.CrossProduct(*normalP, *majorDirectionP);
+        rMatrix.InitFromColumnVectors(*majorDirectionP, minorDirection, *normalP);
+        }
+    else
+        {
+        DVec3d normal;
+
+        normal.CrossProduct(*majorDirectionP, *minorDirectionP);
+        rMatrix.InitFromColumnVectors(*majorDirectionP, *minorDirectionP, normal);
+        }
+
+    double start = (NULL == startP ? 0.0 : ellipseAngle(&center, &rMatrix, major, minor, startP));
+    double sweep = (NULL == endP ? msGeomConst_2pi : ellipseAngle(&center, &rMatrix, major, minor, endP) - start);
+
+    if (sweep < 0.0)
+        sweep += msGeomConst_2pi;
+
+    DVec3d primary, secondary;
+
+    rMatrix.GetColumn(primary, 0);
+    rMatrix.GetColumn(secondary, 1);
+
+    DEllipse3d ellipse;
+
+    ellipse.InitFromDGNFields3d(center, primary, secondary, rX, rY, start, sweep);
+
+    return ellipse;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/98
++---------------+---------------+---------------+---------------+---------------+------*/
+static ICurvePrimitivePtr pki_extractGoOutput
+(
+int             lineType,
+int             nGeoms,
+double const*   geomArrayP,
+int             nLineType,
+int const*      lineTypeP
+)
+    {
+    switch (lineType)
+        {
+        case L3TPSL:
+            return curveFromPoints((DPoint3dCP) geomArrayP, 2);
+
+        case L3TPCC:
+            return ICurvePrimitive::CreateArc(ellipseFromParams((DPoint3dCP) &geomArrayP[0], (DVec3dCP) &geomArrayP[3], nullptr, nullptr, geomArrayP[6], geomArrayP[6], nullptr, nullptr));
+
+        case L3TPCI:
+            return ICurvePrimitive::CreateArc(ellipseFromParams((DPoint3dCP) &geomArrayP[0], (DVec3dCP) &geomArrayP[3], nullptr, nullptr, geomArrayP[6], geomArrayP[6], (DPoint3dCP) &geomArrayP[7], (DPoint3dCP) &geomArrayP[10]));
+
+        case L3TPCE:
+            return ICurvePrimitive::CreateArc(ellipseFromParams((DPoint3dCP) &geomArrayP[0], nullptr, (DVec3dCP) &geomArrayP[3], (DVec3dCP) &geomArrayP[6], geomArrayP[9], geomArrayP[10], nullptr, nullptr));
+
+        case L3TPEL:
+            return ICurvePrimitive::CreateArc(ellipseFromParams((DPoint3dCP) &geomArrayP[0], nullptr, (DVec3dCP) &geomArrayP[3], (DVec3dCP) &geomArrayP[6], geomArrayP[9], geomArrayP[10], (DPoint3dCP) &geomArrayP[11], (DPoint3dCP) &geomArrayP[14]));
+
+        case L3TPPY:
+            return curveFromPoints((DPoint3dCP) geomArrayP, nGeoms);
+
+        case L3TPNC:
+        case L3TPRN:
+            return curveFromParams(geomArrayP, L3TPRN == lineType, lineTypeP[9], lineTypeP[8] + 1);
+
+        default:
+            return nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void pki_GOSGMT
+(
+const int      *pSegTypeIn,         /* => input segment type  */
+const int      *pNumTagIn,          /* => input size of tag array */
+const int      *pTagArrayIn,        /* => input segment tag array */
+const int      *pNumGeomIn,         /* => input size of geom array */
+const double   *pGeomArrayIn,       /* => input segment geom array */
+const int      *pNumLineTypeIn,     /* => input size of line type array */
+const int      *pLineTypeArrayIn,   /* => input line type array */
+int            *pFailureCodeOut     /* <= output failure code: CONTIN or ABORT */
+)
+    {
+    *pFailureCodeOut = CONTIN;
+
+    switch (*pSegTypeIn)
+        {
+        case SGTPED:
+        case SGTPPL:
+        case SGTPSI:
+        case SGTPRH:
+            {
+            if (nullptr != s_frustrumOutput.m_wireOutput)
+                {
+                ICurvePrimitivePtr curve = pki_extractGoOutput(pLineTypeArrayIn[1], *pNumGeomIn, pGeomArrayIn, *pNumLineTypeIn, pLineTypeArrayIn);
+
+                if (!curve.IsValid())
+                    break;
+
+                if (SUCCESS != s_frustrumOutput.m_wireOutput->_ProcessGoOutput(*curve, pTagArrayIn[0]))
+                    *pFailureCodeOut = ABORT;
+                }
+            else if (nullptr != s_frustrumOutput.m_hlineOutput)
+                {
+                int     visibilityToken = pLineTypeArrayIn[3];
+                bool    isSmooth = (CODSMO == pLineTypeArrayIn[4] && CODNIN != pLineTypeArrayIn[5]); /* Not sure about this condition for smoothness -JS 2/98 */
+
+                if ((visibilityToken == CODVIS || visibilityToken == CODUNV))
+                    {
+                    ICurvePrimitivePtr curve = pki_extractGoOutput(pLineTypeArrayIn[1], *pNumGeomIn, pGeomArrayIn, *pNumLineTypeIn, pLineTypeArrayIn);
+
+                    if (!curve.IsValid())
+                        break;
+
+                    if (SUCCESS != s_frustrumOutput.m_hlineOutput->_ProcessGoOutput(*curve, pTagArrayIn[0], false, isSmooth, *pSegTypeIn))
+                        *pFailureCodeOut = ABORT;
+                    }
+                else if (s_frustrumOutput.m_hlineOutput->_ReturnHidden() && (visibilityToken == CODDRV || (s_frustrumOutput.m_hlineOutput->_IncludeTraceEdges() && visibilityToken == CODINV)))
+                    {
+                    ICurvePrimitivePtr curve = pki_extractGoOutput(pLineTypeArrayIn[1], *pNumGeomIn, pGeomArrayIn, *pNumLineTypeIn, pLineTypeArrayIn);
+
+                    if (!curve.IsValid())
+                        break;
+
+                    if (SUCCESS != s_frustrumOutput.m_hlineOutput->_ProcessGoOutput(*curve, pTagArrayIn[0], true, isSmooth, *pSegTypeIn))
+                        *pFailureCodeOut = ABORT;
+                    }
+                }
+
+            break;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     pki_GOOPPX
+(
+const int      *pNumRealIn,        /* => input number of reals in real array  */
+const double   *pRealArrayIn,        /* => input real array  */
+const int      *pNumIntIn,        /* => input number of integers in int array  */
+const int      *pIntArrayIn,        /* => input integer array  */
+int            *pFailureCodeOut        /* <= output failure code: CONTIN or ABORT  */
+)
+    {
+    *pFailureCodeOut = CONTIN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     pki_GOCLPX
+(
+const int      *pNumRealIn,        /* => input number of reals in real array  */
+const double   *pRealArrayIn,        /* => input real array  */
+const int      *pNumIntIn,        /* => input number of integers in int array  */
+const int      *pIntArrayIn,        /* => input integer array  */
+int            *pFailureCodeOut        /* <= output failure code: CONTIN or ABORT  */
+)
+    {
+    *pFailureCodeOut = CONTIN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     pki_GOPIXL
+(
+const int      *pNumPixelIn,        /* => input number of pixels to output  */
+const double   *pPixelArrayIn,        /* => input real array of pixel intensities  */
+const int      *pNumIntIn,        /* => input number of integers in int array  */
+const int      *pIntArrayIn,        /* => input integer array  */
+int            *pFailureCodeOut        /* <= output failure code: CONTIN or ABORT  */
+)
+    {
+    *pFailureCodeOut = CONTIN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     pki_GOOPSG
+(
+const int      *pSegTypeIn,        /* => input segment type   */
+const int      *pNumTagIn,        /* => input size of tag array  */
+const int      *pTagArrayIn,        /* => input segment tag array  */
+const int      *pNumGeomIn,        /* => input size of geom array  */
+const double   *pGeomArrayIn,        /* => input segment geom array  */
+const int      *pNumLineTypeIn,        /* => input size of line type array  */
+const int      *pLineTypeArrayIn,        /* => input line type array  */
+int            *pFailureCodeOut        /* <= output failure code: CONTIN or ABORT  */
+)
+    {
+    *pFailureCodeOut = CONTIN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Deepak.Malkan   04/96
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     pki_GOCLSG
+(
+const int      *pSegTypeIn,        /* => input segment type   */
+const int      *pNumTagIn,        /* => input size of tag array  */
+const int      *pTagArrayIn,        /* => input segment tag array  */
+const int      *pNumGeomIn,        /* => input size of geom array  */
+const double   *pGeomArrayIn,        /* => input segment geom array  */
+const int      *pNumLineTypeIn,        /* => input size of line type array  */
+const int      *pLineTypeArrayIn,        /* => input line type array  */
+int            *pFailureCodeOut        /* <= output failure code: CONTIN or ABORT  */
+)
+    {
+    *pFailureCodeOut = CONTIN;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Brien.Bastings                 11/2017
+//---------------------------------------------------------------------------------------
+static void computeViewTransform
+(
+PK_TRANSF_t&    viewTransformTag,   // <= view transform tag
+DPoint3dCP      eyePoint,           // => eye point (nullptr if parallel)
+DVec3dCR        direction           // => toward the view (positive Z)
+)
+    {
+    PK_TRANSF_create_view_o_t options;
+
+    PK_TRANSF_create_view_o_m(options);
+
+    if (nullptr != eyePoint)
+        {
+        options.have_eye_position = PK_LOGICAL_true;
+        options.eye_position.coord[0] = eyePoint->x;
+        options.eye_position.coord[1] = eyePoint->y;
+        options.eye_position.coord[2] = eyePoint->z;
+        }
+
+    DVec3d tmpDir = DVec3d::From(direction);
+    PK_VECTOR1_t vector;
+
+    tmpDir.Normalize();
+    vector.coord[0] = -tmpDir.x;
+    vector.coord[1] = -tmpDir.y;
+    vector.coord[2] = -tmpDir.z;
+        
+    PK_TRANSF_create_view(vector, &options, &viewTransformTag);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Brien.Bastings                 11/2017
+//---------------------------------------------------------------------------------------
+void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, TransformCP entityTransform, double tolerance)
+    {
+    PK_TRANSF_t viewTransformTag = PK_ENTITY_null;
+    PK_TRANSF_t entityTransformTag = PK_ENTITY_null;
+
+    computeViewTransform(viewTransformTag, eyePoint, direction);
+
+    if (nullptr != entityTransform)
+        PSolidUtil::CreateTransf(entityTransformTag, *entityTransform);
+
+    PK_TOPOL_render_line_o_t options;
+
+    PK_TOPOL_render_line_o_m(options);
+    options.edge = PK_render_edge_no_c;
+    options.silhouette = PK_render_silhouette_arcs_c;
+    options.visibility = PK_render_vis_no_c;
+
+    if (tolerance > 0.0)
+        {
+        options.is_curve_chord_tol = true;
+        options.curve_chord_tol = tolerance;
+        }
+ 
+    s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
+    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null == entityTransformTag ? PK_ENTITY_null : &entityTransformTag, viewTransformTag, &options);
+    s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
+
+    PK_ENTITY_delete(1, &viewTransformTag);
+
+    if (PK_ENTITY_null != entityTransformTag)
+        PK_ENTITY_delete(1, &entityTransformTag);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Deepak.Malkan   06/96
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int pki_start_modeler()
@@ -2442,15 +2869,12 @@ static int pki_start_modeler()
     sessionFrustrum.ffoprb = pki_FFOPRB;
     sessionFrustrum.ffseek = pki_FFSEEK;
     sessionFrustrum.fftell = pki_FFTELL;
-
-#if defined (GO_OUTPUT_REQUIRED)
-    sessionFrustrum.gosgmt = pki_GOSGMT; // <- This is used to create face-iso (and hiddne line?) in Connect...but it's yucky and not thread safe...
+    sessionFrustrum.gosgmt = pki_GOSGMT; // Used to produce face-iso/hidden line/silhouettes...yucky and not thread safe...
     sessionFrustrum.goopsg = pki_GOOPSG;
     sessionFrustrum.goclsg = pki_GOCLSG;
     sessionFrustrum.gopixl = pki_GOPIXL;
     sessionFrustrum.gooppx = pki_GOOPPX;
     sessionFrustrum.goclpx = pki_GOCLPX;
-#endif
 
     PK_SESSION_register_frustrum (&sessionFrustrum);
 

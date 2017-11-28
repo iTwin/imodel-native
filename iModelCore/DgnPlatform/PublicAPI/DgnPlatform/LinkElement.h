@@ -330,7 +330,7 @@ public:
     //! @param[in] url URL that the link points to
     //! @param[in] label Display label of the link
     //! @param[in] description Description of the link
-    DGNPLATFORM_EXPORT explicit CreateParams(LinkModelR linkModel, Utf8CP url = nullptr, Utf8CP label = nullptr, Utf8CP description = nullptr);
+    DGNPLATFORM_EXPORT explicit CreateParams(InformationModelR linkModel, Utf8CP url = nullptr, Utf8CP label = nullptr, Utf8CP description = nullptr);
     };
 
     BE_JSON_NAME(url);
@@ -399,19 +399,19 @@ protected:
 
 public:
     //! Create a DgnCode using the specified model (uniqueness scope) and name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(LinkModelCR model, Utf8StringCR name);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(InformationModelCR model, Utf8StringCR name);
     //! Create a unique DgnCode for an InformationPartitionElement with the specified Subject as its parent
     //! @param[in] model The uniqueness scope for the DgnCode
     //! @param[in] baseName The base name for the CodeValue. A suffix will be appended (if necessary) to make it unique within the specified scope.
     //! @private
-    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(LinkModelCR model, Utf8CP baseName);
+    DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(InformationModelCR model, Utf8CP baseName);
 
     //! Create a RepositoryLink in memory
     //! @param[in] model Create the RepositoryLink in this DgnModel
     //! @param[in] url The URL of the RepositoryLink
     //! @param[in] name The name of the RepositoryLink that will be used to form its DgnCode
     //! @param[in] description The optional description of the RepositoryLink
-    DGNPLATFORM_EXPORT static RepositoryLinkPtr Create(LinkModelR model, Utf8CP url, Utf8CP name, Utf8CP description = nullptr);
+    DGNPLATFORM_EXPORT static RepositoryLinkPtr Create(InformationModelR model, Utf8CP url, Utf8CP name, Utf8CP description = nullptr);
 
     //! Get the RepositoryGuid property value
     BeSQLite::BeGuid GetRepositoryGuid() const {return m_repositoryGuid;}

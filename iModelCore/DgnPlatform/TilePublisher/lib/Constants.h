@@ -7,56 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/WString.h>
+#include <Logging/bentleylogging.h>
+#include <DgnPlatform/TileIO.h>
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
 USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_TILETREE_IO
 
-static const char s_gltfMagic[]              = "glTF";
-static const char s_b3dmMagic[]              = "b3dm";
-static const char s_compositeTileMagic[]     = "cmpt";
-static const char s_instanced3dMagic[]       = "i3dm";
-static const char s_pointCloudMagic[]        = "pnts";
-static const char s_vectorMagic[]            = "vctr";
-
-static const uint32_t s_b3dmVersion          = 1;
-static const uint32_t s_gltfVersion          = 1;
-static const uint32_t s_gltfSceneFormat      = 0;
-static const uint32_t s_compositeTileVersion = 1; 
-static const uint32_t s_instanced3dVersion   = 1;
-static const uint32_t s_pointCloudVersion    = 1;
-static const uint32_t s_vectorVersion        = 1;
-
-static const size_t   s_maxPointsPerTile = 250000;
-
-#define GLTF_LINES 1
-#define GLTF_LINE_STRIP 3
-#define GLTF_TRIANGLES 4
-#define GLTF_CULL_FACE 2884
-#define GLTF_DEPTH_TEST 2929
-#define GLTF_SIGNED_BYTE 0x1400
-#define GLTF_UNSIGNED_BYTE 0x1401
-#define GLTF_SIGNED_SHORT 5122
-#define GLTF_UNSIGNED_SHORT 5123
-#define GLTF_UINT32 5125
-#define GLTF_FLOAT 5126
-#define GLTF_RGB 6407
-#define GLTF_RGBA 6408
-#define GLTF_NEAREST 9728
-#define GLTF_LINEAR 9729
-#define GLTF_LINEAR_MIPMAP_LINEAR 9987
-#define GLTF_REPEAT 10497
-#define GLTF_CLAMP_TO_EDGE 33071
-#define GLTF_ARRAY_BUFFER 34962
-#define GLTF_ELEMENT_ARRAY_BUFFER 34963
-#define GLTF_FRAGMENT_SHADER 35632
-#define GLTF_VERTEX_SHADER 35633
-#define GLTF_INT_VEC2 0x8b53
-#define GLTF_INT_VEC3 0x8b54
-#define GLTF_FLOAT_VEC2 35664
-#define GLTF_FLOAT_VEC3 35665
-#define GLTF_FLOAT_VEC4 35666
-#define GLTF_FLOAT_MAT3 35675
-#define GLTF_FLOAT_MAT4 35676
-#define GLTF_SAMPLER_2D 35678
+static const size_t   s_maxPointsPerTile = 250000;
 
 #define JSON_Root "root"
 #define JSON_GeometricError "geometricError"
@@ -202,11 +161,15 @@ static std::string s_computeLighting = R"RAW_STRING(
         specular += lightIntensity * pow(specularDot, specularExponent);
         }
 
-    vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor)
+    vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor, mat4 proj)
         {
         vec3 normal = normalize(normalIn);
         vec3 toEye = normalize (position);
-        normal = faceforward(normal, toEye, normal);
+
+        if (proj[3][3] != 1.0) // perspective
+            normal = faceforward(normal, toEye, -normal);
+        else
+            normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);
 
         float ambient = 0.2;
         vec3 lightPos1 = vec3(-500, -200.0, 0.0);
@@ -235,11 +198,13 @@ static std::string s_untexturedFragShader = R"RAW_STRING(
     varying vec3 v_pos;
     uniform float u_specularExponent;
     uniform vec3 u_specularColor;
+    uniform mat4 u_proj;
+
 )RAW_STRING"
 + s_computeLighting + R"RAW_STRING(
     void main(void)
         {
-        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, v_color);
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, v_color, u_proj);
         }
 )RAW_STRING";
 
@@ -250,13 +215,15 @@ static std::string s_texturedFragShader = R"RAW_STRING(
     varying vec3 v_pos;
     uniform float u_specularExponent;
     uniform vec3 u_specularColor;
+    uniform mat4 u_proj;
+
 )RAW_STRING"
 + s_computeLighting + R"RAW_STRING(
     void main(void)
         {
         vec4 textureColor = texture2D(u_tex, v_texc);
         if (0.0 == textureColor.a) discard;
-        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor);
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor, u_proj);
         }
 )RAW_STRING";
 

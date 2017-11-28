@@ -196,7 +196,7 @@ virtual GeometricPrimitiveCPtr _GetGeometry() const = 0;
 //! @private
 virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
 //! @private
-virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR) const = 0;
+virtual Render::GraphicPtr _GetGraphic(ViewContextR) const = 0;
 //! @private
 virtual bool _GetFaceLocation(DPoint3dR, DPoint2dR) const = 0;
 //! @private
@@ -225,7 +225,7 @@ GeometricPrimitiveCPtr GetGeometry() const {return _GetGeometry();}
 GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
 
 //! @return A Render::Graphic representing this sub-entity.
-Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
+Render::GraphicPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
 //! Get pick location and uv parameter from a sub-entity representing a face. 
 //! @return false if the sub-entity was not created from a method where locate information was meaningful.
@@ -555,10 +555,11 @@ struct Create
     //! @param[out] out The new body.
     //! @param[in] profiles The cross sections profiles.
     //! @param[in] guides An optional set of guide curves for controlling the loft.
+    //! @param[in] periodic When true start profile is also used as end profile to create a periodic result in loft direction.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @note Requires a minimum input of 2 profiles, or 1 profile and 1 guide to produce a valid loft.
     //! @return SUCCESS if body was created.
-    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, uint32_t nodeId = 0L);
+    DGNPLATFORM_EXPORT static BentleyStatus BodyFromLoft(IBRepEntityPtr& out, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, bool periodic, uint32_t nodeId = 0L);
 
     //! Create a new sheet or solid body by sweeping a cross section profile along a path.
     //! @param[out] out The new body.

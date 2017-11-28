@@ -442,7 +442,7 @@ bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyGraphic& 
         if (0 != perFacePolyfaces.size())
             {
             AutoRestore<bool> savePolyEdges(&m_testPolyEdges, true);
-            Render::GraphicBuilder(graphic).AddPolyface(*perFacePolyfaces.front());
+            graphic.AddPolyface(*perFacePolyfaces.front());
             }
 
         break;
@@ -482,7 +482,7 @@ void _OutputGraphics(ViewContextR context) override
         if (geom.IsValid())
             {
             if (!graphic.IsValid())
-                graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
+                graphic = context.CreateWorldGraphic(iter.GetGeometryToWorld());
 
             geom->AddToGraphic(*graphic);
             break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
@@ -509,7 +509,7 @@ void _OutputGraphics(ViewContextR context) override
                 continue;
 
             if (!graphic.IsValid())
-                graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), partIter.GetGeometryToWorld()));
+                graphic = context.CreateWorldGraphic(partIter.GetGeometryToWorld());
 
             partGeom->AddToGraphic(*graphic);
             continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...

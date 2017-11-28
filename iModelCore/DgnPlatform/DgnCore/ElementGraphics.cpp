@@ -506,20 +506,20 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
     {
     if (nullptr == entryId || !entryId->IsValid())
         {
-        graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+        graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
         return;
         }
 
     CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
     primitive->SetId(newId.get());
 
-    graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+    graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, CheckStop* stopTester, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, ViewContext* stopTester, bool includeEdges, bool includeFaceIso)
     {
     GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
 
@@ -586,15 +586,16 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(1), entryId);
                 }
 
-            if (!includeFaceIso || nullptr == graphic.GetViewport() || !graphic.IsSimplifyGraphic())
-                return; // QVis handles cone silhouette display...
+            DgnViewportCP viewport = nullptr != stopTester ? stopTester->GetViewport() : nullptr;
+            if (!includeFaceIso || nullptr == viewport)
+                return;
 
             Transform   worldToLocalTrans;
 
             worldToLocalTrans.InverseOf(graphic.GetLocalToWorldTransform());
 
             DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
-            DMatrix4d   viewToWorld = graphic.GetViewport()->GetWorldToViewMap()->M1;
+            DMatrix4d   viewToWorld = viewport->GetWorldToViewMap()->M1;
             DMatrix4d   viewToLocal;
 
             viewToLocal.InitProduct(worldToLocal, viewToWorld);
@@ -854,7 +855,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR
                 if (!curve.IsValid())
                     continue;
 
-                graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+                graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
                 }
             }
         }
@@ -925,7 +926,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, IBRepEntityCR enti
                 }
 
             curve->TransformInPlace(entity.GetEntityTransform());
-            graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+            graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
             }
 
         PK_MEMORY_free(edgeTags);
@@ -1011,7 +1012,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 void _OutputGraphics(ViewContextR context) override
     {
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    auto graphic = context.CreateWorldGraphic();
 
     if (nullptr != m_entryId && m_entryId->IsValid())
         graphic->SetGeometryStreamEntryId(m_entryId);
@@ -1023,7 +1024,7 @@ void _OutputGraphics(ViewContextR context) override
     else if (m_entity)
         WireframeGeomUtil::Draw(*graphic, *m_entity, &context, m_includeEdges, m_includeFaceIso);
 
-    graphic->Close();
+    graphic->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1167,7 +1168,7 @@ void WireframeGeomUtil::DrawControlPolygon(MSBsplineSurfaceCR surface, Render::G
     graphic.AddPointString((int) poles.size(), &poles.front());
 
     poleParams.SetWidth(1);
-    poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+    poleParams.SetLinePixels(LinePixels::Code2);
     graphic.ActivateGraphicParams(poleParams, nullptr);
 
     size_t uNumPoles = surface.GetNumUPoles();
@@ -1264,7 +1265,7 @@ void WireframeGeomUtil::DrawControlPolygon(ICurvePrimitiveCR curve, Render::Grap
 
             // Display dotted style start/end tangent lines...
             poleParams.SetWidth(1);
-            poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+            poleParams.SetLinePixels(LinePixels::Code2);
             graphic.ActivateGraphicParams(poleParams, nullptr);
 
             tangentPoints[1] = fitCurve->fitPoints[0];
@@ -1310,7 +1311,7 @@ void WireframeGeomUtil::DrawControlPolygon(ICurvePrimitiveCR curve, Render::Grap
     graphic.AddPointString((int) poles.size(), &poles.front());
     
     poleParams.SetWidth(1);
-    poleParams.SetLinePixels(GraphicParams::LinePixels::Code2);
+    poleParams.SetLinePixels(LinePixels::Code2);
     graphic.ActivateGraphicParams(poleParams, nullptr);
 
     if (bcurve->params.closed)
@@ -1555,36 +1556,7 @@ bool ViewContext::_WantLineStyles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions)
     {
-    if (!lsSymb.GetUseStroker())
-        return false;
-
-    if (builder.IsSimplifyGraphic())
-        {
-        Graphic& graphic = builder;
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&graphic);
-
-        BeAssert(nullptr != sGraphic);
-        return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
-        }
-
-    double pixelSize = builder.GetPixelSize();
-    double maxWidth = (0.0 != pixelSize ? lsSymb.GetStyleWidth() : 0.0);
-
-    if (0.0 != maxWidth)
-        {
-        double pixelThreshold = 5.0;
-
-        if ((maxWidth / pixelSize) < pixelThreshold)
-            {
-            builder.UpdatePixelSizeRange(maxWidth/pixelThreshold, DBL_MAX);
-
-            return false; // Width not discernable...
-            }
-
-        builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
-        }
-
-    return true; // Width discernable (or no width)...
+    return lsSymb.GetUseStroker() && builder.WantStrokeLineStyle(lsSymb, facetOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**

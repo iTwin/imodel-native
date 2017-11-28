@@ -13,6 +13,7 @@
 #include "Lighting.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <cmath>
 
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
     struct HICON__;
@@ -21,8 +22,6 @@
 #endif
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
-
-struct GraphicBuilderPtr;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
@@ -48,7 +47,7 @@ private:
     uint32_t m_weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
     uint32_t m_styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
     uint32_t m_transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
-    uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed.
+    uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed. Only applies in wireframe mode.
     uint32_t m_textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t m_materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
     uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
@@ -170,6 +169,80 @@ public:
 };
 
 //=======================================================================================
+//! Overrides a subset of ViewFlags.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ViewFlagsOverrides
+{
+private:
+    enum PresenceFlag
+    {
+        kRenderMode,
+        kText,
+        kDimensions,
+        kPatterns,
+        kWeights,
+        kStyles,
+        kTransparency,
+        kFill,
+        kTextures,
+        kMaterials,
+        kVisibleEdges,
+        kHiddenEdges,
+        kSourceLights,
+        kCameraLights,
+        kSolarLight,
+        kShadows,
+        kClipVolume,
+        kConstructions,
+        kMonochrome,
+        kGeometryMap,
+        kHlineMaterialColors,
+        kEdgeMask,
+    };
+
+    uint32_t    m_present = 0;
+    ViewFlags   m_values;
+
+    void SetPresent(PresenceFlag flag) { m_present |= (1 << static_cast<uint32_t>(flag)); }
+    bool IsPresent(PresenceFlag flag) const { return 0 != (m_present & (1 << static_cast<uint32_t>(flag))); }
+public:
+    //! Construct a ViewFlagsOverrides which overrides nothing
+    ViewFlagsOverrides() { }
+
+    //! Construct a ViewFlagsOverrides which overrides all flags to match the specified ViewFlags
+    DGNPLATFORM_EXPORT explicit ViewFlagsOverrides(ViewFlags viewFlags);
+
+    void SetShowDimensions(bool val) { m_values.SetShowDimensions(val); SetPresent(kDimensions); }
+    void SetShowPatterns(bool val) { m_values.SetShowPatterns(val); SetPresent(kPatterns); }
+    void SetShowWeights(bool val) { m_values.SetShowWeights(val); SetPresent(kWeights); }
+    void SetShowStyles(bool val) { m_values.SetShowStyles(val); SetPresent(kStyles); }
+    void SetShowTransparency(bool val) { m_values.SetShowTransparency(val); SetPresent(kTransparency); }
+    void SetShowFill(bool val) { m_values.SetShowFill(val); SetPresent(kFill); }
+    void SetShowTextures(bool val) { m_values.SetShowTextures(val); SetPresent(kTextures); }
+    void SetShowMaterials(bool val) { m_values.SetShowMaterials(val); SetPresent(kMaterials); }
+    void SetShowSourceLights(bool val) { m_values.SetShowSourceLights(val); SetPresent(kSourceLights); }
+    void SetShowCameraLights(bool val) { m_values.SetShowCameraLights(val); SetPresent(kCameraLights); }
+    void SetShowSolarLight(bool val) { m_values.SetShowSolarLight(val); SetPresent(kSolarLight); }
+    void SetShowVisibleEdges(bool val) { m_values.SetShowVisibleEdges(val); SetPresent(kVisibleEdges); }
+    void SetShowHiddenEdges(bool val) { m_values.SetShowHiddenEdges(val); SetPresent(kHiddenEdges); }
+    void SetShowShadows(bool val) { m_values.SetShowShadows(val); SetPresent(kShadows); }
+    void SetShowClipVolume(bool val) { m_values.SetShowClipVolume(val); SetPresent(kClipVolume); }
+    void SetShowConstructions(bool val) { m_values.SetShowConstructions(val); SetPresent(kConstructions); }
+    void SetMonochrome(bool val) { m_values.SetMonochrome(val); SetPresent(kMonochrome); }
+    void SetIgnoreGeometryMap(bool val) { m_values.SetIgnoreGeometryMap(val); SetPresent(kGeometryMap); }
+    void SetUseHlineMaterialColors(bool val) { m_values.SetUseHlineMaterialColors(val); SetPresent(kHlineMaterialColors); }
+    void SetEdgeMask(int val) { m_values.SetEdgeMask(val); SetPresent(kEdgeMask); }
+    void SetRenderMode(RenderMode val) { m_values.SetRenderMode(val); SetPresent(kRenderMode); }
+
+    bool AnyOverridden() const { return 0 != m_present; }
+    void Clear() { m_present = 0; }
+
+    //! Apply these overrides to the supplied ViewFlags
+    DGNPLATFORM_EXPORT void Apply(ViewFlags& base) const;
+};
+
+//=======================================================================================
 //! A rendering task to be performed on the render thread.
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
@@ -178,24 +251,21 @@ struct Task : RefCounted<NonCopyableClass>
     //! The rendering operation a task performs.
     enum class Operation
     {
-        BeginHeal,
-        ChangeDecorations,
         ChangeDynamics,
         ChangeRenderPlan,
         ChangeScene,
-        ChangeTerrain,
         DefineGeometryTexture,
         DestroyTarget,
-        DrawFrame,
-        DrawProgressive,
-        FindNearestZ,
-        FinishHeal,
-        Heal,
         Initialize,
+        OverrideFeatureSymbology,
         ReadImage,
+        ReadPixels,
         Redraw,
+        RenderFrame,
         RenderTile,
         ResetTarget,
+        SetFlash,
+        SetHiliteSet,
     };
 
     //! The outcome of the processing of a Task.
@@ -277,7 +347,7 @@ struct NonSceneTask : Task
 };
 
 //=======================================================================================
-//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
+//! The Render::Queue is accessed through DgnViewport::RenderQueue(). It holds an array of Render::Tasks waiting
 //! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
 //! on the main (work) thread, and may only be processed on the Render thread.
 // @bsiclass                                                    Keith.Bentley   09/15
@@ -294,6 +364,7 @@ private:
     void Process();
     THREAD_MAIN_DECL Main(void*);
 
+    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op, Target* target) const;
 public:
     //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
     //! for the same Render::Target for which task._CanReplace(existing) returns true.
@@ -317,7 +388,9 @@ public:
     DGNPLATFORM_EXPORT bool IsIdle() const;
 
     DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
-    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
+    bool HasActiveOrPending(Task::Operation op) const { return HasActiveOrPending(op, nullptr); }
+
+    bool HasActiveOrPending(Task::Operation op, Target& target) const { return HasActiveOrPending(op, &target); }
 };
 
 //=======================================================================================
@@ -451,11 +524,12 @@ struct Texture : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/15
+//! Represents a texture and a description of how to map the texture to geometry.
+// @bsistruct                                                   Paul.Connelly   08/17
 //=======================================================================================
-struct Material : RefCounted<NonCopyableClass>
+struct TextureMapping
 {
-    enum class MapMode : int
+    enum class Mode : int
     {
         None              = -1,
         Parametric        = 0,
@@ -469,6 +543,50 @@ struct Material : RefCounted<NonCopyableClass>
         FrontProject      = 8, //<! Only valid for lights.
     };
 
+    struct Trans2x3
+    {
+        double m_val[2][3];
+        Trans2x3() {}
+        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+        Transform GetTransform() const;
+    };
+
+    struct Params
+    {
+        Trans2x3 m_textureMat2x3;
+        double m_textureWeight;
+        Mode m_mapMode;
+        bool m_worldMapping;
+
+        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0), double weight=1.0, bool worldMapping=false)
+            : m_textureMat2x3(trans), m_textureWeight(weight), m_mapMode(mode), m_worldMapping(worldMapping) { }
+
+        void SetMode(Mode val) {m_mapMode=val;}
+        void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
+        void SetTransform(Trans2x3* val) {m_textureMat2x3 = nullptr != val ? *val : Trans2x3();} //<! Set Texture 2x3 transform
+        void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
+
+        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
+    };
+
+private:
+    TextureCPtr m_texture;
+    Params      m_params;
+public:
+    TextureMapping(TextureCR texture, Params const& params) : m_texture(&texture), m_params(params) { }
+    explicit TextureMapping(TextureCP texture=nullptr) : m_texture(texture) { }
+    explicit TextureMapping(TextureCR texture) : TextureMapping(&texture) { }
+
+    bool IsValid() const { return m_texture.IsValid(); }
+    TextureCP GetTexture() const { return m_texture.get(); }
+    Params const& GetParams() const { return m_params; }
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Material : RefCounted<NonCopyableClass>
+{
     struct CreateParams
     {
         struct MatColor
@@ -505,40 +623,18 @@ struct Material : RefCounted<NonCopyableClass>
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
     };
 
-    struct Trans2x3
-    {
-        double m_val[2][3];
-        Trans2x3() {}
-        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
-        Transform GetTransform() const;
-    };
-
-    struct TextureMapParams
-    {
-        TextureMapParams() {}
-        double m_textureWeight = 1.0;
-        Trans2x3* m_textureMat2x3 = nullptr;
-        MapMode m_mapMode = MapMode::Parametric;
-        bool m_worldMapping = false;
-        DPoint3dCP m_basisX = nullptr;
-        DPoint3dCP m_basisY = nullptr;
-        DPoint3dCP m_basisZ = nullptr;
-        DPoint3dCP m_basisOrg = nullptr;
-        DPoint3dCP m_basisScale = nullptr;
-        void SetMapMode(MapMode val) {m_mapMode=val;}
-        void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
-        void SetTransform(Trans2x3* val) {m_textureMat2x3 = val;} //<! Set Texture 2x3 transform
-        void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
-        void SetBasis(DPoint3dCP x, DPoint3dCP y, DPoint3dCP z, DPoint3dCP org, DPoint3dCP scale) {m_basisX = x; m_basisY = y; m_basisZ = z; m_basisOrg = org; m_basisScale = scale;}
-    };
-
 protected:
-    bvector<TextureCPtr> m_mappedTextures;
-    void AddMappedTexture(TextureCR texture) {m_mappedTextures.push_back(&texture);}
+    TextureMapping  m_textureMapping;
+
+    //! Override to perform additional logic when texture mapping is set, if necessary.
+    virtual void _MapTexture() { }
 
 public:
     //! Map a texture to this material
-    virtual void _MapTexture(Texture const& texture, TextureMapParams const& params = TextureMapParams()) = 0;
+    void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping; _MapTexture();}
+
+    bool HasTextureMapping() const {return m_textureMapping.IsValid();}
+    TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
 };
 
 //=======================================================================================
@@ -547,7 +643,7 @@ public:
 //=======================================================================================
 struct LineStyleParams
 {
-    uint32_t    modifiers;      /* see STYLEMOD_... above              */
+    uint32_t    modifiers;      /* see STYLEMOD_... in LineStyleResource.r.h */
     uint32_t    reserved;
     double      scale;          /* Applied to all length values        */
     double      dashScale;      /* Applied to adjustable dash strokes  */
@@ -719,6 +815,7 @@ protected:
 
     DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
 
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 public:
     DGNPLATFORM_EXPORT void CopyFrom(LineStyleInfoCR);
 
@@ -829,6 +926,7 @@ public:
 
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(GradientSymbCR rhs) const;
 
     uint32_t GetNKeys() const {return m_nKeys;}
     Mode GetMode() const {return m_mode;}
@@ -836,15 +934,20 @@ public:
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
+    bool GetIsOutlined() const {return 0 != (m_flags & Outline); }
     void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index]; value = m_values[index];}
     void SetMode(Mode mode) {m_mode = mode;}
     void SetFlags(Flags flags) {m_flags = flags;}
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
+    BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
     DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
     ColorDef MapColor(double value) const;
-    Image   GetImage(uint32_t width, uint32_t height) const;
+    DGNPLATFORM_EXPORT bool HasTransparency() const;
+    DGNPLATFORM_EXPORT Image GetImage(uint32_t width, uint32_t height) const;
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& json);
 };
 
 //=======================================================================================
@@ -993,6 +1096,26 @@ public:
 };
 
 //=======================================================================================
+//! Built in line code patterns
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+enum class LinePixels : uint32_t
+    {
+    Solid = 0,
+    Code0 = Solid,      // 0
+    Code1 = 0x80808080, // 1
+    Code2 = 0xf8f8f8f8, // 2
+    Code3 = 0xffe0ffe0, // 3
+    Code4 = 0xfe10fe10, // 4
+    Code5 = 0xe0e0e0e0, // 5
+    Code6 = 0xf888f888, // 6
+    Code7 = 0xff18ff18, // 7
+    HiddenLine = 0xcccccccc,  // hidden lines 
+    Invisible = 0x00000001, // nearly invisible
+    Invalid = 0xffffffff,
+    };
+
+//=======================================================================================
 //! The "cooked" material and symbology for a Render::Graphic. This determines the appearance
 //! (e.g. texture, color, width, linestyle, etc.) used to draw Geometry.
 //=======================================================================================
@@ -1013,27 +1136,11 @@ private:
 
 public:
 
-    enum class LinePixels : uint32_t
-        {
-        Solid = 0,
-        Code0 = Solid,      // 0
-        Code1 = 0x80808080, // 1
-        Code2 = 0xf8f8f8f8, // 2
-        Code3 = 0xffe0ffe0, // 3
-        Code4 = 0xfe10fe10, // 4
-        Code5 = 0xe0e0e0e0, // 5
-        Code6 = 0xf888f888, // 6
-        Code7 = 0xff18ff18, // 7
-        HiddenLine = 0xcccccccc,  // hidden lines 
-        Invisible = 0x00000001, // nearly invisible
-        Invalid = 0xffffffff,
-        };
-
     void Cook(GeometryParamsCR, ViewContextR);
 
     void Init() {*this = GraphicParams();}
     GraphicParams() {}
-    DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
+    DGNPLATFORM_EXPORT GraphicParams(GraphicParamsCR rhs);
 
     //! @name Query Methods
     //@{
@@ -1083,7 +1190,7 @@ public:
     //@{
 
     //! Set the current line color for this GraphicParams.
-    //! @param[in] lineColor the new TBGR line color for this GraphicParams.
+    //! @param[in] lineColor the new TBGR line color for this GraphicParams.     a
     void SetLineColor(ColorDef lineColor) {m_lineColor = lineColor;}
     void SetLineTransparency(Byte transparency) {m_lineColor.SetAlpha(transparency);}
 
@@ -1123,6 +1230,24 @@ public:
     void SetMaterial(MaterialP material) {m_material = material;}
 
     //@}
+
+    static GraphicParams FromSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, LinePixels linePixels=LinePixels::Solid)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetLineColor(lineColor);
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetWidth(lineWidth);
+        graphicParams.SetLinePixels(linePixels);
+        return graphicParams;
+        }
+
+    static GraphicParams FromBlankingFill(ColorDef fillColor)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetIsBlankingRegion(true);
+        return graphicParams;
+        }
 };
 
 //=======================================================================================
@@ -1170,7 +1295,7 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
-    void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
+    void SetLinePixels(LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetLineTexture(TextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
     void SetTrueWidthStart(double width) {m_matSymb.SetTrueWidthStart(width); m_flags |= FLAGS_TrueWidth;}
@@ -1184,95 +1309,83 @@ public:
 struct Graphic : RefCounted<NonCopyableClass>
 {
     friend struct ViewContext;
-    struct CreateParams
-    {
-        DgnViewportCP m_vp;
-        Transform m_placement;
-        double m_pixelSize;
-        CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
-    };
-
 protected:
-    DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
-    double m_pixelSize; //! Pixel size to use for stroke
-    double m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
-    double m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
-    Transform m_localToWorldTransform;
+    DgnDbR      m_dgndb;
 
     virtual ~Graphic() {}
-    virtual bool _IsSimplifyGraphic() const {return false;}
-    virtual StatusInt _EnsureClosed() = 0;
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
+    explicit Graphic(DgnDbR db) : m_dgndb(db) {}
 
-    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
-        {
-        if (nullptr != m_vp && m_vp != &vp)
-            return false;
-
-        if (0.0 == metersPerPixel || (0.0 == m_minSize && 0.0 == m_maxSize))
-            return true;
-
-        return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
-        }
-
-    bool IsSpecificToViewport(DgnViewportCR vp) const {return nullptr != m_vp && m_vp == &vp;}
-    DgnViewportCP GetViewport() const {return m_vp;}
-
-    //! Get current local to world transform (ex. GeometrySource placement transform).
-    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
-
-    double GetPixelSize() const {return m_pixelSize;}
-    void GetPixelSizeRange(double& min, double& max) const {min = m_minSize; max = m_maxSize;}
-    void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
-    void UpdatePixelSizeRange(double newMin, double newMax) //! Update min/max only if more restrictive than current value.
-        {
-        if (newMin > 0.0)
-            m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
-        if (newMax > 0.0)
-            m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
-        }
-
-    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
-    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
-    StatusInt EnsureClosed() {return _EnsureClosed();} //!< Called when this Graphic is added to a display list, to ensure it is fully constructed and ready for display
+    DgnDbR GetDgnDb() const { return m_dgndb; }
 };
 
 //=======================================================================================
-//! Interface adopted by an object that can build a Graphic from the Graphic primitives.
-// @bsiclass
+//! Exposes methods for constructing a Graphic from geometric primitives.
+// @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
-struct IGraphicBuilder
+struct GraphicBuilder : RefCountedBase
 {
-    //=======================================================================================
-    //! Information needed to draw a triangle mesh
-    // @bsiclass                                                    Keith.Bentley   06/16
-    //=======================================================================================
-    struct TriMeshArgs
-    {
-        int32_t m_numIndices = 0;
-        int32_t const* m_vertIndex = nullptr;
-        int32_t m_numPoints = 0;
-        FPoint3d const* m_points= nullptr;
-        FPoint3d const* m_normals= nullptr;
-        FPoint2d const* m_textureUV= nullptr;
-        TexturePtr m_texture;
-        int32_t m_flags = 0; // don't generate normals
-        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
-    };
-
     struct TileCorners
     {
         DPoint3d m_pts[4];
     };
 
+    //! Parameters used to construct a GraphicBuilder.
+    struct CreateParams
+    {
+    private:
+        DgnDbR          m_dgndb;
+        Transform       m_placement;
+        DgnViewportP    m_viewport;
+        bool            m_worldCoords = true;
+
+        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, bool world) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_worldCoords(world) { }
+    public:
+        //! Create params for a graphic in world coordinates, not associated with any viewport.
+        //! This function is chiefly used for tile generation code as the tolerance for faceting the graphic's geometry is independent of any viewport.
+        //! If this function is used outside of tile generation context, a default coarse tolerance will be used.
+        //! To get a tolerance appropriate to a viewport, use the overload accepting a DgnViewport.
+        static CreateParams World(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
+            { return CreateParams(db, placement, vp, true); }
+
+        //! Create params for a graphic in world coordinates associated with a viewport.
+        //! This function is chiefly used for code which produces world decorations and dynamics.
+        //! The faceting tolerance will be computed from the finished graphic's range and the viewport.
+        DGNPLATFORM_EXPORT static CreateParams World(DgnViewportR vp, TransformCR placement=Transform::FromIdentity());
+
+        //! Create params for a view decoration (defined in view coordinates).
+        static CreateParams View(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
+            { return CreateParams(db, placement, vp, false); }
+
+        //! Create params for a view decoration (defined in view coordinates).
+        DGNPLATFORM_EXPORT static CreateParams View(DgnViewportR vp, TransformCR placement=Transform::FromIdentity());
+
+        //! Create params for a subgraphic
+        CreateParams SubGraphic(TransformCR placement=Transform::FromIdentity()) const
+            { return CreateParams(m_dgndb, placement, m_viewport, m_worldCoords); }
+
+        DgnDbR GetDgnDb() const { return m_dgndb; }
+        TransformCR GetPlacement() const { return m_placement; }
+        DgnViewportP GetViewport() const { return m_viewport; }
+        bool IsWorldCoordinates() const { return m_worldCoords; }
+        bool IsViewCoordinates() const { return !IsWorldCoordinates(); }
+
+        void SetPlacement(TransformCR tf) { m_placement=tf; }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(CreateParams);
+
+    enum class AsThickenedLine { No=0, Yes=1 };
+
 protected:
-    friend struct GraphicBuilder;
+    CreateParams    m_createParams;
+
+    GraphicBuilder(CreateParams const& params) : m_createParams(params) { }
 
     virtual bool _IsOpen() const = 0;
-    virtual StatusInt _Close() = 0;
+    virtual GraphicPtr _Finish() = 0;
     virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const {return nullptr;}
     virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP) {}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
@@ -1282,8 +1395,8 @@ protected:
     virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
     virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) = 0;
     virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) = 0;
-    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) = 0;
-    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) = 0;
+    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine asThickenedLine) = 0;
+    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) = 0;
     virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) = 0;
     virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) = 0;
     virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
@@ -1293,94 +1406,86 @@ protected:
     virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
-    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
+    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
-    virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
-};
+    virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
+    virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
+    DGNPLATFORM_EXPORT virtual bool _WantPreBakedBody(IBRepEntityCR body); // By default, returns true if parasolid is not supported, or if the body contains no curved faces or edges.
 
-//=======================================================================================
-//! Exposes methods for constructing a Graphic from graphic primitives.
-// @bsistruct                                                   Paul.Connelly   05/16
-//=======================================================================================
-struct GraphicBuilder
-{
-    typedef IGraphicBuilder::TriMeshArgs TriMeshArgs;
-    typedef IGraphicBuilder::TileCorners TileCorners;
-private:
-    friend struct GraphicBuilderPtr;
-
-    GraphicPtr m_graphic;
-    IGraphicBuilderP m_builder;
-
-    GraphicBuilder() : m_builder(nullptr) {}
-    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) {}
-    template<typename T> GraphicBuilder(T* t) : m_graphic(t), m_builder(t) {}
-
-    bool IsValid() const {return m_graphic.IsValid();}
+    virtual void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurve(curve, filled); }
+    virtual void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2d(curve, filled, zDepth); }
+    virtual void _AddCurveVectorR(CurveVectorR curves, bool isFilled) { _AddCurveVector(curves, isFilled); }
+    virtual void _AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) { _AddCurveVector2d(curves, isFilled, zDepth); }
+    virtual void _AddSolidPrimitiveR(ISolidPrimitiveR primitive) { _AddSolidPrimitive(primitive); }
+    virtual void _AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) { _AddBSplineSurface(surface); }
+    virtual void _AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) { _AddPolyface(meshData, filled); }
+    virtual void _AddBodyR(IBRepEntityR body) { _AddBody(body); }
+    virtual void _AddTextStringR(TextStringR text) { _AddTextString(text); }
+    virtual void _AddTextString2dR(TextStringR text, double zDepth) { _AddTextString2d(text, zDepth); }
 public:
-    GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) {}
-    template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) {}
+    // NOTE: subToGraphic is provided to allow stroking in world coords...
+    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
 
-    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
+    GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
 
-    operator Graphic&() {BeAssert(m_graphic.IsValid()); return *m_graphic;}
-    DgnViewportCP GetViewport() const {return m_graphic->GetViewport();}
-    TransformCR GetLocalToWorldTransform() const {return m_graphic->GetLocalToWorldTransform();}
-    double GetPixelSize() const {return m_graphic->GetPixelSize();}
-    void GetPixelSizeRange(double& min, double& max) const {m_graphic->GetPixelSizeRange(min, max);}
-    void SetPixelSizeRange(double min, double max) {m_graphic->SetPixelSizeRange(min, max);}
-    void UpdatePixelSizeRange(double newMin, double newMax) {m_graphic->UpdatePixelSizeRange(newMin, newMax);}
-    bool IsSimplifyGraphic() const {return m_graphic->IsSimplifyGraphic();}
+    CreateParams const& GetCreateParams() const {return m_createParams;}
+    DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
+    TransformCR GetLocalToWorldTransform() const {return m_createParams.GetPlacement();}
+    DgnViewportP GetViewport() const {return m_createParams.GetViewport();}
+    bool IsWorldCoordinates() const {return m_createParams.IsWorldCoordinates();}
+    bool IsViewCoordinates() const {return m_createParams.IsViewCoordinates();}
+    bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
+    bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
+    bool WantPreBakedBody(IBRepEntityCR body) { return _WantPreBakedBody(body); }
 
-    StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
-    bool IsOpen() const {return m_builder->_IsOpen();}
+    bool IsOpen() const {return _IsOpen();}
 
     //! Get the current GeometryStreamEntryId.
     //! @return A GeometryStream entry identifier for the graphics that are currently being drawn.
-    GeometryStreamEntryIdCP GetGeometryStreamEntryId() const {return m_builder->_GetGeometryStreamEntryId();}
+    GeometryStreamEntryIdCP GetGeometryStreamEntryId() const {return _GetGeometryStreamEntryId();}
 
     //! Set the current GeometryStreamEntryId.
-    void SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {m_builder->_SetGeometryStreamEntryId(entry);}
+    void SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {_SetGeometryStreamEntryId(entry);}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in] graphicParams The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
     //! @param[in] geomParams The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
-    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {m_builder->_ActivateGraphicParams(graphicParams, geomParams);}
+    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
     //! @param[in] numPoints Number of vertices in points array.
     //! @param[in] points Array of vertices in the line string.
-    void AddLineString(int numPoints, DPoint3dCP points) {m_builder->_AddLineString(numPoints, points);}
+    void AddLineString(int numPoints, DPoint3dCP points) {_AddLineString(numPoints, points);}
 
     //! Draw a 2D line string.
     //! @param[in] numPoints Number of vertices in points array.
     //! @param[in] points Array of vertices in the line string.
     //! @param[in] zDepth Z depth value in local coordinates.
-    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddLineString2d(numPoints, points, zDepth);}
+    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddLineString2d(numPoints, points, zDepth);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in] numPoints Number of vertices in points array.
     //! @param[in] points Array of vertices in the point string.
-    void AddPointString(int numPoints, DPoint3dCP points) {m_builder->_AddPointString(numPoints, points);}
+    void AddPointString(int numPoints, DPoint3dCP points) {_AddPointString(numPoints, points);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in] numPoints Number of vertices in points array.
     //! @param[in] points Array of vertices in the point string.
     //! @param[in] zDepth Z depth value.
-    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddPointString2d(numPoints, points, zDepth);}
+    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddPointString2d(numPoints, points, zDepth);}
 
     //! Draw a closed 3D shape.
     //! @param[in] numPoints Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
     //!                      additional vertex will be added to close the shape.
     //! @param[in] points Array of vertices of the shape.
     //! @param[in] filled If true, the shape will be drawn filled.
-    void AddShape(int numPoints, DPoint3dCP points, bool filled) {m_builder->_AddShape(numPoints, points, filled);}
+    void AddShape(int numPoints, DPoint3dCP points, bool filled) {_AddShape(numPoints, points, filled);}
 
     //! Draw a 2D shape.
     //! @param[in] numPoints Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -1388,77 +1493,72 @@ public:
     //! @param[in] points Array of vertices of the shape.
     //! @param[in] zDepth Z depth value.
     //! @param[in] filled If true, the shape will be drawn filled.
-    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {m_builder->_AddShape2d(numPoints, points, filled, zDepth);}
+    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {_AddShape2d(numPoints, points, filled, zDepth);}
 
     //! Draw a 3D elliptical arc or ellipse.
     //! @param[in] ellipse arc data.
     //! @param[in] isEllipse If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in] filled If true, and isEllipse is also true, then draw ellipse filled.
-    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {m_builder->_AddArc(ellipse, isEllipse, filled);}
+    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {_AddArc(ellipse, isEllipse, filled);}
 
     //! Draw a 2D elliptical arc or ellipse.
     //! @param[in] ellipse arc data.
     //! @param[in] isEllipse If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in] filled If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in] zDepth Z depth value
-    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {m_builder->_AddArc2d(ellipse, isEllipse, filled, zDepth);}
+    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {_AddArc2d(ellipse, isEllipse, filled, zDepth);}
 
     //! Draw a BSpline curve.
-    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {m_builder->_AddBSplineCurve(curve, filled);}
+    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {_AddBSplineCurve(curve, filled);}
 
     //! Draw a BSpline curve as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {m_builder->_AddBSplineCurve2d(curve, filled, zDepth);}
+    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {_AddBSplineCurve2d(curve, filled, zDepth);}
 
     //! Draw a curve vector.
-    void AddCurveVector(CurveVectorCR curves, bool isFilled) {m_builder->_AddCurveVector(curves, isFilled);}
+    void AddCurveVector(CurveVectorCR curves, bool isFilled) {_AddCurveVector(curves, isFilled);}
 
     //! Draw a curve vector as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {m_builder->_AddCurveVector2d(curves, isFilled, zDepth);}
+    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_AddCurveVector2d(curves, isFilled, zDepth);}
 
     //! Draw a light-weight surface or solid primitive.
     //! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
-    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {m_builder->_AddSolidPrimitive(primitive);}
+    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {_AddSolidPrimitive(primitive);}
 
     //! Draw a BSpline surface.
-    void AddBSplineSurface(MSBsplineSurfaceCR surface) {m_builder->_AddBSplineSurface(surface);}
+    void AddBSplineSurface(MSBsplineSurfaceCR surface) {_AddBSplineSurface(surface);}
 
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
-    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {m_builder->_AddPolyface(meshData, filled);}
-
-    void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
-
-    //! Draw a 3D point cloud.
-    void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}
+    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    void AddBody(IBRepEntityCR entity) {m_builder->_AddBody(entity);}
+    void AddBody(IBRepEntityCR entity) {_AddBody(entity);}
 
     //! Draw a series of Glyphs.
     //! @param[in] text Text drawing parameters
-    void AddTextString(TextStringCR text) {m_builder->_AddTextString(text);}
+    void AddTextString(TextStringCR text) {_AddTextString(text);}
 
     //! Draw a series of Glyphs with display priority.
     //! @param[in] text   Text drawing parameters
     //! @param[in] zDepth Priority value in 2d
-    void AddTextString2d(TextStringCR text, double zDepth) {m_builder->_AddTextString2d(text, zDepth);}
+    void AddTextString2d(TextStringCR text, double zDepth) {_AddTextString2d(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
-    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {m_builder->_AddTriStrip(numPoints, points, usageFlags);}
+    //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
+    void AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine asThickenedLine) {_AddTriStrip(numPoints, points, asThickenedLine);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in] numPoints Number of vertices in \c points array.
     //! @param[in] points Array of vertices.
     //! @param[in] zDepth Z depth value.
-    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {m_builder->_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
+    //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) {_AddTriStrip2d(numPoints, points, asThickenedLine, zDepth);}
 
     //! @private
-    void AddTile(TextureCR tile, TileCorners const& corners) {m_builder->_AddTile(tile, corners);}
+    void AddTile(TextureCR tile, TileCorners const& corners) {_AddTile(tile, corners);}
 
     //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
@@ -1502,78 +1602,783 @@ public:
         }
 
     //! Draw OLE object.
-    void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
+    void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {m_builder->_AddSubGraphic(graphic, subToGraphic, params, clip);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {_AddSubGraphic(graphic, subToGraphic, params, clip);}
 
     //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
-    void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
+    void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, LinePixels linePixels=LinePixels::Solid)
         {
-        GraphicParams graphicParams;
-        graphicParams.SetLineColor(lineColor);
-        graphicParams.SetFillColor(fillColor);
-        graphicParams.SetWidth(lineWidth);
-        graphicParams.SetLinePixels(linePixels);
-        ActivateGraphicParams(graphicParams);
+        ActivateGraphicParams(GraphicParams::FromSymbology(lineColor, fillColor, lineWidth, linePixels));
         }
 
     //! Set blanking fill symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
     void SetBlankingFill(ColorDef fillColor)
         {
-        GraphicParams graphicParams;
-        graphicParams.SetFillColor(fillColor);
-        graphicParams.SetIsBlankingRegion(true);
-        ActivateGraphicParams(graphicParams);
+        ActivateGraphicParams(GraphicParams::FromBlankingFill(fillColor));
+        }
+
+    // The following potentially take ownership of and/or modify the input graphic primitives.
+    // Callers should prefer these functions when they do not need to preserve the input primitives.
+    // Implementations should implement these functions if they would otherwise clone or take ownership of the input primitives.
+    // The default implementations forward to the corresponding function taking const primitives.
+    void AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurveR(curve, filled); }
+    void AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2dR(curve, filled, zDepth); }
+    void AddCurveVectorR(CurveVectorR curves, bool isFilled) { _AddCurveVectorR(curves, isFilled); }
+    void AddCurveVector2dR(CurveVectorR curves, bool isFilled, double zDepth) { _AddCurveVector2dR(curves, isFilled, zDepth); }
+    void AddSolidPrimitiveR(ISolidPrimitiveR primitive) { _AddSolidPrimitiveR(primitive); }
+    void AddBSplineSurfaceR(RefCountedMSBsplineSurfaceR surface) { _AddBSplineSurfaceR(surface); }
+    void AddPolyfaceR(PolyfaceHeaderR meshData, bool filled = false) { _AddPolyfaceR(meshData, filled); }
+    void AddBodyR(IBRepEntityR body) { _AddBodyR(body); }
+    void AddTextStringR(TextStringR text) { _AddTextStringR(text); }
+    void AddTextString2dR(TextStringR text, double zDepth) { _AddTextString2dR(text, zDepth); }
+};
+
+//=======================================================================================
+//! Defines non-uniform color for a graphic primitive.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ColorIndex
+{
+    struct NonUniform
+    {
+        uint32_t const* m_colors; // RGBT color values (see ColorDef), or nullptr if uniform color.
+        uint16_t const* m_indices; // per-vertex indices into m_colors
+        bool            m_hasAlpha; // true if any value in m_colors has transparency
+
+        void Set(uint32_t const* colors, uint16_t const* indices, bool hasAlpha)
+            {
+            m_colors = colors;
+            m_indices = indices;
+            m_hasAlpha = hasAlpha;
+            }
+    };
+
+    union
+    {
+        uint32_t    m_uniform;    // if m_numColors == 1
+        NonUniform  m_nonUniform; // if m_numColors > 1
+    };
+
+    uint16_t        m_numColors;
+
+    ColorIndex() { Reset(); }
+
+    bool IsValid() const { return m_numColors > 0; }
+    bool IsUniform() const { BeAssert(m_numColors > 0); return 1 == m_numColors; }
+    bool HasAlpha() const { return IsUniform() ? 0 != (m_uniform & 0xff000000) : m_nonUniform.m_hasAlpha; }
+
+    void Reset() { SetUniform(ColorDef::White()); }
+    void SetUniform(ColorDef color) { SetUniform(color.GetValue()); }
+    void SetUniform(uint32_t color) { m_numColors = 1; m_uniform = color; }
+    void SetNonUniform(uint16_t numColors, uint32_t const* colors, uint16_t const* indices, bool hasAlpha)
+        {
+        BeAssert(numColors > 1);
+        m_numColors = numColors;
+        m_nonUniform.Set(colors, indices, hasAlpha);
         }
 };
 
 //=======================================================================================
-//! A smart-pointer to a GraphicBuilder object.
-// @bsistruct                                                   Paul.Connelly   05/16
+//! Describes 0 or more Features within a graphic primitive.
+//! The featureIDs refer to indices into a FeatureTable associated with the Graphic
+//! containing the primitive.
+// @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct GraphicBuilderPtr
+struct FeatureIndex
 {
-private:
-    GraphicBuilder  m_builder;
-public:
-    GraphicBuilderPtr() {}
-    GraphicBuilderPtr(GraphicBuilderP builder) : m_builder(builder) {}
+    enum class Type
+    {
+        Empty, //!< No Features defined for this primitive. Union members invalid.
+        Uniform, //!< One Feature defined for this primitive. m_featureID holds the feature ID.
+        NonUniform //!< Multiple Features defined for this primitive. m_featureIDs holds per-vertex feature IDs.
+    };
 
-    template<typename T> GraphicBuilderPtr(T* impl) : m_builder(impl) {}
-    operator GraphicPtr() {return m_builder.m_graphic;}
+    Type    m_type = Type::Empty;
+    union
+        {
+        uint32_t        m_featureID;        // If m_numFeatures == 1, the ID of the single Feature within this primitive
+        uint32_t const* m_featureIDs;       // If m_numFeatures > 1, per-vertex Feature IDs
+        };
 
-    bool IsValid() const {return m_builder.IsValid();}
-    bool IsNull() const {return !IsValid();}
-    GraphicBuilderP get() {return IsValid() ? &m_builder : nullptr;}
-    GraphicBuilderP operator->() {return get();}
-    GraphicBuilderR operator*() {BeAssert(IsValid()); return *get();}
-    GraphicP GetGraphic() {return m_builder.m_graphic.get();}
+    FeatureIndex() { m_featureIDs = nullptr; }
+
+    constexpr bool IsUniform() const { return Type::Uniform == m_type; }
+    constexpr bool IsEmpty() const { return Type::Empty == m_type; }
+
+    void Reset() { *this = FeatureIndex(); }
 };
 
 //=======================================================================================
-//! An ordered list of RefCountedPtrs to a Render::Graphics, plus an override for each one.
-// @bsiclass
+//! Represents a normal vector compressed to a 16-bit unsigned integer value. This is
+//! a lossy compression.
+//! Oct encoding is a compact representation of unit length vectors.
+//! The 'oct' encoding is described in "A Survey of Efficient Representations of Independent Unit Vectors",
+//! Cigolle et al 2014: http://jcgt.org/published/0003/02/01/
+//! @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+struct OctEncodedNormal
+{
+private:
+    uint16_t    m_value;
+
+    static constexpr double Clamp(double val, double minVal, double maxVal) { return val < minVal ? minVal : (val > maxVal ? maxVal : val); }
+    static constexpr double SignNotZero(double val) { return val < 0.0 ? -1.0 : 1.0; }
+    static constexpr uint16_t ToUInt16(double val) { return static_cast<uint16_t>(.5 + (Clamp(val, -1.0, 1.0) * 0.5 + 0.5) * 255.0); }
+
+    static DVec3d Decode(uint16_t value)
+        {
+        auto ex = static_cast<double>(value & 0xff),
+             ey = static_cast<double>(value >> 8);
+        ex = ex / 255.0 * 2.0 - 1.0;
+        ey = ey / 255.0 * 2.0 - 1.0;
+
+        DVec3d n = DVec3d::From(ex, ey, 1.0 - (std::fabs(ex) + std::fabs(ey)));
+        if (n.z < 0.0)
+            {
+            double x = n.x, y = n.y;
+            n.x = (1.0 - std::fabs(y)) * SignNotZero(x);
+            n.y = (1.0 - std::fabs(x)) * SignNotZero(y);
+            }
+
+        n.Normalize();
+        return n;
+        }
+
+    static uint16_t Encode(DVec3dCR vec)
+        {
+        VerifyNormalized(vec);
+        double denom = std::fabs(vec.x) + std::fabs(vec.y) + std::fabs(vec.z),
+               rx = vec.x / denom,
+               ry = vec.y / denom;
+        if (vec.z < 0)
+            {
+            double x = rx, y = ry;
+            rx = (1.0 - std::fabs(y)) * SignNotZero(x);
+            ry = (1.0 - std::fabs(x)) * SignNotZero(y);
+            }
+
+        uint16_t value = ToUInt16(ry) << 8 | ToUInt16(rx);
+        VerifyEncoded(value, vec);
+
+        return value;
+        }
+
+#if !defined(NDEBUG)
+    DGNPLATFORM_EXPORT static void VerifyNormalized(DVec3dCR);
+    DGNPLATFORM_EXPORT static void VerifyEncoded(uint16_t encoded, DVec3dCR input);
+#else
+    static void VerifyNormalized(DVec3dCR) { }
+    static void VerifyEncoded(uint16_t, DVec3dCR) { }
+#endif
+public:
+    //! Directly initialize from a previously-computed oct-encoding.
+    void InitFrom(uint16_t value) { m_value = value; }
+
+    //! Initialize from a vector. The input vector must be normalized. This function will not attempt to normalize it for you.
+    void InitFrom(DVec3dCR vec)
+        {
+        m_value = Encode(vec);
+        }
+
+    //! Initialize from a vector. The input vector must be normalized. This function will not attempt to normalize it for you.
+    void InitFrom(FVec3dCR vec) { InitFrom(DVec3d::From(vec)); }
+
+    //! Returns an OctEncodedNormal computed from the input vector. The input vector must be normalized beforehand.
+    static OctEncodedNormal From(DVec3dCR vec) { OctEncodedNormal n; n.InitFrom(vec); return n; }
+    //! Returns an OctEncodedNormal initialized from a previously-computed oct-encoding.
+    static OctEncodedNormal From(uint16_t val) { OctEncodedNormal n; n.InitFrom(val); return n; }
+    //! Returns an OctEncodedNormal computed from the input vector. The input vector must be normalized beforehand.
+    static OctEncodedNormal From(FVec3dCR vec) { return From(DVec3d::From(vec)); }
+
+    //! Returns the 16-bit encoded value.
+    uint16_t Value() const { return m_value; }
+
+    //! Returns the decoded normalized vector represented by this OctEncodedNormal.
+    DVec3d Decode() const { return Decode(Value()); }
+    //! Returns the decoded normalized vector represented by this OctEncodedNormal.
+    FVec3d Decode32() const { return FVec3d::From(Decode(Value())); }
+
+    bool operator==(OctEncodedNormal rhs) const { return Value() == rhs.Value(); }
+    bool operator!=(OctEncodedNormal rhs) const { return !(*this == rhs); }
+    bool operator<(OctEncodedNormal rhs) const { return Value() < rhs.Value(); }
+    bool operator>(OctEncodedNormal rhs) const { return Value() > rhs.Value(); }
+    OctEncodedNormalR operator=(OctEncodedNormal rhs) { m_value = rhs.Value(); return *this; }
+};
+
+typedef bvector<OctEncodedNormal> OctEncodedNormalList;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalList)
+
+typedef bpair<OctEncodedNormal,OctEncodedNormal> OctEncodedNormalPair;
+typedef bvector<OctEncodedNormalPair> OctEncodedNormalPairList;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPair)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPairList)
+
+//! Common operations for QPoint2d and QPoint3d
+namespace Quantization
+{
+    constexpr double RangeScale() { return static_cast<double>(0xffff); }
+
+    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+
+    inline bool IsInRange(double quantizedPos)
+        {
+        return quantizedPos >= 0.0 && quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
+        }
+
+    constexpr double QuantizeDouble(double pos, double origin, double scale)
+        {
+        return 0.5 + (pos - origin) * scale;
+        }
+
+    inline bool IsQuantizable(double pos, double origin, double scale)
+        {
+        return IsInRange(QuantizeDouble(pos, origin, scale));
+        }
+
+    inline uint16_t Quantize(double pos, double origin, double scale)
+        {
+        double qpos = QuantizeDouble(pos, origin, scale);
+        BeAssert(IsInRange(qpos));
+        return static_cast<uint16_t>(qpos);
+        }
+
+    constexpr double Unquantize(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? origin : origin + pos/scale;
+        }
+
+    constexpr double UnquantizeAboutCenter(uint16_t pos, double origin, double scale)
+        {
+        return 0.0 == scale ? 0.0 : (static_cast<double>(pos) - 0x7fff) * (pos/scale);
+        }
+
+    template<typename T> class QPointList : public bvector<T>
+    {
+    public:
+        typedef typename T::Params Params;
+        typedef typename T::T_Range Range;
+        typedef typename T::T_DPoint DPoint;
+        typedef typename T::T_DVec DVec;
+        typedef typename T::T_FPoint FPoint;
+
+        //! Construct an empty list to be quantized by the specified params
+        explicit QPointList(Params const& params) : m_params(params) { }
+        //! Construct an empty list to be quantized to the specified range
+        explicit QPointList(Range const& range ) : QPointList(Params(range)) { }
+        QPointList() { }
+        //! Construct a copy of another list
+        QPointList(QPointList const& src) : bvector<T>(src), m_params(src.m_params) { }
+        //! Move-construct a copy of another list
+        QPointList(QPointList&& src) : bvector<T>(std::move(src)), m_params(src.m_params) { }
+        //! Populate a list of points quantized to the range of the input points
+        template<typename T_UnquantizedPoint> QPointList(T_UnquantizedPoint const* pts, size_t nPts) { InitFrom(pts, nPts); }
+
+        QPointList& operator=(QPointList const& src) { Assign(src.data(), src.size(), src.m_params); return *this; }
+        QPointList& operator=(QPointList&& src) { this->swap(src); m_params = src.m_params; return *this; }
+
+        //! Reset this list's parameters to the range of the input points, and replace its contents with the input points quantized to that range.
+        template<typename T_UnquantizedPoint> void InitFrom(T_UnquantizedPoint const* pts, size_t nPts)
+            {
+            Range range = Range::NullRange();
+            for (size_t i = 0; i < nPts; i++)
+                range.Extend(ToDPoint(pts[i]));
+
+            Reset(Params(range));
+            for (size_t i = 0; i < nPts; i++)
+                Add(pts[i]);
+            }
+
+        //! Replace the contents of this list with the specified points, quantized to the specified params
+        void Assign(T const* points, size_t nPoints, Params const& params)
+            {
+            m_params = params;
+            assign(points, points+nPoints);
+            }
+
+        //! Empty this list and change its quantization parameters
+        void Reset(Params const& params)
+            {
+            m_params = params;
+            this->clear();
+            }
+
+        Params const& GetParams() const { return m_params; }
+        void SetParams(Params const& params) { m_params = params; }
+
+        //! Quantize the specified point and add it to this list
+        void Add(DPoint const& dpt) { this->push_back(T(dpt, GetParams())); }
+        //! Quantize the specified point and add it to this list
+        void Add(FPoint const& fpt) { Add(ToDPoint(fpt)); }
+        //! Return the unquantized point at the specified index.
+        DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
+        //! Return the point at the specified index, unquantized as a vector type.
+        DVec UnquantizeAsVector(size_t index) const { BeAssert(index < this->size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
+        //! Return the point at the specified index
+        FPoint Unquantize32(size_t index) const { return ToFPoint(Unquantize(index)); }
+
+        //! Requantize all the points in this list to the new parameters, and update the list's parameters.
+        void Requantize(Params const& params)
+            {
+            for (auto& qpt : *this)
+                {
+                auto dpt = qpt.Unquantize(m_params);
+                qpt = T(dpt, params);
+                }
+
+            m_params = params;
+            }
+    private:
+        Params  m_params;
+
+        // Because FPoint2d/3d and DPoint2d/3d interfaces have annoying differences which prevent us from writing generic code against them...
+        static FPoint ToFPoint(DPoint const& dpt) { return T::ToFPoint(dpt); }
+        static DPoint ToDPoint(FPoint const& fpt) { return T::ToDPoint(fpt); }
+        static FPoint ToFPoint(FPoint const& fpt) { return fpt; }
+        static DPoint ToDPoint(DPoint const& dpt) { return dpt; }
+    };
+}
+
+//=======================================================================================
+//! Represents a DPoint3d quantized within some known range to a triplet of 16-bit
+//! integers. This is a lossy compression technique.
+// @bsistruct                                                   Ray.Bentley     01/2017
+//=======================================================================================
+struct QPoint3d
+{
+    using T_Range = DRange3d;
+    using T_DPoint = DPoint3d;
+    using T_DVec = DVec3d;
+    using T_FPoint = FPoint3d;
+
+    static FPoint3d ToFPoint(DPoint3dCR dpt) { return FPoint3d::From(dpt); }
+    static DPoint3d ToDPoint(FPoint3dCR fpt) { return DPoint3d::From(fpt); }
+
+    uint16_t x, y, z;
+
+    //! Describes the range associated with a QPoint3d.
+    struct Params
+    {
+        DPoint3d    origin;
+        DPoint3d    scale;
+
+        Params() : Params(DRange3d::NullRange()) { }
+        explicit Params(DRange3dCR range) : origin(range.low)
+            {
+            DVec3d diagonal = range.DiagonalVector();
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            scale.z = Quantization::ComputeScale(diagonal.z);
+            }
+
+        //! Create params suitable for quantizing points with components in the range [-1.0,1.0].
+        //! Depending on precision needs, consider using OctEncodedNormal instead of QPoint3d to quantize normals.
+        static Params FromNormalizedRange()
+            {
+            return Params(DRange3d::From(DPoint3d::FromXYZ(-1.0,-1.0,-1.0), DPoint3d::FromXYZ(1.0,1.0,1.0)));
+            }
+
+        DPoint3dCR GetOrigin() const { return origin; }
+        DPoint3dCR GetScale() const { return scale; }
+        DRange3d GetRange() const { return DRange3d::From (origin, QPoint3d((uint16_t) Quantization::RangeScale(), (uint16_t)Quantization::RangeScale(), (uint16_t)Quantization::RangeScale()).Unquantize(*this)); }
+
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
+
+    QPoint3d() { }
+    QPoint3d(uint16_t x_, uint16_t y_, uint16_t z_) : x(x_), y(y_), z(z_) { }
+    QPoint3d(DPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(DPoint3dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
+        }
+    QPoint3d(FPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
+    QPoint3d(FPoint3dCR pt, ParamsCR params) : QPoint3d(ToDPoint(pt), params) {} 
+
+    //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
+    DPoint3d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint3d into a DVec3d using the same params from which the QPoint3d was created.
+    DVec3d UnquantizeAsVector(ParamsCR params) const
+        {
+        return DVec3d::From(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y),
+            Quantization::Unquantize(z, params.origin.z, params.scale.z));
+        }
+
+    //! Decode this QPoint3d into an FPoint3d, with the center of the original range translated to (0,0,0).
+    FPoint3d UnquantizeAboutCenter(ParamsCR params) const
+        {
+        return FPoint3d::From(
+            Quantization::UnquantizeAboutCenter(x, params.origin.x, params.scale.x),
+            Quantization::UnquantizeAboutCenter(y, params.origin.y, params.scale.y),
+            Quantization::UnquantizeAboutCenter(z, params.origin.z, params.scale.z));
+        }
+
+    //! Decode this QPoint3d into a FPoint3d using the same params from which the QPoint3d was created.
+    FPoint3d Unquantize32(ParamsCR params) const
+        {
+        return ToFPoint(Unquantize(params));
+        }
+
+    bool operator==(QPoint3dCR rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
+    bool operator!=(QPoint3dCR rhs) const { return !(*this == rhs); }
+};
+
+//=======================================================================================
+//! Represents a DPoint2d quantized within some known range to a pair of 16-bit integers.
+//! This is a lossy compression technique.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+struct QPoint2d
+{
+    using T_Range = DRange2d;
+    using T_DPoint = DPoint2d;
+    using T_DVec = DVec2d;
+    using T_FPoint = FPoint2d;
+
+    static FPoint2d ToFPoint(DPoint2dCR dpt) { FPoint2d fpt; fpt.x = static_cast<float>(dpt.x); fpt.y = static_cast<float>(dpt.y); return fpt; }
+    static DPoint2d ToDPoint(FPoint2dCR fpt) { return DPoint2d::From(fpt.x, fpt.y); }
+
+    uint16_t x, y;
+
+    //! Describes the range associated with a QPoint2d.
+    struct Params
+    {
+        DPoint2d    origin;
+        DPoint2d    scale;
+
+        Params() : Params(DRange2d::NullRange()) { }
+        explicit Params(DRange2dCR range) : origin(range.low)
+            {
+            DVec2d diagonal = range.IsNull() ? DVec2d::From(0, 0) : DVec2d::FromStartEnd(range.low, range.high);
+            scale.x = Quantization::ComputeScale(diagonal.x);
+            scale.y = Quantization::ComputeScale(diagonal.y);
+            }
+
+        DPoint2dCR GetOrigin() const { return origin; }
+        DPoint2dCR GetScale() const { return scale; }
+        DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
+
+    QPoint2d() { }
+    QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(FPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
+    QPoint2d(FPoint2dCR pt, ParamsCR params) : QPoint2d(ToDPoint(pt), params) { }
+    QPoint2d(DPoint2dCR pt, ParamsCR params)
+        {
+        x = Quantization::Quantize(pt.x, params.origin.x, params.scale.x);
+        y = Quantization::Quantize(pt.y, params.origin.y, params.scale.y);
+        }
+
+    //! Decode this QPoint2d into a DPoint2d using the same params from which the QPoint2d was created.
+    DPoint2d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+
+    //! Decode this QPoint2d into a FPoint2d using the same params from which the QPoint2d was created.
+    FPoint2d Unquantize32(ParamsCR params) const
+        {
+        return ToFPoint(Unquantize(params));
+        }
+
+    //! Decode this QPoint2d into a DVec2d using the same params from which the QPoint2d was created.
+    DVec2d UnquantizeAsVector(ParamsCR params) const
+        {
+        return DVec2d::From(
+            Quantization::Unquantize(x, params.origin.x, params.scale.x),
+            Quantization::Unquantize(y, params.origin.y, params.scale.y));
+        }
+};
+
+//=======================================================================================
+//! Represents a scalar value quantized within some known range to a 16-bit integer.
+//! This is a lossy compression technique.
+// @bsistruct                                                   Paul.Connelly   06/17
+//=======================================================================================
+struct QPoint1d
+{
+    struct Params
+    {
+        double  origin;
+        double  scale;
+
+        Params() : Params(DRange1d::NullRange()) { }
+        explicit Params(DRange1d range) : origin(range.low), scale(range.IsNull() ? 0.0 : Quantization::ComputeScale(range.high - range.low)) { }
+
+        double GetOrigin() const { return origin; }
+        double GetScale() const { return scale; }
+        DRange1d GetRange() const { return DRange1d::From(origin, origin + Quantization::RangeScale() * scale); }
+    };
+
+    using T_Range = DRange1d;
+    using T_DPoint = double;
+    using T_DVec = double;
+    using T_FPoint = float;
+
+    static float ToFPoint(double dx) { return static_cast<float>(dx); }
+    static double ToDPoint(float fx) { return fx; }
+
+    uint16_t    x;
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
+
+    QPoint1d() { }
+    QPoint1d(double x, DRange1d range) : QPoint1d(x, Params(range)) { }
+    QPoint1d(float x, DRange1d range) : QPoint1d(ToDPoint(x), Params(range)) { }
+    QPoint1d(float x, ParamsCR params) : QPoint1d(ToDPoint(x), params) { }
+    QPoint1d(double x, ParamsCR params) : x(Quantization::Quantize(x, params.origin, params.scale)) { }
+
+    double Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
+    float Unquantize32(ParamsCR params) const { return ToFPoint(Unquantize(params)); }
+    double UnquantizeAsVector(ParamsCR params) const { return Quantization::Unquantize(x, params.origin, params.scale); }
+};
+
+typedef Quantization::QPointList<QPoint1d> QPoint1dList;
+typedef Quantization::QPointList<QPoint2d> QPoint2dList;
+typedef Quantization::QPointList<QPoint3d> QPoint3dList;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint1dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint2dList)
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QPoint3dList)
+
+//=======================================================================================
+//! Describes the type of fill associated with a mesh.
+// @bsistruct                                                   Paul.Connelly   05/17
+//=======================================================================================
+enum class FillFlags : uint8_t
+{
+    None        = 0,                    //<! No fill, e.g. for any non-planar geometry.
+    ByView      = 1 << 0,               //<! Use element fill color, when fill enabled by view
+    Always      = 1 << 1,               //<! Use element fill color, even when fill is disabled by view
+    Blanking    = (1 << 2) | Always,    //<! Use element fill color, always rendered behind non-blanking geometry of the same element.
+    Background  = 1 << 3,               //<! Use background color specified by view
+};
+
+ENUM_IS_FLAGS(FillFlags);
+
+//=======================================================================================
+//! Information needed to draw a triangle mesh
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct TriMeshArgs
+{
+    uint32_t            m_numIndices = 0;
+    uint32_t const*     m_vertIndex = nullptr;
+    uint32_t            m_numPoints = 0;
+    uint32_t            m_edgeWidth = 0;
+    QPoint3dCP          m_points= nullptr;
+    OctEncodedNormalCP  m_normals = nullptr;
+    FPoint2d const*     m_textureUV= nullptr;
+    uint8_t const*      m_edgeFlags = nullptr;
+    TexturePtr          m_texture;
+    ColorIndex          m_colors;
+    FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
+    MaterialPtr         m_material;
+    FillFlags           m_fillFlags = FillFlags::None;
+    bool                m_isPlanar = false;
+
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+};
+
+//=======================================================================================
+//! Information needed to draw a set of indexed polylines using a shared vertex buffer.
+// @bsistruct                                                   Paul.Connelly   01/17
+//=======================================================================================
+struct IndexedPolylineArgs
+{
+    //! An individual polyline which indexes into a shared set of vertices
+    struct Polyline
+    {
+        uint32_t const* m_vertIndex = nullptr;
+        uint32_t        m_numIndices = 0;
+        float           m_startDistance = 0.0;
+        FPoint3d        m_rangeCenter;
+
+        Polyline() { }
+        Polyline(uint32_t const* indices, uint32_t numIndices, float startDistance, FPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+    };
+
+    QPoint3dCP          m_points = nullptr;
+    Polyline const*     m_lines = nullptr;
+    uint32_t            m_numPoints = 0;
+    uint32_t            m_numLines = 0;
+    ColorIndex          m_colors;
+    FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
+    uint32_t            m_width = 0;
+    LinePixels          m_linePixels = LinePixels::Solid;
+    bool                m_disjoint = false;
+    bool                m_isEdge = false;
+    bool                m_is2d = false;
+    bool                m_isPlanar = false;
+
+    IndexedPolylineArgs() { }
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, bool is2d, bool isPlanar)
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_is2d(is2d), m_isPlanar(isPlanar) { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================                                                           
+struct  MeshEdge
+    {
+    enum    Flags
+        {
+        Invisible =  1,
+        Visible    = 0,
+        };
+
+    uint32_t                m_indices[2];
+
+    MeshEdge() { }
+    MeshEdge(uint32_t index0, uint32_t index1);
+
+    bool operator < (MeshEdge const& rhs) const;
+    };                 
+
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MeshPolyline
+{
+private:
+    bvector<uint32_t>   m_indices;
+    float               m_startDistance;
+    FPoint3d            m_rangeCenter;
+
+public:
+    MeshPolyline () : m_startDistance(0.0) { }
+    MeshPolyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+    MeshPolyline (float startDistance, FPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+
+    bvector<uint32_t> const& GetIndices() const { return m_indices; }
+    bvector<uint32_t>& GetIndices() { return m_indices; }
+    float GetStartDistance() const { return m_startDistance; }
+    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+    
+    void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
+    void Clear() { m_indices.clear(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct MeshEdges : RefCountedBase
+{
+    bvector<MeshEdge>           m_visible;
+    bvector<MeshEdge>           m_silhouette;
+    bvector<MeshPolyline>       m_polylines;
+    OctEncodedNormalPairList    m_silhouetteNormals;
+
+    MeshEdges() { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2017
+//=======================================================================================
+struct MeshEdgeArgs
+{
+    MeshEdgeCP                  m_edges;
+    uint32_t                    m_numEdges;
+    QPoint3dCP                  m_points = nullptr;
+    FeatureIndex                m_features;
+    ColorIndex                  m_colors;
+    QPoint3d::Params            m_pointParams;
+    uint32_t                    m_width = 0;
+    LinePixels                  m_linePixels = LinePixels::Solid;
+    bool                        m_isPlanar = false;
+
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams, bool isPlanar);
+}; 
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2017
+//=======================================================================================
+struct SilhouetteEdgeArgs   : MeshEdgeArgs
+{
+    // two normals per edge - define the triangle normals for silhouette calculation.
+    OctEncodedNormalPairCP  m_normals;
+
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
+};  
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct PointCloudArgs
+{
+    QPoint3dCP          m_points;
+    ByteCP              m_colors;
+    QPoint3d::Params    m_qParams;
+    int32_t             m_numPoints;
+
+    PointCloudArgs() : PointCloudArgs(QPoint3d::Params(DRange3d::NullRange()), 0, nullptr, nullptr) { }
+    PointCloudArgs(QPoint3d::Params qParams, int32_t numPoints, QPoint3dCP points, ByteCP colors)
+        : m_points(points), m_colors(colors), m_qParams(qParams), m_numPoints(numPoints) { }
+};
+
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/17
 //=======================================================================================
 struct GraphicList : RefCounted<NonCopyableClass>
 {
+    using List = bvector<GraphicPtr>;
+private:
+    List    m_list;
+public:
+    typedef List::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_list.begin(); }
+    const_iterator end() const { return m_list.end(); }
+    size_t size() const { return m_list.size(); }
+    bool empty() const { return m_list.empty(); }
+    void clear() { m_list.clear(); }
+
+    void Add(GraphicR graphic) { m_list.push_back(&graphic); }
+    uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/17
+//=======================================================================================
+struct DecorationList : RefCounted<NonCopyableClass>
+{
     struct Node
     {
-        GraphicPtr m_ptr;
-        void* m_overrides;
-        uint32_t m_ovrFlags;
-        Node(Graphic& graphic, void* ovr, uint32_t ovrFlags) : m_ptr(&graphic), m_overrides(ovr), m_ovrFlags(ovrFlags) {}
+        GraphicPtr          m_graphic;
+        OvrGraphicParams    m_overrides;
+
+        Node(GraphicR graphic, OvrGraphicParamsCR ovr) : m_graphic(&graphic), m_overrides(ovr) { BeAssert(m_graphic.IsValid()); }
     };
 
-    bvector<Node> m_list;
+    using List = bvector<Node>;
+private:
+    List    m_list;
+public:
+    typedef List::iterator iterator;
+    typedef List::const_iterator const_iterator;
 
-    uint32_t GetCount() const {return (uint32_t) m_list.size();}
-    bool IsEmpty() const {return m_list.empty();}
-    void Clear() {m_list.clear();}
-    DGNPLATFORM_EXPORT void Drop(Graphic& graphic);
-    DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
-    DGNPLATFORM_EXPORT void ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags);
+    iterator begin() { return m_list.begin(); }
+    iterator end() { return m_list.end(); }
+    const_iterator begin() const { return m_list.begin(); }
+    const_iterator end() const { return m_list.end(); }
+    size_t size() const { return m_list.size(); }
+    bool empty() const { return m_list.empty(); }
+    void clear() { m_list.clear(); }
+
+    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { BeAssert(GraphicPtr(&graphic).IsValid()); m_list.push_back(Node(graphic, ovr)); }
+    void Add(GraphicR graphic, OvrGraphicParamsCP ovr=nullptr) { Add(graphic, nullptr != ovr ? *ovr : OvrGraphicParams()); }
+    uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
 };
 
 //=======================================================================================
@@ -1583,21 +2388,11 @@ struct GraphicList : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Decorations
 {
-    GraphicListPtr m_normal;         // drawn with zbuffer, with scene lighting
-    GraphicListPtr m_flashed;        // drawn with zbuffer, with scene lighting
-    GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
-    GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
-    GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/16
-//=======================================================================================
-struct Redraws
-{
-    GraphicListPtr m_erase;
-    GraphicListPtr m_draw;
-    GraphicListPtr m_change;
+    GraphicPtr          m_viewBackground;// drawn first, view units, with no zbuffer, smooth shading, default lighting. e.g., a skybox
+    GraphicListPtr      m_normal;       // drawn with zbuffer, with scene lighting
+    DecorationListPtr   m_world;        // drawn with zbuffer, with default lighting, smooth shading
+    DecorationListPtr   m_worldOverlay; // drawn in overlay mode, world units
+    DecorationListPtr   m_viewOverlay;  // drawn in overlay mode, view units
 };
 
 //=======================================================================================
@@ -1611,7 +2406,7 @@ struct FrustumPlanes
     FrustumPlanes() {}
     ~FrustumPlanes() {}
     explicit FrustumPlanes(FrustumCR frustum){Init(frustum);}
-    void Init(FrustumCR frustum);
+    DGNPLATFORM_EXPORT void Init(FrustumCR frustum);
     bool IsValid() const {return m_isValid;}
     enum struct Contained {Outside = 0, Partly = 1,Inside = 2,};
     Contained Contains(FrustumCR box) const {return Contains(box.m_pts, 8);}
@@ -1631,9 +2426,9 @@ struct HiddenLineParams
     {
         bool m_ovrColor;
         ColorDef m_color;
-        GraphicParams::LinePixels m_pattern;
+        LinePixels m_pattern;
         uint32_t m_width; // 0 means don't override
-        Style(bool ovrColor, ColorDef color, GraphicParams::LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
+        Style(bool ovrColor, ColorDef color, LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
         bool operator==(Style const& rhs) const {return m_ovrColor==rhs.m_ovrColor && m_color==rhs.m_color && m_pattern==rhs.m_pattern && m_width==rhs.m_width;}
         bool operator!=(Style const& rhs) const {return !(*this==rhs);}
 
@@ -1645,8 +2440,8 @@ struct HiddenLineParams
         void FromJson(JsonValueCR);
     };
 
-    Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
-    Style m_hidden = Style(false, ColorDef(), GraphicParams::LinePixels::HiddenLine, 1);
+    Style m_visible = Style(false, ColorDef(), LinePixels::Solid, 1);
+    Style m_hidden = Style(false, ColorDef(), LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
     bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
@@ -1682,6 +2477,46 @@ struct SceneLights : RefCounted<NonCopyableClass>
 DEFINE_REF_COUNTED_PTR(SceneLights)
 
 //=======================================================================================
+//! Describes the effect applied to hilited elements within a view.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct HiliteSettings
+{
+    //! Describes the width of the outline applied to hilited geometry.
+    enum class Silhouette
+    {
+        None, //!< No silhouette
+        Thin, //!< A thin silhouette
+        Thick //!< A thick silhouette
+    };
+private:
+    ColorDef    m_color;
+    double      m_visibleRatio = 0.5;
+    double      m_hiddenRatio = 0.25;
+    Silhouette  m_silhouette = Silhouette::Thick;
+
+    static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
+public:
+    explicit HiliteSettings(ColorDef color=ColorDef::Magenta(), double visibleRatio=0.5, double hiddenRatio=0.25, Silhouette silhouette=Silhouette::Thick)
+        : m_color(color), m_visibleRatio(visibleRatio), m_hiddenRatio(hiddenRatio), m_silhouette(silhouette)
+        {
+        Clamp(m_visibleRatio);
+        Clamp(m_hiddenRatio);
+        }
+
+    //! The hilite color
+    ColorDef GetColor() const { return m_color; }
+    //! The ratio to which the hilite color is mixed with the element color for visible portions of the element. 1.0 = all hilite color; 0.0 = all element color.
+    double GetVisibleRatio() const { return m_visibleRatio; }
+    //! The ratio to which the hilite color is mixed with the color of geometry which occludes hilited geometry.
+    double GetHiddenRatio() const { return m_hiddenRatio; }
+    //! The silhouette effect.
+    Silhouette GetSilhouette() const { return m_silhouette; }
+    //! Change the color, preserving all other settings
+    void SetColor(ColorDef color) { m_color = color; }
+};
+
+//=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying a Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
@@ -1695,12 +2530,287 @@ struct Plan
     double m_fraction;
     ColorDef m_bgColor;
     ColorDef m_monoColor;
+    HiliteSettings m_hiliteSettings;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
     ClipVectorPtr m_activeVolume;
     SceneLightsCPtr m_lights;   //! if not valid, render with default lighting
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
+};
+
+//=======================================================================================
+//! Describes a "feature" within a batched Graphic. A batched Graphic can
+//! contain multiple features. Each feature is associated with a unique combination of
+//! attributes (element ID, subcategory, geometry class). This allows geometry to be
+//! more efficiently batched on the GPU, while enabling features to be resymbolized
+//! individually.
+//!
+//! As a simple example, a single mesh primitive may contain geometry for 3 elements,
+//! all belonging to the same subcategory and geometry class. The mesh would therefore
+//! contain 3 Features. Each vertex within the mesh would be associated with the
+//! index of the Feature to which it belongs, where the index is determined by the
+//! FeatureTable associated with the primitive.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct Feature
+{
+private:
+    DgnElementId        m_elementId;
+    DgnSubCategoryId    m_subCategoryId;
+    DgnGeometryClass    m_class = DgnGeometryClass::Primary;
+public:
+    Feature() : Feature(DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
+    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+
+    DgnElementId GetElementId() const { return m_elementId; }
+    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+    DgnGeometryClass GetClass() const { return m_class; }
+
+    bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
+    bool operator==(FeatureCR rhs) const
+        {
+        if (IsUndefined() && rhs.IsUndefined())
+            return true;
+        else
+            return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId() && GetClass() == rhs.GetClass();
+        }
+
+    DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
+
+    bool IsDefined() const { return m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class; }
+    bool IsUndefined() const { return !IsDefined(); }
+};
+
+//=======================================================================================
+//! Defines a look-up table for Features within a batched Graphic. Consecutive 32-bit
+//! indices are assigned to each unique Feature. Primitives within the Graphic can
+//! use per-vertex indices to specify the distribution of Features within the primitive.
+//! A FeatureTable can be shared amongst multiple primitives within a single Graphic, and
+//! amongst multiple sub-Graphics of a Graphic.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct FeatureTable
+{
+    typedef bmap<Feature, uint32_t> Map;
+private:
+    Map         m_map;
+    uint32_t    m_maxFeatures;
+    
+public:
+    explicit FeatureTable(uint32_t maxFeatures) : m_maxFeatures(maxFeatures) { }
+    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_maxFeatures(src.m_maxFeatures) { }
+    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_maxFeatures = src.m_maxFeatures; return *this; }
+
+    //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
+    uint32_t GetIndex(FeatureCR feature)
+        {
+        BeAssert(!IsFull());
+        uint32_t index = 0;
+        if (!FindIndex(index, feature) && !IsFull())
+            {
+            index = GetNumIndices();
+            m_map[feature] = index;
+            }
+
+        return index;
+        }
+
+    //! Looks up the index of an existing Feature. Returns false if the Feature does not exist in the lookup table.
+    bool FindIndex(uint32_t& index, FeatureCR feature) const
+        {
+        auto iter = m_map.find(feature);
+        bool found;
+        if (found = (m_map.end() != iter))
+            index = iter->second;
+
+        return found;
+        }
+    
+    bool FindFeature(FeatureR feature, uint32_t index) const
+        {
+        for (auto kvp : m_map)
+            {
+            if (kvp.second == index)
+                {
+                feature = kvp.first;
+                return true;
+                }
+            }
+
+        return false;
+        }
+
+    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
+    bool IsUniform() const { return 1 == size(); }
+    bool IsFull() const { BeAssert(size() <= GetMaxFeatures()); return size() >= GetMaxFeatures(); }
+    uint32_t GetNumIndices() const { return static_cast<uint32_t>(size()); }
+    bool AnyDefined() const { return size() > 1 || (IsUniform() && begin()->first.IsDefined()); }
+
+    typedef Map::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+    void clear() { m_map.clear(); }
+
+    // Used by tile reader...
+    void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
+    bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
+};
+
+//=======================================================================================
+//! Overrides visibility and symbology based on element ID, subcategory, and/or geometry class.
+//! Overrides applied to elements take priority over those applied to subcategories.
+//! The rules for determining visibility and symbology follow a priority:
+//! Visibility:
+//!     If an element is in the "always drawn" list, it is visible.
+//!     Else, if the "always drawn" list is exclusive, it is invisible.
+//!     Else, if it is in the "never drawn" list, it is invisible.
+//!     Else, any geometry not in the "visible subcategories" list is invisible
+//!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
+//!     Else, it is visible.
+//! Symbology:
+//!     - Overrides defined for the element are applied, followed by any overrides defined
+//!     by the subcategory and not already overridden by the element.
+//!     - If no overrides are defined for the element, any global overrides not supplied by
+//!     the subcategory are applied.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct FeatureSymbologyOverrides
+{
+    //! Defines symbology overrides for a single element or subcategory.
+    struct Appearance
+    {
+    private:
+        friend struct FeatureSymbologyOverrides;
+
+        struct Flags
+            {
+            uint8_t         m_rgb:1;
+            uint8_t         m_alpha:1;
+            uint8_t         m_weight:1;
+            uint8_t         m_linePixels:1;
+            uint8_t         m_ignoreMaterial:1;
+            };
+
+        ColorDef        m_color;
+        uint8_t         m_weight;
+        LinePixels      m_linePixels;
+        union
+            {
+            Flags       m_flags;
+            uint8_t     m_flagsMask;
+            };
+    public:
+        Appearance() { Init(); }
+        void Init() { m_flagsMask = 0; }
+        void InitFrom(DgnSubCategory::Override const& ovr);
+
+        static Appearance FromRgb(ColorDef rgb) { Appearance app; app.SetRgb(rgb); return app; }
+        static Appearance FromRgba(ColorDef rgb, uint8_t alpha) { Appearance app = FromRgb(rgb); app.SetAlpha(alpha); return app; }
+        static Appearance FromRgba(ColorDef rgba) { return FromRgba(rgba, rgba.GetAlpha()); }
+
+        //! Override transparency
+        void SetTransparency(double t) { SetAlpha(static_cast<uint8_t>((1.0-t)*255.0)); }
+        //! Override transparency
+        void SetAlpha(uint8_t alpha) { m_flags.m_alpha = true; m_color.SetAlpha(alpha); }
+        //! Override RGB and transparency
+        void SetRgba(ColorDef color) { SetRgb(color); SetAlpha(color.GetAlpha()); }
+        //! Override line weight
+        void SetWeight(uint8_t weight) { m_flags.m_weight = true; m_weight = weight; }
+        //! Override line code
+        void SetLinePixels(LinePixels pix) { m_flags.m_linePixels = true; m_linePixels = pix; }
+        //! Override to ignore render material (including any associated texture)
+        void SetIgnoresMaterial(bool ignore) { m_flags.m_ignoreMaterial = ignore; }
+        //! Override RGB (alpha component of color is ignored)
+        void SetRgb(ColorDef color)
+            {
+            m_flags.m_rgb = true;
+            if (m_flags.m_alpha)
+                color.SetAlpha(m_color.GetAlpha());
+
+            m_color = color;
+            }
+
+        //! Get the RGB override (alpha component ignored)
+        ColorDef GetRgb() const { return m_color; }
+        //! Get the transparency override as an alpha value from 0 (opaque) to 255 (transparent)
+        uint8_t GetAlpha() const { return m_color.GetAlpha(); }
+        //! Get the transparency override as a float value from 0.0 (transparent) to 1.0 (opaque)
+        double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
+        //! Get the line weight override
+        uint8_t GetWeight() const { return m_weight; }
+        //! Get the line code override
+        LinePixels GetLinePixels() const { return m_linePixels; }
+        //! Returns whether render material (including texture) is ignored
+        bool IgnoresMaterial() const { return m_flags.m_ignoreMaterial; }
+
+        //! Returns true if any aspect of symbology is overridden.
+        bool OverridesSymbology() const { return 0 != m_flagsMask; }
+        //! Returns true if transparency is overridden. If it is not, the return values of GetTransparency() and GetAlpha() are meaningless
+        bool OverridesAlpha() const { return m_flags.m_alpha; }
+        //! Returns true if RGB is overridden. If it is not, the return value of GetRgb() is meaningless
+        bool OverridesRgb() const { return m_flags.m_rgb; }
+        //! Returns true if line weight is overridden. If it is not, the return value of GetWeight() is meaningless
+        bool OverridesWeight() const { return m_flags.m_weight; }
+        //! Returns true if line code is overridden. If it is not, the return value of GetLinePixels() is meaningless
+        bool OverridesLinePixels() const { return m_flags.m_linePixels; }
+
+        //! Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
+        Appearance Extend(Appearance const& base) const;
+
+        OvrGraphicParams ToOvrGraphicParams() const;
+    };
+private:
+
+    DgnElementIdSet                     m_alwaysDrawn;
+    DgnElementIdSet                     m_neverDrawn;
+    bmap<DgnElementId, Appearance>      m_elementOverrides; // Appearance for elements which have been explicitly overridden.
+    DgnSubCategoryIdSet                 m_visibleSubCategories;
+    bmap<DgnSubCategoryId, Appearance>  m_subcategoryOverrides;
+    Appearance                          m_defaultOverrides;
+    uint8_t                             m_constructions:1;
+    uint8_t                             m_dimensions:1;
+    uint8_t                             m_patterns:1;
+    uint8_t                             m_alwaysDrawnExclusive:1;
+    uint8_t                             m_lineWeights:1;
+public:
+    FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false), m_lineWeights(true) { }
+    DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
+
+    // Returns false if the feature is invisible.
+    // Otherwise, populates the feature's Appearance overrides
+    DGNPLATFORM_EXPORT bool GetAppearance(Appearance&, FeatureCR) const;
+    DGNPLATFORM_EXPORT bool IsFeatureVisible(FeatureCR) const;
+    DGNPLATFORM_EXPORT bool IsSubCategoryVisible(DgnSubCategoryId) const;
+    DGNPLATFORM_EXPORT bool IsClassVisible(DgnGeometryClass) const;
+
+    // NB: Appearance can override nothing, which prevents the default overrides from applying to it.
+    DGNPLATFORM_EXPORT void OverrideElement(DgnElementId, Appearance appearance, bool replaceExisting=true);
+    DGNPLATFORM_EXPORT void ClearElementOverrides(DgnElementId);
+
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, Appearance appearance, bool replaceExisting=true);
+    DGNPLATFORM_EXPORT void ClearSubCategoryOverrides(DgnSubCategoryId);
+
+    void SetDefaultOverrides(Appearance appearance, bool replaceExisting=true)
+        {
+        if (replaceExisting || !m_defaultOverrides.OverridesSymbology())
+            m_defaultOverrides = appearance;
+        }
+
+    bool IsAlwaysDrawnExclusive() const { return m_alwaysDrawnExclusive; }
+    void SetAlwaysDrawnExclusive(bool exclusive) { m_alwaysDrawnExclusive = exclusive; }
+
+    DgnElementIdSet& GetAlwaysDrawn()  { return m_alwaysDrawn; }
+    DgnElementIdSet const& GetAlwaysDrawn() const { return m_alwaysDrawn; }
+
+    DgnElementIdSet& GetNeverDrawn()  { return m_neverDrawn; }
+    DgnElementIdSet const& GetNeverDrawn() const { return m_neverDrawn; }
+
+    void AlwaysDraw(DgnElementId id) { m_alwaysDrawn.insert(id); }
+    void NeverDraw(DgnElementId id) { m_neverDrawn.insert(id); }
 };
 
 //=======================================================================================
@@ -1744,7 +2854,8 @@ public:
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
     virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
-    virtual TargetPtr _CreateTarget(double frameRateGoal) = 0;
+    virtual TargetPtr _CreateTarget(double tileSizeModifier) = 0;
+    virtual TargetPtr _CreateOffscreenTarget(double tileSizeModifier) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
@@ -1756,12 +2867,13 @@ public:
 //=======================================================================================
 struct GraphicBranch
 {
-    bool m_hasFlags = false;
-    ViewFlags m_viewFlags;
+    ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
 
-    void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
-    void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
+    void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
+    void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
+    void SetViewFlagsOverrides(ViewFlagsOverridesCR ovr) { m_viewFlagsOverrides = ovr; }
+    ViewFlags GetViewFlags(ViewFlagsCR base) const { ViewFlags flags = base; m_viewFlagsOverrides.Apply(flags); return flags; }
     void Clear() {m_entries.clear();}
 };
 
@@ -1778,6 +2890,33 @@ struct ViewletPosition
 };
 
 //=======================================================================================
+// @bsiclass                                                    Ray.Bentley     05/17
+//=======================================================================================
+struct MeshEdgeCreationOptions
+    {
+    enum    Options
+        {
+        NoEdges                 = 0x0000,
+        SheetEdges              = 0x0001 << 0, 
+        CreaseEdges             = 0x0001 << 1, 
+        SmoothEdges             = 0x0001 << 2,
+        DefaultEdges            = CreaseEdges | SheetEdges,
+        AllEdges                = CreaseEdges | SheetEdges | SmoothEdges
+        };
+
+    Options     m_options               = DefaultEdges;
+    double      m_minCreaseAngle        = 20.0 * msGeomConst_radiansPerDegree;
+
+    MeshEdgeCreationOptions(Options options) : m_options(options) {}
+    MeshEdgeCreationOptions(Options options, double minCreaseAngle) :m_options(options) { }
+
+    bool GenerateAllEdges() const    { return m_options == AllEdges; }
+    bool GenerateNoEdges() const     { return m_options == NoEdges;   }
+    bool GenerateSheetEdges() const  { return 0 != (m_options & SheetEdges); }
+    bool GenerateCreaseEdges() const { return 0 != (m_options & CreaseEdges); } 
+    };
+
+//=======================================================================================
 //! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
 //! @note The methods of this class may be called from any thread.
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -1790,7 +2929,16 @@ struct System
     void StartPainting(Target* target) {BeAssert(!IsPainting()); m_nowPainting = target;}
     void NotPainting() {m_nowPainting = nullptr;}
 
-    virtual ~System(){}
+    virtual ~System() { }
+    
+    //! Initialize the rendering system. Return a non-zero value in case of error.
+    virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
+
+    //! Create a render target.
+    virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) = 0;
+
+    //! Create an offscreen render target.
+    virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
 
     //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const = 0;
@@ -1798,21 +2946,57 @@ struct System
     //! Create a Material from parameters
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
 
-    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
-    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
-    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
+    virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
+    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
+
+    // Create a triangle mesh primitive and edges (if required).
+    // WIP virtual bvector<GraphicPtr> _CreateTriMeshAndEdges (TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeOptions) const { return bvector<GraphicPtr> (1, _CreateTriMesh(args, dgndb, params)); }
+
+    //! Create a triangle mesh primitive
+    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const = 0;
+
+    //! Create an indexed polyline primitive
+    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const = 0;
+
+    //! Create visible mesh edges primitive
+    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb) const = 0;
+
+    //! Create silhouette mesh edges primitive  - these edges are displayed only if they become silhouettes.
+    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb) const = 0;
+
+    //! Create a point cloud primitive
+    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
+
+    //! Create a tile primitive
+    DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
+
+    //! Create a Graphic consisting of a list of Graphics
+    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
+
+    //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
+    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
+
+
+    //! Return the maximum number of Features allowed within a Batch.
+    virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
+
+    //! Create a Graphic consisting of batched Features.
+    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
     //! @param[in] db the DgnDb for textureId
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
 
+    //! Get or create a Texture from a GradientSymb. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
+    virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const = 0;
+
     //! Create a new Texture from an Image.
     virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a new Texture from an ImageSource.
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
@@ -1822,30 +3006,104 @@ struct System
 };
 
 //=======================================================================================
-//! Provides an algorithm for dynamically adjusting the frame rate goal of a
-//! Render::Target based on the ratio of successfully drawn to aborted frames and other
-//! factors.
+//! Provides an algorithm for dynamically adjusting the tile size modifier of a
+//! Render::Target based on observed frame rate.
 // @bsistruct                                                   Paul.Connelly   06/16
 //=======================================================================================
-struct FrameRateAdjuster
+struct TileSizeAdjuster
 {
 private:
-    uint32_t m_drawCount = 0;
-    uint32_t m_abortCount = 0;
+    uint32_t    m_frameWindow;  // # of frames to record before performing adjustment
+    uint32_t    m_numFrames;    // # of frames recorded thus far
+    double      m_averageFrameTime;   // average # of seconds to render each frame thus far
 
+    void Record(double frameTime);
+    double Compute(Render::TargetCR target, double curModifier) const;
 public:
-    static uint32_t const FRAME_RATE_MIN = 1;
-    static uint32_t const FRAME_RATE_MAX = 30;
+    explicit TileSizeAdjuster(uint32_t frameWindow=15) : m_frameWindow(frameWindow) { Reset(); }
 
-    //! Computes an adjusted frame rate goal based on factors like draw/abort ratio, smallest attempted element size, etc
-    //! @param[in] target The target who's frame rate goal is to be adjusted
-    //! @param[in] lowestScore The smallest attempted element size (NPC squared)
-    //! @return The adjusted frame rate goal
-    DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double lowestScore);
+    //! Call after each rendered frame. Returns an adjusted tile size modifier.
+    DGNPLATFORM_EXPORT double Update(Render::TargetCR target, double frameTime);
 
-    void Reset() {m_drawCount = m_abortCount = 0;}    //!< Reset abort/draw counts
-    void IncrementDrawCount() {++m_drawCount;}        //!< Increment the number of frames drawn
-    void IncrementAbortCount() {++m_abortCount;}      //!< Increment the number of drawn frames aborted
+    void Reset() {m_numFrames=0; m_averageFrameTime=0.0;}   //!< Reset the accumulated statistics
+    uint32_t GetFramesPerSecond() const { return 0.0 != m_averageFrameTime ? static_cast<uint32_t>(1.0/m_averageFrameTime) : 0; }
+    double GetAverageFrameTime() const { return m_averageFrameTime; }
+    uint32_t GetNumFramesRecorded() const { return m_numFrames; }
+};
+
+//=======================================================================================
+//! Describes aspects of a pixel as read from a Render::Target.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct PixelData
+{
+    //! Describes the foremost type of geometry which produced the pixel
+    enum class GeometryType : uint8_t
+    {
+        Unknown, //!< Geometry was not selected, or type could not be determined
+        None, //!< No geometry was rendered to this pixel
+        Surface, //!< A surface
+        Linear, //!< A polyline
+        Edge, //!< The edge of a surface
+        Silhouette, //!< A silhouette of a surface
+    };
+
+    //! Describes the planarity of the foremost geometry which produced the pixel
+    enum class Planarity : uint8_t
+    {
+        Unknown, //!< Geometry was not selected, or planarity could not be determined
+        None, //!< No geometry was rendered to this pixel
+        Planar, //!< Planar geometry
+        NonPlanar, //!< Non-planar geometry
+    };
+
+    //! Bit-mask by which callers of DgnViewport::ReadPixels() specify which aspects are of interest.
+    //! Aspects not specified will be omitted from the returned data.
+    enum class Selector : uint8_t
+    {
+        None = 0,
+        ElementId = 1 << 0, //!< Select element IDs
+        Distance = 1 << 1, //!< Select distances from near plane
+        Geometry = 1 << 2, //!< Select geometry type and planarity
+
+        GeometryAndDistance = Geometry | Distance, //!< Select geometry type/planarity and distance from near plane
+        All = GeometryAndDistance | ElementId, //!< Select all aspects
+    };
+private:
+    DgnElementId    m_elementId;
+    double          m_distance;
+    GeometryType    m_type;
+    Planarity       m_planarity;
+public:
+    PixelData() : m_distance(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
+    PixelData(DgnElementId id, double distance, GeometryType geomType, Planarity planarity)
+        : m_elementId(id), m_distance(distance), m_type(geomType), m_planarity(planarity) { }
+
+    //! Returns the ID of the foremost element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
+    DgnElementId GetElementId() const { return m_elementId; }
+    //! Returns the distance from the near plane in world units, or a negative value if distances were not selected.
+    double GetDistance() const { return m_distance; }
+    //! Returns the foremost type of geometry that produced this pixel, or Unknown if geometry was not selected
+    GeometryType GetGeometryType() const { return m_type; }
+    //! Returns the planarity of the foremost geometry that produced this pixel, or Unknown if geometry was not selected
+    Planarity GetPlanarity() const { return m_planarity; }
+
+    void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
+    void SetDistance(double dist) { m_distance=dist; }
+    void SetGeometry(GeometryType type, Planarity planarity) { m_type=type; m_planarity=planarity; }
+};
+
+ENUM_IS_FLAGS(PixelData::Selector);
+
+//=======================================================================================
+//! A rectangular array of pixels as read from a Target's render buffers.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct IPixelDataBuffer : RefCountedBase
+{
+    //! Retrieve the data associated with the pixel at (x,y) in view coordinates.
+    //! Results are undefined if x or y is outside the bounds of the view rect.
+    virtual PixelData GetPixel(uint32_t x, uint32_t y) const = 0;
 };
 
 //=======================================================================================
@@ -1864,99 +3122,79 @@ protected:
     DevicePtr m_device;
     ClipVectorCPtr m_activeVolume;
     GraphicListPtr m_currentScene;
-    GraphicListPtr m_terrain;
-    GraphicListPtr m_dynamics;
+    DecorationListPtr m_dynamics;
     Decorations m_decorations;
-    double m_frameRateGoal; // frames per second
+    double m_tileSizeModifier;
     uint32_t m_minimumFrameRate;
-    BeAtomic<uint32_t> m_graphicsPerSecondScene;
-    BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
-    virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
+    DGNVIEW_EXPORT Target(SystemR, double tileSizeModifier);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
-    struct Debug
-    {
-        static void SaveGPS(int, double);
-        DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
-        DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
-        static void Show();
-        static void RecordGraphicsStats();
-    };
+    static void RecordGraphicsStats();
     virtual void _OnDestroy() {}
-    virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_terrain=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
+    virtual void _Reset() {VerifyRenderThread(); m_currentScene=nullptr; m_activeVolume=nullptr; m_dynamics=nullptr; m_decorations=Decorations();}
     virtual void _ChangeScene(GraphicListR scene, ClipVectorCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
-    virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
-    virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
+    virtual void _ChangeDynamics(DecorationListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
-    virtual void _Redraw(Redraws&) = 0;
-    virtual void _BeginHeal() = 0;
-    virtual void _DrawHeal(GraphicListR healList) = 0;
-    enum class HealAborted : bool {No=0, Yes=1};
-    virtual void _FinishHeal(HealAborted) = 0;
-    virtual bool _NeedsHeal(BSIRectR) const = 0;
-    virtual void _DrawFrame(StopWatch&) = 0;
+    virtual void _DrawFrame(StopWatch&, double sceneSecondsElapsed) = 0;
     virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
-    virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
-    virtual double _FindNearestZ(DRange2dCR) const = 0;
+    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
+    virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
+    virtual void _SetFlashed(DgnElementId, double) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
-    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
+    virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();
-    DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}
-    void AbortProgressive() {m_abort=true;}
+    void SetAbortFlag() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
     DeviceCP GetDevice() const {return m_device.get();}
     DGNPLATFORM_EXPORT void DestroyNow();
     void OnResized() {_OnResized();}
-    void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
-    GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
-    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
+    GraphicBuilderPtr CreateGraphic(GraphicBuilder::CreateParams const& params) {return m_system._CreateGraphic(params);}
+    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(RenderMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
     TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
-    TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
+    TexturePtr CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
     SystemR GetSystem() {return m_system;}
 
-    static double DefaultFrameRateGoal()
+    static constexpr double DefaultTileSizeModifier()
         {
 #ifdef BENTLEYCONFIG_GRAPHICS_DIRECTX // *** WIP - we are trying to predict the likely graphics performance of the box.
-        return 20.0; // Plan for the best on Windows (desktop) computers.
+        return 1.0; // Plan for the best on Windows (desktop) computers.
 #else
-        return 10.0; // Plan for the worst on mobile devices
+        return 2.5; // Plan for the worst on mobile devices
 #endif
         }
 
+    static constexpr uint32_t DefaultMinimumFrameRate() { return 15; }
     static constexpr double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
     static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
     static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
     static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
     static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
-    double GetFrameRateGoal() const {return m_frameRateGoal;}
-    void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
-    static int const FRAME_RATE_MIN_DEFAULT = 5;
+    double GetTileSizeModifier() const {return m_tileSizeModifier;}
+    void SetTileSizeModifier(double mod) {m_tileSizeModifier=mod;}
     uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}
     uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
-    uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
-    uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {_RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
+    double GetMaximumTileSizeModifier() const {return 8.0;}
 
     //! Make the specified rectangle have the specified aspect ratio
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture

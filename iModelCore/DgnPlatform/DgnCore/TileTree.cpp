@@ -8,31 +8,30 @@
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
 #include <BeHttp/HttpClient.h>
+#include <numeric>
+
+#define WIP_SCALABLE_MESH
 
 USING_NAMESPACE_TILETREE
 
-#define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
-
-BEGIN_UNNAMED_NAMESPACE
+#define TABLE_NAME_TileTree "TileTree3" // Moved 'Created' to a separate table
+#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime"
 
 //=======================================================================================
-// Manage the creation and cleanup of the local TileCache used by TileData
-// @bsiclass                                                    Keith.Bentley   08/16
+// @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct TileCache : RealityData::Cache
+struct CacheBlobHeader
 {
-    uint64_t m_allowedSize;
-    BentleyStatus _Prepare() const override;
-    BentleyStatus _Cleanup() const override;
-    TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
+    enum {DB_Signature06 = 0x0600};
+    uint32_t m_signature;    // write this so we can detect errors on read
+    uint32_t m_size;
+
+    CacheBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
+    CacheBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
-DEFINE_REF_COUNTED_PTR(TileCache)
-
-END_UNNAMED_NAMESPACE
-
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
+// @bsimethod                                                   Mathieu.Marchand  11/2016                                        
 //----------------------------------------------------------------------------------------
 BentleyStatus TileLoader::LoadTile()
     {
@@ -49,22 +48,19 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    if (m_loads)
-        m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
     m_tile->SetIsQueued(); // mark as queued so we don't request it again.
 
     TileLoaderPtr me(this);
-    auto loadFlag = std::make_shared<LoadFlag>(m_tile->GetRootR());  // Keep track of running requests so we can exit gracefully.
+    auto loadFlag = std::make_shared<LoadFlag>(m_loads);  // Keep track of running requests so we can exit gracefully.
 
     return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
         {
         if (SUCCESS == status)
             return folly::makeFuture(SUCCESS);
-
+            
         if (me->IsCanceledOrAbandoned())
             return folly::makeFuture(ERROR);
-
+       
         return me->_GetFromSource();
         }).then(&BeFolly::ThreadPool::GetCpuPool(), [me, loadFlag] (BentleyStatus status)
             {
@@ -80,10 +76,11 @@ folly::Future<BentleyStatus> TileLoader::Perform()
                     tile.SetNotFound();
                 return ERROR;
                 }
-
+            
+            T_HOST._OnNewTileReady(tile.GetRoot().GetDgnDb());
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-            // On a successful load, potentially store the tile in the cache.
+            
+            // On a successful load, potentially store the tile in the cache.   
             me->_SaveToDb();    // don't wait on the save.
             return SUCCESS;
             });
@@ -106,28 +103,29 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
                 return ERROR;
 
-            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream());
+            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
             me->m_contentType = response.GetHeaders().GetContentType();
             me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
 
             return SUCCESS;
             });
-        }
+        }                                           
+
 
     auto query = std::make_shared<FileDataQuery>(m_resourceName, m_loads);
-
+ 
     TileLoaderPtr me(this);
     return query->Perform().then([me, query](ByteStream const& data)
         {
         if (!data.HasData())
             return ERROR;
 
-        me->m_tileBytes = std::move(data);
-        me->m_contentType = "";     // unknown
-        me->m_expirationDate = 0;   // unknown
+        me->m_tileBytes = std::move(data); // NEEDSWORK this is a copy not a move...
+        me->m_contentType = "";     // unknown 
+        me->m_expirationDate = 0;   // unknown 
 
         return SUCCESS;
-        });
+        });         
     }
 
 //----------------------------------------------------------------------------------------
@@ -164,9 +162,13 @@ BentleyStatus TileLoader::DoReadFromDb()
         {
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
-        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4};
+        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4,Created=5};
         CachedStatementPtr stmt;    
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires," TABLE_NAME_TileTree ".ROWID as TileRowId,"
+            "Created," TABLE_NAME_TileTreeCreateTime ".ROWID as CreatedRowId FROM " TABLE_NAME_TileTree
+            " JOIN " TABLE_NAME_TileTreeCreateTime " ON TileRowId=CreatedRowId WHERE Filename=?";
+
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
             {
             BeAssert(false);
             return ERROR;
@@ -177,15 +179,64 @@ BentleyStatus TileLoader::DoReadFromDb()
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
 
-        m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(Column::Data), stmt->GetValueInt(Column::DataSize));
+        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
+        uint64_t createTime = stmt->GetValueInt64(Column::Created);
+        if (_IsExpired(createTime))
+            {
+            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
+            stmt->BindInt64(1, rowId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
+            stmt->BindInt64(1, rowId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false);
+                }
+
+            return ERROR;
+            }
+        if (0 == stmt->GetValueInt64(Column::DataSize))
+            {
+            m_tileBytes.clear();
+            }
+        else
+            {
+            if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", stmt->GetValueInt64(Column::Rowid)))
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            CacheBlobHeader     header(m_snappyFrom);
+            uint32_t            sizeRead;
+
+            if ((CacheBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            m_tileBytes.Resize(header.m_size);
+            m_snappyFrom.ReadAndFinish(m_tileBytes.GetDataP(), header.m_size, sizeRead);
+
+            if (sizeRead != header.m_size)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+            }
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(Column::ContentType);
         m_expirationDate = stmt->GetValueInt64(Column::Expires);
-
+        
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
-        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
-        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
+        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?"))
             {
             stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
             stmt->BindInt64(2, rowId);
@@ -196,11 +247,8 @@ BentleyStatus TileLoader::DoReadFromDb()
             }
         }
 
-    if (m_loads != nullptr)
-        {
-        m_loads->m_fromDb.IncrementAtomicPre(std::memory_order_relaxed);   // just for debugging, really
-        m_loads = nullptr;
-        }
+    // ###TODO: Why? if (m_loads != nullptr)
+    // ###TODO: Why?     m_loads = nullptr;
 
     return SUCCESS;
     }
@@ -236,33 +284,89 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
-        return ERROR;
+        return ERROR; 
 
     BeAssert(!m_cacheKey.empty());
-    BeAssert(m_tileBytes.HasData());
 
     RealityData::Cache::AccessLock lock(*cache);
 
     // "INSERT OR REPLACE" so we can update old data that we failed to load.
     CachedStatementPtr stmt;
-    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Created,Expires) VALUES (?,?,?,?,?,?)");
+    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Expires) VALUES (?,?,?,?,?)");
 
     BeAssert(rc == BE_SQLITE_OK);
     BeAssert(stmt.IsValid());
 
     stmt->ClearBindings();
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
-    stmt->BindBlob(2, m_tileBytes.GetData(), (int) m_tileBytes.GetSize(), Statement::MakeCopy::No);
-    stmt->BindInt64(3, (int64_t) m_tileBytes.GetSize());
+    if (m_tileBytes.empty())
+        {
+        stmt->BindZeroBlob(2, 0);
+        stmt->BindInt64(3, 0);
+        }
+    else
+        {
+        m_snappyTo.Init();
+        CacheBlobHeader header(m_tileBytes.GetSize());
+        m_snappyTo.Write((Byte const*) &header, sizeof(header));
+        m_snappyTo.Write(m_tileBytes.GetData(), (int) m_tileBytes.GetSize());
+        uint32_t zipSize = m_snappyTo.GetCompressedSize();
+        stmt->BindZeroBlob(2, zipSize); 
+        stmt->BindInt64(3, (int64_t) zipSize);
+        }
     stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
-    stmt->BindInt64(5, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    stmt->BindInt64(6, m_expirationDate);
+    stmt->BindInt64(5, m_expirationDate);
 
     rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
         {
         BeAssert(false);
         return ERROR;
+        }
+
+    // Write the tile creation time into separate table so that when we update it on next use of this tile, sqlite doesn't have to copy the potentially-huge data column
+    // We don't know if we did an INSERT or UPDATE above...
+    rc = cache->GetDb().GetCachedStatement(stmt, "SELECT ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?");
+    BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
+
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    uint64_t rowId = stmt->GetValueInt64(0);
+
+    if (!m_tileBytes.empty())
+        {
+        StatusInt status = m_snappyTo.SaveToRow( cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId);
+        if (SUCCESS != status)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
+
+    // Try update existing row...
+    rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
+    BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
+
+    stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindInt64(2, rowId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        // We must have done an INSERT on tile tree table...
+        rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTreeCreateTime " (Created) VALUES (?)");
+        BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
+
+        stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        rc = stmt->Step();
+        if (BE_SQLITE_DONE != rc)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -288,12 +392,6 @@ folly::Future<Http::Response> HttpDataQuery::Perform()
 
     return GetRequest().Perform().then([loads] (Http::Response response)
         {
-        if (Http::ConnectionStatus::OK == response.GetConnectionStatus() && Http::HttpStatus::OK == response.GetHttpStatus() &&
-            loads != nullptr)
-            {
-            loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
-            }
-
         return response;
         });
     }
@@ -307,7 +405,7 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
 
     if (!response.IsSuccess())
         return false;
-
+         
     Utf8String cacheControl = response.GetHeaders().GetCacheControl();
     size_t offset = 0;
     Utf8String directive;
@@ -334,14 +432,14 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
 
     // if cache-control did not provide a max-age we must use 'Expires' directive if present.
     if (0 == expirationDate)
-        {
+        {        
         Utf8CP expiresStr = response.GetHeaders().GetValue("Expires");
         if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
             {
             // if we cannot find an expiration date we are still allowed to cache.
             }
         }
-
+       
     return true;
     }
 
@@ -362,9 +460,6 @@ folly::Future<ByteStream> FileDataQuery::Perform()
         if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
             return data;
 
-        if (loads != nullptr)
-            loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
-
         return data;
         });
     }
@@ -373,18 +468,25 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 * Create the table to hold entries in this TileCache
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileCache::_Prepare() const
+BentleyStatus TileCache::_Prepare() const 
     {
     if (m_db.TableExists(TABLE_NAME_TileTree))
+        {
+        BeAssert(m_db.TableExists(TABLE_NAME_TileTreeCreateTime));
         return SUCCESS;
+        }
+        
+    if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Created BIGINT"))
+        return ERROR;
 
-    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Created BIGINT,Expires BIGINT") ? SUCCESS : ERROR;
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
+        "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Expires BIGINT") ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileCache::_Cleanup() const
+BentleyStatus TileCache::_Cleanup() const 
     {
     AccessLock lock(const_cast<TileCache&>(*this));
 
@@ -404,7 +506,11 @@ BentleyStatus TileCache::_Cleanup() const
     uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
-    m_db.GetCachedStatement(selectStatement, "SELECT DataSize,Created FROM " TABLE_NAME_TileTree " ORDER BY Created ASC");
+    constexpr Utf8CP selectSql = "SELECT DataSize,Created," TABLE_NAME_TileTree ".ROWID as TileRowId," TABLE_NAME_TileTreeCreateTime ".ROWID as CreatedRowId "
+        " FROM " TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON TileRowId=CreatedRowId ORDER BY Created ASC";
+
+    m_db.GetCachedStatement(selectStatement, selectSql);
+    BeAssert(selectStatement.IsValid());
 
     uint64_t runningSum=0;
     while (runningSum < garbageSize)
@@ -423,7 +529,10 @@ BentleyStatus TileCache::_Cleanup() const
     BeAssert(creationDate > 0);
 
     CachedStatementPtr deleteStatement;
-    m_db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TileTree " WHERE Created <= ?");
+    constexpr Utf8CP deleteSql = "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID IN (SELECT ROWID FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?)";
+    m_db.GetCachedStatement(deleteStatement, deleteSql);
+    BeAssert(deleteStatement.IsValid());
+
     deleteStatement->BindInt64(1, creationDate);
 
     return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
@@ -438,9 +547,9 @@ void Root::ClearAllTiles()
         return;
 
     m_rootTile->SetAbandoned();
-    m_rootTile = nullptr;
     WaitForAllLoads();
 
+    m_rootTile = nullptr;
     m_cache = nullptr;
     }
 
@@ -456,11 +565,11 @@ BentleyStatus Root::DeleteCacheFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
+void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     {
-    if (!IsHttp())
+    if (httpOnly && !IsHttp()) 
         return;
-
+        
     m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
     m_localCacheName.AppendToPath(BeFileName(realityCacheName));
     m_localCacheName.AppendExtension(L"TileCache");
@@ -473,7 +582,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -481,10 +590,13 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
         return ERROR;
         }
 
+    if (nullptr == loads)
+        loads = std::make_shared<TileLoadState>(tile, deadline);
+
     TileLoaderPtr loader = tile._CreateTileLoader(loads, renderSys);
     if (!loader.IsValid())
-        return ERROR;
-
+        return ERROR;   
+    
     return loader->Perform();
     }
 
@@ -516,7 +628,28 @@ Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP
         }
     }
 
-void Tile::_DrawGraphics(DrawArgsR args, int depth) const { _GetGraphics(args.m_graphics, depth); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::StartTileLoad(TileLoadStatePtr state) const
+    {
+    BeAssert(nullptr != state);
+    BeMutexHolder lock(m_cv.GetMutex());
+    BeAssert(m_activeLoads.end() == m_activeLoads.find(state));
+    m_activeLoads.insert(state);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DoneTileLoad(TileLoadStatePtr state) const
+    {
+    BeAssert(nullptr != state);
+    BeMutexHolder lock(m_cv.GetMutex());
+    // NB: If the load was canceled by RequestTiles(), it no longer exists in m_activeLoads
+    m_activeLoads.erase(state);
+    m_cv.notify_all();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * This method gets called on the (valid) children of nodes as they are unloaded. Its purpose is to notify the loading
@@ -555,6 +688,12 @@ void Tile::_UnloadChildren(BeTimePoint olderThan) const
     for (auto const& child : m_children)
         child->SetAbandoned();
 
+#if defined(DEBUG_UNLOAD_CHILDREN)
+    BeDuration elapsed(BeTimePoint::Now() - olderThan);
+    BeDuration sinceLastUsed(BeTimePoint::Now() - m_childrenLastUsed);
+    THREADLOG.debugv("Unloading children after %f seconds (children last used %f seconds ago)", elapsed.ToSeconds(), sinceLastUsed.ToSeconds());
+#endif
+
     _OnChildrenUnloaded();
     m_children.clear();
     }
@@ -575,72 +714,223 @@ void Tile::ExtendRange(DRange3dCR childRange) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
-* @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::Draw(DrawArgsR args, int depth) const
+Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
     {
     DgnDb::VerifyClientThread();
 
-    bool tooCoarse = true;
-
-    if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
+    _ValidateChildren();
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
         {
-        Frustum box(m_range);
-        box.Multiply(args.GetLocation());
-
-        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box) ||
-            ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
-            {
-            if (_HasChildren())
-                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum or clip. Unload any loaded children if they're expired.
-
-            return;
-            }
-
-        double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
-        DPoint3d center = args.GetTileCenter(*this);
-
-        static double s_minPixelSize = 1.0E-7;
-        double pixelSize = radius / std::max(s_minPixelSize, args.m_context.GetPixelSizeAtPoint(&center));
-        tooCoarse = pixelSize > _GetMaximumSize();
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
         }
 
-    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
-    if (tooCoarse && nullptr != children)
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    bool ready = IsReady();
+
+    // Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
+    // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
+    // The IsParentDisplayable() test below allows us to skip intermediate tiles, but never the first displayable tiles in the tree.
+    bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
+    auto children = skipThisTile ? _GetChildren(true) : nullptr;
+
+    // Don't enqueue a tile if we're skipping it...
+    if (!ready && !skipThisTile)
+        args.InsertMissing(*this);
+
+    if (nullptr != children)
         {
-        // this node is too coarse for current view, don't draw it and instead draw its children
-        m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
+        m_childrenLastUsed = args.m_now;
+        bool drawParent = false;
+        size_t initialSize = selected.size();
 
         for (auto const& child : *children)
-            child->Draw(args, depth+1);
+            {
+            if (SelectParent::Yes == child->_SelectTiles(selected, args))
+                {
+                drawParent = true;
+                // NB: We must continue iterating children so that they can be requested if missing...
+                }
+            }
 
-        return;
+        if (!drawParent)
+            {
+            m_childrenLastUsed = args.m_now;
+            return SelectParent::No;
+            }
+
+        selected.resize(initialSize);
         }
-
-    // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
-    _DrawGraphics(args, depth);
-
-    if (!_HasChildren()) // this is a leaf node - we're done
-        return;
 
     if (!tooCoarse)
-        {
-        // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
         _UnloadChildren(args.m_purgeOlderThan);
+
+    if (ready)
+        {
+        if (_HasGraphics())
+            selected.push_back(this);
+
+        return SelectParent::No;
+        }
+    else if (_HasBackupGraphics())
+        {
+        // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
+        selected.push_back(this);
+        return SelectParent::No;
+        }
+
+    return SelectParent::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::HasContentRange() const
+    {
+    auto const& contentRange = _GetContentRange();
+    return &contentRange != &m_range && !contentRange.IsEqual(m_range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
+    {
+    /// NO. if (!IsDisplayable())
+    /// NO.     return false;
+
+    // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
+    Frustum box(range);
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
+    bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
+    return isOutside || clipped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
+    {
+    // NB: We test for region culling before IsDisplayable() - otherwise we will never unload children of undisplayed tiles when
+    // they are outside frustum
+    if (IsRegionCulled(args))
+        return Visibility::OutsideFrustum;
+
+    // some nodes are merely for structure and don't have any geometry
+    if (!IsDisplayable())
+        return Visibility::TooCoarse;
+
+    bool hasContentRange = HasContentRange();
+    if (!_HasChildren())
+        {
+        if (hasContentRange && IsContentCulled(args))
+            return Visibility::OutsideFrustum;
+
+        return Visibility::Visible; // it's a leaf node
+        }
+
+    if (GetDepth() < args.GetMinDepth())
+        return Visibility::TooCoarse; // replace with children
+    else if (GetDepth() == args.GetMaxDepth())
+        return hasContentRange && IsContentCulled(args) ? Visibility::OutsideFrustum : Visibility::Visible;
+
+    double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
+    DPoint3d center = args.GetTileCenter(*this);
+
+#if defined(LIMIT_MIN_PIXEL_SIZE)
+    constexpr double s_minPixelSizeAtPoint = 1.0E-7;
+    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
+#else
+    double pixelSizeAtPt = args.m_context.GetPixelSizeAtPoint(&center);
+    double pixelSize = 0.0 != pixelSizeAtPt ? radius / pixelSizeAtPt : 1.0E-3;
+#endif
+
+    if (pixelSize > _GetMaximumSize() * args.GetTileSizeModifier())
+        return Visibility::TooCoarse;
+
+    if (hasContentRange && IsContentCulled(args))
+        return Visibility::OutsideFrustum;
+
+    return Visibility::Visible;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DrawInView(SceneContextR context)
+    {
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
         return;
         }
 
-    // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
-    // NOTE: add all missing tiles, even if they're already queued.
-    if (!IsNotFound())
-        args.m_missing.Insert(depth, this);
+    DrawArgs args = CreateDrawArgs(context);
+    bvector<TileCPtr> selectedTiles = SelectTiles(args);
+
+    std::sort(selectedTiles.begin(), selectedTiles.end(), [&](TileCPtr const& lhs, TileCPtr const& rhs)
+        {
+        return args.ComputeTileDistance(*lhs) < args.ComputeTileDistance(*rhs);
+        });
+
+    for (auto const& selectedTile : selectedTiles)
+        {
+        BeAssert(!selectedTile->IsRegionCulled(args));
+        selectedTile->_DrawGraphics(args);
+        }
+
+#if defined(DEBUG_TILE_SELECTION)
+    if (!selectedTiles.empty())
+        THREADLOG.debugv("Selected %u tiles requested %u tiles", static_cast<uint32_t>(selectedTiles.size()), static_cast<uint32_t>(context.m_requests.GetMissing(*this).size()));
+#endif
+
+    args.DrawGraphics();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawArgs Root::CreateDrawArgs(SceneContextR context)
+    {
+    auto now = BeTimePoint::Now();
+    return DrawArgs(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<TileCPtr> Root::SelectTiles(SceneContextR context)
+    {
+    DrawArgs args = CreateDrawArgs(context);
+    return SelectTiles(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<TileCPtr> Root::SelectTiles(DrawArgsR args)
+    {
+    bvector<TileCPtr> selectedTiles;
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return selectedTiles;
+        }
+
+    InvalidateDamagedTiles();
+
+    GetRootTile()->_SelectTiles(selectedTiles, args);
+
+    return selectedTiles;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::Pick(PickArgsR args, int depth) const
+void Tile::Pick(PickArgsR args, uint32_t depth) const
     {
     DgnDb::VerifyClientThread();
 
@@ -720,50 +1010,101 @@ int Tile::CountTiles() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileLoadState::~TileLoadState()
     {
-    DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled.load(), m_requested.load(), m_fromFile.load() , m_fromHttp.load(), m_fromDb.load());
+    if (m_canceled.load())
+        {
+#if defined(DEBUG_TILE_CANCEL)
+        THREADLOG.errorv("Tile load canceled", m_canceled.load());
+#endif
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double branchOffset, Utf8CP title)
+void DrawArgs::DrawBranch(ViewFlagsOverridesCR flags, Render::GraphicBranch& branch)
     {
     if (branch.m_entries.empty())
         return;
 
-    DPoint3d offset = {0.0, 0.0, m_root.m_biasDistance + branchOffset};
-    Transform location = Transform::FromProduct(GetLocation(), Transform::From(offset));
-    DEBUG_PRINTF("drawing %d %s Tiles", branch.m_entries.size(), title);
-    branch.SetViewFlags(flags);
-    auto drawBranch = m_context.CreateBranch(branch, &location, m_clip);
+    branch.SetViewFlagsOverrides(flags);
+    auto drawBranch = m_context.CreateBranch(branch, m_context.GetDgnDb(), GetLocation(), m_clip);
     BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
     m_context.OutputGraphic(*drawBranch, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add the Render::Graphics from all tiles that were found from this draw request to the context.
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
+    {
+    ViewFlagsOverrides flags;
+
+    flags.SetRenderMode(Render::RenderMode::SmoothShade);
+    flags.SetShowVisibleEdges(false);                                                                                                                                                                                                                               
+    flags.SetShowTextures(true);
+    flags.SetShowShadows(false);
+    flags.SetShowCameraLights(false);
+    flags.SetShowSourceLights(false);
+    flags.SetShowSolarLight(false);
+
+    return flags;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics()
     {
-    ViewFlags flags = m_root._GetDrawViewFlags(m_context);
-    DrawBranch(flags, m_graphics.m_graphics, 0.0, "Main");
-    DrawBranch(flags, m_graphics.m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
-    DrawBranch(flags, m_graphics.m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
+    // Allow the tile tree to specify how view flags should be overridden
+    DrawBranch(m_root._GetViewFlagsOverrides(), m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add all missing tiles that are in the "not loaded" state to the download queue.
-* @bsimethod                                    Keith.Bentley                   08/16
+* We want to draw these missing tiles, but they are not yet ready. They may already be
+* queued for loading, or actively loading.
+* If they are in the "not loaded" state, add them to the load queue.
+* Any tiles which are currently loading/queued but are *not* in this missing set should
+* be cancelled - we have determined we do not need them to draw the current frame.
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root, TileLoadStatePtr loads)
+void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
     {
-    // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
-    for (auto const& tile : m_missing)
+    uint32_t numCanceled = 0;
+
         {
-        if (tile.second->IsNotLoaded())
-            root._RequestTile(const_cast<TileR>(*tile.second), loads);
+        // First cancel any loading/queued tiles which are no longer needed
+        BeMutexHolder lock(m_cv.GetMutex());
+        for (auto iter = m_activeLoads.begin(); iter != m_activeLoads.end(); /**/)
+            {
+            auto& load = *iter;
+            if (!load->IsCanceled() && !missingNodes.Contains(load->GetTile()))
+                {
+                ++numCanceled;
+                load->SetCanceled();
+                iter = m_activeLoads.erase(iter);
+                }
+            else
+                {
+                ++iter;
+                }
+            }
         }
+
+    // This requests tiles ordered first by distance to camera, then by depth.
+    for (auto const& missing : missingNodes)
+        {
+        if (missing.GetTile().IsNotLoaded())
+            {
+            TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile(), deadline);
+            _RequestTile(const_cast<TileR>(missing.GetTile()), loads, nullptr, deadline);
+            }
+        }
+
+#if defined(DEBUG_TILE_REQUESTS)
+    THREADLOG.warningv("Missing %u Loading %u Canceled %u", static_cast<uint32_t>(missingNodes.size()), static_cast<uint32_t>(m_activeLoads.size()), numCanceled);
+#endif
+    UNUSED_VARIABLE(numCanceled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -791,64 +1132,76 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
             }
         }
 
-    return &m_children;
+    return m_children.empty() ? nullptr : &m_children;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
+* @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFlags Root::_GetDrawViewFlags(RenderContextCR context) const 
+void QuadTree::Tile::_DrawGraphics(DrawArgsR args) const
     {
-    ViewFlags flags = context.GetViewFlags();
-    flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.SetShowTextures(true);
-    flags.SetShowVisibleEdges(false);
-    flags.SetShowShadows(false);
-    flags.SetShowCameraLights(false);
-    flags.SetShowSourceLights(false);
-    flags.SetShowSolarLight(false);
-    return flags;
+    BeAssert(IsReady());
+    if (m_graphic.IsValid())
+        args.m_graphics.Add(*m_graphic);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
+* @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVectorCP clips)
+void QuadTree::Tile::_ValidateChildren() const
     {
-    if (!GetRootTile().IsValid())
+    // This node may have initially had children and subsequently determined that it should be a leaf instead
+    // - unload its now-useless children unconditionally
+    if (m_isLeaf)
+        _UnloadChildren(BeTimePoint::Now());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+    : T_Super::Root(db, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+    {
+    m_tileColor = ColorDef::White();
+    if (0.0 != transparency)
+        m_tileColor.SetAlpha((Byte) (255.* transparency));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+OctTree::Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
+    : T_Super(db, location, rootUrl, system)
+    {
+    // 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
+    {
+    if (m_isLeaf)
+        return nullptr;
+
+    if (load && m_children.empty())
         {
-        BeAssert(false);
-        return;
-        }
-
-    auto now = BeTimePoint::Now();
-    DrawArgs args(context, location, *this, now, now-GetExpirationTime(), clips);
-    for (;;)
-        {
-        m_rootTile->Draw(args, 0);
-        DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.Count(), GetRootTile()->CountTiles(), args.m_missing.size());
-        BeAssert("Unusually large number of tile to draw" && (args.m_missing.size() + args.m_graphics.Count() < 10000));
-
-        // Do we still have missing tiles?
-        if (args.m_missing.empty())
-            break; // no, just draw what we've got
-
-        // yes, request them
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*this, loads);
-
-        if (!context.GetUpdatePlan().GetQuitTime().IsInFuture()) // do we want to wait for them? This is really just for thumbnails
+        for (int i = 0; i < 2; i++)
             {
-            // no, schedule a progressive pass for when they arrive
-            context.GetViewport()->ScheduleProgressiveTask(*_CreateProgressiveTask(args, loads));
-            break;
+            for (int j = 0; j < 2; j++)
+                {
+                for (int k = 0; k < 2; k++)
+                    {
+                    auto child = _CreateChild(m_id.CreateChildId(i, j, k));
+                    if (child.IsValid())
+                        m_children.push_back(child);
+                    }
+                }
             }
-
-        BeDuration::FromMilliseconds(20).Sleep(); // we want to wait. Give tiles some time to arrive
-        args.Clear(); // clear graphics/missing from previous attempt
         }
 
-    args.DrawGraphics();
+    return m_children.empty() ? nullptr : &m_children;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -864,132 +1217,433 @@ void Root::Pick(PickContext& context, TransformCR location, ClipVectorCP clips)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* we do not have any graphics for this tile, try its (lower resolution) parent, recursively.
-* @bsimethod                                    Keith.Bentley                   09/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QuadTree::Tile::TryLowerRes(DrawGraphicsR args, int depth) const
+void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
-    Tile* parent = (Tile*) m_parent;
-    if (depth <= 0 || nullptr == parent)
-        {
-        // DEBUG_PRINTF("no lower res");
-        return false;
-        }
-
-    if (parent->HasGraphics())
-        {
-        //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_loResSubstitutes.Add(*parent->m_graphic);
-        return true;
-        }
-
-    return parent->TryLowerRes(args, depth-1); // recursion
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* We do not have any graphics for this tile, try its immediate children. Not recursive.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::TryHigherRes(DrawGraphicsR args) const
-    {
-    for (auto const& child : m_children)
-        {
-        Tile* quadChild = (Tile*) child.get();
-
-        if (quadChild->HasGraphics())
-            {
-            //DEBUG_PRINTF("using higher res");
-            args.m_hiResSubstitutes.Add(*quadChild->m_graphic);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const 
-    {
-    _GetGraphics(args.m_graphics, depth);
-
-    if (!IsReady() && !IsNotFound())
-        args.m_missing.Insert(depth, this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::_GetGraphics(DrawGraphicsR args, int depth) const
-    {
-    if (!IsReady())
-        {
-        TryLowerRes(args, 10);
-        TryHigherRes(args);
-        return;
-        }
-
-    if (m_graphic.IsValid())
+    BeAssert(IsReady());
+    BeAssert(_HasGraphics()); // _SelectTiles() checks this - does not select tiles with no graphics.
+    if (_HasGraphics())
         args.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootDirectory, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency)
-    : T_Super::Root(db, trans, rootDirectory, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+static DRange3d bisectRange(DRange3dCR range, bool takeLow)
     {
-    m_tileColor = ColorDef::White();
-    if (0.0 != transparency)
-        m_tileColor.SetAlpha((Byte) (255.* transparency));
+    DVec3d diag = range.DiagonalVector();
+    DRange3d subRange = range;
+
+    double bisect;
+    double* replace;
+    if (diag.x > diag.y && diag.x > diag.z)
+        {
+        bisect = (range.low.x + range.high.x) / 2.0;
+        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        }
+    else if (diag.y > diag.z)
+        {
+        bisect = (range.low.y + range.high.y) / 2.0;
+        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        }
+    else
+        {
+        bisect = (range.low.z + range.high.z) / 2.0;
+        replace = takeLow ? &subRange.high.z : &subRange.low.z;
+        }
+
+    *replace = bisect;
+    return subRange;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
-* @bsimethod                                    Keith.Bentley                   08/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderListContext& context, WantShow& wantShow)
+DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child) const
     {
-    auto now = BeTimePoint::Now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime(), m_root.m_clip.get());
+    // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
+    TileTree::OctTree::TileId relativeId = child.GetRelativeTileId();
+    BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
 
-    DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
+    DRange3d range = bisectRange(GetRange(), 0 == relativeId.m_i);
+    range = bisectRange(range, 0 == relativeId.m_j);
+    range = bisectRange(range, 0 == relativeId.m_k);
 
-    for (auto const& node: m_missing)
-        {
-        auto stat = node.second->GetLoadStatus();
-        if (stat == Tile::LoadStatus::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadStatus::NotFound)
-            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
-        }
-
-    args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics();  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
-
-    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
-
-    DEBUG_PRINTF("%s after progressive still %d missing", m_name.c_str(), m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
-        {
-        m_loads = nullptr; // for debugging
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + BeDuration::Seconds(1); // once per second
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
+    return range;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTaskPtr QuadTree::Root::_CreateProgressiveTask(DrawArgs& args, TileLoadStatePtr loads)
+OctTree::TileId OctTree::TileId::GetRelativeId(OctTree::TileId parentId) const
     {
-    return new QuadTree::ProgressiveTask(*this, args.m_missing, loads);
+    BeAssert(parentId.m_level+1 == m_level);
+    return TileId(parentId.m_level, m_i % 2, m_j % 2, m_k % 2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+OctTree::TileId OctTree::Tile::GetRelativeTileId() const
+    {
+    auto tileId = GetTileId();
+    auto parent = GetOctParent();
+    if (nullptr != parent)
+        tileId = tileId.GetRelativeId(parent->GetTileId());
+
+    return tileId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctTree::Tile::_ValidateChildren() const
+    {
+    // This node may have initially had children and subsequently determined that it should be a leaf instead
+    // - unload its now-useless children unconditionally
+    if (m_isLeaf)
+        _UnloadChildren(BeTimePoint::Now());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void MissingNodes::Insert(TileCR tile, double distance)
+    {
+    MissingNode toInsert(tile, distance);
+    auto inserted = m_set.insert(toInsert);
+    if (!inserted.second && distance < inserted.first->GetDistance())
+        {
+        // replace with closer distance
+        m_set.erase(inserted.first);
+        m_set.insert(toInsert);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MissingNodes::Contains(TileCR tile) const
+    {
+    // ###TODO: Make this more efficient...
+    return m_set.end() != std::find_if(m_set.begin(), m_set.end(), [&](MissingNodeCR arg) { return &arg.GetTile() == &tile; });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::InsertMissing(TileCR tile)
+    {
+    m_missing.Insert(tile, ComputeTileDistance(tile));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+double DrawArgs::ComputeTileDistance(TileCR tile) const
+    {
+    // Actually, distance squared...
+    DPoint3d centroid = DPoint3d::FromInterpolate(tile.GetRange().low, 0.5, tile.GetRange().high);
+    m_root.GetLocation().Multiply(centroid);
+    return centroid.DistanceSquared(m_context.GetViewportR().GetCamera().GetEyePoint());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double DrawArgs::GetTileSizeModifier() const
+    {
+    TargetCP target = m_context.GetViewportR().GetRenderTarget();
+    double targetMod = nullptr != target ? target->GetTileSizeModifier() : 1.0;
+    return targetMod * m_context.GetUpdatePlan().GetTileOptions().GetScale();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeTimePoint DrawArgs::GetDeadline() const
+    {
+    return m_context.GetUpdatePlan().GetTileOptions().GetDeadline();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DrawArgs::GetMinDepth() const
+    {
+    return m_context.GetUpdatePlan().GetTileOptions().GetMinDepth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t DrawArgs::GetMaxDepth() const
+    {
+    return m_context.GetUpdatePlan().GetTileOptions().GetMaxDepth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
+    {
+    ByteCP start = GetCurrent();
+
+    if (nullptr == Advance(size)) 
+        {
+        BeAssert(false); 
+        return false;
+        }
+
+    memcpy(buf, start, size);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DirtyRanges DirtyRanges::Intersect(DRange3dCR range) const
+    {
+    auto end = std::partition(m_begin, m_end, [&range](DRange3dCR arg) { return arg.IntersectsWith(range); });
+    return DirtyRanges(m_begin, end);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::MarkDamaged(DRange3dCR range)
+    {
+    Transform transformToTile;
+    transformToTile.InverseOf(GetLocation());
+    DRange3d tileRange;
+    transformToTile.Multiply(tileRange, range);
+
+    BeMutexHolder lock(m_cv.GetMutex());
+    m_damagedRanges.push_back(tileRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
+    {
+    MarkDamaged(range);
+    _OnAddToRangeIndex(range, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
+    {
+    MarkDamaged(range);
+    _OnRemoveFromRangeIndex(range, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id)
+    {
+    MarkDamaged(oldRange);
+    MarkDamaged(newRange);
+    _OnUpdateRangeIndex(oldRange, newRange, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::InvalidateDamagedTiles()
+    {
+    DgnDb::VerifyClientThread();
+    BeAssert(m_rootTile.IsValid());
+
+    BeMutexHolder lock(m_cv.GetMutex());
+    if (m_damagedRanges.empty() || m_rootTile.IsNull())
+        return;
+
+    DirtyRanges dirty(m_damagedRanges);
+    UpdateRange(dirty);
+    m_rootTile->Invalidate(dirty);
+
+    m_damagedRanges.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Invalidate(DirtyRangesCR dirty)
+    {
+    DgnDb::VerifyClientThread();
+
+    // NB: The caller has already filtered the ranges to include only those which intersect this tile's range.
+    if (dirty.empty())
+        return;
+
+    // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
+    if (IsDisplayable() && _IsInvalidated(dirty))
+        {
+        // This tile needs to be regenerated
+        m_root.CancelTileLoad(*this);
+        SetNotLoaded();
+        _Invalidate();
+        }
+
+    // Test children. Note that we are only partitioning the subset of damaged ranges which intersect the parent.
+    auto children = _GetChildren(false);
+    if (nullptr == children)
+        return;
+
+    for (auto const& child : *children)
+        {
+        DirtyRanges childDirty = dirty.Intersect(child->GetRange());
+        child->Invalidate(childDirty);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::UpdateRange(DirtyRangesCR dirty)
+    {
+    TilePtr rootTile = GetRootTile();
+    if (dirty.empty() || rootTile.IsNull())
+        return;
+
+    auto iter = dirty.begin();
+    DRange3d range = *iter;
+    ++iter;
+
+    for (/*iter*/; iter != dirty.end(); ++iter)
+        range.UnionOf(range, *iter);
+
+    if (!range.IsContained(rootTile->GetRange()))
+        rootTile->_UpdateRange(rootTile->GetRange(), range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::WaitForAllLoadsFor(uint32_t milliseconds)
+    {
+    auto condition = [&](BeConditionVariable&) { return 0 == m_activeLoads.size(); };
+    ConditionVariablePredicate<decltype(condition)> pred(condition);
+    m_cv.WaitOnCondition(&pred, milliseconds);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::CancelAllTileLoads()
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    for (auto& load : m_activeLoads)
+        load->SetCanceled();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::CancelTileLoad(TileCR tile)
+    {
+    // ###TODO_ELEMENT_TILE: Bentley containers don't support 'transparent' comparators, meaning we can't compare a TileLoadStatePtr to a Tile even
+    // though the comparator can. We should fix that - but for now, instead, we're using std::set.
+    BeMutexHolder lock(m_cv.GetMutex());
+    auto iter = m_activeLoads.find(&tile);
+    if (iter != m_activeLoads.end())
+        {
+        (*iter)->SetCanceled();
+        m_activeLoads.erase(iter);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileRequests::RequestMissing(BeTimePoint deadline) const
+    {
+#if defined(DEBUG_REQUEST_MISSING)
+    size_t nRequested = 0;
+    for (auto const& kvp : m_map)
+        {
+        for (auto const& missing : kvp.second)
+            if (missing.GetTile().IsNotLoaded())
+                ++nRequested;
+        }
+
+    if (0 < nRequested)
+        THREADLOG.debugv("Requesting %llu tiles", nRequested);
+#endif
+
+    for (auto const& kvp : m_map)
+        if (!kvp.second.empty())
+            kvp.first->RequestTiles(kvp.second, deadline);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)
+    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::QPoint3dList TriMeshTree::TriMesh::CreateParams::QuantizePoints() const
+    {
+    // ###TODO: Is the tile's range known yet, and do we expect the range of points within it to be significantly smaller?
+    DRange3d range = DRange3d::NullRange();
+    for (int32_t i = 0; i < m_numPoints; i++)
+        range.Extend(DPoint3d::From(m_points[i]));
+
+    Render::QPoint3dList qpts(range);
+    qpts.reserve(m_numPoints);
+    for (int32_t i = 0; i < m_numPoints; i++)
+        qpts.Add(DPoint3d::From(m_points[i]));
+
+    return qpts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::OctEncodedNormalList TriMeshTree::TriMesh::CreateParams::QuantizeNormals() const
+    {
+    OctEncodedNormalList oens;
+    if (nullptr != m_normals)
+        {
+        oens.resize(m_numPoints);
+        for (size_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d normal = m_normals[i];
+            FVec3d vec = FVec3d::From(normal.x, normal.y, normal.z);
+            oens[i] = OctEncodedNormal::From(vec);
+            }
+        }
+
+    return oens;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TriMeshArgs TriMeshTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
+    {
+    TriMeshArgs trimesh;
+    trimesh.m_numIndices = m_indices.size();
+    trimesh.m_vertIndex = (uint32_t const*) (m_indices.empty() ? nullptr : &m_indices.front());
+    trimesh.m_numPoints = (uint32_t) m_points.size();
+    trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
+    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
+    trimesh.m_textureUV = textureUV;
+    trimesh.m_pointParams = m_points.GetParams();
+    trimesh.m_texture = texture;
+
+    return trimesh;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -998,14 +1652,7 @@ ProgressiveTaskPtr QuadTree::Root::_CreateProgressiveTask(DrawArgs& args, TileLo
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr TriMeshTree::TriMesh::GetPolyface() const
     {
-    IGraphicBuilder::TriMeshArgs trimesh;
-    trimesh.m_numIndices = (int32_t) m_indices.size();
-    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
-    trimesh.m_numPoints = (int32_t) m_points.size();
-    trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
-    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
-
+    TriMeshArgs trimesh = CreateTriMeshArgs(nullptr, nullptr);
     return trimesh.ToPolyface();
     }
 
@@ -1023,34 +1670,31 @@ TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render:
         m_indices.resize(args.m_numIndices);
         memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
 
-        m_points.resize(args.m_numPoints);
-        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+        m_points = args.QuantizePoints();
 
         if (nullptr != args.m_normals)
-            {
-            m_normals.resize(args.m_numPoints);
-            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-            }
+            m_normals = args.QuantizeNormals();
         }
 
-    if (nullptr == renderSys|| !args.m_texture.IsValid())
+#if defined(WIP_SCALABLE_MESH) // texture may not be valid...
+    if (nullptr == renderSys)
+#else
+    if (nullptr == renderSys || !args.m_texture.IsValid())
+#endif
         return;
 
-    auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
-    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-    graphic->AddTriMesh(args);
-    graphic->Close();
+    auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
 
-    m_graphic = graphic;
+    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, root.GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::TriMesh::GetGraphics(DrawGraphicsR args)
+void TriMeshTree::TriMesh::Draw(DrawArgsR args)
     {
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    if (!m_graphics.empty())
+        args.m_graphics.Add(m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1061,8 +1705,56 @@ void TriMeshTree::TriMesh::Pick(PickArgsR args)
     if (m_indices.empty())
         return;
 
-    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
+    auto graphic = args.m_context.CreateWorldGraphic(args.m_location);
     graphic->AddPolyface(*GetPolyface());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selectedTiles, DrawArgsR args) const
+    {
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    auto children = _GetChildren(true);
+#if defined(WIP_SCALABLE_MESH)
+    if (tooCoarse && nullptr != children && !children->empty())
+#else
+    if (tooCoarse && nullptr != children)
+#endif
+        {
+        m_childrenLastUsed = args.m_now;
+        for (auto const& child : *children)
+            {
+            // 3mx requires that we load tiles recursively - we cannot jump directly to the tiles we actually want to draw...
+            if (!child->IsReady())
+                args.InsertMissing(*child);
+
+            child->_SelectTiles(selectedTiles, args);
+            }
+
+        return SelectParent::No;
+        }
+
+    // This node is either fine enough for the current view or has some unloaded children. We'll select it.
+    selectedTiles.push_back(this);
+
+    if (!tooCoarse)
+        {
+        // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
+        // Unloading a 3mx tile's children sets the parent as 'not ready', requiring us to reload the parent (which also loads the children again)
+        // - so consider the children 'used' when the parent is selected
+        m_childrenLastUsed = args.m_now;
+        _UnloadChildren(args.m_purgeOlderThan);
+        }
+
+    return SelectParent::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1073,38 +1765,30 @@ void TriMeshTree::Tile::AddDebugRangeGraphics(DrawArgsR args) const
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
 
-    Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
+    auto graphic = args.m_context.CreateWorldGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddRangeBox(m_range);
-    args.m_graphics.m_graphics.Add(*graphic);
+    args.m_graphics.Add(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
+void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args) const
     {
     if (_WantDebugRangeGraphics())
         AddDebugRangeGraphics(args);
 
-    _GetGraphics(args.m_graphics, depth);
+    for (auto mesh : m_meshes)
+        mesh->Draw(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::_PickGraphics(PickArgsR args, int depth) const
+void TriMeshTree::Tile::_PickGraphics(PickArgsR args, uint32_t depth) const
     {
     for (auto mesh : m_meshes)
         mesh->Pick(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Tile::_GetGraphics(DrawGraphicsR args, int depth) const
-    {
-    for (auto mesh : m_meshes)
-        mesh->GetGraphics(args);
     }
 
