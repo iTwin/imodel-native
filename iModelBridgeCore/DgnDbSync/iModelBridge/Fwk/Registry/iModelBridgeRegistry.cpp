@@ -273,7 +273,7 @@ BentleyStatus iModelBridgeRegistry::ComputeBridgeAffinityToDocument(iModelBridge
             }
         }
 
-    int v;
+    int v = 0;
     if (1 != sscanf(line0.c_str(), "%d", &v))
         {
         LOG.errorv(L"%ls - \"%ls\" is an invalid affinity value?!", affinityLibraryPath.c_str(), WString(line0.c_str(), true).c_str());
@@ -314,7 +314,7 @@ BentleyStatus iModelBridgeRegistry::SearchForBridgeToAssignToDocument(BeFileName
 
         LOG.tracev(L"%ls -> (%ls,%d)", affinityLibraryPath.c_str(), thisBridge.m_bridgeRegSubKey.c_str(), (int)thisBridge.m_affinity);
 
-        if (thisBridge.m_affinity > bestBridge.m_affinity)
+        if (!thisBridge.m_bridgeRegSubKey.empty() && thisBridge.m_affinity > bestBridge.m_affinity)
             bestBridge = thisBridge;
         }
 
