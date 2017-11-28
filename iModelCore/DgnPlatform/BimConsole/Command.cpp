@@ -626,7 +626,7 @@ void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> co
         return;
         }
 
-    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(false, true);
     context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
 
     bvector<BeFileName> ecschemaFilePaths;
