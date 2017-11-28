@@ -30,6 +30,7 @@ enum TaskPriority
     TASK_PRIORITY_RefreshHierarchy = 1000,
     TASK_PRIORITY_InvalidateContent = 500,
     TASK_PRIORITY_Report = 100,
+    TASK_PRIORITY_RefreshSelection = 200,
     };
 
 /*=================================================================================**//**
@@ -130,6 +131,9 @@ public:
     // reporting tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(UpdateRecord) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(FullUpdateRecord) const;
+
+    // selection-related tasks
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshSelectionTask(ECDbCR, bmap<uint64_t, uint64_t>&) const;
 };
 
 /*=================================================================================**//**
