@@ -38,6 +38,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_AggregateJsonArray            "AggregateJsonArray"
 #define FUNCTION_NAME_GetPointAsJsonString          "GetPointAsJsonString"
 #define FUNCTION_NAME_ArePointsEqualByValue         "ArePointsEqualByValue"
+#define FUNCTION_NAME_AreDoublesEqualByValue        "AreDoublesEqualByValue"
 #define FUNCTION_NAME_GetPropertyDisplayValue       "GetPropertyDisplayValue"
 
 struct JsonNavNodesFactory;

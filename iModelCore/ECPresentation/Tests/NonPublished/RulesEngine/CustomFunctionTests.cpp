@@ -1049,7 +1049,7 @@ TEST_F(CustomFunctionTests, GetPointAsJsonString)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetPoint2dDisplayValue)
+TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point2d)
     {
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH);
@@ -1070,7 +1070,7 @@ TEST_F(CustomFunctionTests, GetPoint2dDisplayValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetPoint3dDisplayValue)
+TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point3d)
     {
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH);
@@ -1091,7 +1091,25 @@ TEST_F(CustomFunctionTests, GetPoint3dDisplayValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, Are3dPointsEqualByValueReturnsTrue)
+TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Double)
+    {
+    CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, 1.123456789) "
+                   "  FROM RET.Widget";
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, s_widgetClass->GetSchema().GetName().c_str(), IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, s_widgetClass->GetName().c_str(), IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(3, "DoubleProperty", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("_1.123456789_", stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, Are3dPointsEqualByValue_ReturnsTrue)
     {
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance)
@@ -1112,7 +1130,7 @@ TEST_F(CustomFunctionTests, Are3dPointsEqualByValueReturnsTrue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, Are3dPointsEqualByValueReturnsFalse)
+TEST_F(CustomFunctionTests, Are3dPointsEqualByValue_ReturnsFalse)
     {
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance)
@@ -1133,7 +1151,7 @@ TEST_F(CustomFunctionTests, Are3dPointsEqualByValueReturnsFalse)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, Are2dPointsEqualByValueReturnsTrue)
+TEST_F(CustomFunctionTests, Are2dPointsEqualByValue_ReturnsTrue)
     {
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance)
@@ -1154,7 +1172,7 @@ TEST_F(CustomFunctionTests, Are2dPointsEqualByValueReturnsTrue)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, Are2dPointsEqualByValueReturnsFalse)
+TEST_F(CustomFunctionTests, Are2dPointsEqualByValue_ReturnsFalse)
     {
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance)
@@ -1165,6 +1183,44 @@ TEST_F(CustomFunctionTests, Are2dPointsEqualByValueReturnsFalse)
     CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512}', h.Point2dProperty)"
                    "  FROM RET.ClassH h";
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_EQ(0, stmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsTrue)
+    {
+    m_widgetInstance->SetValue("DoubleProperty", ECValue(1.123456789));
+    ECInstanceUpdater updater(GetDb(), *m_widgetInstance, nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*m_widgetInstance));
+
+    CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    Utf8CP query = "SELECT " FUNCTION_NAME_AreDoublesEqualByValue "(1.123456789, DoubleProperty)"
+                   "  FROM RET.Widget";
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_EQ(1, stmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsFalse)
+    {
+    m_widgetInstance->SetValue("DoubleProperty", ECValue(1.123456788));
+    ECInstanceUpdater updater(GetDb(), *m_widgetInstance, nullptr);
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(*m_widgetInstance));
+
+    CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    Utf8CP query = "SELECT " FUNCTION_NAME_AreDoublesEqualByValue "(1.123456789, DoubleProperty)"
+                   "  FROM RET.Widget";
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));

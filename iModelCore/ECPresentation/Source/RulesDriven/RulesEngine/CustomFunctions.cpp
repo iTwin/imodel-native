@@ -550,6 +550,11 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
                 value.SetPoint3d(ValueHelpers::GetPoint3dFromJsonString(args[3].GetValueText()));
                 break;
                 }
+            case PRIMITIVETYPE_Double:
+                {
+                value.SetDouble(args[3].GetValueDouble());
+                break;
+                }
             default:
                 value = ValueHelpers::GetECValueFromString(ecProperty->GetAsPrimitiveProperty()->GetType(), args[3].GetValueText());
             }
@@ -595,6 +600,31 @@ struct ArePointsEqualByValueScalar : ECPresentation::ScalarFunction
                                 && 0 == BeNumerical::Compare(point.y, args[2].GetValueDouble())
                                 && 0 == BeNumerical::Compare(point.z, args[3].GetValueDouble()));
             }
+        }
+    };
+
+/*=================================================================================**//**
+* Parameters:
+* - Point coordinates as Json string
+* - Point x coordinate
+* - Point y coordinate
+* - Point z coordinate if Point is 3d
+* @bsiclass                                     Aidas.Vaiksnoras                11/2017
++===============+===============+===============+===============+===============+======*/
+struct AreDoublesEqualByValueScalar : ECPresentation::ScalarFunction
+    {
+    AreDoublesEqualByValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_AreDoublesEqualByValue, 2, DbValueType::IntegerVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        if (2 != nArgs)
+            {
+            BeAssert(false);
+            ctx.SetResultError("Invalid number of arguments", BE_SQLITE_ERROR);
+            return;
+            }
+        ctx.SetResultInt((int)0 == BeNumerical::Compare(args[0].GetValueDouble(), args[1].GetValueDouble()));
         }
     };
 
@@ -1562,7 +1592,8 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new ECInstanceKeysArrayScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetPointAsJsonStringScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new ArePointsEqualByValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new AreDoublesEqualByValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));    
 
     m_aggregateFunctions.push_back(new GetGroupedInstanceKeysAggregate(CustomFunctionsManager::GetManager()));
     m_aggregateFunctions.push_back(new GetMergedValueAggregate(CustomFunctionsManager::GetManager()));
