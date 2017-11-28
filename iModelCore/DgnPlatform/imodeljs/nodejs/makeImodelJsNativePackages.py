@@ -45,7 +45,6 @@ def doCopy(productdir, localpackagedir, nodeVersionCode, platformandarch, packag
     srcsupportdir = os.path.join(productdir, "Support");
     srcnodefile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), nodeVersionCode), "imodeljs.node")
     srcpackagefile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), nodeVersionCode), "package.json")
-    srcdeclsfile = os.path.join(os.path.join(os.path.join(productdir, "Addon"), nodeVersionCode), "iModelJsNodeAddon.d.ts")
 
     if not os.path.exists(srcnodefile) or not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
         print '***'
@@ -56,13 +55,10 @@ def doCopy(productdir, localpackagedir, nodeVersionCode, platformandarch, packag
             print ' ***   not found: ' + srcsupportdir 
         if not os.path.exists(srcpackagefile):
             print ' ***   not found: ' + srcpackagefile
-        if not os.path.exists(srcdeclsfile):
-            print ' ***   not found: ' + srcdeclsfile
         print('***')
         exit(1)
 
     dstpackagefile = os.path.join(localpackagedir, 'package.json')
-    dstdeclsfile = os.path.join(localpackagedir, 'iModelJsNodeAddon.d.ts')
     dstaddondir = os.path.join(localpackagedir, 'addon')
     dstnodefile = os.path.join(dstaddondir, 'imodeljs.node')
 
@@ -72,8 +68,6 @@ def doCopy(productdir, localpackagedir, nodeVersionCode, platformandarch, packag
     shutil.copyfile(srcnodefile, dstnodefile)
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
-
-    shutil.copyfile(srcdeclsfile, dstdeclsfile)
 
     setMacros(dstpackagefile, nodeVersionCode, platformandarch, packageVersion)
 

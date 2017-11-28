@@ -9,6 +9,5 @@
   "author": {
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
-  },
-  "types": "./iModelJsNodeAddon.d.ts"
+  }
 }

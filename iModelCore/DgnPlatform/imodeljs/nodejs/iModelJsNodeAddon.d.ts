@@ -86,14 +86,14 @@ declare class NodeAddonDgnDb {
    * @param opts Identifies the element
    * @param  callback Invoked when the operation completes. The 'result' argument is the element's properties in stringified JSON format.
    */
-  getElement(opts: string, callback: iModelJsNodeAddonCallback</*IModelStatus*/number, string>): void;
+  getElement(opts: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
 
   /**
    * Get a model's properties
    * @param opts Identifies the model
    * @param  callback Invoked when the operation completes. The 'result' argument is the model's properties in stringified JSON format.
    */
-  getModel(opts: string, callback: iModelJsNodeAddonCallback</*IModelStatus*/number, string>): void
+  getModel(opts: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void
 
   /**
    * Insert an element.
@@ -129,7 +129,7 @@ declare class NodeAddonDgnDb {
    * @param className The name of the ECClass
    * @param callback Invoked when the operation completes. The 'result' argument is an object containing the properties of the class, in stringified JSON format.
    */
-  getECClassMetaData(schema: string, className: string, callback: iModelJsNodeAddonCallback</*IModelStatus*/number, string>): void;
+  getECClassMetaData(schema: string, className: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
 
  /**
    * Get information about an ECClass
@@ -145,7 +145,7 @@ declare class NodeAddonDgnDb {
    * @param bindings The bindings to the statement. Pass null if there are no bindings.
    * @param callback Invoked when the operation completes. The 'result' argument is an array or rows in stringified JSON format.
    */
-  executeQuery(ecsql: string, bindings: string, callback: iModelJsNodeAddonCallback<DbResult, string>): void;
+  executeQuery(ecsql: string, bindings: string, callback: iModelJsNodeAddonCallback<BentleyError<DbResult>, string>): void;
 
 }
 
