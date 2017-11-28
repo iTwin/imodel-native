@@ -232,6 +232,7 @@ friend struct Expression;
 private:
     bvector<UnitCP> m_units;
     mutable bvector<UnitSynonymMap> m_altNames;
+    mutable Utf8String m_displayLabel;
 
     void AddUnit(UnitCR unit);
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
@@ -267,6 +268,7 @@ public:
     UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV); 
     UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const { return &m_altNames; }
     UNITS_EXPORT size_t GetSynonymCount() const { return m_altNames.size(); }
+    UNITS_EXPORT Utf8CP GetLabel() const;
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/
