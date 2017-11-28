@@ -75,7 +75,7 @@ protected:
     explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params, DVec3d normal);
 
 
-    static GridElementVector CreateGridPreview (CreateParams params, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
+    static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
 
     friend struct RadialGridPortionHandler;
 

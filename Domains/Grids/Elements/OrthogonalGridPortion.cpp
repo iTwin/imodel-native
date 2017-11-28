@@ -70,20 +70,8 @@ StandardCreateParams const& params
     
     if (subModel.IsValid ())
         {
-        GridElementVector horizontalElements = CreateGridElements (params, subModel.get(), true, horizontalAxis);
-        GridElementVector verticalElements = CreateGridElements (params, subModel.get(), false, verticalAxis);
-
-        for (GridSurfacePtr gridSurface : horizontalElements)
-            {
-            BuildingLocks_LockElementForOperation (*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
-            gridSurface->Insert ();
-            }
-
-        for (GridSurfacePtr gridSurface : verticalElements)
-            {
-            BuildingLocks_LockElementForOperation (*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
-            gridSurface->Insert ();
-            }
+        if (BentleyStatus::ERROR == CreateAndInsertSurfaces(params, subModel.get(), horizontalAxis, verticalAxis))
+            return nullptr;
         }
     return thisGrid;
     }
@@ -262,100 +250,57 @@ double distance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridElementVector OrthogonalGridPortion::CreateGridElements (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, bool isHorizontal, GridAxisPtr gridAxis)
+BentleyStatus OrthogonalGridPortion::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis)
     {
-    GridElementVector orthogonalGrid;
-
-    DVec3d extendTranslation;
-    double interval;
-    int count;
-    double rotAngle = 0;
+    // Adjust grid height
     double height = params.m_height;
-
     if (params.m_extendHeight)
         height += 2 * BUILDING_TOLERANCE;
 
-    if (isHorizontal)
+    bvector<GridSurfacePtr> surfaces;
+
+    BentleyStatus status = BentleyStatus::SUCCESS;
+
+    auto createElements = [&](int count, double interval, double rotAngle, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal)
         {
-        extendTranslation = params.m_horizontalExtendTranslation;
-        interval = params.m_horizontalInterval;
-        count = params.m_horizontalCount;
-        }
-    else
-        {
-        extendTranslation = params.m_verticalExtendTranslation;
-        interval = params.m_verticalInterval;
-        count = params.m_verticalCount;
-        rotAngle += msGeomConst_pi / 2;
-        }
-
-    for (int i = 0; i < count; ++i)
-        {
-        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length + 2 * extendTranslation.Magnitude(), height);
-        extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
-        extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
-
-        if (params.m_extendHeight)
-            extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
-
-        GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, gridAxis, extDetail);
-        if (!baseGridPlane.IsValid())
-            return GridElementVector();
-
-        baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
-        orthogonalGrid.push_back(baseGridPlane);
-        }
-
-    return orthogonalGrid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-double getIntervalBetweenElements(GridElementVector elements)
-    {
-    if (elements.size() >= 2)
-        {
-        GridSurfacePtr plane1 = elements[0];
-        GridSurfacePtr plane2 = elements[1];
-
-        return plane1->GetPlacement().GetOrigin().DistanceXY(plane2->GetPlacement().GetOrigin());
-        }
-    else
-        return 0;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-void rotateAxisToAngleXY(GridElementVector& axis, double theta)
-    {
-    double axisInterval = getIntervalBetweenElements(axis);
-
-    if (axis.size() > 0)
-        {
-        double existingRotation = GeometryUtils::PlacementToAngleXY(axis.front()->GetPlacement());
-        DVec3d axisTranslation = DVec3d::From(0.0, 0.0, 0.0);
-
-        if (axis.size() > 1)
+        for (int i = 0; i < count; ++i)
             {
-            axisTranslation = DVec3d::FromStartEnd(axis[0]->GetPlacement().GetOrigin(), axis[1]->GetPlacement().GetOrigin());
-            axisTranslation.RotateXY(theta);
+            DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length + 2 * extendTranslation.Magnitude(), height);
+            extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
+            extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
+
+            if (params.m_extendHeight)
+                extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
+
+            GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, gridAxis, extDetail);
+            if (!baseGridPlane.IsValid())
+                {
+                status = BentleyStatus::ERROR;
+                return;
+                }
+
+            baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
+            surfaces.push_back(baseGridPlane);
             }
+        };
 
-        axis[0]->RotateXY(theta);
-        Placement3d basePlacement = axis[0]->GetPlacement();
+    createElements(params.m_horizontalCount, params.m_horizontalInterval, 0, params.m_horizontalExtendTranslation, horizontalGridAxis, true);     // Create horizontal elements
+    createElements(params.m_verticalCount, params.m_verticalInterval, msGeomConst_pi / 2, params.m_verticalExtendTranslation, verticalGridAxis, false); // Create vertical elements
+    if (BentleyStatus::SUCCESS != status)
+        return status;
 
-        for (int i = 1; i < axis.size(); ++i)
-            {
-            axis[i]->SetPlacement(basePlacement);
+    // insert elements
+    for (GridSurfacePtr gridSurface : surfaces)
+        {
+        Dgn::RepositoryStatus lockStatus = BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
+        if (Dgn::RepositoryStatus::Success != lockStatus)
+            return BentleyStatus::ERROR;
 
-            axisTranslation.ScaleToLength(i * axisInterval);
-            DPoint3d newOrigin = basePlacement.GetOrigin();
-            newOrigin.Add(axisTranslation);
-            axis[i]->MoveToPoint(newOrigin);
-            }
+        if (gridSurface->Insert().IsNull())
+            return BentleyStatus::ERROR;
         }
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -366,7 +311,7 @@ Dgn::RepositoryStatus OrthogonalGridPortion::RotateToAngleXY(double theta, bool 
     DgnDbR db = GetDgnDb();
     Dgn::RepositoryStatus status = RepositoryStatus::Success;
 
-    GridElementVector gridElements;
+    bvector<GridSurfacePtr> gridElements;
     for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
         {
         GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);

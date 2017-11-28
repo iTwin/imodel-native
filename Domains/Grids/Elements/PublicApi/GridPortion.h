@@ -15,14 +15,6 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-typedef bvector<Grids::GridSurfacePtr> GridElementVector;
-typedef bmap<Utf8String, GridElementVector> GridAxisMap;
-typedef bmap<Utf8String, GridAxisMap> GridNameMap;
-
-#define DEFAULT_AXIS ""
-#define HORIZONTAL_AXIS "AxisX"
-#define VERTICAL_AXIS "AxisY"
-
 #define GRIDLINE_LENGTH_COEFF 0.1
 
 //=======================================================================================
@@ -45,11 +37,6 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
-
-    //! Inserts all grid elements in given map
-    //! @param[in] elements a grid axis map containing grid elements
-    //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements
-    GRIDELEMENTS_EXPORT static BentleyStatus InsertGridMapElements(GridAxisMap elements);
 
     GRIDELEMENTS_EXPORT static GridPortionPtr Create(Dgn::DgnModelCR model, DVec3d normal);
 

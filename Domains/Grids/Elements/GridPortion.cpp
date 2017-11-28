@@ -65,19 +65,6 @@ DVec3d          normal
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-BentleyStatus GridPortion::InsertGridMapElements(GridAxisMap elements)
-    {
-    for (bpair<Utf8String, GridElementVector> pair : elements)
-        for (GridSurfacePtr gridSurface : pair.second)
-            if (BentleyStatus::ERROR == BuildingUtils::InsertElement(gridSurface))
-                return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     09/17
 //---------------------------------------------------------------------------------------
 DPlane3d GridPortion::GetPlane 

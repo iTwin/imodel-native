@@ -56,9 +56,9 @@ DVec3d                      normal
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params, GridAxisPtr planeAxis, GridAxisPtr arcAxis)
+BentleyStatus RadialGridPortion::CreateAndInsertGridSurfaces(CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis)
     {
-    GridElementVector radialGrid;
+    bvector<GridSurfacePtr> surfaces;
 
     double height = params.m_height;
 
@@ -70,25 +70,25 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params, Grid
     if (params.m_extendHeight)
         extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
 
-
-    GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*params.m_model, planeAxis, extDetail);
+    GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model.get(), planeAxis, extDetail);
     if (!baseGridPlane.IsValid())
-        return GridElementVector();
+        return BentleyStatus::ERROR;
 
     if (params.m_planeCount > 0)
-        radialGrid.push_back (baseGridPlane);
+        surfaces.push_back (baseGridPlane);
 
     // Create plane grids
     for (int i = 1; i < params.m_planeCount; ++i)
         {
         GridPlaneSurfacePtr planeSurface = dynamic_cast<GridPlaneSurface *>(baseGridPlane->Clone().get());
         if (!planeSurface.IsValid())
-            return GridElementVector();
+            return BentleyStatus::ERROR;
 
         planeSurface->RotateXY(i * params.m_planeIterationAngle);
-        radialGrid.push_back(planeSurface);
+        surfaces.push_back(planeSurface);
         }
 
+    // Create arc grids
     for (int i = 0; i < params.m_circularCount; ++i)
         {
         DgnExtrusionDetail extDetail = GeometryUtils::CreateArcExtrusionDetail((i + 1) * params.m_circularInterval, params.m_planeIterationAngle * params.m_planeCount, height, UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH));
@@ -96,14 +96,25 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params, Grid
         if (params.m_extendHeight)
             extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
         
-        GridArcSurfacePtr arcSurface = GridArcSurface::Create(*params.m_model, arcAxis, extDetail);
+        GridArcSurfacePtr arcSurface = GridArcSurface::Create(*model.get(), arcAxis, extDetail);
         if (!arcSurface.IsValid())
-            return GridElementVector();
+            return BentleyStatus::ERROR;
 
-        radialGrid.push_back(arcSurface);
+        surfaces.push_back(arcSurface);
         }
 
-    return radialGrid;
+    // insert elements
+    for (GridSurfacePtr gridSurface : surfaces)
+        {
+        Dgn::RepositoryStatus lockStatus = BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
+        if (Dgn::RepositoryStatus::Success != lockStatus)
+            return BentleyStatus::ERROR;
+
+        if (gridSurface->Insert().IsNull())
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -118,21 +129,18 @@ RadialGridPortionPtr RadialGridPortion::CreateAndInsert (CreateParams params)
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 
-    GridAxisMap grid;
-    CreateParams alteredParams = params;
-    alteredParams.m_model = thisGrid->GetSurfacesModel ().get();
-
-
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
 
     GridAxisPtr planeAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
     GridAxisPtr arcAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
 
-    GridElementVector radialGrid = CreateGridPreview (alteredParams, planeAxis, arcAxis);
-    grid[DEFAULT_AXIS] = radialGrid;
+    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
 
-    InsertGridMapElements (grid);
-
+    if (subModel.IsValid())
+        {
+        if (BentleyStatus::ERROR == CreateAndInsertGridSurfaces(params, subModel.get(), planeAxis, arcAxis))
+            return nullptr;
+        }
     return thisGrid;
     }
 

@@ -119,11 +119,13 @@ protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
     friend struct OrthogonalGridPortionHandler;
 
-    //! Creates horizontal or vertical orthogonal grid portion
-    //! @param[in] params       parameters for creating the grid portion
-    //! @param[in] isHorizontal true if horizontal elements should be created, false if vertical
-    //! @return                 vector containing horizontal or vertical orthogonal grid elements
-    static GridElementVector CreateGridElements (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, bool isHorizontal, GridAxisPtr gridAxis = nullptr);
+    //! Creates horizontal and vertical orthogonal grid surfaces and inserts them
+    //! @param[in] params               parameters for creating the grid portion
+    //! @param[in] model                model to create grid surfaces in
+    //! @param[in] horizontalGridAxis   axis for horizontal elements
+    //! @param[in] verticalGridAxis     axis for vertical elements
+    //! @return                         BentleyStatus::SUCCESS if no error has occured when creating and inserting elements
+    static BentleyStatus CreateAndInsertSurfaces (StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis);
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
     //! @param[in] elementIndex     index of the grid plane
