@@ -363,13 +363,16 @@ private:
 
     //! Initializes the changeSet.
     StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 
-                                      bool relinquishCodesLocks, ICancellationTokenPtr cancellationToken) const;
+                                      bool relinquishCodesLocks, ICancellationTokenPtr cancellationToken,
+                                      IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None) const;
 
     // Wait while bim file is initialized
     void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this ChangeSet file to server.
-    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
+    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, 
+                       Http::Request::ProgressCallbackCR callback = nullptr,
+                       IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     static Json::Value CreateFileJson(FileInfoCR fileInfo);
