@@ -1185,9 +1185,11 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     ContentDescriptorPtr innerDescriptor = ContentDescriptor::Create();
     AddField(*innerDescriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*innerDescriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    innerDescriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", "", 0), "Description", "Description"));
-    innerDescriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
-    innerDescriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
+    ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", "", 0), "Description", "Description");
+    field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
+    field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
+    field->SetName("Description");
+    innerDescriptor->AddField(field);
     
     ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
     q1->SelectContract(*ContentQueryContract::Create(1, *innerDescriptor, m_gadgetClass, *q1), "gadget");
@@ -1200,8 +1202,8 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(*innerDescriptor);
     for (ContentDescriptor::Field* field : outerDescriptor->GetAllFields())
         {
-        for (ContentDescriptor::Property& fieldProperty : field->AsPropertiesField()->GetProperties())
-            fieldProperty.SetPrefix("");
+        for (ContentDescriptor::Property const& fieldProperty : field->AsPropertiesField()->GetProperties())
+            const_cast<ContentDescriptor::Property&>(fieldProperty).SetPrefix("");
         }
     outerDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
@@ -1354,7 +1356,7 @@ TEST_F(QueryExecutorTests, SelectsRelatedProperties)
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("this", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("rel_RET_Widget_0", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back().SetIsRelated(RelatedClass(*m_widgetClass, *m_gadgetClass, *widgetHasGadgetsRelationship, true));
+    const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(*m_widgetClass, *m_gadgetClass, *widgetHasGadgetsRelationship, true));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "this");
@@ -1401,7 +1403,7 @@ TEST_F(QueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhenSelect
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     AddField(*descriptor, classE, ContentDescriptor::Property("this", classE, *classE.GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
     AddField(*descriptor, classE, ContentDescriptor::Property("rel_RET_ClassD_0", classD, *classD.GetPropertyP("StringProperty")->GetAsPrimitiveProperty()));
-    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back().SetIsRelated(RelatedClass(classD, classE, classDHasClassERelationship, true));
+    const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(classD, classE, classDHasClassERelationship, true));
 
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
     query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classE, *query1), "this");
@@ -1555,7 +1557,7 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
 
-    descriptor->GetAllFields().push_back(new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr));
+    descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr));
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -1595,9 +1597,11 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
-    descriptor->GetAllFields().push_back(new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID"));
-    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().push_back(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID");
+    field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
+    field->SetName("MyID");
+    descriptor->AddField(field);
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();

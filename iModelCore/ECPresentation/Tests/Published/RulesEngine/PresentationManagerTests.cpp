@@ -416,7 +416,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, OnNodeExpanded_SetsTheFlagAndUpdat
     // cache root data source
     m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
     DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
-    cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+    cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create the root node
     JsonNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
@@ -446,7 +446,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, OnNodeCollapsed_SetsTheFlagAndUpda
     // cache root data source
     m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
     DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
-    cache.Cache(info, DataSourceFilter(), bvector<ECClassId>(), bvector<Utf8String>());
+    cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create the root node
     JsonNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");

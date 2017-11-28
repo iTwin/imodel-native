@@ -25,7 +25,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
     {
-    bvector<Utf8String> usedClasses = ECExpressionsHelper(ecexpressionsCache).GetUsedClasses(ecexpression);
+    bvector<Utf8String> const& usedClasses = ECExpressionsHelper(ecexpressionsCache).GetUsedClasses(ecexpression);
     for (Utf8StringCR usedClassName : usedClasses)
         {
         Utf8String schemaName, className;
@@ -875,10 +875,20 @@ protected:
 
         BoundQueryValuesList whereClauseBindings;
         Utf8String whereClause;
-        if (ecProperty->GetIsPrimitive() && (PRIMITIVETYPE_Point3d == ecProperty->GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_Point2d == ecProperty->GetAsPrimitiveProperty()->GetType()))
-            whereClause.Sprintf("%s([%s].[%s])", FUNCTION_NAME_GetPointAsJsonString, prefix, extendedData.GetPropertyName());
+        if (ecProperty->GetIsPrimitive() && PRIMITIVETYPE_Point3d == ecProperty->GetAsPrimitiveProperty()->GetType())
+            {
+            whereClause.Sprintf("%s([%s].[%s].x, [%s].[%s].y, [%s].[%s].z)", FUNCTION_NAME_GetPointAsJsonString, 
+                prefix, extendedData.GetPropertyName(), prefix, extendedData.GetPropertyName(), prefix, extendedData.GetPropertyName());
+            }
+        else if (ecProperty->GetIsPrimitive() && PRIMITIVETYPE_Point2d == ecProperty->GetAsPrimitiveProperty()->GetType())
+            {
+            whereClause.Sprintf("%s([%s].[%s].x, [%s].[%s].y)", FUNCTION_NAME_GetPointAsJsonString, 
+                prefix, extendedData.GetPropertyName(), prefix, extendedData.GetPropertyName());
+            }
         else
+            {
             whereClause.Sprintf("[%s].[%s]", prefix, extendedData.GetPropertyName());
+            }
 
         if (ecProperty->GetIsNavigation())
             whereClause.append(".[Id]");

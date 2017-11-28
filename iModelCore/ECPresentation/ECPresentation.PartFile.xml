@@ -47,7 +47,7 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="ECPresentation" />
         <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\ECPresentation.*.nupkg</Files>
+            <Files ProductDirectoryName="NuGetPackages">Install\ECPresentation\ECPresentation.*.nupkg</Files>
         </Bindings>
     </Part>
 

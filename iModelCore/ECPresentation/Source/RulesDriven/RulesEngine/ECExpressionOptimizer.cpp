@@ -60,7 +60,7 @@ bool DisplayTypeOptimizedExpression::_IsEqual(OptimizedExpression const& other) 
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
         return false;
         
     ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
@@ -70,13 +70,10 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
         {
         ECDbClosedNotifier::Register(*this, params.GetConnection(), true);
         ECClassCP expectedClass = params.GetConnection().Schemas().GetClass(m_schemaName, m_className);
-        if (nullptr == expectedClass)
-            {
-            BeAssert(false);
-            return false;
-            }
-        cacheIter = m_cache.Insert(&params.GetConnection(), Cache(*expectedClass)).first;
+        cacheIter = m_cache.Insert(&params.GetConnection(), Cache(expectedClass)).first;
         }
+    if (nullptr == cacheIter->second.m_expectedClass)
+        return false;
 
     bmap<ECClassId, bool>& resultsCache = cacheIter->second.m_results;
     auto iter = resultsCache.find(lookupClassId);
@@ -114,9 +111,9 @@ bool IsOfClassOptimizedExpression::_IsEqual(OptimizedExpression const& other) co
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            08/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
-bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const & params)
+bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
         return false;
 
     ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
@@ -152,12 +149,35 @@ void ClassNameOptimizedExpression::_OnConnectionClosed(ECDbCR connection)
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            08/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
-bool ClassNameOptimizedExpression::_IsEqual(OptimizedExpression const & other) const
+bool ClassNameOptimizedExpression::_IsEqual(OptimizedExpression const& other) const
     {
     ClassNameOptimizedExpression const* otherExp = other.AsClassNameOptimizedExpression();
     if (nullptr == otherExp)
         return false;
     return m_className == otherExp->m_className;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas            08/2017
++---------------+---------------+---------------+---------------+---------------+--*/
+bool InstanceIdOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
+    {
+    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+        return false;
+
+    ECInstanceNodeKey const& nodeKey = *params.GetSelectedNodeKey()->AsECInstanceNodeKey();
+    return nodeKey.GetInstanceId() == m_instanceId;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas            08/2017
++---------------+---------------+---------------+---------------+---------------+--*/
+bool InstanceIdOptimizedExpression::_IsEqual(OptimizedExpression const& other) const
+    {
+    InstanceIdOptimizedExpression const* otherExp = other.AsInstanceIdOptimizedExpression();
+    if (nullptr == otherExp)
+        return false;
+    return m_instanceId == otherExp->m_instanceId;
     }
 
 /*=================================================================================**//**
@@ -169,12 +189,13 @@ struct ECExpressionToOptimizedExpressionConverter : NodeVisitor
         {
         NotParsing,
         ParsingDisplayType,
-        ParsingSelectedNode,
+        ParsingNode,
         ParsingIsOfClass,
         ParsingIsInstanceNode,
         ParsingIsPropertyGroupingNode,
         ParsingIsECClassGroupingNode,
         ParsingClassName,
+        ParsingInstanceId,
         };
 
 private:
@@ -184,6 +205,7 @@ private:
     Utf8String m_preferredDisplayType;
     Utf8String m_schemaName;
     Utf8String m_className;
+    BeInt64Id m_instanceId;
     ConverterState m_state;
     bool m_equalOperator;
     bool m_andOperator;
@@ -200,7 +222,17 @@ private:
             }
         if (0 == strcmp("SelectedNode", node.GetName()))
             {
-            m_state = ConverterState::ParsingSelectedNode;
+            m_state = ConverterState::ParsingNode;
+            return true;
+            }
+        if (0 == strcmp("ParentNode", node.GetName()))
+            {
+            m_state = ConverterState::ParsingNode;
+            return true;
+            }
+        if (0 == strcmp("ThisNode", node.GetName()))
+            {
+            m_state = ConverterState::ParsingNode;
             return true;
             }
 
@@ -209,7 +241,7 @@ private:
 
     bool HandleEqualityOperator(bool equalOperator)
         {
-        if (ConverterState::ParsingDisplayType != m_state && ConverterState::ParsingClassName != m_state)
+        if (ConverterState::ParsingDisplayType != m_state && ConverterState::ParsingClassName != m_state && ConverterState::ParsingInstanceId != m_state)
             return false;
 
         m_equalOperator = equalOperator;
@@ -218,7 +250,7 @@ private:
 
     bool HandleDotNode(DotNodeCR node)
         {
-        if (ConverterState::ParsingSelectedNode != m_state)
+        if (ConverterState::ParsingNode != m_state)
             return false;
 
         if (0 == strcmp("IsInstanceNode", node.GetName()))
@@ -241,6 +273,11 @@ private:
             m_state = ConverterState::ParsingClassName;
             return true;
             }
+        if (0 == strcmp("InstanceId", node.GetName()))
+            {
+            m_state = ConverterState::ParsingInstanceId;
+            return true;
+            }
         return false;
         }
 
@@ -257,7 +294,7 @@ private:
 
     bool HandleMethod(CallNodeCR node)
         {
-        if (ConverterState::ParsingSelectedNode != m_state)
+        if (ConverterState::ParsingNode != m_state)
             return false;
 
         if (0 == strcmp("IsOfClass", node.GetMethodName()))
@@ -281,7 +318,11 @@ private:
             m_className = string;
             return true;
             }
-
+        if (ConverterState::ParsingInstanceId == m_state && !m_instanceId.IsValid())
+            {
+            m_instanceId = ECInstanceId::FromString(string);
+            return true;
+            }
         return false;
         }
 
@@ -340,6 +381,12 @@ private:
             CreateIsECClassGroupingExpression();
             return true;
             }
+        if (ConverterState::ParsingInstanceId == m_state)
+            {
+            CreateInstanceIdExpression();
+            m_instanceId.Invalidate();
+            return true;
+            }
         return false;
         }
 
@@ -380,6 +427,11 @@ private:
     void CreateIsECClassGroupingExpression()
         {
         CreateLogicalExpressionIfNecessary(IsECClassGroupingOptimizedExpression::Create());
+        }
+
+    void CreateInstanceIdExpression()
+        {
+        CreateLogicalExpressionIfNecessary(InstanceIdOptimizedExpression::Create(m_instanceId));
         }
 
 public:

@@ -420,7 +420,7 @@ EmptyNavNodesProvider::EmptyNavNodesProvider(NavNodesProviderContextCR context)
     : NavNodesProvider(context)
     {
     SetDataSourceInfo(CreateDataSourceInfo(context));
-    context.GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bvector<ECClassId>(), 
+    context.GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), 
         context.GetRelatedSettingIds(), context.IsUpdatesDisabled());
     }
 
@@ -556,7 +556,7 @@ void CustomNodesProvider::Initialize()
     if (!GetDataSourceInfo().IsValid())
         {
         SetDataSourceInfo(CreateDataSourceInfo(GetContext()));
-        GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bvector<ECClassId>(), GetContext().GetRelatedSettingIds(), GetContext().IsUpdatesDisabled());
+        GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), GetContext().GetRelatedSettingIds(), GetContext().IsUpdatesDisabled());
 
         if (m_specification.GetNodeType().empty() || m_specification.GetLabel().empty() || m_specification.GetImageId().empty())
             {
@@ -659,24 +659,20 @@ size_t CustomNodesProvider::_GetNodesCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bset<ECClassId> const& usedClassIds) 
+QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds) 
     : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetDb(), context.GetStatementCache(), query), 
-    m_executorIndex(0), m_inProvidersRequest(false)
-    {
-    for (ECClassId classId : usedClassIds)
-        m_usedClassIds.push_back(classId);
-    }
+    m_executorIndex(0), m_inProvidersRequest(false), m_usedClassIds(usedClassIds)
+    { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedNodesProvider::SetQuery(NavigationQuery const& query, bset<ECClassId> const& usedClassIds)
+void QueryBasedNodesProvider::SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds)
     {
     BeAssert(m_query->GetResultParameters().GetResultType() == query.GetResultParameters().GetResultType());
     m_executor.SetQuery(query, false);
     m_query = &query;
-    for (ECClassId classId : usedClassIds)
-        m_usedClassIds.push_back(classId);  
+    m_usedClassIds = usedClassIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -945,7 +941,7 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
 struct SpecificationUsedClassesListener : IUsedClassesListener
     {
     NavNodesProviderContextR m_context;
-    bset<ECClassId> m_usedClassIds;
+    bmap<ECClassId, bool> m_usedClassIds;
 
     SpecificationUsedClassesListener(NavNodesProviderContextR ctx)
         : m_context(ctx)
@@ -956,30 +952,11 @@ struct SpecificationUsedClassesListener : IUsedClassesListener
         {
         m_context.GetQueryBuilder().GetParameters().SetUsedClassesListener(m_context.GetUsedClassesListener());
         }
-    bset<ECClassId> const& GetUsedClassIds() const {return m_usedClassIds;}
-    void RecursivelyAddBaseClasses(ECClassCR ecClass)
-        {
-        for (ECClassCP baseClass : ecClass.GetBaseClasses())
-            {
-            m_usedClassIds.insert(baseClass->GetId());
-            RecursivelyAddBaseClasses(*baseClass);
-            }
-        }
-    void RecursivelyAddDerivedClasses(ECClassCR ecClass)
-        {
-        for (ECClassCP derivedClass : ecClass.GetDerivedClasses())
-            {
-            m_usedClassIds.insert(derivedClass->GetId());
-            RecursivelyAddDerivedClasses(*derivedClass);
-            }
-        }
+    bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
+
     void _OnClassUsed(ECClassCR ecClass, bool polymorphically) override
         {
-        m_usedClassIds.insert(ecClass.GetId());
-        RecursivelyAddBaseClasses(ecClass);
-
-        if (polymorphically)
-            RecursivelyAddDerivedClasses(ecClass);
+        m_usedClassIds[ecClass.GetId()] = polymorphically;
 
         if (nullptr != m_context.GetUsedClassesListener())
             m_context.GetUsedClassesListener()->_OnClassUsed(ecClass, polymorphically);
@@ -1088,7 +1065,7 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     : MultiNavNodesProvider(context)
     {
     SetDataSourceInfo(CreateDataSourceInfo(context));
-    GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bvector<ECClassId>(), context.GetRelatedSettingIds(), context.IsUpdatesDisabled());
+    GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), context.GetRelatedSettingIds(), context.IsUpdatesDisabled());
 
     SpecificationsVisitor visitor;
     for (RootNodeRuleSpecification const& specification : specs)

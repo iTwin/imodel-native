@@ -1034,9 +1034,9 @@ TEST_F(CustomFunctionTests, GetPointAsJsonString)
         });
     CustomFunctionsContext ctx(m_schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
 
-    Utf8CP query = "SELECT " FUNCTION_NAME_GetPointAsJsonString "([PointProperty]) "
+    Utf8CP query = "SELECT " FUNCTION_NAME_GetPointAsJsonString "([PointProperty].x, [PointProperty].y, [PointProperty].z) "
                    "  FROM RET.ClassH ";
-        
+
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());

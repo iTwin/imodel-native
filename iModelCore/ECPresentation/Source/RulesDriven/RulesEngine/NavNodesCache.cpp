@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR 1
+#define NAVNODES_CACHE_DB_VERSION_MAJOR 2
 #define NAVNODES_CACHE_DB_VERSION_MINOR 0
 //#define NAVNODES_CACHE_PERSIST_ON_CHANGE
 
@@ -298,15 +298,16 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         m_db.CreateTable(NODESCACHE_TABLENAME_DataSources, ddl);
         m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_DataSources_Virtual] ON [" NODESCACHE_TABLENAME_DataSources "](COALESCE([VirtualParentNodeId], 0),[ConnectionId],[RulesetId],COALESCE([RemovalId], 0))");
         m_db.ExecuteSql("CREATE INDEX [IX_DataSources_Physical] ON [" NODESCACHE_TABLENAME_DataSources "]([PhysicalParentNodeId],[ConnectionId],[RulesetId])");
+        m_db.ExecuteSql("CREATE INDEX [IX_DataSources_Virtual] ON [" NODESCACHE_TABLENAME_DataSources "]([VirtualParentNodeId],[ConnectionId],[RulesetId])");
         m_db.ExecuteSql("CREATE INDEX [IX_DataSources_RemovalId] ON [" NODESCACHE_TABLENAME_DataSources "]([RemovalId])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSourceClasses))
         {
         Utf8CP ddl = "[DataSourceId] INTEGER NOT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[ECClassId] INTEGER NOT NULL, "
+                     "[Polymorphic] BOOLEAN NOT NULL DEFAULT FALSE, "
                      "PRIMARY KEY([DataSourceId], [ECClassId])";
         m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceClasses, ddl);
-        m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_DataSourceClasses] ON [" NODESCACHE_TABLENAME_DataSourceClasses "]([DataSourceId],[ECClassId])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSourceSettings))
         {
@@ -336,8 +337,6 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                      "[ECPropertyGroupingRangeIndex] INTEGER";
         m_db.CreateTable(NODESCACHE_TABLENAME_NodeKeys, ddl);
         m_db.ExecuteSql("CREATE INDEX [IX_NodeKeys_ECInstanceNodeKeys] ON [" NODESCACHE_TABLENAME_NodeKeys "]([Type],[ECClassId],[ECInstanceId])");
-        //m_db.ExecuteSql("CREATE INDEX [IX_NodeKeys_ECPropertyGroupingNodeKeys] ON [" NODESCACHE_TABLENAME_NodeKeys "]([Type],[ECClassId],[ECPropertyName],[ECPropertyGroupingValue],[ECPropertyGroupingRangeIndex])");
-        //m_db.ExecuteSql("CREATE INDEX [IX_NodeKeys_LabelGroupingNodeKeys] ON [" NODESCACHE_TABLENAME_NodeKeys "]([Type],[Label])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_AffectingInstances))
         {
@@ -376,8 +375,9 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory, IConnectionManagerR connections, NodesCacheType type)
-    : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_statements(10), m_type(type), m_tempCache(false)
+NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory, IConnectionManagerR connections,
+    IECSqlStatementCacheProvider& ecsqlStatements, NodesCacheType type)
+    : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements)
     {
     Initialize(tempDirectory);
     m_connections.AddListener(*this);
@@ -864,9 +864,9 @@ void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bvector<ECClassId> const& classIds)
+void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const& classIds)
     {
-    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceClasses "] ([DataSourceId], [ECClassId]) VALUES (?, ?)";
+    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceClasses "] ([DataSourceId], [ECClassId], [Polymorphic]) VALUES (?, ?, ?)";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -875,11 +875,12 @@ void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bvector<ECClassId> 
         return;
         }
 
-    for (ECClassId classId : classIds)
+    for (auto const& pair : classIds)
         {
         stmt->Reset();
         stmt->BindUInt64(1, datasourceId);
-        stmt->BindUInt64(2, classId.GetValue());
+        stmt->BindUInt64(2, pair.first.GetValue());
+        stmt->BindBoolean(3, pair.second);
         stmt->Step();
         }
     }
@@ -1156,7 +1157,7 @@ void NodesCache::_Cache(JsonNavNodeR node, bool isVirtual)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::_Cache(DataSourceInfo& info, DataSourceFilter const& filter, bvector<ECClassId> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds,
+void NodesCache::_Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds,
     bool disableUpdates)
     {
     CacheEmptyDataSource(info, filter, disableUpdates);
@@ -1221,7 +1222,7 @@ void NodesCache::_Update(uint64_t nodeId, JsonNavNodeCR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* filter, bvector<ECClassId> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
+void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
     {
     if (nullptr != filter)
         {
@@ -1513,6 +1514,7 @@ public:
         for (ECInstanceKeyCR key : keys)
             m_ids.insert(key.GetClassId());
         }
+    ECClassIdSet(bset<ECClassId> ids) : m_ids(ids) {}
     bool _IsInSet(int nVals, DbValue const* vals) const override
         {
         BeAssert(1 == nVals);
@@ -1524,7 +1526,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo const& relationshipInfo, bset<ECInstanceKey> const& keys)
+static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo const& relationshipInfo, bset<ECInstanceKey> const& keys, ECSqlStatementCache& statements)
     {
     for (ECInstanceKeyCR key : keys)
         {
@@ -1565,8 +1567,8 @@ static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo 
             }
         }
 
-    ECSqlStatement stmt;
-    if (!stmt.Prepare(connection, query.c_str()).IsSuccess())
+    CachedECSqlStatementPtr stmt = statements.GetPreparedStatement(connection, query.c_str(), nullptr);
+    if (!stmt.IsValid())
         {
         BeAssert(false);
         return false;
@@ -1577,23 +1579,23 @@ static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo 
 
     for (auto i = 0; i < relationshipInfo.m_relationshipClassIds.size(); ++i)
         {
-        stmt.BindId(bindingIndex++, relationshipInfo.m_instanceId);
-        stmt.BindVirtualSet(bindingIndex++, idsSet);
+        stmt->BindId(bindingIndex++, relationshipInfo.m_instanceId);
+        stmt->BindVirtualSet(bindingIndex++, idsSet);
 
         if (RequiredRelationDirection_Both == relationshipInfo.m_direction)
             {
-            stmt.BindId(bindingIndex++, relationshipInfo.m_instanceId);
-            stmt.BindVirtualSet(bindingIndex++, idsSet);
+            stmt->BindId(bindingIndex++, relationshipInfo.m_instanceId);
+            stmt->BindVirtualSet(bindingIndex++, idsSet);
             }
         }
 
-    return (BE_SQLITE_ROW == stmt.Step());
+    return (BE_SQLITE_ROW == stmt->Step());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool AnyKeyMatchesFilter(ECDbCR connection, Utf8CP serializedFilter, bset<ECInstanceKey> const& keys)
+static bool AnyKeyMatchesFilter(ECDbCR connection, Utf8CP serializedFilter, bset<ECInstanceKey> const& keys, ECSqlStatementCache& statements)
     {
     rapidjson::Document json;
     json.Parse(serializedFilter);
@@ -1602,9 +1604,49 @@ static bool AnyKeyMatchesFilter(ECDbCR connection, Utf8CP serializedFilter, bset
 
     DataSourceFilter filter(json);
     if (nullptr != filter.GetRelatedInstanceInfo())
-        return AreRelated(connection, *filter.GetRelatedInstanceInfo(), keys);
+        return AreRelated(connection, *filter.GetRelatedInstanceInfo(), keys, statements);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AddBaseClasses(bset<ECClassId>& ids, ECClassCR ecClass)
+    {
+    for (ECClassCP base : ecClass.GetBaseClasses())
+        {
+        ids.insert(base->GetId());
+        AddBaseClasses(ids, *base);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AddDerivedClasses(bset<ECClassId>& ids, ECClassCR ecClass)
+    {
+    for (ECClassCP derived : ecClass.GetDerivedClasses())
+        {
+        ids.insert(derived->GetId());
+        AddDerivedClasses(ids, *derived);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AddBaseAndDerivedClasses(bset<ECClassId>& ids, ECDbCR connection, bset<ECInstanceKey> const& keys)
+    {
+    for (ECInstanceKey const& key : keys)
+        {
+        ECClassCP ecClass = connection.Schemas().GetClass(key.GetClassId());
+        if (nullptr == ecClass)
+            continue;
+        ids.insert(ecClass->GetId());
+        AddBaseClasses(ids, *ecClass);
+        AddDerivedClasses(ids, *ecClass);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1625,7 +1667,12 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(BeGuidCR conne
                    "  FROM (SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 1 AS Priority "
                    "          FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "          JOIN [" NODESCACHE_TABLENAME_DataSourceClasses "] dsc ON [dsc].[DataSourceId] = [ds].[Id] "
-                   "         WHERE [ds].[ConnectionId] = ? AND NOT [ds].[IsUpdatesDisabled] AND InVirtualSet(?, [dsc].[ECClassId])"
+                   "         WHERE [ds].[ConnectionId] = ? AND NOT [ds].[IsUpdatesDisabled] AND InVirtualSet(?, [dsc].[ECClassId]) AND [Polymorphic]"
+                   "        UNION ALL"
+                   "        SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 1 AS Priority "
+                   "          FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
+                   "          JOIN [" NODESCACHE_TABLENAME_DataSourceClasses "] dsc ON [dsc].[DataSourceId] = [ds].[Id] "
+                   "         WHERE [ds].[ConnectionId] = ? AND NOT [ds].[IsUpdatesDisabled] AND InVirtualSet(?, [dsc].[ECClassId]) AND NOT [Polymorphic]"
                    "        UNION ALL"
                    "        SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 2 AS Priority "
                    "          FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
@@ -1644,19 +1691,29 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(BeGuidCR conne
 
     stmt->BindGuid(1, connectionId);
 
-    ECClassIdSet classIdsVirtualSet(keys);
-    stmt->BindVirtualSet(2, classIdsVirtualSet);
+    // bind classes for polymorphic search
+    bset<ECClassId> ids;
+    AddBaseAndDerivedClasses(ids, *connection, keys);
+    ECClassIdSet polymorphicIds(ids);
+    stmt->BindVirtualSet(2, polymorphicIds);
 
     stmt->BindGuid(3, connectionId);
 
-    ECInstanceKeySet instanceKeysVirtualSet(keys);
-    stmt->BindVirtualSet(4, instanceKeysVirtualSet);
+    // bind classes for nonpolymorphic search
+    ECClassIdSet nonPolymorphicIds(keys);
+    stmt->BindVirtualSet(4, nonPolymorphicIds);
 
+    stmt->BindGuid(5, connectionId);
+
+    ECInstanceKeySet instanceKeysVirtualSet(keys);
+    stmt->BindVirtualSet(6, instanceKeysVirtualSet);
+
+    ECSqlStatementCache& ecsqlStatements = m_ecsqlStamementCache.GetECSqlStatementCache(*connection);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         int priority = stmt->GetValueInt(4);
         Utf8CP filter = stmt->GetValueText(3);
-        if (priority < 2 && nullptr != filter && 0 != *filter && !AnyKeyMatchesFilter(*connection, filter, keys))
+        if (priority < 2 && nullptr != filter && 0 != *filter && !AnyKeyMatchesFilter(*connection, filter, keys, ecsqlStatements))
             continue;
 
         BeGuid connectionId = stmt->GetValueGuid(0);
@@ -1734,14 +1791,14 @@ bool NodesCache::HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateECInstanceNode(ECInstanceNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateECInstanceNode(ECDbCR connection, ECInstanceNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
-                       " WHERE [k].[Type] = ? AND [k].[ECClassId] = ? AND [k].[ECInstanceId] = ?";
+                       " WHERE [k].[Type] = ? AND [k].[ECClassId] = ? AND [k].[ECInstanceId] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1753,24 +1810,27 @@ NavNodeCPtr NodesCache::LocateECInstanceNode(ECInstanceNodeKey const& key) const
     stmt->BindText(1, NAVNODE_TYPE_ECInstanceNode, Statement::MakeCopy::No);
     stmt->BindId(2, key.GetECClassId());
     stmt->BindId(3, key.GetInstanceId());
+    stmt->BindGuid(4, connection.GetDbGuid());
     
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
 
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECClassGroupingNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECDbCR connection, ECClassGroupingNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[ECClassId] = ?";
+                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[ECClassId] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1782,24 +1842,27 @@ NavNodeCPtr NodesCache::LocateECClassGroupingNode(ECClassGroupingNodeKey const& 
     stmt->BindUInt64(1, key.GetNodeId());
     stmt->BindText(2, key.GetType().c_str(), Statement::MakeCopy::No);
     stmt->BindId(3, key.GetECClassId());
+    stmt->BindGuid(4, connection.GetDbGuid());
         
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
-
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECDbCR connection, ECPropertyGroupingNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [k].[NodeId] = ?";
+                       " WHERE [k].[NodeId] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1809,24 +1872,27 @@ NavNodeCPtr NodesCache::LocateECPropertyGroupingNode(ECPropertyGroupingNodeKey c
         }
 
     stmt->BindUInt64(1, key.GetNodeId());
+    stmt->BindGuid(2, connection.GetDbGuid());
 
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
-
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeKey const& key) const
+NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(ECDbCR connection, DisplayLabelGroupingNodeKey const& key) const
     {
     Utf8String query = "SELECT [ds].[ConnectionId], [ds].[PhysicalParentNodeId], [ds].[VirtualParentNodeId], [n].[Data], [n].[Id], [ex].[NodeId] "
                        "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[Label] = ?";
+                       " WHERE [k].[NodeId] = ? AND [k].[Type] = ? AND [k].[Label] = ? AND [ds].[ConnectionId] = ?";
     
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1838,29 +1904,32 @@ NavNodeCPtr NodesCache::LocateDisplayLabelGroupingNode(DisplayLabelGroupingNodeK
     stmt->BindUInt64(1, key.GetNodeId());
     stmt->BindText(2, key.GetType().c_str(), Statement::MakeCopy::No);
     stmt->BindText(3, key.GetLabel().c_str(), Statement::MakeCopy::No);
+    stmt->BindGuid(4, connection.GetDbGuid());
 
     if (BE_SQLITE_ROW != stmt->Step())
         return nullptr;
-
-    return CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    
+    NavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
+    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NodesCache::_LocateNode(NavNodeKeyCR nodeKey) const
+NavNodeCPtr NodesCache::_LocateNode(ECDbCR connection, NavNodeKeyCR nodeKey) const
     {
     if (nullptr != nodeKey.AsECInstanceNodeKey())
-        return LocateECInstanceNode(*nodeKey.AsECInstanceNodeKey());
+        return LocateECInstanceNode(connection, *nodeKey.AsECInstanceNodeKey());
     
     if (nullptr != nodeKey.AsECPropertyGroupingNodeKey())
-        return LocateECPropertyGroupingNode(*nodeKey.AsECPropertyGroupingNodeKey());
+        return LocateECPropertyGroupingNode(connection, *nodeKey.AsECPropertyGroupingNodeKey());
 
     if (nullptr != nodeKey.AsECClassGroupingNodeKey())
-        return LocateECClassGroupingNode(*nodeKey.AsECClassGroupingNodeKey());
+        return LocateECClassGroupingNode(connection, *nodeKey.AsECClassGroupingNodeKey());
     
     if (nullptr != nodeKey.AsDisplayLabelGroupingNodeKey())
-        return LocateDisplayLabelGroupingNode(*nodeKey.AsDisplayLabelGroupingNodeKey());
+        return LocateDisplayLabelGroupingNode(connection, *nodeKey.AsDisplayLabelGroupingNodeKey());
 
     BeAssert(false);
     return nullptr;

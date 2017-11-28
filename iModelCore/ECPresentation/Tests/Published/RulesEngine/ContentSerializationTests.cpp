@@ -17,7 +17,7 @@
             <ECEnumerator value="2" displayLabel="B" />
             <ECEnumerator value="3" displayLabel="C" />
         </ECEnumeration>
-        <KindOfQuantity typeName="TestKOQ" displayLabel="Test" persistenceUnit="MM" relativeError="0" presentationUnits="MM;CM"/>
+        <KindOfQuantity typeName="TestKOQ" displayLabel="Test" persistenceUnit="MM(real)" relativeError="0"/>
         <ECEntityClass typeName="ClassA">
             <ECProperty propertyName="String" typeName="string" />
             <ECProperty propertyName="EnumProperty" typeName="TestEnum" />
@@ -212,8 +212,7 @@ TEST_F(ContentSerializationTests, ECPropertiesFieldWithKOQProperty)
                     "Name": "TestSchema:TestKOQ",
                     "DisplayLabel": "Test",
                     "PersistenceUnit": "MM(real)",
-                    "CurrentUnit": "MM(real)",
-                    "PresentationUnits": ["MM(real)", "CM(real)"]
+                    "CurrentFusId": "MM(real)"
                     }
                 },
             "RelatedClassPath": []
@@ -237,7 +236,12 @@ private:
 protected:
     Utf8CP _GetName() const override {return m_name.c_str();}
     Params* _Clone() const override {return new TestEditorParams(m_name);}
-    bool _Equals(Params const& other) const override {return Params::_Equals(other) && m_name == static_cast<TestEditorParams const&>(other).m_name;}
+    int _CompareTo(Params const& other) const override 
+        {
+        if (0 != Params::_CompareTo(other))
+            return Params::_CompareTo(other);
+        return strcmp(m_name.c_str(), static_cast<TestEditorParams const&>(other).m_name.c_str());
+        }
     rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override
         {
         rapidjson::Document json(allocator);

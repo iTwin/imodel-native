@@ -54,6 +54,21 @@ bvector<ECInstanceKey> NavNodeExtendedData::GetGroupedInstanceKeys() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType NavNodeExtendedData::GetGroupedInstanceKeysCount() const
+    {
+    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_GroupedInstanceKeys))
+        return 0;
+
+    RapidJsonValueCR json = GetJson()[NAVNODE_EXTENDEDDATA_GroupedInstanceKeys];
+    if (!json.IsArray())
+        return 0;
+
+    return json.Size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NavNodeExtendedData::SetGroupedInstanceKeys(bvector<ECInstanceKey> const& keys)

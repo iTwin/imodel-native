@@ -296,7 +296,7 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("IsSearchNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsClassGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))));
             context.AddSymbol(*ValueSymbol::Create("IsPropertyGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode) || node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))));
-            context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetGroupedInstanceKeys().size())));
+            context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetGroupedInstanceKeysCount())));
 
             if (node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode))
                 {
@@ -362,7 +362,7 @@ public:
         if (m_context.IsValid())
             return m_context;
 
-        NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(*m_key) : nullptr;
+        NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();
@@ -689,7 +689,7 @@ private:
     bool m_ignoreArguments;
     bool m_inStructProperty;
     ExpressionToken m_previousToken;
-    Utf8String m_previousNode;
+    bvector<Utf8String> m_nodesStack;
 
 private:
     /*-----------------------------------------------------------------------------**//**
@@ -737,13 +737,14 @@ private:
         if (!m_ecsql.empty() && NeedsSpaceAfter(m_ecsql) && NeedsSpaceBefore(value))
             {
             m_ecsql.append(" ");
-            m_previousNode.append(" ");
+            m_nodesStack.back().append(" ");
             }
 
         if (m_inStructProperty)
-            m_previousNode.append(value);
+            m_nodesStack.back().append(value);
         else
-            m_previousNode = value;
+            m_nodesStack.push_back(value);
+
         m_ecsql.append(value);
         }
     
@@ -755,13 +756,14 @@ private:
         if (!m_ecsql.empty() && prependSpace)
             {
             m_ecsql.append(" ");
-            m_previousNode.append(" ");
+            m_nodesStack.back().append(" ");
             }
-
+        
         if (m_inStructProperty)
-            m_previousNode.append(value);
+            m_nodesStack.back().append(value);
         else
-            m_previousNode = value;
+            m_nodesStack.push_back(value);
+
         m_ecsql.append(value);
         }
     
@@ -770,9 +772,10 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleLikeToken(NodeCR node)
         {
-        Utf8String::size_type previousNode= m_ecsql.rfind(m_previousNode);
+        Utf8String::size_type previousNode = m_ecsql.rfind(m_nodesStack.back());
         if (previousNode == Utf8String::npos)
             return;
+
         m_ecsql.insert(previousNode, "CAST(");
         Append("AS TEXT)");
         Append("LIKE");
@@ -1160,6 +1163,29 @@ public:
             }
         m_ignoreArguments = false;
         m_inArguments = false;
+
+        // create an aggregated arguments' string and append it to the 
+        // call node so it represents the whole call node
+        Utf8String argsString;
+        int pos = (int)m_nodesStack.size() - 1;
+        bool collectedArgs = false;
+        while (pos >= 0)
+            {
+            if (!collectedArgs)
+                {
+                argsString.insert(0, m_nodesStack[pos]);
+                if (m_nodesStack[pos] == "(")
+                    collectedArgs = true;
+                }
+            else
+                {
+                m_nodesStack[pos].append(argsString);
+                m_nodesStack.erase(m_nodesStack.begin() + pos + 1, m_nodesStack.end());
+                break;
+                }
+            --pos;
+            }
+
         return true;
         }
     bool Comma() override {ARGUMENTS_PRECONDITION(); Append(","); return true;}
@@ -1318,20 +1344,27 @@ Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
+bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
     {
+    static bvector<Utf8String> empty;
     if (expression.empty())
-        return bvector<Utf8String>();
+        return empty;
+
+    bvector<Utf8String> const* cachedClasses = m_cache.GetUsedClasses(expression.c_str());
+    if (nullptr != cachedClasses)
+        return *cachedClasses;
 
     NodePtr node = GetNodeFromExpression(expression.c_str());
     if (node.IsNull())
         {
         BeAssert(false);
-        return bvector<Utf8String>();
+        return empty;
         }
 
     ECExpressionToECSqlConverter converter;
-    return converter.GetUsedClasses(*node);
+    bvector<Utf8String> classes = converter.GetUsedClasses(*node);
+    m_cache.Add(expression.c_str(), classes);
+    return *m_cache.GetUsedClasses(expression.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1383,6 +1416,17 @@ OptimizedExpressionPtr ECExpressionsCache::GetOptimized(Utf8CP expression) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> const* ECExpressionsCache::GetUsedClasses(Utf8CP expression) const
+    {
+    auto iter = m_usedClasses.find(expression);
+    if (m_usedClasses.end() == iter)
+        return nullptr;
+    return &iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const {return m_optimizedCache.end() != m_optimizedCache.find(expression);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1393,7 +1437,12 @@ void ECExpressionsCache::Add(Utf8CP expression, Node& node) {m_cache.Insert(expr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) { m_optimizedCache.Insert(expression, &node); }
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) {m_optimizedCache.Insert(expression, &node);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> const& ECExpressionsCache::Add(Utf8CP expression, bvector<Utf8String>& classes) {return m_usedClasses.Insert(expression, classes).first->second;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017

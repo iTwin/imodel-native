@@ -75,12 +75,8 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptor::ECInstanceKeyField* FindKeyField(ContentDescriptor::ECPropertiesField const& propertiesField) const
         {
-        for (ContentDescriptor::Field* descriptorField : m_descriptor.GetAllFields())
+        for (ContentDescriptor::ECInstanceKeyField* keyField : m_descriptor.GetECInstanceKeyFields())
             {
-            if (!descriptorField->IsSystemField() || !descriptorField->AsSystemField()->IsECInstanceKeyField())
-                continue;
-
-            ContentDescriptor::ECInstanceKeyField* keyField = descriptorField->AsSystemField()->AsECInstanceKeyField();
             for (ContentDescriptor::ECPropertiesField const* keyedField : keyField->GetKeyFields())
                 {
                 if (keyedField == &propertiesField)
@@ -98,16 +94,9 @@ private:
         {
         ContentFieldEditor const* newPropertyEditor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
 
-        for (ContentDescriptor::Field* field : fields)
+        ContentDescriptor::ECPropertiesField* field = m_descriptor.FindECPropertiesField(ecProperty, m_actualClass, m_relatedClassPath, newPropertyEditor);
+        if (nullptr != field)
             {
-            if (!field->IsPropertiesField())
-                continue;
-
-            bool areEditorsEqual = (nullptr == newPropertyEditor && nullptr == field->GetEditor()
-                || nullptr != newPropertyEditor && nullptr != field->GetEditor() && field->GetEditor()->Equals(*newPropertyEditor));
-            if (!areEditorsEqual)
-                continue;
-
             for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())
                 {
                 // skip if already included in descriptor
@@ -117,19 +106,11 @@ private:
                     {
                     return FieldCreateAction::Skip;
                     }
-
-                // if properties in this field are similar, the new property should be included in this field
-                bool isNewPropertyRelated = !m_relatedClassPath.empty();
-                bool areSimilar = (prop.IsRelated() == isNewPropertyRelated) && (&m_actualClass == &prop.GetPropertyClass() || !isNewPropertyRelated);
-                if (areSimilar)
-                    areSimilar = ArePropertiesSimilar(ecProperty, prop.GetProperty());
-                if (areSimilar)
-                    {
-                    mergeField = field->AsPropertiesField();
-                    m_keyField = FindKeyField(*mergeField);
-                    return FieldCreateAction::Merge;
-                    }
                 }
+
+            mergeField = field->AsPropertiesField();
+            m_keyField = FindKeyField(*mergeField);
+            return FieldCreateAction::Merge;
             }
 
         return FieldCreateAction::Create;
@@ -150,20 +131,13 @@ private:
             if (nullptr == m_keyField && !m_relatedClassPath.empty())
                 {
                 m_keyField = new ContentDescriptor::ECInstanceKeyField();
-                m_descriptor.GetAllFields().push_back(m_keyField);
+                m_descriptor.AddField(m_keyField);
                 }
 
             ECClassCR primaryClass = m_relatedClassPath.empty() ? m_actualClass : *m_relatedClassPath.front().GetSourceClass();
             ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, m_relatedClassPath, ecProperty);
             ContentFieldEditor const* editor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
             field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor ? new ContentFieldEditor(*editor) : nullptr);
-            m_descriptor.GetAllFields().push_back(field);
-
-            if (!m_relatedClassPath.empty())
-                m_keyField->AddKeyField(*field);
-
-            if (ecProperty.GetIsNavigation())
-                m_descriptor.GetAllFields().push_back(new ContentDescriptor::ECNavigationInstanceIdField(*field));
             }
 
         return field;
@@ -234,29 +208,12 @@ private:
             else
                 {
                 // if the field is not nested, just append it to the descriptor
-                m_descriptor.GetAllFields().push_back(m_nestedContentField);
+                m_descriptor.AddField(m_nestedContentField);
                 }
             }
         return m_nestedContentField;
         }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                10/2016
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool ArePropertiesSimilar(ECPropertyCR lhs, ECPropertyCR rhs)
-        {
-        if (!lhs.GetName().Equals(rhs.GetName()))
-            return false;
-
-        if (!lhs.GetTypeName().Equals(rhs.GetTypeName()))
-            return false;
-
-        if (lhs.GetKindOfQuantity() != rhs.GetKindOfQuantity())
-            return false;
-
-        return true;
-        }
-    
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -282,17 +239,23 @@ private:
         if (nullptr == field)
             return false;
 
-        // append the property definition
-        field->GetProperties().push_back(ContentDescriptor::Property(propertyClassAlias, m_actualClass, p));
-
+        ContentDescriptor::Property prop(propertyClassAlias, m_actualClass, p);
         // set the "related" flag, if necessary
         if (!m_relatedClassPath.empty())
-            field->GetProperties().back().SetIsRelated(m_relatedClassPath);
-        
-        // update field name (which depends on the properties in the field)
-        field->SetName(QueryBuilderHelpers::CreateFieldName(*field));
-        if (nullptr != m_keyField)
-            m_keyField->RecalculateName();
+            prop.SetIsRelated(m_relatedClassPath);
+
+        // append the property definition
+        field->AddProperty(prop);
+
+        // if new field was created add it to descriptor
+        if (1 == field->GetProperties().size())
+            {
+            m_descriptor.AddField(field);
+            if (!m_relatedClassPath.empty())
+                m_keyField->AddKeyField(*field);
+            if (p.GetIsNavigation())
+                m_descriptor.AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field));
+            }
 
         return true;
         }
@@ -529,7 +492,7 @@ public:
             else if (field->IsNestedContentField())
                 {
                 ContentDescriptor::NestedContentField const* nestedField = field->AsNestedContentField();
-                m_descriptor->GetAllFields().push_back(nestedField->Clone());
+                m_descriptor->AddField(nestedField->Clone());
                 }
             else
                 {

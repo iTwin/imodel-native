@@ -18,6 +18,19 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                10/2017
 +===============+===============+===============+===============+===============+======*/
+struct TestECInstanceChangeEventsSource : ECInstanceChangeEventSource
+    {
+    void NotifyECInstanceChanged(ECDbCR db, ECInstanceId& id, ECClassCR ecClass, ChangeType change) const
+        {
+        ECInstanceChangeEventSource::NotifyECInstanceChanged(db, ECInstanceChangeEventSource::ChangedECInstance(ecClass, id, change));
+        }
+
+    static RefCountedPtr<TestECInstanceChangeEventsSource> Create() {return new TestECInstanceChangeEventsSource();}
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Saulius.Skliutas                10/2017
++===============+===============+===============+===============+===============+======*/
 struct HierarchyPerformanceTests : RulesEnginePerformanceTests
     {
     BeFileName _SupplyProjectPath() const override
@@ -36,10 +49,6 @@ struct HierarchyPerformanceTests : RulesEnginePerformanceTests
             <PresentationRuleSet RuleSetId="Items" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
                                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
 
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Volume", "ProStructures")' Label='this.NAME' OnlyIfNotHandled='true' />
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Equipment", "AutoPlantPDWPersistenceStrategySchema")' Label='this.TAG' OnlyIfNotHandled='true' />
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Pipeline", "AutoPlantPDWPersistenceStrategySchema")' Label='this.NAME' OnlyIfNotHandled='true' />
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Component", "AutoPlantPDWPersistenceStrategySchema")' Label='this.COMPONENT_ID' OnlyIfNotHandled='true' />
                 <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("DefinitionPartition", "BisCore") ANDALSO ThisNode.InstanceId = "16"' Label='"Dictionary"' Priority='200'/>
                 <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("LinkPartition", "BisCore") ANDALSO ThisNode.InstanceId = "14"' Label='"Reality Data Links"' Priority='200'/>
                 <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' Label='IIF(IsNull(this.UserLabel) OR this.UserLabel="", this.CodeValue, this.UserLabel)' OnlyIfNotHandled='true' Priority='100' />
@@ -194,7 +203,22 @@ struct HierarchyPerformanceTests : RulesEnginePerformanceTests
 
     DataContainer<NavNodeCPtr> GetNodes(PageOptions& pageOptions, Json::Value const& options, NavNodeCP parentNode);
     void IncrementallyGetNodes(Utf8CP rulesetId, NavNodeCP parentNode, bool usePaging);
+    NavNodeKeyList GetGeometricElementKeys();
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyList HierarchyPerformanceTests::GetGeometricElementKeys()
+    {
+    // getting content for all geometric elements in the dataset
+    NavNodeKeyList keys;
+    ECSqlStatement stmt;
+    stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
+    return keys;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                10/2017
@@ -281,4 +305,22 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
     Timer t_hierarchy;
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
     m_manager->GetFilteredNodesPaths(m_project, "ist", options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HierarchyPerformanceTests, UpdateGeometricElementInHierarchy)
+    {
+    IncrementallyGetNodes("Items", nullptr, false);
+
+    NavNodeKeyList keys = GetGeometricElementKeys();
+    RefCountedPtr<TestECInstanceChangeEventsSource> source = TestECInstanceChangeEventsSource::Create();
+    m_manager->RegisterECInstanceChangeEventSource(*source);
+
+    ECInstanceId id = keys[0]->AsECInstanceNodeKey()->GetInstanceId();
+    ECClassCP ecClass = m_project.Schemas().GetClass(keys[0]->AsECInstanceNodeKey()->GetECClassId());
+    Timer _time;
+    source->NotifyECInstanceChanged(m_project, id, *ecClass, ChangeType::Update);
+    _time.Finish();
     }

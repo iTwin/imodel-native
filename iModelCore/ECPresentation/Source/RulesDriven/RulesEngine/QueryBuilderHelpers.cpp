@@ -302,56 +302,9 @@ void QueryBuilderHelpers::AddCalculatedFields(ContentDescriptorR descriptor, Cal
                 return;
             }
 
-        descriptor.GetAllFields().push_back(new ContentDescriptor::CalculatedPropertyField(label, propertyName,
+        descriptor.AddField(new ContentDescriptor::CalculatedPropertyField(label, propertyName,
             calculatedProperties[i]->GetValue(), ecClass, calculatedProperties[i]->GetPriority()));
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String QueryBuilderHelpers::CreateFieldName(ContentDescriptor::ECPropertiesField const& field)
-    {
-    Utf8String name;
-    bool isRelated = field.GetProperties().front().IsRelated();
-    if (isRelated)
-        name.append("rel_");
-
-    bvector<Utf8CP> relatedClassNames;
-    bvector<Utf8CP> propertyClassNames;
-
-    bset<ECClassCP> usedRelatedClasses;
-    bset<ECClassCP> usedPropertyClasses;
-
-    for (ContentDescriptor::Property const& prop : field.GetProperties())
-        {
-        if (prop.IsRelated())
-            {
-            for (RelatedClass const& related : prop.GetRelatedClassPath())
-                {
-                if (usedRelatedClasses.end() != usedRelatedClasses.find(related.GetTargetClass()))
-                    continue;
-
-                relatedClassNames.push_back(related.GetTargetClass()->GetName().c_str());
-                usedRelatedClasses.insert(related.GetTargetClass());
-                }
-            }
-
-        if (usedPropertyClasses.end() == usedPropertyClasses.find(&prop.GetPropertyClass()))
-            {
-            propertyClassNames.push_back(prop.GetPropertyClass().GetName().c_str());
-            usedPropertyClasses.insert(&prop.GetPropertyClass());
-            }
-        }
-
-    if (!relatedClassNames.empty())
-        name.append(BeStringUtilities::Join(relatedClassNames, "_")).append("_");
-
-    if (!propertyClassNames.empty())
-        name.append(BeStringUtilities::Join(propertyClassNames, "_")).append("_");
-
-    name.append(field.GetProperties().front().GetProperty().GetName());
-    return name;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -362,17 +315,7 @@ void QueryBuilderHelpers::Aggregate(ContentDescriptorPtr& aggregateDescriptor, C
     if (aggregateDescriptor.IsNull())
         aggregateDescriptor = &inputDescriptor;
     else
-        {
         aggregateDescriptor->MergeWith(inputDescriptor);
-        for (ContentDescriptor::Field* field : aggregateDescriptor->GetAllFields())
-            {
-            if (field->IsPropertiesField())
-                {
-                ContentDescriptor::ECPropertiesField* propertiesField = field->AsPropertiesField();
-                propertiesField->SetName(CreateFieldName(*propertiesField));
-                }
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

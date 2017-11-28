@@ -172,6 +172,7 @@ struct NavNodeExtendedData : ItemExtendedData
     ECPRESENTATION_EXPORT bvector<BeSQLite::EC::ECInstanceKey> GetGroupedInstanceKeys() const;
     ECPRESENTATION_EXPORT void SetGroupedInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const& keys);
     ECPRESENTATION_EXPORT void SetGroupedInstanceKey(BeSQLite::EC::ECInstanceKey const& key);
+    rapidjson::SizeType GetGroupedInstanceKeysCount() const;
     
     // Related instance keys list contains definitions (key + alias) of instances that are related
     // to the primary instance. The relationship is set up in the ruleset by using RelatedInstance 

@@ -644,6 +644,8 @@ TEST_F (RulesPreprocessorTests, GetSortingRules_VerifiesCondition)
     
     TestNavNodePtr node = TestNavNode::Create();
     node->SetType(NAVNODE_TYPE_ECPropertyGroupingNode);
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetPropertyName("TestProperty");
     
     RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, s_project->GetECDbCR(), *rules, m_userSettings, nullptr, m_expressionsCache);
     bvector<SortingRuleCP> sortingRules = RulesPreprocessor::GetSortingRules(params);
@@ -686,6 +688,8 @@ TEST_F (RulesPreprocessorTests, GetGroupingRules_VerifiesCondition)
     
     TestNavNodePtr node = TestNavNode::Create();
     node->SetType(NAVNODE_TYPE_ECPropertyGroupingNode);
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetPropertyName("TestProperty");
     
     RulesPreprocessor::AggregateCustomizationRuleParameters params(node.get(), 0, s_project->GetECDbCR(), *rules, m_userSettings, nullptr, m_expressionsCache);
     bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);

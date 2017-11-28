@@ -73,7 +73,7 @@ static PresentationRuleSetPtr FindRuleset(RuleSetLocaterManager const& locaters,
 struct RulesDrivenECPresentationManager::RulesetECExpressionsCache : IECExpressionsCacheProvider
 {
 private:
-    bmap<Utf8CP, ECExpressionsCache*> m_caches;
+    bmap<Utf8String, ECExpressionsCache*> m_caches;
 protected:
     ECExpressionsCache& _Get(Utf8CP rulesetId) override
         {
@@ -138,7 +138,11 @@ public:
 };
 
 ECSqlStatementCache* CreateECSqlStatementCache() {return new ECSqlStatementCache(50);}
-struct RulesDrivenECPresentationManager::ECDbStatementsCache : SimpleECDbBaseCache<ECSqlStatementCache, CreateECSqlStatementCache> {};
+struct RulesDrivenECPresentationManager::ECDbStatementsCache : SimpleECDbBaseCache<ECSqlStatementCache, CreateECSqlStatementCache>, IECSqlStatementCacheProvider 
+{
+protected:
+    ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) override {return SimpleECDbBaseCache::GetCache(db);}
+};
 
 RelatedPathsCache* CreateRelatedPathsCache() {return new RelatedPathsCache();}
 struct RulesDrivenECPresentationManager::ECDbRelatedPathsCache : SimpleECDbBaseCache<RelatedPathsCache, CreateRelatedPathsCache> {};
@@ -278,10 +282,10 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Paths const& 
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
-    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, 
-        GetConnections(), disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
-    m_contentCache = new ContentCache();
     m_statementCache = new ECDbStatementsCache();
+    m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory, 
+        GetConnections(), *m_statementCache, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
+    m_contentCache = new ContentCache();
     m_relatedPathsCache = new ECDbRelatedPathsCache();
     m_userSettings.SetLocalizationProvider(&GetLocalizationProvider());
     m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, GetConnections(), *m_nodesProviderContextFactory, 

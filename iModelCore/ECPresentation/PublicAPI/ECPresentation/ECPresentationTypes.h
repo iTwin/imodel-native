@@ -38,6 +38,10 @@ ECPRESENTATION_REFCOUNTED_PTR(SelectionSyncHandler)
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+
 //=======================================================================================
 //! Sort direction.
 //! @ingroup GROUP_Presentation

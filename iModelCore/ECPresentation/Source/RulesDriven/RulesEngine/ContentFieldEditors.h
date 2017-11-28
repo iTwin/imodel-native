@@ -25,7 +25,7 @@ private:
 protected:
     Utf8CP _GetName() const override {return "Json";}
     Params* _Clone() const override {return new FieldEditorJsonParams(*this);}
-    ECPRESENTATION_EXPORT bool _Equals(Params const& other) const override;
+    ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
 
 public:
@@ -50,7 +50,7 @@ private:
 protected:
     Utf8CP _GetName() const override {return "Multiline";}
     Params* _Clone() const override {return new FieldEditorMultilineParams(*this);}
-    ECPRESENTATION_EXPORT bool _Equals(Params const& other) const override;
+    ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
 
 public:
@@ -69,7 +69,7 @@ private:
 protected:
     Utf8CP _GetName() const override {return "Range";}
     Params* _Clone() const override {return new FieldEditorRangeParams(*this);}
-    ECPRESENTATION_EXPORT bool _Equals(Params const& other) const override;
+    ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
 
 public:
@@ -88,7 +88,7 @@ private:
 protected:
     Utf8CP _GetName() const override {return "Slider";}
     Params* _Clone() const override {return new FieldEditorSliderParams(*this);}
-    ECPRESENTATION_EXPORT bool _Equals(Params const& other) const override;
+    ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
 
 public:

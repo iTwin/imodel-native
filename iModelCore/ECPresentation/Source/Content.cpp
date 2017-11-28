@@ -135,7 +135,7 @@ ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     for (Field const* field : other.m_fields)
         {
         Field* copy = field->Clone();
-        m_fields.push_back(copy);
+        AddField(copy);
         fieldsRemapInfo[field] = copy;
         }
     for (Field* field : m_fields)
@@ -222,6 +222,16 @@ void ContentDescriptor::RemoveField(Field const& field)
     for (Field* siblingField : fieldsToRemove)
         RemoveField(*siblingField);
 
+    if (field.IsSystemField() && field.AsSystemField()->IsECInstanceKeyField())
+        {
+        auto keyField = std::find_if(m_keyFields.begin(), m_keyFields.end(), [&field](Field const* f) {return f == &field;});
+        if (m_keyFields.end() != keyField)
+            m_keyFields.erase(keyField);
+        }
+
+    if (field.IsPropertiesField())
+        OnECPropertiesFieldRemoved(*field.AsPropertiesField());
+
     delete &field;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -254,40 +264,35 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     for (Field const* sourceField : other.m_fields)
         {
         bool found = false;
+        if (sourceField->IsPropertiesField())
+            {
+            ECPropertiesField* targetField = FindECPropertiesField(sourceField->AsPropertiesField()->GetProperties().front(), sourceField->GetEditor());
+            if (nullptr != targetField)
+                {
+                found = true;
+                for (ContentDescriptor::Property const& sourceProperty : sourceField->AsPropertiesField()->GetProperties())
+                    targetField->AddProperty(sourceProperty);
+
+                fieldsRemapInfo[sourceField] = targetField;
+                }
+            }
+
         for (Field* targetField : m_fields)
             {
+            if (targetField->IsPropertiesField())
+                continue;
+
             if (*targetField == *sourceField)
                 {
                 found = true;
                 break;
                 }
-            if (targetField->IsPropertiesField() && sourceField->IsPropertiesField())
-                {
-                for (ContentDescriptor::Property const& sourceProperty : sourceField->AsPropertiesField()->GetProperties())
-                    {
-                    for (ContentDescriptor::Property& targetProperty : targetField->AsPropertiesField()->GetProperties())
-                        {
-                        if (sourceProperty.GetProperty().GetName().Equals(targetProperty.GetProperty().GetName()) &&
-                            sourceProperty.GetProperty().GetTypeName().Equals(targetProperty.GetProperty().GetTypeName()))
-                            {
-                            bvector<ContentDescriptor::Property>& propertyVector = targetField->AsPropertiesField()->GetProperties();
-                            propertyVector.push_back(sourceProperty);
-                            fieldsRemapInfo[sourceField] = targetField;
-                            found = true;
-                            break;
-                            }
-                        }
-                    if (found)
-                        break;
-                    }
-                }
-            if (found)
-                break;
             }
+
         if (!found)
             {
             Field* copy = sourceField->Clone();
-            m_fields.push_back(copy);
+            AddField(copy);
             fieldsRemapInfo[sourceField] = copy;
             }
         }
@@ -384,6 +389,49 @@ void ContentDescriptor::OnFlagRemoved(ContentFlags flag)
             m_fields.erase(iter);
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentDescriptor::AddField(Field* field)
+    {
+    m_fields.push_back(field);
+    if (field->IsSystemField() && field->AsSystemField()->IsECInstanceKeyField())
+        m_keyFields.push_back(field->AsSystemField()->AsECInstanceKeyField());
+    if (nullptr != field->AsPropertiesField())
+        OnECPropertiesFieldAdded(*field->AsPropertiesField());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::ECPropertiesField* ContentDescriptor::FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass, 
+    RelatedClassPathCR relatedPath, ContentFieldEditor const* editor)
+    {
+    auto iter = m_fieldsMap.find(ECPropertiesFieldKey(prop, propClass, relatedPath, editor));
+    if (m_fieldsMap.end() == iter)
+        return nullptr;
+
+    return iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentDescriptor::OnECPropertiesFieldRemoved(ECPropertiesField const& field)
+    {
+    Property const& prop = field.GetProperties().front();
+    m_fieldsMap.erase(ECPropertiesFieldKey(prop, field.GetEditor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentDescriptor::OnECPropertiesFieldAdded(ECPropertiesField& field)
+    {
+    Property const& prop = field.GetProperties().front();
+    m_fieldsMap[ECPropertiesFieldKey(prop, field.GetEditor())] = &field;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -523,13 +571,7 @@ static rapidjson::Value CreateKindOfQuantityJson(KindOfQuantityCR koq, rapidjson
     json.AddMember("Name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
     json.AddMember("DisplayLabel", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
     json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit().ToText(true).c_str(), allocator), allocator);
-    json.AddMember("CurrentUnit", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
-
-    rapidjson::Value units(rapidjson::kArrayType);
-    for (auto unit : koq.GetPresentationUnitList())
-        units.PushBack(rapidjson::Value(unit.ToText(true).c_str(), allocator), allocator);
-
-    json.AddMember("PresentationUnits", units, allocator);
+    json.AddMember("CurrentFusId", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
 
     return json;
     }
@@ -642,6 +684,18 @@ bool ContentFieldEditor::Equals(ContentFieldEditor const& other) const
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentFieldEditor::operator<(ContentFieldEditor const& other) const
+    {
+    if (m_name < other.m_name)
+        return true;
+    if (m_name > other.m_name)
+        return false;
+    return m_params < other.m_params;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -833,6 +887,64 @@ int ContentDescriptor::ECPropertiesField::_GetPriority() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& field)
+    {
+    Utf8String name;
+    bool isRelated = field.GetProperties().front().IsRelated();
+    if (isRelated)
+        name.append("rel_");
+
+    bvector<Utf8CP> relatedClassNames;
+    bvector<Utf8CP> propertyClassNames;
+
+    bset<ECClassCP> usedRelatedClasses;
+    bset<ECClassCP> usedPropertyClasses;
+
+    for (ContentDescriptor::Property const& prop : field.GetProperties())
+        {
+        if (prop.IsRelated())
+            {
+            for (RelatedClass const& related : prop.GetRelatedClassPath())
+                {
+                if (usedRelatedClasses.end() != usedRelatedClasses.find(related.GetTargetClass()))
+                    continue;
+
+                relatedClassNames.push_back(related.GetTargetClass()->GetName().c_str());
+                usedRelatedClasses.insert(related.GetTargetClass());
+                }
+            }
+
+        if (usedPropertyClasses.end() == usedPropertyClasses.find(&prop.GetPropertyClass()))
+            {
+            propertyClassNames.push_back(prop.GetPropertyClass().GetName().c_str());
+            usedPropertyClasses.insert(&prop.GetPropertyClass());
+            }
+        }
+
+    if (!relatedClassNames.empty())
+        name.append(BeStringUtilities::Join(relatedClassNames, "_")).append("_");
+
+    if (!propertyClassNames.empty())
+        name.append(BeStringUtilities::Join(propertyClassNames, "_")).append("_");
+
+    name.append(field.GetProperties().front().GetProperty().GetName());
+    return name;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ContentDescriptor::ECPropertiesField::_GetName() const
+    {
+    if (!m_isValidName)
+        const_cast<ECPropertiesField*>(this)->SetName(CreateFieldName(*this));
+
+    return Field::_GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::NestedContentField::_CreateTypeDescription() const
@@ -918,6 +1030,16 @@ void ContentDescriptor::ECInstanceKeyField::RecalculateName()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ContentDescriptor::ECInstanceKeyField::_GetName() const
+    {
+    if (!m_isValidName)
+        const_cast<ECInstanceKeyField*>(this)->RecalculateName();
+    return Field::_GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentDescriptor::ECInstanceKeyField::_OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo)
@@ -995,6 +1117,33 @@ void ContentDescriptor::ECNavigationInstanceIdField::_OnFieldsCloned(bmap<Field 
 bool ContentDescriptor::ECNavigationInstanceIdField::_OnFieldRemoved(ContentDescriptor::Field const& field)
     {
     return (&field == m_propertyField);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentDescriptor::ECPropertiesFieldKey::operator<(ECPropertiesFieldKey const& rhs) const
+    {
+    if (GetEditor() != rhs.GetEditor())
+        {
+        if (nullptr == GetEditor() && nullptr != rhs.GetEditor())
+            return true;
+        if (nullptr != GetEditor() && nullptr == rhs.GetEditor())
+            return false;
+        return *GetEditor() < *rhs.GetEditor();
+        }
+    bool areSimilar = (rhs.IsRelated() == IsRelated()) && (GetClass() == rhs.GetClass() || !IsRelated());
+    if (!areSimilar)
+        return m_relatedClassPath < rhs.m_relatedClassPath;
+    if (strcmp(GetType(), rhs.GetType()) < 0)
+        return true;
+    if (strcmp(GetType(), rhs.GetType()) > 0)
+        return false;
+    if (strcmp(GetName(), rhs.GetName()) < 0)
+        return true;
+    if (strcmp(GetName(), rhs.GetName()) > 0)
+        return false;
+    return GetKoq() < rhs.GetKoq();
     }
 
 /*---------------------------------------------------------------------------------**//**

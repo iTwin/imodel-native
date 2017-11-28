@@ -110,14 +110,17 @@ struct ECExpressionsCache
 private:
     bmap<Utf8String, NodePtr> m_cache;
     bmap<Utf8String, OptimizedExpressionPtr> m_optimizedCache;
+    bmap<Utf8String, bvector<Utf8String>> m_usedClasses;
 
 public:
     ECExpressionsCache() {}
     NodePtr Get(Utf8CP expression) const;
     OptimizedExpressionPtr GetOptimized(Utf8CP expression) const;
+    bvector<Utf8String> const* GetUsedClasses(Utf8CP expression) const;
     bool HasOptimizedExpression(Utf8CP expression) const;
     void Add(Utf8CP expression, Node&);
     void Add(Utf8CP expression, OptimizedExpression&);
+    bvector<Utf8String> const& Add(Utf8CP expression, bvector<Utf8String>&);
     void Clear();
 };
 
@@ -145,7 +148,7 @@ public:
     bool EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
     ECPRESENTATION_EXPORT NodePtr GetNodeFromExpression(Utf8CP expression);
     ECPRESENTATION_EXPORT Utf8String ConvertToECSql(Utf8StringCR expression);
-    ECPRESENTATION_EXPORT bvector<Utf8String> GetUsedClasses(Utf8StringCR expression);
+    ECPRESENTATION_EXPORT bvector<Utf8String> const& GetUsedClasses(Utf8StringCR expression);
 };
 
 /*=================================================================================**//**
