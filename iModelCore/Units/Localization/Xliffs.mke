@@ -9,6 +9,6 @@
 
 ContextDeliveryDir  = $(OutputRootDir)BuildContexts/Units/Delivery/
 
-SQLANG_CHeader  = $(_MakeFilePath)Xliffs/Units.xliff.h
+SQLANG_CHeader  = $(_MakeFilePath)xliffs/Units.xliff.h
 SQLANG_Xliff    = $(OutputRootDir)build/Units/Xliffs/Units_en.xliff
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
