@@ -355,7 +355,7 @@ struct AutoHandledPropertiesCollection
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
     
     static void DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR);
-    static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);
+    DGNPLATFORM_EXPORT static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);     // used by imodeljs node addon
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
