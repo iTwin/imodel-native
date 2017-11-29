@@ -37,10 +37,10 @@ always:
 #
 PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
+%warn bsiScripts=$(bsiScripts)
+
 always:
-    >$(o)imodeljsnode_addon_package_version.h
-\#define PACKAGE_VERSION "$(PACKAGE_VERSION)"
-    <
+    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljsnode_addon_package_version.h $(o)imodeljsnode_addon_package_version.h
  
 cIncs + -I$(o)
 
