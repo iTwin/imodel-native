@@ -2358,6 +2358,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
 
 public:
     BE_PROP_NAME(InSpatialIndex)
@@ -2441,6 +2442,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
 
 public:
     BE_PROP_NAME(Rotation)

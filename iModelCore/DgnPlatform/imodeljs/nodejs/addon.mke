@@ -21,15 +21,6 @@ baseDir     = $(_MakeFilePath)
 #   c++ '-DNODE_GYP_MODULE_NAME=libprime' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_DARWIN_USE_64_BIT_INODE=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' -I/Users/sam.wilson/.node-gyp/7.10.0/include/node -I/Users/sam.wilson/.node-gyp/7.10.0/src -I/Users/sam.wilson/.node-gyp/7.10.0/deps/uv/include -I/Users/sam.wilson/.node-gyp/7.10.0/deps/v8/include -I../../prime4lib  -Os -gdwarf-2 -mmacosx-version-min=10.7 -arch x86_64 -Wall -Wendif-labels -W -Wno-unused-parameter -std=gnu++0x -stdlib=libc++ -fno-rtti -fno-exceptions -fno-threadsafe-statics -std=c++11 -stdlib=libc++ -MMD -MF ./Release/.deps/Release/obj.target/libprime/../prime4lib/exchange.o.d.raw   -c -o Release/obj.target/libprime/../prime4lib/exchange.o ../../prime4lib/exchange.cpp
 
 
-cIncs + -I$(BuildContext)VendorAPI/node-gyp_$(NODE_GYP_VER)
-cIncs + -I$(BuildContext)VendorAPI/node-nan_$(NODE_GYP_VER)
-
-cDefs + -DNODE_GYP_MODULE_NAME=$(appName)
-cDefs + -DUSING_UV_SHARED=1
-cDefs + -DUSING_V8_SHARED=1
-cDefs + -DV8_DEPRECATION_WARNINGS=1
-cDefs + -D_LARGEFILE_SOURCE
-cDefs + -D_FILE_OFFSET_BITS=64
 cDefs + -DBUILDING_NODE_EXTENSION
 
 %if $(TARGET_PLATFORM) == "MacOS"
@@ -39,6 +30,19 @@ cDefs + -DBUILDING_NODE_EXTENSION
 o = $(OutputRootDir)Build/iModelJsNodeAddon_$(NODE_GYP_VER)/
 always:
     !~@mkdir $(o)
+
+
+# 
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+%warn bsiScripts=$(bsiScripts)
+
+always:
+    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljsnode_addon_package_version.h $(o)imodeljsnode_addon_package_version.h
+ 
+cIncs + -I$(o)
 
 # DLM_NAME and CCompPDBName must be the same.
 DLM_NAME        =% $(appName)
@@ -95,16 +99,13 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
-#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSecurity.a
-#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libiModelHubClient.a
-#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libnode-addon-api.a
 
 THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
 
 %include $(sharedMki)rollUpSubPartsLibsThin.mki
 
 DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
-#LINKER_LIBRARIES  + $(BuildContext)SubParts/NodeJs/node
 
 %ifdef __apple
 # OSX Specific library
@@ -121,7 +122,7 @@ BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
 
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
 
-LINKER_LIBRARIES  + $(BuildContext)SubParts/NodeJsLib/$(libprefix)node_$(NODE_GYP_VER)$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)node-addon-api$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECPresentation$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
@@ -143,6 +144,7 @@ $(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENT
 #----------------------------------------------------------------------
 always:
     ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/package.json=$(baseDir)/package.json"
+    ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/iModelJsNodeAddon.d.ts=$(baseDir)/iModelJsNodeAddon.d.ts"
     
 #----------------------------------------------------------------------
 # Deliver Presentation Rules
