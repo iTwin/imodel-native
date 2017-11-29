@@ -4167,10 +4167,9 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  GeometricElement::_OnDeleted() const 
-    {
-    T_Super::_OnDeleted();
-    }
+void  GeometricElement::_OnDeleted() const { T_Super::_OnDeleted(); }
+void  GeometricElement2d::_OnDeleted() const { SetHilited(false); T_Super::_OnDeleted(); }
+void  GeometricElement3d::_OnDeleted() const { SetHilited(false); T_Super::_OnDeleted(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
