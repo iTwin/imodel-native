@@ -41,6 +41,7 @@ always:
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch) $(PACKAGE_VERSION)
     @$(mkDirCmd) $(o)imodeljsnodeaddonapi > $(o)sink
     @$(copyCmd) $(baseDir)/*.d.ts $(o)imodeljsnodeaddonapi > $(o)sink
+    @$(copyCmd) $(baseDir)/*.md $(o)imodeljsnodeaddonapi > $(o)sink
     python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljsnodeaddonapi.package.json $(o)imodeljsnodeaddonapi/package.json
     |npm publish $(o)imodeljsnodeaddonapi
 
