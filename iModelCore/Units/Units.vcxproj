@@ -16,6 +16,7 @@
     <ClCompile Include="src\Formatting\FormatParsing.cpp" />
     <ClCompile Include="src\Formatting\FormatQuantity.cpp" />
     <ClCompile Include="src\Formatting\Formatting.cpp" />
+    <ClCompile Include="src\Formatting\FormattingIO.cpp" />
     <ClCompile Include="src\Formatting\FormatUtils.cpp" />
     <ClCompile Include="src\SymbolicExpression.cpp" />
     <ClCompile Include="src\UnitsPCH.cpp" />

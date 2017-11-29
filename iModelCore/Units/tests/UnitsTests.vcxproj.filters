@@ -42,6 +42,9 @@
     <ClCompile Include="NonPublished\formatting_test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\FormattingTestFixture.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\QuantityTestFixture.h">
@@ -51,6 +54,9 @@
       <Filter>NonPublished</Filter>
     </ClInclude>
     <ClInclude Include="NonPublished\UnitsTests.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\FormattingTestFixture.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
   </ItemGroup>

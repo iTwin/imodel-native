@@ -28,6 +28,7 @@
     <Text Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="NonPublished\FormattingTestFixture.cpp" />
     <ClCompile Include="NonPublished\formatting_test.cpp" />
     <ClCompile Include="NonPublished\QuantityTestFixture.cpp" />
     <ClCompile Include="NonPublished\QuantityTests.cpp" />
@@ -35,6 +36,7 @@
     <ClCompile Include="NonPublished\UnitsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="NonPublished\FormattingTestFixture.h" />
     <ClInclude Include="NonPublished\QuantityTestFixture.h" />
     <ClInclude Include="NonPublished\UnitsTestFixture.h" />
     <ClInclude Include="NonPublished\UnitsTests.h" />

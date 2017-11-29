@@ -9,6 +9,8 @@
 #include "UnitsPCH.h"
 #include "SymbolicExpression.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include "../Localization/xliffs/Units.xliff.h"
+#include <BeSQLite/L10N.h>
 
 using namespace std;
 
@@ -633,4 +635,19 @@ Json::Value Phenomenon::SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV)
         }
     return jval;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  11/2017
+//---------------------------------------------------------------------------------------
+Utf8CP Phenomenon::GetLabel() const
+    {
+    if (m_displayLabel.empty())
+        {
+        Utf8PrintfString stringId("PHENOMENON_%s", GetName());
+        m_displayLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(stringId.c_str()));
+        }
+
+    return m_displayLabel.c_str();
+    }
+
 
