@@ -113,13 +113,20 @@ struct UIListEntry
         void SetLabel(Utf8CP n) { m_json["label"] = n; }
         Utf8CP GetLabel() const { return m_json["label"].asCString(); }
 
+        void SetStringValue(Utf8CP n) { m_json["stringValue"] = n; }
+        Utf8CP GetStringValue() const { return m_json["stringValue"].asCString(); }
+
         void SetValue(int n) { m_json["value"] = n; }
         int GetValue() const { return m_json["value"].asInt(); }
 
-        UIListEntry(int value, Utf8CP label) : m_json(Json::objectValue)
+        UIListEntry(int value, Utf8CP label, Utf8CP stringValue=nullptr) : m_json(Json::objectValue)
             {
             SetLabel(label);
             SetValue(value);
+
+            // string value is optional
+            if (stringValue)
+                SetStringValue(stringValue);
             }
 
         Json::Value const& GetJson() const { return m_json; }

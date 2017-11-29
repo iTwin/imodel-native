@@ -64,11 +64,10 @@ UIList UIUtils::GetAvailableFractionalPercisions()
 UIList UIUtils::GetAvailableSignOption()
     {
     UIList signOptions;
-
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NoSign,              UNITSL10N_GETSTRING(ShowSignOption_NoSign).c_str()));
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::OnlyNegative,        UNITSL10N_GETSTRING(ShowSignOption_OnlyNegative).c_str()));
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str()));
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NoSign,              UNITSL10N_GETSTRING(ShowSignOption_NoSign).c_str(), FormatConstant::FPN_NoSign().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::OnlyNegative,        UNITSL10N_GETSTRING(ShowSignOption_OnlyNegative).c_str(), FormatConstant::FPN_OnlyNegative().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
     return signOptions;
     }
 
