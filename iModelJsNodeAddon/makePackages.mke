@@ -39,9 +39,9 @@ always:
     | -- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
     python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch) $(PACKAGE_VERSION)
-    @$(mkDirCmd) $(o)types_imodeljsnodeaddon > $(o)sink
-    @$(copyCmd) $(baseDir)/*.d.ts $(o)types_imodeljsnodeaddon > $(o)sink
-    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/types_imodeljsnodeaddon.package.json $(o)types_imodeljsnodeaddon/package.json
-    |npm publish $(o)types_imodeljsnodeaddon
+    @$(mkDirCmd) $(o)imodeljsnodeaddonapi > $(o)sink
+    @$(copyCmd) $(baseDir)/*.d.ts $(o)imodeljsnodeaddonapi > $(o)sink
+    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljsnodeaddonapi.package.json $(o)imodeljsnodeaddonapi/package.json
+    |npm publish $(o)imodeljsnodeaddonapi
 
 

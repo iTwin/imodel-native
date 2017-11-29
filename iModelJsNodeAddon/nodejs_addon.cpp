@@ -616,6 +616,9 @@ public:
 
         Napi::FunctionReference t = Napi::Function::New(env, New);
 
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
 
         t->SetClassName(Napi::String::New(env, "ECDb"));
 
@@ -1221,6 +1224,9 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
             InstanceMethod("openDgnDb", &NodeAddonDgnDb::StartOpenDgnDb),
@@ -1282,6 +1288,9 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECSqlStatement", {
           InstanceMethod("prepare", &NodeAddonECSqlStatement::Prepare),
