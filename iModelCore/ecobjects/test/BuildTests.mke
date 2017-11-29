@@ -2,7 +2,7 @@
 #
 #  $Source: test/BuildTests.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 # *** NEEDS WORK: Must turn off clang warnings until we can clean up these tests
@@ -30,6 +30,6 @@ o               = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
-# Deliver 
+# Deliver
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

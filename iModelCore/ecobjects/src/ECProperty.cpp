@@ -417,7 +417,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
     PRECONDITION (NULL != isReadOnly, ECObjectsStatus::PreconditionViolated);
 
     bool bReadOnly;
-    ECObjectsStatus status = SchemaParseUtils::ParseBooleanString (bReadOnly, isReadOnly);
+    ECObjectsStatus status = SchemaParseUtils::ParseBooleanXmlString (bReadOnly, isReadOnly);
     if (ECObjectsStatus::Success != status)
         LOG.errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
     else
@@ -711,7 +711,7 @@ ECObjectsStatus resolvePropertyCategory(PropertyCategoryCP& propertyCategory, Ut
     // typeName may potentially be qualified so we must parse into an alias and short class name
     Utf8String alias;
     Utf8String propertyCategoryName;
-    if (ECObjectsStatus::Success != SchemaParseUtils::ParseFullyQualifiedName(alias, propertyCategoryName, typeName))
+    if (ECObjectsStatus::Success != SchemaParseUtils::ParseXmlFullyQualifiedName(alias, propertyCategoryName, typeName))
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return ECObjectsStatus::ParseError;
@@ -967,15 +967,15 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue) const
+SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bool isInherited) const
     {
-    return _WriteJson(outValue, bvector<bpair<Utf8String, Json::Value>>());
+    return _WriteJson(outValue, isInherited, bvector<bpair<Utf8String, Json::Value>>());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bool isInherited, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
     {
     // If this property was created during supplementation as a local property on the class, then don't serialize it
     if (m_forSupplementation)
@@ -1025,6 +1025,9 @@ SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bvector<bpair<Ut
     WriteCustomAttributes(customAttributesArr);
     if (!customAttributesArr.empty())
         outValue[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
+
+    if (isInherited)
+        outValue[ECJSON_INHERITED_ATTRIBUTE] = true;
 
     for (auto const& attribute : additionalAttributes)
         outValue[attribute.first] = attribute.second;
@@ -1166,11 +1169,11 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus PrimitiveECProperty::_WriteJson(Json::Value& outValue) const
+SchemaWriteStatus PrimitiveECProperty::_WriteJson(Json::Value& outValue, bool isInherited) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
     WriteCommonPrimitivePropertyJsonAttributes(attributes, this);
-    return T_Super::_WriteJson(outValue, attributes);
+    return T_Super::_WriteJson(outValue, isInherited, attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1460,11 +1463,11 @@ SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus StructECProperty::_WriteJson(Json::Value& outValue) const
+SchemaWriteStatus StructECProperty::_WriteJson(Json::Value& outValue, bool isInherited) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
     attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, GetTypeFullName()));
-    return T_Super::_WriteJson(outValue, attributes);
+    return T_Super::_WriteJson(outValue, isInherited, attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2060,11 +2063,11 @@ SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(BeXmlNodeR propertyNode, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus PrimitiveArrayECProperty::_WriteJson(Json::Value& outValue) const
+SchemaWriteStatus PrimitiveArrayECProperty::_WriteJson(Json::Value& outValue, bool isInherited) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
     WriteCommonPrimitivePropertyJsonAttributes(attributes, this);
-    return T_Super::_WriteJson(outValue, attributes);
+    return T_Super::_WriteJson(outValue, isInherited, attributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2121,11 +2124,11 @@ ECObjectsStatus StructArrayECProperty::_SetTypeName(Utf8StringCR typeName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus StructArrayECProperty::_WriteJson(Json::Value& outValue) const
+SchemaWriteStatus StructArrayECProperty::_WriteJson(Json::Value& outValue, bool isInherited) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
     attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, GetTypeFullName()));
-    return T_Super::_WriteJson(outValue, attributes);
+    return T_Super::_WriteJson(outValue, isInherited, attributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2343,7 +2346,7 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus NavigationECProperty::_WriteJson(Json::Value& outValue) const
+SchemaWriteStatus NavigationECProperty::_WriteJson(Json::Value& outValue, bool isInherited) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
 
@@ -2353,7 +2356,7 @@ SchemaWriteStatus NavigationECProperty::_WriteJson(Json::Value& outValue) const
     Utf8String directionString;
     attributes.push_back(bpair<Utf8String, Json::Value>(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(direction)));
     
-    return T_Super::_WriteJson(outValue, attributes);
+    return T_Super::_WriteJson(outValue, isInherited, attributes);
     }
 
 //---------------------------------------------------------------------------------------

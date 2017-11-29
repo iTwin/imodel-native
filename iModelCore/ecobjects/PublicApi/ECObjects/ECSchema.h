@@ -733,8 +733,8 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
 
-    virtual SchemaWriteStatus           _WriteJson(Json::Value& outValue) const;
-    SchemaWriteStatus           _WriteJson(Json::Value& outValue, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+    virtual SchemaWriteStatus           _WriteJson(Json::Value& outValue, bool isInherited) const;
+    SchemaWriteStatus                   _WriteJson(Json::Value& outValue, bool isInherited, bvector<bpair<Utf8String, Json::Value>> attributes) const;
 
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const { return GetTypeName(); }
     void                                _AdjustMinMaxAfterTypeChange();
@@ -994,7 +994,7 @@ protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
-    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool isInherited) const override;
 
     bool _IsPrimitive() const override {return true;}
     PrimitiveECPropertyCP _GetAsPrimitivePropertyCP() const override {return this;}
@@ -1054,7 +1054,7 @@ protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
-    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool isInherited) const override;
 
     bool _IsStruct() const override { return true;}
     StructECPropertyCP _GetAsStructPropertyCP() const override {return this;}
@@ -1157,7 +1157,7 @@ protected:
         };
 
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool isInherited) const override;
     Utf8String _GetTypeName(bool useFullName = false) const override;
     Utf8String _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
@@ -1215,7 +1215,7 @@ private:
         };
 
 protected:
-    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool isInherited) const override;
     Utf8String _GetTypeName(bool useFullName = false) const override;
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _IsStructArray() const override {return true;}
@@ -1259,7 +1259,7 @@ protected:
 protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
-    SchemaWriteStatus _WriteJson(Json::Value& outValue) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool isInherited) const override;
 
     bool _IsNavigation() const override {return true;}
     NavigationECPropertyCP _GetAsNavigationPropertyCP() const override {return this;}
@@ -1482,8 +1482,8 @@ protected:
     virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
-    virtual SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
-    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bvector<bpair<Utf8String, Json::Value>> attributes) const;
+    virtual SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> attributes) const;
 
     virtual ECClassType _GetClassType() const {return ECClassType::Entity;} // default type
 
@@ -1709,10 +1709,10 @@ public:
 
     ECOBJECTS_EXPORT bool Validate() const;
 
-    //! Write the class as a standalone schema child in the ECSchemaJSON format.
-    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
-    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) { return _WriteJson(outValue, true, includeSchemaVersion); }
+    //! @param[out] outValue                    Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion        If true the schema version will be included in the Json object.
+    //! @param[in]  includeInheritedProperties  If true inherited properties will be serialized along with noninherited properties.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false, bool includeInheritedProperties = false) {return _WriteJson(outValue, true, includeSchemaVersion, includeInheritedProperties);}
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -2086,7 +2086,7 @@ protected:
     virtual ~ECEntityClass() {}
 
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     ECEntityClassCP _GetEntityClassCP() const override {return this;}
     ECEntityClassP _GetEntityClassP() override {return this;}
     ECClassType _GetClassType() const override {return ECClassType::Entity;}
@@ -2143,7 +2143,7 @@ private:
 protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     ECClassType _GetClassType() const override {return ECClassType::CustomAttribute;}
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override {return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override {return this;}
@@ -2460,7 +2460,7 @@ private:
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const override;
+    SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
 
