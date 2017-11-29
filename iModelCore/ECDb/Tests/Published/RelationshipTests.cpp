@@ -3617,8 +3617,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractClassAsConstraint
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
     {
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                   <ECEntityClass typeName="Element" modifier="Sealed">
                     <ECCustomAttributes>
@@ -3647,106 +3646,132 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithNotMappedClassAsConstrain
                   </ECRelationshipClass>
                 </ECSchema>)xml"))) << "1:N Relationship having NotMapped constraint class on both sides of relationship are not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.02.00'>"
-        "            <MapStrategy>NotMapped</MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.02.00'>"
-        "            <MapStrategy>NotMapped</MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
-        "    <Source cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "N:N Relationship having not mapped constraint class on both sides of relationship are not supported";
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                  <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                  <ECEntityClass typeName="Element" modifier="Sealed">
+                    <ECProperty propertyName="Code" typeName="string" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="ElementGeometry" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>NotMapped</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Geom" typeName="binary" />
+                  </ECEntityClass>
+                  <ECRelationshipClass typeName="ElementHasGeometry" strength="embedding" modifier="Sealed">
+                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="owns">
+                      <Class class="Element" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                      <Class class="ElementGeometry" />
+                    </Target>
+                    <ECProperty propertyName="RelProp" typeName="string" />
+                  </ECRelationshipClass>
+                </ECSchema>)xml"))) << "N:N Relationship having not mapped constraint class on one side of relationship are not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.02.00'>"
-        "            <MapStrategy>NotMapped</MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='NameSpace' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry3D'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.02.00'>"
-        "            <MapStrategy>NotMapped</MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>ElementGeometry</BaseClass>"
-        "    <ECProperty propertyName='Category3D' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
-        "    <Source cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "N:N Relationship having at least one NotMapped constraint class on both sides of relationship are not supported";
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipConstraint_WithNotMappedSubclass.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                  <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                  <ECEntityClass typeName="Element" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Code" typeName="string" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="PhysicalElement" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>NotMapped</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="Code" typeName="string" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="ElementGeometry" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Geom" typeName="binary" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="ElementGeometry3D" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>NotMapped</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="Dimension" typeName="integer" />
+                  </ECEntityClass>
+                  <ECRelationshipClass typeName="ElementHasGeometry" strength="embedding" modifier="Sealed">
+                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="owns">
+                      <Class class="Element" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                      <Class class="ElementGeometry" />
+                    </Target>
+                    <ECProperty propertyName="RelProp" typeName="string" />
+                  </ECRelationshipClass>
+                </ECSchema>)xml")));
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='NameSpace' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry3D'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.02.00'>"
-        "            <MapStrategy>NotMapped</MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>ElementGeometry</BaseClass>"
-        "    <ECProperty propertyName='Category3D' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
-        "    <Source cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "N:N Relationships having at least one NotMapped constraint class on one sides of relationship are not supported";
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_Element").GetType());
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_ElementGeometry").GetType());
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_ElementHasGeometry").GetType());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipConstraint_WithNotMappedSubclass.ecdb", 
+                  SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                  <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                  <ECEntityClass typeName="Element" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                     <ECProperty propertyName="Code" typeName="string" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="PhysicalElement" modifier="Sealed">
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="Name" typeName="string" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="ElementGeometry" modifier="None">
+                      <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                      </ECCustomAttributes>
+                     <ECProperty propertyName="Geom" typeName="binary" />
+                  </ECEntityClass>
+                  <ECEntityClass typeName="ElementGeometry3D" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>NotMapped</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <BaseClass>ElementGeometry</BaseClass>
+                    <ECProperty propertyName="Dimension" typeName="integer" />
+                  </ECEntityClass>
+                  <ECRelationshipClass typeName="ElementHasGeometry" strength="referencing" modifier="Sealed">
+                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="owns">
+                      <Class class="Element" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                      <Class class="ElementGeometry" />
+                    </Target>
+                    <ECProperty propertyName="RelProp" typeName="string" />
+                  </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_Element").GetType());
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_ElementGeometry").GetType());
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_ElementHasGeometry").GetType());
+    }
+
     }
 
 
