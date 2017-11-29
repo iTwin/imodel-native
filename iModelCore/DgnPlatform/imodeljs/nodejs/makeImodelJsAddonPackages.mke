@@ -9,6 +9,7 @@
 
 ProductDir = $(OutputRootDir)Product/
 o = $(OutputRootDir)packages/
+baseDir = $(_MakeFilePath)
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     Platform=Windows
@@ -25,7 +26,22 @@ o = $(OutputRootDir)packages/
 
 # NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
 
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+
+    %return
+%endif
+
 always:
-    -$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch)
+    | -- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
+    -@$(rmdirRecursiveCmd) $(o)
+    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch) $(PACKAGE_VERSION)
+    @$(mkDirCmd) $(o)types_imodeljsnodeaddon > $(o)sink
+    @$(copyCmd) $(baseDir)/*.d.ts $(o)types_imodeljsnodeaddon > $(o)sink
+    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/types_imodeljsnodeaddon.package.json $(o)types_imodeljsnodeaddon/package.json > $(o)sink
+    |npm publish $(o)types_imodeljsnodeaddon
+
 

@@ -200,7 +200,7 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
-    void SetFlashed(DgnElementId id, double duration) {m_lastFlashedElem = m_flashedElem; m_flashedElem = id; m_flashDuration = duration;}
+    DGNPLATFORM_EXPORT void SetFlashed(DgnElementId id, double duration);
 
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
 

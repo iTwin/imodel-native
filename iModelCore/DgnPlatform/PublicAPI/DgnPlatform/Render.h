@@ -251,6 +251,7 @@ struct Task : RefCounted<NonCopyableClass>
     //! The rendering operation a task performs.
     enum class Operation
     {
+        ChangeDecorations,
         ChangeDynamics,
         ChangeRenderPlan,
         ChangeScene,
