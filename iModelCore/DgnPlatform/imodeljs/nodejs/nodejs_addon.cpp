@@ -843,6 +843,7 @@ public:
 struct NodeAddonDgnDb : Nan::ObjectWrap
 {
     Dgn::DgnDbPtr m_dgndb;
+    ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     static Nan::Persistent<FunctionTemplate> s_constructor_template;
 
@@ -859,10 +860,11 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         {
         BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
-        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-		m_presentationManager->GetConnections().NotifyConnectionOpened(*m_dgndb);
+        RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
+        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
+        m_connections.NotifyConnectionOpened(*m_dgndb);
         }
 
     //=======================================================================================
@@ -1231,7 +1233,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                     m_status = DgnDbStatus::BadArg;
                     return;                
                     }
-                ContentDescriptorCPtr descriptor = m_db->m_presentationManager->GetContentDescriptor(*m_db->m_dgndb, ContentDisplayType::PropertyPane, selection, options.GetJson());
+                ContentDescriptorCPtr descriptor = m_db->m_presentationManager->GetContentDescriptor(*m_db->m_dgndb, ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
                 if (descriptor.IsNull())
                     {
                     m_status = DgnDbStatus::BadArg;
@@ -1239,7 +1241,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 PageOptions pageOptions;
                 pageOptions.SetPageStart(0);
                 pageOptions.SetPageSize(0);
-                ContentCPtr content = m_db->m_presentationManager->GetContent(*m_db->m_dgndb, *descriptor, selection, pageOptions, options.GetJson());
+                ContentCPtr content = m_db->m_presentationManager->GetContent(*m_db->m_dgndb, *descriptor, selection, pageOptions, options.GetJson()).get();
                 if (content.IsNull())
                     {
                     m_status = DgnDbStatus::BadArg;
