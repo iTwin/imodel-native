@@ -234,6 +234,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     ECRelationshipClassR ret_ClassDReferencesClassE = *GetECClassP("RulesEngineTest", "ClassDReferencesClassE")->GetRelationshipClassP();
     ECEntityClassR ret_ClassF = *GetECClassP("RulesEngineTest", "ClassF")->GetEntityClassP();
     ECEntityClassR ret_ClassG = *GetECClassP("RulesEngineTest", "ClassG")->GetEntityClassP();
+    ECEntityClassR ret_ClassH = *GetECClassP("RulesEngineTest", "ClassH")->GetEntityClassP();
     //ECEntityClassR ret_ClassI = *GetECClassP("RulesEngineTest", "ClassI")->GetEntityClassP();
     //ECEntityClassR ret_ClassJ = *GetECClassP("RulesEngineTest", "ClassJ")->GetEntityClassP();
     //ECEntityClassR ret_ClassQ = *GetECClassP("RulesEngineTest", "ClassQ")->GetEntityClassP();
@@ -3736,6 +3737,22 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("SelectedNodeInstances_AddsNestedRelatedProperties2", *query);
         }
 
+    // SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue   
+        {
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->AddContentFlag(ContentFlags::DistinctValues);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
+        AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
+        query->SelectContract(*contract, "this");
+        query->From(ret_ClassH, false, "this");
+        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->GroupByContract(*contract);
+        RegisterQuery("SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue", *query);
+        }
+
     // SetsShowImagesFlag
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();
@@ -3997,6 +4014,21 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(*UnionContentQuery::Create(*q1, *q2));
 
         RegisterQuery("ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType2", *query);
+        }
+
+     // ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue
+        {
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->AddContentFlag(ContentFlags::DistinctValues);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
+        AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
+        query->SelectContract(*contract, "this");
+        query->From(ret_ClassH, false, "this");
+        query->GroupByContract(*contract);
+        RegisterQuery("ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
         }
 
     // ContentRelatedInstances_ReturnsForwardRelatedInstanceQueryWhenSelectedOneInstanceNode
@@ -4640,6 +4672,27 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery(queryName, *query);
         }
 
+    // ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue
+        {
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->AddContentFlag(ContentFlags::DistinctValues);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false)
+            });
+        AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
+        query->SelectContract(*contract, "this");
+        query->From(ret_ClassH, true, "this");
+        query->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false), false);
+        query->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->GroupByContract(*contract);
+
+        RegisterQuery("ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
+        }
+
     // NestedContentField_WithSingleStepRelationshipPath
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();
@@ -5005,7 +5058,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(*nestedQuery, "");
         query->Where("([Widget_MyID] = 'WidgetId')", BoundQueryValuesList());
         RegisterQuery("FilterExpressionQueryTest", *query);
+
         }
+
     }
 
 #define LOGD(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->debugv(__VA_ARGS__)

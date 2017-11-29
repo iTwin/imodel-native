@@ -276,6 +276,8 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
                 fieldsRemapInfo[sourceField] = targetField;
                 }
             }
+        if (found)
+            continue;
 
         for (Field* targetField : m_fields)
             {
@@ -571,13 +573,7 @@ static rapidjson::Value CreateKindOfQuantityJson(KindOfQuantityCR koq, rapidjson
     json.AddMember("Name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
     json.AddMember("DisplayLabel", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
     json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit().ToText(true).c_str(), allocator), allocator);
-    json.AddMember("CurrentUnit", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
-
-    rapidjson::Value units(rapidjson::kArrayType);
-    for (auto unit : koq.GetPresentationUnitList())
-        units.PushBack(rapidjson::Value(unit.ToText(true).c_str(), allocator), allocator);
-
-    json.AddMember("PresentationUnits", units, allocator);
+    json.AddMember("CurrentFusId", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
 
     return json;
     }
@@ -818,7 +814,9 @@ bool ContentDescriptor::ECPropertiesField::_Equals(Field const& other) const
         return true;
 
     // if both lists have elements, just compare the first one
-    return m_properties[0] == other.AsPropertiesField()->GetProperties()[0];
+    ECPropertiesFieldKey thisKey(m_properties[0], GetEditor());
+    ECPropertiesFieldKey otherKey(other.AsPropertiesField()->GetProperties()[0], other.GetEditor());
+    return !(thisKey < otherKey) && !(otherKey < thisKey);
     }
 
 /*---------------------------------------------------------------------------------**//**

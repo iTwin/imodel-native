@@ -93,7 +93,6 @@ struct RemapNodeIdsTask : IUpdateTask
 {
 private:
     NodesCache& m_cache;
-    SelectionManagerP m_selectionManager;
     bmap<uint64_t, uint64_t> const& m_remapInfo;
 
 protected:
@@ -101,8 +100,6 @@ protected:
     bvector<IUpdateTaskPtr> _Perform() override
         {
         m_cache.RemapNodeIds(m_remapInfo);
-        if (nullptr != m_selectionManager)
-            m_selectionManager->RemapNodeIds(m_remapInfo);
         return bvector<IUpdateTaskPtr>();
         }
     Utf8String _GetPrintStr() const override
@@ -124,8 +121,8 @@ protected:
         return str;
         }
 public:
-    RemapNodeIdsTask(NodesCache& cache, SelectionManagerP selectionManager, bmap<uint64_t, uint64_t> const& remapInfo) 
-        : m_cache(cache), m_selectionManager(selectionManager), m_remapInfo(remapInfo)
+    RemapNodeIdsTask(NodesCache& cache, SelectionManagerP, bmap<uint64_t, uint64_t> const& remapInfo) 
+        : m_cache(cache), m_remapInfo(remapInfo)
         {}
 };
 
@@ -316,6 +313,86 @@ public:
         {}
 };
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2016
++===============+===============+===============+===============+===============+======*/
+struct RefreshSelectionTask : IUpdateTask
+{
+private:
+    SelectionManagerP m_selectionManager;
+    bmap<uint64_t, uint64_t>& m_remapInfo;
+    ECDbCR m_db;
+
+private:
+    INavNodeKeysContainerCPtr GetNewKeys(INavNodeKeysContainerCR selection)
+        {
+        NavNodeKeyList newKeys;
+        for (NavNodeKeyCPtr key : selection)
+            {
+            if (nullptr != key->AsECPropertyGroupingNodeKey())
+                {
+                ECPropertyGroupingNodeKey const* groupKey = key->AsECPropertyGroupingNodeKey();
+                auto remapIter = m_remapInfo.find(groupKey->GetNodeId());
+                if (m_remapInfo.end() != remapIter)
+                    {
+                    newKeys.push_back(ECPropertyGroupingNodeKey::Create(remapIter->second, groupKey->GetECClassId(), groupKey->GetPropertyName(),
+                        groupKey->GetGroupingRangeIndex(), groupKey->GetGroupingValue()));
+                    continue;
+                    }
+                }
+            else if (nullptr != key->AsECClassGroupingNodeKey())
+                {
+                ECClassGroupingNodeKey const* groupKey = key->AsECClassGroupingNodeKey();
+                auto remapIter = m_remapInfo.find(groupKey->GetNodeId());
+                if (m_remapInfo.end() != remapIter)
+                    {
+                    newKeys.push_back(ECClassGroupingNodeKey::Create(remapIter->second, groupKey->GetECClassId(), groupKey->GetType()));
+                    continue;
+                    }
+                }
+            else if (nullptr != key->AsDisplayLabelGroupingNodeKey())
+                {
+                DisplayLabelGroupingNodeKey const* groupKey = key->AsDisplayLabelGroupingNodeKey();
+                auto remapIter = m_remapInfo.find(groupKey->GetNodeId());
+                if (m_remapInfo.end() != remapIter)
+                    {
+                    newKeys.push_back(DisplayLabelGroupingNodeKey::Create(remapIter->second, groupKey->GetLabel(), groupKey->GetType()));
+                    continue;
+                    }
+                }
+
+            newKeys.push_back(key);
+            }
+        return NavNodeKeyListContainer::Create(newKeys);
+        }
+protected:
+    uint32_t _GetPriority() const override {return TASK_PRIORITY_RefreshSelection;}
+    bvector<IUpdateTaskPtr> _Perform() override 
+        {
+        if (m_remapInfo.empty())
+            return bvector<IUpdateTaskPtr>();
+
+        ECDbR db = const_cast<ECDbR>(m_db);
+        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager->GetSelection(db));
+        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager->GetSubSelection(db));
+        if (0 != selectionKeys->size())
+            m_selectionManager->ChangeSelection(db, "RefreshSelectionTask", false, *selectionKeys);
+        if (0 != subSelectionKeys->size())
+            m_selectionManager->ChangeSelection(db, "RefreshSelectionTask", true, *subSelectionKeys);
+
+        return bvector<IUpdateTaskPtr>();
+        }
+    Utf8String _GetPrintStr() const override
+        {
+        Utf8String str = "[RefreshSelectioTask]";
+        return str;
+        }
+public:
+    RefreshSelectionTask(SelectionManager& manager, ECDbCR db, bmap<uint64_t, uint64_t>& remap)
+        : m_selectionManager(&manager), m_remapInfo(remap), m_db(db)
+        {}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -381,6 +458,17 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(UpdateRecord record) const
 IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) const
     {
     return new FullUpdateReportTask(*m_recordsHandler, record);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IUpdateTaskPtr UpdateTasksFactory::CreateRefreshSelectionTask(ECDbCR db, bmap<uint64_t, uint64_t>& remap) const
+    {
+    if (nullptr == m_selectionManager)
+        return nullptr;
+
+    return new RefreshSelectionTask(*m_selectionManager, db, remap);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -468,6 +556,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
 void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext& updateContext,
     bvector<HierarchyLevelInfo> const& affectedHierarchies) const
     {
+    bset<ECDb const*> affectedConnections;
     for (HierarchyLevelInfo const& info : affectedHierarchies)
         {
         ECDb const* connection = m_connections.GetConnection(info.GetConnectionId().ToString().c_str());
@@ -477,7 +566,12 @@ void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& task
             continue;
             }
         AddTask(tasks, *m_tasksFactory.CreateRefreshHierarchyTask(*m_hierarchyUpdater, updateContext, *connection, info));
+        if (nullptr != m_selectionManager)
+            affectedConnections.insert(connection);
         }
+    for (ECDb const* connection: affectedConnections)
+        AddTask(tasks, *m_tasksFactory.CreateRefreshSelectionTask(*connection, updateContext.GetRemapInfo()));
+
     AddTask(tasks, *m_tasksFactory.CreateRemapNodeIdsTask(updateContext.GetRemapInfo()));
     }
 

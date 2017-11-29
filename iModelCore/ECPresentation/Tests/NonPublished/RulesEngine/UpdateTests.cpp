@@ -5686,3 +5686,97 @@ TEST_F (HierarchyUpdateTests, RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChang
     // expect the key to be found in the selection
     EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HierarchyUpdateTests, UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup)
+    {
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2)); });
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2)); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    GroupingRuleP grouping = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
+    grouping->AddGroup(*new PropertyGroup("", "", false, "IntProperty"));
+    rootRule->AddCustomizationRule(*grouping);
+
+    rootRule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rootRule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options("UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup", TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+
+    // expect 1 grouping node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
+    NavNodeKeyCPtr keyBefore = &rootNodes[0]->GetKey();
+
+    // add node to selection
+    TempSelectionManager selectionManager;
+    selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({keyBefore}));
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyBefore));
+
+    // insert new instance
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2));});
+    s_eventsSource->NotifyECInstanceInserted(s_project->GetECDb(), *widget);
+
+    // get updated hierarchy
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
+    NavNodeKeyCPtr keyAfter = &rootNodes[0]->GetKey();
+
+    // expect the key to be found in the selection
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdatesSelectionWhenUserSettingChanges_UsedInCustomizationRuleCondition)
+    {
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesSelectionWhenUserSettingChanges_UsedInCustomizationRuleCondition", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
+
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode AND 1 = GetSettingIntValue(\"test\")", 1, "\"Test\"", "\"Test\""));
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("Widget", rootNodes[0]->GetLabel().c_str());
+    NavNodeKeyCPtr keyBefore = &rootNodes[0]->GetKey();
+
+    // add node to selection
+    TempSelectionManager selectionManager;
+    selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({keyBefore}));
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyBefore));
+    
+    // change a setting
+    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+
+    // get updated hierarchy
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson());
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("Test", rootNodes[0]->GetLabel().c_str());
+    NavNodeKeyCPtr keyAfter = &rootNodes[0]->GetKey();
+
+    // expect the key to be found in the selection
+    EXPECT_TRUE(selectionManager.GetSelection(s_project->GetECDb())->end() != selectionManager.GetSelection(s_project->GetECDb())->find(keyAfter));
+    }

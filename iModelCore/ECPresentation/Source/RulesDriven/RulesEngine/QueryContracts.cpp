@@ -42,6 +42,20 @@ bool PresentationQueryContract::IsAggregating() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationQueryContract::IsGettingUniqueValues() const
+    {
+    bvector<PresentationQueryContractFieldCPtr> fields = GetFields();
+    for (PresentationQueryContractFieldCPtr field : fields)
+        {
+        if (field->IsDistinct())
+            return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationQueryContract::HasInnerFields() const
@@ -935,43 +949,61 @@ static Utf8String GetPropertySelectClauseFromAccessString(Utf8StringCR accessStr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String PropertyDisplayValueSelectStringClause(ECPropertyCR ecProperty, Utf8StringCR valueAccessString)
+    {
+    Utf8String clause;
+    clause.append(FUNCTION_NAME_GetPropertyDisplayValue).append("('");
+    clause.append(ecProperty.GetClass().GetSchema().GetName());
+    clause.append("', '");
+    clause.append(ecProperty.GetClass().GetName());
+    clause.append("', '");
+    clause.append(ecProperty.GetName());
+    clause.append("', ");
+    clause.append(valueAccessString).append(")");
+    return clause;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String PropertyValueSelectStringClause(Utf8CP prefix, Utf8CP propertyAccessString, PrimitiveType propertyType)
+    {
+    Utf8String valueClause;
+    if (nullptr != prefix && 0 != *prefix)
+        valueClause.append(Wrap(prefix)).append(".");
+    valueClause.append(propertyAccessString);
+
+    if (propertyType == PRIMITIVETYPE_Point2d || propertyType == PRIMITIVETYPE_Point3d)
+        valueClause = GetPointAsJsonStringClause(propertyAccessString, prefix, propertyType == PRIMITIVETYPE_Point2d ? 2 : 3);
+
+    return valueClause;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, ECPropertyCR prop, bool isDistinct)
     {
     if (prop.GetIsPrimitive())
         {
-        switch (prop.GetAsPrimitiveProperty()->GetType())
+        Utf8String valueSelectClause = PropertyValueSelectStringClause(prefix, propertyAccessString, prop.GetAsPrimitiveProperty()->GetType());
+        PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, valueSelectClause.c_str(), false, isDistinct);
+        if (isDistinct)
             {
-            case PRIMITIVETYPE_Point2d:
-                {
-                Utf8String clause = GetPointAsJsonStringClause(propertyAccessString, prefix, 2);
-                return PresentationQueryContractSimpleField::Create(fieldName, clause.c_str(), false);
-                }
-            case PRIMITIVETYPE_Point3d:
-                {
-                Utf8String clause = GetPointAsJsonStringClause(propertyAccessString, prefix, 3);
-                return PresentationQueryContractSimpleField::Create(fieldName, clause.c_str(), false);
-                }
-            case PRIMITIVETYPE_Integer:
-            case PRIMITIVETYPE_String:
-                {
-                /*if (nullptr != primitiveProperty.GetEnumeration())
-                    {
-                    Utf8String enumSchema = Utf8String("'").append(primitiveProperty.GetEnumeration()->GetSchema().GetName()).append("'");
-                    Utf8String enumClass = Utf8String("'").append(primitiveProperty.GetEnumeration()->GetName()).append("'");
-                    field = PresentationQueryContractFunctionField::Create(propertiesField.GetName().c_str(), FUNCTION_NAME_GetECEnumerationValue,
-                        {enumSchema, enumClass, propertyAccessor}, false);
-                    break;
-                    }*/
-                }
+            Utf8String displayValueSelectClause = PropertyDisplayValueSelectStringClause(prop, valueSelectClause);
+            field->SetGroupingClause(displayValueSelectClause);
             }
+        return field;
         }
     if (prop.GetIsNavigation())
         {
         PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetECInstanceDisplayLabel, 
             CreateList("ECClassId", "ECInstanceId", "NULL", "NULL"), true, isDistinct);
         field->SetPrefixOverride(prefix);
+        if (isDistinct)
+            field->SetGroupingClause(field->GetSelectClause(prefix, true));      
         return field;
         }
     PresentationQueryContractFieldPtr field = PresentationQueryContractSimpleField::Create(fieldName, prop.GetName().c_str(), true, isDistinct);

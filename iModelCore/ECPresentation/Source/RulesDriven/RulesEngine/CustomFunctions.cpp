@@ -515,6 +515,121 @@ struct GetPointAsJsonStringScalar : ECPresentation::ScalarFunction
 
 /*=================================================================================**//**
 * Parameters:
+* - ECSchemaName
+* - ECClassName
+* - ECPropertyName
+* - Property value
+* @bsiclass                                     Aidas.Vaiksnoras                11/2017
++===============+===============+===============+===============+===============+======*/
+struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
+    {
+    GetPropertyDisplayValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetPropertyDisplayValue, 4, DbValueType::IntegerVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        if (4 != nArgs)
+            {
+            BeAssert(false);
+            ctx.SetResultError("Invalid number of arguments", BE_SQLITE_ERROR);
+            return;
+            }
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(args[0].GetValueText(), args[1].GetValueText());
+        ECPropertyP ecProperty = ecClass->GetPropertyP(args[2].GetValueText());
+        ECValue value;
+
+        switch (ecProperty->GetAsPrimitiveProperty()->GetType())
+            {
+            case PRIMITIVETYPE_Point2d:
+                {
+                value.SetPoint2d(ValueHelpers::GetPoint2dFromJsonString(args[3].GetValueText()));
+                break;
+                }
+            case PRIMITIVETYPE_Point3d:
+                {
+                value.SetPoint3d(ValueHelpers::GetPoint3dFromJsonString(args[3].GetValueText()));
+                break;
+                }
+            case PRIMITIVETYPE_Double:
+                {
+                value.SetDouble(args[3].GetValueDouble());
+                break;
+                }
+            default:
+                value = ValueHelpers::GetECValueFromString(ecProperty->GetAsPrimitiveProperty()->GetType(), args[3].GetValueText());
+            }
+        
+        Utf8String formattedValue(value.ToString());
+        if (nullptr != GetContext().GetPropertyFormatter())
+            GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value);  
+        ctx.SetResultText(formattedValue.c_str(), (int)formattedValue.size(), DbFunction::Context::CopyData::Yes);
+        }
+    };
+
+/*=================================================================================**//**
+* Parameters:
+* - Point coordinates as Json string
+* - Point x coordinate
+* - Point y coordinate
+* - Point z coordinate if Point is 3d
+* @bsiclass                                     Aidas.Vaiksnoras                11/2017
++===============+===============+===============+===============+===============+======*/
+struct ArePointsEqualByValueScalar : ECPresentation::ScalarFunction
+    {
+    ArePointsEqualByValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_ArePointsEqualByValue, -1, DbValueType::IntegerVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        if (3 != nArgs && 4 != nArgs)
+            {
+            BeAssert(false);
+            ctx.SetResultError("Invalid number of arguments", BE_SQLITE_ERROR);
+            return;
+            }
+        if (3 == nArgs)
+            {
+            DPoint2d point = ValueHelpers::GetPoint2dFromJsonString(args[0].GetValueText());
+            ctx.SetResultInt((int) 0 == BeNumerical::Compare(point.x, args[1].GetValueDouble())
+                                && 0 == BeNumerical::Compare(point.y, args[2].GetValueDouble()));
+            }
+        else
+            {
+            DPoint3d point = ValueHelpers::GetPoint3dFromJsonString(args[0].GetValueText());
+            ctx.SetResultInt((int) 0 == BeNumerical::Compare(point.x, args[1].GetValueDouble())
+                                && 0 == BeNumerical::Compare(point.y, args[2].GetValueDouble())
+                                && 0 == BeNumerical::Compare(point.z, args[3].GetValueDouble()));
+            }
+        }
+    };
+
+/*=================================================================================**//**
+* Parameters:
+* - Point coordinates as Json string
+* - Point x coordinate
+* - Point y coordinate
+* - Point z coordinate if Point is 3d
+* @bsiclass                                     Aidas.Vaiksnoras                11/2017
++===============+===============+===============+===============+===============+======*/
+struct AreDoublesEqualByValueScalar : ECPresentation::ScalarFunction
+    {
+    AreDoublesEqualByValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_AreDoublesEqualByValue, 2, DbValueType::IntegerVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        if (2 != nArgs)
+            {
+            BeAssert(false);
+            ctx.SetResultError("Invalid number of arguments", BE_SQLITE_ERROR);
+            return;
+            }
+        ctx.SetResultInt((int)0 == BeNumerical::Compare(args[0].GetValueDouble(), args[1].GetValueDouble()));
+        }
+    };
+
+/*=================================================================================**//**
+* Parameters:
 * - Any value
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -1308,9 +1423,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, 
     ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener, 
-    NavNodeCP parentNode, rapidjson::Value const* queryExtendedData)
+    NavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter)
     : m_schemaHelper(schemaHelper), m_ruleset(ruleset), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache), 
-    m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener), m_extendedData(queryExtendedData), m_localizationProvider(nullptr)
+    m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener), m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter)
     {
     CustomFunctionsManager::GetManager().PushContext(*this);
     }
@@ -1476,6 +1591,9 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new GetInstanceKeyScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new ECInstanceKeysArrayScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetPointAsJsonStringScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new ArePointsEqualByValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new AreDoublesEqualByValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));    
 
     m_aggregateFunctions.push_back(new GetGroupedInstanceKeysAggregate(CustomFunctionsManager::GetManager()));
     m_aggregateFunctions.push_back(new GetMergedValueAggregate(CustomFunctionsManager::GetManager()));

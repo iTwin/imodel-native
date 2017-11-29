@@ -1483,7 +1483,7 @@ TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPro
     query->From(*m_widgetClass, false, "widget");
     
     ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
     executor.SetPropertyFormatter(formatter);
     
@@ -1509,7 +1509,7 @@ TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPro
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, GetDistinctValuesFromPropertyField)
+TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     {
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
@@ -1520,9 +1520,13 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromPropertyField)
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
+    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query);
+    query->SelectContract(*contract, "widget");
     query->From(*m_widgetClass, false, "widget");
+    query->GroupByContract(*contract);
 
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
     ASSERT_EQ(2, executor.GetRecordsCount());  
 
@@ -1557,11 +1561,13 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
+    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query);
+    query->SelectContract(*contract, "widget");
     query->From(*m_widgetClass, false, "widget");
+    query->GroupByContract(*contract);
     
     ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
     ASSERT_EQ(2, executor.GetRecordsCount());  
 
@@ -1584,49 +1590,7 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, GetDistinctValuesFromECPropertyField)
-    {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
-
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
-    ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID");
-    field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
-    field->SetName("MyID");
-    descriptor->AddField(field);
-    
-    descriptor->AddContentFlag(ContentFlags::DistinctValues);
-
-    ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
-    query->From(*m_widgetClass, false, "widget");
-    
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
-    ASSERT_EQ(2, executor.GetRecordsCount());  
-
-    rapidjson::Document expectedValues;
-    expectedValues.Parse(R"({"MyID": "Test1"})");
-    ContentSetItemPtr record1 = executor.GetRecord(0);
-    ASSERT_TRUE(record1.IsValid());
-    EXPECT_EQ(expectedValues, record1->AsJson()["Values"])
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record1->AsJson()["Values"]);
-
-    expectedValues.Parse(R"({"MyID": "Test2"})");
-    ContentSetItemPtr record2 = executor.GetRecord(1);
-    ASSERT_TRUE(record2.IsValid());
-    EXPECT_EQ(expectedValues, record2->AsJson()["Values"])
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record2->AsJson()["Values"]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, GetDistinctValuesFromMergedECPropertyField)
+TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     {
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
@@ -1641,17 +1605,21 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromMergedECPropertyField)
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
-    query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query1), "gadget");
+    ContentQueryContractPtr contract1 = ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query1);
+    query1->SelectContract(*contract1, "gadget");
     query1->From(*m_gadgetClass, false, "gadget");
+    query1->GroupByContract(*contract1);
     
     ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
-    query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, m_widgetClass, *query2), "widget");
+    ContentQueryContractPtr contract2 = ContentQueryContract::Create(2, *descriptor, m_widgetClass, *query2);
+    query2->SelectContract(*contract2, "widget");
     query2->From(*m_widgetClass, false, "widget");
+    query2->GroupByContract(*contract2);
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
     
     ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
     ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
     ASSERT_EQ(2, executor.GetRecordsCount());  
 
@@ -1669,4 +1637,30 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromMergedECPropertyField)
     EXPECT_EQ(expectedValues, record2->AsJson()["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record2->AsJson()["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
+    {
+    ECEntityClassCP classH = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666, 2.0, 3.0)));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234567777, 2.0, 3.0)));});
+
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    descriptor->AddContentFlag(ContentFlags::DistinctValues);
+    AddField(*descriptor, *classH, ContentDescriptor::Property("h", *classH, *classH->GetPropertyP("PointProperty")->GetAsPrimitiveProperty()));
+
+    ComplexContentQueryPtr query = ComplexContentQuery::Create();
+    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, classH, *query);
+    query->SelectContract(*contract, "h");
+    query->From(*classH, false, "h");
+    query->GroupByContract(*contract);
+    
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    
+    ASSERT_EQ(1, executor.GetRecordsCount());
     }
