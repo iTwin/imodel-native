@@ -50,7 +50,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 0, 0)
         //! Dimensions = false
         //! Extension = false
-        OrthogonalGridPortion::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
         //! Utility for testing
         //! returns create params for orthogonal grid with values:
@@ -65,7 +65,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 0, 0)
         //! Dimensions = true
         //! Extension = false
-        OrthogonalGridPortion::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
         //! Utility for testing
         //! returns create params for orthogonal grid with values:
@@ -80,7 +80,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 1, 0)
         //! Dimensions = false
         //! Extension = true
-        OrthogonalGridPortion::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
         //! Utility for testing
         //! returns create params for orthogonal grid with values:
@@ -95,7 +95,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 1, 0)
         //! Dimensions = true
         //! Extension = true
-        OrthogonalGridPortion::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
         //! Utility for testing
         //! returns create params for radial grid with values:
@@ -106,7 +106,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Length = 70
         //! Height = 50
         //! Extension = false;
-        RadialGridPortion::CreateParams GetTestDefaultCreateParamsForRadialGrid();
+        RadialGrid::CreateParams GetTestDefaultCreateParamsForRadialGrid();
     };
 
 //---------------------------------------------------------------------------------------
@@ -133,13 +133,13 @@ void GridsTestFixture::TearDown()
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrained()
+OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrained()
     {
     DgnDbR db = *DgnClientApp::App().Project();
     DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    return OrthogonalGridPortion::StandardCreateParams(m_model.get(),
+    return OrthogonalGrid::StandardCreateParams(m_model.get(),
                                                        db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                        5, /*horizontal count*/
                                                        4, /*vertical count*/
@@ -158,13 +158,13 @@ OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCrea
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrained()
+OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrained()
     {
     DgnDbR db = *DgnClientApp::App().Project();
     DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    return OrthogonalGridPortion::StandardCreateParams(m_model.get(),
+    return OrthogonalGrid::StandardCreateParams(m_model.get(),
                                                        db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                        5, /*horizontal count*/
                                                        4, /*vertical count*/
@@ -184,13 +184,13 @@ OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCrea
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended()
+OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended()
     {
     DgnDbR db = *DgnClientApp::App().Project();
     DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 1.0, 0.0);
-    return OrthogonalGridPortion::StandardCreateParams(m_model.get(),
+    return OrthogonalGrid::StandardCreateParams(m_model.get(),
                                                        db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                        5, /*horizontal count*/
                                                        4, /*vertical count*/
@@ -209,13 +209,13 @@ OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCrea
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended()
+OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended()
     {
     DgnDbR db = *DgnClientApp::App().Project();
     DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 1.0, 0.0);
-    return OrthogonalGridPortion::StandardCreateParams(m_model.get(),
+    return OrthogonalGrid::StandardCreateParams(m_model.get(),
                                                        db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                        5, /*horizontal count*/
                                                        4, /*vertical count*/
@@ -234,11 +234,11 @@ OrthogonalGridPortion::StandardCreateParams GridsTestFixture::GetTestDefaultCrea
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-RadialGridPortion::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGrid()
+RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGrid()
     {
     DgnDbR db = *DgnClientApp::App().Project();
     DVec3d normal = DVec3d::From(0.0, 0.0, 1.0);
-    return RadialGridPortion::CreateParams(m_model.get(),
+    return RadialGrid::CreateParams(m_model.get(),
                                            db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                            7, /*plane count*/
                                            5, /*circular count*/
@@ -257,9 +257,9 @@ RadialGridPortion::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForR
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrained = OrthogonalGridPortion::CreateAndInsert (createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert (createParams);
 
     db.SaveChanges ();
 
@@ -391,9 +391,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -476,9 +476,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -561,9 +561,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -648,9 +648,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrainedExtended = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -782,9 +782,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrainedExtended = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -867,9 +867,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
-    OrthogonalGridPortionPtr orthogonalGridUnconstrainedExtended = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -952,9 +952,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1086,9 +1086,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1171,9 +1171,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1256,9 +1256,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrained = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1343,9 +1343,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrainedExtended = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1477,9 +1477,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrainedExtended = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1562,9 +1562,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
-    OrthogonalGridPortionPtr orthogonalGridConstrainedExtended = OrthogonalGridPortion::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1647,9 +1647,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 TEST_F(GridsTestFixture, RadialGrid_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    RadialGridPortion::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
+    RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -1772,9 +1772,9 @@ TEST_F(GridsTestFixture, RadialGrid_Created)
 TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    RadialGridPortion::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
+    RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1857,9 +1857,9 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
 TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    RadialGridPortion::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
+    RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -1942,9 +1942,9 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
 TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    RadialGridPortion::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
+    RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
 
     db.SaveChanges();
 
@@ -2031,7 +2031,7 @@ TEST_F(GridsTestFixture, SketchGrid_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPortionPtr sketchGrid = SketchGridPortion::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -2180,7 +2180,7 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 
     {
     // create new definition model
-    OrthogonalGridPortionHandler& handler = OrthogonalGridPortionHandler::GetHandler ();
+    OrthogonalGridHandler& handler = OrthogonalGridHandler::GetHandler ();
     DgnClassId classId = db.Domains ().GetClassId (handler);
     DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
 
@@ -2215,7 +2215,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 
     DVec3d normal = DVec3d::From (1.0, 0.0, 0.0);
 
-    SketchGridPortionPtr grid = SketchGridPortion::Create (*m_model, normal, "SketchGrid-1");
+    SketchGridPtr grid = SketchGrid::Create (*m_model, normal, "SketchGrid-1");
     grid->Insert ();
     GridAxisPtr axis1 = GridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
 
@@ -2394,9 +2394,9 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
         ++gridIteration;
         }
     
-    OrthogonalGridPortionCPtr floorGrid = OrthogonalGridPortion::CreateAndInsertBySurfaces(floorPlaneCurves, 
+    OrthogonalGridCPtr floorGrid = OrthogonalGrid::CreateAndInsertBySurfaces(floorPlaneCurves, 
                                                                                            bvector<CurveVectorPtr>(),
-                                                                                           OrthogonalGridPortion::CreateParams(m_model.get(),
+                                                                                           OrthogonalGrid::CreateParams(m_model.get(),
                                                                                                                                db.Elements().GetRootSubject()->GetElementId(),
                                                                                                                                DVec3d::From(0.0, 0.0, 1.0),
                                                                                                                                true,
@@ -2442,7 +2442,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    OrthogonalGridPortion::StandardCreateParams orthogonalParams = OrthogonalGridPortion::StandardCreateParams(m_model.get(),
+    OrthogonalGrid::StandardCreateParams orthogonalParams = OrthogonalGrid::StandardCreateParams(m_model.get(),
                                                                                                                db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                                                                                2, /*horizontal count*/
                                                                                                                1, /*vertical count*/
@@ -2457,7 +2457,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
                                                                                                                true, /*extend height*/
                                                                                                                "Orthogonal Grid");
 
-    OrthogonalGridPortionPtr orthogonalGrid = OrthogonalGridPortion::CreateAndInsert(orthogonalParams);
+    OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsert(orthogonalParams);
     ASSERT_TRUE(orthogonalGrid.IsValid()) << "Failed to create orthogonal grid";
 
     db.SaveChanges();
@@ -2522,9 +2522,9 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
         ++gridIteration;
         }
     
-    OrthogonalGridPortionCPtr floorGrid = OrthogonalGridPortion::CreateAndInsertBySurfaces(floorPlaneCurves, 
+    OrthogonalGridCPtr floorGrid = OrthogonalGrid::CreateAndInsertBySurfaces(floorPlaneCurves, 
                                                                                            bvector<CurveVectorPtr>(),
-                                                                                           OrthogonalGridPortion::CreateParams(m_model.get(),
+                                                                                           OrthogonalGrid::CreateParams(m_model.get(),
                                                                                                                                db.Elements().GetRootSubject()->GetElementId(),
                                                                                                                                DVec3d::From(0.0, 0.0, 1.0),
                                                                                                                                true,
@@ -2568,7 +2568,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     // Create radial grid
     /////////////////////////////////////////////////////////////
     DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
-    RadialGridPortion::CreateParams radialParams = RadialGridPortion::CreateParams(m_model.get(),
+    RadialGrid::CreateParams radialParams = RadialGrid::CreateParams(m_model.get(),
                                                                                    db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                                                    2, /*plane count*/
                                                                                    2, /*arc count*/
@@ -2580,7 +2580,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                                    true, /*extend height*/
                                                                                    normal);
 
-    RadialGridPortionPtr radialGrid = RadialGridPortion::CreateAndInsert(radialParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(radialParams);
     ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
 
     db.SaveChanges();
@@ -2653,9 +2653,9 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
         ++gridIteration;
         }
     
-    OrthogonalGridPortionCPtr floorGrid = OrthogonalGridPortion::CreateAndInsertBySurfaces(floorPlaneCurves, 
+    OrthogonalGridCPtr floorGrid = OrthogonalGrid::CreateAndInsertBySurfaces(floorPlaneCurves, 
                                                                                            bvector<CurveVectorPtr>(),
-                                                                                           OrthogonalGridPortion::CreateParams(m_model.get(),
+                                                                                           OrthogonalGrid::CreateParams(m_model.get(),
                                                                                                                                db.Elements().GetRootSubject()->GetElementId(),
                                                                                                                                DVec3d::From(0.0, 0.0, 1.0),
                                                                                                                                true,
@@ -2698,7 +2698,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create sketch grid
     /////////////////////////////////////////////////////////////
-    SketchGridPortionPtr sketchGrid = SketchGridPortion::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
     ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();

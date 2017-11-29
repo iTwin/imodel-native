@@ -18,17 +18,17 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SketchGridPortion : GridPortion
+struct EXPORT_VTABLE_ATTRIBUTE SketchGrid : PlanGrid
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchGridPortion, GridPortion);
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchGrid, PlanGrid);
 
 protected:
-    explicit GRIDELEMENTS_EXPORT SketchGridPortion (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT SketchGridPortion (T_Super::CreateParams const& params, DVec3d normal);
-    friend struct SketchGridPortionHandler;
+    explicit GRIDELEMENTS_EXPORT SketchGrid (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT SketchGrid (T_Super::CreateParams const& params, DVec3d normal);
+    friend struct SketchGridHandler;
 
 public:
-    DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchGridPortion, GRIDELEMENTS_EXPORT)
+    DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchGrid, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
     // Creation
@@ -37,7 +37,7 @@ public:
     //! @param[in]  model   model for the radialgridportion
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static SketchGridPortionPtr Create (Dgn::DgnModelCR model, DVec3d normal, Utf8CP name);
+    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::DgnModelCR model, DVec3d normal, Utf8CP name);
 
     //---------------------------------------------------------------------------------------
     // Queries
@@ -48,7 +48,7 @@ public:
     //! @param[in]  gridName    name for grid portion
     //! @return                 if grid portion is found, returns a ptr to it
     //!                         else nullptr is returned
-    GRIDELEMENTS_EXPORT static SketchGridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
+    GRIDELEMENTS_EXPORT static SketchGridPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
 };
 
 END_GRIDS_NAMESPACE

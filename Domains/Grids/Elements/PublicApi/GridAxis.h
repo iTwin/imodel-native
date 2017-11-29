@@ -55,20 +55,20 @@ public:
     //! @param[in]  model   model for the axis
     //! @param[in]  grid    grid this axis belongs to
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static GridAxisPtr Create (Dgn::DgnModelCR model, GridPortionCR grid);
+    GRIDELEMENTS_EXPORT static GridAxisPtr Create (Dgn::DgnModelCR model, GridCR grid);
 
     //! Creates and inserts an empty grid axis
     //! @param[in]  model   model for the axis
     //! @param[in]  grid    grid this axis belongs to
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static GridAxisPtr CreateAndInsert (Dgn::DgnModelCR model, GridPortionCR grid);
+    GRIDELEMENTS_EXPORT static GridAxisPtr CreateAndInsert (Dgn::DgnModelCR model, GridCR grid);
 
     //---------------------------------------------------------------------------------------
     // Getters and setters
     //---------------------------------------------------------------------------------------
     //! Sets gridAxis grid Id value
     //! @param gridId a value to set
-    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridPortionHasAxes)); };
+    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes)); };
 
     //! Gets grid's that contains this axis id
     //! @return element id of the grid

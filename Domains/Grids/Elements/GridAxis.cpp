@@ -44,7 +44,7 @@ DgnClassId classId
 GridAxisPtr                 GridAxis::CreateAndInsert
 (
 Dgn::DgnModelCR model,
-GridPortionCR grid
+GridCR grid
 )
     {
     GridAxisPtr thisAxis = GridAxis::Create (model, grid);
@@ -63,7 +63,7 @@ GridPortionCR grid
 GridAxisPtr                 GridAxis::Create
 (
 Dgn::DgnModelCR model,
-GridPortionCR grid
+GridCR grid
 )
     {
     GridAxisPtr thisAxis = new GridAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));

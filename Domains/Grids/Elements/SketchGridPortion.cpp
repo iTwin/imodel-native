@@ -11,12 +11,12 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (SketchGridPortion)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (SketchGrid)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SketchGridPortion::SketchGridPortion
+SketchGrid::SketchGrid
 (
 T_Super::CreateParams const& params
 ) : T_Super(params) 
@@ -28,7 +28,7 @@ T_Super::CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SketchGridPortion::SketchGridPortion
+SketchGrid::SketchGrid
 (
 T_Super::CreateParams const& params,
 DVec3d                      normal
@@ -40,19 +40,19 @@ DVec3d                      normal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SketchGridPortionPtr        SketchGridPortion::Create
+SketchGridPtr        SketchGrid::Create
 (
 Dgn::DgnModelCR model,
 DVec3d          normal,
 Utf8CP          name
 )
     {
-    return new SketchGridPortion(GeometricElement3d::CreateParams(model.GetDgnDb(),
+    return new SketchGrid(GeometricElement3d::CreateParams(model.GetDgnDb(),
                                                                   model.GetModelId(),
                                                                   QueryClassId(model.GetDgnDb()),
                                                                   DgnCategoryId(),
                                                                   Placement3d(),
-                                                                  Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_SketchGridPortion),
+                                                                  Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_SketchGrid),
                                                                                model.GetModeledElementId(),
                                                                                name)),
                                  normal);
@@ -61,10 +61,10 @@ Utf8CP          name
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-SketchGridPortionPtr SketchGridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
+SketchGridPtr SketchGrid::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
     {
-    return db.Elements().GetForEdit<Grids::SketchGridPortion>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
-                                                                                                                           GRIDS_AUTHORITY_SketchGridPortion,
+    return db.Elements().GetForEdit<Grids::SketchGrid>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
+                                                                                                                           GRIDS_AUTHORITY_SketchGrid,
                                                                                                                            parentId,
                                                                                                                            gridName));
     }

@@ -20,14 +20,14 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RadialGridPortion : GridPortion
+struct EXPORT_VTABLE_ATTRIBUTE RadialGrid : PlanGrid
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_RadialGridPortion, GridPortion);
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_RadialGrid, PlanGrid);
 
 public:
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER(RadialGridPortion::T_Super::CreateParams);
+        DEFINE_T_SUPER(RadialGrid::T_Super::CreateParams);
 
         Dgn::SpatialLocationModelCP m_model;    //TODO: Remove, needs to be handled by the tools
         int m_planeCount;
@@ -50,7 +50,7 @@ public:
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
                                double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 1)) :
-            T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()), Dgn::DgnCode(model->GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_RadialGridPortion), modeledElementId, name))),
+            T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()), Dgn::DgnCode(model->GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_RadialGrid), modeledElementId, name))),
             m_model(model),
             m_planeCount(planeCount),
             m_circularCount(circularCount),
@@ -71,16 +71,16 @@ public:
         };
 
 protected:
-    explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT RadialGridPortion (T_Super::CreateParams const& params, DVec3d normal);
+    explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params, DVec3d normal);
 
 
     static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
 
-    friend struct RadialGridPortionHandler;
+    friend struct RadialGridHandler;
 
 public:
-    DECLARE_GRIDS_ELEMENT_BASE_METHODS (RadialGridPortion, GRIDELEMENTS_EXPORT)
+    DECLARE_GRIDS_ELEMENT_BASE_METHODS (RadialGrid, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
     // Creation
@@ -89,12 +89,12 @@ public:
     //! @param[in]  model   model for the radialgridportion
     //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             Radial grid
-    GRIDELEMENTS_EXPORT static RadialGridPortionPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
+    GRIDELEMENTS_EXPORT static RadialGridPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
 
     //! Creates an empty radial grid
     //! @param[in]  params  create params for this grid portion. See CreateParams
     //! @return             Radial grid
-    GRIDELEMENTS_EXPORT static RadialGridPortionPtr CreateAndInsert (CreateParams params);
+    GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams params);
 
 };
 
