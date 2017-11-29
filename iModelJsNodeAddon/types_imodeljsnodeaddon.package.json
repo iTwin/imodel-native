@@ -1,0 +1,14 @@
+{
+  "name": "@bentley/types_imodeljsnodeaddon",
+  "license": "UNLICENSED",
+  "version": "${PACKAGE_VERSION}",
+  "keywords": [
+    "Bentley",
+    "iModel"
+  ],
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  },
+  "types": "./iModelJsNodeAddon.d.ts"
+}

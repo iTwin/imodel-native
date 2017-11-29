@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<PresentationRuleSet RuleSetId="ViewDefinitions" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+
+    <!-- Label overrides Condition='this.IsOfClass("Element", "BisCore")' ThisNode.IsInstanceNode AND  -->
+    <LabelOverride Label='this.CodeValue' />
+
+    <!-- Grouping rules
+    <GroupingRule SchemaName='BisCore' ClassName='Element'>
+        <PropertyGroup PropertyName='ModelId' CreateGroupForSingleItem='true' />
+    </GroupingRule>
+     -->
+    
+    <!-- Navigation rules -->
+    <RootNodeRule AutoExpand='true'>
+        <CustomNode Type='GIST_ViewDefsRootNode' Label='View Definitions' ImageId='ECLiteralImage://VIEW_DEFINITION' />
+    </RootNodeRule>
+
+    <ChildNodeRule Condition='ParentNode.Type = "GIST_ViewDefsRootNode"'>
+        <InstancesOfSpecificClasses ClassNames='BisCore:ViewDefinition' ArePolymorphic='true' GroupByClass="false" GroupByLabel="true" AlwaysReturnsChildren="false" />
+    </ChildNodeRule>
+
+</PresentationRuleSet>
