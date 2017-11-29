@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/types_imodeljsnodeaddon",
+  "name": "@bentley/imodeljsnodeaddonapi",
   "license": "UNLICENSED",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
