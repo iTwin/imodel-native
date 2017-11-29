@@ -15,6 +15,8 @@
       <ProductDirectory Name="TestsBackdoorIncludes" Path="TestsBackdoor" />
       <ProductDirectory Name="ConstraintSystemIncludes" Path="ConstraintSystem" />
       <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
+      <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+      <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="GridsGTestDirectories">
