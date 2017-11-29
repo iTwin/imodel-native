@@ -14,51 +14,84 @@
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AlignmentSpiral
+//=======================================================================================
+// @bsiclass
+// AlignmentPI
+// Data holder for different PI types stored using a discrimated union
+//=======================================================================================
+struct AlignmentPI
 {
-    AlignmentSpiral ()
+public:
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct ArcData
     {
-    entranceRadius = 0.0;
-    exitRadius = 0.0;
-    length = 0.0;
-    }
-
-    DPoint3d beginSpiralPt;
-    DPoint3d endSpiralPt;
-    DPoint3d spiralPIPt;
+    DPoint3d startPoint;
+    DPoint3d endPoint;
+    DPoint3d piPoint;
+    DPoint3d centerPoint;
+    double radius;
+    bool isCcw;
+    };
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct SpiralData
+    {
+    DPoint3d startPoint;
+    DPoint3d endPoint;
+    DPoint3d piPoint;
+    double startRadius;
+    double endRadius;
+    double length;
 
     DVec3d startVector;
     DVec3d endVector;
+    };
 
-    double entranceRadius;
-    double exitRadius;
-    double length;
-}; // AlignmentSpiral
+public:
+    enum Type { TYPE_Uninitialized, TYPE_GradeBreak, TYPE_Arc, TYPE_SCS, TYPE_SS };
 
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AlignmentArc
-{
-    AlignmentArc ()
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct GradeBreakInfo
     {
-    sweep = radius = 0.0;
-    clockwise = false;
-    }
+    DPoint3d piPoint;
+    };
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct ArcInfo
+    {
+    ArcData arc;
+    };
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct SCSInfo
+    {
+    DPoint3d overallPI;
+    SpiralData spiral0;
+    ArcData arc;
+    SpiralData spiral1;
+    };
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct SSInfo
+    {
+    DPoint3d overallPI;
+    SpiralData spiral0;
+    double arcRadius;
+    SpiralData spiral1;
+    };
 
-    DPoint3d startPoint;
-    DPoint3d endPoint;
-    DPoint3d centerPoint;
-    double radius;
-    double sweep;
-    bool clockwise;
-}; // AlignmentArc
 
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AlignmentPI
-{
+
+
+
 enum HorizontalPIType
     {
     ARC = 0,
@@ -69,9 +102,9 @@ enum HorizontalPIType
 
     DPoint3d location;
 
-    AlignmentArc arc;
-    AlignmentSpiral spiral1;
-    AlignmentSpiral spiral2;
+    ArcData arc;
+    SpiralData spiral1;
+    SpiralData spiral2;
 
     HorizontalPIType curveType;
 
@@ -148,14 +181,26 @@ struct AlignmentPVI
 typedef struct AlignmentPI& AlignmentPIR;
 typedef struct AlignmentPI const& AlignmentPICR;
 
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass
+// Editing capabilities for alignment geometry
+//=======================================================================================
 struct AlignmentPairEditor : AlignmentPair
 {
 DEFINE_T_SUPER (AlignmentPair)
 
+protected:
+    //! Compute the PI by intersecting two rays.
+    DPoint3d ComputePIFromPointsAndVectors(DPoint3d pointA, DVec3d vectorA, DPoint3d pointB, DVec3d vectorB) const;
+
+    bool LoadArcData(AlignmentPI::ArcData& data, ICurvePrimitiveCR primitiveArc) const;
+    bool LoadSpiralData(AlignmentPI::SpiralData& data, ICurvePrimitiveCR primitiveSpiral) const;
+
+
+
+
 private:
-    void _GetValidEditRange (bvector<AlignmentPVI> const& pvis, int index, double * from, double *to);
+    void _GetValidEditRange(bvector<AlignmentPVI> const& pvis, int index, double * from, double *to);
 
 protected:
     // move help
@@ -166,7 +211,6 @@ protected:
     ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolveSpiralPI (size_t index, bvector<AlignmentPI>& pis);
     ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolveSSPI (size_t index, bvector<AlignmentPI>& pis);
     ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolvePI (size_t index, bvector<AlignmentPI>& pis);
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt _LoadSpiralData(ICurvePrimitiveCP primitive, AlignmentSpiral& roadSpiral);
     ROADRAILALIGNMENT_EXPORT bvector<AlignmentPI> _GetPIs();
         
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr _BuildVectorFromPIS(bvector<AlignmentPI> const& pvis);
@@ -174,7 +218,7 @@ protected:
     double _FullTangentLength (AlignmentPICR pi);
     double _GetDesignLength (DPoint3d newPt, bvector<AlignmentPVI> const& pvis, int index, bool useComputedG = false);
 
-    ICurvePrimitivePtr CreateSpiralPrimitive (AlignmentSpiral const& spiral);                       
+    ICurvePrimitivePtr CreateSpiralPrimitive (AlignmentPI::SpiralData const& spiral);                       
     bool AddPrimitivesFromPI (CurveVectorR hvec, const AlignmentPI& pi, DPoint3dR lastPoint);
 
     double _PreviousVerticalCurveStation (bvector<AlignmentPVI> const & pvis, const double& fromStation, VC vc = PVC);
