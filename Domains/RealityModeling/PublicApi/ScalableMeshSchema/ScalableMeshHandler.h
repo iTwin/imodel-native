@@ -183,7 +183,7 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGetPublishedTilesetInfo
+struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublishing
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
