@@ -1647,6 +1647,122 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
         } while (BE_SQLITE_ROW == stmt.Step());
     }
 
+
+//******************************* ChangeCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan     11/2017
+//---------------------------------------------------------------------------------------
+Utf8String ChangeCommand::_GetUsage() const
+    {
+    return " .change tracking [on|off] | create summary\r\n\r\n"
+        COMMAND_USAGE_IDENT "Allow user to enable or disable change tracking\r\n";
+    COMMAND_USAGE_IDENT "While change tracking is enable user can also create a summary.\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan     11/2017
+//---------------------------------------------------------------------------------------
+void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    if (!session.IsFileLoaded(true))
+        return;
+
+    if (session.GetFile().GetType() == SessionFile::Type::BeSQLite)
+        {
+        BimConsole::WriteErrorLine("Only Bim and ECDb file are supported");
+        return;
+        }
+
+    const std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+    if (args.empty())
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (args[0].EqualsIAscii("tracking"))
+        {
+        if (args.size() == 1)
+            {
+            BimConsole::Write("Tracking : %s", session.GetFile().IsTracking() ? "true" : "false");
+            }
+        else if (args.size() == 2)
+            {
+            bool tracking = false;
+            if (args[1].EqualsIAscii("on"))
+                {
+                if (session.GetFile().IsTracking())
+                    {
+                    BimConsole::WriteLine("Tracking is already enabled");
+                    return;
+                    }
+                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(true) ? "true" : "false");
+                return;
+                }
+            else if (args[1].EqualsIAscii("off"))
+                {
+                if (session.GetFile().IsTracking())
+                    {
+                    BimConsole::WriteLine("Tracking is already disabled");
+                    return;
+                    }
+
+                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(false) ? "true" : "false");
+                return;
+                }
+            else
+                {
+                BimConsole::WriteErrorLine("Expecting argument 'on' or 'off'");
+                return;
+                }
+            }
+        }
+    else if (args[0].EqualsIAscii("summary"))
+        {
+        if (args.size() != 2)
+            {
+            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+        else if (!args[2].EqualsIAscii("create"))
+            {
+            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+        else
+            {
+            if (session.GetFileR().GetTracker() == nullptr)
+                {
+                BimConsole::WriteErrorLine("Tracking is not switched 'on'");
+                return;
+                }
+
+            if (!session.GetFileR().GetTracker()->HasChanges())
+                {
+                BimConsole::WriteErrorLine("Tracker has no changes");
+                return;
+                }
+
+            BimChangeSet changeset;
+            if (changeset.FromChangeTrack(*session.GetFileR().GetTracker()) != BE_SQLITE_OK)
+                {
+                BimConsole::WriteErrorLine("Failed to extract changes from tracker");
+                return;
+                }
+
+            ECInstanceKey changeSummaryKey;
+            if (session.GetFileR().GetECDbHandleP()->ExtractChangeSummary(changeSummaryKey, changeset) != SUCCESS)
+                {
+                BimConsole::WriteErrorLine("Failed to extract change summary");
+                return;
+                }
+
+            BimConsole::WriteLine("ChangeSummary extracted successfully [Id=%s]", changeSummaryKey.GetInstanceId().ToString());
+            }
+        }
+    }
+
 //******************************* SchemaStatsCommand ******************
 
 //---------------------------------------------------------------------------------------

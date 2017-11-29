@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY
 struct Session;
 
 #define COMMAND_USAGE_IDENT "                                "
-
+struct Session;
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
@@ -44,6 +44,24 @@ struct Command
         void Run(Session& session, Utf8StringCR args) const;
     };
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Affan.Khan    11/2017
+//---------------------------------------------------------------------------------------
+struct ChangeCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".change"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+    public:
+         ChangeCommand()
+            : Command()
+            {}
+
+        ~ChangeCommand() {}
+    };
+//| 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------

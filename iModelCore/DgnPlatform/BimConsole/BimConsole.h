@@ -13,6 +13,24 @@
 USING_NAMESPACE_BENTLEY
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                                  Affan.Khan         07/2017
+//---------------------------------------------------------------------------------------
+struct BimChangeTracker : BeSQLite::ChangeTracker
+    {
+    BimChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
+
+    OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Continue; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Affan.Khan         07/2017
+//---------------------------------------------------------------------------------------
+struct BimChangeSet : BeSQLite::ChangeSet
+    {
+    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     07/2016
 //---------------------------------------------------------------------------------------
 struct SessionFile
@@ -44,10 +62,10 @@ struct SessionFile
 
     private:
         Type m_type;
-
+        std::unique_ptr<BimChangeTracker> m_changeTracker;
         virtual BeSQLite::EC::ECDb* _GetECDbHandle() const = 0;
         virtual BeSQLite::Db& _GetBeSqliteHandle() const { BeAssert(_GetECDbHandle() != nullptr); return *_GetECDbHandle(); }
-
+        
     protected:
         explicit SessionFile(Type type) : m_type(type) {}
 
@@ -70,7 +88,9 @@ struct SessionFile
         BeSQLite::Db& GetHandleR() const { return _GetBeSqliteHandle(); }
 
         bool TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>&) const;
-
+        bool EnableTracking(bool val);
+        bool IsTracking() const;
+        BimChangeTracker* GetTracker() const { return m_changeTracker.get(); }
         Type GetType() const { return m_type; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
         static Utf8CP TypeToString(Type type);
@@ -155,6 +175,7 @@ struct Session final
         bool IsFileLoaded(bool printMessageIfFalse = false) const;
         bool IsECDbFileLoaded(bool printMessageIfFalse = false) const;
         SessionFile const& GetFile() const { BeAssert(IsFileLoaded()); return *m_file; }
+        SessionFile& GetFileR() { BeAssert(IsFileLoaded()); return *m_file; }
         BentleyStatus SetFile(std::unique_ptr<SessionFile>);
         ECDbIssueListener const& GetIssues() const { return m_issueListener; }
     };
