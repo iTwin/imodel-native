@@ -44,7 +44,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -69,11 +69,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -N0 r LinearReferencing</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>__LINEARREFERENCING_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\VendorAPI\;$(SrcRoot)DgnDomains\LinearReferencing\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
