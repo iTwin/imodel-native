@@ -641,6 +641,7 @@ struct FormatUnitSet
         UNITS_EXPORT BEU::UnitCP ResetUnit();
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
+        UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
     };
 
 
@@ -661,6 +662,10 @@ struct FormatUnitGroup
         UNITS_EXPORT size_t GetPresentationFUSCount();
         UNITS_EXPORT FormatUnitSetCP GetPresentationFUS(size_t index) const;
         UNITS_EXPORT bool IsIdentical(FormatUnitGroupCR other) const;
+        UNITS_EXPORT  BEU::T_UnitSynonymVector* GetSynonymVector() const;
+        UNITS_EXPORT  size_t GetSynonymCount() const;
+        UNITS_EXPORT  BEU::PhenomenonCP GetPhenomenon() const;
+
     };
 
 struct StdFormatSet
@@ -686,7 +691,7 @@ public:
     static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
     static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
     static size_t GetCustomSetSize() { return Set()->m_customSet.size(); }
-    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
+    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name, bool IncludeCustom = true);
     UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name, bool IncludeCustom = true);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);

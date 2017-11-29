@@ -1941,6 +1941,7 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     Init(input, start, unit);     
     }
 PUSH_MSVC_IGNORE(6385 6386)
+
 Utf8String FormatParsingSet::GetSignature(bool distinct)
     {
     Utf8String txt = "";

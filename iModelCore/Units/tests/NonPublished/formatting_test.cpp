@@ -94,6 +94,14 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.info("Test Data File is not available");
 
+    LOG.info("\n=============== Testing default format ==================");
+    LOG.infov("(real) 215.9 = %s", NumericFormatSpec::StdFormatDouble("real", 215.90000000000001).c_str());
+    LOG.infov("(DefaultReal) 215.9 = %s", NumericFormatSpec::StdFormatDouble("DefaultReal", 215.90000000000001).c_str());
+    LOG.infov("(stop100-2u)98765.4321 = %s", NumericFormatSpec::StdFormatDouble("stop100-2u", 98765.4321).c_str());
+    LOG.infov("(stop100-2u)98765 = %s", NumericFormatSpec::StdFormatDouble("stop100-2u", 98765.0).c_str());
+    LOG.infov("(stop100-2uz)98765 = %s", NumericFormatSpec::StdFormatDouble("stop100-2uz", 98765.0).c_str());
+    LOG.info("=============== Testing default format (end) ==================\n");
+    //{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 3, \"presentType\" : \"Stop1000\", \"statSeparator\":\"+\", \"TrailZeroes\":\"true\"}, \"SpecAlias\" : \"StationM\", \"SpecName\" : \"StationM\", \"SpecType\" : \"numeric\"} Call with Diego Diaz (diego.diaz@bentley.com) has ended. 7 minutes  
 
     NumericAccumulator nacc = NumericAccumulator();
     //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());

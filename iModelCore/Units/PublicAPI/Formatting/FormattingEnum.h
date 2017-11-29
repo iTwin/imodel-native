@@ -342,7 +342,8 @@ enum class FormatSpecialCodes
     SignatureNCC  = 12,
     SignatureCNCN = 13,
     SignatureCNC = 14,
-    SignatureCCN = 13,
+    SignatureCCN = 15,
+    SignatureNCNC = 16,
     SignatureInvalid = 100
     };
 

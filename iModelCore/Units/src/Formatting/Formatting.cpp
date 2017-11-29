@@ -766,7 +766,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
         memcpy(buf, locBuf, ind);
         POP_MSVC_IGNORE
-        }
+        } // end fractional
     else if (stops) // we assume that stopping value is always positive 
         {
         int denom = (m_presentationType == PresentationType::Stop100) ? 100 : 1000;
@@ -805,6 +805,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
                 while (aft > 0)
                     {
                     locBuf[k++] = '0';
+                    aft--;
                     }
                 }
             else if(IsKeepDecimalPoint())
@@ -1504,18 +1505,20 @@ bool StdFormatSet::AreSetsIdentical()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
+NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name, bool IncludeCustom)
     {
-    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
+    NamedFormatSpecCP fmtP = FindFormatSpec(name, IncludeCustom); //  *Set()->m_formatSet.begin();
+    if(nullptr == fmtP)
+        return nullptr;
+    return fmtP->GetNumericSpec();
+   /* for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (fmtP->HasName(name) || fmtP->HasAlias(name))
             {
             return fmtP->GetNumericSpec();
             }
-        }
-    return nullptr;
+        }*/
     }
 
 NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name, bool IncludeCustom)
