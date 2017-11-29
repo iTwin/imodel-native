@@ -80,6 +80,7 @@
     <ClCompile Include="SchemaConversionUtils.cpp" />
     <ClCompile Include="SchemaJson.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
+    <ClCompile Include="SchemaParseUtils.cpp" />
     <ClCompile Include="SchemaResourceKeyHelper.cpp" />
     <ClCompile Include="SchemaXml.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />

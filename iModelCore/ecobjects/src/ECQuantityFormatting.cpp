@@ -149,6 +149,9 @@ BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, U
     return qty;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 09/17
+//----------------------------------------------------------------------------------------
 BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, size_t indx, Formatting::FormatProblemCode* probCode)
     {
     Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
@@ -174,6 +177,9 @@ BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, d
     return qty;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 09/17
+//----------------------------------------------------------------------------------------
 BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, BEF::FormatUnitGroupCP fug, size_t indx, Formatting::FormatProblemCode* probCode)
     {
     Formatting::FormatUnitSetCR persistFUS = fug->GetPersistenceFUS();
@@ -198,7 +204,6 @@ BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, d
 
     return qty;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  10/2017
