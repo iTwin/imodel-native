@@ -101,6 +101,7 @@
 #define MIN_OCCURS_ATTRIBUTE                "minOccurs"
 #define MAX_OCCURS_ATTRIBUTE                "maxOccurs"
 #define ECJSON_SCHEMA_CHILD_PROPERTIES_ATTRIBUTE    "properties"
+#define ECJSON_INHERITED_ATTRIBUTE          "inherited"
 #define ECJSON_MIXIN_REFERENCES_ATTRIBUTE   "mixins"
 #define ECXML_ENUMERATOR_ELEMENT            "ECEnumerator"
 #define ECJSON_ENUMERATOR_ELEMENT           "enumerators"
