@@ -205,6 +205,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="SimpleRDSApiExample" BentleyBuildMakeFile="RealityPlatformTools\Example\SimpleRDSApiExample.mke">
+        <SubPart PartName="RealityPlatformTools"/>
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Assemblies>Delivery/SimpleRDSApiExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="RealityDataServiceUploader" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceUploader.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -303,12 +311,13 @@
         <SubPart PartName="RealityDataServiceExample"/>
         <SubPart PartName="RealityDataServiceErrorReportingExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
+        <SubPart PartName="SimpleRDSApiExample"/>
         <SubPart PartName="RealityDataServiceUploader"/>
         <SubPart PartName="RealityDataServiceDownloader"/>
         <SubPart PartName="RealityDataServiceConsole"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
-        <SubPart PartName="UsageDataExtractor"/>
+        <!--<SubPart PartName="UsageDataExtractor"/>-->
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <!--<SubPart PartName="DataHandlerTool" />-->
@@ -348,7 +357,7 @@
     
     <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
         <RequiredRepository>BCC-IdentityModel</RequiredRepository>
-        <SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />
+        <!--<SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />-->
         <SubPart PartName="RequiredNugets" />
         <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
         <Bindings>
@@ -398,7 +407,7 @@
         <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         -->
-        <SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />
+        <!--<SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />-->
         
         <Bindings>
             <Assemblies>NuGet\net40\Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
@@ -411,8 +420,8 @@
             <Assemblies>NuGet\net452\Bentley.EC.Presentation3.dll</Assemblies>
             <Assemblies>NuGet\net452\Bentley.ECObjects3.dll</Assemblies>
             <Assemblies>NuGet\net452\Bentley.ECSystem3.dll</Assemblies>-->
-            <!--<Assemblies>NuGet\net40\Common.Logging.dll</Assemblies>-->
-            <!--<Assemblies>NuGet\net40\Common.Logging.Core.dll</Assemblies>-->
+            <Assemblies>NuGet\net40\Common.Logging.dll</Assemblies>
+            <Assemblies>NuGet\net40\Common.Logging.Core.dll</Assemblies>
         </Bindings>
     </Part>
     

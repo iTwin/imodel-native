@@ -19,21 +19,20 @@ void ConnectedResponse::Clone(const RawServerResponse& raw)
 
 RDSRequestManager* RDSRequestManager::s_instance = nullptr;
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
-//-------------------------------------------------------------------------------------
-/*RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction callbackFunction, RDS_FeedbackFunction errorCallback) :
-    m_callback(callbackFunction),m_errorCallback(errorCallback)
+RDSRequestManager& RDSRequestManager::GetInstance(RDS_FeedbackFunction errorCallback)
     {
-    Init();
-    }*/
+    if (nullptr == s_instance)
+        s_instance = new RDSRequestManager(errorCallback);
+    return *s_instance;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-RDSRequestManager::RDSRequestManager()
+RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction errorCallback)
     {
-    //Init();
+    m_errorCallback = errorCallback;
+    Init();
     }
 
 void RDSRequestManager::Init()

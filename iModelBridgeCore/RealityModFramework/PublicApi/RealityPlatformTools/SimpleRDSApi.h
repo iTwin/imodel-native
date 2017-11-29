@@ -34,14 +34,14 @@ struct RDSRequestManager
     {    
     REALITYDATAPLATFORM_EXPORT void SetCallback(RDS_FeedbackFunction piFunc) { m_callback = piFunc; }
     REALITYDATAPLATFORM_EXPORT void SetErrorCallback(RDS_FeedbackFunction piFunc) { m_errorCallback = piFunc; }
-    REALITYDATAPLATFORM_EXPORT static RDSRequestManager& GetInstance();
+    REALITYDATAPLATFORM_EXPORT static RDSRequestManager& GetInstance(RDS_FeedbackFunction errorCallback = nullptr);
     REALITYDATAPLATFORM_EXPORT void Init();
 
 protected:
     static RDSRequestManager*      s_instance;
     REALITYDATAPLATFORM_EXPORT RDSRequestManager();
+    REALITYDATAPLATFORM_EXPORT RDSRequestManager(RDS_FeedbackFunction errorCallback);
     REALITYDATAPLATFORM_EXPORT Utf8String MakeBuddiCall();
-    //RDSRequestManager(RDS_FeedbackFunction errorCallback, RDS_FeedbackFunction callbackFunction = nullptr);
     
     void Report(Utf8String message);
     void ReportError(Utf8String message);
