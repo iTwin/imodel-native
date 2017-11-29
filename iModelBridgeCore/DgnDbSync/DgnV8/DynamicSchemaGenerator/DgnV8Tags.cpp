@@ -188,7 +188,7 @@ static void createClassPropertyThumbprint(WString& thumbprint, V8ECN::ECClassCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2016
 //---------------------------------------------------------------------------------------
-void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
+void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels)
     {
     //...............................................................................................................................................
     //...............................................................................................................................................
@@ -219,9 +219,9 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
     typedef Bentley::bset<Bentley::WString, CompareInsensitiveWString> T_ExistingClassNameSet;
     T_ExistingClassNameSet existingClassNames;
 
-    for (DgnV8FileP v8File : v8Files)
+    for (DgnV8ModelP v8Model : uniqueModels)
         {
-        DgnV8Api::TagSetCollection tagSetDefs(*v8File);
+        DgnV8Api::TagSetCollection tagSetDefs(*v8Model->GetDgnFileP());
         for (Bentley::ElementRefP tagSetDefElRef : tagSetDefs)
             {
             DgnV8Api::ElementHandle eh(tagSetDefElRef);
@@ -251,7 +251,7 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
             if (nullptr != existingecclass)
                 {
                 // We've seen this tagset def before but in a different file. Create a unique version now. Try to merge later.
-                Bentley::WPrintfString uniqueness(L" [%s]", BeFileName(BeFileName::Basename, v8File->GetFileName().c_str()).c_str());
+                Bentley::WPrintfString uniqueness(L" [%s]", BeFileName(BeFileName::Basename, v8Model->GetDgnFileP()->GetFileName().c_str()).c_str());
                 tagsetDefClassName = V8ECN::ECNameValidation::EncodeToValidName(tagsetDefClassName.append(uniqueness));
                 displayLabel.append(uniqueness);
                 }
@@ -379,9 +379,9 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
     //...............................................................................................................................................
     // Record which tag elements are associated with which target elements.
 
-    for (DgnV8FileP v8File : v8Files)
+    for (DgnV8ModelP v8Model : uniqueModels)
         {
-        for (auto v8ElRef : v8File->GetAllElementsCollection())
+        for (auto v8ElRef : v8Model->GetElementsCollection())
             {
             DgnV8Api::ElementHandle v8TagEh(v8ElRef);
             if (&DgnV8Api::TagElementHandler::GetInstance() != &v8TagEh.GetHandler())
@@ -497,15 +497,6 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
             if (Bentley::SUCCESS != DgnV8Api::TagElementHandler::GetAttributeValue(v8TagEH, tv))
                 { BeDataAssert(false); continue; }
 
-            // Only import the generated tag schema as-needed.
-            if (v8FilesWithImportedTagSetDefSchema.end() == v8FilesWithImportedTagSetDefSchema.find(targetFileId.GetValue()))
-                {
-                v8FilesWithImportedTagSetDefSchema.insert(targetFileId.GetValue());
-                (*foundV8TargetFile)->GetDictionaryModel().SetReadOnly(false);
-
-                if (DgnV8Api::SCHEMAIMPORT_Success != v8ECManager.ImportSchema(*tagSetDefSchema, **foundV8TargetFile))
-                    { BeAssert(false); continue; }
-                }
 
             T_TagSetPropNameMap::const_iterator foundPropNameMap = tagSetPropNameMap.find(v8TagSetDefId);
             if (tagSetPropNameMap.end() == foundPropNameMap)
@@ -514,6 +505,18 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files)
             bmap<uint16_t, Bentley::WString>::const_iterator foundPropName = foundPropNameMap->second.find(def.id);
             if (foundPropNameMap->second.end() == foundPropName)
                 { /* Can be expected if using an unsupported value type. */ continue; }
+
+            // Only import the generated tag schema as-needed.
+            if (v8FilesWithImportedTagSetDefSchema.end() == v8FilesWithImportedTagSetDefSchema.find(targetFileId.GetValue()))
+                {
+                v8FilesWithImportedTagSetDefSchema.insert(targetFileId.GetValue());
+                (*foundV8TargetFile)->GetDictionaryModel().SetReadOnly(false);
+
+                if (DgnV8Api::SCHEMAIMPORT_Success != v8ECManager.ImportSchema(*tagSetDefSchema, **foundV8TargetFile))
+                    {
+                    BeAssert(false); continue;
+                    }
+                }
 
             T_PerClassInstanceMap::const_iterator foundInstance = perClassInstanceMap.find(tagClass);
             if (perClassInstanceMap.end() == foundInstance)
