@@ -1099,14 +1099,51 @@ bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPair d
     }
 
 /*---------------------------------------------------------------------------------**//**
+* To be called when simple curve crossings are "all out".
+* Need to decide if the clip sets are "completely in" the region.
+* CLAIM: take any plane from the clip sets.
+* Intersect the plane with the curve vectors.
+* Classify that curve.
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static ClipPlaneContainment ClassifyRegionContainment
+(
+CurveVectorCR curves,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCP maskSet
+)
+    {
+    for (auto &convexSet : clipSet)
+        {
+        for (auto &plane : convexSet)
+            {
+            auto dplane = plane.GetDPlane3d ();
+            auto lines = curves.PlaneSection (dplane);
+            if (!lines.IsValid ())
+                return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+            auto c = ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*lines, clipSet, maskSet);
+            // this is odd.  We really should just return c.
+            // but then the compiler says the for(auto &plane) line is unreachable.
+            // Removing (commenting) either of this return or the final one (outside both loops) quiets the compiler.
+            if (c == ClipPlaneContainment::ClipPlaneContainment_Ambiguous
+                || c == ClipPlaneContainment::ClipPlaneContainment_StronglyOutside
+                || c == ClipPlaneContainment::ClipPlaneContainment_StronglyInside
+                )
+                return c;
+            }
+        }
+    return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ClipPlaneContainment ClassifyCrossings
 (
 bvector<CurveLocationDetailPair> &crossings,
 ClipPlaneSetCR clipSet,
-ClipPlaneSetCR maskSet,
-bool considerRegions
+ClipPlaneSetCP maskSet,
+bool considerRegions,
+CurveVectorCP curves
 )
     {
     std::sort (crossings.begin (), crossings.end (), CurveLocationDetailPair::cb_compareCurveFraction);
@@ -1138,7 +1175,7 @@ bool considerRegions
                     DPoint3d xyz;
                     curve->FractionToPoint (midFraction, xyz);
                     auto inClip = clipSet.IsPointInside (xyz);
-                    auto inMask= maskSet.IsPointInside (xyz);
+                    auto inMask= maskSet != nullptr ?  maskSet->IsPointInside (xyz) : false;
                     if (inClip && !inMask)
                         {
                         numIn++;
@@ -1154,7 +1191,12 @@ bool considerRegions
             }
         }
     if (numIn == 0 && numOut > 0)
-        return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+        {
+        if (!considerRegions || (curves == nullptr) || !curves->IsAnyRegionType ())
+            return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+        //
+        return ClassifyRegionContainment (*curves, clipSet, maskSet);
+        }
     if (numIn > 0 && numOut == 0)
         return ClipPlaneContainment::ClipPlaneContainment_StronglyInside;
     return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
@@ -1167,15 +1209,16 @@ GEOMDLLIMPEXP ClipPlaneContainment ClipPlaneSet::ClassifyCurveVectorInSetDiffere
 (
 CurveVectorCR curves,
 ClipPlaneSetCR clipSet,
-ClipPlaneSetCR maskSet,
+ClipPlaneSetCP maskSet,
 bool treatRegions
 )
     {
     bvector<CurveLocationDetailPair> crossings;
     clipSet.AppendCrossings (curves, crossings);
-    maskSet.AppendCrossings (curves, crossings);
+    if (maskSet != nullptr)
+        maskSet->AppendCrossings (curves, crossings);
     AppendPrimitiveStartEnd (curves, crossings);
-    return ClassifyCrossings (crossings, clipSet, maskSet, treatRegions);
+    return ClassifyCrossings (crossings, clipSet, maskSet, treatRegions, &curves);
     }
 
 
@@ -1186,14 +1229,15 @@ GEOMDLLIMPEXP ClipPlaneContainment ClipPlaneSet::ClassifyCurvePrimitiveInSetDiff
 (
 ICurvePrimitiveCR curve,
 ClipPlaneSetCR clipSet,
-ClipPlaneSetCR maskSet
+ClipPlaneSetCP maskSet
 )
     {
     bvector<CurveLocationDetailPair> crossings;
     clipSet.AppendCrossings (curve, crossings);
-    maskSet.AppendCrossings (curve, crossings);
+    if (maskSet != nullptr)
+        maskSet->AppendCrossings (curve, crossings);
     AppendPrimitiveStartEnd (curve, crossings);
-    return ClassifyCrossings (crossings, clipSet, maskSet, false);
+    return ClassifyCrossings (crossings, clipSet, maskSet, false, nullptr);
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

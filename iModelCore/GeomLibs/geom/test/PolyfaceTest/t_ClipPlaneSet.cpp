@@ -222,15 +222,36 @@ TEST(ClipPlaneSet,ClassifyCurveVectorInSetDifference)
     auto crossingLine = ICurvePrimitive::CreateLine (DSegment3d::From (-2,h1,0, 10,h1,0));
     auto holeLine = ICurvePrimitive::CreateLine (DSegment3d::From (b+1, bc, 0, c-1, bc, 0));
 
-    auto cOut =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*outsideLine, outerClip, innerClip);
-    auto cIn =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*insideLine, outerClip, innerClip);
-    auto cCrossing =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*crossingLine, outerClip, innerClip);
-    auto cHole =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*holeLine, outerClip, innerClip);
+    auto cOut =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*outsideLine, outerClip, &innerClip);
+    auto cIn =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*insideLine, outerClip, &innerClip);
+    auto cCrossing =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*crossingLine, outerClip, &innerClip);
+    auto cHole =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*holeLine, outerClip, &innerClip);
 
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyOutside, (int)cOut, "Expect OUT");
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyInside, (int)cIn, "Expect IN");
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_Ambiguous, (int)cCrossing, "Expect CROSSING");
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyOutside, (int)cHole, "Expect OUT(hole)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClassifyRegion)
+    {
+    double a = 0.0;
+    double b0 = 5.0;
+    double b1 = 10.0;
+    double c = 20.0;
+
+    auto convexClipPoints = ConvexClipPlaneSet::FromXYBox (b0, b0, b1, b1);
+
+    ClipPlaneSet outerClip (convexClipPoints);
+
+    auto outsideBox = CurveVector::CreateRectangle (a, a, c, c, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
+
+    auto cCrossing =  ClipPlaneSet::ClassifyCurveVectorInSetDifference (*outsideBox, outerClip, nullptr, true);
+
+    Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_Ambiguous, (int)cCrossing, "Expect CROSSING");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,9 +356,9 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
             CurveVectorPtr     testCV    = testGeometry->GetAsCurveVector ();
             ClipPlaneContainment classification;
             if (testCurve.IsValid ())
-                classification = ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*testCurve, outerClip, innerClip);
+                classification = ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*testCurve, outerClip, &innerClip);
             else if (testCV.IsValid ())
-                classification = ClipPlaneSet::ClassifyCurveVectorInSetDifference (*testCV, outerClip, innerClip, true);    // BUT as of now we know that it ignores the region condition.
+                classification = ClipPlaneSet::ClassifyCurveVectorInSetDifference (*testCV, outerClip, &innerClip, true);    // BUT as of now we know that it ignores the region condition.
             else
                 continue;
 
