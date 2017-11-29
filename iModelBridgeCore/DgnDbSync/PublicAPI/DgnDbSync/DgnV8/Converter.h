@@ -1802,7 +1802,7 @@ public:
 
     //! @name  Tags
     //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files);
+    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels);
     static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
     //! @}
 
