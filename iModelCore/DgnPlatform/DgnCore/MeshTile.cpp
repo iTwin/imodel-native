@@ -1569,7 +1569,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-#if 0 
+#ifdef ACCEPT_PUBLISHED_TILESET_INTERFACE 
     if (nullptr != getPublishedURL)
         {
         return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
