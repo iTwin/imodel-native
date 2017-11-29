@@ -91,8 +91,12 @@ static bool isImodelExt(BeFileNameCR fn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge)
     {
-    BeFileName fwkAssets = Desktop::FileSystem::GetExecutableDir();
-    fwkAssets.AppendToPath(L"Assets");
+    BeFileName fwkAssets = bridge._GetParams ().GetAssetsDir (); 
+    if (fwkAssets.empty ())
+        {
+        fwkAssets = Desktop::FileSystem::GetExecutableDir ();
+        fwkAssets.AppendToPath (L"Assets");
+        }
 
     BeFileName fwkDb3 = fwkAssets;
     fwkDb3.AppendToPath(L"sqlang");
