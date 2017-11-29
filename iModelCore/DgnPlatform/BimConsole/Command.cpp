@@ -69,6 +69,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".change")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
@@ -1655,7 +1656,7 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
 //---------------------------------------------------------------------------------------
 Utf8String ChangeCommand::_GetUsage() const
     {
-    return " .change tracking [on|off] | create summary\r\n\r\n"
+    return " .change tracking [on|off] | summary create\r\n\r\n"
         COMMAND_USAGE_IDENT "Allow user to enable or disable change tracking\r\n";
     COMMAND_USAGE_IDENT "While change tracking is enable user can also create a summary.\r\n";
     }
@@ -1685,7 +1686,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (args.size() == 1)
             {
-            BimConsole::Write("Tracking : %s", session.GetFile().IsTracking() ? "true" : "false");
+            BimConsole::WriteLine("Tracking : %s", session.GetFile().IsTracking() ? "on" : "off");
             }
         else if (args.size() == 2)
             {
@@ -1697,18 +1698,18 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                     BimConsole::WriteLine("Tracking is already enabled");
                     return;
                     }
-                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(true) ? "true" : "false");
+                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(true) ? "on" : "off");
                 return;
                 }
             else if (args[1].EqualsIAscii("off"))
                 {
-                if (session.GetFile().IsTracking())
+                if (!session.GetFile().IsTracking())
                     {
                     BimConsole::WriteLine("Tracking is already disabled");
                     return;
                     }
 
-                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(false) ? "true" : "false");
+                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(false) ? "on" : "off");
                 return;
                 }
             else
@@ -1725,7 +1726,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
-        else if (!args[2].EqualsIAscii("create"))
+        else if (!args[1].EqualsIAscii("create"))
             {
             BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
