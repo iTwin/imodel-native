@@ -41,6 +41,116 @@ double AlignmentPVI::LengthFromK (const double& kvalue)
     return fabs (G1 - G2) * kvalue;
     }
 
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+DPoint3d AlignmentPairEditor::ComputePIFromPointsAndVectors(DPoint3d pointA, DVec3d vectorA, DPoint3d pointB, DVec3d vectorB) const
+    {
+    pointA.z = 0.0;
+    vectorA.z = 0.0;
+    pointB.z = 0.0;
+    vectorB.z = 0.0;
+
+    const DRay3d rayA = DRay3d::FromOriginAndVector(pointA, vectorA);
+    const DRay3d rayB = DRay3d::FromOriginAndVector(pointB, vectorB);
+    double fractionA, fractionB;
+    DPoint3d resultA, resultB;
+    DRay3d::ClosestApproachUnboundedRayUnboundedRay(fractionA, fractionB, resultA, resultB, rayA, rayB);
+    return resultA;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::LoadArcData(AlignmentPI::ArcData& arc, ICurvePrimitiveCR primitiveArc) const
+    {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != primitiveArc.GetCurvePrimitiveType())
+        {
+        ROADRAILALIGNMENT_LOGE("AlignmentPairEditor::LoadArcData - not an arc");
+        return false;
+        }
+
+    DEllipse3dCP pEllipse = primitiveArc.GetArcCP();
+    if (pEllipse->IsFullEllipse())
+        {
+        ROADRAILALIGNMENT_LOGE("AlignmentPairEditor::LoadArcData - arc is a full ellipse");
+        return false;
+        }
+
+    if (!pEllipse->IsCircularXY(arc.radius))
+        {
+        ROADRAILALIGNMENT_LOGE("AlignmentPairEditor::LoadArcData - not a circular arc");
+        return false;
+        }
+
+    DPoint3d start, end;
+    DVec3d startTangent, endTangent;
+    primitiveArc.GetStartEnd(start, end, startTangent, endTangent);
+    start.z = 0.0;
+    end.z = 0.0;
+    startTangent.z = 0.0;
+    endTangent.z = 0.0;
+
+    arc.startPoint = start;
+    arc.endPoint = end;
+    arc.piPoint = ComputePIFromPointsAndVectors(start, startTangent, end, endTangent);
+    arc.centerPoint = pEllipse->center;
+    arc.centerPoint.z = 0.0;
+    arc.isCcw = pEllipse->IsCCWSweepXY();
+    return true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::LoadSpiralData(AlignmentPI::SpiralData& spiral, ICurvePrimitiveCR primitiveSpiral) const
+    {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral != primitiveSpiral.GetCurvePrimitiveType())
+        {
+        ROADRAILALIGNMENT_LOGE("AlignmentPairEditor::LoadSpiralData - not a spiral");
+        return false;
+        }
+
+    DSpiral2dPlacementCP pPlacement = primitiveSpiral.GetSpiralPlacementCP();
+    DSpiral2dBaseCP pSpiral = pPlacement->spiral;
+
+    DVec3d startVector, endVector;
+    primitiveSpiral.GetStartEnd(spiral.startPoint, spiral.endPoint, spiral.startVector, spiral.endVector);
+    spiral.startPoint.z = 0.0;
+    spiral.endPoint.z = 0.0;
+    spiral.startVector.z = 0.0;
+    spiral.endVector.z = 0.0;
+
+    spiral.piPoint = ComputePIFromPointsAndVectors(spiral.startPoint, spiral.startVector, spiral.endPoint, spiral.endVector);
+
+    if (0.0 == pSpiral->mCurvature0)
+        spiral.startRadius = (0.0 < pSpiral->mCurvature1) ? -1.0 * CS_SPI_INFINITY : CS_SPI_INFINITY;
+    else
+        spiral.startRadius = -1.0 / pSpiral->mCurvature0;
+
+    if (0.0 == pSpiral->mCurvature1)
+        spiral.endRadius = (0.0 < pSpiral->mCurvature0) ? -1.0 * CS_SPI_INFINITY : CS_SPI_INFINITY;
+    else
+        spiral.endRadius = -1.0 / pSpiral->mCurvature1;
+
+    spiral.length = pSpiral->mLength;
+    return true;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -238,14 +348,8 @@ StatusInt AlignmentPairEditor::_SolveArcPI (size_t index, bvector<AlignmentPI>& 
         return ERROR;
     ICurvePrimitivePtr primitive = ICurvePrimitive::CreateArc (ellipse);
 
-    primitive->GetStartEnd (pis.at (index).arc.startPoint, pis.at (index).arc.endPoint);
-    pis.at (index).arc.centerPoint = ellipse.center;
-    double startAng;
-    ellipse.GetSweep (startAng, pis.at (index).arc.sweep);
-    if (ellipse.vector0.CrossProductXY (ellipse.vector90) * ellipse.sweep > 0.0)
-        pis.at (index).arc.clockwise = false;
-    else
-        pis.at (index).arc.clockwise = true;
+    if (!LoadArcData(pis[index].arc, *primitive))
+        return ERROR;
 
     return SUCCESS;
     }
@@ -310,21 +414,15 @@ StatusInt AlignmentPairEditor::_SolveSpiralPI (size_t index, bvector<AlignmentPI
     ac->GetStartEnd (start, end);
     pis.at (index).arc.startPoint = start;
     pis.at (index).arc.endPoint = end;
-    _LoadSpiralData (sp1.get (), pis.at (index).spiral1);
-    _LoadSpiralData (sp2.get (), pis.at (index).spiral2);
 
-    pis.at (index).arc.centerPoint = arc.center;
-    double startAng;
-    arc.GetSweep (startAng, pis.at (index).arc.sweep);
-    if (arc.vector0.CrossProductXY (arc.vector90) * arc.sweep > 0.0)
-        pis.at (index).arc.clockwise = false;
-    else
-        pis.at (index).arc.clockwise = true;
-    double radius;
-    if (!arc.IsCircularXY(radius))
-        {
-        BeAssert(false);
-        }
+    if (!LoadSpiralData(pis[index].spiral1, *sp1))
+        return ERROR;
+
+    if (!LoadArcData(pis[index].arc, *ac))
+        return ERROR;
+
+    if (!LoadSpiralData(pis[index].spiral2, *sp2))
+        return ERROR;
 
     delete spiralA;
     delete spiralB;
@@ -370,8 +468,11 @@ StatusInt AlignmentPairEditor::_SolveSSPI (size_t index, bvector<AlignmentPI>& p
     const Transform frameB = Transform::From (spiralAToArc);
     ICurvePrimitivePtr sp2 = ICurvePrimitive::CreateSpiral (*spiralB, frameB, fractionA, fractionB);
 
-    _LoadSpiralData (sp1.get(), pis.at (index).spiral1);
-    _LoadSpiralData (sp2.get(), pis.at (index).spiral2);
+    if (!LoadSpiralData(pis[index].spiral1, *sp1))
+        return ERROR;
+
+    if (!LoadSpiralData(pis[index].spiral2, *sp2))
+        return ERROR;
 
     delete spiralA;
     delete spiralB;
@@ -415,7 +516,7 @@ double AlignmentPairEditor::_FullTangentLength (AlignmentPICR pi)
                 break;
             case AlignmentPI::HorizontalPIType::SCS:
                 {
-                return pi.location.DistanceXY (pi.spiral1.beginSpiralPt);
+                return pi.location.DistanceXY (pi.spiral1.startPoint);
                 }
                 break;
         }
@@ -425,61 +526,19 @@ double AlignmentPairEditor::_FullTangentLength (AlignmentPICR pi)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitivePtr AlignmentPairEditor::CreateSpiralPrimitive (AlignmentSpiral const& spiral)
+ICurvePrimitivePtr AlignmentPairEditor::CreateSpiralPrimitive (AlignmentPI::SpiralData const& spiral)
     {
-    Transform placement = Transform::From (spiral.beginSpiralPt);
-    const DVec3d v0 = DVec3d::FromStartEnd (spiral.beginSpiralPt, spiral.spiralPIPt);
-    const DVec3d v1 = DVec3d::FromStartEnd (spiral.spiralPIPt, spiral.endSpiralPt);
+    Transform placement = Transform::From (spiral.startPoint);
+    const DVec3d v0 = DVec3d::FromStartEnd(spiral.startPoint, spiral.piPoint);
+    const DVec3d v1 = DVec3d::FromStartEnd(spiral.piPoint, spiral.endPoint);
     double startRadians = atan2 (v0.y, v0.x);
-    double startRadius = ( fabs (spiral.entranceRadius) > 1e20 ? 0.0 : fabs (spiral.entranceRadius) );
+    double startRadius = (fabs(spiral.startRadius) > 1e20 ? 0.0 : fabs(spiral.startRadius));
     double delta = v0.AngleToXY (v1);
     double side = delta < 0.0 ? -1.0 : 1.0;
-    double endRadius = ( fabs (spiral.exitRadius) > 1e20 ? 0.0 : fabs (spiral.exitRadius) );
+    double endRadius = (fabs(spiral.endRadius) > 1e20 ? 0.0 : fabs(spiral.endRadius));
 
     return ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
         DSpiral2dBase::TransitionType_Clothoid, startRadians, side*startRadius, spiral.length, side*endRadius, placement, 0, 1);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AlignmentPairEditor::_LoadSpiralData (ICurvePrimitiveCP primitive, AlignmentSpiral& roadSpiral)
-    {
-    if (primitive == nullptr) return ERROR;
-
-    DSpiral2dPlacementCP plSpiral = primitive->GetSpiralPlacementCP ();
-    DSpiral2dBaseP vectorSpiral = plSpiral->spiral;
-
-    primitive->GetStartEnd (roadSpiral.beginSpiralPt, roadSpiral.endSpiralPt, roadSpiral.startVector, roadSpiral.endVector);
-    roadSpiral.beginSpiralPt.z = 0.0; roadSpiral.endSpiralPt.z = 0.0;
-    DRay3d rayA = DRay3d::FromOriginAndVector (roadSpiral.beginSpiralPt, roadSpiral.startVector);
-    DRay3d rayB = DRay3d::FromOriginAndVector (roadSpiral.endSpiralPt, roadSpiral.endVector);
-    DPoint3d pi2;
-    double fractionA, fractionB;
-    DRay3d::ClosestApproachUnboundedRayUnboundedRay (fractionA, fractionB, roadSpiral.spiralPIPt, pi2, rayA, rayB);
-    if (vectorSpiral->mCurvature0 == 0.0)
-        {
-        if (vectorSpiral->mCurvature1 > 0.0)
-            roadSpiral.entranceRadius = -1.0 * CS_SPI_INFINITY;
-        else
-            roadSpiral.entranceRadius = CS_SPI_INFINITY;
-        }
-    else
-        roadSpiral.entranceRadius = -1.0 / vectorSpiral->mCurvature0;
-
-    if (vectorSpiral->mCurvature1 == 0.0)
-        {
-        if (vectorSpiral->mCurvature0 > 0.0)
-            roadSpiral.exitRadius = -1.0 * CS_SPI_INFINITY;
-        else
-            roadSpiral.exitRadius = CS_SPI_INFINITY;
-        }
-    else
-        roadSpiral.exitRadius = -1.0 / vectorSpiral->mCurvature1;
-    roadSpiral.length = vectorSpiral->mLength;
-
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,21 +571,18 @@ StatusInt AlignmentPairEditor::GetAlignmentPI (size_t index, AlignmentPI& pi)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
     {
+    CurveVectorCR hzCurve = GetHorizontalCurveVector();
+
     bvector<AlignmentPI> pis;
     DPoint3d startPt, endPt;
-    GetHorizontalCurveVector().GetStartEnd(startPt, endPt);
+    hzCurve.GetStartEnd(startPt, endPt);
     startPt.z = 0.0; endPt.z = 0.0;
     AlignmentPI startPI (startPt);
     pis.push_back (startPI);
     bool addEndPI = true;
-
-    CurveVectorCR hzCurve = GetHorizontalCurveVector();
-
     for (int i = 0; i < hzCurve.size(); i++)
         {
-        ICurvePrimitivePtr primitive = hzCurve[i];
-
-        switch (primitive->GetCurvePrimitiveType())
+        switch (hzCurve[i]->GetCurvePrimitiveType())
             {
             // unless should be that only Arcs have PIs,
             // will be a simple PI unless, we have an SCS
@@ -540,7 +596,7 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         if (hzCurve[i + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
                             {
                             DPoint3d start, end;
-                            primitive->GetStartEnd(start, end);
+                            hzCurve[i]->GetStartEnd(start, end);
                             start.z = 0.0; end.z = 0.0;
                             AlignmentPI piPt;
                             piPt.curveType = AlignmentPI::HorizontalPIType::NONE;
@@ -552,33 +608,13 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                     break;
                 case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                     {
-                    DPoint3d start, end;
-                    DVec3d startTangent, endTangent;
-                    primitive->GetStartEnd (start, end, startTangent, endTangent);
-                    start.z = 0.0; end.z = 0.0;
-                    DRay3d rayA = DRay3d::FromOriginAndVector (start, startTangent);
-                    DRay3d rayB = DRay3d::FromOriginAndVector (end, endTangent);
-                    rayA.direction.z = 0.0; rayB.direction.z = 0.0;
-                    DPoint3d pi, pi2;
-                    double fractionA, fractionB;
-                    DRay3d::ClosestApproachUnboundedRayUnboundedRay (fractionA, fractionB, pi, pi2, rayA, rayB);
+                    AlignmentPI piPt;
 
-                    AlignmentPI piPt (pi);
+                    if (!LoadArcData(piPt.arc, *hzCurve[i]))
+                        return bvector<AlignmentPI>();
+                    
+                    piPt.location = piPt.arc.piPoint; //&&AG FIX this. we shouldn't have to put the piPoint in two different member variable
                     piPt.curveType = AlignmentPI::HorizontalPIType::ARC;
-
-                    primitive->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
-                    DEllipse3dCP arc = primitive->GetArcCP ();
-                    piPt.arc.centerPoint = arc->center;
-                    piPt.arc.centerPoint.z = 0.0;
-                    double startAng;
-                    arc->GetSweep (startAng, piPt.arc.sweep);
-                    if (arc->vector0.CrossProductXY (arc->vector90) * arc->sweep > 0.0)
-                        piPt.arc.clockwise = false;
-                    else
-                        piPt.arc.clockwise = true;
-                    if (arc->IsCircularXY (piPt.arc.radius) == false)
-                        break;  // not sure what happens now
-
                     pis.push_back (piPt);
 
                     if (piPt.arc.endPoint.AlmostEqualXY (endPt))
@@ -593,25 +629,25 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         {
                         AlignmentPI piPt;
                         piPt.curveType = AlignmentPI::HorizontalPIType::SS;
-                        _LoadSpiralData(primitive.get(), piPt.spiral1);
-                        auto placementSpiral = primitive->GetSpiralPlacementCP ();
+
+                        if (!LoadSpiralData(piPt.spiral1, *hzCurve[i]))
+                            return bvector<AlignmentPI>();
+
+                        auto placementSpiral = hzCurve[i]->GetSpiralPlacementCP();
                         DSpiral2dBaseP spiral = placementSpiral->spiral;
                         i++;
-                        _LoadSpiralData(primitive.get(), piPt.spiral2);
-                        // compute the "overall" PI
-                        DRay3d rayA = DRay3d::FromOriginAndVector (piPt.spiral1.beginSpiralPt, piPt.spiral1.startVector);
-                        DRay3d rayB = DRay3d::FromOriginAndVector (piPt.spiral2.endSpiralPt, piPt.spiral2.endVector);
-                        rayA.direction.z = 0.0; rayB.direction.z = 0.0;
-                        double fractionA, fractionB;
-                        DPoint3d pi2;
-                        DRay3d::ClosestApproachUnboundedRayUnboundedRay (fractionA, fractionB, piPt.location, pi2, rayA, rayB);
-                         
+
+                        if (!LoadSpiralData(piPt.spiral2, *hzCurve[i]))
+                            return bvector<AlignmentPI>();
+
+                        piPt.location = ComputePIFromPointsAndVectors(piPt.spiral1.startPoint, piPt.spiral1.startVector, piPt.spiral2.startPoint, piPt.spiral2.startVector);
+ 
                         if (spiral->mCurvature1 != 0.0)
                             {
                             piPt.arc.radius = 1.0 / spiral->mCurvature1;
                             }
                         pis.push_back (piPt);
-                        if (piPt.spiral2.endSpiralPt.AlmostEqualXY (endPt))
+                        if (piPt.spiral2.endPoint.AlmostEqualXY (endPt))
                             addEndPI = false;
                         }
                     else
@@ -621,34 +657,24 @@ bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
                         AlignmentPI piPt;
                         piPt.curveType = AlignmentPI::HorizontalPIType::SCS;
 
-                        _LoadSpiralData(primitive.get(), piPt.spiral1);
+                        if (!LoadSpiralData(piPt.spiral1, *hzCurve[i]))
+                            return bvector<AlignmentPI>();
+
                         i++;
-                        primitive->GetStartEnd (piPt.arc.startPoint, piPt.arc.endPoint);
-                        DEllipse3dCP arc = primitive->GetArcCP ();
-                        BeAssert(arc != nullptr);
-                        piPt.arc.centerPoint = arc->center;
-                        double startAng;
-                        arc->GetSweep (startAng, piPt.arc.sweep);
+
+                        if (!LoadArcData(piPt.arc, *hzCurve[i]))
+                            return bvector<AlignmentPI>();
+
                         i++;
-                        _LoadSpiralData(primitive.get(), piPt.spiral2);
+
+                        if (!LoadSpiralData(piPt.spiral2, *hzCurve[i]))
+                            return bvector<AlignmentPI>();
 
                         // compute the "overall" PI
-                        DRay3d rayA = DRay3d::FromOriginAndVector (piPt.spiral1.beginSpiralPt, piPt.spiral1.startVector);
-                        DRay3d rayB = DRay3d::FromOriginAndVector (piPt.spiral2.endSpiralPt, piPt.spiral2.endVector);
-                        rayA.direction.z = 0.0; rayB.direction.z = 0.0;
-                        double fractionA, fractionB;
-                        DPoint3d pi2;
-                        DRay3d::ClosestApproachUnboundedRayUnboundedRay (fractionA, fractionB, piPt.location, pi2, rayA, rayB);
-
-                        if (arc->vector0.CrossProductXY (arc->vector90) * arc->sweep > 0.0)
-                            piPt.arc.clockwise = false;
-                        else
-                            piPt.arc.clockwise = true;
-                        if (arc->IsCircularXY (piPt.arc.radius) == false)
-                            break;  // not sure what happens now
+                        piPt.location = ComputePIFromPointsAndVectors(piPt.spiral1.startPoint, piPt.spiral1.startVector, piPt.spiral2.startPoint, piPt.spiral2.startVector);
 
                         pis.push_back (piPt);
-                        if (piPt.spiral2.endSpiralPt.AlmostEqualXY (endPt))
+                        if (piPt.spiral2.endPoint.AlmostEqualXY (endPt))
                             addEndPI = false;
                         }
                     }
@@ -676,13 +702,14 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
                 {
                 DEllipse3d ell = DEllipse3d::FromArcCenterStartEnd (pi.arc.centerPoint,
                                                                     pi.arc.startPoint, pi.arc.endPoint);
-                if (fabs (pi.arc.sweep) > PI)
-                    ell.ComplementSweep ();
+                if (!ell.IsCCWSweepXY() && pi.arc.isCcw)
+                    ell.ComplementSweep();
+
                 hvec.Add (ICurvePrimitive::CreateArc (ell));
 
                 lastPoint = pi.arc.endPoint;
-                }
                 return true;
+                }
             case AlignmentPI::HorizontalPIType::SS:
                 {
                 double resultRadius;
@@ -693,8 +720,8 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
                 DSpiral2dBaseP spiralA = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
                 DSpiral2dBaseP spiralB = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
 
-                if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (pi.spiral1.beginSpiralPt,
-                    pi.spiral2.endSpiralPt, pi.location, pi.spiral1.length, *spiralA, *spiralB,
+                if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (pi.spiral1.startPoint,
+                    pi.spiral2.endPoint, pi.location, pi.spiral1.length, *spiralA, *spiralB,
                     lineToSpiralA, lineToSpiralB, spiralAToArc, resultRadius))
                     break;
 
@@ -718,8 +745,8 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
 
                 delete spiralA;
                 delete spiralB;
-                }
                 return true;
+                }
             case AlignmentPI::HorizontalPIType::SCS:
                 {
 
@@ -727,29 +754,30 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
                 if (spiralP == nullptr)
                     {
                     hvec.Add (
-                        ICurvePrimitive::CreateLine (DSegment3d::From (pi.spiral1.beginSpiralPt,
-                        pi.spiral1.endSpiralPt)));
+                        ICurvePrimitive::CreateLine (DSegment3d::From (pi.spiral1.startPoint,
+                        pi.spiral1.endPoint)));
                     }
                 else
                     hvec.Add (spiralP);
 
                 DEllipse3d ell = DEllipse3d::FromArcCenterStartEnd (pi.arc.centerPoint,
                                                                     pi.arc.startPoint, pi.arc.endPoint);
-                if (fabs (pi.arc.sweep) > PI)
-                    ell.ComplementSweep ();
+
+                if (ell.IsCCWSweepXY() && !pi.arc.isCcw)
+                    ell.ComplementSweep();
                 hvec.Add (ICurvePrimitive::CreateArc (ell));
 
                 spiralP = CreateSpiralPrimitive (pi.spiral2);
                 if (spiralP == nullptr)
                     {
                     hvec.Add (
-                        ICurvePrimitive::CreateLine (DSegment3d::From (pi.spiral2.beginSpiralPt,
-                        pi.spiral2.endSpiralPt)));
+                        ICurvePrimitive::CreateLine (DSegment3d::From (pi.spiral2.startPoint,
+                        pi.spiral2.endPoint)));
                     }
                 else
                     hvec.Add (spiralP);
 
-                lastPoint = pi.spiral2.endSpiralPt;
+                lastPoint = pi.spiral2.endPoint;
                 }
                 return true;
         }
@@ -794,11 +822,11 @@ CurveVectorPtr AlignmentPairEditor::_BuildVectorFromPIS (bvector<AlignmentPI> co
                         }
                     else
                         {
-                        if (!lastPoint.AlmostEqualXY (pis.at (i).spiral1.beginSpiralPt))
+                        if (!lastPoint.AlmostEqualXY (pis.at (i).spiral1.startPoint))
                             {
                             horizontalAlignment->Add (
                                 ICurvePrimitive::CreateLine (
-                                DSegment3d::From (lastPoint, pis.at (i).spiral1.beginSpiralPt)));
+                                DSegment3d::From(lastPoint, pis.at(i).spiral1.startPoint)));
                             }
                         }
                     AddPrimitivesFromPI (*horizontalAlignment, pis.at (i), lastPoint);
@@ -923,17 +951,16 @@ bool AlignmentPairEditor::_StationCompare (double x, double x1)
 bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs ()
     {
     bvector<AlignmentPVI> pvis;
-    CurveVectorCP pVertical = GetVerticalCurveVector();
-    if (nullptr == pVertical)
+    if (!IsValidVertical())
         return pvis;
 
-    return _GetPVIs(*pVertical);
+    return _GetPVIs(*GetVerticalCurveVector());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs (CurveVectorCR vt)
+bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs(CurveVectorCR vt)
     {
     bvector<AlignmentPVI> pvis;
     int count = 0;
@@ -1335,7 +1362,7 @@ CurveVectorPtr AlignmentPairEditor::MoveBS (size_t index, DPoint3d toPt, Alignme
         return nullptr;
 
     // compute a new spiral length then just solve the PI
-    double spiralLength = toPt.DistanceXY (pis.at (index).spiral1.endSpiralPt); // this is close enough, perhaps round?
+    double spiralLength = toPt.DistanceXY (pis.at (index).spiral1.endPoint); // this is close enough, perhaps round?
     pis.at (index).spiral1.length = spiralLength;
     pis.at (index).spiral2.length = spiralLength;
     if (_SolvePI (index, pis) != SUCCESS)
@@ -1343,7 +1370,7 @@ CurveVectorPtr AlignmentPairEditor::MoveBS (size_t index, DPoint3d toPt, Alignme
 
     if (pis.at(index).curveType == AlignmentPI::HorizontalPIType::SCS)
         {
-        if (pis.at(index).spiral1.endSpiralPt.DistanceXY(toPt) >= pis.at(index).arc.endPoint.DistanceXY(toPt))
+        if (pis.at(index).spiral1.endPoint.DistanceXY(toPt) >= pis.at(index).arc.endPoint.DistanceXY(toPt))
             return nullptr;
         }
 
@@ -1386,7 +1413,7 @@ CurveVectorPtr AlignmentPairEditor::MoveES (size_t index, DPoint3d toPt, Alignme
         return nullptr;
 
     // compute a new spiral length then just solve the PI
-    double spiralLength = toPt.DistanceXY (pis.at (index).spiral2.beginSpiralPt); // this is close enough, perhaps round?
+    double spiralLength = toPt.DistanceXY (pis.at (index).spiral2.startPoint); // this is close enough, perhaps round?
     pis.at (index).spiral1.length = spiralLength;
     pis.at (index).spiral2.length = spiralLength;
     if (_SolvePI (index, pis) != SUCCESS)
@@ -1394,10 +1421,10 @@ CurveVectorPtr AlignmentPairEditor::MoveES (size_t index, DPoint3d toPt, Alignme
 
     if (pis.at(index).curveType == AlignmentPI::HorizontalPIType::SCS)
         {
-        if (pis.at(index).spiral1.endSpiralPt.DistanceXY(toPt) <= pis.at(index).arc.endPoint.DistanceXY(toPt))
+        if (pis.at(index).spiral1.endPoint.DistanceXY(toPt) <= pis.at(index).arc.endPoint.DistanceXY(toPt))
             return nullptr;
 
-        if (pis.at(index).spiral2.beginSpiralPt.DistanceXY(toPt) >= pis.at(index).arc.startPoint.DistanceXY(toPt))
+        if (pis.at(index).spiral2.startPoint.DistanceXY(toPt) >= pis.at(index).arc.startPoint.DistanceXY(toPt))
             return nullptr;
         }
 
@@ -1551,7 +1578,7 @@ StatusInt AlignmentPairEditor::GetPIPoints (bvector<DPoint3d>& pts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DPoint3d> AlignmentPairEditor::CrestAndSagPointsXZ (ZeroSlopePoints zsType)
     {
-    BeAssert (this->IsValidVertical ());
+    BeAssert (IsValidVertical());
     double runningLength = 0.0;
     bvector<DPoint3d> returnVector;
     for (auto primitive : *GetVerticalCurveVector())
@@ -1620,7 +1647,7 @@ bool AlignmentPairEditor::HasSag ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::MaximumGradeInPercent ()
     {
-    BeAssert (this->IsValidVertical ());
+    BeAssert (IsValidVertical());
     double maxGrade = 0.0;
     for (auto primitive : *GetVerticalCurveVector())
         {
@@ -1671,7 +1698,7 @@ double AlignmentPairEditor::MaximumGradeInPercent ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::MaximumGradeChangeInPercent ()
     {
-    BeAssert (this->IsValidVertical());
+    BeAssert (IsValidVertical());
     double G1 = 0.0, G2 = 0.0;
     double maxGradeChange = 0.0;
     for (auto primitive : *GetVerticalCurveVector())
@@ -2832,7 +2859,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         else if (nextPI.curveType == AlignmentPI::ARC)
             referencePt = nextPI.arc.endPoint;
         else if (nextPI.curveType == AlignmentPI::SCS)
-            referencePt = nextPI.spiral2.endSpiralPt;
+            referencePt = nextPI.spiral2.endPoint;
         rangeEdit.preEditRange.endStation = HorizontalDistanceAlongFromStart(referencePt);
         newHz = MovePI (0, toPt, calcedPI);
         }
@@ -2845,7 +2872,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         else if (prevPI.curveType == AlignmentPI::ARC)
             rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.arc.startPoint);
         else if (prevPI.curveType == AlignmentPI::SCS)
-            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.spiral1.beginSpiralPt);
+            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.spiral1.startPoint);
         newHz = MovePI (pis.size () - 1, toPt, calcedPI);
         }
     if (!newHz.IsValid ()) return false;
@@ -2904,6 +2931,8 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
 AlignmentPairPtr AlignmentPairEditor::FlipAlignment ()
     {
     CurveVectorPtr hzAlign = CloneHorizontalCurveVector();
+    if (!hzAlign.IsValid ()) return nullptr;
+
     hzAlign->ReverseCurvesInPlace ();
     if (nullptr != GetVerticalCurveVector())
         {
@@ -2952,7 +2981,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
 
     DPoint3d start, end;
     DPoint3d newStart, newEnd;
-    GetHorizontalCurveVector().GetStartEnd (start, end);
+    GetStartEnd (start, end);
     newHorizontal.GetStartEnd (newStart, newEnd);
     if (!start.AlmostEqualXY (newStart))
         isStart = true;
@@ -2972,7 +3001,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         else if (nextPI.curveType == AlignmentPI::ARC)
             referencePt = nextPI.arc.endPoint;
         else if (nextPI.curveType == AlignmentPI::SCS)
-            referencePt = nextPI.spiral2.endSpiralPt;
+            referencePt = nextPI.spiral2.endPoint;
         computedRange.preEditRange.endStation = HorizontalDistanceAlongFromStart(referencePt);
 
         computedRange.postEditRange.startStation = LengthXY () - modifiedAlign->LengthXY ();
@@ -2987,7 +3016,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         else if (prevPI.curveType == AlignmentPI::ARC)
             computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.arc.startPoint);
         else if (prevPI.curveType == AlignmentPI::SCS)
-            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.spiral1.beginSpiralPt);
+            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.spiral1.startPoint);
 
         computedRange.postEditRange.startStation = computedRange.preEditRange.startStation;
         computedRange.postEditRange.endStation = modifiedAlign->LengthXY ();
