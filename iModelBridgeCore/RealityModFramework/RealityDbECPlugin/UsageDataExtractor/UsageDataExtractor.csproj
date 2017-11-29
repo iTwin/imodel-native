@@ -54,23 +54,23 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Bentley.Connect.Client.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <HintPath>..\..\..\LastKnownGood\Winx64\bentleydesktopclient\Delivery\Bentley.Connect.Client.API.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Connect.Client.API.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Bentley.Connect.Client.Service.Interface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <HintPath>..\..\..\LastKnownGood\Winx64\bentleydesktopclient\Delivery\Bentley.Connect.Client.Service.Interface.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Connect.Client.Service.Interface.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Bentley.Select.Shareable, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <HintPath>..\..\..\LastKnownGood\Winx64\bentleydesktopclient\Delivery\Bentley.Select.Shareable.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Select.Shareable.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <HintPath>..\..\..\LastKnownGood\Winx64\bentleydesktopclient\Delivery\Common.Logging.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Common.Logging.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <HintPath>..\..\..\LastKnownGood\Winx64\bentleydesktopclient\Delivery\Common.Logging.Core.dll</HintPath>
+      <HintPath>$(OutRoot)\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Common.Logging.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Azure.KeyVault.Core">
