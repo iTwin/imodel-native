@@ -664,7 +664,7 @@ int iModelBridgeRegistry::ComputeAffinityMain(int argc, WCharCP argv[])
         filePath.RemoveQuotes();
         
         WChar registryName[MAX_PATH] = {0};
-        iModelBridgeAffinityLevel affinity;
+        iModelBridgeAffinityLevel affinity = iModelBridgeAffinityLevel::None;
         getAffinity(registryName, MAX_PATH, affinity, affinityLibraryPath.c_str(), filePath.c_str());
         fprintf(stdout, "%d\n%s\n", (int) affinity, Utf8String(registryName).c_str());
         fflush(stdout);
