@@ -1223,24 +1223,24 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
-            InstanceMethod("openDgnDb", &StartOpenDgnDb),
-            InstanceMethod("openDgnDbSync", &OpenDgnDbSync),
-            InstanceMethod("closeDgnDb", &CloseDgnDb),
-            InstanceMethod("setBriefcaseId", &SetBriefcaseId),
-            InstanceMethod("getBriefcaseId", &GetBriefcaseId),
-            InstanceMethod("openBriefcaseSync", &OpenBriefcaseSync),
-            InstanceMethod("saveChanges", &SaveChanges),
-            InstanceMethod("importSchema", &ImportSchema),
-            InstanceMethod("getElement", &StartGetElementWorker),
-            InstanceMethod("getModel", &StartGetModelWorker),
-            InstanceMethod("insertElementSync", &InsertElementSync),
-            InstanceMethod("updateElementSync", &UpdateElementSync),
-            InstanceMethod("deleteElementSync", &DeleteElementSync),
-            InstanceMethod("getElementPropertiesForDisplay", &StartGetElementPropertiesForDisplayWorker),
-            InstanceMethod("getECClassMetaData", &StartGetECClassMetaData),
-            InstanceMethod("getECClassMetaDataSync", &GetECClassMetaDataSync),
-            InstanceMethod("executeQuery", &StartExecuteQueryWorker),
-            InstanceMethod("getCachedBriefcaseInfosSync", &GetCachedBriefcaseInfosSync),
+            InstanceMethod("openDgnDb", &NodeAddonDgnDb::StartOpenDgnDb),
+            InstanceMethod("openDgnDbSync", &NodeAddonDgnDb::OpenDgnDbSync),
+            InstanceMethod("closeDgnDb", &NodeAddonDgnDb::CloseDgnDb),
+            InstanceMethod("setBriefcaseId", &NodeAddonDgnDb::SetBriefcaseId),
+            InstanceMethod("getBriefcaseId", &NodeAddonDgnDb::GetBriefcaseId),
+            InstanceMethod("openBriefcaseSync", &NodeAddonDgnDb::OpenBriefcaseSync),
+            InstanceMethod("saveChanges", &NodeAddonDgnDb::SaveChanges),
+            InstanceMethod("importSchema", &NodeAddonDgnDb::ImportSchema),
+            InstanceMethod("getElement", &NodeAddonDgnDb::StartGetElementWorker),
+            InstanceMethod("getModel", &NodeAddonDgnDb::StartGetModelWorker),
+            InstanceMethod("insertElementSync", &NodeAddonDgnDb::InsertElementSync),
+            InstanceMethod("updateElementSync", &NodeAddonDgnDb::UpdateElementSync),
+            InstanceMethod("deleteElementSync", &NodeAddonDgnDb::DeleteElementSync),
+            InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
+            InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
+            InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),
+            InstanceMethod("executeQuery", &NodeAddonDgnDb::StartExecuteQueryWorker),
+            InstanceMethod("getCachedBriefcaseInfosSync", &NodeAddonDgnDb::GetCachedBriefcaseInfosSync),
         });
 
         target.Set("NodeAddonDgnDb", t);
@@ -1284,13 +1284,13 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECSqlStatement", {
-          InstanceMethod("prepare", &Prepare),
-          InstanceMethod("reset", &Reset),
-          InstanceMethod("dispose", &Dispose),
-          InstanceMethod("clearBindings", &ClearBindings),
-          InstanceMethod("bindValues", &BindValues),
-          InstanceMethod("step", &Step),
-          InstanceMethod("getRow", &GetRow),
+          InstanceMethod("prepare", &NodeAddonECSqlStatement::Prepare),
+          InstanceMethod("reset", &NodeAddonECSqlStatement::Reset),
+          InstanceMethod("dispose", &NodeAddonECSqlStatement::Dispose),
+          InstanceMethod("clearBindings", &NodeAddonECSqlStatement::ClearBindings),
+          InstanceMethod("bindValues", &NodeAddonECSqlStatement::BindValues),
+          InstanceMethod("step", &NodeAddonECSqlStatement::Step),
+          InstanceMethod("getRow", &NodeAddonECSqlStatement::GetRow),
         });
 
         target.Set("NodeAddonECSqlStatement", t);
