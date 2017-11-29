@@ -18,7 +18,7 @@
 #undef X_OK // node\uv-win.h defines this, and then folly/portability/Unistd.h re-defines it.
 
 #include <json/value.h>
-#include "../imodeljs.h"
+#include "AddonUtils.h"
 #include <ECObjects/ECSchema.h>
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
@@ -171,7 +171,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_addon->m_ecdb = IModelJs::CreateECDb(m_status, m_dbPathname);
+            m_addon->m_ecdb = AddonUtils::CreateECDb(m_status, m_dbPathname);
             if (!m_addon->m_ecdb.IsValid())
                 m_addon->m_ecdb = nullptr;
             }
@@ -203,7 +203,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_addon->m_ecdb = IModelJs::OpenECDb(m_status, m_dbPathname, m_mode);
+            m_addon->m_ecdb = AddonUtils::OpenECDb(m_status, m_dbPathname, m_mode);
             if (!m_addon->m_ecdb.IsValid() || m_status != BE_SQLITE_OK)
                 m_addon->m_ecdb = nullptr;
             }
@@ -310,7 +310,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::ImportSchema(*m_addon->m_ecdb, m_schemaPathname);
+            m_status = AddonUtils::ImportSchema(*m_addon->m_ecdb, m_schemaPathname);
             }
         bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
@@ -339,7 +339,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::InsertInstance(m_insertedId, *m_addon->m_ecdb, m_jsonInstance);
+            m_status = AddonUtils::InsertInstance(m_insertedId, *m_addon->m_ecdb, m_jsonInstance);
             }
 
         bool _GetResult(Napi::Value& result) override
@@ -373,7 +373,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::UpdateInstance(*m_addon->m_ecdb, m_jsonInstance);
+            m_status = AddonUtils::UpdateInstance(*m_addon->m_ecdb, m_jsonInstance);
             }
         bool _HadError() override {return m_status != BE_SQLITE_OK;}
         };
@@ -402,7 +402,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::ReadInstance(m_jsonInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
+            m_status = AddonUtils::ReadInstance(m_jsonInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
             }
 
         bool _GetResult(Napi::Value& result) override
@@ -436,7 +436,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::DeleteInstance(*m_addon->m_ecdb, m_jsonInstanceKey);
+            m_status = AddonUtils::DeleteInstance(*m_addon->m_ecdb, m_jsonInstanceKey);
             }
         bool _HadError() override {return m_status != BE_SQLITE_DONE;}
         };
@@ -465,7 +465,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::ContainsInstance(m_containsInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
+            m_status = AddonUtils::ContainsInstance(m_containsInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
             }
 
         bool _GetResult(Napi::Value& result) override
@@ -514,7 +514,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
+            m_status = AddonUtils::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
             }
 
         bool _GetResult(Napi::Value& result) override
@@ -566,7 +566,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 return;
                 }
             
-            m_status = IModelJs::ExecuteStatement(m_instanceId, *stmt, m_isInsertStmt, m_bindings);
+            m_status = AddonUtils::ExecuteStatement(m_instanceId, *stmt, m_isInsertStmt, m_bindings);
             }
 
         bool _GetResult(Napi::Value& result) override
@@ -806,7 +806,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         void Execute() override
             {
-            m_status = IModelJs::OpenDgnDb(m_addondb->m_dgndb, m_dbname, m_mode);
+            m_status = AddonUtils::OpenDgnDb(m_addondb->m_dgndb, m_dbname, m_mode);
             if (m_status == BE_SQLITE_OK)
                 m_addondb->SetupPresentationManager();
             }
@@ -834,7 +834,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, dbname);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION_SYNC
-        auto status = IModelJs::OpenDgnDb(m_dgndb, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        auto status = AddonUtils::OpenDgnDb(m_dgndb, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -853,7 +853,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         void Execute() override
             {
             REQUIRE_DB_TO_BE_OPEN
-            m_status = IModelJs::GetECClassMetaData(m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str());
+            m_status = AddonUtils::GetECClassMetaData(m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str());
             }
 
         Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_metaDataJson.ToString().c_str());}
@@ -876,7 +876,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(1, c);
         RETURN_IF_HAD_EXCEPTION_SYNC
         Json::Value metaDataJson;
-        auto status = IModelJs::GetECClassMetaData(metaDataJson, GetDgnDb(), s.c_str(), c.c_str());
+        auto status = AddonUtils::GetECClassMetaData(metaDataJson, GetDgnDb(), s.c_str(), c.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
         }
 
@@ -897,7 +897,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         void Execute() override
             {
             REQUIRE_DB_TO_BE_OPEN
-            m_status = IModelJs::GetElement(m_elementJson, GetDgnDb(), m_opts);
+            m_status = AddonUtils::GetElement(m_elementJson, GetDgnDb(), m_opts);
             }
 
         Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_elementJson.ToString().c_str());}
@@ -926,7 +926,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         void Execute() override
             {
             REQUIRE_DB_TO_BE_OPEN
-            m_status = IModelJs::GetModel(m_modelJson, GetDgnDb(), m_opts);
+            m_status = AddonUtils::GetModel(m_modelJson, GetDgnDb(), m_opts);
             }
         
         Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_modelJson.ToString().c_str());}
@@ -954,7 +954,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         Json::Value jsonBriefcaseToken = Json::Value::From(briefcaseToken);
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
-        DbResult result = IModelJs::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens);
+        DbResult result = AddonUtils::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens);
         Napi::Object ret;
         if (BE_SQLITE_OK == result)
             SetupPresentationManager();
@@ -973,7 +973,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         Json::Value cachedBriefcaseInfos;
         BeFileName cacheFile(cachePath.c_str(), true);
-        DbResult result = IModelJs::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
+        DbResult result = AddonUtils::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), cachedBriefcaseInfos.ToString().c_str()));
         }
 
@@ -989,7 +989,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         Json::Value elemIdJsonObj;
-        auto status = IModelJs::InsertElement(elemIdJsonObj, GetDgnDb(), elemProps);
+        auto status = AddonUtils::InsertElement(elemIdJsonObj, GetDgnDb(), elemProps);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
         }
 
@@ -1004,7 +1004,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         RETURN_IF_HAD_EXCEPTION_SYNC
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
-        auto status = IModelJs::UpdateElement(GetDgnDb(), elemProps);
+        auto status = AddonUtils::UpdateElement(GetDgnDb(), elemProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -1018,7 +1018,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
         RETURN_IF_HAD_EXCEPTION_SYNC
 
-        auto status = IModelJs::DeleteElement(GetDgnDb(), elemIdStr);
+        auto status = AddonUtils::DeleteElement(GetDgnDb(), elemIdStr);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -1134,7 +1134,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
                 return;
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
+            m_status = AddonUtils::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
             }
 
         Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_rowsJson.ToString().c_str());}
@@ -1182,13 +1182,13 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj);
         RETURN_IF_HAD_EXCEPTION_SYNC
         BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
-        auto stat = IModelJs::ImportSchema(GetDgnDb(), schemaPathname);
+        auto stat = AddonUtils::ImportSchema(GetDgnDb(), schemaPathname);
         return Napi::Number::New(Env(), (int)stat);
         }
 
     void CloseDgnDb(const Napi::CallbackInfo& info)
         {
-        IModelJs::CloseDgnDb(*m_dgndb);
+        AddonUtils::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
         }
 
@@ -1311,7 +1311,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
 
         auto status = m_stmt->Prepare(db->GetDgnDb(), ecsqlStr.c_str());
         if (!status.IsSuccess())
-            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str(), Env());
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastEcdbIssue().c_str(), Env());
             
         MUST_HAVE_M_STMT;                           // success post-condition
         return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
@@ -1344,10 +1344,10 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         
         //BeSqliteDbMutexHolder serializeAccess(*db->m_addondb); // hold mutex, so that we have a chance to get last ECDb error message
 
-        auto status = IModelJs::JsonBinder::BindValues(*m_stmt, Json::Value::From(valuesStr));
+        auto status = AddonUtils::JsonBinder::BindValues(*m_stmt, Json::Value::From(valuesStr));
 
         if (BSISUCCESS != status)
-            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, IModelJs::GetLastEcdbIssue().c_str(), Env());
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastEcdbIssue().c_str(), Env());
          
         return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
         }
@@ -1363,7 +1363,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         {
         MUST_HAVE_M_STMT;
         Json::Value rowJson(Json::objectValue);
-        IModelJs::GetRowAsJson(rowJson, *m_stmt);
+        AddonUtils::GetRowAsJson(rowJson, *m_stmt);
         // *** NEEDS WORK: Get the adapter to set the js object's properties directly
         return Napi::String::New(Env(), rowJson.ToString().c_str());
         }
@@ -1393,7 +1393,7 @@ static void registerModule(Napi::Env env, Napi::Object exports, Napi::Object mod
     auto filename = module.Get("filename").As<Napi::String>();
     BeFileName addondir = BeFileName(filename.Utf8Value().c_str(), true).GetDirectoryName();
 
-    IModelJs::Initialize(addondir, throwJsExceptionOnAssert);
+    AddonUtils::Initialize(addondir, throwJsExceptionOnAssert);
     NodeAddonDgnDb::Init(env, exports, module);
     // NodeAddonECDb::Init(env, exports, module);
     NodeAddonECSqlStatement::Init(env, exports, module);
@@ -1408,4 +1408,4 @@ Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;
 Napi::FunctionReference NodeAddonDgnDb::s_constructor;
 //Napi::FunctionReference NodeAddonECDb::s_constructor;
 
-NODE_API_MODULE(IModelJs, registerModule)
+NODE_API_MODULE(AddonUtils, registerModule)
