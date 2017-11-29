@@ -231,23 +231,23 @@ struct SchemaParseUtils /*abstract*/
 {
     virtual void _Abstract() = 0;
 public:
-    static ECObjectsStatus ParseBooleanString(bool& booleanValue, Utf8CP booleanString);
-    static ECObjectsStatus ParseCardinalityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
-    static ECObjectsStatus ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString);
-    static ECObjectsStatus ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
-    static ECObjectsStatus ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse);
-    static ECObjectsStatus ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
-    static ECObjectsStatus ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
-    static ECObjectsStatus ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName);
-    static ECObjectsStatus ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseBooleanXmlString(bool& booleanValue, Utf8CP booleanString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseCardinalityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseXmlFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString);
 
-    static Utf8CP DirectionToString(ECRelatedInstanceDirection direction);
-    static Utf8CP ModifierToXmlString(ECClassModifier modifier);
-    static Utf8CP ModifierToJsonString(ECClassModifier modifier);
-    static Utf8CP PrimitiveTypeToString(PrimitiveType primitiveType);
-    static Utf8CP StrengthToString(StrengthType strength);
-    static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
-    static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);
+    ECOBJECTS_EXPORT static Utf8CP DirectionToString(ECRelatedInstanceDirection direction);
+    ECOBJECTS_EXPORT static Utf8CP ModifierToXmlString(ECClassModifier modifier);
+    ECOBJECTS_EXPORT static Utf8CP ModifierToJsonString(ECClassModifier modifier);
+    ECOBJECTS_EXPORT static Utf8CP PrimitiveTypeToString(PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT static Utf8CP StrengthToString(StrengthType strength);
+    ECOBJECTS_EXPORT static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
+    ECOBJECTS_EXPORT static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

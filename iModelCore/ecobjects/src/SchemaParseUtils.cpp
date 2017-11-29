@@ -7,14 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <ctype.h>
+#include <regex>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseBooleanString(bool& booleanValue, Utf8CP booleanString)
+ECObjectsStatus SchemaParseUtils::ParseBooleanXmlString(bool& booleanValue, Utf8CP booleanString)
     {
     if (0 == BeStringUtilities::StricmpAscii(booleanString, ECXML_TRUE))
         booleanValue = true;
@@ -27,7 +28,340 @@ ECObjectsStatus SchemaParseUtils::ParseBooleanString(bool& booleanValue, Utf8CP 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR cardinalityString)
+    {
+    // Note to future maintainers: the code in this function can lead to semantically incorrect parsing of a
+    // cardinality string (see unit tests for examples). "Fixing" the function could potentially cause more
+    // problems than it fixes so it has been decided that the function will be left alone.
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    if (0 == cardinalityString.compare("1"))
+        {
+        LOG.debugv("Legacy cardinality of '1' interpreted as '(1,1)'");
+        lowerLimit = 1;
+        upperLimit = 1;
+        return status;
+        }
+
+    if ((0 == cardinalityString.compare("UNBOUNDED")) || (0 == cardinalityString.compare("Unbounded")) ||
+             (0 == cardinalityString.compare("unbounded")) || (0 == cardinalityString.compare("n")) ||
+             (0 == cardinalityString.compare("N")))
+        {
+        LOG.debugv("Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
+        lowerLimit = 0;
+        upperLimit = UINT_MAX;
+        return status;
+        }
+
+    Utf8String cardinalityWithoutSpaces = cardinalityString;
+    cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end());
+    size_t openParenIndex = cardinalityWithoutSpaces.find('(');
+    if (openParenIndex == std::string::npos)
+        {
+        if (0 == BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
+            return ECObjectsStatus::ParseError;
+        LOG.debugv("Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
+        lowerLimit = 0;
+        return status;
+        }
+
+    if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
+        {
+        LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
+    if (2 == scanned)
+        return ECObjectsStatus::Success;
+
+    if (0 == scanned)
+        {
+        LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
+    upperLimit = UINT_MAX;
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+ECObjectsStatus SchemaParseUtils::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
+    {
+    if (Utf8String::IsNullOrEmpty(typeString.c_str()))
+        {
+        LOG.error("Unable to parse CustomAttributeContianerType from input string because it is empty");
+        return ECObjectsStatus::ParseError;
+        }
+
+    bvector<Utf8String> typeTokens;
+    BeStringUtilities::Split(typeString.c_str(), ",;|", typeTokens);
+
+    containerType = static_cast<CustomAttributeContainerType>(0);
+
+    for (Utf8StringCR typeToken : typeTokens)
+        {
+        if (typeToken.empty())
+            continue;
+
+        if (typeToken.EqualsI("Schema"))
+            containerType = containerType | CustomAttributeContainerType::Schema;
+        else if (typeToken.EqualsI("EntityClass"))
+            containerType = containerType | CustomAttributeContainerType::EntityClass;
+        else if (typeToken.EqualsI("CustomAttributeClass"))
+            containerType = containerType | CustomAttributeContainerType::CustomAttributeClass;
+        else if (typeToken.EqualsI("StructClass"))
+            containerType = containerType | CustomAttributeContainerType::StructClass;
+        else if (typeToken.EqualsI("RelationshipClass"))
+            containerType = containerType | CustomAttributeContainerType::RelationshipClass;
+        else if (typeToken.EqualsI("AnyClass"))
+            containerType = containerType | CustomAttributeContainerType::AnyClass;
+        else if (typeToken.EqualsI("PrimitiveProperty"))
+            containerType = containerType | CustomAttributeContainerType::PrimitiveProperty;
+        else if (typeToken.EqualsI("StructProperty"))
+            containerType = containerType | CustomAttributeContainerType::StructProperty;
+        else if (typeToken.EqualsI("ArrayProperty"))
+            containerType = containerType | CustomAttributeContainerType::PrimitiveArrayProperty;
+        else if (typeToken.EqualsI("StructArrayProperty"))
+            containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
+        else if (typeToken.EqualsI("NavigationProperty"))
+            containerType = containerType | CustomAttributeContainerType::NavigationProperty;
+        else if (typeToken.EqualsI("AnyProperty"))
+            containerType = containerType | CustomAttributeContainerType::AnyProperty;
+        else if (typeToken.EqualsI("SourceRelationshipConstraint"))
+            containerType = containerType | CustomAttributeContainerType::SourceRelationshipConstraint;
+        else if (typeToken.EqualsI("TargetRelationshipConstraint"))
+            containerType = containerType | CustomAttributeContainerType::TargetRelationshipConstraint;
+        else if (typeToken.EqualsI("AnyRelationshipConstraint"))
+            containerType = containerType | CustomAttributeContainerType::AnyRelationshipConstraint;
+        else if (typeToken.EqualsI("Any"))
+            containerType = CustomAttributeContainerType::Any;
+        else
+            {
+            LOG.errorv("'%s' is not a valid CustomAttributeContainerType value.", typeToken.c_str());
+            return ECObjectsStatus::ParseError;
+            }
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
+    {
+    if (0 == directionString.length())
+        return ECObjectsStatus::ParseError;
+    if (0 == directionString.CompareToI(DIRECTION_BACKWARD))
+        direction = ECRelatedInstanceDirection::Backward;
+    else if (0 == directionString.CompareToI(DIRECTION_FORWARD))
+        direction = ECRelatedInstanceDirection::Forward;
+    else
+        return ECObjectsStatus::ParseError;
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+ECObjectsStatus SchemaParseUtils::ParseXmlFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse)
+    {
+    if (0 == stringToParse.length())
+        {
+        return ECObjectsStatus::ParseError;
+        }
+
+    Utf8String::size_type colonIndex = stringToParse.find(':');
+    if (Utf8String::npos == colonIndex)
+        {
+        alias.clear();
+        typeName = stringToParse;
+        return ECObjectsStatus::Success;
+        }
+
+    if (stringToParse.length() == colonIndex + 1)
+        {
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (0 == colonIndex)
+        alias.clear();
+    else
+        alias = stringToParse.substr(0, colonIndex);
+
+    typeName = stringToParse.substr(colonIndex + 1);
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString)
+    {
+    if (0 == modifierString.CompareToI(ECXML_MODIFIER_ABSTRACT))
+        modifier = ECClassModifier::Abstract;
+    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_SEALED))
+        modifier = ECClassModifier::Sealed;
+    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_NONE))
+        modifier = ECClassModifier::None;
+    else
+        {
+        LOG.errorv("Invalid value for Modifier attribute: %s.", modifierString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    Utf8String multiplicityWithoutSpaces = multiplicityString;
+    multiplicityWithoutSpaces.erase(std::remove_if(multiplicityWithoutSpaces.begin(), multiplicityWithoutSpaces.end(), ::isspace), multiplicityWithoutSpaces.end());
+
+    size_t openParenIndex = multiplicityWithoutSpaces.find('(');
+    if (openParenIndex == std::string::npos
+        || (openParenIndex != 0 && multiplicityWithoutSpaces.find(')') != multiplicityWithoutSpaces.length() - 1))
+        {
+        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(multiplicityWithoutSpaces.c_str(), "(%d..%d)", &lowerLimit, &upperLimit);
+    if (2 == scanned)
+        return ECObjectsStatus::Success;
+
+    if (0 == scanned)
+        {
+        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    // Otherwise, we just assume the upper limit is '*' and is unbounded
+    upperLimit = UINT_MAX;
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
+    {
+    if (typeName.empty())
+        return ECObjectsStatus::ParseError;
+
+    if (typeName.EqualsIAscii (EC_PRIMITIVE_TYPENAME_STRING))
+        primitiveType = PRIMITIVETYPE_String;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_INTEGER))
+        primitiveType = PRIMITIVETYPE_Integer;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_LONG))
+        primitiveType = PRIMITIVETYPE_Long;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOLEAN))
+        primitiveType = PRIMITIVETYPE_Boolean;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOL))
+        primitiveType = PRIMITIVETYPE_Boolean;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DOUBLE))
+        primitiveType = PRIMITIVETYPE_Double;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT2D))
+        primitiveType = PRIMITIVETYPE_Point2d;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT3D))
+        primitiveType = PRIMITIVETYPE_Point3d;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DATETIME))
+        primitiveType = PRIMITIVETYPE_DateTime;
+    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BINARY))
+        primitiveType = PRIMITIVETYPE_Binary;
+    else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_GENERIC))
+        primitiveType = PRIMITIVETYPE_IGeometry;
+    else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY))
+        primitiveType = PRIMITIVETYPE_IGeometry;
+    else
+        return ECObjectsStatus::ParseError;
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString)
+    {
+    if (0 == strengthString.length())
+        return ECObjectsStatus::ParseError;
+    if (0 == strengthString.CompareToI(STRENGTH_EMBEDDING))
+        strength = StrengthType::Embedding;
+    else if (0 == strengthString.CompareToI(STRENGTH_HOLDING))
+        strength = StrengthType::Holding;
+    else if (0 == strengthString.CompareToI(STRENGTH_REFERENCING))
+        strength = StrengthType::Referencing;
+    else
+        return ECObjectsStatus::ParseError;
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                02/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+Utf8CP SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection direction)
+    {
+    switch (direction)
+        {
+        case ECRelatedInstanceDirection::Forward:
+            return DIRECTION_FORWARD;
+        case ECRelatedInstanceDirection::Backward:
+            return DIRECTION_BACKWARD;
+        default:
+            return EMPTY_STRING;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+Utf8CP SchemaParseUtils::ModifierToXmlString(ECClassModifier modifier)
+    {
+    if (ECClassModifier::Abstract == modifier)
+        return ECXML_MODIFIER_ABSTRACT;
+    if (ECClassModifier::Sealed == modifier)
+        return ECXML_MODIFIER_SEALED;
+    return ECXML_MODIFIER_NONE;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+Utf8CP SchemaParseUtils::ModifierToJsonString(ECClassModifier modifier)
+    {
+    if (ECClassModifier::Abstract == modifier)
+        return ECJSON_MODIFIER_ABSTRACT;
+    else if (ECClassModifier::Sealed == modifier)
+        return ECJSON_MODIFIER_SEALED;
+    return ECJSON_MODIFIER_NONE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
 Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
@@ -60,45 +394,6 @@ Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
-    {
-    if (typeName.empty())
-        return ECObjectsStatus::ParseError;
-
-    if (typeName.EqualsIAscii (EC_PRIMITIVE_TYPENAME_STRING))
-        primitiveType = PRIMITIVETYPE_String;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_INTEGER))
-        primitiveType = PRIMITIVETYPE_Integer;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_LONG))
-        primitiveType = PRIMITIVETYPE_Long;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOLEAN))
-        primitiveType = PRIMITIVETYPE_Boolean;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BOOL))
-        primitiveType = PRIMITIVETYPE_Boolean;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DOUBLE))
-        primitiveType = PRIMITIVETYPE_Double;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT2D))
-        primitiveType = PRIMITIVETYPE_Point2d;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_POINT3D))
-        primitiveType = PRIMITIVETYPE_Point3d;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_DATETIME))
-        primitiveType = PRIMITIVETYPE_DateTime;
-    else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_BINARY))
-        primitiveType = PRIMITIVETYPE_Binary;
-    else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_GENERIC))
-        primitiveType = PRIMITIVETYPE_IGeometry; 
-    else if (typeName.StartsWithIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY_LEGACY))
-        primitiveType = PRIMITIVETYPE_IGeometry; 
-    else
-        return ECObjectsStatus::ParseError;
-
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
@@ -115,215 +410,6 @@ Utf8CP SchemaParseUtils::StrengthToString(StrengthType strength)
         default:
             return EMPTY_STRING;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString)
-    {
-    if (0 == strengthString.length())
-        return ECObjectsStatus::ParseError;
-    if (0 == strengthString.CompareToI(STRENGTH_EMBEDDING))
-        strength = StrengthType::Embedding;
-    else if (0 == strengthString.CompareToI(STRENGTH_HOLDING))
-        strength = StrengthType::Holding;
-    else if (0 == strengthString.CompareToI(STRENGTH_REFERENCING))
-        strength = StrengthType::Referencing;
-    else
-        return ECObjectsStatus::ParseError;
-        
-    return ECObjectsStatus::Success;
-    }
-         
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-Utf8CP SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection direction)
-    {
-    switch (direction)
-        {
-        case ECRelatedInstanceDirection::Forward:
-            return DIRECTION_FORWARD;
-        case ECRelatedInstanceDirection::Backward:
-            return DIRECTION_BACKWARD;
-        default:
-            return EMPTY_STRING;
-        }
-    }
- 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
-    {
-    if (0 == directionString.length())
-        return ECObjectsStatus::ParseError;
-    if (0 == directionString.CompareToI(DIRECTION_BACKWARD))
-        direction = ECRelatedInstanceDirection::Backward;
-    else if (0 == directionString.CompareToI(DIRECTION_FORWARD))
-        direction = ECRelatedInstanceDirection::Forward;
-    else
-        return ECObjectsStatus::ParseError;
-        
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR cardinalityString)
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    if (0 == cardinalityString.compare("1"))
-        {
-        LOG.debugv("Legacy cardinality of '1' interpreted as '(1,1)'");
-        lowerLimit = 1;
-        upperLimit = 1;
-        return status;
-        }
-        
-    if ((0 == cardinalityString.compare("UNBOUNDED")) || (0 == cardinalityString.compare("Unbounded")) ||
-             (0 == cardinalityString.compare("unbounded")) || (0 == cardinalityString.compare("n")) ||
-             (0 == cardinalityString.compare("N")))
-        {
-        LOG.debugv("Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
-        lowerLimit = 0;
-        upperLimit = UINT_MAX;
-        return status;
-        }
-    
-    Utf8String cardinalityWithoutSpaces = cardinalityString;
-    cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end());
-    size_t openParenIndex = cardinalityWithoutSpaces.find('(');
-    if (openParenIndex == std::string::npos)
-        {
-        if (0 == BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
-            return ECObjectsStatus::ParseError;
-        LOG.debugv("Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
-        lowerLimit = 0;
-        return status;
-        }
-        
-    if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
-        {
-        LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-     
-    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
-    if (2 == scanned)
-        return ECObjectsStatus::Success;
-        
-    if (0 == scanned)
-        {
-        LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-    
-    // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
-    upperLimit = UINT_MAX;
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Caleb.Shafer                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-
-    Utf8String multiplicityWithoutSpaces = multiplicityString;
-    multiplicityWithoutSpaces.erase(std::remove_if(multiplicityWithoutSpaces.begin(), multiplicityWithoutSpaces.end(), ::isspace), multiplicityWithoutSpaces.end());
-    
-    size_t openParenIndex = multiplicityWithoutSpaces.find('(');
-    if (openParenIndex == std::string::npos
-            || (openParenIndex != 0 && multiplicityWithoutSpaces.find(')') != multiplicityWithoutSpaces.length() - 1))
-        {
-        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-
-    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(multiplicityWithoutSpaces.c_str(), "(%d..%d)", &lowerLimit, &upperLimit);
-    if (2 == scanned)
-        return ECObjectsStatus::Success;
-        
-    if (0 == scanned)
-        {
-        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-
-    // Otherwise, we just assume the upper limit is '*' and is unbounded
-    upperLimit = UINT_MAX;
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity)
-    {
-    Utf8Char legacyString[32];
-
-    if (multiplicity.IsUpperLimitUnbounded())
-        BeStringUtilities::Snprintf(legacyString, "(%d,N)", multiplicity.GetLowerLimit());
-    else
-        BeStringUtilities::Snprintf(legacyString, "(%d,%d)", multiplicity.GetLowerLimit(), multiplicity.GetUpperLimit());
-
-    return legacyString;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-Utf8CP SchemaParseUtils::ModifierToXmlString(ECClassModifier modifier)
-    {
-    if (ECClassModifier::Abstract == modifier)
-        return ECXML_MODIFIER_ABSTRACT;
-    if (ECClassModifier::Sealed == modifier)
-        return ECXML_MODIFIER_SEALED;
-    return ECXML_MODIFIER_NONE;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman            11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-Utf8CP SchemaParseUtils::ModifierToJsonString(ECClassModifier modifier)
-    {
-    if (ECClassModifier::Abstract == modifier)
-        return ECJSON_MODIFIER_ABSTRACT;
-    else if (ECClassModifier::Sealed == modifier)
-        return ECJSON_MODIFIER_SEALED;
-    return ECJSON_MODIFIER_NONE;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-ECObjectsStatus SchemaParseUtils::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
-    {
-    if (0 == modifierString.CompareToI(ECXML_MODIFIER_ABSTRACT))
-        modifier = ECClassModifier::Abstract;
-    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_SEALED))
-        modifier = ECClassModifier::Sealed;
-    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_NONE))
-        modifier = ECClassModifier::None;
-    else
-        {
-        LOG.errorv("Invalid value for Modifier attribute: %s.", modifierString.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-    return ECObjectsStatus::Success;
     }
 
 static void SetOrAppendValue(Utf8StringR str, Utf8CP val)
@@ -405,101 +491,19 @@ Utf8String SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType 
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
+// @bsimethod                                   Caleb.Shafer                08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-ECObjectsStatus SchemaParseUtils::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
+Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity)
     {
-    if (Utf8String::IsNullOrEmpty(typeString.c_str()))
-        {
-        LOG.error("Unable to parse CustomAttributeContianerType from input string because it is empty");
-        return ECObjectsStatus::ParseError;
-        }
+    Utf8Char legacyString[32];
 
-    bvector<Utf8String> typeTokens;
-    BeStringUtilities::Split(typeString.c_str(), ",;|", typeTokens);
-    
-    containerType = static_cast<CustomAttributeContainerType>(0);
-
-    for (Utf8StringCR typeToken : typeTokens)
-        {
-        if (typeToken.empty())
-            continue;
-
-        if (typeToken.EqualsI("Schema"))
-            containerType = containerType | CustomAttributeContainerType::Schema;
-        else if (typeToken.EqualsI("EntityClass"))
-            containerType = containerType | CustomAttributeContainerType::EntityClass;
-        else if (typeToken.EqualsI("CustomAttributeClass"))
-            containerType = containerType | CustomAttributeContainerType::CustomAttributeClass;
-        else if (typeToken.EqualsI("StructClass"))
-            containerType = containerType | CustomAttributeContainerType::StructClass;
-        else if (typeToken.EqualsI("RelationshipClass"))
-            containerType = containerType | CustomAttributeContainerType::RelationshipClass;
-        else if (typeToken.EqualsI("AnyClass"))
-            containerType = containerType | CustomAttributeContainerType::AnyClass;
-        else if (typeToken.EqualsI("PrimitiveProperty"))
-            containerType = containerType | CustomAttributeContainerType::PrimitiveProperty;
-        else if (typeToken.EqualsI("StructProperty"))
-            containerType = containerType | CustomAttributeContainerType::StructProperty;
-        else if (typeToken.EqualsI("ArrayProperty"))
-            containerType = containerType | CustomAttributeContainerType::PrimitiveArrayProperty;
-        else if (typeToken.EqualsI("StructArrayProperty"))
-            containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
-        else if (typeToken.EqualsI("NavigationProperty"))
-            containerType = containerType | CustomAttributeContainerType::NavigationProperty;
-        else if (typeToken.EqualsI("AnyProperty"))
-            containerType = containerType | CustomAttributeContainerType::AnyProperty;
-        else if (typeToken.EqualsI("SourceRelationshipConstraint"))
-            containerType = containerType | CustomAttributeContainerType::SourceRelationshipConstraint;
-        else if (typeToken.EqualsI("TargetRelationshipConstraint"))
-            containerType = containerType | CustomAttributeContainerType::TargetRelationshipConstraint;
-        else if (typeToken.EqualsI("AnyRelationshipConstraint"))
-            containerType = containerType | CustomAttributeContainerType::AnyRelationshipConstraint;
-        else if (typeToken.EqualsI("Any"))
-            containerType = CustomAttributeContainerType::Any;
-        else
-            {
-            LOG.errorv("'%s' is not a valid CustomAttributeContainerType value.", typeToken.c_str());
-            return ECObjectsStatus::ParseError;
-            }
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-ECObjectsStatus SchemaParseUtils::ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse)
-    {
-    if (0 == stringToParse.length())
-        {
-        return ECObjectsStatus::ParseError;
-        }
-
-    Utf8String::size_type colonIndex = stringToParse.find(':');
-    if (Utf8String::npos == colonIndex)
-        {
-        alias.clear();
-        typeName = stringToParse;
-        return ECObjectsStatus::Success;
-        }
-
-    if (stringToParse.length() == colonIndex + 1)
-        {
-        return ECObjectsStatus::ParseError;
-        }
-
-    if (0 == colonIndex)
-        alias.clear();
+    if (multiplicity.IsUpperLimitUnbounded())
+        BeStringUtilities::Snprintf(legacyString, "(%d,N)", multiplicity.GetLowerLimit());
     else
-        alias = stringToParse.substr(0, colonIndex);
+        BeStringUtilities::Snprintf(legacyString, "(%d,%d)", multiplicity.GetLowerLimit(), multiplicity.GetUpperLimit());
 
-    typeName = stringToParse.substr(colonIndex + 1);
-
-    return ECObjectsStatus::Success;
+    return legacyString;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

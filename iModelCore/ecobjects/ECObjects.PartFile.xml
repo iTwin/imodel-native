@@ -10,16 +10,16 @@
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BentleyDll"              PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="GeomDlls"                PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="GeomlibsSerialization"   PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="StandardSchemasBim"      PartFile="ECStandards"  Repository="ECStandards"/>
-        <SubPart PartName="StandardSchemasV3"       PartFile="ECStandards"  Repository="ECStandards" />
-        <SubPart PartName="V3ConversionSchemas"     PartFile="ECStandards"  Repository="ECStandards"/>
-        <SubPart PartName="BeJsonCpp"               PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="UnitsNative"             PartFile="Units"        Repository="Units" />
+        <SubPart PartName="BentleyDll"              PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="GeomDlls"                PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="GeomlibsSerialization"   PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="BeXml"                   PartFile="Bentley"          Repository="Bentley"/>
+        <SubPart PartName="StandardSchemasBim"      PartFile="ECStandards"      Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasV3"       PartFile="ECStandards"      Repository="ECStandards" />
+        <SubPart PartName="V3ConversionSchemas"     PartFile="ECStandards"      Repository="ECStandards"/>
+        <SubPart PartName="BeJsonCpp"               PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="RapidJson"               PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
+        <SubPart PartName="UnitsNative"             PartFile="Units"            Repository="Units" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
@@ -92,7 +92,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
         <SubPart PartName="PublishedApi"/>
@@ -101,16 +101,25 @@
         </Bindings>
     </Part>
 
+    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
     <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
-        <SubPart PartName="UnitTests" />
+        <SubPart PartName="PublishedTests" />
+        <SubPart PartName="NonPublishedTests" />
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
     <Product Name="ECObjects-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsTest -dTEST_COLLECTION_PRODUCT=ECObjects-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">

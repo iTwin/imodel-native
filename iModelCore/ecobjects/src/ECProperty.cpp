@@ -417,7 +417,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
     PRECONDITION (NULL != isReadOnly, ECObjectsStatus::PreconditionViolated);
 
     bool bReadOnly;
-    ECObjectsStatus status = SchemaParseUtils::ParseBooleanString (bReadOnly, isReadOnly);
+    ECObjectsStatus status = SchemaParseUtils::ParseBooleanXmlString (bReadOnly, isReadOnly);
     if (ECObjectsStatus::Success != status)
         LOG.errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
     else
@@ -711,7 +711,7 @@ ECObjectsStatus resolvePropertyCategory(PropertyCategoryCP& propertyCategory, Ut
     // typeName may potentially be qualified so we must parse into an alias and short class name
     Utf8String alias;
     Utf8String propertyCategoryName;
-    if (ECObjectsStatus::Success != SchemaParseUtils::ParseFullyQualifiedName(alias, propertyCategoryName, typeName))
+    if (ECObjectsStatus::Success != SchemaParseUtils::ParseXmlFullyQualifiedName(alias, propertyCategoryName, typeName))
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return ECObjectsStatus::ParseError;

@@ -1978,7 +1978,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
     if (BEXML_Success == modifierStatus)
         {
-        if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierString(m_modifier, modifierString))
+        if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierXmlString(m_modifier, modifierString))
             {
             LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -3937,7 +3937,7 @@ ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (Utf8CP isPolymorphic
     {
     PRECONDITION (nullptr != isPolymorphic, ECObjectsStatus::PreconditionViolated);
 
-    ECObjectsStatus status = SchemaParseUtils::ParseBooleanString (m_isPolymorphic, isPolymorphic);
+    ECObjectsStatus status = SchemaParseUtils::ParseBooleanXmlString (m_isPolymorphic, isPolymorphic);
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint. Expected values are True or False", isPolymorphic);
         
