@@ -87,7 +87,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -112,11 +112,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -N0 r RoadRailPhysical</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>__ROADRAILPHYSICAL_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(SrcRoot)DgnDomains\RoadRailPhysical\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
