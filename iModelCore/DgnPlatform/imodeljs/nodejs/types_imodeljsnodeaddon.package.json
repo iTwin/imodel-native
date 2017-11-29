@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/imodeljs-${NODE_VERSION_CODE}-${PLATFORM}",
+  "name": "@bentley/types_imodeljsnodeaddon",
   "license": "UNLICENSED",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
@@ -9,5 +9,6 @@
   "author": {
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
-  }
+  },
+  "types": "./iModelJsNodeAddon.d.ts"
 }
