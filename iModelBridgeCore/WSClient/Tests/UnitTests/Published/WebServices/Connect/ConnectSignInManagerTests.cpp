@@ -34,6 +34,71 @@ void ConnectSignInManagerTests::StubUrlProviderEnvironment(UrlProvider::Environm
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, Create_AfterSignIn_NoRequestsAreSent)
+    {
+    SamlTokenPtr token = StubSamlToken();
+    auto imsClient = std::make_shared<MockImsClient>();
+
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+    manager->FinalizeSignIn();
+
+    manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_Default_DoesNotRequestNewToken)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    manager->CheckAndUpdateToken();
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_AfterSignInAndTimeoutIsLargerThanTimePassed_DoesNotRequestNewToken)
+    {
+    SamlTokenPtr token = StubSamlToken();
+    auto imsClient = std::make_shared<MockImsClient>();
+
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    manager->CheckAndUpdateToken();
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken)
+    {
+    SamlTokenPtr token = StubSamlToken();
+    auto imsClient = std::make_shared<MockImsClient>();
+
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ConnectSignInManager::Configuration config;
+    config.identityTokenRefreshRate = 0;
+    manager->Configure(config);
+    manager->CheckAndUpdateToken();
+    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction_SetsValidateCertificateForAllRequests)
