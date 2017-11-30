@@ -53,6 +53,7 @@
 
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
+
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -73,7 +74,7 @@
         <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
 
-        <!--
+      <!--
             Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
             JM: We end up with the full geocoord set on Windows and iOS due to other platform-specific parts including it. These are missing on Android, and it is suspected to cause problems. Based on the description above, I am unifying DgnPlatformDLL to use the full set, so at least we're consistent across platforms.
         -->
@@ -544,7 +545,7 @@
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
-      <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="DgnPlatform" />
+      <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="iModelJsNodeAddon" />
       <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
       <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         -->

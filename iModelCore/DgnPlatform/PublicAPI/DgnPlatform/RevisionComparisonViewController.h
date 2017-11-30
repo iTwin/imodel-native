@@ -188,6 +188,8 @@ public:
     bool WantShowOnlyCurrent() const { return kShowCurrent == m_show; }
     bool WantShowOnlyTarget() const { return kShowTarget == m_show; }
 
+    DGNPLATFORM_EXPORT void SetModelDisplay(DgnModelIdSet& modelIds, bool visible);
+    DGNPLATFORM_EXPORT void SetCategoryDisplay(DgnCategoryIdSet& categories, bool visible);
     DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
     DGNPLATFORM_EXPORT void SetFocusedElementId(DgnElementId elementId) { m_focusedElementId = elementId; SetFeatureOverridesDirty(); }
     DGNPLATFORM_EXPORT Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show flags, SymbologyCR symb=Symbology());
