@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMatrix.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -230,7 +230,10 @@ HFCMatrixRow<Columns, NumericType>::operator[](size_t pi_ColumnNumber) const
     HPRECONDITION(pi_ColumnNumber < Columns && pi_ColumnNumber >= 0);
 
     // Return constant reference to value
+#pragma warning(push)
+#pragma warning(disable: 6385)
     return (m_Values[pi_ColumnNumber]);
+#pragma warning(pop)
     }
 
 
@@ -746,7 +749,10 @@ HFCMatrix<Rows, Columns, NumericType>::operator[](size_t pi_RowNumber) const
     HPRECONDITION(pi_RowNumber < Rows && pi_RowNumber >= 0);
 
     // Return constant reference to self
+#pragma warning(push)
+#pragma warning(disable: 6385)
     return(m_Rows[pi_RowNumber]);
+#pragma warning(pop)
     }
 
 /**----------------------------------------------------------------------------
