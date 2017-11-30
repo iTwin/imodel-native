@@ -94,6 +94,12 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::GetRequiredNodes(bvector<ISca
     return _GetRequiredNodes(meshNodes, queryId);
     }
 
+BentleyStatus IScalableMeshProgressiveQueryEngine::GetRequiredTextureTiles(bvector<SMRasterTile>& rasterTiles,
+                                                                           int                    queryId)
+    {
+    return _GetRequiredTextureTiles(rasterTiles, queryId);
+    }
+
 BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
     {
     return _ClearCaching(clearRanges, scalableMeshPtr);
@@ -1826,6 +1832,56 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENT
 
     return status;
     }
+
+BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                                           int                                                   queryId) const
+    {    
+    bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr> meshNodes;
+
+    BentleyStatus status = _GetRequiredNodes(meshNodes, queryId);
+                        
+    if (status != SUCCESS)
+        return status;
+
+    bvector<DRange3d> tileRanges;
+
+    for (auto& nodes : meshNodes)
+        {
+        //tileRanges.push_back(loadNode->GetContentExtent());
+        tileRanges.push_back(nodes->GetNodeExtent());
+        }
+
+
+    RequestedQuery* requestedQueryP = 0;
+
+    for (auto& query : m_requestedQueries)
+        {
+        if (query.m_queryId == queryId)
+            {
+            requestedQueryP = &query;
+            break;
+            }
+        }    
+
+    if (requestedQueryP == 0)
+        {
+        return ERROR;
+        }
+
+
+    ScalableMesh<DPoint3d>* smP((ScalableMesh<DPoint3d>*)requestedQueryP->m_meshToQuery.get());
+
+    ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());
+
+#ifdef VANCOUVER_API
+    //s_imageppCopyFromLock.lock();
+#endif
+       
+    dataStore->ComputeRasterTiles(rasterTiles, tileRanges);
+    
+    return status;
+    }
+
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_StopQuery(int queryId)
     {
