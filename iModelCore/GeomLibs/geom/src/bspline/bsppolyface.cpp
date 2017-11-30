@@ -3357,6 +3357,11 @@ bool                                        covePatchBoundaries        /* => tru
 )
     {
     DPoint2d resolvedParamScale;
+    auto maxPerFace = options.GetMaxPerFace ();
+    auto curveMaxPerFace = options.GetCurvedSurfaceMaxPerFace ();
+    if (curveMaxPerFace > 0 && curveMaxPerFace < maxPerFace)
+        options.SetMaxPerFace(curveMaxPerFace);
+
     if (parameterScale)
         {
         DPoint2d    length;
@@ -3410,7 +3415,7 @@ bool                                        covePatchBoundaries        /* => tru
     else
         status = bspmesh_tileAndCoveSurface (&meshParams, surfaceP);
 
-
+    options.SetMaxPerFace (maxPerFace);
     return status;
     }
 
