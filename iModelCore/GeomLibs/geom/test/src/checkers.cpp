@@ -1477,7 +1477,9 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data)
     }
 void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
     {
-    auto cp = ICurvePrimitive::CreateLineString
+    ICurvePrimitivePtr cp;
+    if (markerSize > 0)
+        cp = ICurvePrimitive::CreateLineString
             (
             bvector<DPoint3d>
                 {
@@ -1487,6 +1489,8 @@ void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
                 DPoint3d::From (xyz.x , xyz.y - markerSize, xyz.z)
                 }
             );
+    else
+        cp = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (xyz, fabs (markerSize)));
 
     SaveTransformed (IGeometry::Create (cp));
     }
@@ -1572,7 +1576,7 @@ void Check::SetTransform (TransformCR transform) {s_transform = transform;}
 
 
 static int s_save = 1;
-
+static int s_noisyFiles = 0;
 void Check::ClearGeometry (char const *name)
     {
     if (s_save == 1)
@@ -1589,6 +1593,8 @@ void Check::ClearGeometry (char const *name)
         BeFile file;
         if (BeFileStatus::Success == file.Create (path.c_str (), true))
             {
+            if (s_noisyFiles)
+                printf ("%ls\n", path.c_str ());
             uint32_t bytesWritten = 0;
             Utf8String string;
             if (BentleyGeometryJson::TryGeometryToJsonString (string, s_cache, true))
@@ -1600,6 +1606,11 @@ void Check::ClearGeometry (char const *name)
 #endif
                 }
             file.Close ();
+            }
+        else
+            {
+            if (s_noisyFiles)
+                printf ("UNABLE TO OPEN FOR OUTPUT        %ls\n", path.c_str ());
             }
         }
     else if (s_save == 2)

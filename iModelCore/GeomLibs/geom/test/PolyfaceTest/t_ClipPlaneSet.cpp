@@ -222,15 +222,36 @@ TEST(ClipPlaneSet,ClassifyCurveVectorInSetDifference)
     auto crossingLine = ICurvePrimitive::CreateLine (DSegment3d::From (-2,h1,0, 10,h1,0));
     auto holeLine = ICurvePrimitive::CreateLine (DSegment3d::From (b+1, bc, 0, c-1, bc, 0));
 
-    auto cOut =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*outsideLine, outerClip, innerClip);
-    auto cIn =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*insideLine, outerClip, innerClip);
-    auto cCrossing =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*crossingLine, outerClip, innerClip);
-    auto cHole =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*holeLine, outerClip, innerClip);
+    auto cOut =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*outsideLine, outerClip, &innerClip);
+    auto cIn =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*insideLine, outerClip, &innerClip);
+    auto cCrossing =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*crossingLine, outerClip, &innerClip);
+    auto cHole =  ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*holeLine, outerClip, &innerClip);
 
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyOutside, (int)cOut, "Expect OUT");
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyInside, (int)cIn, "Expect IN");
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_Ambiguous, (int)cCrossing, "Expect CROSSING");
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_StronglyOutside, (int)cHole, "Expect OUT(hole)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClassifyRegion)
+    {
+    double a = 0.0;
+    double b0 = 5.0;
+    double b1 = 10.0;
+    double c = 20.0;
+
+    auto convexClipPoints = ConvexClipPlaneSet::FromXYBox (b0, b0, b1, b1);
+
+    ClipPlaneSet outerClip (convexClipPoints);
+
+    auto outsideBox = CurveVector::CreateRectangle (a, a, c, c, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
+
+    auto cCrossing =  ClipPlaneSet::ClassifyCurveVectorInSetDifference (*outsideBox, outerClip, nullptr, true);
+
+    Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_Ambiguous, (int)cCrossing, "Expect CROSSING");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,9 +356,9 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
             CurveVectorPtr     testCV    = testGeometry->GetAsCurveVector ();
             ClipPlaneContainment classification;
             if (testCurve.IsValid ())
-                classification = ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*testCurve, outerClip, innerClip);
+                classification = ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference (*testCurve, outerClip, &innerClip);
             else if (testCV.IsValid ())
-                classification = ClipPlaneSet::ClassifyCurveVectorInSetDifference (*testCV, outerClip, innerClip, true);    // BUT as of now we know that it ignores the region condition.
+                classification = ClipPlaneSet::ClassifyCurveVectorInSetDifference (*testCV, outerClip, &innerClip, true);    // BUT as of now we know that it ignores the region condition.
             else
                 continue;
 
@@ -350,3 +371,436 @@ TEST(ClipPlaneSet,ClassifySetDifference_ManyLines)
 
     Check::ClearGeometry ("ClipPlaneSet.ClassifySetDifference_ManyLines");
     }
+
+void PushIfDistinct (bvector<DPoint3d> &points, DPoint3dCR xyz)
+    {
+    static double s_tolerance = 1.0e-12;
+    if (points.size () == 0 || points.back ().DistanceXY (xyz) > s_tolerance)
+        points.push_back (xyz);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* On the line from pointA to pointB, evaluate each coordinate in lineCoordinates as interpolateAndPerpendicular.
+* Append to points.
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void appendToFractal (bvector<DPoint3d> &points, DPoint3dCR pointA, DPoint3dCR pointB, bvector<DPoint2d> &pattern, int numRecursion, double perpendicularFactor)
+    {
+    DPoint3d point0 = pointA;
+    PushIfDistinct (points, pointA);
+
+    for (auto &uv : pattern)
+        {
+        DPoint3d point1 = DPoint3d::FromInterpolateAndPerpendicularXY (pointA, uv.x, pointB, perpendicularFactor * uv.y);
+        if (numRecursion > 0)
+            appendToFractal (points, point0, point1, pattern, numRecursion - 1, perpendicularFactor);
+        PushIfDistinct (points, point1);
+        point0 = point1;
+        }
+    PushIfDistinct (points, pointB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Map the pattern onto each line segment in poles.
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void appendToFractal (bvector<DPoint3d> &points, bvector<DPoint3d> &poles, bvector<DPoint2d> &pattern, int numRecursion, double perpendicularFactor)
+    {
+    PushIfDistinct (points, poles[0]);
+    for (size_t i = 0; i + 1 < poles.size (); i++)
+        {
+        if (numRecursion > 0)
+            appendToFractal (points, poles[i], poles[i+1], pattern, numRecursion - 1, perpendicularFactor);
+        PushIfDistinct (points, poles[i+1]);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save the polyline data at each level of the tree.
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SaveTree (AlternatingConvexClipTreeNode const &root)
+    {
+    Check::SaveTransformed (root.m_points);
+    for (auto &child: root.m_children)
+        SaveTree (child);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* outputLevel = (0 none, 1 diagonals and scatter samples, 2 all)
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestClipper (bvector<DPoint3d> const &points, AlternatingConvexClipTreeNode &root, int outputLevel = 1)
+    {
+    bvector<double> fractions;
+    auto range = DRange3d::From (points);
+    int halfCount = 20;
+    double df = 0.8 / halfCount;
+    for (int i = -halfCount; i <= halfCount; i++)
+        fractions.push_back (0.5 - i * df);
+    auto a = range.XLength () * 0.004;
+    ClipPlane::GetEvaluationCount (true);
+    UsageSums inSum, outSum;
+    size_t id = 0;
+    static size_t s_idPeriod = 29;
+    for (auto fx : fractions)
+        {
+        for (auto fy : fractions)
+            {
+            id++;
+            auto xyz = range.LocalToGlobal (fx, fy, 0);
+            bool doOutput = outputLevel == 2
+                || (outputLevel == 1 &&
+                    DoubleOps::AlmostEqual (fabs(fx - 0.5), fabs (fy - 0.5)))
+                || (outputLevel == 1 && (id % s_idPeriod) == 0);
+            if (root.IsPointOnOrInside (xyz))
+                {
+                if (doOutput)
+                    Check::SaveTransformedMarker (xyz, a);
+                inSum.Accumulate (ClipPlane::GetEvaluationCount (true));
+                }
+            else
+                {
+                if (doOutput)
+                    Check::SaveTransformedMarker (xyz, -a);
+                outSum.Accumulate (ClipPlane::GetEvaluationCount (true));
+                }
+            }
+        }
+    size_t numTest = fractions.size () * fractions.size ();
+    printf (" ClipperTest  (polygonPoints %d) (TestPoint %d) (IN %lf avg %lf max %lf) (OUT %lf avg %lf max %lf)\n",
+            (int)points.size (),
+            (int)numTest,
+            inSum.Count (), inSum.Mean (), inSum.Max (),
+            outSum.Count (), outSum.Mean (), inSum.Max ());    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RecursveClipSets, Test1)
+    {
+    for (size_t numPoints : bvector<size_t>{5, 8, 12, 15, 23, 37, 67})
+        {
+        SaveAndRestoreCheckTransform shifter(10,0,0);
+        bvector<DPoint3d> points;
+        SampleGeometryCreator::StrokeUnitCircle (points, numPoints);
+        points.pop_back ();
+        double f0 = 0.4;
+        double f = 0.3;
+        double af = 1.4;
+        for (size_t i = 1; i < numPoints;)
+            {
+            points[i].Scale (f0);
+            if (numPoints > 10 && i + 2 < numPoints)
+                {
+                auto vector = points[i+1] - points[i];
+                points[i+1] = points[i+1] + f * vector;
+                f *= af;
+                points[i+2] = points[i+2] + f * vector;
+                if (f > 2.0)
+                    f = 0.1;
+                i += 4;
+                }
+            else
+                i += 3;
+            }
+        Check::SaveTransformed (points);
+        Check::Shift (0,5,0);
+        AlternatingConvexClipTreeNode root;
+        AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+        Check::Shift (0,5,0);
+        SaveTree (root);
+        TestClipper (points, root);
+        }
+    Check::ClearGeometry ("RecursiveClipSets.Test1");
+    }
+
+// Primary shape is a "triangle" with lower edge pushed in so it becomes a mild nonconvex quad.
+// Fractal effects are gentle.
+void NonConvexQuadSimpleFractal(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    points.clear ();
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.5, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0.6,0.1,0),
+        DPoint3d::From (1,0.1,0),
+        DPoint3d::From (0.6,1,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+void Fractal0 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    points.clear ();
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0),
+        DPoint2d::From (0.5, 0.2),
+        DPoint2d::From (0.75, -0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+void Fractal1 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    points.clear ();
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0),
+        DPoint2d::From (0.5, 0.2),
+        DPoint2d::From (0.75, -0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (2,2,0),
+        DPoint3d::From (2,3,0),
+        DPoint3d::From (0,3,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+// A fractal with fewer concavity changes...
+void Fractal2 (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    points.clear ();
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.25, 0.1),
+        DPoint2d::From (0.5, 0.15),
+        DPoint2d::From (0.75, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (1,1,0),
+        DPoint3d::From (2,2,0),
+        DPoint3d::From (2,3,0),
+        DPoint3d::From (0,3,0),
+        DPoint3d::From (0,0,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+
+// A diamond with simple wave fractal
+void FractalA (bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor)
+    {
+    points.clear ();
+    bvector<DPoint2d> pattern {
+        DPoint2d::From (0, 0),
+        DPoint2d::From (0.3, 0.1),
+        DPoint2d::From (0.5, 0.15),
+        DPoint2d::From (0.7, 0.1),
+        DPoint2d::From (1.0, 0.0)
+        };
+    bvector<DPoint3d> poles {
+        DPoint3d::From (0,-1,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (-1,0,0),
+        DPoint3d::From (0,-1,0)
+        };
+    appendToFractal (points, poles, pattern, numRecursion, perpendicularFactor);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (RecursiveClipSets,Test2)
+    {
+    for (auto perpendicularFactor : {-1.0, 1.0})
+        {
+        for (auto generatorFunction : {FractalA, Fractal0, Fractal1, Fractal2})
+            {
+            SaveAndRestoreCheckTransform shifter(0,20,0);
+            for (int numRecursion = 0; numRecursion < 4; numRecursion++)
+                {
+                SaveAndRestoreCheckTransform shifter(10,0,0);
+                bvector<DPoint3d> points;
+                generatorFunction (points, numRecursion, perpendicularFactor);
+                Check::SaveTransformed (points);
+                Check::Shift (0,5,0);
+                AlternatingConvexClipTreeNode root;
+                AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+                SaveTree (root);
+                TestClipper (points, root);
+                }
+            }
+        }
+    Check::ClearGeometry ("RecursiveClipSets.Test2");
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (RecursiveClipSets,Test3)
+    {
+    // A diamond, but with the diagonals pushed inward so no full edge of the polygon is on the hull.
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (5,0,0),
+        DPoint3d::From (2,1,0),
+        DPoint3d::From (1,2,0),
+
+        DPoint3d::From (0,5,0),
+
+        DPoint3d::From (-1,2,0),
+        DPoint3d::From (-2,1,0),
+
+        DPoint3d::From (-5,0,0),
+
+        DPoint3d::From (-2,-1,0),
+        DPoint3d::From (-1,-2,0),
+
+        DPoint3d::From (0,-5,0),
+
+        DPoint3d::From (1,-2,0),
+        DPoint3d::From (2,-1,0)
+
+        //DPoint3d::From (5,0,0),
+        };
+
+    Check::SaveTransformed (points);
+    Check::Shift (0,25,0);
+    AlternatingConvexClipTreeNode root;
+    AlternatingConvexClipTreeNode::CreateTreeForPolygon (points, root);
+    SaveTree (root);
+    TestClipper (points, root);
+    Check::ClearGeometry ("RecursiveClipSets.Test3");
+    }
+
+
+void ClipPathA (DVec3dCR shift, double scale, bvector<DPoint3d> &points)
+    {
+    points.clear ();
+    bvector<DPoint3d> clipPathA {
+        DPoint3d::From (-1,-1),
+        DPoint3d::From (0.5,-1),
+        DPoint3d::From (0.5,0.5),
+        DPoint3d::From (0.6,0.6),
+        DPoint3d::From (1.3,0.8),
+        DPoint3d::From (0.9, 1.4)
+    };
+    for (auto &xyz : clipPathA)
+        {
+        points.push_back (xyz + scale * shift);
+        }
+    }
+
+void ClipAndSave (AlternatingConvexClipTreeNode &root, ICurvePrimitiveCR curve)
+    {
+    bvector<CurveLocationDetailPair> inside, outside;
+    root.AppendCurvePrimitiveClipIntervals (curve, &inside, &outside);
+    for (auto &pair : inside)
+        {
+        auto r = curve.CloneBetweenFractions (pair.detailA.fraction, pair.detailB.fraction, true);
+        if (r.IsValid ())
+            Check::SaveTransformed (*r);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RecursiveClipSets,LineClip0)
+    {
+    bvector<DPoint3d> polygon;
+    bvector<DPoint3d> linesToClip;
+    DVec3d baseShift = DVec3d::From (-0.1, -0.1, 0);
+    for (auto perpendicularFactor : {-1.0, 1.0})
+        {
+        for (auto generatorFunction : {NonConvexQuadSimpleFractal, FractalA, Fractal0, Fractal1, Fractal2})
+            {
+            SaveAndRestoreCheckTransform shifter(50,0,0);
+            for (int depth = 0; depth < 3; depth++)
+                {
+                SaveAndRestoreCheckTransform shifter(5,0,0);
+                generatorFunction (polygon, depth, perpendicularFactor);
+                AlternatingConvexClipTreeNode root;
+                AlternatingConvexClipTreeNode::CreateTreeForPolygon (polygon, root);
+                SaveTree (root);
+
+                ClipPathA (baseShift, 0.0, linesToClip);
+                Check::SaveTransformed (linesToClip);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                for (double s : {0.0, 1.1, 2.3})
+                    {
+                    ClipPathA (baseShift, s, linesToClip);
+
+                    for (size_t i0 = 0; i0 + 1 < linesToClip.size (); i0++)
+                        {
+                        auto lineSegment = ICurvePrimitive::CreateLine (DSegment3d::From (linesToClip[i0], linesToClip[i0+1]));
+                        ClipAndSave (root, *lineSegment);
+                        }
+                    }
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                ClipPathA (baseShift, 0.0, linesToClip);
+                Check::SaveTransformed (linesToClip);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *ICurvePrimitive::CreateLineString (linesToClip));
+
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                DEllipse3d arc0 = DEllipse3d::From (
+                    0.5, 0.5, 0,
+                    0.5, 1,0,
+                    -0.2, 0.2, 0,
+                    Angle::DegreesToRadians (-120),
+                    Angle::DegreesToRadians (240));
+                auto cpArc = ICurvePrimitive::CreateArc (arc0);
+                Check::SaveTransformed (*cpArc);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *cpArc);
+
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+                        bvector<DPoint3d>{
+                        DPoint3d::From (0, -0.2),
+                        DPoint3d::From (1,0.3),
+                        DPoint3d::From (1.2, 0.8),
+                        DPoint3d::From (0.5,1.0),
+                        //DPoint3d::From (-0.1, 0.1),   // some plane cuts missed with sharp cusp?
+                        DPoint3d::From (-0.3, 0.1),
+                        //DPoint3d::From (0, 0.5),
+                        DPoint3d::From (0, 0.8),
+                        DPoint3d::From (0.5,1.3)
+                            },
+                        nullptr, nullptr,
+                        4, false, true);
+                auto cpBCurve = ICurvePrimitive::CreateBsplineCurve (bcurve);
+                Check::SaveTransformed (*cpBCurve);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *cpBCurve);
+
+
+                }
+            }
+        }
+    Check::ClearGeometry ("RecursiveClipSets.LineClip0");
+    }
+

@@ -661,6 +661,7 @@ $(OUT_DIR)ClipPlaneSet$(OUT_EXT)      : $(geomSrcPolyface)ClipPlaneSet.cpp      
 
 $(OUT_DIR)ClipPlane$(OUT_EXT)      : $(geomSrcPolyface)ClipPlane.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)AlternatingConvexClipTree$(OUT_EXT)      : $(geomSrcPolyface)AlternatingConvexClipTree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)drange1d$(OUT_EXT)      : $(geomSrcStructs)drange1d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

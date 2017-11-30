@@ -367,6 +367,9 @@ bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouet
     size_t numHalfEdge = size ();
     bvector<int> &pointIndices = mesh.PointIndex ();
     double smoothAngleMinusTolerance = smoothAngle - Angle::SmallAngle ();   // Let exact crease angles be VISIBLE !!!!
+    size_t numBoundary = 0;
+    size_t numPositiveIndex = 0;
+    size_t numNegativeIndex = 0;
     for (size_t i0 = 0, numMatch = 0; i0 < numHalfEdge; i0 += numMatch)
         {
         numMatch = 1;
@@ -380,19 +383,28 @@ bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouet
         if (numMatch != 2)
             {
             smooth = false;
+            numBoundary++;
             }
         else if (numMatch == 2 && GetNormals (i0, normalA0, normalB0))
             {
+            double thetaA0B0, thetaA0A1, thetaB0B1;
             if (smoothAngle >= 0.0)
                 {
                 // confirm acceptable angle change along this side ...
-                smooth = normalA0.AngleTo (normalB0) <= smoothAngleMinusTolerance;
+                thetaA0B0 = normalA0.AngleTo (normalB0);
+                smooth = true;
+                if (thetaA0B0 > smoothAngleMinusTolerance)
+                    smooth = false;
                 // and acceptable angle change across edge end ...
                 for (size_t i = i0 + 1; smooth && i < i0 + numMatch
                                 && GetNormals (i, normalA1, normalB1); i++)
                     {
-                    smooth   = normalA0.AngleTo (normalA1) < smoothAngleMinusTolerance
-                            && normalB0.AngleTo (normalB1) < smoothAngleMinusTolerance;
+                    thetaA0A1 = normalA0.AngleTo (normalA1);
+                    thetaB0B1 = normalB0.AngleTo (normalB1);
+                    if (thetaA0A1 > smoothAngleMinusTolerance)
+                        smooth = false;
+                    if (thetaB0B1 > smoothAngleMinusTolerance)
+                        smooth = false;
                     }
                  }
             else
@@ -428,6 +440,10 @@ bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouet
             ptrdiff_t signedVertexIndex = abs ((int)he.m_vertex0);
             if (smooth)
                 signedVertexIndex = - signedVertexIndex;
+            if (smooth)
+                numPositiveIndex++;
+            else
+                numNegativeIndex++;
             pointIndices[readIndex] = (int) signedVertexIndex;
             }
             

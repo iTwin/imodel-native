@@ -307,7 +307,7 @@ struct  ClipPlaneSet :  T_ConvexClipPlaneSets
     (
     CurveVectorCR curves,
     ClipPlaneSetCR clipSet,
-    ClipPlaneSetCR maskSet,
+    ClipPlaneSetCP maskSet,
     bool considerRegions
     );
 
@@ -320,7 +320,7 @@ struct  ClipPlaneSet :  T_ConvexClipPlaneSets
     (
     ICurvePrimitiveCR curve,
     ClipPlaneSetCR clipSet,
-    ClipPlaneSetCR maskSet
+    ClipPlaneSetCP maskSet
     );
 
 

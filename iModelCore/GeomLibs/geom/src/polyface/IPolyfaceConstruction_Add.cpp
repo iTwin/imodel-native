@@ -8,6 +8,13 @@
 #include <bsibasegeomPCH.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+// This makes all primitive-to-primitive breaks visible ... probably should be in options . ..
+static bool s_forceDoublePointsVisible = true;
+// Problem: point-to-point equality tests ... options:
+// 1) (old) use bitwise equality. But the stroking code did NOT enforce this.
+// 2) enforce equality in the stroke code
+// 3) use AlmostEqual (which uses smallAngle reltol)
+// Nov 30, 2017 EDL use AlmostEqual in IsVisibleJoint and IsSmoothClosure.
 
 void UpdateRefPoint
 (
@@ -955,9 +962,11 @@ bvector<DVec3d> &tangent
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-static bool IsSmoothClosure(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangentA, DVec3dCR tangentB)
+static bool IsSmoothClosure(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangentA, DVec3dCR tangentB, bool forceDoublePointsVisible)
     {
-    return pointA.IsEqual (pointB) && tangentA.IsParallelTo (tangentB);
+    if (forceDoublePointsVisible)
+        return false;
+    return pointA.AlmostEqual (pointB) && tangentA.IsParallelTo (tangentB);
     }
 
 
@@ -972,7 +981,7 @@ static bool IsSmoothClosure(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tange
 +--------------------------------------------------------------------------------------*/
 static bool IsVisibleJoint(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangentA, DVec3dCR tangentB, bool forceDoublePointsVisible)
     {
-    if (!pointA.IsEqual (pointB))
+    if (!pointA.AlmostEqual (pointB))
         return false;   // simple interior point within curve -- not visible
     if (forceDoublePointsVisible)
         return true;    // head-to-tail junction
@@ -3038,7 +3047,7 @@ bool capped
     bool visible0 = false;
     bool visible1 = false;
     size_t lastIndex = n - 1;
-    bool smoothClosed = IsSmoothClosure (pointA[0], pointA[lastIndex], tangentA->at(0), tangentA->at(lastIndex));
+    bool smoothClosed = IsSmoothClosure (pointA[0], pointA[lastIndex], tangentA->at(0), tangentA->at(lastIndex), s_forceDoublePointsVisible);
 
     if (dir == 1)
         ToggleIndexOrderAndNormalReversal ();
@@ -3071,7 +3080,7 @@ bool capped
             }
 
         if (i > 0 && i < n - 1)
-            visible1 = IsVisibleJoint (pointA[i], pointA[i+1], tangentA->at(i), tangentA->at(i+1), true);
+            visible1 = IsVisibleJoint (pointA[i], pointA[i+1], tangentA->at(i), tangentA->at(i+1), s_forceDoublePointsVisible);
         else
             visible1 = !smoothClosed;
 
@@ -3304,14 +3313,15 @@ bvector<DPoint3d> *endCapPointAccumulator
         normalVector.NormalizedCrossProduct (sweepVector, tangentA[i]);
         baseNormal.push_back (normalVector);
         }
-
     size_t lastIndex = n - 1;
+    if (s_forceDoublePointsVisible)
     baseCurveBreak.push_back (!IsSmoothClosure (
                 pointA[0], pointA[lastIndex],
-                tangentA[0], tangentA[lastIndex]
+                tangentA[0], tangentA[lastIndex],
+                s_forceDoublePointsVisible
                 ));
     for (size_t i = 1; i < lastIndex; i++)
-        baseCurveBreak.push_back (IsVisibleJoint (pointA[i], pointA[i+1], tangentA[i], tangentA[i+1], true));
+        baseCurveBreak.push_back (IsVisibleJoint (pointA[i], pointA[i+1], tangentA[i], tangentA[i+1], s_forceDoublePointsVisible));
 
     baseCurveBreak.push_back (baseCurveBreak[0]);
     DPoint3dOps::Multiply (&workPoint, worldToLocal);
