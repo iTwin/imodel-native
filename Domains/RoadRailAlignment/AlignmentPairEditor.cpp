@@ -12,6 +12,8 @@
 // limit intersection/ramp approach lengths to a factor of the total alignment length
 #define APPROACH_STATION_LIMIT_FACTOR 0.4
 
+#define TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED 1E-04
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     04/2016
 //
@@ -20,8 +22,13 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPVI::KValue () const
     {
+#if 0
     double G1 = AlignmentPairEditor::_Slope (poles[PVC], poles[PVI]);
     double G2 = AlignmentPairEditor::_Slope (poles[PVI], poles[PVT]);
+#else
+    double G1 = 0.0;
+    double G2 = 0.0;
+#endif
     G1 = G1* 100.0;
     G2 = G2 * 100.0;
     if (fabs (G1 - G2) == 0.0)
@@ -34,8 +41,13 @@ double AlignmentPVI::KValue () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPVI::LengthFromK (const double& kvalue)
     {
+#if 0
     double G1 = AlignmentPairEditor::_Slope (poles[PVC], poles[PVI]);
     double G2 = AlignmentPairEditor::_Slope (poles[PVI], poles[PVT]);
+#else
+    double G1 = 0.0;
+    double G2 = 0.0;
+#endif
     G1 = G1 * 100.0;
     G2 = G2 * 100.0;
     return fabs (G1 - G2) * kvalue;
@@ -43,6 +55,213 @@ double AlignmentPVI::LengthFromK (const double& kvalue)
 
 
 
+//=======================================================================================
+// AlignmentPI
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+AlignmentPI::AlignmentPI()
+    {
+#ifndef NDEBUG
+    int size = sizeof(AlignmentPI);
+    memset(this, 0xBAADF00D, size);
+#endif
+
+    m_type = TYPE_Uninitialized;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPI::InitGradeBreak(DPoint3dCR piPoint)
+    {
+    GradeBreakInfo gbInfo;
+    gbInfo.piPoint = DPoint3d::From(piPoint.x, piPoint.y, 0.0);
+
+    m_gradeBreakInfo = gbInfo;
+    m_type = TYPE_GradeBreak;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPI::InitArc(DPoint3dCR piPoint, double radius)
+    {
+    ArcInfo aInfo;
+    aInfo.arc.orientation = ORIENTATION_Unknown;
+    aInfo.arc.piPoint = DPoint3d::From(piPoint.x, piPoint.y, 0.0);
+    aInfo.arc.radius = radius;
+
+    m_arcInfo = aInfo;
+    m_type = TYPE_Arc;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPI::InitSCS(DPoint3dCR overallPI, double arcRadius, double spiralLength1, double spiralLength2)
+    {
+    SCSInfo scsInfo;
+    scsInfo.overallPI = DPoint3d::From(overallPI.x, overallPI.y, 0.0);
+    scsInfo.arc.radius = arcRadius;
+    scsInfo.arc.orientation = ORIENTATION_Unknown;
+    scsInfo.spiral1.length = spiralLength1;
+    scsInfo.spiral2.length = spiralLength2;
+
+    m_scsInfo = scsInfo;
+    m_type = TYPE_SCS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPI::InitSS(DPoint3dCR overallPI, double spiralLength)
+    {
+    SSInfo ssInfo;
+    ssInfo.overallPI = DPoint3d::From(overallPI.x, overallPI.y, 0.0);
+    ssInfo.spiral1.length = spiralLength;
+    ssInfo.spiral2.length = spiralLength;
+
+    m_ssInfo = ssInfo;
+    m_type = TYPE_SS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPI::InitInvalid(AlignmentPI::Type piType)
+    {
+    switch (piType)
+        {
+        case TYPE_Arc:
+            m_arcInfo = ArcInfo();
+            break;
+        case TYPE_SCS:
+            m_scsInfo = SCSInfo();
+            break;
+        case TYPE_SS:
+            m_ssInfo = SSInfo();
+            break;
+        case TYPE_GradeBreak:
+        default:
+            m_gradeBreakInfo = GradeBreakInfo();
+            piType = TYPE_GradeBreak;
+            break;
+        }
+    m_type = piType;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+DPoint3d AlignmentPI::GetPILocation() const
+    {
+    switch (m_type)
+        {
+        case TYPE_GradeBreak:
+            return m_gradeBreakInfo.piPoint;
+        case TYPE_Arc:
+            return m_arcInfo.arc.piPoint;
+        case TYPE_SCS:
+            return m_scsInfo.overallPI;
+        case TYPE_SS:
+            return m_ssInfo.overallPI;
+        default:
+            {
+            BeAssert(!"AlignmentPI::GetPILocation - unexpected PI type");
+            DPoint3d point;
+            point.InitDisconnect();
+            return point;
+            }
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPI::SetPILocation(DPoint3dCR piPoint)
+    {
+    switch (m_type)
+        {
+        case TYPE_GradeBreak:
+            {
+            m_gradeBreakInfo.piPoint = piPoint;
+            return true;
+            }
+        case TYPE_Arc:
+            {
+            m_arcInfo.arc.piPoint = piPoint;
+            return true;
+            }
+        case TYPE_SCS:
+            {
+            m_scsInfo.overallPI = piPoint;
+            return true;
+            }
+        case TYPE_SS:
+            {
+            m_ssInfo.overallPI = piPoint;
+            }
+        default:
+            {
+            return false;
+            }
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double AlignmentPI::GetFullTangentLength() const
+    {
+    switch (m_type)
+        {
+        case TYPE_GradeBreak:
+        case TYPE_SS:
+            return 0.0;
+        case TYPE_Arc:
+            return m_arcInfo.arc.piPoint.DistanceXY(m_arcInfo.arc.startPoint);
+        case TYPE_SCS:
+            return m_scsInfo.overallPI.DistanceXY(m_scsInfo.spiral1.startPoint);
+        default:
+            {
+            BeAssert(!"Must add case for");
+            return 0.0;
+            }
+        }
+    }
+
+
+//=======================================================================================
+// AlignmentPairEditor
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+AlignmentPairEditor::AlignmentPairEditor() :
+    T_Super()
+    {
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment) :
+    T_Super (horizontalAlignment, verticalAlignment)
+    {
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+AlignmentPairPtr AlignmentPairEditor::_Clone() const
+    {
+    return AlignmentPairEditor::Create(GetHorizontalCurveVector(), GetVerticalCurveVector());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor::_UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment)
+    {
+    T_Super::_UpdateHorizontalCurveVector(horizontalAlignment);
+    m_cachedPIs.clear();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor::_UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
+    {
+    T_Super::_UpdateVerticalCurveVector(pVerticalAlignment);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
@@ -99,7 +318,7 @@ bool AlignmentPairEditor::LoadArcData(AlignmentPI::ArcData& arc, ICurvePrimitive
     arc.piPoint = ComputePIFromPointsAndVectors(start, startTangent, end, endTangent);
     arc.centerPoint = pEllipse->center;
     arc.centerPoint.z = 0.0;
-    arc.isCcw = pEllipse->IsCCWSweepXY();
+    arc.orientation = pEllipse->IsCCWSweepXY() ? AlignmentPI::ORIENTATION_CCW : AlignmentPI::ORIENTATION_CW;
     return true;
     }
 //---------------------------------------------------------------------------------------
@@ -139,26 +358,796 @@ bool AlignmentPairEditor::LoadSpiralData(AlignmentPI::SpiralData& spiral, ICurve
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::GetLinePI(AlignmentPIR pi, size_t index) const
+    {
+    CurveVectorCR hz = GetHorizontalCurveVector();
+
+    if (index + 1 < hz.size() && hz[index + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
+        {
+        DPoint3d dummy, end;
+        hz[index]->GetStartEnd(dummy, end);
+        end.z = 0.0;
+
+        pi.InitInvalid(AlignmentPI::TYPE_GradeBreak);
+        pi.GetGradeBreakP()->piPoint = end;
+        return true;
+        }
+
+    return false;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::GetArcPI(AlignmentPIR pi, size_t primitiveIdx) const
+    {
+    pi.InitInvalid(AlignmentPI::TYPE_Arc);
+    AlignmentPI::ArcInfoP pArc = pi.GetArcP();
+
+    if (!LoadArcData(pArc->arc, *GetHorizontalCurveVector()[primitiveIdx]))
+        return false;
+
+    return true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::GetSCSPI(AlignmentPIR pi, size_t primitiveIdx) const
+    {
+    CurveVectorCR hz = GetHorizontalCurveVector();
+    if (primitiveIdx + 2 >= hz.size())
+        return false;
+
+    pi.InitInvalid(AlignmentPI::TYPE_SCS);
+    AlignmentPI::SCSInfoP pSCS = pi.GetSCSP();
+
+    if (!LoadSpiralData(pSCS->spiral1, *hz[primitiveIdx]))
+        return false;
+
+    if (!LoadArcData(pSCS->arc, *hz[primitiveIdx + 1]))
+        return false;
+
+    if (!LoadSpiralData(pSCS->spiral2, *hz[primitiveIdx + 2]))
+        return false;
+
+    pSCS->overallPI = ComputePIFromPointsAndVectors(pSCS->spiral1.startPoint, pSCS->spiral1.startVector, pSCS->spiral2.startPoint, pSCS->spiral2.startVector);
+    return true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::GetSSPI(AlignmentPIR pi, size_t primitiveIdx) const
+    {
+    CurveVectorCR hz = GetHorizontalCurveVector();
+    if (primitiveIdx + 1 >= hz.size())
+        return false;
+
+    pi.InitInvalid(AlignmentPI::TYPE_SS);
+    AlignmentPI::SSInfoP pSS = pi.GetSSP();
+
+    if (!LoadSpiralData(pSS->spiral1, *hz[primitiveIdx]))
+        return false;
+
+    if (!LoadSpiralData(pSS->spiral2, *hz[primitiveIdx + 1]))
+        return false;
+
+#if 0 //&&AG is that even required ?!
+    auto pPlacement = hz[primitiveIdx]->GetSpiralPlacementCP();
+    DSpiral2dBaseCP pSpiral = pPlacement->spiral;
+    if (0.0 != pSpiral->mCurvature1)
+        pSS->arcRadius = 1.0 / pSpiral->mCurvature1;
+    else
+        pSS->arcRadius = 0.0;
+#endif
+
+    pSS->overallPI = ComputePIFromPointsAndVectors(pSS->spiral1.startPoint, pSS->spiral1.startVector, pSS->spiral2.startPoint, pSS->spiral2.startVector);
+    return true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
+    {
+    CurveVectorCR hz = GetHorizontalCurveVector();
+    if (hz.empty())
+        return bvector<AlignmentPI>();
+
+    if (!m_cachedPIs.empty())
+        return m_cachedPIs;
+
+    DPoint3d hzStart, hzEnd;
+    hz.GetStartEnd(hzStart, hzEnd);
+    hzStart.z = hzEnd.z = 0.0;
+
+    bool isError = false;
+    bvector<AlignmentPI> pis;
+
+    // Add the start PI
+    AlignmentPI startPI;
+    startPI.InitGradeBreak(hzStart);
+    pis.push_back(startPI);
+
+    for (size_t i = 0; i < hz.size(); ++i)
+        {
+        switch (hz[i]->GetCurvePrimitiveType())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                {
+                AlignmentPI pi;
+                if (GetLinePI(pi, i))
+                    pis.push_back(pi);
+
+                //! Unlike other primitives, failure to read a Line PI isn't an error
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                {
+                AlignmentPI pi;
+                if (GetArcPI(pi, i))
+                    pis.push_back(pi);
+                else
+                    isError = true;
+
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+                {
+                if (i + 1 >= hz.size())
+                    {
+                    isError = true;
+                    break;
+                    }
+
+                ICurvePrimitive::CurvePrimitiveType nextType = hz[i + 1]->GetCurvePrimitiveType();
+                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == nextType)
+                    {
+                    if (i + 2 >= hz.size() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral != hz[i + 2]->GetCurvePrimitiveType())
+                        {
+                        isError = true;
+                        break;
+                        }
+
+                    AlignmentPI pi;
+                    if (GetSCSPI(pi, i))
+                        pis.push_back(pi);
+                    else
+                        isError = true;
+
+                    i += 2; // Skip the next 2 primitives (arc, spiral)
+                    }    
+                else if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral == nextType)
+                    {
+                    AlignmentPI pi;
+                    if (GetSSPI(pi, i))
+                        pis.push_back(pi);
+                    else
+                        isError = true;
+
+                    i += 1; // Skip the next primitive (spiral)
+                    }
+                else
+                    isError = true;
+
+                break;
+                }
+            default:
+                {
+                BeAssert(!"AlignmentPairEditorTest::GetPIs - Unexpected primitive type");
+                isError = true;
+                break;
+                }
+            }
+
+        if (isError)
+            {
+            ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::GetPIs - error");
+            return bvector<AlignmentPI>();
+            }
+        }
 
 
+    // Add the end PI unless we end with a spiral or arc
+    ICurvePrimitive::CurvePrimitiveType pType = hz.back()->GetCurvePrimitiveType();
+    DPoint3d primStart, primEnd;
+    hz.back()->GetStartEnd(primStart, primEnd);
+
+    if (!primEnd.AlmostEqualXY(hzEnd) || (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != pType && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral != pType))
+        {
+        AlignmentPI endPI;
+        endPI.InitGradeBreak(hzEnd);
+        pis.push_back(endPI);
+        }
+
+    m_cachedPIs = pis;
+    return pis;
+    }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, AlignmentPI::Orientation orientation) const
+    {
+    if (0.0 >= radius)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildArc - null or negative radius");
+        return nullptr;
+        }
+
+    const DVec3d v0 = DVec3d::FromStartEndNormalize(currPI, prevPI);
+    const DVec3d v1 = DVec3d::FromStartEndNormalize(currPI, nextPI);
+    const DVec3d poi = DVec3d::From(currPI);
+
+    // Returns angle between -pi to +pi
+    const double angle = fabs(v0.AngleToXY(v1));
+    if (0.0 == angle)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildArc - null angle");
+        return nullptr;
+        }
+
+    DVec3d bisector = DVec3d::FromSumOf(v0, v1);
+    bisector.ScaleToLength(radius / sin(0.5 * angle));
+    const DPoint3d center = DPoint3d::FromSumOf(poi, bisector);
+
+    // Compute distance from poi tangentArc
+    const double tangentArcLength = radius / tan(0.5 * angle);
+    const DPoint3d tangentArcPt = DPoint3d::FromSumOf(poi, v0, tangentArcLength);
+    const DPoint3d arcTangentPt = DPoint3d::FromSumOf(poi, v1, tangentArcLength);
+
+    if (tangentArcPt.DistanceSquaredXY(poi) > prevPI.DistanceSquaredXY(poi) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildArc - tangentArcPt validation failed");
+        return nullptr;
+        }
+    if (arcTangentPt.DistanceSquaredXY(poi) > nextPI.DistanceSquaredXY(poi) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildArc - arcTangentPt validation failed");
+        return nullptr;
+        }
+
+    DEllipse3d ellipse;
+    if (!ellipse.InitFromArcCenterStartEnd(center, tangentArcPt, arcTangentPt))
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildArc - failed to create arc");
+        return nullptr;
+        }
+
+    if (AlignmentPI::ORIENTATION_Unknown != orientation)
+        {
+        if (ellipse.IsCCWSweepXY() && AlignmentPI::ORIENTATION_CCW != orientation)
+            ellipse.ComplementSweep();
+        }
+
+    return ICurvePrimitive::CreateArc(ellipse);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+ICurvePrimitivePtr AlignmentPairEditor::BuildArc(AlignmentPI::ArcInfoCR info) const
+    {
+    return BuildArc(info.arc.startPoint, info.arc.piPoint, info.arc.endPoint, info.arc.radius, info.arc.orientation);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::BuildSCSCurve(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, double spiralLength1, double spiralLength2) const
+    {
+    if (0.0 >= radius)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - null or negative radius");
+        return nullptr;
+        }
+    if (0.0 >= spiralLength1 || 0.0 >= spiralLength2)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - null or negative spiral length");
+        return nullptr;
+        }
+
+    std::unique_ptr<DSpiral2dBase> spiralA(DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid));
+    std::unique_ptr<DSpiral2dBase> spiralB(DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid));
+    DPoint3d lineToSpiralA;
+    DPoint3d lineToSpiralB;
+    DPoint3d spiralAToArc;
+    DPoint3d spiralBToArc;
+    DEllipse3d arc;
+
+    if (false == DSpiral2dBase::LineSpiralArcSpiralLineTransition(prevPI, nextPI, currPI, radius, spiralLength1, spiralLength2,
+        *spiralA, *spiralB, lineToSpiralA, lineToSpiralB, spiralAToArc, spiralBToArc, arc))
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - failed to create SCS curve");
+        return nullptr;
+        }
+
+    // Validate that the transition is continuous by analyzing the progression of the angles
+    const DVec3d v00 = DVec3d::FromStartEnd(currPI, prevPI);
+    const DVec3d v11 = DVec3d::FromStartEnd(currPI, nextPI);
+    const DVec3d vec0 = DVec3d::FromStartEnd(currPI, spiralAToArc);
+    const DVec3d vec1 = DVec3d::FromStartEnd(currPI, spiralBToArc);
+    const DVec3d vec2 = DVec3d::FromStartEnd(currPI, lineToSpiralB);
+    const DVec3d orientation = DVec3d::FromCrossProduct (v00, v11);
+    const bool sign0 = v00.SignedAngleTo (v11, orientation) >= 0.0;
+    const bool sign1 = vec0.SignedAngleTo (vec1, orientation) >= 0.0;
+    const bool sign2 = vec1.SignedAngleTo (vec2, orientation) >= 0.0;
+    if (sign0 != sign1 || sign0 != sign2)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - validation of angle progression failed");
+        return nullptr;
+        
+        // sdevtodo - _SolveSSPI should return false in many cases...
+        //pis.at (index).curveType = AlignmentPI::HorizontalPIType::SS;
+        //return _SolveSSPI (index, pis);
+        }
+
+    if (lineToSpiralA.DistanceSquaredXY(currPI) > prevPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - lineToSpiralA validation failed");
+        return nullptr;
+        }
+    if (lineToSpiralB.DistanceSquaredXY(currPI) > nextPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - lineToSpiralB validation failed");
+        return nullptr;
+        }
+
+    // Valid solution!
+    const Transform frameA = Transform::From (lineToSpiralA);
+    const Transform frameB = Transform::From (spiralBToArc);
+
+    // SpiralB is oriented from tangentB to Arc. Reverse it to make a continuous road path (tangentA to tangentB)
+    const double theta0 = spiralB->mTheta0;
+    const double theta1 = spiralB->mTheta1;
+    const double curvature0 = spiralB->mCurvature0;
+    const double curvature1 = spiralB->mCurvature1;
+    spiralB->mTheta0 = theta1 + Angle::Pi ();
+    spiralB->mTheta1 = theta0 + Angle::Pi ();
+    spiralB->mCurvature0 = -curvature1;
+    spiralB->mCurvature1 = -curvature0;
+
+    ICurvePrimitivePtr sp1 = ICurvePrimitive::CreateSpiral (*spiralA, frameA, 0.0, 1.0);
+    ICurvePrimitivePtr sp2 = ICurvePrimitive::CreateSpiral (*spiralB, frameB, 0.0, 1.0);
+    ICurvePrimitivePtr ac = ICurvePrimitive::CreateArc(arc);
+
+    if (!sp1.IsValid() || !sp2.IsValid() || !ac.IsValid())
+        return nullptr;
+
+#define AG_POTENTIAL_USELESS_CODE 1
+#if AG_POTENTIAL_USELESS_CODE //&&AG if we run this a couple times and the asserts are never raised, we can safely remove this piece of code!
+    DPoint3d sp1Start, sp1End;
+    DPoint3d sp2Start, sp2End;
+    sp1->GetStartEnd(sp1Start, sp1End);
+    sp2->GetStartEnd(sp2Start, sp2End);
+
+    DPoint3d acStart, acEnd;
+    ac->GetStartEnd(acStart, acEnd);
+
+    BeAssert(acStart.AlmostEqualXY(sp1End));
+    BeAssert(acEnd.AlmostEqual(sp2Start));
+#endif
+
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    cv->push_back(sp1);
+    cv->push_back(ac);
+    cv->push_back(sp2);
+    return cv;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::BuildSCSCurve(AlignmentPI::SCSInfoCR info) const
+    {
+    return BuildSCSCurve(info.spiral1.startPoint, info.overallPI, info.spiral2.endPoint, info.arc.radius, info.spiral1.length, info.spiral2.length);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::BuildSSCurve(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double spiralLength) const
+    {
+    std::unique_ptr<DSpiral2dBase> spiralA(DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid));
+    std::unique_ptr<DSpiral2dBase> spiralB(DSpiral2dBase::Create(DSpiral2dBase::TransitionType_Clothoid));
+    DPoint3d lineToSpiralA;
+    DPoint3d lineToSpiralB;
+    DPoint3d spiralToSpiral;
+    double radius;
+
+    if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition(prevPI, nextPI, currPI, spiralLength,
+        *spiralA, *spiralB, lineToSpiralA, lineToSpiralB, spiralToSpiral, radius))
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSSCurve - failed to create SS curve");
+        return nullptr;
+        }
+
+    if (lineToSpiralA.DistanceSquaredXY(currPI) > prevPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSSCurve - lineToSpiralA validation failed");
+        return nullptr;
+        }
+    if (lineToSpiralB.DistanceSquaredXY(currPI) > nextPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildSSCurve - lineToSpiralB validation failed");
+        return nullptr;
+        }
+
+    // Valid solution!
+    const Transform frameA = Transform::From(lineToSpiralA);
+    const Transform frameB = Transform::From(spiralToSpiral);
+
+    // SpiralB is oriented from tangentB to Arc. Reverse it to make a continuous road path (tangentA to tangentB)
+    const double theta0 = spiralB->mTheta0;
+    const double theta1 = spiralB->mTheta1;
+    const double curvature0 = spiralB->mCurvature0;
+    const double curvature1 = spiralB->mCurvature1;
+    spiralB->mTheta0 = theta1 + Angle::Pi ();
+    spiralB->mTheta1 = theta0 + Angle::Pi ();
+    spiralB->mCurvature0 = -curvature1;
+    spiralB->mCurvature1 = -curvature0;
+
+    ICurvePrimitivePtr sp1 = ICurvePrimitive::CreateSpiral(*spiralA, frameA, 0.0, 1.0);
+    ICurvePrimitivePtr sp2 = ICurvePrimitive::CreateSpiral(*spiralB, frameB, 0.0, 1.0);
+    if (!sp1.IsValid() || !sp2.IsValid())
+        return nullptr;
+
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    cv->push_back(sp1);
+    cv->push_back(sp2);
+    return cv;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::BuildSSCurve(AlignmentPI::SSInfoCR info) const
+    {
+    return BuildSSCurve(info.spiral1.startPoint, info.overallPI, info.spiral2.endPoint, info.spiral1.length);
+    }
+
+BEGIN_UNNAMED_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+// Adds a line primitive to the curve.
+// 'lastPoint' becomes the line end point
+//---------------------------------------------------------------------------------------
+void AddLineToCurve(CurveVectorR curve, DPoint3dR lastPoint, DPoint3dCR point)
+    {
+    curve.push_back(ICurvePrimitive::CreateLine(DSegment3d::From(lastPoint, point)));
+    lastPoint = point;
+    }
+END_UNNAMED_NAMESPACE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr AlignmentPairEditor::BuildCurveVectorFromPIs(bvector<AlignmentPI> const& pis) const
+    {
+    if (pis.empty())
+        return nullptr;
+
+    CurveVectorPtr hzCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+    BeAssert(AlignmentPI::TYPE_GradeBreak == pis.front().GetType());
+    DPoint3d lastPoint = pis.front().GetGradeBreak()->piPoint;
+
+    for (int i = 1; i < pis.size(); ++i)
+        {
+        switch (pis[i].GetType())
+            {
+            case AlignmentPI::TYPE_GradeBreak:
+                {
+                AlignmentPI::GradeBreakInfoCP pGradeBreak = pis[i].GetGradeBreak();
+                AddLineToCurve(*hzCurve, lastPoint, pGradeBreak->piPoint);
+                break;
+                }
+            case AlignmentPI::TYPE_Arc:
+                {
+                ICurvePrimitivePtr primitive = BuildArc(*pis[i].GetArc());
+                if (!primitive.IsValid())
+                    return nullptr;
+
+                DPoint3d pStart, pEnd;
+                primitive->GetStartEnd(pStart, pEnd);
+
+                if (!lastPoint.AlmostEqualXY(pStart))
+                    AddLineToCurve(*hzCurve, lastPoint, pStart);
+                
+                hzCurve->push_back(primitive);
+                lastPoint = pEnd;
+                break;
+                }
+            case AlignmentPI::TYPE_SCS:
+            case AlignmentPI::TYPE_SS:
+                {
+                CurveVectorPtr curve;
+                if (AlignmentPI::TYPE_SCS == pis[i].GetType())
+                    curve = BuildSCSCurve(*pis[i].GetSCS());
+                else
+                    curve = BuildSSCurve(*pis[i].GetSS());
+
+                if (!curve.IsValid())
+                    return nullptr;
+
+                DPoint3d cStart, cEnd;
+                curve->GetStartEnd(cStart, cEnd);
+
+                if (!lastPoint.AlmostEqualXY(cStart))
+                    AddLineToCurve(*hzCurve, lastPoint, cStart);
+
+                hzCurve->AddPrimitives(*curve);
+                lastPoint = cEnd;
+                break;
+                }
+            default:
+                {
+                BeAssert(!"Must add case for!");
+                return nullptr;
+                }
+            }
+        }
+
+    if (!hzCurve->empty())
+        return hzCurve;
+
+    return nullptr;
+    }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::SolveArcPI(bvector<AlignmentPI>& pis, size_t index) const
+    {
+    if (0 == index || index + 1 >= pis.size())
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::SolveArcPI - Arc PI is first or last PI");
+        return false;
+        }
+
+    AlignmentPI::ArcInfoP pInfo = pis[index].GetArcP();
+    BeAssert(nullptr != pInfo);
+
+    const DPoint3d prevPI = pis[index - 1].GetPILocation();
+    const DPoint3d currPI = pis[index].GetPILocation();
+    const DPoint3d nextPI = pis[index + 1].GetPILocation();
+    const double radius = pInfo->arc.radius;
+    const AlignmentPI::Orientation orientation = pInfo->arc.orientation;
+
+    ICurvePrimitivePtr primitive = BuildArc(prevPI, currPI, nextPI, radius, orientation);
+    if (!primitive.IsValid())
+        return false;
+
+    // Update PI with new data
+    if (!LoadArcData(pInfo->arc, *primitive))
+        return false;
+
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
+* "fit" the SCS - potential modifications are the overall PI or the radius
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::SolveSCSPI(bvector<AlignmentPI>& pis, size_t index) const
+    {
+    if (0 == index || index + 1 >= pis.size())
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::SolveSCSPI - Spiral PI is first or last PI");
+        return false;
+        }
+
+    AlignmentPI::SCSInfoP pInfo = pis[index].GetSCSP();
+    BeAssert(nullptr != pInfo);
+
+    const DPoint3d prevPI = pis[index - 1].GetPILocation();
+    const DPoint3d currPI = pis[index].GetPILocation();
+    const DPoint3d nextPI = pis[index + 1].GetPILocation();
+    const double radius = pInfo->arc.radius;
+    const double spiralLength1 = pInfo->spiral1.length;
+    const double spiralLength2 = pInfo->spiral2.length;
+
+    CurveVectorPtr scsCurve = BuildSCSCurve(prevPI, currPI, nextPI, radius, spiralLength1, spiralLength2);
+    if (!scsCurve.IsValid())
+        return false;
+
+    // Update PI with new data
+    if (!LoadSpiralData(pInfo->spiral1, *scsCurve->at(0)))
+        return false;
+
+    if (!LoadArcData(pInfo->arc, *scsCurve->at(1)))
+        return false;
+
+    if (!LoadSpiralData(pInfo->spiral2, *scsCurve->at(2)))
+        return false;
+
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     10/2015
+* overall PI changed or Length change
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::SolveSSPI(bvector<AlignmentPI>& pis, size_t index) const
+    {
+    if (0 == index || index + 1 >= pis.size())
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::SolveSSPI - Spiral PI is first or last PI");
+        return false;
+        }
+
+    AlignmentPI::SSInfoP pInfo = pis[index].GetSSP();
+    BeAssert(nullptr != pInfo);
+
+    if (0.0 >= pInfo->spiral1.length)
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::SolveSSPI - Null or negative spiral length");
+        return false;
+        }
+
+    const DPoint3d prevPI = pis[index - 1].GetPILocation();
+    const DPoint3d currPI = pis[index].GetPILocation();
+    const DPoint3d nextPI = pis[index + 1].GetPILocation();
+    const double spiralLength = pInfo->spiral1.length;
+
+    CurveVectorPtr ssCurve = BuildSSCurve(prevPI, currPI, nextPI, spiralLength);
+    if (!ssCurve.IsValid())
+        return false;
+
+    // Update PI with new data
+    if (!LoadSpiralData(pInfo->spiral1, *ssCurve->at(0)))
+        return false;
+
+    if (!LoadSpiralData(pInfo->spiral2, *ssCurve->at(1)))
+        return false;
+    
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::_SolvePI(bvector<AlignmentPI>& pis, size_t index) const
+    {
+    if (index >= pis.size())
+        {
+        ROADRAILALIGNMENT_LOGE("AlignmentPairEditor::_SolvePI - index out of bounds");
+        return false;
+        }
+
+    switch (pis[index].GetType())
+        {
+        case AlignmentPI::TYPE_GradeBreak:
+            return true;
+        case AlignmentPI::TYPE_Arc:
+            return SolveArcPI(pis, index);
+        case AlignmentPI::TYPE_SCS:
+            return SolveSCSPI(pis, index);
+        case AlignmentPI::TYPE_SS:
+            {
+            //&&AG ask Scott. Previously, this code was always trying to solve a SCS before attempting to solve a SS.
+            // and if that SCS failed, then we'd be trying for SS.
+            // Was that meant only for road?
+
+            return SolveSSPI(pis, index);
+            }
+        default:
+            {
+            ROADRAILALIGNMENT_LOGE("AlignmentPairEditor::_SolvePI - invalid type");
+            return true;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::_ValidatePIs(bvector<AlignmentPI> const& pis) const
+    {
+    for (size_t i = 0; i < pis.size() - 1; ++i)
+        {
+        const double piDistance = pis[i].GetPILocation().DistanceXY(pis[i + 1].GetPILocation());
+        const double sumTangentLengths = pis[i].GetFullTangentLength() + pis[i + 1].GetFullTangentLength();
+        if (0.0 == piDistance || piDistance < sumTangentLengths)
+            return false;
+        }
+    return true;
+    }
 
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentPairEditorPtr AlignmentPairEditor::Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment)
+    {
+    return new AlignmentPairEditor(horizontalAlignment, pVerticalAlignment);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentPairEditorPtr AlignmentPairEditor::Create (AlignmentPairCR pair)
+    {
+    return AlignmentPairEditor::Create(pair.GetHorizontalCurveVector(), pair.GetVerticalCurveVector());
+    }
 
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditorPtr AlignmentPairEditor::Create (CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment)
+CurveVectorPtr AlignmentPairEditor::InsertPI(AlignmentPICR pi) const
     {
-    return new AlignmentPairEditor (horizontalAlignment, verticalAlignment);
+    if (!pi.IsInitialized())
+        return nullptr;
+
+    // Find the index to insert this point
+    bvector<AlignmentPI> pis = GetPIs();
+    if (2 > pis.size())
+        return nullptr;
+
+    // first find nearest point
+    size_t nearestIndex = 0;
+    double distance = DBL_MAX;
+
+    const DPoint3d piLocation = pi.GetPILocation();
+
+    for (size_t i = 0; i < pis.size (); ++i)
+        {
+        const double testDistance = piLocation.DistanceSquaredXY(pis[i].GetPILocation());
+        if (testDistance < distance)
+            {
+            nearestIndex = i;
+            distance = testDistance;
+            }
+        }
+
+    if (DBL_MAX == distance || 0.0 == distance)
+        return nullptr;
+
+    size_t index;
+    // test the direction...
+    if (nearestIndex == 0)
+        index = 1;
+    else if (nearestIndex == (pis.size() - 1))
+        index = pis.size () - 1;
+    else
+        {
+        const double newPiDistFromStart = HorizontalDistanceAlongFromStart(piLocation);
+        const double nearestDistFromStart = HorizontalDistanceAlongFromStart(pis[nearestIndex].GetPILocation(), nullptr);
+        index = (newPiDistFromStart < nearestDistFromStart) ? nearestIndex : nearestIndex + 1;
+        }
+
+    return InsertPI(pi, index);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr AlignmentPairEditor::InsertPI(AlignmentPICR pi, size_t index) const
+    {
+    if (!pi.IsInitialized())
+        return nullptr;
+
+    bvector<AlignmentPI> pis = GetPIs();
+    if (2 > pis.size())
+        return nullptr;
+
+    pis.insert(pis.begin () + index, pi);
+
+    if (0 < index && !_SolvePI(pis, index - 1))
+        return nullptr;
+
+    if (!_SolvePI(pis, index))
+        return nullptr;
+
+    if (index + 1 < pis.size() && !_SolvePI(pis, index + 1))
+        return nullptr;
+
+    if (_ValidatePIs(pis))
+        {
+        CurveVectorPtr hzGeom = BuildCurveVectorFromPIs(pis);
+        if (hzGeom.IsValid ())
+            return hzGeom;
+        }
+    return nullptr;
     }
 
+
+
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -169,15 +1158,6 @@ AlignmentPairEditorPtr AlignmentPairEditor::CreateFromSingleCurveVector (CurveVe
         return roadAlignment;
     return nullptr;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditorPtr AlignmentPairEditor::Create (AlignmentPairCR pair)
-    {
-    return new AlignmentPairEditor(pair.GetHorizontalCurveVector(), pair.GetVerticalCurveVector());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -207,14 +1187,6 @@ AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR vertical, bool inXY)
     UpdateCurveVectors (*hz, vt.get ());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment) :
-    T_Super (horizontalAlignment, verticalAlignment)
-    {
-
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     10/2015
@@ -222,8 +1194,8 @@ AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR horizontalAlignment, Cur
 bool AlignmentPairEditor::_GenerateFromSingleVector (CurveVectorCR curveVector)
     {
     UpdateCurveVectors (curveVector, nullptr);
-    bvector<AlignmentPI> pis = _GetPIs (); // flatten to zero;
-    CurveVectorPtr hzAlign = _BuildVectorFromPIS (pis);
+    bvector<AlignmentPI> pis = GetPIs(); // flatten to zero;
+    CurveVectorPtr hzAlign = BuildCurveVectorFromPIs(pis);
     if (!hzAlign.IsValid ()) return false;
 
     UpdateCurveVectors (*hzAlign, nullptr);
@@ -282,7 +1254,7 @@ bool AlignmentPairEditor::_ValidatePIs (bvector<AlignmentPI> const& pis)
     {
     for (size_t i = 0; i < pis.size () - 1; i++)
         {
-        if (pis.at (i).location.DistanceXY (pis.at (i + 1).location) <
+        if (pis.at(i).GetPILocation().DistanceXY(pis.at(i + 1).GetPILocation()) <
             ( _FullTangentLength (pis.at (i)) + _FullTangentLength (pis.at (i + 1)) ))
             return false;
         }
@@ -297,232 +1269,76 @@ bool AlignmentPairEditor::_ValidateMove (size_t index, DPoint3d toPt, bvector<Al
     if (pis.size () <= 1) return false;
     if (index == 0)
         {
-        if (pis.at (index + 1).location.DistanceXY (toPt) < _FullTangentLength (pis.at (index + 1)))
+        if (pis.at(index + 1).GetPILocation().DistanceXY(toPt) < _FullTangentLength(pis.at(index + 1)))
             return false;
         }
     else if (index == ( pis.size () - 1 )) // end point
         {
-        if (pis.at (index - 1).location.DistanceXY (toPt) < _FullTangentLength (pis.at (index - 1)))
+        if (pis.at(index - 1).GetPILocation().DistanceXY(toPt) < _FullTangentLength(pis.at(index - 1)))
             return false;
         }
     else
         {
-        if (pis.at (index - 1).location.DistanceXY (toPt) <
+        if (pis.at(index - 1).GetPILocation().DistanceXY(toPt) <
             ( _FullTangentLength (pis.at (index)) + _FullTangentLength (pis.at (index - 1)) ))
             return false;
-        if (pis.at (index + 1).location.DistanceXY (toPt) <
+        if (pis.at(index + 1).GetPILocation().DistanceXY(toPt) <
             ( _FullTangentLength (pis.at (index)) + _FullTangentLength (pis.at (index + 1)) ))
             return false;
         }
 
     return true;
     }
+#endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AlignmentPairEditor::_SolveArcPI (size_t index, bvector<AlignmentPI>& pis)
-    {
-    if (index == 0 || index == ( pis.size () - 1 )) return ERROR;
-    //    const DVec3d v0 = DVec3d::FromStartEnd (pis.at (index).location, pis.at (index - 1).location);
-    const DVec3d v0_norm = DVec3d::FromStartEndNormalize (pis.at (index).location, pis.at (index - 1).location);
-    const DVec3d v1_norm = DVec3d::FromStartEndNormalize (pis.at (index).location, pis.at (index + 1).location);
-    const DVec3d poi = DVec3d::From (pis.at (index).location);
-
-    const double angle = fabs (v0_norm.AngleToXY (v1_norm));
-    DVec3d bisector = DVec3d::FromSumOf (v0_norm, v1_norm);
-    bisector.ScaleToLength (pis.at (index).arc.radius / sin (angle / 2.0));
-    const double tgArcLen = ( pis.at (index).arc.radius / tan (angle / 2.0) );
-    DVec3d tangentArc = v0_norm;
-    tangentArc.ScaleToLength (tgArcLen);
-    tangentArc.Add (poi);
-
-    DVec3d arcTangent = v1_norm;
-    arcTangent.ScaleToLength (tgArcLen);
-    arcTangent.Add (poi);
-
-    const DVec3d center = DVec3d::FromSumOf (bisector, poi);
-
-    DEllipse3d ellipse;
-    if (!ellipse.InitFromArcCenterStartEnd (center, tangentArc, arcTangent))
-        return ERROR;
-    ICurvePrimitivePtr primitive = ICurvePrimitive::CreateArc (ellipse);
-
-    if (!LoadArcData(pis[index].arc, *primitive))
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-*
-* "fit" the SCS - potential modifications are the overall PI or the radius
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AlignmentPairEditor::_SolveSpiralPI (size_t index, bvector<AlignmentPI>& pis)
-    {
-    if (index == 0 || index == ( pis.size () - 1 )) return ERROR;
-    DPoint3d  lineToSpiralA;
-    DPoint3d  lineToSpiralB;
-    DPoint3d  spiralAToArc;
-    DPoint3d  spiralBToArc;
-    DEllipse3d arc;
-
-    DSpiral2dBaseP spiralA = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
-    DSpiral2dBaseP spiralB = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
-
-    if (false == DSpiral2dBase::LineSpiralArcSpiralLineTransition (pis.at(index-1).location,
-        pis.at(index+1).location, pis.at(index).location, pis.at(index).arc.radius, pis.at(index).spiral1.length,
-        pis.at(index).spiral2.length, *spiralA, *spiralB, lineToSpiralA, lineToSpiralB, spiralAToArc, spiralBToArc, arc))
-        return ERROR;
-
-    // Validate that the transition is continuous by analyzing the progression of the angles
-    const DVec3d v00 = DVec3d::FromStartEnd (pis.at(index).location, pis.at(index-1).location);
-    const DVec3d v11 = DVec3d::FromStartEnd (pis.at(index).location, pis.at(index+1).location);
-    const DVec3d vec0 = DVec3d::FromStartEnd (pis.at (index).location, spiralAToArc);
-    const DVec3d vec1 = DVec3d::FromStartEnd (pis.at (index).location, spiralBToArc);
-    const DVec3d vec2 = DVec3d::FromStartEnd (pis.at (index).location, lineToSpiralB);
-    const DVec3d orientation = DVec3d::FromCrossProduct (v00, v11);
-    const bool sign0 = v00.SignedAngleTo (v11, orientation) >= 0.0;
-    const bool sign1 = vec0.SignedAngleTo (vec1, orientation) >= 0.0;
-    const bool sign2 = vec1.SignedAngleTo (vec2, orientation) >= 0.0;
-    if (sign0 != sign1 || sign0 != sign2)
-        {
-        return ERROR; // sdevtodo - _SolveSSPI should return false in many cases...
-        //pis.at (index).curveType = AlignmentPI::HorizontalPIType::SS;
-        //return _SolveSSPI (index, pis);
-        }
-    const double fractionA = 0;
-    const double fractionB = 1;
-    const Transform frameA = Transform::From (lineToSpiralA);
-    const Transform frameB = Transform::From (spiralBToArc);
-
-    // SpiralB is oriented from tangentB to Arc. Reverse it to make a continuous road path (tangentA to tangentB)
-    const double theta0 = spiralB->mTheta0;
-    const double theta1 = spiralB->mTheta1;
-    const double curvature0 = spiralB->mCurvature0;
-    const double curvature1 = spiralB->mCurvature1;
-    spiralB->mTheta0 = theta1 + Angle::Pi ();
-    spiralB->mTheta1 = theta0 + Angle::Pi ();
-    spiralB->mCurvature0 = -curvature1;
-    spiralB->mCurvature1 = -curvature0;
-
-    DPoint3d start, end;
-    ICurvePrimitivePtr sp1 = ICurvePrimitive::CreateSpiral (*spiralA, frameA, fractionA, fractionB);
-    ICurvePrimitivePtr sp2 = ICurvePrimitive::CreateSpiral (*spiralB, frameB, fractionA, fractionB);
-    ICurvePrimitivePtr ac = ICurvePrimitive::CreateArc (arc);
-    ac->GetStartEnd (start, end);
-    pis.at (index).arc.startPoint = start;
-    pis.at (index).arc.endPoint = end;
-
-    if (!LoadSpiralData(pis[index].spiral1, *sp1))
-        return ERROR;
-
-    if (!LoadArcData(pis[index].arc, *ac))
-        return ERROR;
-
-    if (!LoadSpiralData(pis[index].spiral2, *sp2))
-        return ERROR;
-
-    delete spiralA;
-    delete spiralB;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     10/2015
-* overall PI changed or Length change
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AlignmentPairEditor::_SolveSSPI (size_t index, bvector<AlignmentPI>& pis)
-    {
-    if (index == 0 || index == ( pis.size () - 1 )) return ERROR;
-    double resultRadius;
-    DPoint3d  lineToSpiralA;
-    DPoint3d  lineToSpiralB;
-    DPoint3d  spiralAToArc;
-
-    DSpiral2dBaseP spiralA = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
-    DSpiral2dBaseP spiralB = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
-
-    if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (pis.at (index-1).location,
-        pis.at (index+1).location, pis.at (index).location, pis.at (index).spiral1.length, *spiralA, *spiralB,
-        lineToSpiralA, lineToSpiralB, spiralAToArc, resultRadius))
-        return ERROR;  // could look at an automatic conversion to SCS
-
-    const double fractionA = 0;
-    const double fractionB = 1;
-    const Transform frameA = Transform::From (lineToSpiralA);
-
-    // SpiralB is oriented from tangentB to Arc. Reverse it to make a continuous road path (tangentA to tangentB)
-    const double theta0 = spiralB->mTheta0;
-    const double theta1 = spiralB->mTheta1;
-    const double curvature0 = spiralB->mCurvature0;
-    const double curvature1 = spiralB->mCurvature1;
-    spiralB->mTheta0 = theta1 + Angle::Pi ();
-    spiralB->mTheta1 = theta0 + Angle::Pi ();
-    spiralB->mCurvature0 = -curvature1;
-    spiralB->mCurvature1 = -curvature0;
-
-    ICurvePrimitivePtr sp1 = ICurvePrimitive::CreateSpiral (*spiralA, frameA, fractionA, fractionB);
-    const Transform frameB = Transform::From (spiralAToArc);
-    ICurvePrimitivePtr sp2 = ICurvePrimitive::CreateSpiral (*spiralB, frameB, fractionA, fractionB);
-
-    if (!LoadSpiralData(pis[index].spiral1, *sp1))
-        return ERROR;
-
-    if (!LoadSpiralData(pis[index].spiral2, *sp2))
-        return ERROR;
-
-    delete spiralA;
-    delete spiralB;
-
-    return SUCCESS;
-    }
-
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AlignmentPairEditor::_SolvePI (size_t index, bvector<AlignmentPI>& pis)
     {
-    if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::ARC)
-        return _SolveArcPI (index, pis);
+    if (pis.at(index).curveType == AlignmentPI::HorizontalPIType::ARC)
+        {
+        if (SolveArcPI(pis, index))
+            return SUCCESS;
+
+        return ERROR;
+        }
     else if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::SCS)
-        return _SolveSpiralPI (index, pis);
+        {
+        if (SolveSCSPI(pis, index))
+            return SUCCESS;
+
+        return ERROR;
+        }
     else if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::SS)
         {
-        StatusInt retVal;
         pis.at (index).curveType = AlignmentPI::HorizontalPIType::SCS;
-        if (( retVal = _SolveSpiralPI (index, pis)) == SUCCESS )
-            return retVal;
+
+        if (SolveSCSPI(pis, index))
+            return SUCCESS;
+
         pis.at (index).curveType = AlignmentPI::HorizontalPIType::SS;
-        return _SolveSSPI (index, pis);
+        if (SolveSSPI(pis, index))
+            return SUCCESS;
+
+        return ERROR;
         }
     else
         return SUCCESS;
     }
-
+#endif
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::_FullTangentLength (AlignmentPICR pi)
     {
-    switch (pi.curveType)
-        {
-            case AlignmentPI::HorizontalPIType::ARC:
-                {
-                return pi.location.DistanceXY (pi.arc.startPoint);
-                }
-                break;
-            case AlignmentPI::HorizontalPIType::SCS:
-                {
-                return pi.location.DistanceXY (pi.spiral1.startPoint);
-                }
-                break;
-        }
-    return 0.0;
+    return pi.GetFullTangentLength();
     }
 
+#endif
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -546,7 +1362,7 @@ ICurvePrimitivePtr AlignmentPairEditor::CreateSpiralPrimitive (AlignmentPI::Spir
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AlignmentPairEditor::GetAlignmentPIs (bvector<AlignmentPI>& pis)
     {
-    pis = _GetPIs ();
+    pis = GetPIs();
     return SUCCESS;
     }
 
@@ -555,7 +1371,7 @@ StatusInt AlignmentPairEditor::GetAlignmentPIs (bvector<AlignmentPI>& pis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AlignmentPairEditor::GetAlignmentPI (size_t index, AlignmentPI& pi)
     {
-    auto pis = _GetPIs ();
+    auto pis = GetPIs();
     if (index < pis.size())
         {
         pi = pis.at(index);
@@ -563,128 +1379,6 @@ StatusInt AlignmentPairEditor::GetAlignmentPI (size_t index, AlignmentPI& pi)
         }
 
     return ERROR;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<AlignmentPI> AlignmentPairEditor::_GetPIs ()
-    {
-    CurveVectorCR hzCurve = GetHorizontalCurveVector();
-
-    bvector<AlignmentPI> pis;
-    DPoint3d startPt, endPt;
-    hzCurve.GetStartEnd(startPt, endPt);
-    startPt.z = 0.0; endPt.z = 0.0;
-    AlignmentPI startPI (startPt);
-    pis.push_back (startPI);
-    bool addEndPI = true;
-    for (int i = 0; i < hzCurve.size(); i++)
-        {
-        switch (hzCurve[i]->GetCurvePrimitiveType())
-            {
-            // unless should be that only Arcs have PIs,
-            // will be a simple PI unless, we have an SCS
-            // situation, in which case we can iterate it on
-            // the first spiral that we come to
-            // 9/30 we need to support PIs that were inserted
-                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-                    // only in a line/line situation
-                    if (i < hzCurve.size() - 1) // Not last
-                        {
-                        if (hzCurve[i + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
-                            {
-                            DPoint3d start, end;
-                            hzCurve[i]->GetStartEnd(start, end);
-                            start.z = 0.0; end.z = 0.0;
-                            AlignmentPI piPt;
-                            piPt.curveType = AlignmentPI::HorizontalPIType::NONE;
-                            piPt.location = end;
-
-                            pis.push_back (piPt);
-                            }
-                        }
-                    break;
-                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-                    {
-                    AlignmentPI piPt;
-
-                    if (!LoadArcData(piPt.arc, *hzCurve[i]))
-                        return bvector<AlignmentPI>();
-                    
-                    piPt.location = piPt.arc.piPoint; //&&AG FIX this. we shouldn't have to put the piPoint in two different member variable
-                    piPt.curveType = AlignmentPI::HorizontalPIType::ARC;
-                    pis.push_back (piPt);
-
-                    if (piPt.arc.endPoint.AlmostEqualXY (endPt))
-                        addEndPI = false;
-                    }
-                    break;
-                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-                    {
-                    // see if it's ss or SCS
-                    if (i >= hzCurve.size() - 1) break; //ack!
-                    if (hzCurve[i + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral)
-                        {
-                        AlignmentPI piPt;
-                        piPt.curveType = AlignmentPI::HorizontalPIType::SS;
-
-                        if (!LoadSpiralData(piPt.spiral1, *hzCurve[i]))
-                            return bvector<AlignmentPI>();
-
-                        auto placementSpiral = hzCurve[i]->GetSpiralPlacementCP();
-                        DSpiral2dBaseP spiral = placementSpiral->spiral;
-                        i++;
-
-                        if (!LoadSpiralData(piPt.spiral2, *hzCurve[i]))
-                            return bvector<AlignmentPI>();
-
-                        piPt.location = ComputePIFromPointsAndVectors(piPt.spiral1.startPoint, piPt.spiral1.startVector, piPt.spiral2.startPoint, piPt.spiral2.startVector);
- 
-                        if (spiral->mCurvature1 != 0.0)
-                            {
-                            piPt.arc.radius = 1.0 / spiral->mCurvature1;
-                            }
-                        pis.push_back (piPt);
-                        if (piPt.spiral2.endPoint.AlmostEqualXY (endPt))
-                            addEndPI = false;
-                        }
-                    else
-                        {
-                        // use 3 primitives as we only support SCS
-                        // can get the overall PI 
-                        AlignmentPI piPt;
-                        piPt.curveType = AlignmentPI::HorizontalPIType::SCS;
-
-                        if (!LoadSpiralData(piPt.spiral1, *hzCurve[i]))
-                            return bvector<AlignmentPI>();
-
-                        i++;
-
-                        if (!LoadArcData(piPt.arc, *hzCurve[i]))
-                            return bvector<AlignmentPI>();
-
-                        i++;
-
-                        if (!LoadSpiralData(piPt.spiral2, *hzCurve[i]))
-                            return bvector<AlignmentPI>();
-
-                        // compute the "overall" PI
-                        piPt.location = ComputePIFromPointsAndVectors(piPt.spiral1.startPoint, piPt.spiral1.startVector, piPt.spiral2.startPoint, piPt.spiral2.startVector);
-
-                        pis.push_back (piPt);
-                        if (piPt.spiral2.endPoint.AlmostEqualXY (endPt))
-                            addEndPI = false;
-                        }
-                    }
-                    break;
-            }
-        }
-    if (addEndPI)
-        pis.push_back (endPt);
-
-    return pis;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -696,13 +1390,13 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
     switch (pi.curveType)
         {
             case AlignmentPI::HorizontalPIType::NONE:
-                lastPoint = pi.location;
+                lastPoint = pi.GetPILocation();
                 return true;
             case AlignmentPI::HorizontalPIType::ARC:
                 {
                 DEllipse3d ell = DEllipse3d::FromArcCenterStartEnd (pi.arc.centerPoint,
                                                                     pi.arc.startPoint, pi.arc.endPoint);
-                if (!ell.IsCCWSweepXY() && pi.arc.isCcw)
+                if (!ell.IsCCWSweepXY() && pi.arc.isCCW)
                     ell.ComplementSweep();
 
                 hvec.Add (ICurvePrimitive::CreateArc (ell));
@@ -721,7 +1415,7 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
                 DSpiral2dBaseP spiralB = DSpiral2dBase::Create (DSpiral2dBase::TransitionType_Clothoid);
 
                 if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (pi.spiral1.startPoint,
-                    pi.spiral2.endPoint, pi.location, pi.spiral1.length, *spiralA, *spiralB,
+                    pi.spiral2.endPoint, pi.GetPILocation(), pi.spiral1.length, *spiralA, *spiralB,
                     lineToSpiralA, lineToSpiralB, spiralAToArc, resultRadius))
                     break;
 
@@ -783,7 +1477,6 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
         }
     return false;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -803,8 +1496,8 @@ CurveVectorPtr AlignmentPairEditor::_BuildVectorFromPIS (bvector<AlignmentPI> co
                     { // just do the back tangent, unless next is none also..
                     horizontalAlignment->Add (
                         ICurvePrimitive::CreateLine (
-                        DSegment3d::From (lastPoint, pis.at (i).location)));
-                    lastPoint = pis.at (i).location;
+                        DSegment3d::From(lastPoint, pis.at(i).GetPILocation())));
+                    lastPoint = pis.at(i).GetPILocation();
                     }
                     break;
                 case AlignmentPI::HorizontalPIType::ARC:
@@ -836,6 +1529,11 @@ CurveVectorPtr AlignmentPairEditor::_BuildVectorFromPIS (bvector<AlignmentPI> co
         }
     return horizontalAlignment;
     }
+#endif
+
+
+
+#if 0
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
@@ -1101,12 +1799,12 @@ CurveVectorPtr AlignmentPairEditor::MovePI (size_t index, DPoint3d toPt, Alignme
     bvector<AlignmentPI> pis;
 
     if (NULL == pisP)
-        pis = _GetPIs();
+        pis = GetPIs();
     else
         pis = *pisP;
 
     // !!!! special case, not the beginning or end!
-    DPoint3d cachePt = pis.at (index).location;
+    DPoint3d cachePt = pis.at(index).GetPILocation();
     if (index != 0 && index != pis.size () - 1) 
         {
         if (minRadius > 0.0)
@@ -1116,7 +1814,7 @@ CurveVectorPtr AlignmentPairEditor::MovePI (size_t index, DPoint3d toPt, Alignme
                 pis.at (index).location = toPt;
                 pis.at (index).curveType = piType;
                 pis.at (index).arc.radius = minRadius;
-                if (_SolvePI (index, pis) == ERROR)
+                if (!_SolvePI(pis, index))
                     {
                     pis.at (index).curveType = AlignmentPI::NONE;
                     pis.at (index).arc.radius = 0.0;
@@ -1132,26 +1830,27 @@ CurveVectorPtr AlignmentPairEditor::MovePI (size_t index, DPoint3d toPt, Alignme
         }
 
     pis.at (index).location = toPt;
-    StatusInt retCode = SUCCESS;
+    bool success = true;
     if (index == 0) // special...
         {
-        retCode = _SolvePI (index + 1, pis);
+        success = _SolvePI(pis, index + 1);
         }
     else if (index == pis.size () - 1) // end point,special
         {
-        retCode = _SolvePI (index - 1, pis);
+        success = _SolvePI(pis, index - 1);
         }
     else
         {
-        if (( retCode = _SolvePI (index, pis) ) == SUCCESS)
-            {
-            if (( retCode = _SolvePI (index - 1, pis) ) == SUCCESS)
-                {
-                retCode = _SolvePI (index + 1, pis);
-                }
-            }
+        success = _SolvePI(pis, index);
+
+        if (success)
+            success = _SolvePI(pis, index - 1);
+
+        if (success)
+            success = _SolvePI(pis, index + 1);
         }
-    if (retCode != SUCCESS)
+
+    if (true != success)
         return nullptr;
 
     if (_ValidatePIs (pis) == false)
@@ -1161,7 +1860,7 @@ CurveVectorPtr AlignmentPairEditor::MovePI (size_t index, DPoint3d toPt, Alignme
         }
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs(pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1172,40 +1871,40 @@ CurveVectorPtr AlignmentPairEditor::MovePI (size_t index, DPoint3d toPt, Alignme
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::MovePC (size_t index, DPoint3d toPt, AlignmentPIR outPi)
     { 
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::NONE || pis.at (index).arc.radius == 0.0) return nullptr;
     if (index == 0 || index >= ( pis.size () - 1 )) return nullptr; // todo start and end?
 
     // validate that this will fit
-    double tangentLength = toPt.DistanceXY (pis.at (index).location);
-    double fullLength = pis.at (index).location.DistanceXY (pis.at (index - 1).location);
+    double tangentLength = toPt.DistanceXY(pis.at(index).GetPILocation());
+    double fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index - 1).GetPILocation());
     double prevtangent = 0.0;
     if (pis.at (index-1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        prevtangent = pis.at (index - 1).location.DistanceXY (pis.at (index - 1).arc.endPoint);
+        prevtangent = pis.at(index - 1).GetPILocation().DistanceXY(pis.at(index - 1).arc.endPoint);
         }
     if (tangentLength + prevtangent > fullLength) return nullptr;
 
-    fullLength = pis.at(index).location.DistanceXY(pis.at(index + 1).location);
+    fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index + 1).GetPILocation());
     double nexttangent = 0.0;
     if (pis.at(index + 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        nexttangent = pis.at(index + 1).location.DistanceXY(pis.at(index + 1).arc.startPoint);
+        nexttangent = pis.at(index + 1).GetPILocation().DistanceXY(pis.at(index + 1).arc.startPoint);
         }
     if (tangentLength + nexttangent > fullLength) return nullptr;
 
     // compute a new radius then just solve the PI
     // T = R tan I/2
-    double taniover2 = pis.at (index).location.DistanceXY (pis.at (index).arc.startPoint) / pis.at (index).arc.radius;
+    double taniover2 = pis.at(index).GetPILocation().DistanceXY(pis.at(index).arc.startPoint) / pis.at(index).arc.radius;
     // update the radius R = T/tani/2
     pis.at (index).arc.radius = tangentLength / taniover2;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI (pis, index))
         return nullptr;
     if (!_ValidatePIs (pis))
         return nullptr;
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1216,18 +1915,18 @@ CurveVectorPtr AlignmentPairEditor::MovePC (size_t index, DPoint3d toPt, Alignme
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::UpdateRadius (size_t index, double radius, AlignmentPIR outPi, bool validate)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (index == 0 || index >= ( pis.size () - 1 )) return nullptr; // todo start and end?
 
     pis.at (index).arc.radius = radius;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI(pis, index))
         return nullptr;
 
     if (validate && !_ValidatePIs (pis))
         return nullptr;
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1238,17 +1937,17 @@ CurveVectorPtr AlignmentPairEditor::UpdateRadius (size_t index, double radius, A
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::RemoveSpirals (size_t index, AlignmentPIR outPi)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (index == 0 || index >= ( pis.size () - 1 )) return nullptr; // todo start and end?
 
     pis.at (index).curveType = AlignmentPI::HorizontalPIType::ARC;
     pis.at (index).spiral1.length = 0.0;
     pis.at (index).spiral2.length = 0.0;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI(pis, index))
         return nullptr;
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1259,20 +1958,20 @@ CurveVectorPtr AlignmentPairEditor::RemoveSpirals (size_t index, AlignmentPIR ou
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::AddSpirals (size_t index, double length, AlignmentPIR outPi)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (index == 0 || index >= ( pis.size () - 1 )) return nullptr; // todo start and end?
 
     pis.at (index).curveType = AlignmentPI::HorizontalPIType::SCS;
     pis.at (index).spiral1.length = length;
     pis.at (index).spiral2.length = length;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI(pis, index))
         return nullptr;
 
     if (!_ValidatePIs (pis))
         return nullptr;
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1283,8 +1982,9 @@ CurveVectorPtr AlignmentPairEditor::AddSpirals (size_t index, double length, Ali
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPI::HorizontalPIType AlignmentPairEditor::GetHorizontalPIType (size_t index)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
-    if (/*index < 0 || */index >= pis.size ()) return AlignmentPI::HorizontalPIType::NONE;
+    bvector<AlignmentPI> pis = GetPIs();
+    if (index >= pis.size ())
+        return AlignmentPI::HorizontalPIType::NONE;
 
     return pis[index].curveType;
     }
@@ -1294,38 +1994,38 @@ AlignmentPI::HorizontalPIType AlignmentPairEditor::GetHorizontalPIType (size_t i
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::MovePT (size_t index, DPoint3d toPt, AlignmentPIR outPi)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::NONE || pis.at (index).arc.radius == 0.0) return nullptr;
     if (index == 0 || index >= ( pis.size () - 1 )) return nullptr; // todo start and end?
     
     // validate that this will fit
-    double tangentLength = toPt.DistanceXY(pis.at(index).location);
-    double fullLength = pis.at(index).location.DistanceXY(pis.at(index - 1).location);
+    double tangentLength = toPt.DistanceXY(pis.at(index).GetPILocation());
+    double fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index - 1).GetPILocation());
     double prevtangent = 0.0;
     if (pis.at(index - 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        prevtangent = pis.at(index - 1).location.DistanceXY(pis.at(index - 1).arc.endPoint);
+        prevtangent = pis.at(index - 1).GetPILocation().DistanceXY(pis.at(index - 1).arc.endPoint);
         }
     if (tangentLength + prevtangent > fullLength) return nullptr;
     
-    fullLength = pis.at (index).location.DistanceXY (pis.at (index + 1).location);
+    fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index + 1).GetPILocation());
     double nexttangent = 0.0;
     if (pis.at (index + 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        nexttangent = pis.at (index + 1).location.DistanceXY (pis.at (index + 1).arc.startPoint);
+        nexttangent = pis.at(index + 1).GetPILocation().DistanceXY(pis.at(index + 1).arc.startPoint);
         }
     if (tangentLength + nexttangent > fullLength) return nullptr;
 
     // compute a new radius then just solve the PI
     // T = R tan I/2
-    double taniover2 = pis.at (index).location.DistanceXY (pis.at (index).arc.endPoint) / pis.at (index).arc.radius;
+    double taniover2 = pis.at(index).GetPILocation().DistanceXY(pis.at(index).arc.endPoint) / pis.at(index).arc.radius;
     // update the radius R = T/tani/2
     pis.at (index).arc.radius = tangentLength / taniover2;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI(pis, index))
         return nullptr;
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1336,27 +2036,27 @@ CurveVectorPtr AlignmentPairEditor::MovePT (size_t index, DPoint3d toPt, Alignme
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::MoveBS (size_t index, DPoint3d toPt, AlignmentPIR outPi)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::NONE || pis.at (index).arc.radius == 0.0) return nullptr;
     if (index == 0 || index >= ( pis.size () - 1 ))
         return nullptr; // todo start and end?
                                       
     // validate that this will fit
-    double tangentLength = toPt.DistanceXY (pis.at (index).location);
-    double fullLength = pis.at (index).location.DistanceXY (pis.at (index - 1).location);
+    double tangentLength = toPt.DistanceXY(pis.at(index).GetPILocation());
+    double fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index - 1).GetPILocation());
     double prevtangent = 0.0;
     if (pis.at (index - 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        prevtangent = pis.at (index - 1).location.DistanceXY (pis.at (index - 1).arc.endPoint);
+        prevtangent = pis.at(index - 1).GetPILocation().DistanceXY(pis.at(index - 1).arc.endPoint);
         }
     if (tangentLength + prevtangent > fullLength)
         return nullptr;
 
-    fullLength = pis.at(index).location.DistanceXY(pis.at(index + 1).location);
+    fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index + 1).GetPILocation());
     double nexttangent = 0.0;
     if (pis.at(index + 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        nexttangent = pis.at(index + 1).location.DistanceXY(pis.at(index + 1).arc.startPoint);
+        nexttangent = pis.at(index + 1).GetPILocation().DistanceXY(pis.at(index + 1).arc.startPoint);
         }
     if (tangentLength + nexttangent > fullLength)
         return nullptr;
@@ -1365,7 +2065,7 @@ CurveVectorPtr AlignmentPairEditor::MoveBS (size_t index, DPoint3d toPt, Alignme
     double spiralLength = toPt.DistanceXY (pis.at (index).spiral1.endPoint); // this is close enough, perhaps round?
     pis.at (index).spiral1.length = spiralLength;
     pis.at (index).spiral2.length = spiralLength;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI(pis, index))
         return nullptr;
 
     if (pis.at(index).curveType == AlignmentPI::HorizontalPIType::SCS)
@@ -1375,7 +2075,7 @@ CurveVectorPtr AlignmentPairEditor::MoveBS (size_t index, DPoint3d toPt, Alignme
         }
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
 
@@ -1387,27 +2087,27 @@ CurveVectorPtr AlignmentPairEditor::MoveBS (size_t index, DPoint3d toPt, Alignme
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::MoveES (size_t index, DPoint3d toPt, AlignmentPIR outPi)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.at (index).curveType == AlignmentPI::HorizontalPIType::NONE || pis.at (index).arc.radius == 0.0) return nullptr;
     if (index == 0 || index >= ( pis.size () - 1 ))
         return nullptr; // todo start and end?
 
     // validate that this will fit
-    double tangentLength = toPt.DistanceXY (pis.at (index).location);
-    double fullLength = pis.at (index).location.DistanceXY (pis.at (index + 1).location);
+    double tangentLength = toPt.DistanceXY(pis.at(index).GetPILocation());
+    double fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index + 1).GetPILocation());
     double nexttangent = 0.0;
     if (pis.at (index + 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        nexttangent = pis.at (index + 1).location.DistanceXY (pis.at (index + 1).arc.startPoint);
+        nexttangent = pis.at(index + 1).GetPILocation().DistanceXY(pis.at(index + 1).arc.startPoint);
         }
     if (tangentLength + nexttangent > fullLength)
         return nullptr;
 
-    fullLength = pis.at(index).location.DistanceXY(pis.at(index - 1).location);
+    fullLength = pis.at(index).GetPILocation().DistanceXY(pis.at(index - 1).GetPILocation());
     double prevtangent = 0.0;
     if (pis.at(index - 1).curveType != AlignmentPI::HorizontalPIType::NONE)
         {
-        prevtangent = pis.at(index - 1).location.DistanceXY(pis.at(index - 1).arc.endPoint);
+        prevtangent = pis.at(index - 1).GetPILocation().DistanceXY(pis.at(index - 1).arc.endPoint);
         }
     if (tangentLength + prevtangent > fullLength)
         return nullptr;
@@ -1416,7 +2116,7 @@ CurveVectorPtr AlignmentPairEditor::MoveES (size_t index, DPoint3d toPt, Alignme
     double spiralLength = toPt.DistanceXY (pis.at (index).spiral2.startPoint); // this is close enough, perhaps round?
     pis.at (index).spiral1.length = spiralLength;
     pis.at (index).spiral2.length = spiralLength;
-    if (_SolvePI (index, pis) != SUCCESS)
+    if (!_SolvePI(pis, index))
         return nullptr;
 
     if (pis.at(index).curveType == AlignmentPI::HorizontalPIType::SCS)
@@ -1429,7 +2129,7 @@ CurveVectorPtr AlignmentPairEditor::MoveES (size_t index, DPoint3d toPt, Alignme
         }
 
     memcpy (&outPi, &pis.at (index), sizeof (AlignmentPI));
-    CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+    CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
     if (hzGeom.IsValid ())
         return hzGeom;
     return nullptr;
@@ -1441,13 +2141,13 @@ CurveVectorPtr AlignmentPairEditor::MoveES (size_t index, DPoint3d toPt, Alignme
 CurveVectorPtr AlignmentPairEditor::InsertPI (DPoint3d piPt)
     {
     // find the index to insert this point
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     // first find nearest point
     size_t nearestIndex = 0;
     double distance = DBL_MAX;
     for (size_t i = 0; i < pis.size (); i++)
         {
-        double testDistance = piPt.DistanceXY (pis.at (i).location);
+        double testDistance = piPt.DistanceXY(pis.at(i).GetPILocation());
         if (testDistance < distance)
             {
             nearestIndex = i;
@@ -1466,7 +2166,7 @@ CurveVectorPtr AlignmentPairEditor::InsertPI (DPoint3d piPt)
         index = pis.size () - 1;
     else
         {
-        double nearestDistFromStart = HorizontalDistanceAlongFromStart(pis.at(nearestIndex).location, nullptr);
+        double nearestDistFromStart = HorizontalDistanceAlongFromStart(pis.at(nearestIndex).GetPILocation(), nullptr);
         double newPiDistFromStart = HorizontalDistanceAlongFromStart(piPt);
         if (newPiDistFromStart < nearestDistFromStart)
             index = nearestIndex;
@@ -1482,18 +2182,18 @@ CurveVectorPtr AlignmentPairEditor::InsertPI (DPoint3d piPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::InsertPI (size_t index, AlignmentPIR pi)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     pis.insert (pis.begin () + index, pi);
 
     if (index != 0)
-        _SolvePI (index - 1, pis);
-    _SolvePI (index, pis);
+        _SolvePI(pis, index - 1);
+    _SolvePI(pis, index);
     if (index != pis.size () - 1)
-        _SolvePI (index + 1, pis);
+        _SolvePI(pis, index + 1);
 
     if (_ValidatePIs (pis))
         {
-        CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+        CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
         if (hzGeom.IsValid ())
             return hzGeom;
         }
@@ -1524,7 +2224,7 @@ CurveVectorPtr AlignmentPairEditor::DeletePI (DPoint3d pviPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPairEditor::DeletePI (size_t index)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (/*index < 0 || */index >= pis.size ())
         return nullptr;
     if (index == 0 || index == ( pis.size () - 1 )) // can't delete beginning or end for now
@@ -1534,7 +2234,7 @@ CurveVectorPtr AlignmentPairEditor::DeletePI (size_t index)
             // just remove the curve data at begin or end
             {
             pis.at(index).curveType = AlignmentPI::HorizontalPIType::NONE;
-            CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+            CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
             if (hzGeom.IsValid ())
                 return hzGeom;
             }
@@ -1546,9 +2246,9 @@ CurveVectorPtr AlignmentPairEditor::DeletePI (size_t index)
         if (i == index)
             {
             pis.erase (iter);
-            _SolvePI (index - 1, pis);
-            _SolvePI (index, pis);
-            CurveVectorPtr hzGeom = _BuildVectorFromPIS (pis);
+            _SolvePI(pis, index - 1);
+            _SolvePI(pis, index);
+            CurveVectorPtr hzGeom = BuildCurveVectorFromPIs (pis);
             if (hzGeom.IsValid ())
                 return hzGeom;
             }
@@ -1562,13 +2262,13 @@ CurveVectorPtr AlignmentPairEditor::DeletePI (size_t index)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AlignmentPairEditor::GetPIPoints (bvector<DPoint3d>& pts)
     {
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.size () <= 0)
         return ERROR;
 
     for (auto pi : pis)
         {
-        pts.push_back (pi.location);
+        pts.push_back(pi.GetPILocation());
         }
     return SUCCESS;
     }
@@ -1796,11 +2496,15 @@ double AlignmentPairEditor::_GetDesignLength (DPoint3d newPt, bvector<AlignmentP
     return designDist;
     }
 
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPairEditor::SlopeAtStation (const double& station)
     {
+#if 1
+    return 0.0;
+#else
     bvector<AlignmentPVI> pvis = _GetPVIs ();
     if (pvis.size () <= 0) return 0.0f; // just go with flat, since there is no vertical alignment
 
@@ -1837,8 +2541,9 @@ double AlignmentPairEditor::SlopeAtStation (const double& station)
         return G2;
 
     return 0.0;
+#endif
     }
-
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2845,7 +3550,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
 
     AlignmentPI calcedPI;
     StationRangeEdit rangeEdit;
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.size () < 2)
         return false;
 
@@ -2855,7 +3560,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         rangeEdit.preEditRange.startStation = 0.0;
         AlignmentPI nextPI = pis[1];
         if (nextPI.curveType == AlignmentPI::NONE)
-            referencePt = nextPI.location;
+            referencePt = nextPI.GetPILocation();
         else if (nextPI.curveType == AlignmentPI::ARC)
             referencePt = nextPI.arc.endPoint;
         else if (nextPI.curveType == AlignmentPI::SCS)
@@ -2868,7 +3573,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         rangeEdit.preEditRange.endStation = LengthXY ();
         AlignmentPI prevPI = pis[pis.size () - 2];
         if (prevPI.curveType == AlignmentPI::NONE)
-            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.location);
+            rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.GetPILocation());
         else if (prevPI.curveType == AlignmentPI::ARC)
             rangeEdit.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.arc.startPoint);
         else if (prevPI.curveType == AlignmentPI::SCS)
@@ -2877,7 +3582,7 @@ bool AlignmentPairEditor::MoveEndPIWithVerticalChange (DPoint3d toPt, bool isSta
         }
     if (!newHz.IsValid ()) return false;
     AlignmentPairEditorPtr modifiedAlign = AlignmentPairEditor::Create (*newHz, nullptr);
-    pis = modifiedAlign->_GetPIs ();
+    pis = modifiedAlign->GetPIs();
     // compute the post edit range
     if (isStart)
         {
@@ -2989,7 +3694,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         isEnd = true;
     DPoint3d referencePt;
     AlignmentPairEditorPtr modifiedAlign = AlignmentPairEditor::Create (newHorizontal, nullptr);
-    bvector<AlignmentPI> pis = _GetPIs ();
+    bvector<AlignmentPI> pis = GetPIs();
     if (pis.size () < 2)
         return computedRange;
     if (isStart)
@@ -2997,7 +3702,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         computedRange.preEditRange.startStation = 0.0;
         AlignmentPI nextPI = pis[1];
         if (nextPI.curveType == AlignmentPI::NONE)
-            referencePt = nextPI.location;
+            referencePt = nextPI.GetPILocation();
         else if (nextPI.curveType == AlignmentPI::ARC)
             referencePt = nextPI.arc.endPoint;
         else if (nextPI.curveType == AlignmentPI::SCS)
@@ -3012,7 +3717,7 @@ StationRangeEdit AlignmentPairEditor::ComputeHorizontalEditRange (CurveVectorCR 
         computedRange.preEditRange.endStation = LengthXY ();
         AlignmentPI prevPI = pis[pis.size () - 2];
         if (prevPI.curveType == AlignmentPI::NONE)
-            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.location);
+            computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.GetPILocation());
         else if (prevPI.curveType == AlignmentPI::ARC)
             computedRange.preEditRange.startStation = HorizontalDistanceAlongFromStart(prevPI.arc.startPoint);
         else if (prevPI.curveType == AlignmentPI::SCS)
@@ -3109,3 +3814,5 @@ AlignmentPairPtr AlignmentPairEditor::GetPartialAlignment (double startStation, 
         }
     return nullptr;
     }
+
+#endif

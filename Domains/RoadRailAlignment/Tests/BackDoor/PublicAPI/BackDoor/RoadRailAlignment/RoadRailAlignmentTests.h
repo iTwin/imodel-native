@@ -2,6 +2,7 @@
 
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <Bentley/BeTest.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 #define BEGIN_BENTLEY_ROADRAILALIGNMENT_UNITTESTS_NAMESPACE  BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE namespace Tests {
 #define END_BENTLEY_ROADRAILALIGNMENT_UNITTESTS_NAMESPACE    } END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

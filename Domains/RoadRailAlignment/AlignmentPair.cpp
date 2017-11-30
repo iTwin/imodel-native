@@ -142,6 +142,36 @@ AlignmentPairPtr AlignmentPair::_Clone() const
     {
     return AlignmentPair::Create(*m_horizontalCurveVector, m_verticalCurveVector.get());
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPair::_UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment)
+    {
+    m_horizontalCurveVector = horizontalAlignment.Clone();
+    m_hzIndex = nullptr;
+
+    if (CurveVector::BOUNDARY_TYPE_Open != m_horizontalCurveVector->GetBoundaryType())
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPair UpdateHorizontalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
+        m_horizontalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPair::_UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
+    {
+    m_verticalCurveVector = (pVerticalAlignment && !pVerticalAlignment->empty()) ? pVerticalAlignment->Clone() : nullptr;
+    m_vtIndex = nullptr;
+    m_vtXIndex = nullptr;
+
+    if (m_verticalCurveVector.IsValid() && CurveVector::BOUNDARY_TYPE_Open != m_verticalCurveVector->GetBoundaryType())
+        {
+        ROADRAILALIGNMENT_LOGW("AlignmentPair UpdateVerticalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
+        m_verticalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -194,29 +224,14 @@ void AlignmentPair::UpdateCurveVectors(CurveVectorCR horizontalAlignment, CurveV
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AlignmentPair::UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment)
     {
-    m_horizontalCurveVector = horizontalAlignment.Clone();
-    m_hzIndex = nullptr;
-
-    if (CurveVector::BOUNDARY_TYPE_Open != m_horizontalCurveVector->GetBoundaryType())
-        {
-        ROADRAILALIGNMENT_LOGW("AlignmentPair UpdateHorizontalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
-        m_horizontalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
-        }
+    return _UpdateHorizontalCurveVector(horizontalAlignment);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AlignmentPair::UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
     {
-    m_verticalCurveVector = (pVerticalAlignment && !pVerticalAlignment->empty()) ? pVerticalAlignment->Clone() : nullptr;
-    m_vtIndex = nullptr;
-    m_vtXIndex = nullptr;
-
-    if (m_verticalCurveVector.IsValid() && CurveVector::BOUNDARY_TYPE_Open != m_verticalCurveVector->GetBoundaryType())
-        {
-        ROADRAILALIGNMENT_LOGW("AlignmentPair UpdateVerticalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
-        m_verticalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
-        }
+    return _UpdateVerticalCurveVector(pVerticalAlignment);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -53,6 +53,8 @@ protected:
     AlignmentPair() {}
     AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
     virtual AlignmentPairPtr _Clone() const;
+    virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
+    virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
 public:
     //! Allocate an AlignmentPair object.
