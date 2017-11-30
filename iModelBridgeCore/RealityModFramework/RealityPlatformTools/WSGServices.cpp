@@ -291,7 +291,7 @@ bvector<NavNode> NodeNavigator::GetRootNodes(Utf8String serverName, Utf8String r
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId, RawServerResponse& responseObject)
+bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer& server, Utf8String repoId, RawServerResponse& responseObject)
     {
     bvector<NavNode> returnVector;
     RawServerResponse versionResponse = RawServerResponse();
@@ -318,7 +318,7 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode, RawServerResponse& responseObject)
+bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer& server, Utf8String repoId, NavNode& parentNode, RawServerResponse& responseObject)
     {
     return GetChildNodes(server, repoId, parentNode.GetNavString(), responseObject);
     }
@@ -326,7 +326,22 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
-bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject)
+bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer& server, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject)
+    {
+    RawServerResponse versionResponse = RawServerResponse();
+    Utf8String version = server.GetVersion(versionResponse);
+    if (versionResponse.responseCode > 399)
+        {
+        responseObject = versionResponse;
+        return bvector<NavNode>();
+        }
+    return GetChildNodes(server.GetServerName(), version, repoId, nodePath, responseObject);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                11/2017
+//-------------------------------------------------------------------------------------
+bvector<NavNode> NodeNavigator::GetChildNodes(Utf8String serverName, Utf8String serverVersion, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject)
     {
     nodePath.ReplaceAll("/", "~2F");
 
@@ -340,13 +355,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
     Utf8String rootId = guidString.substr(guidString.length() - 36, rootNode.length()); // 36 = size of GUID
 
     bvector<NavNode> returnVector;
-    RawServerResponse versionResponse = RawServerResponse();
-    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(versionResponse), repoId, nodePath);
-    if (versionResponse.responseCode > 399)
-        {
-        responseObject = versionResponse;
-        return returnVector;
-        }
+    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(serverName, serverVersion, repoId, nodePath);
 
     WSGRequest::GetInstance().PerformRequest(*navNode, responseObject, 0);
 

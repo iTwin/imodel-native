@@ -290,11 +290,12 @@ public:
 
     //! Returns the NavNodes for all RealityData entries on the server
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(Utf8String serverName, Utf8String repoId, RawServerResponse& responseObject);
-    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer server, Utf8String repoId, RawServerResponse& responseObject);
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer& server, Utf8String repoId, RawServerResponse& responseObject);
 
     //! Returns the NavNodes beneath the provided NavNode path
-    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject);
-    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode, RawServerResponse& responseObject);
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(Utf8String serverName, Utf8String serverVersion, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject);
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer& server, Utf8String repoId, Utf8String nodePath, RawServerResponse& responseObject);
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer& server, Utf8String repoId, NavNode& parentNode, RawServerResponse& responseObject);
 
 private:    
     NodeNavigator();

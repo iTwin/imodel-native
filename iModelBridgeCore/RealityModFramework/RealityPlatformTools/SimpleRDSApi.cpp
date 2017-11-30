@@ -47,8 +47,8 @@ void RDSRequestManager::Init()
         ReportError("cannot reach server");
         return;
         }
-
-    RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX");
+    
+    RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8());
     }
 
 //-------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ ConnectedResponse ConnectedNavNode::GetChildNodes(bvector<ConnectedNavNode>& nod
     ConnectedResponse response = ConnectedResponse();
 
     RawServerResponse rawResponse = RawServerResponse();
-    bvector<NavNode> rootNodes = NodeNavigator::GetInstance().GetChildNodes(RealityDataService::GetServerName(), RealityDataService::GetRepoName(), *this, rawResponse);
+    bvector<NavNode> rootNodes = NodeNavigator::GetInstance().GetChildNodes(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), GetNavString(), rawResponse);
 
     for (int i = 0; i < rootNodes.size(); i++)
         nodes.push_back(ConnectedNavNode(rootNodes[i]));
@@ -188,6 +188,8 @@ ConnectedRealityDataRelationship::ConnectedRealityDataRelationship(RealityDataRe
 //-------------------------------------------------------------------------------------
 void ConnectedRealityDataRelationship::Clone(RealityDataRelationshipPtr relationship)
     {
+    if(relationship == nullptr)
+        return;
     m_realityDataId = relationship->GetRealityDataId();
     m_relatedId = relationship->GetRelatedId();
     m_relationType = relationship->GetRelationType();
@@ -360,6 +362,8 @@ ConnectedRealityDataDocument::ConnectedRealityDataDocument(RealityDataDocumentPt
 //-------------------------------------------------------------------------------------
 void ConnectedRealityDataDocument::Clone(RealityDataDocumentPtr docptr)
     {
+    if(docptr == nullptr)
+        return;
     m_containerName = docptr->GetContainerName();
     m_name = docptr->GetName();
     m_id = docptr->GetId();
@@ -520,6 +524,8 @@ ConnectedRealityDataFolder::ConnectedRealityDataFolder(Utf8String navString)
 //-------------------------------------------------------------------------------------
 void ConnectedRealityDataFolder::Clone(RealityDataFolderPtr folderptr)
     {
+    if (folderptr == nullptr)
+        return;
     m_id = folderptr->GetId();
     m_name = folderptr->GetName();
     m_parentId = folderptr->GetParentId();
@@ -542,7 +548,7 @@ ConnectedResponse ConnectedRealityDataFolder::GetInfo()
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataFolderByIdRequest request = RealityDataFolderByIdRequest(m_id);
     RealityDataFolderPtr folderptr = RealityDataService::Request(request, rawResponse);
-    
+        
     Clone(folderptr);
     response.Clone(rawResponse);
 
@@ -667,6 +673,8 @@ ConnectedRealityData::ConnectedRealityData(RealityDataPtr rd)
 //-------------------------------------------------------------------------------------
 void ConnectedRealityData::Clone(RealityDataPtr rd)
     {
+    if(rd == nullptr)
+        return;
     m_identifier = rd->GetIdentifier();
     m_name = rd->GetName();
     m_resolution = rd->GetResolution();
@@ -768,7 +776,7 @@ ConnectedResponse ConnectedRealityData::GetInfo()
 
     RealityDataByIdRequest idReq = RealityDataByIdRequest(m_identifier);
     RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
-
+    
     Clone(entity);
     response.Clone(rawResponse);
 
