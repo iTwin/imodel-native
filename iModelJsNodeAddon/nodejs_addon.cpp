@@ -707,6 +707,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     static Napi::FunctionReference s_constructor;
     
     Dgn::DgnDbPtr m_dgndb;
+    ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
     NodeAddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonDgnDb>(info)
@@ -730,10 +731,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
-        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-		m_presentationManager->GetConnections().NotifyConnectionOpened(*m_dgndb);
+        RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
+        m_connections.NotifyConnectionOpened(*m_dgndb);
         }
 
     Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NodeUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
@@ -1079,7 +1080,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
                 m_status = DgnDbStatus::BadArg;
                 return;                
                 }
-            ContentDescriptorCPtr descriptor = m_addondb->m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson());
+            ContentDescriptorCPtr descriptor = m_addondb->m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
             if (descriptor.IsNull())
                 {
                 m_status = DgnDbStatus::BadArg;
@@ -1087,7 +1088,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             PageOptions pageOptions;
             pageOptions.SetPageStart(0);
             pageOptions.SetPageSize(0);
-            ContentCPtr content = m_addondb->m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson());
+            ContentCPtr content = m_addondb->m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson()).get();
             if (content.IsNull())
                 {
                 m_status = DgnDbStatus::BadArg;
