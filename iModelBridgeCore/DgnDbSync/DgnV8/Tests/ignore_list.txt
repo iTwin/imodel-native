@@ -28,47 +28,6 @@ RasterTests.RasterReprojected
     # Expected: {-27262.460350 19477.554900}{-25753.419790 20986.611090}
     # Actual:   {430500.000000 4503000.000000}{432000.000000 4504500.000000}
 
-#TFS 777178:
-ConverterTests.GCSMultiFilesGOAndHelmert
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-
-#TFS 777178:
-ConverterTests.GCSMultiFilesGCSTransformWithScale
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(338): error:       Expected: TestRootModelCreator::ImportJobCreateStatus::Success
-    # Which is: 4-byte object <00-00 00-00>
-    # To be equal to: creator.InitializeJob()
-    # Which is: 4-byte object <02-00 00-00>
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(468): error: Value of: model.IsValid()
-    # Actual: false
-    # Expected: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
-    # Model range is wrong. Model: Building 1
-    # Expected: {775953.179000 83335.971000}{776088.567000 83467.104000}
-    # Actual:   {-24.874306 -102.773877}{65.332224 62.070878}
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(485): error: Failed
-    # Model range is wrong. Model: TPB Building
-    # Expected: {775885.795000 83307.686000}{775960.121000 83398.667000}
-    # Actual:   {19423.654845 -1229.968723}{19523.497038 -1173.407035}
-    
 #----------------------------------------------------------------------------------------
 #   Tests that are failing only on tiles branch
 #----------------------------------------------------------------------------------------

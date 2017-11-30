@@ -2823,7 +2823,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
         if (true)
             {
             StopWatch timer(true);
-            _ConvertDgnV8Tags(filesInOrder);
+            _ConvertDgnV8Tags(filesInOrder, modelsInOrder);
             ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
             }
 
