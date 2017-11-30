@@ -1116,18 +1116,18 @@ TEST_F(ClassTest, SerializeClassWithProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerialized)
+TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerializedByDefault)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    PrimitiveECPropertyP primProp;
 
     PropertyCategoryP propertyCategory;
     schema->CreatePropertyCategory(propertyCategory, "ExamplePropertyCategory");
 
     KindOfQuantityP kindOfQuantity;
     schema->CreateKindOfQuantity(kindOfQuantity, "ExampleKoQ");
-
-    PrimitiveECPropertyP primProp;
 
     ECCustomAttributeClassP customAttrClassBP;
     schema->CreateCustomAttributeClass(customAttrClassBP, "CustomAttributeOnBaseProperty");
@@ -1136,12 +1136,6 @@ TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerialized)
     ECCustomAttributeClassP customAttrClassBC;
     schema->CreateCustomAttributeClass(customAttrClassBC, "CustomAttributeOnBaseClass");
     IECInstancePtr customAttrBC = customAttrClassBC->GetDefaultStandaloneEnabler()->CreateInstance();
-
-    ECEntityClassP sourceClass;
-    schema->CreateEntityClass(sourceClass, "ExampleSource");
-
-    ECEntityClassP targetClass;
-    schema->CreateEntityClass(targetClass, "ExampleTarget");
 
     ECCustomAttributeClassP customAttrClassRelCon;
     schema->CreateCustomAttributeClass(customAttrClassRelCon, "CustomAttributeOnRelationshipConstraint");
@@ -1165,7 +1159,43 @@ TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerialized)
     EXPECT_EQ(SchemaWriteStatus::Success, derivedEntityClass->WriteJson(entityClassJson, true));
 
     Json::Value testDataJson;
-    BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/ClassInheritedCustomAttributesAndProperties.ecschema.json"));
+    BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneClassDefaultSerializeInheritedCustomAttributesAndProperties.ecschema.json"));
+    auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, ExplicitSerializeInheritedProperties)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+
+    PrimitiveECPropertyP primPropNonOverrideBase;
+    PrimitiveECPropertyP primPropOverrideBase;
+    PrimitiveECPropertyP primPropOverrideDerived;
+
+    ECEntityClassP baseEntityClass;
+    schema->CreateEntityClass(baseEntityClass, "BaseEntityClass");
+    baseEntityClass->CreatePrimitiveProperty(primPropNonOverrideBase, "PrimitivePropertyNonOverride", PrimitiveType::PRIMITIVETYPE_Integer);
+    baseEntityClass->CreatePrimitiveProperty(primPropOverrideBase, "PrimitivePropertyOverride", PrimitiveType::PRIMITIVETYPE_String);
+    primPropOverrideBase->SetMinimumLength(0);
+    primPropOverrideBase->SetMaximumLength(10);
+
+    ECEntityClassP derivedEntityClass;
+    schema->CreateEntityClass(derivedEntityClass, "DerivedEntityClass");
+    derivedEntityClass->AddBaseClass(*baseEntityClass);
+    derivedEntityClass->CreatePrimitiveProperty(primPropOverrideDerived, "PrimitivePropertyOverride", PrimitiveType::PRIMITIVETYPE_String);
+    primPropOverrideDerived->SetMinimumLength(3);
+    primPropOverrideDerived->SetMaximumLength(12);
+
+    Json::Value entityClassJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, derivedEntityClass->WriteJson(entityClassJson, true, true));
+
+    Json::Value testDataJson;
+    BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneClassExplicitlySerializeInheritedProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);

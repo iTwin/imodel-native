@@ -48,7 +48,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteClass(ECClassCR ecClass)
         return SchemaWriteStatus::Success;
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][ecClass.GetName()];
-    return ecClass._WriteJson(childObj, false, false);
+    return ecClass._WriteJson(childObj, false, false, false);
     }
 
 //---------------------------------------------------------------------------------------

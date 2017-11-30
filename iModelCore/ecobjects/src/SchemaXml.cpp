@@ -429,7 +429,7 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     Utf8String boolStr;
     bool isDomain = true; // defaults to true
     if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE))
-        SchemaParseUtils::ParseBooleanString(isDomain, boolStr.c_str());
+        SchemaParseUtils::ParseBooleanXmlString(isDomain, boolStr.c_str());
 
     if (0 == strcmp(nodeName, EC_CLASS_ELEMENT))
         {
@@ -438,11 +438,11 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
         bool isStruct = false;
         bool isSealed = false;
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_CUSTOMATTRIBUTE_ATTRIBUTE))
-            SchemaParseUtils::ParseBooleanString(isCA, boolStr.c_str());
+            SchemaParseUtils::ParseBooleanXmlString(isCA, boolStr.c_str());
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_STRUCT_ATTRIBUTE))
-            SchemaParseUtils::ParseBooleanString(isStruct, boolStr.c_str());
+            SchemaParseUtils::ParseBooleanXmlString(isStruct, boolStr.c_str());
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_FINAL_ATTRIBUTE))
-            SchemaParseUtils::ParseBooleanString(isSealed, boolStr.c_str());
+            SchemaParseUtils::ParseBooleanXmlString(isSealed, boolStr.c_str());
 
         ECClassType classType;
         ECClassModifier modifier;

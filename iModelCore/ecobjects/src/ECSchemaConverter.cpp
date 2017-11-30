@@ -1010,6 +1010,15 @@ ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQ
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void removePropertyUnitCustomAttributes(IECCustomAttributeContainerR container, Utf8StringCR schemaName, Utf8StringCR className)
+    {
+    container.RemoveCustomAttribute(schemaName, className);
+    container.RemoveSupplementedCustomAttribute(schemaName, className);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
@@ -1018,7 +1027,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (prop == nullptr)
         {
         LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is %s.", container.GetContainerName());
-        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
@@ -1027,7 +1036,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
-        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
@@ -1036,7 +1045,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.warningv("The property %s:%s.%s has an old unit '%s' that does not resolve to a new unit.  Dropping unit to continue", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
-        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
@@ -1060,7 +1069,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
-        container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return status;
         }
 
@@ -1072,7 +1081,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         LOG.warningv("Unable to convert KindOfQuantity '%s' on property %s.%s because it conflicts with another KindOfQuantity in the base class hierarchy.", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
         }
 
-    container.RemoveCustomAttribute(instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+    removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
     return ECObjectsStatus::Success;
     }
 

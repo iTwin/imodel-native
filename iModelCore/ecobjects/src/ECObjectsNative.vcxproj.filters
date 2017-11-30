@@ -138,10 +138,13 @@
     <ClCompile Include="SchemaJson.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SchemaConversionUtils.cpp">
+    <ClCompile Include="SchemaParseUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SchemaParseUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaConversionUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -260,7 +263,7 @@
     <ClInclude Include="SchemaJson.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PrivateApi\ECObjects\SchemaConversionUtils.h">
+    <ClInclude Include="..\PrivateApi\ECObjects\SchemaParseUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

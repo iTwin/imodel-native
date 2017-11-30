@@ -1978,7 +1978,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
     if (BEXML_Success == modifierStatus)
         {
-        if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierString(m_modifier, modifierString))
+        if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierXmlString(m_modifier, modifierString))
             {
             LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -2385,15 +2385,15 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
-    return _WriteJson(outValue, standalone, includeSchemaVersion, bvector<bpair<Utf8String, Json::Value>>());
+    return _WriteJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>>());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
+SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
     {
     // Common properties to all Schema children
     if (standalone)
@@ -2447,13 +2447,13 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
         }
 
     SchemaWriteStatus status;
-    if (GetPropertyCount(false))
+    if (GetPropertyCount(includeInheritedProperties))
         {
         auto& propertiesArr = outValue[ECJSON_SCHEMA_CHILD_PROPERTIES_ATTRIBUTE] = Json::Value(Json::ValueType::arrayValue);
-        for (const auto& prop : GetProperties())
+        for (const auto& prop : GetProperties(includeInheritedProperties))
             {
             Json::Value propJson(Json::ValueType::objectValue);
-            if (SchemaWriteStatus::Success != (status = prop->_WriteJson(propJson)))
+            if (SchemaWriteStatus::Success != (status = prop->_WriteJson(propJson, includeInheritedProperties && !ECClass::ClassesAreEqualByName(this, &prop->GetClass()))))
                 return status;
             propertiesArr.append(propJson);
             }
@@ -2647,7 +2647,7 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECEntityClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+SchemaWriteStatus ECEntityClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
 
@@ -2685,7 +2685,7 @@ SchemaWriteStatus ECEntityClass::_WriteJson(Json::Value& outValue, bool standalo
             }
         }
 
-    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
+    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2910,11 +2910,11 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, ECVe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECCustomAttributeClass::_WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
+SchemaWriteStatus ECCustomAttributeClass::_WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
     attributes.push_back(bpair<Utf8String, Json::Value>(CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE, SchemaParseUtils::ContainerTypeToString(m_containerType)));
-    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
+    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3937,7 +3937,7 @@ ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (Utf8CP isPolymorphic
     {
     PRECONDITION (nullptr != isPolymorphic, ECObjectsStatus::PreconditionViolated);
 
-    ECObjectsStatus status = SchemaParseUtils::ParseBooleanString (m_isPolymorphic, isPolymorphic);
+    ECObjectsStatus status = SchemaParseUtils::ParseBooleanXmlString (m_isPolymorphic, isPolymorphic);
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to parse the isPolymorphic string '%s' for ECRelationshipConstraint. Expected values are True or False", isPolymorphic);
         
@@ -4314,7 +4314,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECRelationshipClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+SchemaWriteStatus ECRelationshipClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
 
@@ -4333,7 +4333,7 @@ SchemaWriteStatus ECRelationshipClass::_WriteJson(Json::Value& outValue, bool st
         return status;
     attributes.push_back(bpair<Utf8String, Json::Value>(ECJSON_TARGETCONSTRAINT_ELEMENT, targetJson));
 
-    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, attributes);
+    return T_Super::_WriteJson(outValue, standalone, includeSchemaVersion, includeInheritedProperties, attributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
