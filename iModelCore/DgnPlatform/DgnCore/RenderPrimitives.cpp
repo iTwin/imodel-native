@@ -500,7 +500,6 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
         toFind.Resolve(m_db, m_system);
         BeAssert(toFind.m_resolved);
         iter = m_set.insert(toFind.Clone()).first;
-        BeAssert(iter.second);
 #if defined(DEBUG_DISPLAY_PARAMS_CACHE)
         printf("\nLooking for: %s\nCreated: %s\n", toFind.ToDebugString().c_str(), (*iter)->ToDebugString().c_str());
 #endif
