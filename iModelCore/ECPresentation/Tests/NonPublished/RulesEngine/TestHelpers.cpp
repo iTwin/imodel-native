@@ -446,7 +446,7 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> const& instances, Content const& content, bool validateOrder)
+void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances, Content const& content, bool validateOrder)
     {
     DataContainer<ContentSetItemCPtr> contentSet = content.GetContentSet();
     ASSERT_EQ(instances.size(), contentSet.GetSize());
@@ -456,17 +456,19 @@ void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> const& in
         IECInstanceCP instance = nullptr;
         if (validateOrder)
             {
-            instance = instances[index];
+            instance = instances[0];
+            instances.erase(instances.begin());
             }
         else
             {
             bvector<ECInstanceKey> const& itemKeys = item->GetKeys();
-            bset<Utf8String> instanceIds;
-            std::transform(itemKeys.begin(), itemKeys.end(), std::inserter(instanceIds, instanceIds.end()), [](ECInstanceKeyCR key){return key.GetInstanceId().ToString();});
-            IECInstanceCP const* instanceP = std::find_if(instances.begin(), instances.end(),
-                [&instanceIds](IECInstanceCP instance){return instanceIds.end() != instanceIds.find(instance->GetInstanceId());});
-            ASSERT_TRUE(nullptr != instanceP && nullptr != *instanceP);
-            instance = *instanceP;
+            bset<Utf8String> itemInstanceIds;
+            std::transform(itemKeys.begin(), itemKeys.end(), std::inserter(itemInstanceIds, itemInstanceIds.end()), [](ECInstanceKeyCR key){return key.GetInstanceId().ToString();});
+            auto iter = std::find_if(instances.begin(), instances.end(),
+                [&itemInstanceIds](IECInstanceCP instance){return itemInstanceIds.end() != itemInstanceIds.find(instance->GetInstanceId());});
+            ASSERT_TRUE(instances.end() != iter);
+            instance = *iter;
+            instances.erase(iter);
             }
         ValidateContentSetItem(*instance, *item, content.GetDescriptor());
         index++;

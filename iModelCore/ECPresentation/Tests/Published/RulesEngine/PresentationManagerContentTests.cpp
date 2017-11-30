@@ -1210,6 +1210,77 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis               11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentRelatedInstances_RecursiveWithMultipleSelectClasses, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ElementA">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementB">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_RecursiveWithMultipleSelectClasses)
+    {
+    ECEntityClassCP elementClass = GetClass("Element")->GetEntityClassCP();
+    ECEntityClassCP elementAClass = GetClass("ElementA")->GetEntityClassCP();
+    ECEntityClassCP elementBClass = GetClass("ElementB")->GetEntityClassCP();
+    ECRelationshipClassCP relationshipClass = GetRelationshipClass("ElementOwnsChildElements")->GetRelationshipClassCP();
+    
+    // insert some  instances
+    IECInstancePtr parentA = RulesEngineTestHelpers::InsertInstance(*s_project, *elementAClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(1));});
+    IECInstancePtr childA = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(2));});
+    IECInstancePtr parentB = RulesEngineTestHelpers::InsertInstance(*s_project, *elementBClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(3));});
+    IECInstancePtr childB = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(4));});
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *parentA, *childA);
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *parentB, *childB);
+
+    // set up selection
+    NavNodeKeyList keys = {ECInstanceNodeKey::Create(*parentA), ECInstanceNodeKey::Create(*parentB)};
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RecursiveWithMultipleSelectClasses", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Forward, 
+        relationshipClass->GetFullName(), elementClass->GetFullName()));
+    rules->AddPresentationRule(*rule);
+    
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    RulesEngineTestHelpers::ValidateContentSet({childA.get(), childB.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
  * @betest                                       Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_CalculatedPropertiesValue)

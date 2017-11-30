@@ -134,6 +134,14 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
+    ~RecursiveQueriesHelper() 
+        {
+        DELETE_AND_CLEAR(m_bwdRecursiveChildrenIds);
+        DELETE_AND_CLEAR(m_fwdRecursiveChildrenIds);
+        }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
     BoundQueryRecursiveChildrenIdSet const& GetRecursiveChildrenIds(IParsedSelectionInfo const& selection, SelectClassInfo const& thisInfo)
         {
         bool forward = IsRecursiveJoinForward(thisInfo);
@@ -214,11 +222,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     if (specificationDescriptor.IsNull())
         return nullptr;
     
-    RecursiveQueriesHelper recursiveQueries(*specificationDescriptor);
-
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
+        RecursiveQueriesHelper recursiveQueries(*specificationDescriptor);
+
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
         classQuery->SelectContract(*contract, "this");
