@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //---------------------------------------------------------------------------------------
 ChangeSetPrePushEvent::ChangeSetPrePushEvent
 (
-Utf8String eventTopic, 
+Utf8String eventTopic,
 Utf8String fromEventSubscriptionId
 )
     {
@@ -28,7 +28,7 @@ Utf8String fromEventSubscriptionId
 //---------------------------------------------------------------------------------------
 RefCountedPtr<struct ChangeSetPrePushEvent> ChangeSetPrePushEvent::Create
 (
-Utf8String eventTopic, 
+Utf8String eventTopic,
 Utf8String fromEventSubscriptionId
 )
     {

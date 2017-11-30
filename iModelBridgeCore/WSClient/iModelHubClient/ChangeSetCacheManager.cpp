@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 bool ChangeSetCacheManager::TryGetChangeSetFile(BeFileName changeSetFileName, Utf8String changeSetId) const
     {
     auto preDownloadPath = BuildChangeSetPredownloadPathname(changeSetId);
-    
+
     FileLock fileLock(preDownloadPath);
     bool lockResult = fileLock.Lock();
     if (!lockResult)
@@ -61,7 +61,7 @@ StatusTaskPtr ChangeSetCacheManager::EnableBackgroundDownload() const
             BeAssert(false && "File lock failed");
             return;
             }
-            
+
         if (changeSetEventPtr.IsValid() && m_connection)
             {
             PredownloadChangeSet(m_connection, changeSetId)->GetResult();
@@ -113,7 +113,7 @@ uint64_t ChangeSetCacheManager::GetCacheSize(BeFileName directoryName) const
     BeFileName tempFileName;
     uint64_t cacheSize = 0;
 
-    while(SUCCESS == fileIterator.GetNextFileName(tempFileName))
+    while (SUCCESS == fileIterator.GetNextFileName(tempFileName))
         {
         uint64_t fileSize;
         BeFileNameStatus status = tempFileName.GetFileSize(fileSize);
@@ -165,7 +165,7 @@ void ChangeSetCacheManager::CheckCacheSize(BeFileName changeSetFileName) const
         {
         // Delete oldest files from cache
         auto cacheFiles = GetOrderedCacheFiles(directoryName);
-        for (auto it = cacheFiles.begin(); it != cacheFiles.end(); it ++)
+        for (auto it = cacheFiles.begin(); it != cacheFiles.end(); it++)
             {
             if (cacheFiles.size() <= 1)
                 break;
@@ -176,7 +176,7 @@ void ChangeSetCacheManager::CheckCacheSize(BeFileName changeSetFileName) const
             // Update remaining cache size
             currentFile.GetFileSize(currentFileSize);
             cacheSize -= currentFileSize;
-            
+
             // Get lock for the file
             FileLock lock(currentFile);
             if (0 != BeStringUtilities::Wcsicmp(currentFile.GetName(), changeSetFileName.GetName()))
@@ -239,7 +239,8 @@ ICancellationTokenPtr             cancellationToken
 
         auto changeSetPtr = changeSetResult.GetValue();
         ObjectId fileObject(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetId);
-        imodelConnectionP->DownloadFileInternal(changeSetPreDownloadPath, fileObject, changeSetPtr->GetFileAccessKey(), callback, cancellationToken)->Then([=](StatusResultCR downloadResult)
+        imodelConnectionP->DownloadFileInternal(changeSetPreDownloadPath, fileObject, changeSetPtr->GetFileAccessKey(), callback, cancellationToken)
+            ->Then([=](StatusResultCR downloadResult)
             {
             if (!downloadResult.IsSuccess())
                 {

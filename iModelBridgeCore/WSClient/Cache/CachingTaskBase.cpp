@@ -68,9 +68,11 @@ bool CachingTaskBase::IsSuccess()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachingTaskBase::AddFailedObject(CacheTransactionCR txn, ObjectIdCR objectId, ICachingDataSource::ErrorCR error)
+void CachingTaskBase::AddFailedObject(IDataSourceCache& cache, ObjectIdCR objectId, ICachingDataSource::ErrorCR error, Utf8String objectLabel)
     {
-    m_failedObjects.push_back({objectId, txn.GetCache().ReadInstanceLabel(objectId), error});
+    if (objectLabel.empty())
+        objectLabel = cache.ReadInstanceLabel(objectId);
+    m_failedObjects.push_back({objectId, objectLabel, error});
     }
 
 /*--------------------------------------------------------------------------------------+

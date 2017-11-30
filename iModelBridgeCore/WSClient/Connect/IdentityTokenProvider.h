@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/IdentityTokenProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         void RenewTokenIfNeeded();
 
     public:
-        WSCLIENT_EXPORT static IdentityTokenProviderPtr Create
+        static IdentityTokenProviderPtr Create
             (
             IImsClientPtr client,
             ITokenStorePtr store,
@@ -44,10 +44,10 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
             );
 
         //! Set new token lifetime and refresh rate in minutes
-        WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate);
+        void Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate);
 
-        WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
-        WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
+        AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
+        SamlTokenPtr GetToken() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

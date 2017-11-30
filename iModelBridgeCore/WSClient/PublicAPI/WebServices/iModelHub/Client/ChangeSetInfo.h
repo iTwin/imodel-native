@@ -51,15 +51,16 @@ private:
     bool                    m_containsFileAccessKey = false;
 
     ChangeSetInfo(Utf8String id, Utf8String parentChangeSetId, Utf8String dbGuid, int64_t index,
-        Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges)
-        : m_id(id), m_parentChangeSetId(parentChangeSetId), m_dbGuid(dbGuid), m_index(index), m_description(description), m_fileSize(fileSize),
-        m_briefcaseId(briefcaseId), m_userCreated(userCreated), m_pushDate(pushDate), m_containingChanges(containingChanges) {}
+                  Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, 
+                  ContainingChanges containingChanges) : m_id(id), m_parentChangeSetId(parentChangeSetId), m_dbGuid(dbGuid), m_index(index), 
+                  m_description(description), m_fileSize(fileSize), m_briefcaseId(briefcaseId), m_userCreated(userCreated), m_pushDate(pushDate), 
+                  m_containingChanges(containingChanges) {}
 
-    bool GetContainsFileAccessKey() const { return m_containsFileAccessKey; }
-    FileAccessKeyPtr GetFileAccessKey() const { return m_fileAccessKey; }
-    void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) { m_fileAccessKey = fileAccessKey; m_containsFileAccessKey = true; }
+    bool GetContainsFileAccessKey() const {return m_containsFileAccessKey;}
+    FileAccessKeyPtr GetFileAccessKey() const {return m_fileAccessKey;}
+    void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) {m_fileAccessKey = fileAccessKey; m_containsFileAccessKey = true;}
 
-    bool operator==(ChangeSetInfoCR changeSet) const { return changeSet.GetId() == GetId(); }
+    bool operator==(ChangeSetInfoCR changeSet) const {return changeSet.GetId() == GetId();}
     static ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties);
     static ChangeSetInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
 public:

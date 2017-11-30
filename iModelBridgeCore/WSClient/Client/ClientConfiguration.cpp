@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConfiguration.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -20,8 +20,9 @@ IHttpHandlerPtr customHandler
 ) :
 m_serverUrl(serverUrl),
 m_repositoryId(repositoryId),
+m_headerProvider(std::make_shared<HeaderProvider>(defaultHeadersProvider)),
+m_httpClient(std::make_shared<HttpClient>(m_headerProvider, customHandler)),
 m_schemaProvider(schemaProvider),
-m_httpClient(std::make_shared<HttpClient>(defaultHeadersProvider, customHandler)),
 m_httpHandler(customHandler)
     {}
 
@@ -67,4 +68,21 @@ BeFileName ClientConfiguration::GetDefaultSchemaPath(WSInfoCR info) const
         return BeFileName();
         }
     return m_schemaProvider->GetSchema(info);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpRequestHeadersR ClientConfiguration::GetDefaultHeaders()
+    {
+    return m_headerProvider->GetDefaultHeaders();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientConfiguration::HeaderProvider::FillHttpRequestHeaders(HttpRequestHeaders& headersOut) const
+    {
+    headersOut.GetMap().insert(m_defaultHeaders.GetMap().begin(), m_defaultHeaders.GetMap().end());
+    m_customProvider->FillHttpRequestHeaders(headersOut);
     }

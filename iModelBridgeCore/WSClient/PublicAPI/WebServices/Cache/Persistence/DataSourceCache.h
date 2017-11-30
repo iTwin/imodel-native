@@ -122,7 +122,7 @@ struct DataSourceCache : public IDataSourceCache
             ICancellationTokenPtr ct = nullptr
             ) override;
 
-        WSCACHE_EXPORT BentleyStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) override;
+        WSCACHE_EXPORT CacheStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateInstances
             (
@@ -208,7 +208,7 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus RemoveResponses(Utf8StringCR name) override;
         WSCACHE_EXPORT CacheStatus RemoveInstance(ObjectIdCR objectId) override;
         WSCACHE_EXPORT BentleyStatus RemoveFile(ObjectIdCR objectId) override;
-        WSCACHE_EXPORT BentleyStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr) override;
+        WSCACHE_EXPORT CacheStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr, AsyncError* errorOut = nullptr) override;
         WSCACHE_EXPORT BentleyStatus RemoveRoot(Utf8StringCR rootName) override;
         WSCACHE_EXPORT BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix) override;
 

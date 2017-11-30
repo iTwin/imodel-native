@@ -93,7 +93,7 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
     ASSERT_EQ(0, cache.GetECDb().GetCurrentSavepointDepth()); // No default txn
     cache.Close();
 
-    EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), params));
+    EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,7 +487,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     DataSourceCache cache2;
 
     ASSERT_EQ(SUCCESS, cache1.Create(path, StubCacheEnvironemnt(), params));
-    ASSERT_EQ(SUCCESS, cache2.Open(path, StubCacheEnvironemnt(), params));
+    ASSERT_EQ(SUCCESS, cache2.Open(path, StubCacheEnvironemnt(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
 
     cache1.RegisterSchemaChangeListener(&listener1);
     cache2.RegisterSchemaChangeListener(&listener2);
@@ -576,6 +576,9 @@ TEST_F(DataSourceCacheTests, GetInstance_NewInstance_ReturnsPlaceholderInstanceW
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
     {
     auto cache = GetTestCache();
@@ -584,7 +587,23 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndIn
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     BeTest::SetFailOnAssert(false);
-    EXPECT_EQ(ERROR, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCacheAndResponseNotModified_ReturnsErrorAndInstanceNotCached)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, StubWSObjectsResponseNotModified()));
     BeTest::SetFailOnAssert(true);
 
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
@@ -600,7 +619,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "TestValue"}});
-    EXPECT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::OK, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
 
     Json::Value updatedInstance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, updatedInstance));
@@ -1082,6 +1101,47 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWitStro
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingChildInstanceClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.NotExistingClass", "B"});
+
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingRelationshipClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.NotExistingClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingInstanceClass_ReturnsError)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.NotExistingClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFromCache)
     {
     auto cache = GetTestCache();
@@ -1349,7 +1409,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_TRUE(path.DoesPathExist());
@@ -1367,7 +1427,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1387,7 +1447,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1408,7 +1468,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1437,7 +1497,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
 
     DateTime maxAccessDateTime;
     EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1463,7 +1523,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
 
     DateTime maxAccessDateTime;
     EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
 
     EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_TRUE(path.DoesPathExist());
@@ -1482,7 +1542,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExist
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
     }
@@ -1534,7 +1594,7 @@ TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
     EXPECT_FALSE(newCachedPath.empty());
     EXPECT_FALSE(oldCachedPath.DoesPathExist());
     EXPECT_EQ(Utf8String(BeFileName::GetDirectoryName(oldCachedPath)),
-              Utf8String(BeFileName::GetDirectoryName(newCachedPath)));
+        Utf8String(BeFileName::GetDirectoryName(newCachedPath)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3621,6 +3681,30 @@ TEST_F(DataSourceCacheTests, CacheResponse_ParentIsRemoved_NewResponseIsNotCache
     ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance({"TestSchema.TestClass", "A"}));
     ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponseNotCached_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponsePageNotCached_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified(), nullptr, nullptr, 42));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4427,7 +4511,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue)
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithoutValue_CacheDoesNotUpdateValueAsECDbNoLongerDoesThat)
     {
     auto cache = GetTestCache();
     auto key = StubCachedResponseKey(*cache);
@@ -4437,10 +4521,35 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedProperty_Caches
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
-    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"]);
+    EXPECT_FALSE("OldValue" == properties["TestCalculatedProperty"]); // Value is not calculated
+    EXPECT_EQ(Json::Value::GetNull(), properties["TestCalculatedProperty"]);
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestProperty", "NewValue"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_FALSE("NewValue" == properties["TestCalculatedProperty"]); // Value is not calculated
+    EXPECT_EQ(Json::Value::GetNull(), properties["TestCalculatedProperty"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithValue_CachesProvidedValue)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestCalculatedProperty", "OldValue"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
+    EXPECT_EQ("OldValue", properties["TestCalculatedProperty"]);
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass4", "Foo"}, {{"TestCalculatedProperty", "NewValue"}});
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
     properties = ReadInstance(*cache, cache->FindInstance({"TestSchema.TestClass4", "Foo"}));
@@ -4647,48 +4756,110 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_NonExistingQuery_ReturnsDataNotCachedAndEmptyArray)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDataNotCachedAndEmptyArray)
     {
     auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
 
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponse({root, "NonExisting"}, results));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponseInstanceKeys({root, "NonExisting"}, results));
     EXPECT_TRUE(results.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_NonExistingParent_ReturnsDataNotCachedAndEmptyArray)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingParent_ReturnsDataNotCachedAndEmptyArray)
     {
     auto cache = GetTestCache();
     ECInstanceKey parent = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponse({parent, nullptr}, results));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponseInstanceKeys({parent, nullptr}, results));
     EXPECT_TRUE(results.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_ZeroResultsCached_ReturnsOkAndEmptyArray)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ZeroResultsCached_ReturnsOkAndEmptyArray)
     {
     auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
 
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
 
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, results));
     EXPECT_TRUE(results.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsWithTwoInstance_ReturnsBothInstances)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, results));
+
+    EXPECT_EQ(2, results.size());
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
+    {
+    auto cache = GetTestCache();
+
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, results));
+
+    EXPECT_EQ(2, results.size());
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
+    EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_EmptyResultsOverrideParentAndInstanceResult_ReturnsEmpty)
+    {
+    auto cache = GetTestCache();
+
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse({parent, "TestQuery"}, instances.ToWSObjectsResponse()));
+    ECInstanceKeyMultiMap results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys({parent, "TestQuery"}, results));
+    EXPECT_EQ(2, results.size());
+
+    results.clear();
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse({parent, "TestQuery"}, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys({parent, "TestQuery"}, results));
+    EXPECT_EQ(0, results.size());
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
     {
     // Arrange
     auto cache = GetTestCache();
@@ -4707,55 +4878,18 @@ TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_St
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse()));
 
     // Act
-    Json::Value queryResults;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, queryResults));
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+    Json::Value results;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
 
     // Assert
-    EXPECT_EQ(1, queryResults.size());
-    EXPECT_EQ("FullyCached", queryResults[0][DataSourceCache_PROPERTY_RemoteId].asString());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithTwoInstance_ReturnsBothInstances)
-    {
-    auto cache = GetTestCache();
-    auto responseKey = StubCachedResponseKey(*cache);
-
-    StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "A"});
-    instances.Add({"TestSchema.TestClass", "B"});
-    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
-
-    EXPECT_EQ(2, results.size());
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), cache->ObjectIdFromJsonInstance(results[0]));
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "B"), cache->ObjectIdFromJsonInstance(results[1]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
-    {
-    auto cache = GetTestCache();
-
-    auto responseKey = StubCachedResponseKey(*cache);
-
-    StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-
-    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-
-    Json::Value results;
-    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
-
-    EXPECT_EQ(2, results.size());
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), cache->ObjectIdFromJsonInstance(results[0]));
-    EXPECT_EQ(ObjectId("TestSchema.TestClass", "B"), cache->ObjectIdFromJsonInstance(results[1]));
+    EXPECT_EQ(1, results.size());
+    EXPECT_EQ("FullyCached", results[0][DataSourceCache_PROPERTY_RemoteId].asString());
     }
 
 /*---------------------------------------------------------------------------------**//**

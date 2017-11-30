@@ -36,17 +36,6 @@ struct LRPTests : public IntegrationTestsBase
         return IntegrationTestsBase::CreateTestDb("ClientTest");
         }
 
-    void DeleteiModels()
-        {
-        auto result = m_client->GetiModels(m_projectId)->GetResult();
-        EXPECT_SUCCESS(result);
-
-        for (auto imodel : result.GetValue())
-            {
-            DeleteiModel(m_projectId, *m_client, *imodel);
-            }
-        }
-
     iModelInfoPtr CreateNewiModel()
         {
         return IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");

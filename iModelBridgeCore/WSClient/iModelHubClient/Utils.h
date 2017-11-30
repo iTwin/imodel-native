@@ -13,6 +13,7 @@
 #include <WebServices/iModelHub/Client/iModelConnection.h>
 #include "Error.xliff.h"
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_SQLITE
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -160,17 +161,30 @@ namespace Db
     {
     namespace Local
         {
-        static Utf8CP iModelURL = "iModelHubServiceURL";
-        static Utf8CP iModelId = "iModelId";
         static Utf8CP ParentChangeSetId = "ParentChangeSetId";
         }
     namespace Properties
         {
         static Utf8CP ProjectNamespace = "dgn_Proj";
+        static Utf8CP iModelHubNamespace = "iModel_Hub";
         static Utf8CP Name = "Name";
         static Utf8CP Description = "Description";
+        static Utf8CP iModelURL = "iModelHubServiceURL";
+        static Utf8CP iModelId = "iModelId";
         }
     }
+
+
+struct iModelHubSpec : PropertySpec
+    {
+    iModelHubSpec(Utf8CP name, PropertySpec::Compress compress = PropertySpec::Compress::Yes) : PropertySpec(name, Db::Properties::iModelHubNamespace, Mode::Normal, compress) {}
+    };
+
+struct iModelHubProperties
+    {
+    static iModelHubSpec iModelURL() { return iModelHubSpec(Db::Properties::iModelURL); }
+    static iModelHubSpec iModelId() { return iModelHubSpec(Db::Properties::iModelId); }
+    };
 
 bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR iModelId);
 bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR iModelId);

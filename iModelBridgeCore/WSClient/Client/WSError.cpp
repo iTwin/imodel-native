@@ -7,27 +7,48 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <map>
+#include <mutex>
 #include <WebServices/Connect/ImsClient.h>
 #include <BeHttp/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
 
 #include "WSError.xliff.h"
 
-#define JSON_ErrorId            "errorId"
-#define JSON_ErrorMessage       "errorMessage"
-#define JSON_ErrorDescription   "errorDescription"
+#define JSON_ErrorId                "errorId"
+#define JSON_ErrorMessage           "errorMessage"
+#define JSON_ErrorDescription       "errorDescription"
 
-#define XML_NAMESPACE           "http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models"
-#define XML_NAMESPACE_PREFIX    "error"
-#define XML_ROOTNODE_NAME       "ModelError"
-#define XML_ErrorId             "error:errorId"
-#define XML_ErrorMessage        "error:errorMessage"
-#define XML_ErrorDescription    "error:errorDescription"
+#define JSON_ErrorHttpStatusCode    "httpStatusCode"
+
+#define XML_NAMESPACE               "http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models"
+#define XML_NAMESPACE_PREFIX        "error"
+#define XML_ROOTNODE_NAME           "ModelError"
+#define XML_ErrorId                 "error:errorId"
+#define XML_ErrorMessage            "error:errorMessage"
+#define XML_ErrorDescription        "error:errorDescription"
+
+#define XML_Azure_Error         "Error"
+#define XML_Azure_Code          "Code"
+#define XML_Azure_Message       "Message"
+#define XML_Azure_BlobNotFound  "BlobNotFound"
+
+std::once_flag s_initErrorIdmap;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
+    {
+    //static local variables are not thread safe in VS2013 version of c++11 compiler
+    //TODO: change this to old way after we move to VS2015
+    std::call_once(s_initErrorIdmap, []() {GetErrorIdFromString(""); });
+    return GetErrorIdFromString(errorIdString);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Basanta.Kharel    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::Id WSError::GetErrorIdFromString(Utf8StringCR errorIdString)
     {
     static std::map<Utf8String, Id> map =
         {
@@ -51,9 +72,7 @@ WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
 
     auto it = map.find(errorIdString);
     if (it != map.end())
-        {
         return it->second;
-        }
 
     return Id::Unknown;
     }
@@ -106,34 +125,76 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
         m_data = nullptr;
         
         if (ConnectionStatus::CertificateError == httpResponse.GetConnectionStatus())
-            {
             m_status = Status::CertificateError;
-            }
         else
-            {
             m_status = Status::ConnectionError;
-            }
 
         m_id = WSError::Id::Unknown;
         return;
         }
 
     if (SUCCESS == ParseBody(httpResponse))
-        {
         return;
-        }
 
     if (ImsClient::IsLoginRedirect(httpResponse) ||                 // Bentley CONNECT login redirect
         HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
         {
-        m_message = HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized);
+        m_message = HttpError(ConnectionStatus::OK, HttpStatus::Unauthorized).GetDisplayMessage();
         m_data = nullptr;
         m_status = Status::ReceivedError;
         m_id = Id::LoginFailed;
         return;
         }
 
+    if (HttpStatus::ProxyAuthenticationRequired == httpResponse.GetHttpStatus())
+        {
+        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_status = Status::ReceivedError;
+        m_id = Id::ProxyAuthenticationRequired;
+        return;
+        }
+
     SetStatusServerNotSupported();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::WSError(JsonValueCR jsonError)
+    {
+    int statusInt = jsonError[JSON_ErrorHttpStatusCode].asInt();
+    if (statusInt == 0)
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
+
+    HttpStatus status = static_cast<HttpStatus>(statusInt);
+    if (SUCCESS != ParseJsonError(jsonError, status))
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::WSError(RapidJsonValueCR jsonError)
+    {
+    int statusInt = GetOptionalInt(jsonError, JSON_ErrorHttpStatusCode);
+    if (statusInt == 0)
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
+
+    HttpStatus status = static_cast<HttpStatus>(statusInt);
+    if (SUCCESS != ParseJsonError(jsonError, status))
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -156,7 +217,7 @@ WSError::WSError(HttpErrorCR httpError)
         return;
         }
 
-    SetStatusReceivedError(httpError, Id::Unknown, nullptr, nullptr);
+    SetStatusReceivedError(httpError, Id::Unknown, nullptr, nullptr, nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -184,28 +245,56 @@ BentleyStatus WSError::ParseBody(Http::ResponseCR httpResponse)
 BentleyStatus WSError::ParseJsonError(Http::ResponseCR httpResponse)
     {
     Json::Value jsonError = Json::Reader::DoParse(httpResponse.GetBody().AsString());
-    if (!IsValidErrorJson(jsonError))
-        {
+    return ParseJsonError(jsonError, httpResponse.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseJsonError(JsonValueCR jsonError, HttpStatus status)
+    {
+    if (!DoesStringFieldExist(jsonError, JSON_ErrorMessage))
         return ERROR;
-        }
 
     WSError::Id errorId = ErrorIdFromString(jsonError[JSON_ErrorId].asString());
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
     Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription, std::make_shared<const Json::Value>(jsonError));
+
+    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription, &jsonError);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseJsonError(RapidJsonValueCR jsonError, HttpStatus status)
+    {
+    if (!DoesStringFieldExist(jsonError, JSON_ErrorMessage))
+        return ERROR;
+
+    WSError::Id errorId = ErrorIdFromString(GetOptionalString(jsonError, JSON_ErrorId));
+    Utf8String errorMessage = GetOptionalString(jsonError, JSON_ErrorMessage);
+    Utf8String errorDescription = GetOptionalString(jsonError, JSON_ErrorDescription);
+
+    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription, nullptr); // TODO: pass json
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8StringR contentsOut)
+BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8StringR contentsOut, bool isRequired)
     {
     BeXmlNodeP childNode = node->SelectSingleNode(childNodePath);
-    if (nullptr == childNode)
+    if (nullptr == childNode && isRequired)
         {
-        return ERROR;
+        if (isRequired)
+            return ERROR;
+
+        contentsOut.clear();
+        return SUCCESS;
         }
+
     childNode->GetContent(contentsOut);
     return SUCCESS;
     }
@@ -220,14 +309,18 @@ BentleyStatus WSError::ParseXmlError(Http::ResponseCR httpResponse)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, bodyStr.c_str(), bodyStr.size());
     if (BeXmlStatus::BEXML_Success != xmlStatus)
-        {
         return ERROR;
-        }
+
     xmlDom->RegisterNamespace(XML_NAMESPACE_PREFIX, XML_NAMESPACE);
 
     BeXmlNodeP rootNode = xmlDom->GetRootElement();
+    if (nullptr == rootNode)
+        return ERROR;
+
     if (nullptr == rootNode || Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
         {
+        if (Utf8String(XML_Azure_Error) == rootNode->GetName())
+            return ParseXmlAzureError(httpResponse, *xmlDom);
         return ERROR;
         }
 
@@ -235,16 +328,42 @@ BentleyStatus WSError::ParseXmlError(Http::ResponseCR httpResponse)
     Utf8String errorMessage;
     Utf8String errorDescription;
 
-    if (SUCCESS != GetChildNodeContents(rootNode, XML_ErrorId, errorIdStr) ||
-        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorMessage, errorMessage) ||
-        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorDescription, errorDescription))
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_ErrorId, errorIdStr, false) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorMessage, errorMessage, true) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorDescription, errorDescription, false))
         {
         return ERROR;
         }
 
     WSError::Id errorId = ErrorIdFromString(errorIdStr);
 
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription, nullptr);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseXmlAzureError(Http::ResponseCR httpResponse, BeXmlDom& xmlDom)
+    {
+    BeXmlNodeP rootNode = xmlDom.GetRootElement();
+    if (nullptr == rootNode)
+        return ERROR;
+
+    Utf8String errorCode;
+    Utf8String errorMessage;
+
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Code, errorCode, true) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Message, errorMessage, true))
+        {
+        return ERROR;
+        }
+
+    auto errorId = WSError::Id::Unknown;
+    if (XML_Azure_BlobNotFound == errorCode)
+        errorId = WSError::Id::FileNotFound;
+
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, nullptr, nullptr);
     return SUCCESS;
     }
 
@@ -262,7 +381,7 @@ void WSError::SetStatusServerNotSupported()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription, JsonValueCPtr errorData)
+void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription, JsonValueCP errorData)
     {
     m_status = Status::ReceivedError;
 
@@ -320,7 +439,8 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         }
 
     // Set custom properties
-    m_data = errorData;
+    if (errorData)
+        m_data = std::make_shared<Json::Value>(*errorData);
     
     // Fallback to default messages if not enough information received
     if (m_message.empty())
@@ -334,27 +454,51 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    09/2014
+* @bsimethod                                                    Vincas.Razma    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsMemberStringOrNull(JsonValueCR json, Utf8CP name)
+bool WSError::DoesStringFieldExist(JsonValueCR json, Utf8CP name)
     {
     if (!json.isMember(name))
-        {
         return false;
-        }
     JsonValueCR member = json[name];
     return member.isString() || member.isNull();
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
+* @bsimethod                                                    Vincas.Razma    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSError::IsValidErrorJson(JsonValueCR jsonError)
+bool WSError::DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name)
     {
-    return
-        IsMemberStringOrNull(jsonError, JSON_ErrorId) &&
-        IsMemberStringOrNull(jsonError, JSON_ErrorMessage) &&
-        IsMemberStringOrNull(jsonError, JSON_ErrorDescription);
+    if (!json.HasMember(name))
+        return false;
+    RapidJsonValueCR member = json[name];
+    return member.IsString() || member.IsNull();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP WSError::GetOptionalString(RapidJsonValueCR json, Utf8CP name)
+    {
+    if (!json.HasMember(name))
+        return nullptr;
+    RapidJsonValueCR member = json[name];
+    if (member.IsNull())
+        return nullptr;
+    return member.GetString();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+int WSError::GetOptionalInt(RapidJsonValueCR json, Utf8CP name)
+    {
+    if (!json.HasMember(name))
+        return 0;
+    RapidJsonValueCR member = json[name];
+    if (member.IsNull())
+        return 0;
+    return member.GetInt();
     }
 
 /*--------------------------------------------------------------------------------------+

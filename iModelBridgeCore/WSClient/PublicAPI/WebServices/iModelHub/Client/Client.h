@@ -46,23 +46,32 @@ private:
     IHttpHandlerPtr             m_customHandler;
     iModelAdmin                 m_iModelAdmin;
 
-    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath);
+    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
+                                                 ICancellationTokenPtr cancellationToken = nullptr);
 
     Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler) : 
         m_clientInfo(clientInfo), m_customHandler(customHandler), m_iModelAdmin(this) { m_serverUrl = UrlProvider::Urls::iModelHubApi.Get(); }
 
     StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
-                                                FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
-                                                ICancellationTokenPtr cancellationToken = nullptr) const;
+                                   FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
+                                   ICancellationTokenPtr cancellationToken = nullptr) const;
     iModelTaskPtr CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
-                                                      ICancellationTokenPtr cancellationToken) const;
-    iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const { return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_customHandler); }
+                                       ICancellationTokenPtr cancellationToken) const;
+    iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const {return iModelConnection::Create(iModelInfo, m_credentials, 
+                                                                                                                  m_clientInfo, m_customHandler);}
     IWSRepositoryClientPtr CreateProjectConnection(Utf8StringCR projectId) const;
 
-    BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
+    BeFileNameTaskPtr DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, 
+                                                          bvector<ChangeSetInfoPtr> changeSetsToMerge, 
+                                                          LocalBriefcaseFileNameCallback const & fileNameCallBack, 
+                                                          Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
 
     //! Opens iModel with schema upgrade and custom DomainUpgradeOptions
-    static DgnDbPtr OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly);
+    static DgnDbPtr OpenWithSchemaUpgradeInternal
+    (
+    BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
+    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly
+    );
 
 public:
     //! Set custom handler.
@@ -80,7 +89,7 @@ public:
     Utf8StringCR GetServerUrl() const {return m_serverUrl;}
 
     //! Returns iModel admin that caches iModelManager instances.
-    DgnPlatformLib::Host::RepositoryAdmin* GetiModelAdmin() { return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_iModelAdmin); }
+    DgnPlatformLib::Host::RepositoryAdmin* GetiModelAdmin() {return dynamic_cast<DgnPlatformLib::Host::RepositoryAdmin*>(&m_iModelAdmin);}
 
     IMODELHUBCLIENT_EXPORT static BriefcaseFileNameCallback DefaultFileNameCallback;
 
@@ -96,7 +105,8 @@ public:
 
     //! Creates a connection to a iModel. Use this method if you need to access iModel information without acquirying a briefcase.
     //! If you already have a briefcase, please use Briefcase.GetiModelConnection()
-    IMODELHUBCLIENT_EXPORT iModelConnectionTaskPtr ConnectToiModel(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelConnectionTaskPtr ConnectToiModel(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr 
+                                                                   cancellationToken = nullptr) const;
 
     //! Get list of available repostiories for this client.
     //! @param[in] projectId Project Id to connect to.
@@ -111,7 +121,8 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelByName(Utf8StringCR projectId, Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelByName(Utf8StringCR projectId, Utf8StringCR iModelName, ICancellationTokenPtr 
+                                                         cancellationToken = nullptr) const;
 
     //! Gets iModel with the specified id.
     //! @param[in] projectId Project Id to connect to.
@@ -119,7 +130,8 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, 
+                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new iModel on the server.
     //! @param[in] projectId Project Id to connect to.
@@ -130,7 +142,9 @@ public:
     //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
     //! @note This method uses name and description properties from dgn_Proj namespace as iModel name and description. If name property is not set, it will use the filename instead.
     //! @note Returned iModel Id might be different from the user supplied iModel name.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, bool waitForInitialized = true, 
+                                                         Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new iModel on the server.
     //! @param[in] projectId Project Id to connect to.
@@ -143,14 +157,16 @@ public:
     //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
     //! @note CreateNewiModel without iModelName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
     //! @note Returned iModel Id might be different from the user supplied iModel name.
-    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, bool waitForInitialized = true,
-                                                                                     Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, 
+                                                         bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr, 
+                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete a iModel from server
     //! @param[in] projectId Project Id to connect to.
     //! @param[in] iModelInfo Information of iModel to be deleted. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] cancellationToken Cancellation is not going to prevent iModel deletion, if the request is already sent.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, 
+                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a iModel from the server.
     //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
@@ -161,7 +177,8 @@ public:
     //! @return Asynchronous task that has briefcase info as the result.
     //! @note If localFileName is an existing file, this method will fail. If it is an existing directory, file name retrieved from server will be appended.
     IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr AcquireBriefcase(iModelInfoCR iModelInfo, BeFileNameCR localFileName, bool doSync = true,
-                                                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                                 Http::Request::ProgressCallbackCR callback = nullptr,
+                                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a iModel from the server using callback to provide the file path.
     //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
@@ -173,15 +190,17 @@ public:
     //! @return Asynchronous task that has briefcase info as the result.
     //! @note Default callback will save iModel at baseDirectory\\iModelId\\briefcaseId\\fileName
     IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFileNameCR baseDirectory, bool doSync = true,
-                                                                                     BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
-                                                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-   
+                                                                      BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback,
+                                                                      Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Abandon a briefcase. It will abandon a briefcase and release all locks and codes associated to it. Make sure you delete briefcase BIM file after calling this.
     //! @param[in] iModelInfo Information of iModel to connect to. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
     //! @param[in] briefcaseId id that should be abandoned.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns error if abandoning briefcase fails.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBriefcaseId briefcaseId, 
+                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a Briefcase instance from a previously downloaded DgnDb file.
     //! @param[in] db Previously downloaded briefcase file. See Client::AcquireBriefcase.
@@ -190,7 +209,8 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has briefcase instance as result. See Briefcase.
     //! @note This method ignores the server url set in client and uses server url read from the briefcase file.
-    IMODELHUBCLIENT_EXPORT BriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Redownload briefcase file if original became invalid.
     //! @param[in] db Previously downloaded briefcase file. See Client::AcquireBriefcase.
@@ -198,7 +218,8 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns error if download has failed. See Briefcase.
     //! @note Should be used if briefcase file has became invalid.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr RecoverBriefcase(DgnDbPtr db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr RecoverBriefcase(DgnDbPtr db, Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Restore a briefcase of an iModel for a briefcase id that was issued previously. This function should be used in cases when briefcase file was deleted,
     //! but briefcase id remained for future use. For example: briefcase was deleted to free up the space temporarilly.
@@ -211,9 +232,11 @@ public:
     //! @param cancellationToken
     //! @return Asynchronous task that has briefcase info as the result.
     //! @note Default callback will save iModel at baseDirectory\\iModelId\\briefcaseId\\fileName
-    IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBriefcaseId briefcaseId, BeFileNameCR baseDirectory, 
-                                                                 bool doSync = true, BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
-                                                                 Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBriefcaseId briefcaseId, 
+                                                                 BeFileNameCR baseDirectory, bool doSync = true, 
+                                                                 BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
+                                                                 Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Creates iModel manager that is not managed by Client.
     //! @param[in] iModelInfo
@@ -240,8 +263,10 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has breifcase file path as the result.
-    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallback const& fileNameCallBack,
-                                                                                    Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, 
+                                                                                         LocalBriefcaseFileNameCallback const& fileNameCallBack,
+                                                                                         Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Dowloads local briefcase updated to specified ChangeSet. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
     //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
@@ -250,8 +275,13 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has breifcase file path as the result.
-    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallback const& fileNameCallBack,
-                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcaseUpdatedToChangeSet
+    (
+    iModelInfoCR iModelInfo, Utf8String changeSetId,
+    LocalBriefcaseFileNameCallback const& fileNameCallBack,
+    Http::Request::ProgressCallbackCR callback = nullptr, 
+    ICancellationTokenPtr cancellationToken = nullptr
+    ) const;
 
     //! Dowloads local briefcase from server with version applied. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
     //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
@@ -259,8 +289,10 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has briefcase info as the result.
-    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const& fileNameCallBack,
-                                                                    Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, 
+                                                                         LocalBriefcaseFileNameCallback const& fileNameCallBack, 
+                                                                         Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

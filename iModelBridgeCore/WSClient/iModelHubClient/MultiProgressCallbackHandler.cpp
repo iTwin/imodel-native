@@ -31,7 +31,7 @@ void MultiProgressCallbackHandler::AddCallback(Http::Request::ProgressCallback& 
             {
             totalProgress += progressItem.second;
             }
-            
+
         if (this->m_callback)
             this->m_callback(totalProgress, 100);
         };
