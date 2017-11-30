@@ -2531,7 +2531,7 @@ struct HiliteSettings
 private:
     ColorDef    m_color;
     double      m_visibleRatio = 0.5;
-    double      m_hiddenRatio = 0.25;
+    double      m_hiddenRatio = 0.0;
     Silhouette  m_silhouette = Silhouette::Thick;
 
     static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
