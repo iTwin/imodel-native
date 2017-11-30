@@ -140,7 +140,8 @@ private:
     PhenomenonCP    m_phenomenon;
     UnitCP          m_parent;
     bool            m_isConstant;
-
+    mutable Utf8String m_displayLabel;
+    mutable Utf8String m_displayDescription;
 
     static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     static UnitP Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
@@ -166,6 +167,8 @@ public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
     UNITS_EXPORT Utf8String GetParsedUnitExpression() const;
     UNITS_EXPORT UnitsProblemCode Convert(double& converted, double value, UnitCP toUnit) const;
+    UNITS_EXPORT Utf8CP GetLabel() const;
+    UNITS_EXPORT Utf8CP GetDescription() const;
 
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }

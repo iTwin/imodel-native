@@ -81,7 +81,7 @@
         <SubPart PartName="RuniOSXCTest" />
         <Directories DirectoryListName="UnitsTested"/>
     </Product>
-    
+
     <Product Name="Units-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
@@ -102,12 +102,20 @@
     <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/Prewire.mke">
         <SubPart PartName="UnitsNative" />
         <SubPart PartName="UnitsConversionData" />
+        <SubPart PartName="TestsSqlang" />
         <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-  <!-- Platform-specific test parts and products -->
+    <Part Name="TestsSqlang" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/ECPresentation/SQLang/Units_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="UnitsDll" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/Units_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Platform-specific test parts and products -->
   <!-- Only/ExcludePlatforms attributes should be used only in this section -->
 
   <!-- *** GTEST - runs on Windows, Linux, MaxOS *** -->
@@ -116,6 +124,7 @@
     <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     <Bindings>
       <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/UnitsTest.log</Files>
+        <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest/Assets" />
     </Bindings>
   </Part>
 
@@ -226,6 +235,7 @@
     <Part Name="Units-Xliffs" BentleyBuildMakeFile="Localization/Xliffs.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitsXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/Units_en.xliff</Files>
+            <Files ProductDirectoryName="UnitsXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/UnitLabels_en.xliff</Files>
         </Bindings>
     </Part>
 

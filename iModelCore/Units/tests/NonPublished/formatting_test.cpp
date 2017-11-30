@@ -16,6 +16,8 @@
 #include <Units/Quantity.h>
 #include <Units/Units.h>
 #include "FormattingTestFixture.h"
+#include <BeSQLite/L10N.h>
+
 
 //#define FORMAT_DEBUG_PRINT
 
@@ -31,11 +33,32 @@ BE_JSON_NAME(pitch)
 BE_JSON_NAME(roll)
 
 
+static void SetUpL10N() 
+    {
+    BeFileName sqlangFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
+    sqlangFile.AppendToPath(L"sqlang");
+    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+
+    BeFileName temporaryDirectory;
+    BeTest::GetHost().GetTempDir(temporaryDirectory);
+
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+    BeSQLite::L10N::Shutdown();
+    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+    }
+
+static void TearDownL10N()
+    {
+    BeSQLite::L10N::Shutdown();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Preliminary)
     {
+    SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
@@ -157,6 +180,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("ft");
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("IN");
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("in");
+    TearDownL10N();
     }
 
 //#ifdef _WIN32
@@ -177,6 +201,8 @@ TEST(FormattingTest, Preliminary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, StdFormatting)
     {
+    SetUpL10N();
+
     "{AddSynonym:{UnitName:\"FT\", Synonym:\"'\"";
 
     FormattingTestFixture::StdFormattingTest("stop100-2",   1517.23, "15+17.23");
@@ -193,6 +219,7 @@ TEST(FormattingTest, StdFormatting)
     EXPECT_STREQ ("0000", numFmt.FormatIntegerToString(0, 4, false).c_str());
     numFmt.SetSignOption(Formatting::ShowSignOption::SignAlways);
     EXPECT_STREQ ("+00152", numFmt.FormatIntegerToString(152, 5, false).c_str());
+    TearDownL10N();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,6 +460,8 @@ TEST(FormattingTest, Pasring)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, PhysValues)
     {
+    SetUpL10N();
+
     FormattingDividers fdiv = FormattingDividers("()[]{} ");
     EXPECT_TRUE(fdiv.IsDivider('('));
     EXPECT_TRUE(fdiv.IsDivider(')'));
@@ -492,15 +521,15 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
     //StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
-    EXPECT_STREQ ("74 15/32 FT", NumericFormatSpec::StdFormatQuantity("fractu", len, ftUOM, " ").c_str());
-    EXPECT_STREQ ("74 1/2 FT", NumericFormatSpec::StdFormatQuantity("fract16u", len, ftUOM, " ").c_str());
-    EXPECT_STREQ ("74 15/32 FT", NumericFormatSpec::StdFormatQuantity("fract32u", len, ftUOM, " ").c_str());
-    EXPECT_STREQ ("24 7/8 YRD", NumericFormatSpec::StdFormatQuantity("fract8u", len, yardUOM, " ").c_str());
-    EXPECT_STREQ ("24 7/8-YRD", NumericFormatSpec::StdFormatQuantity("fract8u", len, yrdsdUOM, "-").c_str());
+    EXPECT_STREQ ("74 15/32 ft", NumericFormatSpec::StdFormatQuantity("fractu", len, ftUOM, " ").c_str());
+    EXPECT_STREQ ("74 1/2 ft", NumericFormatSpec::StdFormatQuantity("fract16u", len, ftUOM, " ").c_str());
+    EXPECT_STREQ ("74 15/32 ft", NumericFormatSpec::StdFormatQuantity("fract32u", len, ftUOM, " ").c_str());
+    EXPECT_STREQ ("24 7/8 yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yardUOM, " ").c_str());
+    EXPECT_STREQ ("24 7/8-yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yrdsdUOM, "-").c_str());
 
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
     //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
-    EXPECT_STREQ ("74 15/32FT", fusYF.FormatQuantity(len, "").c_str());
+    EXPECT_STREQ ("74 15/32ft", fusYF.FormatQuantity(len, "").c_str());
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -587,25 +616,25 @@ TEST(FormattingTest, PhysValues)
     // Volumes
     EXPECT_STREQ ("405.0 CFT", NumericFormatSpec::StdFormatPhysValue("real4u", 15.0, "CUB.YRD", "CUB.FT", "CFT", " ").c_str());
 
-    EXPECT_STREQ ("11.4683 CUB.M", NumericFormatSpec::StdFormatPhysValue("real4u", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
+    EXPECT_STREQ (u8"11.4683 m³", NumericFormatSpec::StdFormatPhysValue("real4u", 15.0, "CUB.YRD", "CUB.M", nullptr, " ").c_str());
     EXPECT_STREQ ("2058.0148 L", NumericFormatSpec::StdFormatPhysValue("real4u", 543.6700, "GALLON", "LITRE", "L", " ").c_str());
 
     // Areas
-    EXPECT_STREQ ("327.7853 ACRE", NumericFormatSpec::StdFormatPhysValue("real4u", 132.65, "HECTARE", "ACRE", nullptr, " ").c_str());
+    EXPECT_STREQ ("327.7853 acres", NumericFormatSpec::StdFormatPhysValue("real4u", 132.65, "HECTARE", "ACRE", nullptr, " ").c_str());
 
     // Pressure
     EXPECT_STREQ ("99.974 KP", NumericFormatSpec::StdFormatPhysValue("real4u", 14.5, "PSI", "KILOPASCAL", "KP", " ").c_str());
-    EXPECT_STREQ ("6701.3526 PSI", NumericFormatSpec::StdFormatPhysValue("real4u", 456.0, "ATM", "PSI", nullptr, " ").c_str());
+    EXPECT_STREQ (u8"6701.3526 lbf/in²", NumericFormatSpec::StdFormatPhysValue("real4u", 456.0, "ATM", "PSI", nullptr, " ").c_str());
 
     // mass
-    EXPECT_STREQ ("115.3485 KG", NumericFormatSpec::StdFormatPhysValue("real4u", 254.3, "LBM", "KG", nullptr, " ").c_str());
-    EXPECT_STREQ ("35.274 OZM", NumericFormatSpec::StdFormatPhysValue("real4u", 1.0, "KG", "OZM", nullptr, " ").c_str());
-    EXPECT_STREQ ("35.273962_OZM", NumericFormatSpec::StdFormatPhysValue("realu", 1.0, "KG", "OZM", nullptr, "_").c_str());
-    EXPECT_STREQ ("1.0 KG", NumericFormatSpec::StdFormatPhysValue("realu", 35.27396194958, "OZM", "KG", nullptr, " ").c_str());
-    EXPECT_STREQ ("4068.7986 OZM", NumericFormatSpec::StdFormatPhysValue("real4u", 115.3485, "KG", "OZM", nullptr, " ").c_str());
+    EXPECT_STREQ ("115.3485 kg", NumericFormatSpec::StdFormatPhysValue("real4u", 254.3, "LBM", "KG", nullptr, " ").c_str());
+    EXPECT_STREQ ("35.274 oz", NumericFormatSpec::StdFormatPhysValue("real4u", 1.0, "KG", "OZM", nullptr, " ").c_str());
+    EXPECT_STREQ ("35.273962_oz", NumericFormatSpec::StdFormatPhysValue("realu", 1.0, "KG", "OZM", nullptr, "_").c_str());
+    EXPECT_STREQ ("1.0 kg", NumericFormatSpec::StdFormatPhysValue("realu", 35.27396194958, "OZM", "KG", nullptr, " ").c_str());
+    EXPECT_STREQ ("4068.7986 oz", NumericFormatSpec::StdFormatPhysValue("real4u", 115.3485, "KG", "OZM", nullptr, " ").c_str());
 
     //CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
-
+    TearDownL10N();
     }
 
 /*---------------------------------------------------------------------------------**//**
