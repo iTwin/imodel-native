@@ -61,10 +61,10 @@ To test changes to the native code before publishing, you must at a minimum inst
 ``` bat
 cd <localjsroot>\imodeljs-core
 cd source\backend
-npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
 npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
 cd ..\test
-npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
 npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
 ```
 
@@ -73,16 +73,17 @@ Here is the same set of commands in the form of a .bat file:
 ``` bat
 cd <localjsroot>\imodeljs-core
 cd source\backend
-call npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
 cd ..\test
-call npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
 ```
 
 This example is for a Windows node app. Use appropriate paths, as printed by the MakePackages part in your local build.
 
 Note the `--no-save` argument. Make sure that you do not accidentally add imodeljs-N_8_2-WinX64 to dependencies in your packages.json file! imodeljs-core must not have a hard dependency on any particular addon package!
+Also, even though imodeljs-core does depend on imodeljs-nodeaddonapi, make sure that you don't add a dependency that refers to a local file.
 
 Then go back up to the imodeljs-core parent directory and rebuild and run the tests.
 
