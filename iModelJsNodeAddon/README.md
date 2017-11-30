@@ -1,14 +1,14 @@
-﻿# @bentley/imodeljsnodeaddonapi
+﻿# @bentley/imodeljs-nodeaddonapi
 
-The iModelJs node addon contains native code that is projected into JavaScript for use by imodeljs-core backend. The @bentley/imodeljsnodeaddonapi package defines the classes, methods, and properties -- the API -- that the addon implements.
+The iModelJs node addon contains native code that is projected into JavaScript for use by imodeljs-core backend. The @bentley/imodeljs-nodeaddonapi package declares the classes, methods, and properties -- the API -- that the addon implements.
 
-The addon itself is in a different package. In fact, there will be a separate package for each combination of node version and target platform that is supported. For example, @bentley/imodeljs-n_8_9-winx64 is the version of the addon that can be used on a Windows desktop machine running node v8.9.x. In addition, some apps may build custom versions of the addon.
+The addon and api declaration are in separte packages. In fact, there will be many versions of the addon, one for each combination of node version and target platform that is supported, and each will be in its own package. For example, @bentley/imodeljs-n_8_9-winx64 is the version of the addon that can be used on a Windows desktop machine running node v8.9.x. In addition, some apps may build custom versions of the addon.
 
 imodeljs-core does not have a package dependency on the addon. Instead, the addon is delivered by the app. This allows the app to substitute a custom addon of its own. Or, an app can use the default addon. In either case, it is up to the app to know what addon it wants to use, to obtain that addon, and to include it in its installation package. The app must then tell imodeljs-core where the addon is by calling a method on the NodeAddon class in imodeljs-core. imodeljs-core will `require` the delivered addon (whatever it is) and use the classes and methods that it contains.
 
-imodeljs-core does have a package dependency on imodeljsnodeaddonapi and is built to expect a particular addon API. The addon that is loaded and used at runtime must implement the expected API, as explained below.
+imodeljs-core does have a package dependency on imodeljs-nodeaddonapi and is built to expect a particular addon API. The addon that is loaded and used at runtime must implement the expected API, as explained below.
 
-Note: imodeljs-core depends on imodeljsnodeaddonapi in two places: in backend/package.json and test/package.json. Keep them consistent!
+Note: imodeljs-core depends on imodeljs-nodeaddonapi in two places: in backend/package.json and test/package.json. Keep them consistent!
 
 ## Versioning Rules
 
@@ -20,7 +20,7 @@ Increment the *third digit* if you merely fix a bug or otherwise change the impl
 
 Obviously, if you change the addon's API in any way, you must update iModelJsNodeApi.d.ts to reflect the change.
 
-In order to verify that the addon is compatible, imodeljs-core compares the version of the addon, *addon*, with the version of imodeljsnodeaddonapi from which imodeljs-core was built, *api*:
+In order to verify that the addon is compatible, imodeljs-core compares the version of the addon, *addon*, with the version of imodeljs-nodeaddonapi from which imodeljs-core was built, *api*:
 1. The first digit of *addon* must be equal to the first digit of *api*, and
 2. The second digit of *addon* must be greater than or equal to the second digit of *api*.
 
@@ -30,19 +30,25 @@ From these versioning rules, it is clear that an app use an existing version of 
 
 # Building the Addon
 
-If you change the addon code itself or any library that it links with, build the addon like this: 
+You can build the addon like this:
 
-`bb -riModelJsNodeAddon -piModelJsNodeAddon:MakePackages b`
+`bb -siModelJsNodeAddon b`
 
-You might need to use a rebuild command to force incremental rebuilds of individual parts. For example,
+If you are making changes to the libraries that are used by the addon, such as DgnPlatform.dll, then you must add BuildAll to your build strategy, in order to build and link with your local build, rather than with LKGs, like this:
 
-`bb -riModelJsNodeAddon -piModelJsNodeAddon:MakePackages re DgnPlatformDLL iModelJsNodeAddonLib* MakePackages`
+`bb -s"imodeljs-nodeaddonapi;BuildAll" b`
+
+To force a rebuild of individual parts, do this:
+
+`bb "imodeljs-nodeaddonapi;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
 
 The MakePackages part will print a message like this: 
 
-`npm publish %OutRoot%Winx64\packages\imodeljs-E_1_6_11-WinX64`
-`npm publish %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64`
-`npm publish %OutRoot%Winx64\packages\imodeljsnodeaddonapi`
+``` bat
+npm publish %OutRoot%Winx64\packages\imodeljs-E_1_6_11-WinX64
+npm publish %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
+npm publish %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+```
 
 That message identifies the (generated) npm packages that contain the addon, as well as the API package. This example is from a Windows build. The messages from a Linux or MacOS build will be similar, but will show names that are specific to those platforms. Note MakePackages produces several packages from the same source. In the case of a Windows build, there is one addon package for use in a node app and another for an electron app. The API package is the same for both. All of the packages must be published together.
 
@@ -52,24 +58,45 @@ But, before publishing ...
 
 To test changes to the native code before publishing, you must at a minimum install your local build of the addon into imodeljs-core and then run unit tests, as follows:
 
-`cd <localjsroot>\imodeljs-core`
-`npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64`
+``` bat
+cd <localjsroot>\imodeljs-core
+cd source\backend
+npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
+cd ..\test
+npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
+```
 
-This example is for Windows. Use whatever path is printed by the build step above.
+Here is the same set of commands in the form of a .bat file:
+
+``` bat
+cd <localjsroot>\imodeljs-core
+cd source\backend
+call npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
+cd ..\test
+call npm install %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
+```
+
+This example is for a Windows node app. Use appropriate paths, as printed by the MakePackages part in your local build.
 
 Note the `--no-save` argument. Make sure that you do not accidentally add imodeljs-N_8_2-WinX64 to dependencies in your packages.json file! imodeljs-core must not have a hard dependency on any particular addon package!
+
+Then go back up to the imodeljs-core parent directory and rebuild and run the tests.
 
 # Publish the Addon
 
 ### Change the Package Version
 
-The package version that is used for both the addon(s) and the corresponding imodeljsnodeaddonapi is contained in a text file called `%SrcRoot%iModelJsNodeAddon\package_version.txt`. Edit this file to change the version number as appropriate. Don't forget to hg commit and hg push that. 
+The package version that is used for both the addon(s) and the corresponding imodeljs-nodeaddonapi is contained in a text file called `%SrcRoot%imodeljs-nodeaddonapi\package_version.txt`. Edit this file to change the version number as appropriate. Don't forget to hg commit and hg push that. 
 
 ### Rebuild the packages
 
 After changing the version number, you must rebuild the MakePackages part:
 
-`bb -riModelJsNodeAddon -piModelJsNodeAddon:MakePackages re MakePackages`
+`bb -siModelJsNodeAddon re MakePackages`
 
 ### Publish
 
@@ -104,4 +131,4 @@ Finally, change the PartFiles that refer to the version of the node api that is 
 
 1. Edit `%SrcRoot%thirdparty\nodejs\napi\node-addon-api.mke` and change the value of the macros such as `nodeIncludes` that you see that refer to the version-specific node-gyp includes and libs. 
 
-2. Edit `%SrcRoot%iModelJsNodeAddon\iModelJsNodeAddon.PartFile.xml` and change the node version that you see in the various `iModelJsNode_node_module` bindings. Note that we specify only major and minor version, not build number.
+2. Edit `%SrcRoot%imodeljs-nodeaddonapi\imodeljs-nodeaddonapi.PartFile.xml` and change the node version that you see in the various `iModelJsNode_node_module` bindings. Note that we specify only major and minor version, not build number.

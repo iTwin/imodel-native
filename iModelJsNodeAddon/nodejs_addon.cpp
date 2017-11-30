@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <memory>
 #include "suppress_warnings.h"
-#include <imodeljsnode_addon_package_version.h>
+#include <imodeljs-nodeaddonapi.package.version.h>
 
 #include <node-addon-api/napi.h>
 #include <uv/uv.h>

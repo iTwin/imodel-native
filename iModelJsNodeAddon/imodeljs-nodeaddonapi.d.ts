@@ -8,7 +8,7 @@ import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data 
 returned in a successful outcome. */
-interface iModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
+interface IModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
   /**
    * The signature of a callback.
    * @param error A description of th error, in case of failure.
@@ -18,7 +18,7 @@ interface iModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
 }
 
 /* The signature of a callback that expects a single argument, a status code. */
-interface iModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
+interface IModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
   /**
    * The signature of a callback.
    * @param error A description of th error, in case of failure.
@@ -42,7 +42,7 @@ declare class NodeAddonDgnDb {
    * @param mode The open mode
    * @param callback Invoked when the operation completes. The only argument is a status code indicating sucess or failure.
    */
-  openDgnDb(dbname: string, mode: OpenMode, callback: iModelJsNodeAddonStatusOnlyCallback<DbResult>): void;
+  openDgnDb(dbname: string, mode: OpenMode, callback: IModelJsNodeAddonStatusOnlyCallback<DbResult>): void;
 
   /**
    * Open a local BIM file.
@@ -86,14 +86,14 @@ declare class NodeAddonDgnDb {
    * @param opts Identifies the element
    * @param  callback Invoked when the operation completes. The 'result' argument is the element's properties in stringified JSON format.
    */
-  getElement(opts: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
+  getElement(opts: string, callback: IModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
 
   /**
    * Get a model's properties
    * @param opts Identifies the model
    * @param  callback Invoked when the operation completes. The 'result' argument is the model's properties in stringified JSON format.
    */
-  getModel(opts: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void
+  getModel(opts: string, callback: IModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void
 
   /**
    * Insert an element.
@@ -121,7 +121,7 @@ declare class NodeAddonDgnDb {
    * @param id The element's ID, in stringified JSON format
    * @param callback Invoked when the operation completes. The 'result' argument is an object containing the object's properties, in stringified JSON format.
    */
-  getElementPropertiesForDisplay(id: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
+  getElementPropertiesForDisplay(id: string, callback: IModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
 
   /**
    * Get information about an ECClass
@@ -129,7 +129,7 @@ declare class NodeAddonDgnDb {
    * @param className The name of the ECClass
    * @param callback Invoked when the operation completes. The 'result' argument is an object containing the properties of the class, in stringified JSON format.
    */
-  getECClassMetaData(schema: string, className: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
+  getECClassMetaData(schema: string, className: string, callback: IModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
 
  /**
    * Get information about an ECClass
@@ -145,7 +145,7 @@ declare class NodeAddonDgnDb {
    * @param bindings The bindings to the statement. Pass null if there are no bindings.
    * @param callback Invoked when the operation completes. The 'result' argument is an array or rows in stringified JSON format.
    */
-  executeQuery(ecsql: string, bindings: string, callback: iModelJsNodeAddonCallback<BentleyError<DbResult>, string>): void;
+  executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<BentleyError<DbResult>, string>): void;
 
 }
 
@@ -194,7 +194,6 @@ declare class NodeAddonECSqlStatement {
 
 }
 
-/* The NodeAddonECDb class that is projected by the iModelJs node addon. */
 declare class NodeAddonECDb {
     constructor();
 

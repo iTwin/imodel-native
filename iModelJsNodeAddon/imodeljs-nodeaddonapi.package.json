@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/imodeljsnodeaddonapi",
+  "name": "@bentley/imodeljs-nodeaddonapi",
   "license": "UNLICENSED",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
@@ -10,5 +10,5 @@
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
   },
-  "types": "./iModelJsNodeAddon.d.ts"
+  "types": "./imodeljs-nodeaddonapi.d.ts"
 }
