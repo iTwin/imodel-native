@@ -173,10 +173,9 @@ public:
     ClipVectorCPtr GetActiveVolume() const {return m_volume;}
     void EnableStopAfterTimout(BeDuration::Milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
-    Render::GraphicBuilderPtr CreateWorldGraphic(TransformCR tf=Transform::FromIdentity())
-        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), tf, GetViewport())); }
-    Render::GraphicBuilderPtr CreateViewGraphic(TransformCR tf=Transform::FromIdentity())
-        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::View(GetDgnDb(), tf, GetViewport())); }
+    Render::GraphicBuilderPtr CreateSceneGraphic(TransformCR tf=Transform::FromIdentity())
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(), tf, GetViewport())); }
+
     Render::TexturePtr CreateTexture(Render::ImageCR image) const { return _CreateTexture(image); }
     Render::TexturePtr CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp=Render::Image::BottomUp::No) const
         { return _CreateTexture(source, bottomUp); }
@@ -333,6 +332,8 @@ struct RenderContext : ViewContext
 protected:
     Render::TargetR m_target;
 
+    Render::GraphicBuilderPtr CreateGraphic(TransformCR tf, Render::GraphicType type)
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams(GetViewportR(), tf, type)); }
 public:
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
@@ -340,6 +341,8 @@ public:
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(std::move(branch), db, tf, clips);}
     Render::TargetR GetTargetR() {return m_target;}
     DgnViewportR GetViewportR()  {return *m_viewport;}   // A RenderContext always have a viewport.
+
+    Render::GraphicBuilderPtr CreateSceneGraphic(TransformCR tf=Transform::FromIdentity()) { return CreateGraphic(tf, Render::GraphicType::Scene); }
 };
 
 //=======================================================================================
@@ -474,6 +477,11 @@ public:
     DGNPLATFORM_EXPORT void SetViewBackground(Render::GraphicR graphic);
 
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
+
+    Render::GraphicBuilderPtr CreateViewBackground(TransformCR tf=Transform::FromIdentity()) { return CreateGraphic(tf, Render::GraphicType::ViewBackground); }
+    Render::GraphicBuilderPtr CreateWorldDecoration(TransformCR tf=Transform::FromIdentity()) { return CreateGraphic(tf, Render::GraphicType::WorldDecoration); }
+    Render::GraphicBuilderPtr CreateWorldOverlay(TransformCR tf=Transform::FromIdentity()) { return CreateGraphic(tf, Render::GraphicType::WorldOverlay); }
+    Render::GraphicBuilderPtr CreateViewOverlay(TransformCR tf=Transform::FromIdentity()) { return CreateGraphic(tf, Render::GraphicType::ViewOverlay); }
 };  
 
 END_BENTLEY_DGN_NAMESPACE

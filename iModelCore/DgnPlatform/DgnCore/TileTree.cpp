@@ -563,6 +563,24 @@ BentleyStatus Root::DeleteCacheFile()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName TileCache::GetCacheFileName(BeFileNameCR baseName)
+    {
+    BeFileName filename = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+
+    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
+    filename.AppendToPath(L"Tiles");
+    filename.AppendSeparator();
+    BeFileName::CreateNewDirectory(filename);
+
+    filename.AppendToPath(baseName);
+    filename.AppendExtension(L"TileCache");
+
+    return filename;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
@@ -570,10 +588,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     if (httpOnly && !IsHttp()) 
         return;
         
-    m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-    m_localCacheName.AppendToPath(BeFileName(realityCacheName));
-    m_localCacheName.AppendExtension(L"TileCache");
-
+    m_localCacheName = TileCache::GetCacheFileName(BeFileName(realityCacheName));
     m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
         m_cache = nullptr;
@@ -1705,7 +1720,7 @@ void TriMeshTree::TriMesh::Pick(PickArgsR args)
     if (m_indices.empty())
         return;
 
-    auto graphic = args.m_context.CreateWorldGraphic(args.m_location);
+    auto graphic = args.m_context.CreateSceneGraphic(args.m_location);
     graphic->AddPolyface(*GetPolyface());
     }
 
@@ -1765,7 +1780,7 @@ void TriMeshTree::Tile::AddDebugRangeGraphics(DrawArgsR args) const
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
 
-    auto graphic = args.m_context.CreateWorldGraphic();
+    auto graphic = args.m_context.CreateSceneGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddRangeBox(m_range);
     args.m_graphics.Add(*graphic->Finish());

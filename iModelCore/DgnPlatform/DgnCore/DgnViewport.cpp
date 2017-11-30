@@ -1175,6 +1175,20 @@ void DgnViewport::SetAnimator(IViewportAnimatorR animator)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetFlashed(DgnElementId id, double duration)
+    {
+    if (m_flashedElem != id)
+        {
+        m_lastFlashedElem = m_flashedElem;
+        m_flashedElem = id;
+        }
+
+    m_flashDuration = duration;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Frustum::ScaleAboutCenter(double scale)

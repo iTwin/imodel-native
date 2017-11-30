@@ -131,6 +131,16 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::SetViewedCategories(DgnCategoryIdSet const& categories)
+    {
+    GetViewDefinitionR().GetCategorySelector().SetCategories(categories);
+    SetFeatureOverridesDirty();
+    _OnCategoryChange(false); // boolean indicates a single category was enabled; false means a category was disabled or multiple changes were made
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::ViewController(ViewDefinitionCR def, SkipClone skipClone)
@@ -660,7 +670,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
 #else
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
-    GraphicBuilderPtr graphic = context.CreateWorldGraphic();
+    GraphicBuilderPtr graphic = context.CreateWorldOverlay();
 
     graphic->SetSymbology(color, colorFill, 1);
     graphic->AddArc(ellipse, true, true);
@@ -696,7 +706,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
-    GraphicBuilderPtr graphic = context.CreateViewGraphic();
+    GraphicBuilderPtr graphic = context.CreateViewOverlay();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 

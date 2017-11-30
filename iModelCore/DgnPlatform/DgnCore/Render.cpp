@@ -1016,22 +1016,6 @@ void OctEncodedNormal::VerifyEncoded(uint16_t val, DVec3dCR in)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilder::CreateParams GraphicBuilder::CreateParams::World(DgnViewportR vp, TransformCR tf)
-    {
-    return World(vp.GetViewController().GetDgnDb(), tf, &vp);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilder::CreateParams GraphicBuilder::CreateParams::View(DgnViewportR vp, TransformCR tf)
-    {
-    return View(vp.GetViewController().GetDgnDb(), tf, &vp);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GraphicBuilder::_WantPreBakedBody(IBRepEntityCR body)
@@ -1041,5 +1025,14 @@ bool GraphicBuilder::_WantPreBakedBody(IBRepEntityCR body)
 #else
     return true;
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicBuilder::CreateParams::CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type)
+    : CreateParams(vp.GetViewController().GetDgnDb(), tf, &vp, type)
+    {
+    //
     }
 

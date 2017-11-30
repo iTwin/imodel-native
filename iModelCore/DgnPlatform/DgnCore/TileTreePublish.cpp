@@ -51,6 +51,8 @@ bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip
 bool IsUnclipped() {return m_unclipped;}
 
 }; // Clipper
+
+static double    calculateTolerance(TileTree::TileCR inputTile) { return (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6 : inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();  }   // off by factor two??      
  
 //=======================================================================================
 // @bsiclass                                                     Ray.Bentley     04/2017
@@ -73,16 +75,14 @@ protected:
 public:
     bool    GeometryExists() const { return !m_geometry.IsEmpty(); }
 
+
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    double          tileTolerance = (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6 : inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();     // off by factor two??
-
-    return new Tile(model, inputTile.GetRange(), transformFromDgn, depth, siblingIndex, parent, tileTolerance);
+    return new Tile(model, inputTile.GetRange(), transformFromDgn, depth, siblingIndex, parent, calculateTolerance(inputTile));
     }
-
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
@@ -318,6 +318,10 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
     {
     return requestTile(context).then([=](BentleyStatus status)
         {
+        // The range and tolerance were s set when the output tile was constructed - but the input node may have not been loaded then, so reset them here. (3SM)
+        context.m_outputTile->SetDgnRange(context.m_inputTile->GetRange());
+        context.m_outputTile->SetTolerance(calculateTolerance(*context.m_inputTile));
+
         if (SUCCESS != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
 

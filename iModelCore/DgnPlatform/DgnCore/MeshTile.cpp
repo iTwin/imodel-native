@@ -1569,7 +1569,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-#if 0 
+#ifdef ACCEPT_PUBLISHED_TILESET_INTERFACE 
     if (nullptr != getPublishedURL)
         {
         return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
@@ -2574,6 +2574,8 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         {
         m_geometries.clear();
         }
+#if defined(NEEDSWORK_SHEET_BORDER)
+    // Sheet::Model::CreateBorder() now creates border in *view* coords...Cesium needs it in world coords...
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
@@ -2594,6 +2596,7 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             PushCurrentGeometry();
             }
         }
+#endif
 
     return status;
     }

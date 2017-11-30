@@ -16,17 +16,18 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct WireframeGeomUtil
 {
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false, GeometryStreamEntryIdCP entryId = nullptr);
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false, GeometryStreamEntryIdCP entryId = nullptr);
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(IBRepEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false, GeometryStreamEntryIdCP entryId = nullptr);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, GeometryStreamEntryIdCP entryId = nullptr);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, GeometryStreamEntryIdCP entryId = nullptr);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(IBRepEntityCR, DgnDbR, GeometryStreamEntryIdCP entryId = nullptr);
 
-    DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, ISolidPrimitiveCR, ViewContext* viewContext = nullptr, bool includeEdges = true, bool includeFaceIso = true);
-    DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, MSBsplineSurfaceCR, CheckStop* stopTester = nullptr, bool includeEdges = true, bool includeFaceIso = true);
-    DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, IBRepEntityCR, CheckStop* stopTester = nullptr, bool includeEdges = true, bool includeFaceIso = true);
+    DGNPLATFORM_EXPORT static void Draw(ISolidPrimitiveCR, Render::GraphicBuilderR, CheckStop* stopTester = nullptr);
+    DGNPLATFORM_EXPORT static void Draw(MSBsplineSurfaceCR, Render::GraphicBuilderR, CheckStop* stopTester = nullptr);
+    DGNPLATFORM_EXPORT static void Draw(IBRepEntityCR, Render::GraphicBuilderR, CheckStop* stopTester = nullptr);
 
     DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GraphicBuilderR);
     DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GraphicBuilderR, double zDepth);
 
+    DGNPLATFORM_EXPORT static void DrawUVRules(MSBsplineSurfaceCR, Render::GraphicBuilderR, Render::GraphicParamsCR, CheckStop* stopTester = nullptr);
     DGNPLATFORM_EXPORT static void DrawControlPolygon(MSBsplineSurfaceCR, Render::GraphicBuilderR, Render::GraphicParamsCR);
     DGNPLATFORM_EXPORT static void DrawControlPolygon(ICurvePrimitiveCR, Render::GraphicBuilderR, Render::GraphicParamsCR, bool is3d = true, double zDepth = 0.0);
 };

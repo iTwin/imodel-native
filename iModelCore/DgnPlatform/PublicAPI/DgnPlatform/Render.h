@@ -251,12 +251,14 @@ struct Task : RefCounted<NonCopyableClass>
     //! The rendering operation a task performs.
     enum class Operation
     {
+        ChangeDecorations,
         ChangeDynamics,
         ChangeRenderPlan,
         ChangeScene,
         DefineGeometryTexture,
         DestroyTarget,
         Initialize,
+        OnResized,
         OverrideFeatureSymbology,
         ReadImage,
         ReadPixels,
@@ -1303,6 +1305,30 @@ public:
 };
 
 //=======================================================================================
+//! Describes the type of a Graphic. Used when creating a GraphicBuilder to specify the purpose of the Graphic.
+//! For Graphics like overlays and view background for which depth testing is disabled:
+//!  - The individual geometric primitives are rendered in the order in which they were defined in the GraphicBuilder; and
+//!  - The individual Graphics within the DecorationList are rendered in the order in which they appear in the list.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+enum class GraphicType
+{
+    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: disabled.
+    ViewBackground,
+    //! Renders as if it were part of the scene. Coordinates: world. RenderMode: from view. Lighting: from view. Z-testing: enabled.
+    //! Used for the scene itself, dynamics, and 'normal' decorations.
+    Scene,
+    //! Renders within the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    WorldDecoration,
+    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Used for things like the ACS triad and the grid.
+    WorldOverlay,
+    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Used for things like the locate circle.
+    ViewOverlay
+};
+
+//=======================================================================================
 //! A renderer-specific object that can be placed into a display list.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
@@ -1339,38 +1365,51 @@ struct GraphicBuilder : RefCountedBase
         DgnDbR          m_dgndb;
         Transform       m_placement;
         DgnViewportP    m_viewport;
-        bool            m_worldCoords = true;
+        GraphicType     m_type;
 
-        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, bool world) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_worldCoords(world) { }
     public:
-        //! Create params for a graphic in world coordinates, not associated with any viewport.
+        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type) { }
+        DGNPLATFORM_EXPORT CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type);
+
+        //! Create params for a graphic in world coordinates, not necessarily associated with any viewport.
         //! This function is chiefly used for tile generation code as the tolerance for faceting the graphic's geometry is independent of any viewport.
         //! If this function is used outside of tile generation context, a default coarse tolerance will be used.
         //! To get a tolerance appropriate to a viewport, use the overload accepting a DgnViewport.
-        static CreateParams World(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
-            { return CreateParams(db, placement, vp, true); }
+        static CreateParams Scene(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
+            { return CreateParams(db, placement, vp, GraphicType::Scene); }
 
         //! Create params for a graphic in world coordinates associated with a viewport.
-        //! This function is chiefly used for code which produces world decorations and dynamics.
+        //! This function is chiefly used for code which produces 'normal' decorations and dynamics.
+        static CreateParams Scene(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
+            { return CreateParams(vp, placement, GraphicType::Scene); }
+
+        //! Create params for a WorldDecoration-type Graphic
         //! The faceting tolerance will be computed from the finished graphic's range and the viewport.
-        DGNPLATFORM_EXPORT static CreateParams World(DgnViewportR vp, TransformCR placement=Transform::FromIdentity());
+        static CreateParams WorldDecoration(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
+            { return CreateParams(vp, placement, GraphicType::WorldDecoration); }
 
-        //! Create params for a view decoration (defined in view coordinates).
-        static CreateParams View(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
-            { return CreateParams(db, placement, vp, false); }
+        //! Create params for a WorldOverlay-type Graphic
+        //! The faceting tolerance will be computed from the finished graphic's range and the viewport.
+        static CreateParams WorldOverlay(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
+            { return CreateParams(vp, placement, GraphicType::WorldOverlay); }
 
-        //! Create params for a view decoration (defined in view coordinates).
-        DGNPLATFORM_EXPORT static CreateParams View(DgnViewportR vp, TransformCR placement=Transform::FromIdentity());
+        //! Create params for a ViewOverlay-type Graphic
+        static CreateParams ViewOverlay(DgnViewportR vp, TransformCR placement=Transform::FromIdentity())
+            { return CreateParams(vp, placement, GraphicType::ViewOverlay); }
 
         //! Create params for a subgraphic
         CreateParams SubGraphic(TransformCR placement=Transform::FromIdentity()) const
-            { return CreateParams(m_dgndb, placement, m_viewport, m_worldCoords); }
+            { return CreateParams(m_dgndb, placement, m_viewport, m_type); }
 
         DgnDbR GetDgnDb() const { return m_dgndb; }
         TransformCR GetPlacement() const { return m_placement; }
         DgnViewportP GetViewport() const { return m_viewport; }
-        bool IsWorldCoordinates() const { return m_worldCoords; }
-        bool IsViewCoordinates() const { return !IsWorldCoordinates(); }
+        GraphicType GetType() const { return m_type; }
+        bool IsViewCoordinates() const { return GraphicType::ViewBackground == GetType() || GraphicType::ViewOverlay == GetType(); }
+        bool IsWorldCoordinates() const { return !IsViewCoordinates(); }
+        bool IsSceneGraphic() const { return GraphicType::Scene == GetType(); }
+        bool IsViewBackground() const { return GraphicType::ViewBackground == GetType(); }
+        bool IsOverlay() const { return GraphicType::ViewOverlay == GetType() || GraphicType::WorldOverlay == GetType(); }
 
         void SetPlacement(TransformCR tf) { m_placement=tf; }
     };
@@ -2956,9 +2995,6 @@ struct System
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
-
-    // Create a triangle mesh primitive and edges (if required).
-    // WIP virtual bvector<GraphicPtr> _CreateTriMeshAndEdges (TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params, DRange3dCR tileRange, MeshEdgeCreationOptionsCR edgeOptions) const { return bvector<GraphicPtr> (1, _CreateTriMesh(args, dgndb, params)); }
 
     //! Create a triangle mesh primitive
     virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const = 0;
