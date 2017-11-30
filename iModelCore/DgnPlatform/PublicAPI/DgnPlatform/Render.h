@@ -1320,10 +1320,10 @@ enum class GraphicType
     Scene,
     //! Renders within the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
     WorldDecoration,
-    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the ACS triad and the grid.
     WorldOverlay,
-    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the locate circle.
     ViewOverlay
 };
