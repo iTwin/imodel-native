@@ -128,6 +128,11 @@ BingMapLogoRetriever* BingMapLogoRetriever::s_instance = nullptr;
 /*----------------------------------------------------------------------------+
 |IScalableMeshTextureInfo Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
+WString IScalableMeshTextureInfo::GetBingMapsType() const
+    {   
+    return _GetBingMapsType();
+    }
+
 SMTextureType IScalableMeshTextureInfo::GetTextureType() const
     {
     return _GetTextureType();
@@ -150,12 +155,20 @@ const Byte* IScalableMeshTextureInfo::GetBingMapLogo(DPoint2d& bingMapLogoSize)
 /*----------------------------------------------------------------------------+
 |IScalableMeshTextureInfo Method Definition Section - End
 +----------------------------------------------------------------------------*/
-ScalableMeshTextureInfo::ScalableMeshTextureInfo(SMTextureType textureType, bool isUsingBingMap, bool isTextureAvailable)
+ScalableMeshTextureInfo::ScalableMeshTextureInfo(SMTextureType textureType, bool isUsingBingMap, bool isTextureAvailable, const WString& bingMapType)
     {
     assert(isTextureAvailable || isUsingBingMap);
     m_textureType = textureType;
     m_isUsingBingMap = isUsingBingMap;
     m_isTextureAvailable = isTextureAvailable;
+    m_bingMapType = bingMapType;
+    }
+
+WString ScalableMeshTextureInfo::_GetBingMapsType() const
+    {
+    assert(IsUsingBingMap());
+
+    return m_bingMapType;
     }
 
 SMTextureType ScalableMeshTextureInfo::_GetTextureType() const

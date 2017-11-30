@@ -1906,6 +1906,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
 
     SMTextureType textureType = m_scmIndexPtr->IsTextured();
     bool isUsingBingMap = false;    
+    WString bingMapType; 
 
     if (textureType == SMTextureType::Streaming)
         {
@@ -1927,15 +1928,18 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
                 HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
 
                 if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
-                    {
+                    {                    
                     isUsingBingMap = true;
+                    bingMapType = source.GetPath();                        
+                    size_t nbReplaces = bingMapType.ReplaceAll(L"http://www.bing.com/maps/", L"");
+                    assert(nbReplaces > 0);
                     break;
                     }                                
                 }
             } 
         }
 
-    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap, m_scmIndexPtr->GetDataStore()->IsTextureAvailable()));
+    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap, m_scmIndexPtr->GetDataStore()->IsTextureAvailable(), bingMapType));
 
     return SUCCESS;
     }
