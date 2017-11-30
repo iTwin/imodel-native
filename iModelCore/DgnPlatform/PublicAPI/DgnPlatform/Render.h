@@ -163,6 +163,22 @@ public:
     RenderMode GetRenderMode() const {return m_renderMode;}
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
+    bool HiddenEdgesVisible() const
+        {
+        switch (m_renderMode)
+            {
+            case RenderMode::SolidFill:
+            case RenderMode::HiddenLine:
+                return m_hiddenEdges;
+
+            case RenderMode::SmoothShade:
+                return m_visibleEdges && m_hiddenEdges;
+
+            default:
+                return true;
+            }
+        }
+
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
