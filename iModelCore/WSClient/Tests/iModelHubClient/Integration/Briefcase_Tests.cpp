@@ -7,8 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
 #include "IntegrationTestsHelper.h"
+#include "LRPJobBackdoorAPI.h"
+#include "../../../iModelHubClient/Utils.h"
+#include "StubLocalState.h"
 #include <BeSQLite/BeSQLite.h>
 #include <DgnPlatform/TxnManager.h>
+#include <WebServices/Client/WSRepositoryClient.h>
+#include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/iModelHub/Client/Client.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -22,18 +27,42 @@ struct BriefcaseTests: public IntegrationTestsBase
     ClientPtr    m_client;
     iModelInfoPtr m_imodel;
     iModelConnectionPtr m_imodelConnection;
+    IWSRepositoryClientPtr m_projectConnection;
 
     virtual void SetUp() override
         {
         IntegrationTestsBase::SetUp();
 
         auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-        m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
+        auto credentials = IntegrationTestSettings::Instance().GetValidAdminCredentials();
+
+        m_client            = SetUpClient(credentials, proxy);
+        m_projectConnection = SetUpProjectConnection(proxy, credentials);
+
         m_imodel = CreateNewiModel(*m_client, "BriefcaseTest");
 
         m_imodelConnection = ConnectToiModel(*m_client, m_imodel);
 
         m_pHost->SetRepositoryAdmin(m_client->GetiModelAdmin());
+        }
+
+    IWSRepositoryClientPtr SetUpProjectConnection(IHttpHandlerPtr proxy, Credentials credentials)
+        {
+        Utf8StringCR serverUrl = UrlProvider::Urls::iModelHubApi.Get();
+        ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo ();
+
+        auto manager = ConnectSignInManager::Create(clientInfo, proxy, StubLocalState::Instance());
+        SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
+        if (!signInResult.IsSuccess())
+            return nullptr;
+
+        AuthenticationHandlerPtr authHandler = manager->GetAuthenticationHandler(serverUrl);
+
+        Utf8String project;
+        project.Sprintf("%s--%s", ServerSchema::Plugin::Project, m_projectId.c_str());
+        IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, project, clientInfo, nullptr, authHandler);
+        client->SetCredentials(credentials);
+        return client;
         }
 
     virtual void TearDown() override
@@ -935,3 +964,22 @@ TEST_F(BriefcaseTests, UnsuccessfulRestoreBriefcase)
     EXPECT_FALSE(result.IsSuccess());
     CheckNoProgress();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Robertas.Maleckas      11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (BriefcaseTests, SuccessfulAcquireBriefcaseAfterMergeJob)
+{
+    InitializeWithChangeSets();
+
+    Utf8StringCR mergeJobId = LRPJobBackdoorAPI::ScheduleLRPJob(m_projectConnection, "MergeJob", m_imodel->GetId());
+
+    bool mergeJobSuccessful = LRPJobBackdoorAPI::WaitForLRPJobToFinish(m_projectConnection, mergeJobId);
+    EXPECT_TRUE (mergeJobSuccessful);
+
+    auto acquireBriefcaseResult = m_client->AcquireBriefcaseToDir (*m_imodel, m_pHost->GetOutputDirectory (), false, Client::DefaultFileNameCallback, CreateProgressCallback ())->GetResult ();
+
+    EXPECT_SUCCESS (acquireBriefcaseResult);
+    auto dbPath = acquireBriefcaseResult.GetValue ()->GetLocalPath ();
+    EXPECT_TRUE (dbPath.DoesPathExist ());
+}
