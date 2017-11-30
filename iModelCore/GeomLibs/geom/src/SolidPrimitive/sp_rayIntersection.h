@@ -175,6 +175,8 @@ double minParameter
                 FractionalizeInCircle (uv0.x, uv0.y, 1.0, uFraction, vFraction);
                 uDirection.Scale (ellipse0.vector0, 2.0);
                 vDirection.Scale (ellipse0.vector90, 2.0);
+                localToWorld.MultiplyMatrixOnly (uDirection);
+                localToWorld.MultiplyMatrixOnly (vDirection);
                 // Those calculations are on ellipse facing inwards ... map u==>1-u
                 ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
                 ISolidPrimitive::ReverseFractionOrientation (uDirection, vDirection);
@@ -189,6 +191,8 @@ double minParameter
                 FractionalizeInCircle (uv1.x, uv1.y, 1.0, uFraction, vFraction);
                 uDirection.Scale (ellipse1.vector0, 2.0);
                 vDirection.Scale (ellipse1.vector90, 2.0);
+                localToWorld.MultiplyMatrixOnly (uDirection);
+                localToWorld.MultiplyMatrixOnly (vDirection);
                 pickData.back ().SetUV (uFraction, vFraction, uDirection, vDirection);
                 pickData.back ().SetCapSelector (1); 
                 }
