@@ -104,9 +104,11 @@ struct TileCache : RealityData::Cache
     BentleyStatus _Prepare() const override;
     BentleyStatus _Cleanup() const override;
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
+
+    // Return full path to a tile cache on disk of a format along the lines of "{TempDir}/Tiles/{baseName}.TileCache".
+    // Creates "Tiles/" subdirectory if necessary.
+    static BeFileName GetCacheFileName(BeFileNameCR baseName);
 };
-
-
 
 typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 

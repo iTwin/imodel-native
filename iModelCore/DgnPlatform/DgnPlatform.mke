@@ -35,7 +35,6 @@ privmki                         = $(SrcDgnPlatform)privmki/
 DgnGeoCoordDir                  = $(SrcDgnPlatform)DgnGeoCoord/
 ToolsDir                        = $(SrcDgnPlatform)Tools/ToolSubs/
 ConfigToolsDir                  = $(SrcDgnPlatform)Tools/ToolSubs/macro/
-imodeljsDir                     = $(SrcDgnPlatform)imodeljs/
 
 DgnPlatformInternalDir          = $(PrivateApiSrc)DgnPlatformInternal/
 lineStyleDir                    = $(DgnCoreDir)linestyle/
@@ -374,14 +373,6 @@ $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(D
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
-
-#----------------------------------------------------------------------
-#   imodeljs
-#----------------------------------------------------------------------
-
-$(CoreObjs)imodeljs$(oext) :                        $(imodeljsDir)imodeljs.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
-
-$(CoreObjs)imodeljs_dgndb$(oext) :                  $(imodeljsDir)imodeljs_dgndb.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
 
 #----------------------------------------------------------------------
 #   DgnBRep
