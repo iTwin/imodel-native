@@ -190,12 +190,13 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     if (strcmp("NUNUNU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
     if (strcmp("NUNUNFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNFU;
     if (strcmp("NUNUFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
-    if (strcmp("NCNCN", name) == 0) return FormatSpecialCodes::SignatureNCNCN;
-    if (strcmp("NCCN", name) == 0) return FormatSpecialCodes::SignatureNCCN;
-    if (strcmp("NCC", name) == 0) return FormatSpecialCodes::SignatureNCC;
-    if (strcmp("CNCN", name) == 0) return FormatSpecialCodes::SignatureCNCN;
-    if (strcmp("CNC", name) == 0) return FormatSpecialCodes::SignatureCNC;
-    if (strcmp("CCN", name) == 0) return FormatSpecialCodes::SignatureCCN;
+    if (strcmp("NCNCN", name) == 0) return FormatSpecialCodes::SignatureNCNCN;  // 0:0:0
+    if (strcmp("NCCN", name) == 0) return FormatSpecialCodes::SignatureNCCN;    // 0::0
+    if (strcmp("NCC", name) == 0) return FormatSpecialCodes::SignatureNCC;      // 0::
+    if (strcmp("CNCN", name) == 0) return FormatSpecialCodes::SignatureCNCN;    // :0:0
+    if (strcmp("CNC", name) == 0) return FormatSpecialCodes::SignatureCNC;      // :0:
+    if (strcmp("CCN", name) == 0) return FormatSpecialCodes::SignatureCCN;      // ::0
+    if (strcmp("NCNC", name) == 0) return FormatSpecialCodes::SignatureNCNC;      // 0:0:
     return FormatSpecialCodes::SignatureInvalid;
     }
 
@@ -1420,6 +1421,30 @@ bool FormatUnitGroup::IsIdentical(FormatUnitGroupCR other) const
     if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
     return true;
     }
+
+
+BEU::T_UnitSynonymVector* FormatUnitGroup::GetSynonymVector() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? nullptr : php->GetSynonymVector();
+    }
+
+size_t FormatUnitGroup::GetSynonymCount() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? 0 : php->GetSynonymCount();
+    }
+
+BEU::PhenomenonCP FormatUnitGroup::GetPhenomenon() const
+    {
+    Formatting::FormatUnitSet fus = GetPersistenceFUS();
+    BEU::UnitCP un = fus.GetUnit();
+    BEU::PhenomenonCP php = (nullptr == un) ? nullptr : un->GetPhenomenon();
+    return php;
+    }
+
+
+
 
 FormattingDividers::FormattingDividers(Utf8CP div)
     {

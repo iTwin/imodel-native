@@ -16,6 +16,7 @@
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/Units.h>
+//#include <ECObjects/ECQuantityFormatting.h>
 #include "FormattingTestFixture.h"
 
 using namespace BentleyApi::Formatting;
@@ -139,6 +140,26 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
     EXPECT_TRUE(fug.IsIdentical(fug1));
     //LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/17
+//----------------------------------------------------------------------------------------
+//static void TestFUGFormat(double dval, Utf8CP uom, Utf8CP name, Utf8CP fusText)
+//    {
+//    FormatUnitGroup fug = FormatUnitGroup(name, fusText);
+//    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
+//    if (nullptr == unit)
+//        {
+//        LOG.infov("Invalid UOM: >%s<", uom);
+//        return;
+//        }
+//    BEU::Quantity qty = BEU::Quantity(dval, *unit);
+//    ECN::ECQuantityFormattingStatus status;
+//    Utf8String str = ECN::ECQuantityFormatting::FormatQuantity(qty, &fug, 0, &status);
+//
+//    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
