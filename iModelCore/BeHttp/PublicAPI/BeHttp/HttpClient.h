@@ -27,35 +27,18 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 * @bsiclass                                                     Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct HttpClient
-    { 
+    {
+public:
+    struct Options;
+
 private:
     IHttpHeaderProviderPtr m_defaultHeadersProvider;
     IHttpHandlerPtr m_handler;
     Credentials m_credentials;
     CompressionOptions m_compressionOptions;
 
+
 public:
-
-    //=======================================================================================
-    //! Initialization options
-    //=======================================================================================
-    struct Options
-    {
-        private:
-            BeFileName m_assetDirectoryPath;
-            uint32_t m_maxConnectionsPerHost = 10;
-            uint32_t m_maxTotalConnections = 0;
-
-        public:
-            Options() {};
-            Options(BeFileNameCR assetDir, uint32_t maxConnectionsPerHost = 10, uint32_t maxTotalConnections = 0)
-                :m_assetDirectoryPath(assetDir), m_maxConnectionsPerHost(maxConnectionsPerHost), m_maxTotalConnections(maxTotalConnections) {}
-
-            BeFileNameCR GetAssetsDirectoryPath() const { return m_assetDirectoryPath; }
-            uint32_t GetMaxConnectionsPerHost() const { return m_maxConnectionsPerHost; }
-            uint32_t GetMaxTotalConnections() const { return m_maxTotalConnections; }
-    };
-
     //! Construct new client with predefined configuration
     //! @param[in] defaultHeadersProvider - provided headers will be included by default to all requests created with this client
     //! @param[in] customHandler - custom handler to be used for requests
@@ -67,7 +50,7 @@ public:
     BEHTTP_EXPORT static BeFileNameCR GetAssetsDirectoryPath();
 
     //! Options provided at initialization
-    BEHTTP_EXPORT static Options const& GetOptions();
+    BEHTTP_EXPORT static const Options& GetOptions();
 
     // Methods for grouping multiple network requests to one activity
     BEHTTP_EXPORT static void BeginNetworkActivity();
@@ -104,5 +87,25 @@ public:
 
 typedef HttpClient& HttpClientR;
 typedef const HttpClient& HttpClientCR;
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass Initialization options
++---------------+---------------+---------------+---------------+---------------+------*/
+struct HttpClient::Options
+    {
+private:
+    BeFileName m_assetsDirectoryPath;
+    uint32_t m_maxConnectionsPerHost = 10;
+    uint32_t m_maxTotalConnections = 0;
+
+public:
+    Options() {};
+    Options(BeFileName assetsDir, uint32_t maxConnectionsPerHost = 10, uint32_t maxTotalConnections = 0) :
+        m_assetsDirectoryPath(assetsDir), m_maxConnectionsPerHost(maxConnectionsPerHost), m_maxTotalConnections(maxTotalConnections) {}
+
+    BeFileNameCR GetAssetsDirectoryPath() const { return m_assetsDirectoryPath; }
+    uint32_t GetMaxConnectionsPerHost() const { return m_maxConnectionsPerHost; }
+    uint32_t GetMaxTotalConnections() const { return m_maxTotalConnections; }
+    };
 
 END_BENTLEY_HTTP_NAMESPACE

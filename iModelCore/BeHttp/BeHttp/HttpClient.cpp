@@ -31,7 +31,7 @@ bool s_isFullLoggingEnabled = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.Marchand                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::Initialize(HttpClient::Options const& options)
+void HttpClient::Initialize(const HttpClient::Options& options)
     {
     s_options = options;
     }
@@ -48,7 +48,10 @@ BeFileNameCR HttpClient::GetAssetsDirectoryPath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.Marchand                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpClient::Options const& HttpClient::GetOptions() { return s_options; }
+const HttpClient::Options& HttpClient::GetOptions()
+    {
+    return s_options;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
