@@ -34,9 +34,8 @@ ICachingDataSource::SelectProvider::SelectProvider(ISelectProviderPtr provider)
 void ICachingDataSource::SelectProvider::SetForRemote(ISelectProviderPtr provider)
     {
     if (nullptr == provider)
-        {
         provider = std::make_shared<ISelectProvider>();
-        }
+
     m_remoteSelectProvider = provider;
     }
 
@@ -46,9 +45,8 @@ void ICachingDataSource::SelectProvider::SetForRemote(ISelectProviderPtr provide
 void ICachingDataSource::SelectProvider::SetForCache(ISelectProviderPtr provider)
     {
     if (nullptr == provider)
-        {
         provider = std::make_shared<ISelectProvider>();
-        }
+
     m_cacheSelectProvider = provider;
     }
 
@@ -95,29 +93,9 @@ m_status(Status::Success)
 * @bsimethod                                            Vytenis.Navalinskas    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICachingDataSource::Error::Error(Status status) :
+AsyncError(GetLocalizedMessage(status)),
 m_status(status)
-    {
-    if (status == ICachingDataSource::Status::Canceled)
-        {
-        return;
-        }
-    else if (status == ICachingDataSource::Status::InternalCacheError)
-        {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCache);
-        }
-    else if (status == ICachingDataSource::Status::DataNotCached)
-        {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_DataNotCached);
-        }
-    else if (status == ICachingDataSource::Status::FunctionalityNotSupported)
-        {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_FunctionalityNotSupported);
-        }
-    else if (status == ICachingDataSource::Status::SchemaError)
-        {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_SchemaError);
-        }
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
@@ -125,6 +103,15 @@ m_status(status)
 ICachingDataSource::Error::Error(CacheStatus status) : Error(ConvertCacheStatus(status))
     {}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Vytautas.Barkauskas    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::Error::Error(CacheStatus status, AsyncError error) :
+Error(ConvertCacheStatus(status), error)
+    {
+    if (m_message.empty())
+        m_message = GetLocalizedMessage(ConvertCacheStatus(status));
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -138,7 +125,7 @@ Error(status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error(WSErrorCR error) :
+ICachingDataSource::Error::Error(WSError error) :
 AsyncError(error.GetMessage(), error.GetDescription()),
 m_status(Status::NetworkErrorsOccured),
 m_wsError(error)
@@ -152,14 +139,14 @@ m_wsError(error)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error(AsyncErrorCR error) :
+ICachingDataSource::Error::Error(AsyncError error) :
 Error(Status::InternalCacheError, error)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error(ICachingDataSource::Status status, AsyncErrorCR error) :
+ICachingDataSource::Error::Error(ICachingDataSource::Status status, AsyncError error) :
 AsyncError(error),
 m_status(status)
     {}
@@ -167,7 +154,7 @@ m_status(status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error(Utf8StringCR message) :
+ICachingDataSource::Error::Error(Utf8String message) :
 AsyncError(message),
 m_status(Status::InternalCacheError)
     {}
@@ -193,20 +180,42 @@ ICachingDataSource::Error::~Error()
 ICachingDataSource::Status ICachingDataSource::Error::ConvertCacheStatus(CacheStatus status)
     {
     if (CacheStatus::DataNotCached == status)
-        {
         return ICachingDataSource::Status::DataNotCached;
-        }
+
     if (CacheStatus::Error == status)
-        {
         return ICachingDataSource::Status::InternalCacheError;
-        }
+
     if (CacheStatus::OK == status)
-        {
         return ICachingDataSource::Status::Success;
-        }
+
+    if (CacheStatus::FileLocked == status)
+        return ICachingDataSource::Status::FileLocked;
 
     BeAssert(false);
     return ICachingDataSource::Status::InternalCacheError;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Vytautas.Barkauskas    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ICachingDataSource::Error::GetLocalizedMessage(ICachingDataSource::Status status)
+    {
+    if (status == ICachingDataSource::Status::Canceled)
+        return nullptr;
+
+    if (status == ICachingDataSource::Status::InternalCacheError)
+        return ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCache);
+
+    if (status == ICachingDataSource::Status::DataNotCached)
+        return ICachingDataSourceLocalizedString(ERRORMESSAGE_DataNotCached);
+
+    if (status == ICachingDataSource::Status::FunctionalityNotSupported)
+        return ICachingDataSourceLocalizedString(ERRORMESSAGE_FunctionalityNotSupported);
+
+    if (status == ICachingDataSource::Status::SchemaError)
+        return ICachingDataSourceLocalizedString(ERRORMESSAGE_SchemaError);
+
+    return nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -281,15 +290,16 @@ ICachingDataSource::DataOrigin ICachingDataSource::ObjectsData::GetOrigin() cons
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICachingDataSource::KeysData::KeysData() :
-KeysData(nullptr, DataOrigin::CachedData)
+KeysData(nullptr, DataOrigin::CachedData, SyncStatus::NotSynced)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::KeysData::KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin) :
+ICachingDataSource::KeysData::KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin, SyncStatus syncStatus) :
 m_data(data ? data : std::make_shared<ECInstanceKeyMultiMap>()),
-m_origin(origin)
+m_origin(origin),
+m_syncStatus(syncStatus)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -322,6 +332,14 @@ ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys()
 ICachingDataSource::DataOrigin ICachingDataSource::KeysData::GetOrigin() const
     {
     return m_origin;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::SyncStatus ICachingDataSource::KeysData::GetSyncStatus() const
+    {
+    return m_syncStatus;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -389,3 +407,15 @@ ICachingDataSource::ErrorCR ICachingDataSource::FailedObject::GetError() const
     {
     return m_error;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ICachingDataSource::Progress::GetLabel() const
+    {
+    if (m_label)
+        return *m_label;
+        
+    static const Utf8String empty;
+    return empty;
+    };

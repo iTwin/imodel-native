@@ -2,13 +2,14 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectTokenProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <WebServices/Connect/IConnectTokenProvider.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+using namespace ::testing;
 
 #if defined (USE_GTEST)
 /*--------------------------------------------------------------------------------------+
@@ -17,6 +18,11 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct MockConnectTokenProvider : public IConnectTokenProvider
     {
     public:
+        MockConnectTokenProvider()
+            {
+            ON_CALL(*this, GetToken()).WillByDefault(Return(nullptr));
+            ON_CALL(*this, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(SamlTokenPtr())));
+            }
         MOCK_METHOD0(UpdateToken, AsyncTaskPtr<SamlTokenPtr>());
         MOCK_METHOD0(GetToken, SamlTokenPtr());
     };

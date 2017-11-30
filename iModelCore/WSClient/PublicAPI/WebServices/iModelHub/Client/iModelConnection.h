@@ -73,7 +73,8 @@ public:
     void AddCode(const Dgn::DgnCode dgnCode, Dgn::DgnCodeState dgnCodeState, BeSQLite::BeBriefcaseId briefcaseId);
     void AddLock(const Dgn::DgnLock dgnLock, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR changeSetId);
     void Insert(const CodeLockSetResultInfo& codeLockResultInfo);
-    void Insert(const Dgn::DgnCodeSet& codes, const Dgn::DgnCodeInfoSet& codeStates, const Dgn::DgnLockSet& locks, const Dgn::DgnLockInfoSet& lockStates);
+    void Insert(const Dgn::DgnCodeSet& codes, const Dgn::DgnCodeInfoSet& codeStates, const Dgn::DgnLockSet& locks, 
+                const Dgn::DgnLockInfoSet& lockStates);
 
     //! Returns the set of locks.
     Dgn::DgnCodeSet const& GetCodes() const {return m_codes;}
@@ -110,7 +111,8 @@ public:
     Utf8StringCR GetScope() const {return m_scope;}
 
     //! Determine if two CodeSequences are equivalent
-    bool operator==(CodeSequence const& other) const {return m_codeSpecId == other.m_codeSpecId && m_value == other.m_value && m_scope == other.m_scope && m_valuePattern == other.m_valuePattern;}
+    bool operator==(CodeSequence const& other) const {return m_codeSpecId == other.m_codeSpecId && 
+        m_value == other.m_value && m_scope == other.m_scope && m_valuePattern == other.m_valuePattern;}
     //! Determine if two CodeSequences are not equivalent
     bool operator!=(CodeSequence const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
@@ -118,8 +120,10 @@ public:
     
     //! Creates CodeSequence instance.
     CodeSequence() : m_value(""), m_scope(""), m_valuePattern("") {}
-    CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), m_valuePattern(valuePattern), m_value("") {}
-    CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), m_valuePattern(valuePattern), m_value(value) {}
+    CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), m_scope(scope), 
+        m_valuePattern(valuePattern), m_value("") {}
+    CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), 
+        m_scope(scope), m_valuePattern(valuePattern), m_value(value) {}
 };
 
 //=======================================================================================
@@ -160,8 +164,8 @@ private:
     //! Sets AzureBlobStorageClient. 
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient) { m_azureClient = azureClient; }
 
-    StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback,
-        ICancellationTokenPtr cancellationToken) const;
+    StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, 
+                                       Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
     //! Download a copy of the file from the iModel.
     StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -173,7 +177,8 @@ private:
     FileTaskPtr CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Performs a file upload to azure blob storage.
-    StatusTaskPtr AzureFileUpload(BeFileNameCR filePath, FileAccessKeyPtr url, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    StatusTaskPtr AzureFileUpload(BeFileNameCR filePath, FileAccessKeyPtr url, Http::Request::ProgressCallbackCR callback = nullptr, 
+                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Updates existing file instance on the server. 
     StatusTaskPtr UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -189,80 +194,85 @@ private:
 
     //! Download a copy of the seed file from the iModel and initialize it as briefcase
     StatusResult DownloadBriefcaseFile(BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, FileAccessKeyPtr fileAccessKey,
-        Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                       Http::Request::ProgressCallbackCR callback = nullptr, 
+                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     StatusTaskPtr AcquireCodesLocksInternal(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+                                            BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, 
+                                            IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+                                            ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Delete all currently held codes and/or locks by specific briefcase.
     StatusTaskPtr RelinquishCodesLocksInternal(IBriefcaseManager::Resources resourcesToRelinquish, BeSQLite::BeBriefcaseId briefcaseId,
-        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                               IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, 
+                                               ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //Returns birefcases information for given query. Query should have its filter already set.
     BriefcasesInfoTaskPtr QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const;
     
     //Returns all codes by code id
     StatusTaskPtr QueryCodesInternal
-        (
-        Dgn::DgnCodeSet const& codes,
-        BeSQLite::BeBriefcaseId const* briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
+    (
+    Dgn::DgnCodeSet const& codes,
+    BeSQLite::BeBriefcaseId const* briefcaseId,
+    CodeLockSetResultInfoPtr codesLocksOut,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     //Returns all codes by briefcase id
     StatusTaskPtr QueryCodesInternal
-        (
-        BeSQLite::BeBriefcaseId const*  briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
+    (
+    BeSQLite::BeBriefcaseId const*  briefcaseId,
+    CodeLockSetResultInfoPtr codesLocksOut,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     //Returns all locks by lock id
     StatusTaskPtr QueryLocksInternal
-        (
-        LockableIdSet const& locks,
-        BeSQLite::BeBriefcaseId const*  briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
+    (
+    LockableIdSet const& locks,
+    BeSQLite::BeBriefcaseId const*  briefcaseId,
+    CodeLockSetResultInfoPtr codesLocksOut,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     //Returns all locks by briefcase id
     StatusTaskPtr QueryLocksInternal
-        (
-        BeSQLite::BeBriefcaseId const*  briefcaseId,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken
-        ) const;
+    (
+    BeSQLite::BeBriefcaseId const*  briefcaseId,
+    CodeLockSetResultInfoPtr codesLocksOut,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     //! Returns all available codes and locks for given briefcase id.
     CodeLockSetTaskPtr QueryCodesLocksInternal
-        (
-        Dgn::DgnCodeSet const* codes,
-        LockableIdSet const* locks,
-        BeSQLite::BeBriefcaseId const* briefcaseId,
-        ICancellationTokenPtr cancellationToken
-        ) const;
+    (
+    Dgn::DgnCodeSet const* codes,
+    LockableIdSet const* locks,
+    BeSQLite::BeBriefcaseId const* briefcaseId,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     //! Returns all available codes and locks by executing given query.
     StatusTaskPtr QueryCodesLocksInternal
-        (
-        WSQuery query,
-        CodeLockSetResultInfoPtr codesLocksOut,
-        CodeLocksSetAddFunction addFunction,
-        ICancellationTokenPtr cancellationToken
-        ) const;
+    (
+    WSQuery query,
+    CodeLockSetResultInfoPtr codesLocksOut,
+    CodeLocksSetAddFunction addFunction,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     StatusTaskPtr QueryUnavailableCodesInternal(BeSQLite::BeBriefcaseId const briefcaseId, CodeLockSetResultInfoPtr codesLocksOut,
-        ICancellationTokenPtr cancellationToken) const;
+                                                ICancellationTokenPtr cancellationToken) const;
 
     StatusTaskPtr QueryUnavailableLocksInternal(BeSQLite::BeBriefcaseId const briefcaseId, uint64_t const lastChangeSetIndex,
         CodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
 
-    CodeSequenceTaskPtr QueryCodeMaximumIndexInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
-    CodeSequenceTaskPtr QueryCodeNextAvailableInternal(std::shared_ptr<WSChangeset> changeSet, ICancellationTokenPtr cancellationToken = nullptr) const;
+    CodeSequenceTaskPtr QueryCodeMaximumIndexInternal(std::shared_ptr<WSChangeset> changeSet, 
+                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
+    CodeSequenceTaskPtr QueryCodeNextAvailableInternal(std::shared_ptr<WSChangeset> changeSet, 
+                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new briefcase instance for this iModel.
     AsyncTaskPtr<WSCreateObjectResult> CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -283,16 +293,19 @@ private:
     AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // This pointer needs to change to be generic
-    EventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
+    EventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, 
+                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get EventSubscription with the given Event Types
-    EventSubscriptionTaskPtr GetEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    EventSubscriptionTaskPtr GetEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, 
+                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Update the EventSubscription to the given EventTypes
-    EventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    EventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, 
+                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
-    EventReponseTaskPtr GetEventServiceResponse(int numOfRetries, bool longpolling = true);
+    EventReponseTaskPtr GetEventServiceResponse(int numOfRetries, bool longpolling = true, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Subscribe callback for the events
     StatusTaskPtr SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback, iModelConnectionP imodelConnectionP);
@@ -301,19 +314,23 @@ private:
     ChangeSetInfoTaskPtr GetChangeSetByIdInternal(Utf8StringCR changeSetId, bool loadAccessKey, ICancellationTokenPtr cancellationToken) const;
 
     //! Get all ChangeSet information based on a query.
-    ChangeSetsInfoTaskPtr ChangeSetsFromQueryInternal(WSQuery const& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+    ChangeSetsInfoTaskPtr ChangeSetsFromQueryInternal(WSQuery const& query, bool parseFileAccessKey, 
+                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all ChangeSet information based on a query (repeated).
-    ChangeSetsInfoTaskPtr ChangeSetsFromQuery(WSQuery const& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+    ChangeSetsInfoTaskPtr ChangeSetsFromQuery(WSQuery const& query, bool parseFileAccessKey, 
+                                              ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsInternal(WSQuery const& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+    ChangeSetsInfoTaskPtr GetChangeSetsInternal(WSQuery const& query, bool parseFileAccessKey, 
+                                                ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all of the changeSets.
     ChangeSetsInfoTaskPtr GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsAfterIdInternal(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), bool loadAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
+    ChangeSetsInfoTaskPtr GetChangeSetsAfterIdInternal(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), 
+                                                       bool loadAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the ChangeSet files.
     ChangeSetsTaskPtr DownloadChangeSetsInternal(bvector<ChangeSetInfoPtr> const& changeSets, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -332,23 +349,26 @@ private:
     WSQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
 
     //! Sends a request from changeset.
-    StatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    StatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, 
+                                       IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Sends a request from changeset.
-    StatusTaskPtr SendChangesetRequestInternal(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr, IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
+    StatusTaskPtr SendChangesetRequestInternal(std::shared_ptr<WSChangeset> changeset, 
+                                               IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+                                               ICancellationTokenPtr cancellationToken = nullptr, 
+                                               IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
 
     //! Initializes the changeSet.
-    StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, bool relinquishCodesLocks,
-        ICancellationTokenPtr cancellationToken) const;
+    StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 
+                                      bool relinquishCodesLocks, ICancellationTokenPtr cancellationToken) const;
 
     // Wait while bim file is initialized
-    void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult) const;
+    void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this ChangeSet file to server.
     StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     static Json::Value CreateFileJson(FileInfoCR fileInfo);
 
@@ -360,14 +380,15 @@ private:
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note Client is the class that creates this connection. See Client::OpenBriefcase.
     static iModelConnectionResult Create(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo,
-                                                   IHttpHandlerPtr customHandler = nullptr);
+                                         IHttpHandlerPtr customHandler = nullptr);
 
     //! Checks whether seed file with specified fileId is active.
     //! @param[in] fileId Db guid of the seed file.
     //! @param[in] briefcaseId Briefcase id.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns error if there is no active seed file with specified id.
-    StatusTaskPtr ValidateBriefcase(BeSQLite::BeGuidCR fileId, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    StatusTaskPtr ValidateBriefcase(BeSQLite::BeGuidCR fileId, BeSQLite::BeBriefcaseId briefcaseId, 
+                                    ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
@@ -377,9 +398,10 @@ private:
     //! @param[in] lastChangeSetId Last pulled ChangeSetId
     //! @param[in] options
     //! @param[in] cancellationToken
-    StatusTaskPtr AcquireCodesLocks(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, 
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    StatusTaskPtr AcquireCodesLocks(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId, BeSQLite::BeGuidCR seedFileId, 
+                                    Utf8StringCR lastChangeSetId, 
+                                    IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, 
+                                    ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Attempt to acquire the requested set of locks.
     //! @param[in] locks Set of locks to check
@@ -390,7 +412,8 @@ private:
     //! @param[in] options
     //! @param[in] cancellationToken
     StatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, Dgn::DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
-        BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+                                              BeSQLite::BeGuidCR seedFileId, Utf8StringCR lastChangeSetId, 
+                                              IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Update the Event Subscription
@@ -470,7 +493,9 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the uploaded file information as the result.
     //! @note Part of seed file replacement. Needs iModel to be locked before calling. See LockiModel.
-    IMODELHUBCLIENT_EXPORT FileTaskPtr UploadNewSeedFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT FileTaskPtr UploadNewSeedFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized = true, 
+                                                         Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Cancels seed file creation.
     //! @param[in] cancellationToken
@@ -506,8 +531,9 @@ public:
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that results in an error if the download failed.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr DownloadSeedFile(BeFileName localFile, Utf8StringCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr DownloadSeedFile(BeFileName localFile, Utf8StringCR fileId, 
+                                                          Http::Request::ProgressCallbackCR callback = nullptr,
+                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire briefcase id without downloading the briefcase file.
     //! @param[in] cancellationToken
@@ -530,7 +556,8 @@ public:
     //! @param[in] fileId Id of the seed file changeSets belong to.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of ChangeSet information as the result.
-    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), 
+                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get ChangeSets between two specified ChangeSets.
     //! @param[in] firstChangeSetId If empty gets all changeSets before secondChangeSetId
@@ -538,7 +565,9 @@ public:
     //! @param[in] fileId Id of the seed file changeSets belong to.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of ChangeSet information as the result.
-    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, 
+                                                                      BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), 
+                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the ChangeSet files.
     //! @param[in] changeSets Set of changeSets to download.
@@ -546,8 +575,9 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of changeSets metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
-    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSets(bvector<ChangeSetInfoPtr> const& changeSets, Http::Request::ProgressCallbackCR callback = nullptr,
-                                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSets(bvector<ChangeSetInfoPtr> const& changeSets, 
+                                                                Http::Request::ProgressCallbackCR callback = nullptr,
+                                                                ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the ChangeSet files.
     //! @param[in] changeSetIds Set of ChangeSet ids to download.
@@ -555,8 +585,9 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of changeSets metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
-    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSets(bvector<Utf8String> const& changeSetIds, Http::Request::ProgressCallbackCR callback = nullptr,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSets(bvector<Utf8String> const& changeSetIds, 
+                                                                Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                                ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download all ChangeSet files after ChangeSetId
     //! @param[in] changeSetId Id of the parent ChangeSet for the first ChangeSet in the resulting collection. If empty gets all changeSets on server.
@@ -565,8 +596,9 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of downloaded changeSets metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
-    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), Http::Request::ProgressCallbackCR callback = nullptr,
-                                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSetsAfterId(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false), 
+                                                                       Http::Request::ProgressCallbackCR callback = nullptr, 
+                                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the change set on the server.
     //! @param[in] cancellationToken
@@ -580,48 +612,58 @@ public:
     //! Returns briefcase info about specific briefcase.
     //! @param[in] briefcaseId for queried briefcase
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, 
+                                                                   ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns info about selected briefcases.
     //! @param[in] briefcasesIds for which to return briefcases info
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT BriefcasesInfoTaskPtr QueryBriefcasesInfo(bvector<BeSQLite::BeBriefcaseId>& briefcasesIds, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT BriefcasesInfoTaskPtr QueryBriefcasesInfo(bvector<BeSQLite::BeBriefcaseId>& briefcasesIds, 
+                                                                     ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks by ids.
     //! @param[in] codes
     //! @param[in] locks
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocksById(Dgn::DgnCodeSet const& codes, LockableIdSet const& locks, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocksById(Dgn::DgnCodeSet const& codes, LockableIdSet const& locks, 
+                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks by ids and briefcase id.
     //! @param[in] codes
     //! @param[in] locks
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocksById(Dgn::DgnCodeSet const& codes, LockableIdSet const& locks, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocksById(Dgn::DgnCodeSet const& codes, LockableIdSet const& locks, 
+                                                                  BeSQLite::BeBriefcaseId briefcaseId, 
+                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks by briefcase id.
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, 
+                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks held by other briefcases.
     //! @param[in] briefcaseId
     //! @param[in] lastChangeSetId
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryUnavailableCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, Utf8StringCR lastChangeSetId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryUnavailableCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, 
+                                                                         Utf8StringCR lastChangeSetId, 
+                                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Returns maximum used code value by the given pattern.
     //! @param[in] codeSequence
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeMaximumIndex(CodeSequenceCR codeSequence, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeMaximumIndex(CodeSequenceCR codeSequence, 
+                                                                     ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns next available code by the given pattern, index start and increment by value.
     //! @param[in] codeSequence
     //! @param[in] startIndex
     //! @param[in] incrementBy
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeNextAvailable(CodeSequenceCR codeSequence, int startIndex = 0, int incrementBy = 1, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeNextAvailable(CodeSequenceCR codeSequence, int startIndex = 0, 
+                                                                      int incrementBy = 1, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Checks if iModelConnection is subscribed to EventService
     IMODELHUBCLIENT_EXPORT bool IsSubscribedToEvents() const;

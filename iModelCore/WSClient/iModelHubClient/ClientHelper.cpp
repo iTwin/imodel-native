@@ -43,7 +43,7 @@ ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState
         }
     return s_instance;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -68,7 +68,7 @@ ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials 
         return nullptr;
         }
 
-    return SignInWithManager (m_signinMgr);
+    return SignInWithManager(m_signinMgr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,7 +86,7 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
         return nullptr;
         }
 
-    return SignInWithManager (m_signinMgr);
+    return SignInWithManager(m_signinMgr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,9 +127,9 @@ Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProje
     auto authHandler = m_signinMgr->GetAuthenticationHandler(UrlProvider::Urls::ConnectWsgGlobal.Get());
     auto client = WSRepositoryClient::Create(UrlProvider::Urls::ConnectWsgGlobal.Get(), wsgBentleyConnectRepository, m_clientInfo, nullptr, authHandler);
 
-    WSQuery query ("GlobalSchema", "Project");
-    query.SetSelect ("$id");
-    query.SetFilter (Utf8PrintfString ("Active+eq+true+and+Number+eq+'%s'", bcsProjectName.c_str()));
+    WSQuery query("GlobalSchema", "Project");
+    query.SetSelect("$id");
+    query.SetFilter(Utf8PrintfString("Active+eq+true+and+Number+eq+'%s'", bcsProjectName.c_str()));
 
     auto result = ExecuteAsync(client->SendQueryRequest(query));
     if (!result->IsSuccess())

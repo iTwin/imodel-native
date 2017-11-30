@@ -34,7 +34,7 @@ struct ISolrClient
 
         virtual Utf8StringCR GetCollectionPath() const = 0;
 
-        //! Send query request using a SolrQuery. Send an HttpRequest to the Ims Search API Url.
+        //! Send query request using a SolrQuery. Send an Http::Request to the Ims Search API Url.
         //! @param[in] query	The request
         virtual AsyncTaskPtr<SolrGetResult> SendGetRequest(SolrQueryCR query = SolrQuery()) const = 0;
     };
@@ -73,7 +73,7 @@ struct SolrClient : public ISolrClient
         //! @return collectionPath - address to supported service (i.e. IMS/User/, GPR/ProductRegistry/, Notification/)
         WSCLIENT_EXPORT Utf8StringCR GetCollectionPath() const override;
 
-        //! Send query request using a SolrQuery. Send an HttpRequest to the Solr REST Url.
+        //! Send query request using a SolrQuery. Send an Http::Request to the Solr REST Url.
         //! @param[in] query [Optional] The SolrQuery used to construct the get request url
         WSCLIENT_EXPORT AsyncTaskPtr<SolrGetResult> SendGetRequest(SolrQueryCR query = SolrQuery()) const override;
     };

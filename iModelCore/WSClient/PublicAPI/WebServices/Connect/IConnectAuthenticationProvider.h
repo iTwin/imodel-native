@@ -40,7 +40,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationProvider
             Utf8StringCR serverUrl,
             IHttpHandlerPtr httpHandler = nullptr,
             HeaderPrefix prefix = HeaderPrefix::Token
-            ) = 0;
+            ) const = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

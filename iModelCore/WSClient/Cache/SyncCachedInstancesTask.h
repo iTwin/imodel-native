@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/SyncCachedInstancesTask.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,6 +19,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SyncCachedInstancesTask : public CachingTaskBase
     {
+    public:
+        typedef std::function<void(size_t, CacheTransactionCR, const bset<ECInstanceKey>&)> ProgressCallback;
+    
     private:
         const bset<ObjectId>  m_objectsToCache;
         std::deque<ObjectId>  m_objectsLeftToCache;

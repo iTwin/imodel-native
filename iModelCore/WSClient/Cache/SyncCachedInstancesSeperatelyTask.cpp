@@ -17,12 +17,12 @@ SyncCachedInstancesSeperatelyTask::SyncCachedInstancesSeperatelyTask
 (
 CachingDataSourcePtr ds,
 const bset<ObjectId>& objects,
-ProgressCallback onProgress,
+SyncCachedInstancesTask::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_objectsLeftToCache(objects.begin(), objects.end()),
-m_onProgress(onProgress ? onProgress : [] (size_t) {}),
+m_onProgress(onProgress ? onProgress : [] (size_t, CacheTransactionCR, const bset<ECInstanceKey>&) {}),
 m_totalToCache(m_objectsLeftToCache.size())
     {}
 
@@ -38,6 +38,7 @@ void SyncCachedInstancesSeperatelyTask::_OnExecute()
             return;
             }
         auto txn = m_ds->StartCacheTransaction();
+        m_onProgress(0, txn, bset<ECInstanceKey>());
         CacheNextObjects(txn);
         txn.Commit();
         });
@@ -48,12 +49,8 @@ void SyncCachedInstancesSeperatelyTask::_OnExecute()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
     {
-    m_onProgress(m_totalToCache - m_objectsLeftToCache.size());
-
     if (IsTaskCanceled() || m_objectsLeftToCache.empty())
-        {
         return;
-        }
 
     ObjectId objectId = m_objectsLeftToCache.front();
     m_objectsLeftToCache.pop_front();
@@ -67,18 +64,28 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
 
         auto txn = m_ds->StartCacheTransaction();
 
+        bset<ECInstanceKey> cachedInstances;
+
         if (result.IsSuccess())
             {
-            if (SUCCESS != txn.GetCache().UpdateInstance(objectId, result.GetValue()))
+            auto status = txn.GetCache().UpdateInstance(objectId, result.GetValue());
+            if (CacheStatus::OK != status &&
+                CacheStatus::DataNotCached != status)
                 {
                 SetError();
                 return;
                 }
+
+            if (CacheStatus::DataNotCached == status)
+                AddFailedObject(txn.GetCache(), objectId, status);
+            else
+                cachedInstances.insert(txn.GetCache().FindInstance(objectId));
             }
+
         else if (result.GetError().GetId() == WSError::Id::InstanceNotFound ||
                  result.GetError().GetId() == WSError::Id::NotEnoughRights)
             {
-            AddFailedObject(txn, objectId, result.GetError());
+            AddFailedObject(txn.GetCache(), objectId, result.GetError());
             auto status = txn.GetCache().RemoveInstance(objectId);
             if (CacheStatus::OK != status &&
                 CacheStatus::DataNotCached != status)
@@ -91,6 +98,8 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
             SetError(result.GetError());
             return;
             }
+
+        m_onProgress(m_totalToCache - m_objectsLeftToCache.size(), txn, cachedInstances);
 
         CacheNextObjects(txn);
         txn.Commit();

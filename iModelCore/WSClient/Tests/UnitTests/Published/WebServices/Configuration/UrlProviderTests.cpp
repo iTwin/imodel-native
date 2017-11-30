@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-#define URL_COUNT 15
+#define URL_COUNT 17
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
@@ -190,6 +190,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectTermsOfServiceUrl.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectProjectUrl.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
@@ -198,6 +199,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectForms.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
@@ -206,6 +208,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
 
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectTermsOfServiceUrl.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectProjectUrl.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
@@ -214,6 +217,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectForms.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
@@ -240,6 +244,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectTermsOfServiceUrl.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectProjectUrl.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
@@ -248,6 +253,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectForms.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
@@ -262,6 +268,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Urls::ConnectEula.Get().c_str();
+    UrlProvider::Urls::ConnectTermsOfServiceUrl.Get().c_str();
     UrlProvider::Urls::ConnectProjectUrl.Get().c_str();
     UrlProvider::Urls::ConnectWsgGlobal.Get().c_str();
     UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str();
@@ -270,6 +277,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::Urls::ConnectWsgPunchList.Get().c_str();
     UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str();
     UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str();
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     UrlProvider::Urls::ConnectForms.Get().c_str();
     UrlProvider::Urls::ImsStsAuth.Get().c_str();
     UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str();

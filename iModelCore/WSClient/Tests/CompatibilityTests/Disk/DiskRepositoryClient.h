@@ -97,7 +97,7 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             return m_id;
             }
 
-        virtual void SetCredentials(Credentials credentials) override
+        virtual void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) override
             {
             BeAssert(false);
             };

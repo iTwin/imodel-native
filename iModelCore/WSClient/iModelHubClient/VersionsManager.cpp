@@ -15,24 +15,27 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             02/2017
 //---------------------------------------------------------------------------------------
-WSQuery VersionsManager::CreateChangeSetsBetweenVersionsQuery(Utf8StringCR sourceVersionId, Utf8String destinationVersionId, BeSQLite::BeGuidCR fileId) const
+WSQuery VersionsManager::CreateChangeSetsBetweenVersionsQuery(Utf8StringCR sourceVersionId, Utf8String destinationVersionId, 
+                                                              BeSQLite::BeGuidCR fileId) const
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     Utf8String queryFilter;
 
     if (fileId.IsValid())
-        queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
-                            ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str(),
-                            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
-                            ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
-                            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str(),
-                            ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+        queryFilter.Sprintf
+        ("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
+         ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str(),
+         ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
+         ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
+         ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str(),
+         ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
     else
-        queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
-                            ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str(),
-                            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
-                            ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
-                            ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str());
+        queryFilter.Sprintf
+        ("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
+         ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str(),
+         ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
+         ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, destinationVersionId.c_str(),
+         ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, sourceVersionId.c_str());
 
     query.SetFilter(queryFilter);
 
@@ -48,9 +51,9 @@ WSQuery VersionsManager::CreateVersionChangeSetsQuery(Utf8StringCR versionId, Be
     Utf8String queryFilter;
 
     if (fileId.IsValid())
-        queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version,
-                            ServerSchema::Property::Id, versionId.c_str(),
-                            ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+        queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet, 
+                            ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),ServerSchema::Property::SeedFileId, 
+                            fileId.ToString().c_str());
     else
         queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version,
                             ServerSchema::Property::Id, versionId.c_str());
@@ -84,36 +87,41 @@ WSQuery VersionsManager::CreateChangeSetsAfterVersionQuery(Utf8StringCR versionI
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             02/2017
 //---------------------------------------------------------------------------------------
-WSQuery VersionsManager::CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const
+WSQuery VersionsManager::CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, Utf8StringCR changeSetId, 
+                                                                         BeSQLite::BeGuidCR fileId) const
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     Utf8String queryFilter;
 
     if (Utf8String::IsNullOrEmpty(changeSetId.c_str()))
         {
-        if(fileId.IsValid())
+        if (fileId.IsValid())
             queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'",
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, 
+                                versionId.c_str(),
                                 ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
         else
             queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'",
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str());
+                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, 
+                                versionId.c_str());
         }
     else
         {
         if (fileId.IsValid())
-            queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
-                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
-                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
-                                ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
+            queryFilter.Sprintf
+            ("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
+             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
+             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
+             ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
         else
-            queryFilter.Sprintf("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
-                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
-                                ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str());
+            queryFilter.Sprintf
+            ("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
+             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str(),
+             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::Version, ServerSchema::Property::Id, versionId.c_str(),
+             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, changeSetId.c_str());
         }
 
     query.SetFilter(queryFilter);
@@ -131,7 +139,7 @@ VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancel
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Version);
 
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<VersionsInfoResult>
-        ([=] (const WSObjectsResult& versionInfoResult)
+        ([=](const WSObjectsResult& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
             {
@@ -163,8 +171,9 @@ VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICanc
     {
     const Utf8String methodName = "VersionsManager::GetVersionById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return m_wsRepositoryClient->SendGetObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, versionId), nullptr, cancellationToken)
-        ->Then<VersionInfoResult>([=] (WSObjectsResult const& versionInfoResult)
+    return m_wsRepositoryClient->SendGetObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, versionId), nullptr, 
+                                                      cancellationToken)
+        ->Then<VersionInfoResult>([=](WSObjectsResult const& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
             {
@@ -188,7 +197,7 @@ VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancell
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     return m_wsRepositoryClient->SendCreateObjectRequest(version.GenerateJson(), BeFileName(), nullptr, cancellationToken)
-        ->Then<VersionInfoResult>([=] (const WSCreateObjectResult& versionInfoResult)
+        ->Then<VersionInfoResult>([=](const WSCreateObjectResult& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
             {
@@ -218,8 +227,10 @@ StatusTaskPtr VersionsManager::UpdateVersion(VersionInfoCR version, ICancellatio
 
     Json::Value varsionJson = version.GenerateJson();
 
-    return m_wsRepositoryClient->SendUpdateObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, version.GetId()), varsionJson[ServerSchema::Instance][ServerSchema::Properties], nullptr, BeFileName(), nullptr, cancellationToken)
-        ->Then<StatusResult>([=] (const WSUpdateObjectResult& result)
+    return m_wsRepositoryClient->SendUpdateObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, version.GetId()), 
+                                                         varsionJson[ServerSchema::Instance][ServerSchema::Properties], nullptr, BeFileName(), 
+                                                         nullptr, cancellationToken)
+        ->Then<StatusResult>([=](const WSUpdateObjectResult& result)
         {
         if (result.IsSuccess())
             return StatusResult::Success();
@@ -234,7 +245,8 @@ StatusTaskPtr VersionsManager::UpdateVersion(VersionInfoCR version, ICancellatio
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId, BeSQLite::BeGuid fileId, 
+                                                            ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "VersionsManager::GetVersionChangeSets";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -248,7 +260,8 @@ ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, BeSQLite::BeGuid fileId, 
+                                                                    ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "VersionsManager::GetChangeSetsBetweenVersions";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -256,13 +269,15 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String f
     if (Utf8String::IsNullOrEmpty(firstVersionId.c_str()) || Utf8String::IsNullOrEmpty(secondVersionId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidVersion));
 
-    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsBetweenVersionsQuery(firstVersionId, secondVersionId, fileId), false, cancellationToken);
+    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsBetweenVersionsQuery(firstVersionId, secondVersionId, fileId), false, 
+                                                     cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsAfterVersion(Utf8String versionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsAfterVersion(Utf8String versionId, BeSQLite::BeGuid fileId, ICancellationTokenPtr 
+                                                                 cancellationToken) const
     {
     const Utf8String methodName = "VersionsManager::GetChangeSetsAfterVersion";
 
@@ -277,7 +292,8 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsAfterVersion(Utf8String vers
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersionAndChangeSet(Utf8String versionId, Utf8String changeSetId, BeSQLite::BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersionAndChangeSet(Utf8String versionId, Utf8String changeSetId, BeSQLite::BeGuid fileId, 
+                                                                               ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "VersionsManager::GetChangeSetsBetweenVersionAndChangeSet";
 
@@ -285,6 +301,6 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersionAndChangeSet(U
 
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidVersion));
-
-    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsBetweenVersionAndChangeSetQuery(versionId, changeSetId, fileId), false, cancellationToken);
+    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsBetweenVersionAndChangeSetQuery(versionId, changeSetId, fileId), false, 
+                                                     cancellationToken);
     }

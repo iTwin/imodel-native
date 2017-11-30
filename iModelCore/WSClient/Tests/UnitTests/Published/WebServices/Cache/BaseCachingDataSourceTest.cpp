@@ -34,6 +34,11 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV24()
     return GetTestDataSource({2, 4});
     }
 
+CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV25()
+    {
+    return GetTestDataSource({2, 5});
+    }
+
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webApiVersion)
     {
     // AsyncTask API delays destruction of CachingDataSource, thus DB is not always closed, force close here

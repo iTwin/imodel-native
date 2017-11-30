@@ -40,7 +40,8 @@ public:
     //! Returns multiple users info by ids.
     //! @param[in] userIds
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT UsersInfoTaskPtr QueryUsersInfoByIds(bvector<Utf8String> userIds, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT UsersInfoTaskPtr QueryUsersInfoByIds(bvector<Utf8String> userIds, 
+                                                                ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

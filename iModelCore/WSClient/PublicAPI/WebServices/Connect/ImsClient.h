@@ -29,7 +29,7 @@ struct ImsClient : IImsClient
     private:
         ClientInfoPtr m_clientInfo;
         IHttpHandlerPtr m_httpHandler;
-		Utf8String m_ImsActiveSTSHelperServiceAuthKey;
+        Utf8String m_ImsActiveSTSHelperServiceAuthKey;
 
     private:
         ImsClient(ClientInfoPtr clientInfo, IHttpHandlerPtr httpHandler);
@@ -40,12 +40,12 @@ struct ImsClient : IImsClient
             JsonValueR params,
             Utf8StringCR rpUri,
             Utf8StringCR stsUrl,
-            uint64_t lifetime
+            uint64_t lifetime,
+            Utf8StringCR pastUsername
             );
 
         static Utf8String GetClientRelyingPartyUriForWtrealm(ClientInfoCR clientInfo);
-		
-
+        
     public:
         // TODO: static API for compatibility with old static code (ConnectSpaces, ConnectSetup, etc.)
         //! Will be DEPRECATED in future.

@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1BentleyConnect.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -49,10 +49,11 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid() || filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     if (SchemaInfo::IsDummySchemaId(objectId))
-        {
         return GetSchema(filePath, eTag, downloadProgressCallback, ct);
-        }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url);

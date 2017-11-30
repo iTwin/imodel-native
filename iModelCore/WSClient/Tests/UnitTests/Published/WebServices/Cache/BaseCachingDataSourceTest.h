@@ -50,6 +50,8 @@ class BaseCachingDataSourceTest : public BaseCacheTest
         CachingDataSourcePtr GetTestDataSourceV2();
         // Get seed WebApi 2.4 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSourceV24();
+        // Get seed WebApi 2.5 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        CachingDataSourcePtr GetTestDataSourceV25();
         // Get seed WebApi version CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSource(BeVersion webApiVersion);
 
