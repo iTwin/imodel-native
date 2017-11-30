@@ -601,7 +601,7 @@ void DRange1d::UnionSorted (bvector <DRange1d> &dataA, bvector <DRange1d> &dataB
     while (iA < nA && iB < nB)
         {
         DRange1d rangeA = dataA[iA];
-        DRange1d rangeB = dataB[iA];
+        DRange1d rangeB = dataB[iB];
         DRange1d workRange;
         // Pull from the lower of rangeA and rangeB.  This always advances exactly one of the indices -- progress towards getting out.
         if (rangeA.low <= rangeB.low)
