@@ -36,7 +36,6 @@ public:
         double m_circularInterval;
         double m_length;
         double m_height;
-        DVec3d m_normal;
         bool m_extendHeight;    //TODO: Remove, needs to be handled by the tools
 
         //! Creates create parameters for radial grid
@@ -49,7 +48,7 @@ public:
         //! @param[in] height               height of grid surfaces
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 1)) :
+                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false) :
             T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()), Dgn::DgnCode(model->GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_RadialGrid), modeledElementId, name))),
             m_model(model),
             m_planeCount(planeCount),
@@ -58,8 +57,7 @@ public:
             m_circularInterval(circularInterval),
             m_length(length),
             m_height(height),
-            m_extendHeight(extendHeight),
-            m_normal(normal)
+            m_extendHeight(extendHeight)
             {
             }
 
@@ -72,7 +70,6 @@ public:
 
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params, DVec3d normal);
 
 
     static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
@@ -87,9 +84,8 @@ public:
     //---------------------------------------------------------------------------------------
     //! Creates an empty radial grid
     //! @param[in]  model   model for the radialgridportion
-    //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             Radial grid
-    GRIDELEMENTS_EXPORT static RadialGridPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
+    GRIDELEMENTS_EXPORT static RadialGridPtr Create (Dgn::SpatialLocationModelCR model);
 
     //! Creates an empty radial grid
     //! @param[in]  params  create params for this grid portion. See CreateParams

@@ -27,8 +27,7 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Grid::Grid
 (
-T_Super::CreateParams const& params,
-DVec3d          normal
+T_Super::CreateParams const& params
 ) : T_Super(params) 
     {
     if (!m_categoryId.IsValid () && m_classId.IsValid()) //really odd tests in platform.. attempts to create elements with 0 class id and 0 categoryId. NEEDS WORK: PLATFORM
@@ -37,7 +36,6 @@ DVec3d          normal
         if (catId.IsValid ())
             DoSetCategoryId (catId);
         }
-    SetPropertyValue (prop_Normal (), normal);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -53,28 +51,18 @@ DgnClassId classId
     return CreateParams(createParams);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridPtr                 Grid::Create 
-(
-Dgn::DgnModelCR model,
-DVec3d          normal
-)
-    {
-    return new Grid (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     09/17
 //---------------------------------------------------------------------------------------
-DPlane3d Grid::GetPlane 
+DPlane3d PlanGrid::GetPlane 
 (
 ) const
     {
     DPlane3d plane;
-    plane.Zero ();
-    plane.normal = DVec3d::From (GetPropertyValueDPoint3d (prop_Normal ()));
+    bsiDPlane3d_initFromOriginAndNormalXYZXYZ (&plane, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+    YawPitchRollAngles angles = GetPlacement().GetAngles ();
+    RotMatrix rotMatrix = angles.ToRotMatrix ();
+    rotMatrix.Multiply (plane.normal);
     return plane;
     }
 
@@ -225,10 +213,6 @@ Dgn::DgnDbStatus      Grid::Validate
 (
 ) const
     {
-    DPlane3d plane = GetPlane ();
-    if (bsiDPlane3d_isZero(&plane)) //plane must be set
-        return Dgn::DgnDbStatus::ValidationFailed;
-
     return Dgn::DgnDbStatus::Success;
     }
 

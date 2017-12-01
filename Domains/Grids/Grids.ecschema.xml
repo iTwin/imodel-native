@@ -117,32 +117,30 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="Grid">
+    <ECEntityClass typeName="Grid" modifier="Abstract"  description="A grid is a collection of gridsurfaces.">
       <BaseClass>bis:SpatialLocationPortion</BaseClass>
-      <ECProperty propertyName="Normal" typeName="point3d" readOnly="True" description="normal vector of the grid"/>
     </ECEntityClass>
 
 
-    <ECEntityClass typeName="PlanGrid">
+    <ECEntityClass typeName="PlanGrid" modifier="Abstract" description="a plangrid is a grid whose surfaces are extruded in a common direction">
       <BaseClass>bis:SpatialLocationPortion</BaseClass>
-      <ECProperty propertyName="Normal" typeName="point3d" readOnly="True" description="normal vector of the grid"/>
     </ECEntityClass>
   
-    <ECEntityClass typeName="OrthogonalGrid">
+    <ECEntityClass typeName="OrthogonalGrid" description="And OrthogonalGrid has all of its' surfaces orthogonal in either X or Y direction">
       <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="RadialGrid">
+    <ECEntityClass typeName="RadialGrid" description="A RadialGrid consists either of arcsurfaces in radial axis or planarsurfaces in circular axis">
       <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SketchGrid">
+    <ECEntityClass typeName="SketchGrid" description="A SketchGrid contains surfaces whose positions are not constrained (other than being swept to the grid normal)">
       <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />

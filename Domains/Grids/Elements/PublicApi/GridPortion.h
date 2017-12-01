@@ -24,7 +24,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Grid : Dgn::SpatialLocationPortion
 {
     DEFINE_T_SUPER (Dgn::SpatialLocationPortion);
 private:
-    BE_PROP_NAME (Normal);
 
     Dgn::SpatialLocationModelPtr    CreateSubModel () const;
 
@@ -32,13 +31,9 @@ protected:
 
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
-    //! @param[in]          normal  perpendicularity plane of this Grid
-    explicit GRIDELEMENTS_EXPORT Grid (T_Super::CreateParams const& params) : T_Super (params) {};
-    explicit GRIDELEMENTS_EXPORT Grid (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
+    explicit GRIDELEMENTS_EXPORT Grid (T_Super::CreateParams const& params);
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
-
-    GRIDELEMENTS_EXPORT static GridPtr Create(Dgn::DgnModelCR model, DVec3d normal);
 
     Dgn::DgnDbStatus Validate () const;
 
@@ -62,10 +57,6 @@ public:
     //! gets the surfaces model
     //! @return                 the surfaces model
     GRIDELEMENTS_EXPORT Dgn::SpatialLocationModelPtr    GetSurfacesModel() const;
-
-    //! gets the perpendicularity plane of this Grid
-    //! @return             perpendicularity plane of this Grid
-    GRIDELEMENTS_EXPORT DPlane3d    GetPlane() const;
 
     //! Returns an angle the grid elements have rotated to
     //! @param[out] angle   angle that the grid elements have rotated to 
@@ -128,11 +119,14 @@ private:
 
 protected:
 
+
+    //! gets the perpendicularity plane of this Grid
+    //! @return             perpendicularity plane of this Grid
+    GRIDELEMENTS_EXPORT DPlane3d    GetPlane () const;
+
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
-    //! @param[in]          normal  perpendicularity plane of this Grid
     explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params) : T_Super (params) {};
-    explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params, DVec3d normal) : T_Super (params, normal) {};
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
 

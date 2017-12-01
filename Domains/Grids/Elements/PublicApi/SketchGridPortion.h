@@ -24,7 +24,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchGrid : PlanGrid
 
 protected:
     explicit GRIDELEMENTS_EXPORT SketchGrid (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT SketchGrid (T_Super::CreateParams const& params, DVec3d normal);
     friend struct SketchGridHandler;
 
 public:
@@ -35,9 +34,8 @@ public:
     //---------------------------------------------------------------------------------------
     //! Creates an empty sketch grid
     //! @param[in]  model   model for the radialgridportion
-    //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::DgnModelCR model, DVec3d normal, Utf8CP name);
+    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::DgnModelCR model, Utf8CP name);
 
     //---------------------------------------------------------------------------------------
     // Queries

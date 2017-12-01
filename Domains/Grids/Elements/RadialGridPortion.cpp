@@ -31,26 +31,14 @@ T_Super::CreateParams const& params
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-RadialGrid::RadialGrid
-(
-T_Super::CreateParams const& params,
-DVec3d                      normal
-) : T_Super(params, normal) 
-    {
-
-    }
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RadialGridPtr        RadialGrid::Create
 (
-Dgn::SpatialLocationModelCR model,
-DVec3d                      normal
+Dgn::SpatialLocationModelCR model
 )
     {
-    return new RadialGrid (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
+    return new RadialGrid (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,7 +110,7 @@ BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::
 //---------------------------------------------------------------------------------------
 RadialGridPtr RadialGrid::CreateAndInsert (CreateParams params)
     {
-    RadialGridPtr thisGrid = new RadialGrid (params, params.m_normal);
+    RadialGridPtr thisGrid = new RadialGrid (params);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting Radial grid");
 

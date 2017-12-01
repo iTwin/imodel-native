@@ -35,18 +35,6 @@ T_Super::CreateParams const& params
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGrid::OrthogonalGrid
-(
-T_Super::CreateParams const& params,
-DVec3d normal
-) : T_Super(params, normal)
-    {
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalGridPtr        OrthogonalGrid::CreateAndInsert
@@ -54,7 +42,7 @@ OrthogonalGridPtr        OrthogonalGrid::CreateAndInsert
 StandardCreateParams const& params
 )
     {
-    OrthogonalGridPtr thisGrid = new OrthogonalGrid (params, params.m_normal);
+    OrthogonalGridPtr thisGrid = new OrthogonalGrid (params);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
 
@@ -134,7 +122,7 @@ CreateParams const& params
     if (BentleyStatus::SUCCESS != ValidateBySurfacesParams (xSurfaces, ySurfaces, params))
         return nullptr;
 
-    OrthogonalGridPtr thisGrid = new OrthogonalGrid (params, params.m_normal);
+    OrthogonalGridPtr thisGrid = new OrthogonalGrid (params);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
     if (!thisGrid->Insert ().IsValid ())
