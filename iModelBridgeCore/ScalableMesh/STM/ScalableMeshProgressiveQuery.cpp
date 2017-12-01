@@ -956,8 +956,14 @@ public:
             
             for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
                 {
-                if (m_workingThreads[threadId].joinable())
-                    m_workingThreads[threadId].join();                    
+                try
+                    {
+                    if (m_workingThreads[threadId].joinable())
+                        m_workingThreads[threadId].join();
+                    }
+                catch (...)
+                    {//TFS #773063 - For some reason sometime the join is throwing an exception. For now just catch it and do nothing. 
+                    }
                 }                                
             }
        

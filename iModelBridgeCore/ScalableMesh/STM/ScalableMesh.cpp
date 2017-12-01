@@ -1336,10 +1336,16 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
         //if (m_contentExtent.isNull() || m_contentExtent.isEmpty() || m_contentExtent.DiagonalDistance() == 0) return BSIERROR;
         for (int i = 0; i < (int)DTMAnalysisType::Qty; ++i)
-        {
+            {
             m_scalableMeshDTM[i] = ScalableMeshDTM::Create(this);
             m_scalableMeshDTM[i]->SetAnalysisType((DTMAnalysisType)i);
-        }
+
+            //TFS# 775936 - Ensure that the reprojection matrix is applied to the scalableMeshDTM object when reopening the 3SM internally 
+            //              (e.g. : when adding texture to existing terrain).
+            auto mat4d = DMatrix4d::From(m_reprojectionTransform);
+            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
+            }
+
         return BSISUCCESS;  
         }
     catch(...)
