@@ -2548,15 +2548,15 @@ struct HiliteSettings
     struct Defaults
     {
         static ColorDef Color() {return ColorDef(0x23,0xbb,0xfc);};
-        static double VisibleRatio() {return 0.5;}
+        static double VisibleRatio() {return 0.25;}
         static double HiddenRatio() {return 0.0;}
         static HiliteSettings::Silhouette Width() {return HiliteSettings::Silhouette::Thin;}
     };
 private:
     ColorDef    m_color;
-    double      m_visibleRatio = 0.25;
-    double      m_hiddenRatio = 0.0;
-    Silhouette  m_silhouette = Silhouette::Thick;
+    double      m_visibleRatio;
+    double      m_hiddenRatio;
+    Silhouette  m_silhouette;
 
     static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
 public:
