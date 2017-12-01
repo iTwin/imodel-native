@@ -57,14 +57,14 @@ SchemaManager::Dispatcher::Iterable SchemaManager::Dispatcher::GetIterable(Utf8C
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TableSpaceSchemaManager const* SchemaManager::Dispatcher::AddManager(DbTableSpace const& tableSpace) const
+BentleyStatus SchemaManager::Dispatcher::AddManager(DbTableSpace const& tableSpace) const
     {
     if (!tableSpace.IsAttached())
         {
         BeAssert(tableSpace.IsValid() && "Should have been caught before as this method is expected to be called during attaching the db");
         BeAssert(!tableSpace.IsMain() && "Must not be called for the main table space");
         BeAssert(!tableSpace.IsTemp() && "Must not be called for the temp table space as schemas cannot be persisted in the temp table space");
-        return nullptr;
+        return ERROR;
         }
 
     BeAssert(m_managers.find(tableSpace.GetName()) == m_managers.end());
@@ -75,7 +75,7 @@ TableSpaceSchemaManager const* SchemaManager::Dispatcher::AddManager(DbTableSpac
     m_managers[managerP->GetTableSpace().GetName()] = std::move(manager);
     m_orderedManagers.push_back(managerP);
     BeAssert(m_managers.size() == m_orderedManagers.size());
-    return managerP;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

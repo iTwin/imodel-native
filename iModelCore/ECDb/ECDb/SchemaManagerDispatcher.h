@@ -224,7 +224,7 @@ struct SchemaManager::Dispatcher final
         ~Dispatcher() {}
 
         MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }
-        TableSpaceSchemaManager const* AddManager(DbTableSpace const&) const;
+        BentleyStatus AddManager(DbTableSpace const&) const;
         BentleyStatus RemoveManager(DbTableSpace const&) const;
 
         bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const;

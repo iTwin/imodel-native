@@ -78,7 +78,11 @@ void ECDb::Impl::OnDbClose() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const
     {
-    return m_schemaManager->GetDispatcher().AddManager(DbTableSpace(tableSpaceName)) != nullptr ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    DbTableSpace tableSpace(tableSpaceName);
+    if (!tableSpace.IsAttachedECDb(m_ecdb))
+        return BE_SQLITE_OK; //only need to react to attached ECDb files
+
+    return m_schemaManager->GetDispatcher().AddManager(tableSpace) == SUCCESS ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //--------------------------------------------------------------------------------------
