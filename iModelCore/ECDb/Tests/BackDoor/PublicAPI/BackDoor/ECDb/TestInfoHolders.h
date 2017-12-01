@@ -70,7 +70,6 @@ struct Table final
 
     private:
         Utf8String m_name;
-        Utf8String m_tableSpace;
         Nullable<Type> m_type;
         Utf8String m_parentTableName;
         ECN::ECClassId m_exclusiveRootClassId;
@@ -82,15 +81,14 @@ struct Table final
 
     public:
         Table() {}
-        Table(Utf8StringCR tableSpace, Utf8StringCR name, Type type, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_tableSpace(tableSpace), m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
-        Table(Table&& rhs) : m_tableSpace(std::move(rhs.m_tableSpace)), m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
+        Table(Utf8StringCR name, Type type, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
+        Table(Table&& rhs) : m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
             m_columns(std::move(rhs.m_columns)), m_columnLookupMap(std::move(rhs.m_columnLookupMap)) {}
 
         Table& operator=(Table&& rhs)
             {
             if (this != &rhs)
                 {
-                m_tableSpace = std::move(rhs.m_tableSpace);
                 m_name = std::move(rhs.m_name);
                 m_type = std::move(rhs.m_type);
                 m_parentTableName = std::move(rhs.m_parentTableName);
@@ -106,7 +104,6 @@ struct Table final
 
         bool Exists() const { return !m_name.empty(); }
 
-        Utf8StringCR GetTableSpace() const { return m_tableSpace; }
         Utf8StringCR GetName() const { return m_name; }
         Nullable<Type> GetType() const { return m_type; }
         Utf8StringCR GetParentTable() const { return m_parentTableName; }

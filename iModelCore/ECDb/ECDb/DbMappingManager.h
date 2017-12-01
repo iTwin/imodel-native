@@ -319,8 +319,8 @@ struct DbMappingManager final : NonCopyableClass
             ~Tables();
 
             static DbTable* FindOrCreateTable(SchemaImportContext&, ClassMap const&, ClassMappingInfo const&, DbTable::Type, DbTable const* primaryTable);
-            static DbTable* CreateTableForExistingTableStrategy(SchemaImportContext&, ClassMap const&, DbTableSpace const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
-            static DbTable* CreateTableForOtherStrategies(SchemaImportContext&, ClassMap const&, DbTableSpace const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+            static DbTable* CreateTableForExistingTableStrategy(SchemaImportContext&, ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
+            static DbTable* CreateTableForOtherStrategies(SchemaImportContext&, ClassMap const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
             static BentleyStatus CreateClassIdColumn(SchemaImportContext&, DbTable&, PersistenceType);
             static bool IsExclusiveRootClassOfTable(ClassMappingInfo const&);
             static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);

@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.01" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.00" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECCustomAttributeClass typeName="SchemaMap" modifier="Sealed" appliesTo="Schema">
         <ECProperty propertyName="TablePrefix" typeName="string" description="Specifies a prefix for generated tables. If not specified, the alias of the ECSchema is used"/>
     </ECCustomAttributeClass>
     
     <ECCustomAttributeClass typeName="ClassMap" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
         <ECProperty propertyName="MapStrategy" typeName="string" description="Defines how the ECClass is mapped to table(s). Values: OwnTable (default), TablePerHierarchy, ExistingTable, NotMapped"/>
-        <ECProperty propertyName="TableSpace" typeName="string" description="Optionally specify a DB table space (aka DB schema) where the mapped tables will be created, if the mapped tables should not be created in the primary/main DB table space."/>
         <ECProperty propertyName="TableName" typeName="string" description="If MapStrategy is 'ExistingTable' provide the table name here. Must not be set in all other cases."/>
         <ECProperty propertyName="ECInstanceIdColumn" typeName="string" description="Optionally specify the name of custom 'primary key' column which must be of type Int64."/>
     </ECCustomAttributeClass>

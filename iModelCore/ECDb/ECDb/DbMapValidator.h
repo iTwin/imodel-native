@@ -6,20 +6,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "DbMap.h"
-#include "RelationshipClassMap.h"
+
+#include "SchemaManagerDispatcher.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Affan.Khan     07/2017
 //+===============+===============+===============+===============+===============+======
-struct DbMapValidator final : NonCopyableClass
+struct DbMapValidator final
     {
     private:
-        DbMap const& m_dbMap;
         SchemaImportContext& m_schemaImportContext;
 
         mutable bmap<DbColumnId, bset<DbIndex const*>> m_indexesByColumnCache;
+
+        //not copyable
+        DbMapValidator(DbMapValidator const&) = delete;
+        DbMapValidator& operator=(DbMapValidator const&) = delete;
 
         BentleyStatus Initialize() const;
 
@@ -42,12 +45,13 @@ struct DbMapValidator final : NonCopyableClass
         BentleyStatus ValidateNavigationPropertyMapNotNull(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
         BentleyStatus ValidateNavigationPropertyMapUniqueness(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
         BentleyStatus ValidateOverflowPropertyMaps(ClassMap const& classMap) const;
-        ECDbCR GetECDb() const { return m_dbMap.GetECDb(); }
-        DbSchema const& GetDbSchema() const { return m_dbMap.GetDbSchema(); }
-        IssueReporter const& Issues() const { return m_dbMap.Issues(); }
+        ECDbCR GetECDb() const { return m_schemaImportContext.GetECDb(); }
+        MainSchemaManager const& GetSchemaManager() const { return m_schemaImportContext.GetSchemaManager(); }
+        DbSchema const& GetDbSchema() const { return GetSchemaManager().GetDbSchema(); }
+        IssueReporter const& Issues() const { return GetSchemaManager().Issues(); }
 
     public:
-        DbMapValidator(DbMap const& dbMap, SchemaImportContext& ctx) : m_dbMap(dbMap), m_schemaImportContext(ctx) {}
+        explicit DbMapValidator(SchemaImportContext& ctx) : m_schemaImportContext(ctx) {}
         ~DbMapValidator() {}
 
         BentleyStatus Validate() const;

@@ -182,7 +182,7 @@ ECN::ECClassId ChangeIterator::RowEntry::GetClassIdFromChangeOrTable(Utf8CP clas
         return m_sqlChange->GetValueId<ECClassId>(m_tableMap->GetColumnIndexByName(classIdColumnName));
 
     /* if (dbOpcode == DbOpcode::Update) */
-    return DbSchemaPersistenceManager::QueryRowClassId(m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId);
+    return DbUtilities::QueryRowClassId(m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId);
     }
 
 
@@ -455,8 +455,8 @@ void ChangeIterator::TableClassMap::FreeColumnMaps()
 //---------------------------------------------------------------------------------------
 void ChangeIterator::TableClassMap::Initialize()
     {
-    m_classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(m_class);
-    if (!m_classMap)
+    m_classMap = m_ecdb.Schemas().Main().GetClassMap(m_class);
+    if (m_classMap == nullptr)
         return;
 
     InitEndTableRelationshipMaps();
@@ -565,7 +565,7 @@ DbColumn const* ChangeIterator::TableClassMap::EndTableRelationshipMap::GetForei
 //---------------------------------------------------------------------------------------
 void ChangeIterator::TableMap::Initialize(Utf8StringCR tableName)
     {
-    DbSchema const& dbSchema = m_ecdb.Schemas().GetDbMap().GetDbSchema();
+    DbSchema const& dbSchema = m_ecdb.Schemas().Main().GetDbSchema();
     m_tableName = tableName;
 
     DbTable const* dbTable = dbSchema.FindTable(tableName);
@@ -623,12 +623,12 @@ void ChangeIterator::TableMap::InitSystemColumnMaps()
 ECClassId ChangeIterator::TableMap::QueryClassId() const
     {
     CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-        "SELECT DISTINCT ec_Class.Id FROM ec_Class "
-        "JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId "
-        "JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
-        "JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_Table.Name = :tableName AND "
+        "SELECT DISTINCT ec_Class.Id FROM main.ec_Class "
+        "JOIN main.ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId "
+        "JOIN main.ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
+        "JOIN main.ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+        "JOIN main.ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE main.ec_Table.Name = :tableName AND "
         " (ec_ClassMap.MapStrategy <> " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable " AND ec_ClassMap.MapStrategy <> " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND "
         " ec_Column.IsVirtual = " SQLVAL_False " AND "
         " (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECInstanceId "=" SQLVAL_DbColumn_Kind_ECInstanceId ")");

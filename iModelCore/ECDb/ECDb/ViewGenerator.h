@@ -13,6 +13,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct TableSpaceSchemaManager;
 struct ECSqlPrepareContext;
 struct ConstraintECClassIdJoinInfo;
 struct MemberFunctionCallExp;
@@ -37,16 +38,17 @@ struct ViewGenerator final
         private:
             ViewType m_viewType;
             ECDbCR m_ecdb;
+            TableSpaceSchemaManager const& m_schemaManager;
 
         protected:
-            Context(ViewType viewType, ECDbCR ecdb) : m_viewType(viewType), m_ecdb(ecdb) {}
+            Context(ViewType viewType, ECDbCR ecdb, TableSpaceSchemaManager const& manager) : m_viewType(viewType), m_ecdb(ecdb), m_schemaManager(manager) {}
 
         public:
             virtual ~Context() {}
 
             ViewType GetViewType() const { return m_viewType; }
             ECDbCR GetECDb() const { return m_ecdb; }
-
+            TableSpaceSchemaManager const& GetSchemaManager() const { return m_schemaManager; }
             template<typename TContext>
             TContext& GetAs() { BeAssert(dynamic_cast<TContext*> (this) != nullptr); return static_cast<TContext&> (*this); }
             };
@@ -61,7 +63,7 @@ struct ViewGenerator final
             bool m_isPolymorphicQuery = false;
             MemberFunctionCallExp const* m_memberFunctionCallExp = nullptr;
         public:
-            SelectFromViewContext(ECSqlPrepareContext const&, bool isPolymorphicQuery, MemberFunctionCallExp const*);
+            SelectFromViewContext(ECSqlPrepareContext const&, TableSpaceSchemaManager const& manager, bool isPolymorphicQuery, MemberFunctionCallExp const*);
             ~SelectFromViewContext() {}
 
             ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
@@ -81,7 +83,7 @@ struct ViewGenerator final
                 bvector<Utf8StringCP> m_viewColumnNameList;
                 bool m_captureViewColumnNames;
             public:
-                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb), m_captureViewColumnNames(true) {}
+                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb, ecdb.Schemas().Main()), m_captureViewColumnNames(true) {}
                 ~ECClassViewContext() {}
 
                 bool MustCaptureViewColumnNames() const { return m_captureViewColumnNames; }
@@ -159,12 +161,12 @@ struct ViewGenerator final
 
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
 
-        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin = false);
+        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMap const* baseClass, PropertyMap::Type filter, bool requireJoin = false);
         static BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassEndTableMap const& relationMap);
         static BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassLinkTableMap const& relationMap);
         static BentleyStatus DoRenderRelationshipClassMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
-        static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
+        static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMap const* castAs = nullptr);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);

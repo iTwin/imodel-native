@@ -224,6 +224,8 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
 
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
     ECEnumeration const* opCodeECEnum = m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode");
     ASSERT_TRUE(opCodeECEnum != nullptr);
 
@@ -263,10 +265,10 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
 
     BeFileName fileName(m_ecdb.GetDbFileName());
     BeFileName cachePath = m_ecdb.GetChangeSummaryCachePath();
-    ASSERT_TRUE(cachePath.DoesPathExist()) << "After creating ECDb, change summary cache is expected to have been created as well";
-    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "After creating ECDb, change summary cache is expected to have been created as well";
-    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "After creating ECDb, change summary cache is expected to have been created as well";
-    ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "After creating ECDb, change summary cache is expected to have been created as well";
+    ASSERT_FALSE(cachePath.DoesPathExist()) << "After creating ECDb, change summary cache is not expected to have been created";
+    ASSERT_FALSE(GetHelper().TableExists("change_ChangeSummary")) << "After creating ECDb, change summary cache is not expected to have been created";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "After creating ECDb, change summary cache is not expected to have been created";
+    ASSERT_EQ(-1, getChangeSummaryCount(m_ecdb)) << "After creating ECDb, change summary cache is not expected to have been created";
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::DoNotAttach)));
     ASSERT_TRUE(cachePath.DoesPathExist());
@@ -354,11 +356,9 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
     }
 
 //---------------------------------------------------------------------------------------
-//! The ChangedValue function is only intended for internal use by ECDb. Still ECDb makes sure it triggers
-//! loading the temp tables in case someone uses the function accidentally
 // @bsimethod                                Krischan.Eberle                  11/17
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, LoadTempTableForChangedValueFunction)
+TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
@@ -373,13 +373,21 @@ TEST_F(ChangeSummaryTestFixture, LoadTempTableForChangedValueFunction)
             </ECEntityClass>
         </ECSchema>)xml")));
 
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('hello',123)"));
 
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ChangedValue(1,'S','AfterInsert','Hello World') FROM ts.Foo1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    TestChangeSet revision1;
+    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
 
-    ASSERT_STRCASEEQ("Hello World", stmt.GetValueText(0));
+    ECInstanceKey summaryKey;
+    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(summaryKey, revision1));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ChangedValue(1,'S','AfterInsert','Hello World') FROM ts.Foo1"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.ChangeSummary(1,'AfterInsert')"));
     }
 
 //---------------------------------------------------------------------------------------

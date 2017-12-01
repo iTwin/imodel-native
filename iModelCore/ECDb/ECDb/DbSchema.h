@@ -26,11 +26,6 @@ enum class PersistenceType
     Virtual //! Not persisted in db rather used as a view specification
     };
 
-struct DbTableSpaceId final : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(DbTableSpaceId, BeInt64Id)
-    };
-
 struct DbTableId final: BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(DbTableId, BeInt64Id)
@@ -378,50 +373,6 @@ public:
 
 
 
-//======================================================================================
-// @bsiclass                                               Krischan.Eberle       11/2017
-//======================================================================================
-struct DbTableSpace final : NonCopyableClass
-    {
-    public:
-        enum class Type
-            {
-            Main,
-            Temp,
-            Attached
-            };
-
-    private:
-        DbTableSpaceId m_id;
-        Type m_type;
-        Utf8String m_name;
-
-    public:
-        DbTableSpace(DbTableSpaceId id, Utf8CP name);
-
-        bool operator==(DbTableSpace const& rhs) const 
-            {
-            const bool idsAreEqual = m_id == rhs.m_id;
-            if (!idsAreEqual)
-                return false;
-
-            if (m_id.IsValid())
-                return true;
-
-            return m_name.EqualsIAscii(rhs.m_name);
-            }
-
-        bool operator!=(DbTableSpace const& rhs) const { return !(*this == rhs); }
-
-        DbTableSpaceId GetId() const { return m_id; }
-        void SetId(DbTableSpaceId id) { BeAssert(id.IsValid());  m_id = id; }
-        Type GetType() const { return m_type; }
-        bool IsMain() const { return m_type == Type::Main; }
-        bool IsTemp() const { return m_type == Type::Temp; }
-        bool IsAttached() const { return m_type == Type::Attached; }
-        Utf8StringCR GetName() const { return m_name; }
-    };
-
 struct DbSchema;
 
 //======================================================================================
@@ -479,7 +430,6 @@ private:
     ECDbCR m_ecdb;
     DbTableId m_id;
     Utf8String m_name;
-    DbTableSpace const& m_tableSpace;
     Type m_type;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
@@ -501,7 +451,7 @@ private:
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(ECDbCR ecdb, DbTableId id, DbTableSpace const&, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
+    DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     bool operator==(DbTable const& rhs) const;
@@ -515,7 +465,6 @@ public:
     //! the DB schema name to make it unique. I.e. tables in the TEMP namespace or in an attached
     //! database may not have the same name as in the MAIN namespace
     Utf8StringCR GetName() const { return m_name; }
-    DbTableSpace const& GetTableSpace() const { return m_tableSpace; }
     Type GetType() const { return m_type; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
@@ -552,41 +501,15 @@ public:
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }
     };
 
+
+
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
 struct DbSchema final : NonCopyableClass
     {
 public:
-    struct TableSpaceManager final
-        {
-        private:
-            ECDbCR m_ecdb;
-            mutable std::map<Utf8CP, std::unique_ptr<DbTableSpace>, CompareIUtf8Ascii> m_tableSpaces;
-            mutable std::vector<DbTableSpace const*> m_tableSpacesOrdered;
-            mutable DbTableSpace const* m_mainTableSpace = nullptr;
-            mutable DbTableSpace const* m_tempTableSpace = nullptr;
-
-            DbTableSpaceId LookupTableSpaceId(Utf8CP name) const;
-
-        public:
-            explicit TableSpaceManager(ECDbCR ecdb) : m_ecdb(ecdb) {}
-
-            DbTableSpace const* AddTableSpace(Utf8CP name) const { return AddTableSpace(DbTableSpaceId(), name); }
-            DbTableSpace const* AddTableSpace(DbTableSpaceId id, Utf8CP name) const;
-
-            DbTableSpace const* FindOrAddTableSpace(Utf8CP name) const;
-
-            DbTableSpace const& GetMain() const;
-            DbTableSpace const& GetTemp() const;
-
-            DbTableSpace const* LoadTableSpace(DbTableSpaceId) const;
-            BentleyStatus PersistNewTableSpaces() const;
-
-            void ClearCache() const { m_mainTableSpace = nullptr; m_tempTableSpace = nullptr; m_tableSpacesOrdered.clear(); m_tableSpaces.clear(); }
-        };
-
-    struct TableCollection final
+   struct TableCollection final
         {
         public:
             struct const_iterator final : std::iterator<std::forward_iterator_tag, DbTable const*>
@@ -628,7 +551,7 @@ public:
         public:
             explicit TableCollection(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
-            DbTable* Add(DbTableId, DbTableSpace const&, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
+            DbTable* Add(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
             void Remove(Utf8StringCR tableName) const;
 
             DbTable const* Get(Utf8StringCR tableName) const;
@@ -644,7 +567,8 @@ public:
 
 private:
     ECDbCR m_ecdb;
-    TableSpaceManager m_tableSpaceManager;
+    DbTableSpace const& m_tableSpace;
+
     TableCollection m_tables;
     mutable bool m_indexDefsAreLoaded = false;
     mutable DbTable* m_nullTable = nullptr;
@@ -658,15 +582,15 @@ private:
 
     BentleyStatus LoadIndexDefs(std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>>&, Utf8CP sqlWhereOrJoinClause) const;
 
-    BentleyStatus RecreateTempIndexes() const;
-
 public:
-    explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_tables(ecdb), m_tableSpaceManager(ecdb) {}
+    explicit DbSchema(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace), m_tables(ecdb) {}
     ~DbSchema() {}
 
+    DbTableSpace const& GetTableSpace() const { return m_tableSpace; }
+
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* AddTable(DbTableSpace const&, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId);
-    DbTable* AddTable(DbTableSpace const&, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const& parentTable);
+    DbTable* AddTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId);
+    DbTable* AddTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const& parentTable);
     TableCollection const& Tables() const { return m_tables; }
     DbTable const* FindTable(Utf8StringCR name) const;
     DbTable* FindTableP(Utf8StringCR name) const;
@@ -681,11 +605,6 @@ public:
 
     //!This function save or update table as required. It skip if a table is not loaded
     BentleyStatus SaveOrUpdateTables() const;
-
-    BentleyStatus RecreateTempTables(bool& hasTempTables) const;
-
-    TableSpaceManager const& GetTableSpaceManager() const { return m_tableSpaceManager; }
-
     BentleyStatus LoadIndexDefs() const;
     BentleyStatus PersistIndexDef(DbIndex const&) const;
 

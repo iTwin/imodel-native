@@ -1522,30 +1522,47 @@ BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OS
         return ERROR;
         }
 
-    Utf8StringCP schemaName = nullptr;
-    Utf8StringCP className = nullptr;
-    std::unique_ptr<MemberFunctionCallExp> memberFunCall;
-
-    if (parseNode->count() <= 4)
+    OSQLParseNode const* tableNode = parseNode;
+    OSQLParseNode const* memberCallNode = nullptr;
+    if (SQL_ISRULE(parseNode, table_node_mf))
         {
-        schemaName = &parseNode->getChild(0)->getTokenValue();
-        className = &parseNode->getChild(2)->getTokenValue();
-        if (parseNode->count() == 4 && ParseMemberFunctionCall(memberFunCall, parseNode->getChild(3)) != SUCCESS)
-            return ERROR;
+        tableNode = parseNode->getChild(0);
+        if (parseNode->count() == 2)
+            memberCallNode = parseNode->getChild(1);
         }
 
+    const bool hasTableSpaceNode = tableNode->count() == 5;
+
+    Utf8CP tableSpaceName = nullptr;
+    Utf8StringCP schemaName = nullptr;
+    Utf8StringCP className = nullptr;
+
+    if (hasTableSpaceNode)
+        {
+        tableSpaceName = tableNode->getChild(0)->getTokenValue().c_str();
+        schemaName = &tableNode->getChild(2)->getTokenValue();
+        className = &tableNode->getChild(4)->getTokenValue();
+        }
     else
         {
-        BeAssert(false);
-        return ERROR;
+        BeAssert(tableNode->count() == 3);
+        schemaName = &tableNode->getChild(0)->getTokenValue();
+        className = &tableNode->getChild(2)->getTokenValue();
         }
 
     BeAssert(className != nullptr && schemaName != nullptr);
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
-    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className, ecsqlType, isPolymorphic))
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, isPolymorphic))
         return ERROR;
 
-    exp = std::unique_ptr<ClassNameExp>(new ClassNameExp(*className, *schemaName, nullptr, classNameExpInfo, isPolymorphic, std::move(memberFunCall)));
+    std::unique_ptr<MemberFunctionCallExp> memberFunCall;
+    if (memberCallNode != nullptr)
+        {
+        if (SUCCESS != ParseMemberFunctionCall(memberFunCall, memberCallNode))
+            return ERROR;
+        }
+
+    exp = std::make_unique<ClassNameExp>(*className, *schemaName, tableSpaceName, classNameExpInfo, isPolymorphic, std::move(memberFunCall));
     return SUCCESS;
     }
 
@@ -1556,15 +1573,15 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
     {
     if (!SQL_ISRULE(parseNode, opt_member_func_call))
         {
-        BeAssert(false && "Wrong grammar. Expecting table_node");
+        BeAssert(false && "Wrong grammar. Expecting opt_member_func_call");
         return ERROR;
         }
 
     if (parseNode->isLeaf())
         return SUCCESS;
 
-    Utf8StringCR funtionName = parseNode->getChild(1)->getTokenValue();
-    memberFunCallExp = std::unique_ptr<MemberFunctionCallExp>(new MemberFunctionCallExp(funtionName));
+    Utf8StringCR functionName = parseNode->getChild(1)->getTokenValue();
+    memberFunCallExp = std::make_unique<MemberFunctionCallExp>(functionName);
     OSQLParseNode const* argumentsNode = parseNode->getChild(3);
     for (size_t i = 0; i < argumentsNode->count(); i++)
         {
@@ -2712,37 +2729,41 @@ void ECSqlParseContext::PopArg() { m_finalizeParseArgs.pop_back(); }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp)
+BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP tableSpaceName, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp)
     {
     BeAssert(!schemaNameOrAlias.empty());
-    ECClassCP resolvedClass = m_ecdb.Schemas().GetClass(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect);
 
-    if (resolvedClass == nullptr)
+    ClassMap const* classMap = m_ecdb.Schemas().GetDispatcher().GetClassMap(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect, tableSpaceName);
+    if (classMap == nullptr)
         {
-        Issues().Report("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+        if (Utf8String::IsNullOrEmpty(tableSpaceName))
+            Issues().Report("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+        else
+            Issues().Report("ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
+
         return ERROR;
         }
 
-    auto it = m_classNameExpInfoList.find(resolvedClass->GetECSqlName().c_str());
+    Utf8String fullyQualifiedClassName;
+    //it is fine if tableSpaceName is nullptr (which means any table space) as the given class will always be found in the same table space even
+    //if a class with the same name exists in more than one table space
+    fullyQualifiedClassName.Sprintf("%s.%s", tableSpaceName, classMap->GetClass().GetFullName());
+    auto it = m_classNameExpInfoList.find(fullyQualifiedClassName);
     if (it != m_classNameExpInfoList.end())
         {
         classNameExpInfo = it->second;
         return SUCCESS;
         }
 
-    ClassMap const* map = m_ecdb.Schemas().GetDbMap().GetClassMap(*resolvedClass);
-    if (map == nullptr)
-        return ERROR;
-
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*map, ecsqlType, isPolymorphicExp));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
         Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 
-    classNameExpInfo = ClassNameExp::Info::Create(*map);
-    m_classNameExpInfoList[resolvedClass->GetECSqlName().c_str()] = classNameExpInfo;
+    classNameExpInfo = ClassNameExp::Info::Create(*classMap);
+    m_classNameExpInfoList[fullyQualifiedClassName] = classNameExpInfo;
     return SUCCESS;
     }
 

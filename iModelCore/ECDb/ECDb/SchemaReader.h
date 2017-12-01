@@ -6,7 +6,9 @@
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECDbInternalTypes.h"
+#include <ECDb/ECDb.h>
+#include "SchemaPersistenceHelper.h"
+#include "DbUtilities.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -77,13 +79,13 @@ struct PropertyCategoryDbEntry final
         PropertyCategoryDbEntry(ECN::PropertyCategoryId id, ECN::PropertyCategoryCR cat) : m_categoryId(id), m_cachedCategory(const_cast<ECN::PropertyCategoryP> (&cat)) {}
     };
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsimethod                                                    Affan.Khan        05/2012
+//+===============+===============+===============+===============+===============+======
 struct SchemaReader final
     {
-    private:
-        struct Context final: NonCopyableClass
+    public:
+        struct Context final : NonCopyableClass
             {
             private:
                 std::vector<ECN::NavigationECProperty*> m_navProps;
@@ -96,14 +98,20 @@ struct SchemaReader final
                 BentleyStatus Postprocess(SchemaReader const&) const;
             };
 
+    private:
         ECDbCR m_ecdb;
+        DbTableSpace const& m_tableSpace;
+
         mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
         mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
         mutable std::map<ECN::ECEnumerationId, std::unique_ptr<EnumDbEntry>> m_enumCache;
         mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<KindOfQuantityDbEntry>> m_koqCache;
         mutable std::map<ECN::PropertyCategoryId, std::unique_ptr<PropertyCategoryDbEntry>> m_propCategoryCache;
         mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
-        ECDbSystemSchemaHelper m_systemSchemaHelper;
+
+        //not copyable
+        SchemaReader(SchemaReader const&) = delete;
+        SchemaReader& operator=(SchemaReader const&) = delete;
 
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;
@@ -127,18 +135,19 @@ struct SchemaReader final
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
     public:
-        explicit SchemaReader(ECDbCR ecdb) :m_ecdb(ecdb), m_systemSchemaHelper(ecdb) {}
+        SchemaReader(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace) {}
         ~SchemaReader() {}
 
-        bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return GetSchemaId(schemaNameOrAlias, mode).IsValid(); }
+        BentleyStatus GetSchemas(bvector<ECN::ECSchemaCP>&, bool loadSchemaEntities) const;
+        bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetSchemaId(m_ecdb, m_tableSpace, schemaNameOrAlias.c_str(), mode).IsValid(); }
+        ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode) const;
         ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECSchemaId GetSchemaId(ECN::ECSchemaCR) const;
-        ECN::ECSchemaId GetSchemaId(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetSchemaId(m_ecdb, schemaNameOrAlias.c_str(), mode); }
-        Utf8String GetSchemaName(ECN::ECSchemaId schemaId) const { return SchemaPersistenceHelper::GetSchemaName(m_ecdb, schemaId); }
 
+        ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode) const;
         ECN::ECClassCP GetClass(ECN::ECClassId) const;
-        ECN::ECClassId GetClassId(ECN::ECClassCR) const;
         ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode) const;
+        ECN::ECClassId GetClassId(ECN::ECClassCR) const;
 
         ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaName, Utf8StringCR enumName, SchemaLookupMode) const;
         ECN::ECEnumerationId GetEnumerationId(ECN::ECEnumerationCR) const;
@@ -150,12 +159,9 @@ struct SchemaReader final
         ECN::PropertyCategoryId GetPropertyCategoryId(ECN::PropertyCategoryCR) const;
 
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
-        ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(m_ecdb, schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
+        ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(m_ecdb, m_tableSpace, schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
-
-        ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
-        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ChangeSummary"}; }
 
         void ClearCache() const;
     };

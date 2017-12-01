@@ -213,6 +213,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             }
         else
             {
+            //WIP: Need to change the grammar to allow specifying cast targets from other table spaces
             ECClassCP targetType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetClassName(), SchemaLookupMode::AutoDetect);
             if (targetType == nullptr)
                 {

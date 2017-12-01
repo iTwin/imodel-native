@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ECDbFileInfo" alias="ecdbf" version="02.00.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="ECDbMap" version="02.00.01" alias="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
 
     <ECEntityClass typeName="FileInfo" description="Abstract base class for holding attributes of a file" modifier="Abstract">
@@ -17,7 +17,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="EmbeddedFileInfo" modifier="Sealed" description="Attributes of a file stored in the ECDb file." displayLabel="Embedded File Info">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>be_EmbedFile</TableName>
             </ClassMap>
@@ -25,7 +25,7 @@
         <BaseClass>FileInfo</BaseClass>
         <ECProperty propertyName="Name" typeName="string" description="File name">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
                     <IsUnique>True</IsUnique>
                     <Collation>NoCase</Collation>
@@ -34,7 +34,7 @@
         </ECProperty>
         <ECProperty propertyName="Description" typeName="string" description="File description">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>Descr</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -51,10 +51,10 @@
     
     <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
-            <ShareColumns xmlns="ECDbMap.02.01">
+            <ShareColumns xmlns="ECDbMap.02.00">
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
@@ -65,7 +65,7 @@
     
     <ECEntityClass typeName="FileInfoOwnership" modifier="Sealed">
         <ECCustomAttributes>
-            <DbIndexList xmlns="ECDbMap.02.01">
+            <DbIndexList xmlns="ECDbMap.02.00">
                   <Indexes>
                     <DbIndex>
                         <Name>uix_ecdbf_fileinfoownership_fileinfoid_fileinfoecclassid</Name>
@@ -94,28 +94,28 @@
         </ECCustomAttributes>
         <ECProperty propertyName="OwnerId" typeName="long">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="OwnerECClassId" typeName="long">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="FileInfoId" typeName="long">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="FileInfoECClassId" typeName="long">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>

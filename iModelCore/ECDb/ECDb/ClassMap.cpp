@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ClassMap.h"
 #include <algorithm>
-#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -18,8 +16,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this), m_state(ObjectState::New)
+ClassMap::ClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
+    : m_type(type), m_ecdb(ecdb), m_schemaManager(manager), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this), m_state(ObjectState::New)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
@@ -259,7 +257,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetSchemaManager().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false);
@@ -359,7 +357,7 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
         {
         for (ECClassCP baseClass : GetClass().GetBaseClasses())
             {
-            ClassMap* baseClassMap = const_cast<ClassMap*>(GetDbMap().GetClassMap(*baseClass));
+            ClassMap* baseClassMap = const_cast<ClassMap*>(GetSchemaManager().GetClassMap(*baseClass));
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false && "Failed to find baseClass map");
@@ -402,7 +400,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     std::set<DbTable*> overflowTables;
     if (!dbLoadCtx.HasMappedProperties())
         {
-        SetTable(*const_cast<DbTable*>(GetDbMap().GetDbSchema().GetNullTable()));
+        SetTable(*const_cast<DbTable*>(GetSchemaManager().GetDbSchema().GetNullTable()));
         return SUCCESS;
         }
 
@@ -478,7 +476,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetSchemaManager().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 return ERROR;
 
@@ -555,7 +553,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
 
         //! ECSchema update added new property for which we need to save property map
         DbMapSaveContext ctx(m_ecdb);
-        if (GetDbMap().GetDbSchema().UpdateTable(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
+        if (GetSchemaManager().GetDbSchema().UpdateTable(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
             {
             BeAssert(false && "Failed to save table");
             return ERROR;
@@ -607,7 +605,7 @@ IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetImpl().Issues()
 //------------------------------------------------------------------------------------------
 StorageDescription const& ClassMap::GetStorageDescription() const
     {
-    return GetDbMap().GetLightweightCache().GetStorageDescription(*this);
+    return GetSchemaManager().GetLightweightCache().GetStorageDescription(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -619,7 +617,7 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
     std::vector<ClassMap const*> derivedClassMaps;
     for (ECClassCP derivedClass : derivedClasses)
         {
-        if (ClassMap const* derivedClassMap = GetDbMap().GetClassMap(*derivedClass))
+        if (ClassMap const* derivedClassMap = GetSchemaManager().GetClassMap(*derivedClass))
             derivedClassMaps.push_back(derivedClassMap);
         }
 
@@ -671,7 +669,7 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
     if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecClassIdPropertyMap, *ecClassIdColumn) == ERROR)
         return ERROR;
     
-    for (ClassMapCP derviedClassMap : GetDerivedClassMaps())
+    for (ClassMap const* derviedClassMap : GetDerivedClassMaps())
         if (derviedClassMap)
             const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);
 
@@ -754,7 +752,7 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
 //---------------------------------------------------------------------------------------
 ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext& ctx)
     {
-    DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
+    DbTable const* nullTable = GetSchemaManager().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
     return ClassMappingStatus::Success;
     }
@@ -764,7 +762,7 @@ ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 BentleyStatus NotMappedClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
-    DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
+    DbTable const* nullTable = GetSchemaManager().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
     return SUCCESS;
     }

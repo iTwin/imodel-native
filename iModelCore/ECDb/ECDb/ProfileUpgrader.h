@@ -37,16 +37,6 @@ struct ProfileUpgrader_4001 final : ProfileUpgrader
     };
 
 //=======================================================================================
-// @bsiclass                                                 Krischan.Eberle     10/2017
-//+===============+===============+===============+===============+===============+======
-struct ProfileUpgrader_4002 final : ProfileUpgrader
-    {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-    private:
-        DbResult _Upgrade(ECDbCR) const override;
-    };
-
-//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
 struct ProfileSchemaUpgrader final

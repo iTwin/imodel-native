@@ -1,11 +1,10 @@
 <ECSchema schemaName="ECDbChangeSummaries" alias="change" version="01.00.00" description="ECDb Change Summaries" displayLabel="ECDb Change Summaries" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="ECDbMap" version="02.00.01" alias="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
       
     <ECEntityClass typeName="ChangeSummary" displayLabel="Summary">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <TableSpace>changesummaries</TableSpace>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -23,11 +22,10 @@
     
     <ECEntityClass typeName="InstanceChange" displayLabel="Instance Change"  description="Represents an instance change in a change summary">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>                 
-                <TableSpace>changesummaries</TableSpace>
             </ClassMap>
-            <DbIndexList xmlns="ECDbMap.02.01">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>uix_change_InstanceChange_SummaryId_ChangedInstance</Name>
@@ -43,7 +41,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryContainsInstanceChanges" direction="backward" >
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.01">
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                     <OnDeleteAction>Cascade</OnDeleteAction>
                 </ForeignKeyConstraint>
             </ECCustomAttributes>
@@ -55,11 +53,10 @@
     
     <ECEntityClass typeName="PropertyValueChange" displayLabel="Property Value Change" description="Represents an property value change of an instance change in a change summary">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <TableSpace>changesummaries</TableSpace>
             </ClassMap>
-            <DbIndexList xmlns="ECDbMap.02.01">
+            <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>uix_change_PropertyValueChange_InstanceChangeId_AccessString</Name>
@@ -74,7 +71,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="InstanceChange" relationshipName="InstanceChangeOwnsPropertyValueChanges" direction="backward">
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.01">
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                     <OnDeleteAction>Cascade</OnDeleteAction>
                 </ForeignKeyConstraint>
             </ECCustomAttributes>

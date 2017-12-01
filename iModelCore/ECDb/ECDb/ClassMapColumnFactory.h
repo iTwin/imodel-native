@@ -126,7 +126,6 @@ struct ClassMapColumnFactory : NonCopyableClass
         DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
         DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&) const;
         ColumnMaps* GetColumnMaps() const;
-        ECDbCR GetECDb() const;
         DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
         DbColumn* AllocateColumn(SchemaImportContext&, ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR) const;

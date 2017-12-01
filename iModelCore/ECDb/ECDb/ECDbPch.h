@@ -23,19 +23,20 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
+#include "DbUtilities.h"
 #include "JsonPersistenceHelper.h"
 
 #include "ECDbImpl.h"
 
 #include "ProfileManager.h"
 #include "ProfileUpgrader.h"
+#include "SchemaManagerDispatcher.h"
 #include "ECDbSystemSchemaHelper.h"
 #include "ECDbMapSchemaHelper.h"
 #include "PolicyManager.h"
 
 #include "ECDbSqlFunctions.h"
 
-#include "DbMap.h"
 #include "DbMappingManager.h"
 #include "DbMapValidator.h"
 #include "MapStrategy.h"

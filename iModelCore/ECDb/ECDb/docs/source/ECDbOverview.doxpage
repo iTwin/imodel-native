@@ -809,13 +809,21 @@
     @page ECDbChangeSummaries Change Summaries
     
     ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called change summaries.
-    ECDb persists them locally in a cache file next to the actual %ECDb file, so that they can be accessed across sessions.
+    ECDb persists them locally in a <b>change summary cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
     
-    On opening an ECDb file, you can specify whether the change summary cache should be attached or not (see BentleyApi::BeSQLite::EC::ECDb::OpenParams).
+    The <b>change summary cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeSummaryCache. Alternatively, you
+    can have it attached when opening the primary %ECDb by specify the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
+
+    Once attached the change summary cache file is visible in ECSQL under the table space @b @c changesummaries.
 
     ### Querying into the change summaries
     You can use ECSQL against the @b ECDbChangeSummaries ECSchema to find out what ECInstances and what properties in them have changed 
-    in a given changeset. The @b ECDbChangeSummaries ECSchema is built-into every %ECDb file.
+    in a given changeset. The @b ECDbChangeSummaries ECSchema is built-into every <b>ChangeSummary cache %ECDb file</b>. Once attached
+    the entities of that schema can be referenced by the table space mentioned above.
+
+    Example:
+
+        SELECT ChangedInstance.Id, OpCode FROM changesummaries.change.InstanceChange WHERE Summary.Id=?
 
     ### Querying for the changed values
     Whereas ECDbChangeSummaries ECSchema yields information about what ECInstances and what properties have changed, querying for the actual

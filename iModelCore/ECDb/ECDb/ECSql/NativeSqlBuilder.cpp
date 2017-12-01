@@ -169,7 +169,7 @@ BentleyStatus SqlUpdateBuilder::ExecuteSql(ECDb const& ecdb) const
         return ERROR;
 
     Utf8String sql;
-    sql.append("UPDATE [").append(m_table).append("] SET ");
+    sql.append("UPDATE main.[").append(m_table).append("] SET ");
     bool isFirstItem = true;
     for (std::pair<Utf8String, ECValue> const& kvPair : m_updateExpressions)
         {

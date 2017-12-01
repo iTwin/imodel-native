@@ -52,7 +52,7 @@ struct ISupportsPropertyMapVisitor
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisitor
+struct PropertyMapContainer final : ISupportsPropertyMapVisitor
     {
     typedef std::vector<PropertyMap const*>::const_iterator const_iterator;
     private:
@@ -60,7 +60,10 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         std::vector<PropertyMap const*> m_topLevelPropMapsOrdered;
         std::map<Utf8CP, RefCountedPtr<PropertyMap>, CompareIUtf8Ascii> m_byAccessString;
 
-    private:
+        //not copyable
+        PropertyMapContainer(PropertyMapContainer const&) = delete;
+        PropertyMapContainer& operator=(PropertyMapContainer const&) = delete;
+
         BentleyStatus _AcceptVisitor(IPropertyMapVisitor const&)  const override;
 
     public:
@@ -78,7 +81,7 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
 // @bsiclass                                                   Affan.Khan          07/16
 // Abstract baseclass of all property map.
 //+===============+===============+===============+===============+===============+======
-struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableClass
+struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor
     {
     struct Path
         {
@@ -132,6 +135,10 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         PropertyMap const* m_parentPropertMap = nullptr;
         ClassMap const& m_classMap;
         const Utf8String m_propertyAccessString;
+
+        //not copyable
+        PropertyMap(PropertyMap const&) = delete;
+        PropertyMap& operator=(PropertyMap const&) = delete;
 
         virtual bool _IsMappedToTable(DbTable const&) const = 0;
 

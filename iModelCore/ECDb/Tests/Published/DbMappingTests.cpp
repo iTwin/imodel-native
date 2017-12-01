@@ -10347,7 +10347,6 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
 
     std::vector<Utf8CP> expectedSchemas;
     expectedSchemas.push_back("CoreCustomAttributes");
-    expectedSchemas.push_back("ECDbChangeSummaries");
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
     expectedSchemas.push_back("ECDbMeta");

@@ -444,7 +444,7 @@ ECSqlSystemPropertyInfo const& ECSqlToJsonConverter::DetermineTopLevelSystemProp
         return ECSqlSystemPropertyInfo::NoSystemProperty();
 
     BeAssert(colInfo.GetProperty() != nullptr && "Must be checked before");
-    ECSqlSystemPropertyInfo const& sysPropInfo = m_stmt.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
+    ECSqlSystemPropertyInfo const& sysPropInfo = m_stmt.GetECDb()->Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class || sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Relationship)
         return sysPropInfo;
 

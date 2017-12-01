@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static 
 BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, MemberFunctionCallExp const* memberFunctionCallExp)
     {
-    SelectFromViewContext ctx(prepareContext, isPolymorphicQuery, memberFunctionCallExp);
+    SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), isPolymorphicQuery, memberFunctionCallExp);
     if (memberFunctionCallExp == nullptr) 
         return GenerateViewSql(viewSql, ctx, classMap);
 
@@ -51,7 +51,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
-                                     "SELECT c.Id FROM " TABLE_Class " c, " TABLE_ClassMap " cm WHERE c.Id = cm.ClassId AND "
+                                     "SELECT c.Id FROM main." TABLE_Class " c, main." TABLE_ClassMap " cm WHERE c.Id = cm.ClassId AND "
                                      "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
                                      "cm.MapStrategy NOT IN (" SQLVAL_MapStrategy_NotMapped "," SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"))
         return ERROR;
@@ -65,12 +65,9 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         if (ecClass == nullptr)
             return ERROR;
 
-        ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
+        ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(*ecClass);
         if (classMap == nullptr)
             return ERROR;
-
-        if (!classMap->GetPrimaryTable().GetTableSpace().IsMain())
-            continue;
 
         if (CreateECClassView(ecdb, *classMap) != SUCCESS)
             return ERROR;
@@ -95,7 +92,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
         if (ecClass == nullptr)
             return ERROR;
 
-        ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
+        ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(*ecClass);
         if (classMap == nullptr)
             return ERROR;
 
@@ -108,14 +105,6 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
                                            classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }
-
-        if (!classMap->GetPrimaryTable().GetTableSpace().IsMain())
-            {
-            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is mapped to the table space '%s'. ECClassViews can only be created for classes mapped to the MAIN table space.",
-                                           classMap->GetClass().GetFullName(), classId.ToString().c_str(), classMap->GetPrimaryTable().GetTableSpace().GetName().c_str());
-            return ERROR;
-            }
-
 
         if (CreateECClassView(ecdb, *classMap) != SUCCESS)
             return ERROR;
@@ -152,7 +141,7 @@ BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
         }
 
     Utf8String createViewSql;
-    createViewSql.Sprintf("CREATE VIEW %s (%s)\n\t--### ECCLASS VIEW is for debugging purpose only!.\n\tAS %s;", viewName.c_str(), viewColumnNameList.c_str(), viewSql.GetSql().c_str());
+    createViewSql.Sprintf("CREATE VIEW main.%s (%s)\n\t--### ECCLASS VIEW is for debugging purpose only!.\n\tAS %s;", viewName.c_str(), viewColumnNameList.c_str(), viewSql.GetSql().c_str());
     if (ecdb.ExecuteSql(createViewSql.c_str()) != BE_SQLITE_OK)
         return ERROR;
 
@@ -169,8 +158,8 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
-                                     "SELECT ('DROP VIEW IF EXISTS [' || s.Alias || '.' || c.Name || '];') FROM ec_Class c "
-                                     "INNER JOIN ec_Schema s ON s.Id=c.SchemaId"))
+                                     "SELECT ('DROP VIEW IF EXISTS main.[' || s.Alias || '.' || c.Name || '];') FROM main.ec_Class c "
+                                     "INNER JOIN main.ec_Schema s ON s.Id=c.SchemaId"))
         return ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -183,9 +172,6 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     PERFLOG_FINISH("ECDb", "Drop ECClass views");
     return SUCCESS;
     }
-
-
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
@@ -227,6 +213,12 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
         }
 
+    if (!ctx.GetECDb().IsChangeSummaryCacheAttached())
+        {
+        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_ChangeSummary " the ChangeSummary ECDb must have been attached before.");
+        return ERROR;
+        }
+
     NativeSqlBuilder::List argSqlSnippets;
     if (ECSqlExpPreparer::PrepareFunctionArgList(argSqlSnippets, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), memberFuncCallExp) != ECSqlStatus::Success)
         return ERROR;
@@ -239,31 +231,20 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
         return ERROR;
 
-    ECClassCP instanceChangeClass = ctx.GetECDb().Schemas().GetClass(ECSCHEMA_ECDbChangeSummaries, ECDBCHANGE_CLASS_InstanceChange);
-    if (instanceChangeClass == nullptr)
-        {
-        ctx.GetECDb().GetImpl().Issues().Report("ChangeSummary extension requires the " ECSCHEMA_ECDbChangeSummaries " schema.");
-        BeAssert(false);
-        return ERROR;
-        }
+#define TABLEALIAS_InstanceChange "ic"
+#define TABLE_InstanceChange "change_InstanceChange"
+#define TABLE_InstanceChange_COL_Id "Id"
+#define TABLE_InstanceChange_COL_SummaryId "Summary_Id"
+#define TABLE_InstanceChange_COL_OpCode "OpCode"
+#define TABLE_InstanceChange_COL_ChangedInstanceId "ChangedInstance_Id"
+#define TABLE_InstanceChange_COL_ChangedInstanceClassId "ChangedInstance_ClassId"
 
-    ClassMap const* instanceChangeClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*instanceChangeClass);
-    if (instanceChangeClassMap == nullptr)
-        return ERROR;
-
-    DbTable const& instanceChangeTable = instanceChangeClassMap->GetPrimaryTable();
-    Utf8StringCR summaryIdColumnName = instanceChangeClassMap->GetPropertyMaps().Find("Summary.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
-    Utf8StringCR changeIdColumnName = instanceChangeClassMap->GetECInstanceIdPropertyMap()->GetDataPropertyMaps().front()->GetColumn().GetName();
-    Utf8StringCR opCodeColumnName = instanceChangeClassMap->GetPropertyMaps().Find("OpCode")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
-    Utf8StringCR idOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find("ChangedInstance.Id")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
-    Utf8StringCR classIdOfChangedInstanceColumnName = instanceChangeClassMap->GetPropertyMaps().Find("ChangedInstance.ClassId")->GetAs<SingleColumnDataPropertyMap>().GetColumn().GetName();
 
     Utf8StringCR viewName = classMap.GetClass().GetName();
 
     internalView.AppendSpace().AppendEscaped(viewName);
 
-    NativeSqlBuilder columnSql;
-    columnSql.AppendFormatted("ic.%s " ECDBSYS_PROP_ECInstanceId ", ic.%s " ECDBSYS_PROP_ECClassId, idOfChangedInstanceColumnName.c_str(), classIdOfChangedInstanceColumnName.c_str());
+    NativeSqlBuilder columnSql(TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId " " ECDBSYS_PROP_ECInstanceId ", "  TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId " " ECDBSYS_PROP_ECClassId);
 
     SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::ConstraintECClassId | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::SingleColumnData);
     if (SUCCESS != classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor))
@@ -277,8 +258,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || propertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
             {
             Utf8StringCR accessString = propertyMap->GetAccessString();
-            columnSql.AppendComma().Append(SQLFUNC_ChangedValue).Append("(ic.").Append(changeIdColumnName).AppendComma();
-            columnSql.Append("'").Append(accessString).Append("'").AppendComma();
+            columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+            columnSql.Append("'").Append(accessString).Append("',");
             columnSql.Append(operationArgSql).AppendComma();
             columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
             columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
@@ -294,7 +275,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                 }
             else
                 {
-                columnSql.AppendComma().Append(SQLFUNC_ChangedValue).Append("(ic.").Append(changeIdColumnName).AppendComma();
+                columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
                 columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("',");
                 columnSql.Append(operationArgSql).AppendComma();
                 columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
@@ -304,17 +285,19 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         }
 
     viewSql.AppendParenLeft();
-    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM ").Append(instanceChangeTable.GetTableSpace().GetName()).AppendDot().Append(instanceChangeTable.GetName()).Append(" ic ");
+    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ChangeSummaries "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
 
     if (ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted(" INNER JOIN " TABLE_ClassHierarchyCache " ch ON ic.%s=ch.ClassId AND ch.BaseClassId=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
+        viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s", 
+                                ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
 
-    viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql().c_str()).Append(" ON ").AppendEscaped(viewName).Append("." ECDBSYS_PROP_ECInstanceId "=ic.").Append(classIdOfChangedInstanceColumnName);
-    viewSql.Append(" WHERE ic.").Append(opCodeColumnName).Append("=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
-    viewSql.Append(" AND ic.").Append(summaryIdColumnName).Append("=").Append(summaryIdArgSql);
+    viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql()).Append(" ON ").AppendEscaped(viewName);
+    viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId
+                   " WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
+    viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
 
     if (!ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted(" AND ic.%s=%s", classIdOfChangedInstanceColumnName.c_str(), classMap.GetClass().GetId().ToString().c_str());
+        viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classMap.GetClass().GetId().ToString().c_str());
 
     viewSql.AppendParenRight();
     return SUCCESS;
@@ -376,7 +359,7 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(bmap<Utf8String, bpair<DbTable 
                 ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
         }
 
-    for (ClassMapCP derivedClassMap : derivedClassMap.GetDerivedClassMaps())
+    for (ClassMap const* derivedClassMap : derivedClassMap.GetDerivedClassMaps())
         if (RenderMixinClassMap(selectClauses, ctx, mixInClassMap, *derivedClassMap) != SUCCESS)
             return ERROR;
 
@@ -485,14 +468,14 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
             }
 
         NativeSqlBuilder view;
-        ECClass const* tableRootClass = ctx.GetECDb().Schemas().GetClass(partition->GetRootClassId());
+        ECClass const* tableRootClass = ctx.GetSchemaManager().GetClass(partition->GetRootClassId());
         if (tableRootClass == nullptr || tableRootClass->GetClassType() != ECClassType::Entity)
             {
             BeAssert(false);
             return ERROR;
             }
 
-        ClassMap const* tableRootClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*tableRootClass);
+        ClassMap const* tableRootClassMap = ctx.GetSchemaManager().GetClassMap(*tableRootClass);
         if (tableRootClassMap == nullptr || tableRootClassMap->GetType() != ClassMap::Type::Class)
             {
             BeAssert(false);
@@ -555,19 +538,14 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs)
+BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& classMap, DbTable const& contextTable, ClassMap const* castAs)
     {
     viewSql.Append("SELECT ");
     bset<DbTable const*> requireJoinTo;
     if (RenderPropertyMaps(viewSql, ctx, requireJoinTo, classMap, contextTable, castAs, PropertyMap::Type::Data | PropertyMap::Type::ECInstanceId | PropertyMap::Type::ECClassId) != SUCCESS)
         return ERROR;
 
-    viewSql.Append(" FROM ");
-    
-    if (!contextTable.GetTableSpace().IsMain())
-        viewSql.AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot();
-
-    viewSql.AppendEscaped(contextTable.GetName());
+    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName());
 
     //Join necessary table for table 
     for(DbTable const* to : requireJoinTo)
@@ -626,20 +604,21 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
     {
     NativeSqlBuilder::List unionList;
     StorageDescription const& storageDesc = relationMap.GetStorageDescription();
+
     for (Partition const& partition : storageDesc.GetHorizontalPartitions())
         {
         if (partition.GetTable().GetType() == DbTable::Type::Virtual)
             continue;
 
         NativeSqlBuilder view;
-        ECClass const* relationshipECClass = ctx.GetECDb().Schemas().GetClass(partition.GetRootClassId());
+        ECClass const* relationshipECClass = ctx.GetSchemaManager().GetClass(partition.GetRootClassId());
         if (relationshipECClass == nullptr || !relationshipECClass->IsRelationshipClass())
             {
             BeAssert(false);
             return ERROR;
             }
 
-        ClassMap const* classMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*relationshipECClass);
+        ClassMap const* classMap = ctx.GetSchemaManager().GetClassMap(*relationshipECClass);
         if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipLinkTable)
             {
             BeAssert(false);
@@ -777,7 +756,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             {
             // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
             // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
-            std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassIdColumn()->GetTable());
+            std::vector<ECClassId> const& classIds = ctx.GetSchemaManager().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassIdColumn()->GetTable());
             BeAssert(classIds.size() == 1);
             if (classIds.size() != 1)
                 return ERROR;
@@ -809,7 +788,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             {
             // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
             // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
-            std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassIdColumn()->GetTable());
+            std::vector<ECClassId> const& classIds = ctx.GetSchemaManager().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassIdColumn()->GetTable());
             BeAssert(classIds.size() == 1);
             if (classIds.size() != 1)
                 return ERROR;
@@ -859,7 +838,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             viewSql.Append(" AND ");
             toSql(viewSql, partition->GetECClassIdColumn());
             if (isPolymorphic)
-                viewSql.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(relationMap.GetClass().GetId()).Append(")");
+                viewSql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), relationMap.GetClass().GetId().ToString().c_str());
             else
                 viewSql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
             }
@@ -1070,11 +1049,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         viewSql.AppendComma().Append(dataPropertySql);
         }
 
-    viewSql.Append(" FROM ");
-    if (!contextTable.GetTableSpace().IsMain())
-        viewSql.AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot();
-
-    viewSql.AppendEscaped(contextTable.GetName());
+    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName());
     return SUCCESS;
     }
 
@@ -1082,7 +1057,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Context& ctx, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const&  contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin)
+BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Context& ctx, bset<DbTable const*>& requireJoinTo, ClassMapCR classMap, DbTable const&  contextTable, ClassMap const* baseClass, PropertyMap::Type filter, bool requireJoin)
     {
     requireJoinTo.clear();
     if (Enum::Contains(filter, PropertyMap::Type::ConstraintECClassId) || Enum::Contains(filter, PropertyMap::Type::ConstraintECInstanceId))
@@ -1303,7 +1278,7 @@ BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpres
     if (partition->NeedsECClassIdFilter())
         {
         Utf8String cacheTableAlias = "[CHC_" + table.GetName() + "]";
-        filterSqlExpression.append("INNER JOIN " TABLE_ClassHierarchyCache " ").append(cacheTableAlias)
+        filterSqlExpression.append("INNER JOIN [").append(classMap.GetSchemaManager().GetTableSpace().GetName()).append("]." TABLE_ClassHierarchyCache " ").append(cacheTableAlias)
             .append(" ON ").append(cacheTableAlias).append(".[ClassId]").append("=").append(classIdColSql)
             .append(" AND ").append(cacheTableAlias).append(".[BaseClassId]").append("=").append(classIdStr);
         }
@@ -1468,8 +1443,8 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                     12/2016
 //---------------------------------------------------------------------------------------
-ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, bool isPolymorphicQuery, MemberFunctionCallExp const* functionCallExp)
-    : Context(ViewType::SelectFromView, prepareCtx.GetECDb()), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery), m_memberFunctionCallExp(functionCallExp)
+ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, TableSpaceSchemaManager const& manager, bool isPolymorphicQuery, MemberFunctionCallExp const* functionCallExp)
+    : Context(ViewType::SelectFromView, prepareCtx.GetECDb(), manager), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery), m_memberFunctionCallExp(functionCallExp)
     {}
 
 //---------------------------------------------------------------------------------------

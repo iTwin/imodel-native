@@ -41,7 +41,8 @@ ECDbAllHeaders = \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)ECDbSqlFunctions.h \
-                $(baseDir)DbMap.h \
+                $(baseDir)DbUtilities.h \
+                $(baseDir)SchemaManagerDispatcher.h \
                 $(baseDir)DbMapValidator.h \
                 $(baseDir)DbMappingManager.h \
                 $(baseDir)ClassMap.h \
@@ -155,9 +156,9 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonPersistenceHelper$(oext):                             $(baseDir)JsonPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbUtilities$(oext):                                       $(baseDir)DbUtilities.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonPersistenceHelper$(oext):                             $(baseDir)JsonPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbMappingManager$(oext):                                  $(baseDir)DbMappingManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -191,11 +192,13 @@ $(o)IssueReporter$(oext):                                     $(baseDir)IssueRep
 
 $(o)SchemaPersistenceHelper$(oext):                           $(baseDir)SchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaManagerDispatcher$(oext):                           $(baseDir)SchemaManagerDispatcher.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)SchemaReader$(oext):                                      $(baseDir)SchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaWriter$(oext):                                      $(baseDir)SchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaImportContext$(oext):                               $(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -462,7 +465,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
 $(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbFileInfo.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.01.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMeta.01.00.00.ecschema.xml
@@ -491,5 +494,5 @@ always:
     ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
     ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
     @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
-    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml"
+    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
 

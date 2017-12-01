@@ -12,6 +12,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //************************************PropertyMap*************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
@@ -41,7 +42,7 @@ bool PropertyMap::IsMappedToClassMapTables() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-PropertyMap::Path& PropertyMap::Path::operator = (PropertyMap::Path const& path)
+PropertyMap::Path& PropertyMap::Path::operator=(PropertyMap::Path const& path)
     {
     if (this != &path)
         m_vect = path.m_vect;
@@ -52,7 +53,7 @@ PropertyMap::Path& PropertyMap::Path::operator = (PropertyMap::Path const& path)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-PropertyMap::Path& PropertyMap::Path::operator = (PropertyMap::Path const&& path)
+PropertyMap::Path& PropertyMap::Path::operator=(PropertyMap::Path const&& path)
     {
     if (this != &path)
         m_vect = std::move(path.m_vect);
@@ -63,10 +64,7 @@ PropertyMap::Path& PropertyMap::Path::operator = (PropertyMap::Path const&& path
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //--------------------------------------------------------------------------------------
-PropertyMap const& PropertyMap::Path::operator [] (size_t i) const
-    {
-    return *m_vect[i];
-    }
+PropertyMap const& PropertyMap::Path::operator[](size_t i) const { return *m_vect[i]; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
@@ -298,7 +296,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
         return ERROR;
         }
 
-    ECDbSystemSchemaHelper const& systemSchemaHelper = GetClassMap().GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
+    ECDbSystemSchemaHelper const& systemSchemaHelper = GetClassMap().GetECDb().Schemas().Main().GetSystemSchemaHelper();
     ECPropertyCP propX = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::PointX());
     if (propX == nullptr)
         return ERROR;
@@ -380,7 +378,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
         return ERROR;
         }
 
-    ECDbSystemSchemaHelper const& systemSchemaHelper = GetClassMap().GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper();
+    ECDbSystemSchemaHelper const& systemSchemaHelper = GetClassMap().GetECDb().Schemas().Main().GetSystemSchemaHelper();
     ECPropertyCP propX = systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::PointX());
     if (propX == nullptr)
         return ERROR;
@@ -583,7 +581,7 @@ ECN::ECRelationshipEnd NavigationPropertyMap::GetRelationshipEnd(ECN::Navigation
 //static 
 RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationPropertyMap::RelECClassIdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId)
     {
-    ECPropertyCP relECClassIdProp = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationRelECClassId());
+    ECPropertyCP relECClassIdProp = parentPropertyMap.GetClassMap().GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationRelECClassId());
     if (relECClassIdProp == nullptr)
         return nullptr;
 
@@ -597,7 +595,7 @@ RefCountedPtr<NavigationPropertyMap::RelECClassIdPropertyMap> NavigationProperty
 //static
 RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPropertyMap::CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column)
     {
-    ECPropertyCP idProp = parentPropertyMap.GetClassMap().GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId());
+    ECPropertyCP idProp = parentPropertyMap.GetClassMap().GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId());
     if (idProp == nullptr)
         return nullptr;
 

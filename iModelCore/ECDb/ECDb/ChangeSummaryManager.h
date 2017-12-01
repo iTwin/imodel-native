@@ -9,11 +9,11 @@
 //_BENTLEY_INTERNAL_ONLY_
 #include "ChangeSummaryExtractor.h"
 #include "ECDbSqlFunctions.h"
-#include "DbSchemaPersistenceManager.h"
+#include "DbUtilities.h"
+#include "SqlNames.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define TABLESPACE_ChangeSummaries "changesummaries"
 
 #define ECSCHEMA_ECDbChangeSummaries "ECDbChangeSummaries"
 #define ECSCHEMA_ALIAS_ECDbChangeSummaries "change"
@@ -30,50 +30,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ChangeSummaryManager final : NonCopyableClass
     {
     private:
-        struct SeedFile final
-            {
-        private:
-            BeFileName m_ecdbPath;
-            BeFileName m_cachePath;
-
-            BeFileName m_seedFolder;
-            BeFileName m_seedECDbPath;
-            mutable BeFileName m_seedCachePath;
-
-
-        public:
-            SeedFile(Utf8CP ecdbPath, BeFileName const& cachePath);
-            //! Deletes any seed file artefacts on disk
-            ~SeedFile();
-
-            bool IsValid() const { return !m_seedFolder.empty(); }
-
-            DbResult CreateCacheFromSeed(BeFileNameCR targetCachePath) const;
-            };
-
         ECDbCR m_ecdb;
         ChangeSummaryExtractor m_extractor;
         mutable std::unique_ptr<ChangedValueSqlFunction> m_changedValueSqlFunction;
 
-        DbResult CreateChangeSummaryCacheFile(BeFileName const& cachePath) const;
-
-        //If the cache file does not exist, the method returns without error.
-        //The method does not recreate the cache file
-        DbResult DoAttachChangeSummaryCacheFile(BeFileNameCR cachePath) const;
-
-        DbResult AddMetadataToChangeSummaryCacheFile(Db& cacheFile, ProfileVersion const& ecdbProfileVersion) const;
+        DbResult CreateCacheFile(BeFileNameCR cachePath) const;
+        DbResult AddMetadataToChangeSummaryCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
 
     public:
-        explicit ChangeSummaryManager(ECDbCR ecdb) : m_ecdb(ecdb), m_extractor(ecdb) {}
+        explicit ChangeSummaryManager(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
         BentleyStatus Extract(ECInstanceKey& summaryKey, BeSQLite::IChangeSet&, ECDb::ChangeSummaryExtractOptions const&) const;
 
         static BeFileName DetermineCachePath(ECDbCR);
         static BeFileName DetermineCachePath(BeFileNameCR ecdbPath);
 
-        DbResult OnCreatingECDb() const;
-
-        bool IsChangeSummaryCacheAttached() const { return DbSchemaPersistenceManager::TableSpaceExists(m_ecdb, Utf8String(TABLESPACE_ChangeSummaries)); }
+        bool IsChangeSummaryCacheAttached() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ChangeSummaries); }
         DbResult AttachChangeSummaryCacheFile(bool createIfNotExists) const;
 
         ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }
@@ -81,6 +53,7 @@ struct ChangeSummaryManager final : NonCopyableClass
         void RegisterSqlFunctions() const;
         void UnregisterSqlFunction() const;
 
+        ECDbCR GetECDb() const { return m_ecdb; }
         void ClearCache();
 
         static Nullable<ChangeOpCode> ToChangeOpCode(DbOpcode);

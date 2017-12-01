@@ -136,9 +136,6 @@ struct PropertyPath final
         BentleyStatus Resolve(ClassMap const& classMap, Utf8String* errorMessage = nullptr);
         bool IsResolved() const;
 
-        BentleyStatus TryGetQualifiedPath(Utf8StringR qualifiedPath) const;
-        static BentleyStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifiedPath, ECDbCR ecdb);
-
         Utf8String ToString(bool escape = false, bool includeArrayIndexes = true) const;
     };
 

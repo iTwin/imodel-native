@@ -27,11 +27,11 @@
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
-    <ClCompile Include="DbMap.cpp" />
     <ClCompile Include="DbMappingManager.cpp" />
     <ClCompile Include="DbMapValidator.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
+    <ClCompile Include="DbUtilities.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
@@ -119,6 +119,7 @@
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
     <ClCompile Include="SchemaManager.cpp" />
+    <ClCompile Include="SchemaManagerDispatcher.cpp" />
     <ClCompile Include="SchemaPersistenceHelper.cpp" />
     <ClCompile Include="SchemaReader.cpp" />
     <ClCompile Include="SchemaValidator.cpp" />
@@ -151,11 +152,11 @@
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
-    <ClInclude Include="DbMap.h" />
     <ClInclude Include="DbMappingManager.h" />
     <ClInclude Include="DbMapValidator.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />
+    <ClInclude Include="DbUtilities.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -227,6 +228,7 @@
     <ClInclude Include="PropertyMapVisitor.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
+    <ClInclude Include="SchemaManagerDispatcher.h" />
     <ClInclude Include="SchemaPersistenceHelper.h" />
     <ClInclude Include="SchemaReader.h" />
     <ClInclude Include="SchemaValidator.h" />
@@ -252,7 +254,7 @@
       <SubType>Designer</SubType>
     </Xml>
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
-    <Xml Include="ECSchemas\ECDbMap.02.00.01.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml" />
   </ItemGroup>

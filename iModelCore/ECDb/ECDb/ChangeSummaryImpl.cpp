@@ -537,8 +537,12 @@ void ChangeExtractor::ExtractRelInstances(ChangeIterator::RowEntry const& rowEnt
     {
     ECClassCP primaryClass = rowEntry.GetPrimaryClass();
 
-    ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*primaryClass);
-    BeAssert(classMap != nullptr);
+    ClassMap const* classMap = m_ecdb.Schemas().Main().GetClassMap(*primaryClass);
+    if (classMap == nullptr)
+        {
+        BeAssert(classMap != nullptr);
+        return;
+        }
 
     ClassMap::Type type = classMap->GetType();
     if (type == ClassMap::Type::RelationshipLinkTable)
@@ -591,7 +595,7 @@ ECN::ECClassId ChangeExtractor::GetClassIdFromColumn(ChangeIterator::TableMap co
         }
 
     // Search in table itself
-    classId = DbSchemaPersistenceManager::QueryRowClassId(m_ecdb, tableMap.GetTableName(), classIdColumn.GetName(), tableMap.GetIdColumn().GetName(), instanceId);
+    classId = DbUtilities::QueryRowClassId(m_ecdb, tableMap.GetTableName(), classIdColumn.GetName(), tableMap.GetIdColumn().GetName(), instanceId);
     BeAssert(classId.IsValid());
     return classId;
     }
@@ -621,8 +625,12 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     
     ECN::ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
     BeAssert(relClass != nullptr);
-    RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().GetDbMap().GetClassMap(*relClass));
-    BeAssert(relClassMap != nullptr);
+    RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().Main().GetClassMap(*relClass));
+    if (relClassMap == nullptr)
+        {
+        BeAssert(relClassMap != nullptr);
+        return;
+        }
     
     // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
@@ -872,7 +880,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
             return ECClassId();
             }
 
-        classId = DbSchemaPersistenceManager::QueryRowClassId(m_ecdb, endTableName, classIdColumn->GetName(), tableMap->GetIdColumn().GetName(), relEndInstanceId);
+        classId = DbUtilities::QueryRowClassId(m_ecdb, endTableName, classIdColumn->GetName(), tableMap->GetIdColumn().GetName(), relEndInstanceId);
         BeAssert(classId.IsValid());
         return classId;
         }
@@ -889,7 +897,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
 //---------------------------------------------------------------------------------------
 bool ChangeExtractor::ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const
     {
-    bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdb.Schemas().GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(relClassId);
+    bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdb.Schemas().Main().GetLightweightCache().GetConstraintClassesForRelationshipClass(relClassId);
     auto it = constraintClassIds.find(candidateClassId);
     if (it == constraintClassIds.end())
         return false;
@@ -1115,7 +1123,7 @@ Utf8String ChangeSummary::GetValuesTableName() const { return m_valuesTable->Get
 BentleyStatus ChangeSummary::GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb)
     {
     // TODO: This functionality needs to be moved to some publicly available ECDb mapping utility. 
-    ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
+    ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(ecClass);
     if (!classMap)
         return ERROR;
 
@@ -1264,7 +1272,7 @@ Utf8String ChangeSummary::InstanceIterator::Options::ToSelectStatement(Utf8CP co
             "    DerivedClasses(ClassId) AS ("
             "        VALUES(:baseClassId)"
             "        UNION "
-            "        SELECT ec_ClassHasBaseClasses.ClassId FROM ec_ClassHasBaseClasses, DerivedClasses WHERE ec_ClassHasBaseClasses.BaseClassId=DerivedClasses.ClassId"
+            "        SELECT ec_ClassHasBaseClasses.ClassId FROM main.ec_ClassHasBaseClasses, DerivedClasses WHERE ec_ClassHasBaseClasses.BaseClassId=DerivedClasses.ClassId"
             "        )"
             " SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName"
             " FROM ");

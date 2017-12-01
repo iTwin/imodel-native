@@ -6,15 +6,18 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECDb/ECDb.h>
 #include "ECDbInternalTypes.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+struct TableSpaceSchemaManager;
 struct StorageDescription;
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct LightweightCache final: NonCopyableClass
+struct LightweightCache final
     {
     public:
         enum class RelationshipEnd
@@ -42,6 +45,8 @@ struct LightweightCache final: NonCopyableClass
 
     private:
         ECDb const& m_ecdb;
+        TableSpaceSchemaManager const& m_manager;
+
         mutable ClassIdsPerTableMap m_classIdsPerTable;
         mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
         mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_constraintClassIdsPerRelClassIds;
@@ -49,13 +54,16 @@ struct LightweightCache final: NonCopyableClass
         mutable RelationshipPerTable m_relationshipPerTable;
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
 
+        LightweightCache(LightweightCache const&) = delete;
+        LightweightCache& operator=(LightweightCache const&) = delete;
+
         ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId)  const;
         bset<DbTable const*> const& LoadTablesForClassId(ECN::ECClassId) const;
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
         
     public:
-        explicit LightweightCache(ECDb const&);
+        explicit LightweightCache(ECDb const&, TableSpaceSchemaManager const&);
         ~LightweightCache() {}
         std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
         bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;

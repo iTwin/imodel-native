@@ -30,14 +30,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @nosubgrouping
 // @bsiclass                                                 Krischan.Eberle    05/2013
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
     {
     public:
-
-    struct Impl;
+        struct Impl;
 
     private:
-        Impl* m_pimpl;
+        Impl* m_pimpl = nullptr;
+
+        //not copyable
+        ECSqlStatement(ECSqlStatement const&) = delete;
+        ECSqlStatement& operator=(ECSqlStatement const&) = delete;
 
     public:
         //! Initializes a new unprepared ECSqlStatement.

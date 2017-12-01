@@ -45,7 +45,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 BeAssert(rootClassId.IsValid());
                 ECClassCP rootClass = ctx.GetECDb().Schemas().GetClass(rootClassId);
                 BeAssert(rootClass != nullptr);
-                ClassMap const* rootClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*rootClass);
+                ClassMap const* rootClassMap = classMap.GetSchemaManager().GetClassMap(*rootClass);
                 BeAssert(rootClassMap != nullptr);
                 effectivePropMap = rootClassMap->GetPropertyMaps().Find(propMap.GetAccessString().c_str());
                 if (effectivePropMap == nullptr)
@@ -96,7 +96,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
-            return (ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(propertyMap.GetProperty()) == ECSqlSystemPropertyInfo::ECClassId());
+            return (ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(propertyMap.GetProperty()) == ECSqlSystemPropertyInfo::ECClassId());
         
         switch (currentScope.GetExp().GetType())
             {

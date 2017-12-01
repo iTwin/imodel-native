@@ -6,12 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECDbImpl.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2016
@@ -134,6 +132,16 @@ DbResult ECDb::_VerifyProfileVersion(Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const { return m_pimpl->OnDbAttached(fileName, dbAlias); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbDetached(Utf8CP dbAlias) const { return m_pimpl->OnDbDetached(dbAlias); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
 int ECDb::_OnAddFunction(DbFunction& func) const { return m_pimpl->OnAddFunction(func) == SUCCESS ? 0 : 1; }
 
 //--------------------------------------------------------------------------------------
@@ -216,15 +224,15 @@ void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnCl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2016
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
+BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
     {
-    return m_pimpl->OpenBlobIO(blobIO, ecClass, propertyAccessString, ecinstanceId, writable, writeToken);
+    return m_pimpl->OpenBlobIO(blobIO, tableSpace, ecClass, propertyAccessString, ecinstanceId, writable, writeToken);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
+void ECDb::ClearECDbCache(Utf8CP tableSpace) const { m_pimpl->ClearECDbCache(tableSpace); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012

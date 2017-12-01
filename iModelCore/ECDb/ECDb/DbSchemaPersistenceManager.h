@@ -10,7 +10,6 @@
 #include "DbSchema.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //======================================================================================
 //! Represents one row of the result set when running the SQLite pragma table_info
 // @bsiclass                                                 Affan.Khan         06/2016
@@ -26,7 +25,8 @@ struct SqliteColumnInfo final
 
     public:
         SqliteColumnInfo(Utf8StringCR name, DbColumn::Type type, int pkordinal, bool isnotnull, Utf8StringCR defaultConstraint)
-            :m_name(name), m_type(type), m_pkordinal(pkordinal), m_isnotnull(isnotnull), m_defaultConstraint(defaultConstraint) {}
+            :m_name(name), m_type(type), m_pkordinal(pkordinal), m_isnotnull(isnotnull), m_defaultConstraint(defaultConstraint)
+            {}
 
         DbColumn::Type GetType() const { return m_type; }
         Utf8StringCR GetName() const { return m_name; }
@@ -73,6 +73,9 @@ private:
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
 public:
+
+    static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP tableSpace = nullptr);
+
     static BentleyStatus CreateIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
 
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
@@ -81,55 +84,7 @@ public:
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
-    static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
-    static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
-
-    static ECN::ECClassId QueryRowClassId(ECDbCR, Utf8StringCR tableName, Utf8StringCR classIdColName, Utf8StringCR pkColName, ECInstanceId id);
-
-    template<typename TId>
-    static TId GetLastInsertedId(ECDbCR ecdb)
-        {
-        const int64_t id = ecdb.GetLastInsertRowId();
-        if (id <= 0)
-            {
-            BeAssert(false && "Could not retrieve last inserted row id from SQLite");
-            return TId();
-            }
-
-        return TId((uint64_t) id);
-        }
-		
-    static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP dbSchemaName = nullptr);
-
-    static bool TableSpaceExists(ECDbCR ecdb, Utf8StringCR tableSpace);
-    static BentleyStatus GetTableSpaces(std::vector<Utf8String>& tableSpaces, ECDbCR ecdb);
-
-    static bool TableExists(ECDbCR ecdb, Utf8CP tableName, Utf8CP tableSpace = nullptr)
-        {
-        if (Utf8String::IsNullOrEmpty(tableSpace))
-            return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s]", tableName).c_str());
-
-        return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s].[%s]", tableSpace, tableName).c_str());
-        }
-
-    static bool IndexExists(ECDbCR ecdb, Utf8CP indexName, Utf8CP dbSchemaName = nullptr)
-        {
-        CachedStatementPtr stmt;
-        if (Utf8String::IsNullOrEmpty(dbSchemaName))
-            stmt = ecdb.GetCachedStatement("SELECT 1 FROM sqlite_master where type='index' AND name=?");
-        else
-            stmt = ecdb.GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='index' AND name=?", dbSchemaName).c_str());
-        
-        if (stmt == nullptr)
-            {
-            BeAssert(false);
-            return false;
-            }
-
-        stmt->BindText(1, indexName, Statement::MakeCopy::No);
-        return stmt->Step() == BE_SQLITE_ROW;
-        }
-
+ 
     //!Safe method to cast an integer value to the MapStrategy enum.
     //!It makes sure the integer is a valid value for the enum.
     static Nullable<MapStrategy> ToMapStrategy(int val)
