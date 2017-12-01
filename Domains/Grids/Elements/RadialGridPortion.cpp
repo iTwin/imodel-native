@@ -17,12 +17,12 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (RadialGridPortion)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (RadialGrid)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RadialGridPortion::RadialGridPortion
+RadialGrid::RadialGrid
 (
 T_Super::CreateParams const& params
 ) : T_Super(params) 
@@ -33,7 +33,7 @@ T_Super::CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RadialGridPortion::RadialGridPortion
+RadialGrid::RadialGrid
 (
 T_Super::CreateParams const& params,
 DVec3d                      normal
@@ -44,19 +44,19 @@ DVec3d                      normal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RadialGridPortionPtr        RadialGridPortion::Create
+RadialGridPtr        RadialGrid::Create
 (
 Dgn::SpatialLocationModelCR model,
 DVec3d                      normal
 )
     {
-    return new RadialGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
+    return new RadialGrid (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus RadialGridPortion::CreateAndInsertGridSurfaces(CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis)
+BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis)
     {
     bvector<GridSurfacePtr> surfaces;
 
@@ -120,9 +120,9 @@ BentleyStatus RadialGridPortion::CreateAndInsertGridSurfaces(CreateParams params
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     10/17
 //---------------------------------------------------------------------------------------
-RadialGridPortionPtr RadialGridPortion::CreateAndInsert (CreateParams params)
+RadialGridPtr RadialGrid::CreateAndInsert (CreateParams params)
     {
-    RadialGridPortionPtr thisGrid = new RadialGridPortion (params, params.m_normal);
+    RadialGridPtr thisGrid = new RadialGrid (params, params.m_normal);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting Radial grid");
 

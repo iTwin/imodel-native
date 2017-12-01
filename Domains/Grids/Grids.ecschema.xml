@@ -13,10 +13,10 @@
 
 
 
-    <ECRelationshipClass typeName="GridPortionIntersectsGridSurface" strength="referencing">
+    <ECRelationshipClass typeName="GridIntersectsGridSurface" strength="referencing">
       <BaseClass>bis:ElementRefersToElements</BaseClass>
       <Source cardinality="(1,1)" polymorphic="true">
-        <Class class="GridPortion"/>
+        <Class class="Grid"/>
       </Source>
       <Target cardinality="(1,1)" polymorphic="true">
         <Class class="GridSurface"/>
@@ -37,10 +37,10 @@
       <ECProperty propertyName="IsBaseSurface" typeName="boolean" description="whether the surface is the base on which others are imprinted"/>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GridPortionHasAxes" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None">
       <!-- Relationship that indicates a decomposition of child AllocatedVolume -->
       <Source multiplicity="(0..1)" roleLabel="Has Axis" polymorphic="true">
-        <Class class="GridPortion"/>
+        <Class class="Grid"/>
       </Source>
       <Target multiplicity="(0..*)" roleLabel="is axis of" polymorphic="true">
         <Class class="GridAxis"/>
@@ -61,7 +61,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECNavigationProperty propertyName="Grid" relationshipName="GridPortionHasAxes" direction="Backward" description="Grid this axis belong to" />
+      <ECNavigationProperty propertyName="Grid" relationshipName="GridHasAxes" direction="Backward" description="Grid this axis belong to" />
     </ECEntityClass>
   
     <ECEntityClass typeName="GridCurve">
@@ -117,27 +117,33 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridPortion">
+    <ECEntityClass typeName="Grid">
       <BaseClass>bis:SpatialLocationPortion</BaseClass>
       <ECProperty propertyName="Normal" typeName="point3d" readOnly="True" description="normal vector of the grid"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="OrthogonalGridPortion">
-      <BaseClass>GridPortion</BaseClass>
+
+    <ECEntityClass typeName="PlanGrid">
+      <BaseClass>bis:SpatialLocationPortion</BaseClass>
+      <ECProperty propertyName="Normal" typeName="point3d" readOnly="True" description="normal vector of the grid"/>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="OrthogonalGrid">
+      <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="RadialGridPortion">
-      <BaseClass>GridPortion</BaseClass>
+    <ECEntityClass typeName="RadialGrid">
+      <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SketchGridPortion">
-      <BaseClass>GridPortion</BaseClass>
+    <ECEntityClass typeName="SketchGrid">
+      <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>

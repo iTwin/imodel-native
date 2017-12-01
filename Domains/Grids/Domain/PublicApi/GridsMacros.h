@@ -63,14 +63,15 @@
 #define GRIDS_CODESPEC_CODE(categoryName)                     GRIDS_SCHEMA_NAME "::" categoryName
 
 #define GRIDS_REL_GridSurfaceCreatesGridCurve                   "GridSurfaceCreatesGridCurve"
-#define GRIDS_REL_GridPortionHasAxes                            "GridPortionHasAxes"
+#define GRIDS_REL_GridHasAxes                            "GridHasAxes"
 #define GRIDS_REL_GridAxisContainsGridSurfaces                  "GridAxisContainsGridSurfaces"
 
 #define GRIDS_CLASS_SurfaceSet                                  "SurfaceSet"
-#define GRIDS_CLASS_GridPortion                                 "GridPortion"
-#define GRIDS_CLASS_OrthogonalGridPortion                       "OrthogonalGridPortion"
-#define GRIDS_CLASS_RadialGridPortion                           "RadialGridPortion"
-#define GRIDS_CLASS_SketchGridPortion                           "SketchGridPortion"
+#define GRIDS_CLASS_Grid                                 "Grid"
+#define GRIDS_CLASS_PlanGrid                             "PlanGrid"
+#define GRIDS_CLASS_OrthogonalGrid                       "OrthogonalGrid"
+#define GRIDS_CLASS_RadialGrid                           "RadialGrid"
+#define GRIDS_CLASS_SketchGrid                           "SketchGrid"
 
 #define GRIDS_CLASS_IntersectionCurve                           "IntersectionCurve"
 #define GRIDS_CLASS_GridCurve                                   "GridCurve"
@@ -98,10 +99,10 @@
 //Authorities
 #define GRIDS_AUTHORITY_GridCurve                       GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurve)
 #define GRIDS_AUTHORITY_SurfaceSet                      GRIDS_CODESPEC_CODE(GRIDS_CLASS_SurfaceSet)
-#define GRIDS_AUTHORITY_GridPortion                     GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridPortion)
-#define GRIDS_AUTHORITY_OrthogonalGridPortion           GRIDS_CODESPEC_CODE(GRIDS_CLASS_OrthogonalGridPortion)
-#define GRIDS_AUTHORITY_RadialGridPortion               GRIDS_CODESPEC_CODE(GRIDS_CLASS_RadialGridPortion)
-#define GRIDS_AUTHORITY_SketchGridPortion               GRIDS_CODESPEC_CODE(GRIDS_CLASS_SketchGridPortion)
+#define GRIDS_AUTHORITY_Grid                     GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
+#define GRIDS_AUTHORITY_OrthogonalGrid           GRIDS_CODESPEC_CODE(GRIDS_CLASS_OrthogonalGrid)
+#define GRIDS_AUTHORITY_RadialGrid               GRIDS_CODESPEC_CODE(GRIDS_CLASS_RadialGrid)
+#define GRIDS_AUTHORITY_SketchGrid               GRIDS_CODESPEC_CODE(GRIDS_CLASS_SketchGrid)
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

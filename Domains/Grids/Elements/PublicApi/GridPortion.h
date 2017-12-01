@@ -20,7 +20,7 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridPortion : Dgn::SpatialLocationPortion
+struct EXPORT_VTABLE_ATTRIBUTE Grid : Dgn::SpatialLocationPortion
 {
     DEFINE_T_SUPER (Dgn::SpatialLocationPortion);
 private:
@@ -30,15 +30,15 @@ private:
 
 protected:
 
-    //! creates the GridPortion.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
+    //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
     //! @param[in]          normal  perpendicularity plane of this Grid
-    explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params) : T_Super (params) {};
-    explicit GRIDELEMENTS_EXPORT GridPortion (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
+    explicit GRIDELEMENTS_EXPORT Grid (T_Super::CreateParams const& params) : T_Super (params) {};
+    explicit GRIDELEMENTS_EXPORT Grid (T_Super::CreateParams const& params, DVec3d normal /* = DVec3d::From(0.0,0.0,0.0)*/);
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
-    GRIDELEMENTS_EXPORT static GridPortionPtr Create(Dgn::DgnModelCR model, DVec3d normal);
+    GRIDELEMENTS_EXPORT static GridPtr Create(Dgn::DgnModelCR model, DVec3d normal);
 
     Dgn::DgnDbStatus Validate () const;
 
@@ -56,7 +56,7 @@ protected:
 
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 public:
-    DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPortion, GRIDELEMENTS_EXPORT)
+    DECLARE_GRIDS_ELEMENT_BASE_METHODS (Grid, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
     // Getters and setters
@@ -108,7 +108,7 @@ public:
     //! @param[in]  gridName    name of grid portion
     //! @return                 if grid portion has been found, returns a ptr to it
     //!                         otherwise a nullptr is returned
-    GRIDELEMENTS_EXPORT static GridPortionPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
+    GRIDELEMENTS_EXPORT static GridPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
 
     //---------------------------------------------------------------------------------------
     // Other
@@ -119,5 +119,25 @@ public:
     //! @return BentleyStatus for the operation result
     GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
     };
+    
+//=======================================================================================
+//! Physical building element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PlanGrid : Grid
+{
+    DEFINE_T_SUPER (Grid);
+private:
 
+protected:
+
+    //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
+    //! @param[in]          params  params for creation
+    //! @param[in]          normal  perpendicularity plane of this Grid
+    explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+    explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params, DVec3d normal) : T_Super (params, normal) {};
+public:
+    DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
+
+    };
+    
 END_GRIDS_NAMESPACE

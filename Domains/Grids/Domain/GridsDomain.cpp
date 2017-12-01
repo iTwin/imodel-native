@@ -31,9 +31,9 @@ GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     RegisterHandler (GridPlaneSurfaceHandler::GetHandler ());
     RegisterHandler (GridSplineSurfaceHandler::GetHandler ());
 
-    RegisterHandler (OrthogonalGridPortionHandler::GetHandler ());
-    RegisterHandler (RadialGridPortionHandler::GetHandler ());
-    RegisterHandler (SketchGridPortionHandler::GetHandler ());
+    RegisterHandler (OrthogonalGridHandler::GetHandler ());
+    RegisterHandler (RadialGridHandler::GetHandler ());
+    RegisterHandler (SketchGridHandler::GetHandler ());
     RegisterHandler (GridAxisHandler::GetHandler ());
 
     RegisterHandler (GridLineHandler::GetHandler ());
@@ -126,10 +126,10 @@ double* pTransparency
 void GridsDomain::InsertDomainAuthorities (DgnDbR db) const
     {
     InsertCodeSpec (db, GRIDS_AUTHORITY_SurfaceSet);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_GridPortion);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_OrthogonalGridPortion);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_RadialGridPortion);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_SketchGridPortion);
+    InsertCodeSpec (db, GRIDS_AUTHORITY_Grid);
+    InsertCodeSpec (db, GRIDS_AUTHORITY_OrthogonalGrid);
+    InsertCodeSpec (db, GRIDS_AUTHORITY_RadialGrid);
+    InsertCodeSpec (db, GRIDS_AUTHORITY_SketchGrid);
     InsertCodeSpec (db, GRIDS_AUTHORITY_GridCurve);
     }
 
@@ -142,21 +142,21 @@ void GridsDomain::EnsureDomainAuthoritiesExist (Dgn::DgnDbR db)
         {
         InsertCodeSpec (db, GRIDS_AUTHORITY_SurfaceSet);
         }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_GridPortion).IsValid ())
+    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid).IsValid ())
         {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_GridPortion);
+        InsertCodeSpec (db, GRIDS_AUTHORITY_Grid);
         }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_OrthogonalGridPortion).IsValid ())
+    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_OrthogonalGrid).IsValid ())
         {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_OrthogonalGridPortion);
+        InsertCodeSpec (db, GRIDS_AUTHORITY_OrthogonalGrid);
         }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_RadialGridPortion).IsValid ())
+    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_RadialGrid).IsValid ())
         {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_RadialGridPortion);
+        InsertCodeSpec (db, GRIDS_AUTHORITY_RadialGrid);
         }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_SketchGridPortion).IsValid ())
+    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_SketchGrid).IsValid ())
         {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_SketchGridPortion);
+        InsertCodeSpec (db, GRIDS_AUTHORITY_SketchGrid);
         }
     if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_GridCurve).IsValid ())
         {

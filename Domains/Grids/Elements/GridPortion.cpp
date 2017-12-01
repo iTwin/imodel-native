@@ -18,13 +18,14 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPortion)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (Grid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid)
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPortion::GridPortion
+Grid::Grid
 (
 T_Super::CreateParams const& params,
 DVec3d          normal
@@ -41,7 +42,7 @@ DVec3d          normal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPortion::CreateParams           GridPortion::CreateParamsFromModel
+Grid::CreateParams           Grid::CreateParamsFromModel
 (
 Dgn::DgnModelCR model,
 DgnClassId classId
@@ -55,19 +56,19 @@ DgnClassId classId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPortionPtr                 GridPortion::Create 
+GridPtr                 Grid::Create 
 (
 Dgn::DgnModelCR model,
 DVec3d          normal
 )
     {
-    return new GridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
+    return new Grid (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), normal);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     09/17
 //---------------------------------------------------------------------------------------
-DPlane3d GridPortion::GetPlane 
+DPlane3d Grid::GetPlane 
 (
 ) const
     {
@@ -80,7 +81,7 @@ DPlane3d GridPortion::GetPlane
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-RepositoryStatus GridPortion::RotateToAngleXY (double theta)
+RepositoryStatus Grid::RotateToAngleXY (double theta)
     {
     RepositoryStatus status = RepositoryStatus::Success;
     for (Dgn::ElementIteratorEntry pIterEntry : MakeIterator ())
@@ -97,7 +98,7 @@ RepositoryStatus GridPortion::RotateToAngleXY (double theta)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-RepositoryStatus GridPortion::TranslateToPoint (DPoint3d point)
+RepositoryStatus Grid::TranslateToPoint (DPoint3d point)
     {
     RepositoryStatus status = RepositoryStatus::Success;
     Dgn::ElementIterator gridElements = MakeIterator ();
@@ -120,7 +121,7 @@ RepositoryStatus GridPortion::TranslateToPoint (DPoint3d point)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-BentleyStatus GridPortion::GetGridRotationAngleXY(double& angle) const
+BentleyStatus Grid::GetGridRotationAngleXY(double& angle) const
     {
     bvector<DgnElementId> gridElementIds = MakeIterator().BuildIdList<DgnElementId>();
     if (gridElementIds.empty() || !gridElementIds.front().IsValid())
@@ -135,7 +136,7 @@ BentleyStatus GridPortion::GetGridRotationAngleXY(double& angle) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/17
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::ElementIterator GridPortion::MakeIterator () const
+Dgn::ElementIterator Grid::MakeIterator () const
     {
     Dgn::ElementIterator iterator;
     if (GetSubModelId ().IsValid ())
@@ -149,7 +150,7 @@ Dgn::ElementIterator GridPortion::MakeIterator () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::SpatialLocationModelPtr    GridPortion::GetSurfacesModel
+Dgn::SpatialLocationModelPtr    Grid::GetSurfacesModel
 (
 ) const
     {
@@ -158,7 +159,7 @@ Dgn::SpatialLocationModelPtr    GridPortion::GetSurfacesModel
     if (subModel.IsValid ())
         {
         Dgn::SpatialLocationModelPtr surfacesModel = dynamic_cast<Dgn::SpatialLocationModel*>(subModel.get ());
-        BeAssert (surfacesModel.IsValid () && "GridPortion submodel is not spatialLocationModel!");
+        BeAssert (surfacesModel.IsValid () && "Grid submodel is not spatialLocationModel!");
         return surfacesModel;
         }
     return CreateSubModel ();
@@ -167,7 +168,7 @@ Dgn::SpatialLocationModelPtr    GridPortion::GetSurfacesModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
+Dgn::SpatialLocationModelPtr    Grid::CreateSubModel
 (
 ) const
     {
@@ -188,10 +189,10 @@ Dgn::SpatialLocationModelPtr    GridPortion::CreateSubModel
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::ElementIterator GridPortion::MakeAxesIterator () const
+Dgn::ElementIterator Grid::MakeAxesIterator () const
     {
     Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridAxis), "WHERE Grid=?", "ORDER BY ECInstanceId ASC");
-    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridPortionHasAxes);
+    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
         {
         pStmnt->BindNavigationValue (1, GetElementId (), relClassId);
@@ -201,10 +202,10 @@ Dgn::ElementIterator GridPortion::MakeAxesIterator () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-GridPortionPtr GridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
+GridPtr Grid::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
     {
-    return db.Elements().GetForEdit<Grids::GridPortion>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
-                                                                                                                    GRIDS_AUTHORITY_GridPortion,
+    return db.Elements().GetForEdit<Grids::Grid>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
+                                                                                                                    GRIDS_AUTHORITY_Grid,
                                                                                                                     parentId,
                                                                                                                     gridName));
     }
@@ -212,7 +213,7 @@ GridPortionPtr GridPortion::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, U
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-Utf8CP  GridPortion::GetName() const
+Utf8CP  Grid::GetName() const
     {
     return GetCode().GetValueUtf8CP();
     }
@@ -220,7 +221,7 @@ Utf8CP  GridPortion::GetName() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      GridPortion::Validate
+Dgn::DgnDbStatus      Grid::Validate
 (
 ) const
     {
@@ -234,7 +235,7 @@ Dgn::DgnDbStatus      GridPortion::Validate
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      GridPortion::_OnInsert
+Dgn::DgnDbStatus      Grid::_OnInsert
 (
 )
     {
@@ -249,7 +250,7 @@ Dgn::DgnDbStatus      GridPortion::_OnInsert
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      GridPortion::_OnUpdate
+Dgn::DgnDbStatus      Grid::_OnUpdate
 (
     Dgn::DgnElementCR original
 )
@@ -278,7 +279,7 @@ Dgn::DgnDbStatus GridPortion::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   GridPortion::IntersectGridSurface 
+BentleyStatus   Grid::IntersectGridSurface 
 (
 GridSurfaceCPtr surface, 
 Dgn::DgnModelCR targetModel

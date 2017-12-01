@@ -20,13 +20,13 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid)
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGridPortion::OrthogonalGridPortion
+OrthogonalGrid::OrthogonalGrid
 (
 T_Super::CreateParams const& params
 ) : T_Super(params)
@@ -37,7 +37,7 @@ T_Super::CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGridPortion::OrthogonalGridPortion
+OrthogonalGrid::OrthogonalGrid
 (
 T_Super::CreateParams const& params,
 DVec3d normal
@@ -49,12 +49,12 @@ DVec3d normal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGridPortionPtr        OrthogonalGridPortion::CreateAndInsert
+OrthogonalGridPtr        OrthogonalGrid::CreateAndInsert
 (
 StandardCreateParams const& params
 )
     {
-    OrthogonalGridPortionPtr thisGrid = new OrthogonalGridPortion (params, params.m_normal);
+    OrthogonalGridPtr thisGrid = new OrthogonalGrid (params, params.m_normal);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
 
@@ -80,7 +80,7 @@ StandardCreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   OrthogonalGridPortion::CreateCoplanarGridPlanes
+BentleyStatus                   OrthogonalGrid::CreateCoplanarGridPlanes
 (
 bvector<CurveVectorPtr> const& surfaces,
 GridAxisPtr gridAxis,
@@ -124,7 +124,7 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGridPortionPtr        OrthogonalGridPortion::CreateAndInsertBySurfaces
+OrthogonalGridPtr        OrthogonalGrid::CreateAndInsertBySurfaces
 (
 bvector<CurveVectorPtr> const& xSurfaces,
 bvector<CurveVectorPtr> const& ySurfaces,
@@ -134,7 +134,7 @@ CreateParams const& params
     if (BentleyStatus::SUCCESS != ValidateBySurfacesParams (xSurfaces, ySurfaces, params))
         return nullptr;
 
-    OrthogonalGridPortionPtr thisGrid = new OrthogonalGridPortion (params, params.m_normal);
+    OrthogonalGridPtr thisGrid = new OrthogonalGrid (params, params.m_normal);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
     if (!thisGrid->Insert ().IsValid ())
@@ -155,7 +155,7 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   OrthogonalGridPortion::ValidateBySurfacesParams
+BentleyStatus                   OrthogonalGrid::ValidateBySurfacesParams
 (
 bvector<CurveVectorPtr> const& xSurfaces,
 bvector<CurveVectorPtr> const& ySurfaces,
@@ -172,7 +172,7 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                            OrthogonalGridPortion::AreSurfacesCoplanar
+bool                            OrthogonalGrid::AreSurfacesCoplanar
 (
 bvector<CurveVectorPtr> const& surfaces
 )
@@ -200,7 +200,7 @@ bvector<CurveVectorPtr> const& surfaces
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  04/17
 //---------------------------------------------------------------------------------------
-DVec3d OrthogonalGridPortion::FindOrthogonalFormTranslation(int elementIndex, double interval, double rotationAngle, bool isHorizontal)
+DVec3d OrthogonalGrid::FindOrthogonalFormTranslation(int elementIndex, double interval, double rotationAngle, bool isHorizontal)
     {
     double offset;
     if (isHorizontal)
@@ -218,7 +218,7 @@ DVec3d OrthogonalGridPortion::FindOrthogonalFormTranslation(int elementIndex, do
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  04/17
 //---------------------------------------------------------------------------------------
-void OrthogonalGridPortion::AddDimensionsToOrthogonalGrid
+void OrthogonalGrid::AddDimensionsToOrthogonalGrid
 (
 GridSurfacePtr lastElement,
 GridSurfacePtr element,
@@ -250,7 +250,7 @@ double distance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGridPortion::CreateSurfaces(bvector<GridSurfacePtr> & allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal)
+BentleyStatus OrthogonalGrid::CreateSurfaces(bvector<GridSurfacePtr> & allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal)
     {
     for (int i = 0; i < count; ++i)
         {
@@ -275,7 +275,7 @@ BentleyStatus OrthogonalGridPortion::CreateSurfaces(bvector<GridSurfacePtr> & al
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGridPortion::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis)
+BentleyStatus OrthogonalGrid::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis)
     {
     // Adjust grid height
     double height = params.m_height;
@@ -331,7 +331,7 @@ BentleyStatus OrthogonalGridPortion::CreateAndInsertSurfaces(StandardCreateParam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-Dgn::RepositoryStatus OrthogonalGridPortion::RotateToAngleXY(double theta, bool updateDimensions)
+Dgn::RepositoryStatus OrthogonalGrid::RotateToAngleXY(double theta, bool updateDimensions)
     {
     DgnDbR db = GetDgnDb();
     Dgn::RepositoryStatus status = RepositoryStatus::Success;

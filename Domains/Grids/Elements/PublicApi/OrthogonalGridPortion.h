@@ -18,16 +18,16 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! Physical building element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE OrthogonalGridPortion : GridPortion
+struct EXPORT_VTABLE_ATTRIBUTE OrthogonalGrid : PlanGrid
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_OrthogonalGridPortion, GridPortion);
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_OrthogonalGrid, PlanGrid);
 protected:
 
 public:     //public - non-exported
 
     struct CreateParams : T_Super::CreateParams
         {
-        DEFINE_T_SUPER (OrthogonalGridPortion::T_Super::CreateParams);
+        DEFINE_T_SUPER (OrthogonalGrid::T_Super::CreateParams);
 
         Dgn::SpatialLocationModelCP m_model;    //TODO: remove, instead use modelId of base CreateParams
         DVec3d m_normal;
@@ -47,7 +47,7 @@ public:     //public - non-exported
         //! @param[in] createDimensions             true to create dimensions between planes
         //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
         CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, DVec3d normal, bool createDimensions, Utf8CP name) :
-            T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), QueryClassId (model->GetDgnDb ()), Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_OrthogonalGridPortion), modeledElementId, name))),
+            T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), QueryClassId (model->GetDgnDb ()), Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_OrthogonalGrid), modeledElementId, name))),
             m_model (model),
             m_normal (normal),
             m_createDimensions (createDimensions)
@@ -63,7 +63,7 @@ public:     //public - non-exported
 
     struct StandardCreateParams : CreateParams
         {
-        DEFINE_T_SUPER (OrthogonalGridPortion::CreateParams);
+        DEFINE_T_SUPER (OrthogonalGrid::CreateParams);
 
         int m_horizontalCount;
         int m_verticalCount;
@@ -125,9 +125,9 @@ private:
     static BentleyStatus CreateSurfaces(bvector<GridSurfacePtr>& allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal);
 
 protected:
-    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT OrthogonalGridPortion (T_Super::CreateParams const& params, DVec3d normal);
-    friend struct OrthogonalGridPortionHandler;
+    explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params, DVec3d normal);
+    friend struct OrthogonalGridHandler;
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
     //! @param[in] elementIndex     index of the grid plane
@@ -146,7 +146,7 @@ protected:
     BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisPtr gridAxis, CreateParams const& params);
 
 public:
-    DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion, GRIDELEMENTS_EXPORT)
+    DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
     // Creation
@@ -154,14 +154,14 @@ public:
     //! Creates orthogonal grid
     //! @param[in]  params          grid parameters containing information about the grid. For more info look up CreateParams
     //! @return                     grid with gridsurfaces in submodel
-    GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr CreateAndInsert (StandardCreateParams const& params);
+    GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsert (StandardCreateParams const& params);
 
     //! Creates orthogonal grid
     //! @param[in]  xSurfaces   gridsurfaces in the X direction
     //! @param[in]  ySurfaces   gridsurfaces in the Y direction
     //! @param[in]  params      grid parameters containing information about the grid. For more info look up CreateParams
     //! @return     grid with gridsurfaces in submodel
-    GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr CreateAndInsertBySurfaces (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
+    GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsertBySurfaces (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
 
     //---------------------------------------------------------------------------------------
     // Geometry modification
