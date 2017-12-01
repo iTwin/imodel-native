@@ -54,6 +54,9 @@ TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
     EXPECT_EQ(tokenStr, result.GetValue()->AsString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetToken_MismatchingUserName_ReturnsError)
     {
     auto tokenStr = StubSamlTokenWithUser("Boo")->AsString();
