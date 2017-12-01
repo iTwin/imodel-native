@@ -14,6 +14,8 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
+// #define DEBUG_DISPLAY_PARAMS_CACHE
+
 BEGIN_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,6 +582,11 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     if (&rhs == this)
         return false;
 
+#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
+    if (ComparePurpose::Merge == purpose)
+        printf("Comparing:%s\n       to:%s\n", ToDebugString().c_str(), rhs.ToDebugString().c_str());
+#endif
+
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
@@ -606,6 +613,9 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         if (GetTextureMapping().IsValid())
             TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
 
+#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
+        printf ("Equal.\n");
+#endif
         return false;
         }
 
@@ -679,9 +689,33 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
         toFind.Resolve(m_db, m_system);
         BeAssert(toFind.m_resolved);
         iter = m_set.insert(toFind.Clone()).first;
+#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
+        printf("\nLooking for: %s\nCreated: %s\n", toFind.ToDebugString().c_str(), (*iter)->ToDebugString().c_str());
+#endif
         }
 
     return **iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DisplayParams::ToDebugString() const
+    {
+    Utf8CP types[3] = { "Mesh", "Linear", "Text" };
+    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s%s",
+        types[static_cast<uint8_t>(m_type)],
+        m_lineColor.GetValue(),
+        m_fillColor.GetValue(),
+        m_width,
+        static_cast<uint32_t>(m_linePixels),
+        static_cast<uint32_t>(m_fillFlags),
+        static_cast<uint32_t>(m_class),
+        m_ignoreLighting ? "ignoreLights " : "",
+        m_resolved ? "resolved " : "",
+        m_hasRegionOutline ? "outlined" : "");
+
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
