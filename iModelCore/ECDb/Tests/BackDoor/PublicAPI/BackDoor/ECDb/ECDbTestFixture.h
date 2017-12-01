@@ -64,6 +64,9 @@ private:
         SeedECDbManager& operator=(SeedECDbManager const&) = delete;
 
     public:
+        SeedECDbManager() {}
+        ~SeedECDbManager() {}
+
         bool TryGet(BeFileName& seedPath, BeFileNameCR schemaFileName) const
             {
             auto it = m_seedFilePathsBySchemaFileName.find(schemaFileName);

@@ -46,7 +46,7 @@ DbResult ECDb::Impl::OnDbOpening() const
 DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
     {
     ECDb::OpenParams const* ecdbParams = dynamic_cast<ECDb::OpenParams const*> (&params);
-    ChangeSummaryCacheMode changeSummaryCacheMode = ChangeSummaryCacheMode::AttachAndCreateIfNotExists;
+    ChangeSummaryCacheMode changeSummaryCacheMode = ChangeSummaryCacheMode::DoNotAttach;
     if (ecdbParams != nullptr)
         changeSummaryCacheMode = ecdbParams->GetChangeSummaryCacheMode();
 

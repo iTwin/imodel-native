@@ -64,7 +64,7 @@ TEST_F(ECSqlToSqlGenerationTests, CastForSharedColumns)
     EXPECT_STREQ("SELECT [BaseClass].[ECInstanceId],[BaseClass].[ECClassId],[BaseClass].[ps1] FROM (SELECT [ts_BaseClass].[Id] ECInstanceId,[ts_BaseClass].[ECClassId],CAST([ts_BaseClass].[ps1] AS INTEGER) [ps1] FROM [ts_BaseClass]) [BaseClass]", 
                  GetHelper().ECSqlToSql("SELECT * FROM ts.BaseClass").c_str());
 
-    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT * FROM ts.D_A").Contains("INNER JOIN ec_cache_ClassHierarchy [CHC_ts_BaseClass] ON [CHC_ts_BaseClass].[ClassId]=[ts_BaseClass].ECClassId AND [CHC_ts_BaseClass].[BaseClassId]"));
+    EXPECT_TRUE(GetHelper().ECSqlToSql("SELECT * FROM ts.D_A").Contains("INNER JOIN [main].ec_cache_ClassHierarchy [CHC_ts_BaseClass] ON [CHC_ts_BaseClass].[ClassId]=[ts_BaseClass].ECClassId AND [CHC_ts_BaseClass].[BaseClassId]"));
 
     EXPECT_STREQ(Utf8PrintfString("SELECT [D_A].[ECInstanceId],[D_A].[ECClassId],[D_A].[ps1],[D_A].[ps2],[D_A].[ps3] FROM (SELECT [Id] ECInstanceId,[ECClassId],CAST([ps1] AS INTEGER) [ps1],CAST([ps2] AS INTEGER) [ps2],CAST([ps3] AS INTEGER) [ps3] FROM [ts_BaseClass] WHERE [ts_BaseClass].ECClassId=%s) [D_A]", daId.ToString().c_str()).c_str(),
                  GetHelper().ECSqlToSql("SELECT * FROM ONLY ts.D_A").c_str()) << "with ONLY keyword";
@@ -171,7 +171,7 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
     EXPECT_STREQ(Utf8PrintfString("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId] FROM "
                  "(SELECT [ts_Child].[Id] ECInstanceId,CAST([ts_Child].[ps4] AS INTEGER) ECClassId,CAST([ts_Child].[ps3] AS INTEGER) SourceECInstanceId,%s SourceECClassId,"
                  "[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId FROM [ts_Child] "
-                 "WHERE [ts_Child].[ps3] IS NOT NULL AND CAST([ts_Child].[ps4] AS INTEGER) IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [Rel]", parentClassId.ToString().c_str(), relClassId.ToString().c_str()).c_str(),
+                 "WHERE [ts_Child].[ps3] IS NOT NULL AND CAST([ts_Child].[ps4] AS INTEGER) IN (SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=%s)) [Rel]", parentClassId.ToString().c_str(), relClassId.ToString().c_str()).c_str(),
                  GetHelper().ECSqlToSql("SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel").c_str());
     }
 

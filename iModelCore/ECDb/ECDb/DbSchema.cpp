@@ -884,7 +884,6 @@ DbTable::DbTable(DbTableId id, Utf8StringCR name, Type type, ECN::ECClassId excl
         m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(m_type));
 
     BeAssert(m_linkNode.Validate() == SUCCESS);
-    BeAssert(m_linkNode.GetParent() == nullptr);
     }
 
 

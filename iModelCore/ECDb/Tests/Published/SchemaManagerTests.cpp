@@ -2427,34 +2427,6 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                   11/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, CreateECClassViewsForTempTableSpace)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("CreateECClassViewsForTempTableSpace.ecdb", SchemaItem(R"xml(<ECSchema schemaName="Test" alias="t" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
-                <ECEntityClass typeName="Foo" >
-                    <ECCustomAttributes>
-                        <ClassMap xlmns="ECDbMap.02.01">
-                            <TableSpace>temp</TableSpace>
-                        </ClassMap>
-                    </ECCustomAttributes>
-                    <ECProperty propertyName="Name" typeName="string"/>
-                </ECEntityClass>
-                <ECEntityClass typeName="Goo" >
-                    <ECProperty propertyName="Price" typeName="double"/>
-                </ECEntityClass>
-                </ECSchema>)xml")));
-    ECClassId fooClassId = m_ecdb.Schemas().GetClassId("Test", "Foo");
-    ASSERT_TRUE(fooClassId.IsValid());
-    ECClassId gooClassId = m_ecdb.Schemas().GetClassId("Test", "Goo");
-    ASSERT_TRUE(gooClassId.IsValid());
-
-    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(bvector<ECClassId>({gooClassId})));
-    ASSERT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(bvector<ECClassId>({fooClassId})));
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                   01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)

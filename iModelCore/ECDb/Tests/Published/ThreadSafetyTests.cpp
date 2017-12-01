@@ -65,6 +65,7 @@ struct BeThread final
     private:
         const static int DEFAULT_STACK_SIZE = 1024 * 1024 * 8 * 2;
         mutable std::unique_ptr<__ThreadArg> m_arg;
+        
         BeThread() {}
         //not copyable
         BeThread(BeThread const&) = delete;
@@ -280,7 +281,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
             for (int i = 0; i < 100; ++i)
                 {
                 ECDb db;
-                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
+                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
                 ECSqlStatement stmt;
                 ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECInstanceId, Name, NumberOfEmployees FROM stco.Company"));
@@ -350,7 +351,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
             for (int i = 0; i < 100; ++i)
                 {
                 ECDb db;
-                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
+                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
                 Statement stmt;
                 ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT Id, Name, NumberOfEmployees FROM sc_Company"));

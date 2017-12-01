@@ -93,19 +93,22 @@ struct ColumnMapContext
 struct ClassMapColumnFactory final
     {
     public:
-        struct ColumnResolutionScope final
+        struct ColumnResolutionScope
             {
-            protected:
-                ClassMap const& m_classMap;
-
             private:
                 ColumnMaps m_columnMaps;
                 bool m_init = false;
 
+            protected:
+                ClassMap const& m_classMap;
+
+            private:
                 virtual void _Fill(ColumnMaps&) = 0;
 
-            public:
+            protected:
                 explicit ColumnResolutionScope(ClassMap const&);
+
+            public:
                 virtual ~ColumnResolutionScope();
 
                 ClassMap const& GetClassMap() const { return m_classMap; }

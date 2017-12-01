@@ -125,7 +125,7 @@ public:
     ClassNameExp::Info const& GetInfo() const { return *m_info;}
 
     Utf8String GetFullName() const;
-    Utf8StringCR const& GetTableSpace() const { return m_tableSpace; }
+    Utf8StringCR GetTableSpace() const { return m_tableSpace; }
     Utf8StringCR GetSchemaName() const { return m_schemaAlias; }
     Utf8StringCR GetClassName() const { return m_className;}
 
