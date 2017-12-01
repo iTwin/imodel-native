@@ -1329,17 +1329,17 @@ public:
 //=======================================================================================
 enum class GraphicType
 {
-    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: disabled.
+    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled.
     ViewBackground,
     //! Renders as if it were part of the scene. Coordinates: world. RenderMode: from view. Lighting: from view. Z-testing: enabled.
     //! Used for the scene itself, dynamics, and 'normal' decorations.
     Scene,
     //! Renders within the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
     WorldDecoration,
-    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the ACS triad and the grid.
     WorldOverlay,
-    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the locate circle.
     ViewOverlay
 };
@@ -2554,7 +2554,7 @@ struct HiliteSettings
     };
 private:
     ColorDef    m_color;
-    double      m_visibleRatio = 0.5;
+    double      m_visibleRatio = 0.25;
     double      m_hiddenRatio = 0.0;
     Silhouette  m_silhouette = Silhouette::Thick;
 
