@@ -261,7 +261,9 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
     static bool bInitialized = false;
     if (!bInitialized)
         {
-        ScalableMeshModule().Initialize();
+        static ScalableMeshModule smApp;
+        smApp.Initialize();
+
         bInitialized = true;
         }
 

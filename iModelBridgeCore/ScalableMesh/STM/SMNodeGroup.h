@@ -20,6 +20,7 @@
 #include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
 #include <queue>
+#include <map>
 #include <iomanip>
 
 #ifdef VANCOUVER_API
@@ -147,6 +148,12 @@ class SMNodeDistributor : public Queue, std::mutex, std::condition_variable, pub
     unsigned int m_concurrency;
     bool m_done = false;
     std::vector<std::thread> m_threads;
+    enum class ThreadState
+        {
+        IDLE,
+        WORKING
+        };
+    std::map<std::thread::id, ThreadState> m_threadStates;
     std::function<void(Type)> m_workFunction;
 
 public:
@@ -175,8 +182,11 @@ public:
             throw std::invalid_argument("Max items per thread must be non-zero");
 
         for (unsigned int count{ 0 }; count < concurrency; count += 1)
+            {
             m_threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function)>
-            (&SMNodeDistributor::Consume), this, function);
+                (&SMNodeDistributor::Consume), this, function);
+            m_threadStates[m_threads.back().get_id()] = ThreadState::IDLE;
+            }
         }
 
     //    SMNodeDistributor(SMNodeDistributor &&) = default;
@@ -235,6 +245,46 @@ public:
         wait(lock, function);
         }
 
+    template <typename Function>
+    void WaitUntilFinished(Function function)
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        bool areThreadsFinished = false;
+        while (!wait_for(lock, 1000ms, function))
+            {
+            for (auto state : m_threadStates)
+                {
+                if (!(areThreadsFinished = state.second == ThreadState::IDLE))
+                    break;
+                }
+            if (Queue::empty() && areThreadsFinished)
+                break;
+            }
+        }
+
+    void WaitUntilFinished()
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        bool areThreadsFinished = false;
+        while (true)
+            {
+            for (auto state : m_threadStates)
+                {
+                if (!(areThreadsFinished = state.second == ThreadState::IDLE))
+                    break;
+                }
+            if (!Queue::empty() || !areThreadsFinished)
+                {
+                assert(lock.owns_lock());
+                wait_for(lock, 1000ms);
+                }
+            else
+                {
+                break;
+                }
+            }
+        }
+
     void CancelAll()
         {
         std::unique_lock<std::mutex> lock(*this);
@@ -258,6 +308,7 @@ private:
                 Type item{ std::move(Queue::front()) };
                 Queue::pop();
                 notify_one();
+                m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
                 lock.unlock();
                 process(item);
                 lock.lock();
@@ -278,6 +329,8 @@ private:
 //                    std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
 //                    }
 //#endif
+                m_threadStates[std::this_thread::get_id()] = ThreadState::IDLE;
+
                     wait(lock);
 //#ifdef DEBUG_GROUPS
 //                    {

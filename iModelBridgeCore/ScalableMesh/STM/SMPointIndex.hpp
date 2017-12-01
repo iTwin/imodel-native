@@ -943,9 +943,9 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
             {
             return const_cast<SMPointIndexNode<POINT,EXTENT>*>(this);
             }
-        if (m_apSubNodes.size() > 0 && m_apSubNodes[0] != NULL && m_nodeHeader.m_level <= level)
+        if (m_apSubNodes.size() > 0 && /*m_apSubNodes[0] != NULL &&*/ m_nodeHeader.m_level <= level)
             {
-            for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit; i++)
+            for (size_t i = 0; i < m_apSubNodes.size(); i++)
                 if (m_apSubNodes[i] != nullptr && ExtentOp<EXTENT>::OutterOverlap(ext, m_apSubNodes[i]->m_nodeHeader.m_nodeExtent))
                     {
                     auto node = m_apSubNodes[i]->FindNode(ext, level);
@@ -3922,7 +3922,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
         
         if (needStoreHeader && IsLoaded())
             {
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
+            //RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             
             //NEEDS_WORK_SM : During partial update some synchro problem can occur.
             //NEEDS_WORK_SM : Should not be required now that ID is attributed during node creation.

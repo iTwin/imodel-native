@@ -5,6 +5,9 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& tranform, bvector<Byte>& outData, bool outputTexture)
     {
     size_t siblingIndex = 0;
@@ -18,6 +21,9 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture)
     {
     size_t siblingIndex = 0;

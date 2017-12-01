@@ -1570,21 +1570,20 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
                 GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery());
 
+                // Clear mesh
                 meshPtr = ScalableMeshMesh::Create();
-                //for (int clipID = 0; clipID < clips->size(); clipID++)
-                //    {
-                //    int polyfaceID = (*clips)[clipID]->IsMask() ? 1 : 0;
-                    if (!polyfaces[1].empty())
-                        {
-                        DifferenceSet clipped = DifferenceSet::FromPolyfaceSet(polyfaces[1], mapOfPoints, 1);
-                        clearedPts = clipped.addedVertices;
-                        clearedIndices = clipped.addedFaces;
-                        newUvsIndices = clipped.addedUvIndices;
-                        newUvs = clipped.addedUvs;
-                        status = meshPtr->AppendMesh(clearedPts.size(), clearedPts.data(), clearedIndices.size(), clearedIndices.data(), 0, 0, 0, newUvs.size(), newUvs.data(), newUvsIndices.data());
-                        BeAssert(status == SUCCESS);
-                        }
-                 //   }
+
+                // Reconstruct mesh with new polyface
+                auto polyface = polyfaces[1].empty() ? nullptr : polyfaces[1][0];
+                if (polyface != nullptr)
+                    {
+                    status = meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                                 polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                                 0, 0, 0,
+                                                 polyface->Param().size(), polyface->Param().data(),
+                                                 polyface->ParamIndex().data());
+                    BeAssert(status == SUCCESS);
+                    }
 
                 }
 
@@ -3234,7 +3233,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     pointsPtr->clear();
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    //m_meshNode->m_nodeHeader.m_arePoints3d = true;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)
@@ -3429,6 +3428,7 @@ template <class POINT> bvector<IScalableMeshNodeEditPtr> ScalableMeshNodeEdit<PO
     else
         for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
         {
+            assert(m_node->m_apSubNodes[i] != NULL);
             children.push_back(new ScalableMeshNodeEdit<POINT>(m_node->m_apSubNodes[i]));
         }
 

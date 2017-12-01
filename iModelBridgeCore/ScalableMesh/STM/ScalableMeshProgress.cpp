@@ -186,6 +186,15 @@ ScalableMeshProgress::ScalableMeshProgress(const ScalableMeshProcessType& proces
         m_totalNIterationsPerStep[0] = m_totalNIterationsPerStep[1] = nodeCount;
         break;
         }
+        case SAVEAS_3SM:
+        {
+        auto nodeCount = smPtr->GetNodeCount();
+        assert(nodeCount > 0);
+        m_progressStepProcess = ScalableMeshStepProcess::PROCESS_SAVEAS_3SM;
+        m_totalNSteps = 1;
+        m_totalNIterationsPerStep[0] = nodeCount;
+        break;
+        }
         default:
         {
         assert(!"Unknown process type for scalable mesh progress");

@@ -61,6 +61,8 @@ extern bool   GET_HIGHEST_RES;
 #include "MosaicTextureProvider.h"
 #include "ScalableMeshGroup.h"
 #include "ScalableMeshMesher.h"
+#include <ScalableMesh/IScalableMeshPublisher.h>
+#include "Stores\SMPublisher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -477,6 +479,11 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     return _RemoveSkirt(clipID);
     }
 
+
+int IScalableMesh::SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
+    {
+    return _SaveAs(destination, clips, progress);
+    }
 
 int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips) const
     {
@@ -3013,6 +3020,68 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
         return true;
 
     } 
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_SaveAs
++----------------------------------------------------------------------------*/
+template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
+    {
+    // Create Scalable Mesh at output path
+    StatusInt status;
+    IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
+    if (SUCCESS != status || !scMeshDestination.IsValid())
+        return ERROR;
+
+    IScalableMeshTextureInfoPtr textureInfo = nullptr;
+    if (SUCCESS != GetTextureInfo(textureInfo))
+        return ERROR;
+
+    // Set global parameters to the new 3sm (this will also create a new index)
+    if (SUCCESS != scMeshDestination->SetGCS(m_sourceGCS))
+        return ERROR;
+    scMeshDestination->SetIsTerrain(IsTerrain());
+    scMeshDestination->SetIsSingleFile(!IsCesium3DTiles());
+    scMeshDestination->SetTextured(textureInfo->GetTextureType());
+
+    { // Scope the publishing part for proper cleanup of parameters when finished
+    SM3SMPublishParamsPtr smParams = new SM3SMPublishParams();
+
+    smParams->SetSource(this);
+    smParams->SetDestination(scMeshDestination);
+    smParams->SetClips(clips);
+    smParams->SetProgress(progress);
+    smParams->SetSaveTextures(textureInfo->IsTextureAvailable() && !textureInfo->IsUsingBingMap());
+
+    auto smPublisher = IScalableMeshPublisher::Create(SMPublishType::THREESM);
+    if (SUCCESS != smPublisher->Publish(smParams))
+        return ERROR;
+    }
+
+    scMeshDestination = nullptr;
+
+    if (m_smSQLitePtr->HasSources())
+        {
+        IScalableMeshSourceCreatorPtr destMeshSourceEdit = IScalableMeshSourceCreator::GetFor(destination.c_str(), status);
+        if (status != SUCCESS) 
+            return ERROR;
+
+        IDTMSourceCollection sources;
+
+        SourcesDataSQLite sourcesData;
+        m_smSQLitePtr->LoadSources(sourcesData);
+
+        if (!BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, DocumentEnv(L"")))
+            return ERROR;
+
+        destMeshSourceEdit->EditSources() = sources;
+        destMeshSourceEdit->SetSourcesDirty();
+
+        if (SUCCESS != destMeshSourceEdit->SaveToFile())
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_Generate3DTiles

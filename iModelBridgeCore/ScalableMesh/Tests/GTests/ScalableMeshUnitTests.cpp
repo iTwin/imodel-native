@@ -9,7 +9,10 @@
 #include <Bentley/BeTest.h>
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <TerrainModel/Core/IDTM.h>
+#include <DgnPlatform/ClipPrimitive.h>
+#include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
 
 class ScalableMeshEnvironment : public ::testing::Environment
@@ -55,24 +58,54 @@ class ScalableMeshEnvironment : public ::testing::Environment
 
 ::testing::Environment* const sm_env = ::testing::AddGlobalTestEnvironment(new ScalableMeshEnvironment);
 
-class ScalableMeshTest : public ::testing::TestWithParam<BeFileName>
+class ScalableMeshTest : public ::testing::Test
+    {
+    virtual void SetUp() 
+        {
+
+        ScalableMesh::ScalableMeshFilterType filterType = ScalableMesh::SCM_FILTER_DUMB_MESH;
+        WChar filterTypeChar[10];
+        
+        swprintf(filterTypeChar, L"%i", filterType);
+        
+        BentleyStatus defineStatus = ConfigurationManager::DefineVariable(L"SM_FILTER_TYPE", filterTypeChar);
+        
+        BeAssert(defineStatus == SUCCESS);
+
+        WString filterTypeStr;
+        ASSERT_TRUE(BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"));
+        ASSERT_TRUE(filterTypeStr == L"2");
+        }
+    virtual void TearDown() 
+        {
+        //auto err = GetLastError();
+        //std::cout << "LastError = " << err << std::endl;
+        }
+
+    public:
+    static ScalableMesh::IScalableMeshPtr OpenMesh(BeFileName filename)
+        {
+        StatusInt status;
+        ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(filename, true, true, status);
+        BeAssert(status == SUCCESS);
+        return myScalableMesh;
+        }
+    };
+
+class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
     {
     protected:
         BeFileName m_filename;
 
     public:
-        virtual void SetUp() { m_filename = GetParam(); }
+        virtual void SetUp() 
+            {
+            m_filename = GetParam(); 
+            }
         virtual void TearDown() { }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
 
-        ScalableMesh::IScalableMeshPtr OpenMesh()
-            {
-            StatusInt status;
-            ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
-            BeAssert(status == SUCCESS);
-            return myScalableMesh;
-            }
     };
 
 
@@ -149,19 +182,19 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTest, CanOpen)
+TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
 
-    EXPECT_EQ(OpenMesh().IsValid(), true ) << "\n Error opening "<< typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    EXPECT_EQ(ScalableMeshTest::OpenMesh(m_filename).IsValid(), true ) << "\n Error opening "<< typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTest, CanGetRootNode)
+TEST_P(ScalableMeshTestWithParams, CanGetRootNode)
     {
-    auto myScalableMesh = OpenMesh();
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     auto rootNode = myScalableMesh->GetRootNode();
@@ -174,9 +207,9 @@ TEST_P(ScalableMeshTest, CanGetRootNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTest, HasCoherentMeshFormat)
+TEST_P(ScalableMeshTestWithParams, HasCoherentMeshFormat)
     {
-    auto myScalableMesh = OpenMesh();
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     EXPECT_EQ((myScalableMesh->IsCesium3DTiles() && ScalableMeshGTestUtil::SMMeshType::TYPE_3DTILES == GetType())
@@ -187,9 +220,9 @@ TEST_P(ScalableMeshTest, HasCoherentMeshFormat)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTest, CanGenerate3DTiles)
+TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
     {
-    auto myScalableMesh = OpenMesh();
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     // Skip 3dtiles
@@ -215,7 +248,103 @@ TEST_P(ScalableMeshTest, CanGenerate3DTiles)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTest, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH))));
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestWithParams, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH))));
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
+    {
+    WString filterTypeStr;
+
+    ASSERT_TRUE(BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"));
+
+    WString testFile = L"SaltLakeCity_small.3sm";
+    BeFileName filename(SM_DATA_PATH);
+    ASSERT_TRUE(ScalableMeshGTestUtil::GetDataPath(filename));
+
+    filename.AppendToPath(testFile.c_str());
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
+    destination.append(testFile.c_str());
+
+    if (BeFileName::DoesPathExist(destination.c_str()))
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
+
+    //ScalableMeshGTestUtil::TestProgressListener progressListener;
+    //auto progressSM = ScalableMesh::IScalableMeshProgress::Create(ScalableMesh::ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
+    //ASSERT_TRUE(progressSM->AddListener(progressListener));
+
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    Transform tr = Transform::FromIdentity();
+
+    // Create clip
+    auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, false /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+
+    auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
+
+    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+
+    EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
+
+    // Cleanup
+    ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ScalableMeshTest, SaveAsWithClipMask)
+    {
+    WString filterTypeStr;
+
+    ASSERT_TRUE(BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"));
+
+    WString testFile = L"SaltLakeCity_small.3sm";
+    BeFileName filename(SM_DATA_PATH);
+    ASSERT_TRUE(ScalableMeshGTestUtil::GetDataPath(filename));
+
+    filename.AppendToPath(testFile.c_str());
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
+    destination.append(testFile.c_str());
+
+    if (BeFileName::DoesPathExist(destination.c_str()))
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
+
+    //ScalableMeshGTestUtil::TestProgressListener progressListener;
+    //auto progressSM = ScalableMesh::IScalableMeshProgress::Create(ScalableMesh::ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
+    //ASSERT_TRUE(progressSM->AddListener(progressListener));
+
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    Transform tr = Transform::FromIdentity();
+
+    // Create clip
+    auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, true /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+
+    auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
+
+    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+
+    EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
+
+    // Cleanup
+    ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
+    }
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
 
@@ -307,7 +436,6 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
     [&]() { ASSERT_TRUE(isTrue); }(); \
     if (!(isTrue)) return 1; \
     }
-
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Richard.Bois      10/2017
