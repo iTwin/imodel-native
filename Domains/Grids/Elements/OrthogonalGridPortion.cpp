@@ -83,11 +83,11 @@ CreateParams const& params
         status = BentleyStatus::SUCCESS;
 
         //not putting into same method yet.. will do as GridAxis element is introduced.
-        GridPlaneSurfacePtr lastGridPlane = nullptr;
+        GridPlanarSurfacePtr lastGridPlane = nullptr;
         DPlane3d planeLast;
         for (CurveVectorPtr gridPlaneGeom : surfaces)
             {
-            GridPlaneSurfacePtr gridPlane = GridPlaneSurface::Create (*subModel, gridAxis, gridPlaneGeom);
+            GridPlanarSurfacePtr gridPlane = GridPlanarSurface::Create (*subModel, gridAxis, gridPlaneGeom);
             BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
             gridPlane->Insert ();
             DPlane3d planeThis;
@@ -213,14 +213,14 @@ GridSurfacePtr element,
 double distance
 )
     {
-    DPlane3d elementPlane = (dynamic_cast<GridPlaneSurface *>(element.get()))->GetPlane();
+    DPlane3d elementPlane = (dynamic_cast<GridPlanarSurface *>(element.get()))->GetPlane();
     DVec3d planeNormal = elementPlane.normal;
 
     if (lastElement.IsValid())
         {
         DPoint3d elementOrigin = elementPlane.origin;
         DPoint3d lastPlaneOrigin;
-        DPlane3d lastPlane = (dynamic_cast<GridPlaneSurface *>(lastElement.get()))->GetPlane();
+        DPlane3d lastPlane = (dynamic_cast<GridPlanarSurface *>(lastElement.get()))->GetPlane();
         bsiDPlane3d_projectPoint(&lastPlane, &lastPlaneOrigin, &elementOrigin);
 
         DVec3d direction = DVec3d::FromStartEnd(lastPlaneOrigin, elementOrigin);
@@ -249,7 +249,7 @@ BentleyStatus OrthogonalGrid::CreateSurfaces(bvector<GridSurfacePtr> & allSurfac
         if (extendHeight)
             extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
 
-        GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model, gridAxis, extDetail);
+        GridPlanarSurfacePtr baseGridPlane = GridPlanarSurface::Create(*model, gridAxis, extDetail);
         if (!baseGridPlane.IsValid())
             return BentleyStatus::ERROR;
 

@@ -12,6 +12,8 @@
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
 
+    <KindOfQuantity typeName="Length" description="Length" persistenceUnit="M" relativeError="1e-6" presentationUnits="FT(fi8)"/>
+    <KindOfQuantity typeName="Angle" description="Angle" persistenceUnit="M" relativeError="1e-6" presentationUnits="FT(fi8)"/>
 
     <ECRelationshipClass typeName="GridIntersectsGridSurface" strength="referencing">
       <BaseClass>bis:ElementRefersToElements</BaseClass>
@@ -90,27 +92,42 @@
       </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECEntityClass typeName="GridSurface">
+    <ECEntityClass typeName="GridSurface" modifier="Abstract" description="A grid surface element.">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
       <ECNavigationProperty propertyName="Axis" relationshipName="GridAxisContainsGridSurfaces" direction="Backward" description="Axis this gridSurface belong to" />
+      <ECProperty propertyName="Length" displayLabel="Length" typeName="double" readOnly="true" kindOfQuantity="Length"/>
     </ECEntityClass>
 
-
-    <ECEntityClass typeName="GridPlaneSurface">
+    <ECEntityClass typeName="GridPlanarSurface" description="A planar grid surface element.">
       <BaseClass>GridSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridArcSurface">
+    <ECEntityClass typeName="ElevationGridSurface" description="A planar 2d grid surface with elevation.">
+      <BaseClass>GridPlanarSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+      <ECProperty propertyName="Elevation" displayLabel="Length" typeName="double" kindOfQuantity="Length"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FreeGridSurface" description="a grid surface of any geometry.">
       <BaseClass>GridSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridSplineSurface">
+    <ECEntityClass typeName="GridArcSurface" description="A grid surface that is parallel to extruded arc.">
+      <BaseClass>GridSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GridSplineSurface" description="A grid surface that is parallel to extruded spline.">
       <BaseClass>GridSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
@@ -131,6 +148,10 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="DefaultMinExtentX" displayLabel="DefaultMinExtentX" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
+      <ECProperty propertyName="DefaultMaxExtentX" displayLabel="DefaultMaxExtentX" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultMinExtentY" displayLabel="DefaultMinExtentY" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultMaxExtentY" displayLabel="DefaultMaxExtentY" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="RadialGrid" description="A RadialGrid consists either of arcsurfaces in radial axis or planarsurfaces in circular axis">
@@ -138,10 +159,103 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="DefaultMinAngle" displayLabel="DefaultMinAngle" typeName="double" kindOfQuantity="Angle" description="Origin of the surface"/>
+      <ECProperty propertyName="DefaultMaxAngle" displayLabel="DefaultMaxAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="DefaultMinExtent" displayLabel="DefaultMinExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultMaxExtent" displayLabel="DefaultMaxExtent" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SketchGrid" description="A SketchGrid contains surfaces whose positions are not constrained (other than being swept to the grid normal)">
       <BaseClass>PlanGrid</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ElevationGrid" description="An ElevationGrid contains planar surfaces that are parallel to the local XY plane">
+      <BaseClass>Grid</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="FreeGrid" description="An FreeGrid contains surfaces that do not need to follow any rules">
+      <BaseClass>Grid</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="IPlanGridSurface" modifier="Abstract" displayLabel="PlanGrid Surface" description="An interface that indicates that this Surface is suitable to be placed in PlanGrid ">
+      <ECCustomAttributes>
+        <IsMixin xmlns="CoreCustomAttributes.1.0">
+          <!-- Only subclasses of grids:GridSurface can implement the IPlanGridSurface interface -->
+          <AppliesToEntityClass>GridSurface</AppliesToEntityClass>
+        </IsMixin>
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PlanGridPlanarSurface" modifier="Abstract" description="A planar plangrid surface element.">
+      <BaseClass>GridPlanarSurface</BaseClass>
+      <BaseClass>IPlanGridSurface</BaseClass>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="PlanCartesianGridSurface" description="A planar grid surface element.">
+      <BaseClass>PlanGridPlanarSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+      <ECProperty propertyName="Coordinate" displayLabel="Coordinate" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
+      <ECProperty propertyName="MinExtent" displayLabel="MinExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="MaxExtent" displayLabel="MaxExtent" typeName="double" kindOfQuantity="Length"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PlanRadialGridSurface" description="A planar grid surface element.">
+      <BaseClass>PlanGridPlanarSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+      <ECProperty propertyName="Angle" displayLabel="Angle" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
+      <ECProperty propertyName="MinRadius" displayLabel="MinRadius" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="MaxRadius" displayLabel="MaxRadius" typeName="double" kindOfQuantity="Length"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SketchLineGridSurface" description="An extruded line gridsurface element.">
+      <BaseClass>PlanGridPlanarSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PlanGridArcSurface" modifier="Abstract" description="An arc plangrid surface element.">
+      <BaseClass>GridArcSurface</BaseClass>
+      <BaseClass>IPlanGridSurface</BaseClass>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="PlanCircumferentialGridSurface" description="An extruded spline gridsurface element.">
+      <BaseClass>PlanGridArcSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+      <ECProperty propertyName="Radius" displayLabel="Radius" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
+      <ECProperty propertyName="MinAngle" displayLabel="MinAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="MaxAngle" displayLabel="MaxAngle" typeName="double" kindOfQuantity="Angle"/>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="SketchArcGridSurface" description="An extruded spline gridsurface element.">
+      <BaseClass>PlanGridArcSurface</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="PlanGridSplineSurface" modifier="Abstract" description="An arc plangrid surface element.">
+      <BaseClass>GridSplineSurface</BaseClass>
+      <BaseClass>IPlanGridSurface</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SketchSplineGridSurface" description="An extruded spline gridsurface element.">
+      <BaseClass>PlanGridSplineSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>

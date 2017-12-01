@@ -58,7 +58,7 @@ BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::
     if (params.m_extendHeight)
         extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
 
-    GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*model.get(), planeAxis, extDetail);
+    GridPlanarSurfacePtr baseGridPlane = GridPlanarSurface::Create(*model.get(), planeAxis, extDetail);
     if (!baseGridPlane.IsValid())
         return BentleyStatus::ERROR;
 
@@ -68,7 +68,7 @@ BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::
     // Create plane grids
     for (int i = 1; i < params.m_planeCount; ++i)
         {
-        GridPlaneSurfacePtr planeSurface = dynamic_cast<GridPlaneSurface *>(baseGridPlane->Clone().get());
+        GridPlanarSurfacePtr planeSurface = dynamic_cast<GridPlanarSurface *>(baseGridPlane->Clone().get());
         if (!planeSurface.IsValid())
             return BentleyStatus::ERROR;
 

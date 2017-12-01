@@ -299,19 +299,19 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
     // Check if axes elements are valid
     /////////////////////////////////////////////////////////////
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         ASSERT_TRUE(plane.IsValid()) << "horizontal element invalid";
         horizontalElements.push_back(plane);
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         ASSERT_TRUE(plane.IsValid()) << "vertical element invalid";
         verticalElements.push_back(plane);
         }
@@ -320,13 +320,13 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
     // Check if axes elements parallel and perpendicular
     /////////////////////////////////////////////////////////////
     // for any two elements e_1 and e_2 : if both elements are in same axis, they must be parallel, otherwise they must be perpendicular
-    bvector<GridPlaneSurfaceCPtr> allElements;
+    bvector<GridPlanarSurfaceCPtr> allElements;
     allElements.insert(allElements.end(), horizontalElements.begin(), horizontalElements.end());
     allElements.insert(allElements.end(), verticalElements.begin(), verticalElements.end());
 
-    for (GridPlaneSurfaceCPtr firstElem : allElements)
+    for (GridPlanarSurfaceCPtr firstElem : allElements)
         {
-        for (GridPlaneSurfaceCPtr secondElem : allElements)
+        for (GridPlanarSurfaceCPtr secondElem : allElements)
             {
             if (firstElem->GetElementId() == secondElem->GetElementId())
                 continue;
@@ -365,7 +365,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -373,7 +373,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
     /////////////////////////////////////////////////////////////
     // Check if grid elements have correct length and height
     /////////////////////////////////////////////////////////////
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid surface length should be accessible";
@@ -418,10 +418,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Unconstrained_Created";
@@ -432,10 +432,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Unconstrained_Created";
@@ -459,12 +459,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     ASSERT_TRUE(DPoint3d::From(53, 76, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -503,10 +503,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Unconstrained_Created";
@@ -517,10 +517,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Unconstrained_Created";
@@ -544,12 +544,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
     ASSERT_TRUE(DPoint3d::From(25.980762, 15, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin(), 0.1)) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -590,10 +590,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Unconstrained_Created";
@@ -604,10 +604,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Unconstrained_Created";
@@ -631,12 +631,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     ASSERT_TRUE(DPoint3d::From(48.980762, 91, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin(), 0.1)) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -690,19 +690,19 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
     // Check if axes elements are valid
     /////////////////////////////////////////////////////////////
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         ASSERT_TRUE(plane.IsValid()) << "horizontal element invalid";
         horizontalElements.push_back(plane);
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         ASSERT_TRUE(plane.IsValid()) << "vertical element invalid";
         verticalElements.push_back(plane);
         }
@@ -711,13 +711,13 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
     // Check if axes elements parallel and perpendicular
     /////////////////////////////////////////////////////////////
     // for any two elements e_1 and e_2 : if both elements are in same axis, they must be parallel, otherwise they must be perpendicular
-    bvector<GridPlaneSurfaceCPtr> allElements;
+    bvector<GridPlanarSurfaceCPtr> allElements;
     allElements.insert(allElements.end(), horizontalElements.begin(), horizontalElements.end());
     allElements.insert(allElements.end(), verticalElements.begin(), verticalElements.end());
 
-    for (GridPlaneSurfaceCPtr firstElem : allElements)
+    for (GridPlanarSurfaceCPtr firstElem : allElements)
         {
-        for (GridPlaneSurfaceCPtr secondElem : allElements)
+        for (GridPlanarSurfaceCPtr secondElem : allElements)
             {
             if (firstElem->GetElementId() == secondElem->GetElementId())
                 continue;
@@ -756,7 +756,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -764,7 +764,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
     /////////////////////////////////////////////////////////////
     // Check if grid elements have correct length and height
     /////////////////////////////////////////////////////////////
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid surface length should be accessible";
@@ -809,10 +809,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_UnconstrainedExtended_Created";
@@ -823,10 +823,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_UnconstrainedExtended_Created";
@@ -850,12 +850,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     ASSERT_TRUE(DPoint3d::From(53, 76, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -894,10 +894,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_UnconstrainedExtended_Created";
@@ -908,10 +908,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_UnconstrainedExtended_Created";
@@ -935,12 +935,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     ASSERT_TRUE(DPoint3d::From(25.980762, 15, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin(), 0.1)) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -994,19 +994,19 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
     // Check if axes elements are valid
     /////////////////////////////////////////////////////////////
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         ASSERT_TRUE(plane.IsValid()) << "horizontal element invalid";
         horizontalElements.push_back(plane);
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         ASSERT_TRUE(plane.IsValid()) << "vertical element invalid";
         verticalElements.push_back(plane);
         }
@@ -1015,13 +1015,13 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
     // Check if axes elements parallel and perpendicular
     /////////////////////////////////////////////////////////////
     // for any two elements e_1 and e_2 : if both elements are in same axis, they must be parallel, otherwise they must be perpendicular
-    bvector<GridPlaneSurfaceCPtr> allElements;
+    bvector<GridPlanarSurfaceCPtr> allElements;
     allElements.insert(allElements.end(), horizontalElements.begin(), horizontalElements.end());
     allElements.insert(allElements.end(), verticalElements.begin(), verticalElements.end());
 
-    for (GridPlaneSurfaceCPtr firstElem : allElements)
+    for (GridPlanarSurfaceCPtr firstElem : allElements)
         {
-        for (GridPlaneSurfaceCPtr secondElem : allElements)
+        for (GridPlanarSurfaceCPtr secondElem : allElements)
             {
             if (firstElem->GetElementId() == secondElem->GetElementId())
                 continue;
@@ -1060,7 +1060,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1068,7 +1068,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
     /////////////////////////////////////////////////////////////
     // Check if grid elements have correct length and height
     /////////////////////////////////////////////////////////////
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid surface length should be accessible";
@@ -1113,10 +1113,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Constrained_Created";
@@ -1127,10 +1127,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Constrained_Created";
@@ -1154,12 +1154,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     ASSERT_TRUE(DPoint3d::From(53, 76, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1198,10 +1198,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Constrained_Created";
@@ -1212,10 +1212,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Constrained_Created";
@@ -1239,12 +1239,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
     ASSERT_TRUE(DPoint3d::From(25.980762, 15, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin(), 0.1)) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1285,10 +1285,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Constrained_Created";
@@ -1299,10 +1299,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_Constrained_Created";
@@ -1326,12 +1326,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     ASSERT_TRUE(DPoint3d::From(48.980762, 91, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin(), 0.1)) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1385,19 +1385,19 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
     // Check if axes elements are valid
     /////////////////////////////////////////////////////////////
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         ASSERT_TRUE(plane.IsValid()) << "horizontal element invalid";
         horizontalElements.push_back(plane);
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         ASSERT_TRUE(plane.IsValid()) << "vertical element invalid";
         verticalElements.push_back(plane);
         }
@@ -1406,13 +1406,13 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
     // Check if axes elements parallel and perpendicular
     /////////////////////////////////////////////////////////////
     // for any two elements e_1 and e_2 : if both elements are in same axis, they must be parallel, otherwise they must be perpendicular
-    bvector<GridPlaneSurfaceCPtr> allElements;
+    bvector<GridPlanarSurfaceCPtr> allElements;
     allElements.insert(allElements.end(), horizontalElements.begin(), horizontalElements.end());
     allElements.insert(allElements.end(), verticalElements.begin(), verticalElements.end());
 
-    for (GridPlaneSurfaceCPtr firstElem : allElements)
+    for (GridPlanarSurfaceCPtr firstElem : allElements)
         {
-        for (GridPlaneSurfaceCPtr secondElem : allElements)
+        for (GridPlanarSurfaceCPtr secondElem : allElements)
             {
             if (firstElem->GetElementId() == secondElem->GetElementId())
                 continue;
@@ -1451,7 +1451,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1459,7 +1459,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
     /////////////////////////////////////////////////////////////
     // Check if grid elements have correct length and height
     /////////////////////////////////////////////////////////////
-    for (GridPlaneSurfaceCPtr plane : allElements)
+    for (GridPlanarSurfaceCPtr plane : allElements)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid surface length should be accessible";
@@ -1504,10 +1504,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_ConstrainedExtended_Created";
@@ -1518,10 +1518,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_ConstrainedExtended_Created";
@@ -1545,12 +1545,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     ASSERT_TRUE(DPoint3d::From(53, 76, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1589,10 +1589,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> horizontalElementIds = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> horizontalElements;
+    bvector<GridPlanarSurfaceCPtr> horizontalElements;
     for (DgnElementId horizontalElementId : horizontalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(horizontalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(horizontalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_ConstrainedExtended_Created";
@@ -1603,10 +1603,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         }
 
     bvector<DgnElementId> verticalElementIds = verticalAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> verticalElements;
+    bvector<GridPlanarSurfaceCPtr> verticalElements;
     for (DgnElementId verticalElementId : verticalElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(verticalElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(verticalElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:OrthogonalGrid_ConstrainedExtended_Created";
@@ -1630,12 +1630,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     ASSERT_TRUE(DPoint3d::From(25.980762, 15, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin(), 0.1)) << "Vertical plane 3 origin is incorrect";
 
     // all elements placement rotation angle should be 0
-    for (GridPlaneSurfaceCPtr plane : horizontalElements)
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
-    for (GridPlaneSurfaceCPtr plane : verticalElements)
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1688,10 +1688,10 @@ TEST_F(GridsTestFixture, RadialGrid_Created)
     // Check if axes elements are valid
     /////////////////////////////////////////////////////////////
     bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> planeElements;
+    bvector<GridPlanarSurfaceCPtr> planeElements;
     for (DgnElementId planeElementId : planeElementIds)
         {
-        GridPlaneSurfaceCPtr plane = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        GridPlanarSurfaceCPtr plane = db.Elements().Get<GridPlanarSurface>(planeElementId);
         ASSERT_TRUE(plane.IsValid()) << "plane element invalid";
         planeElements.push_back(plane);
         }
@@ -1721,7 +1721,7 @@ TEST_F(GridsTestFixture, RadialGrid_Created)
     // all plane elements rotation angle should be i * iteration_angle = i * 7 * msGeomConst_pi / 180
     for (size_t i = 0; i < planeElements.size(); ++i)
         {
-        GridPlaneSurfaceCPtr plane = planeElements[i];
+        GridPlanarSurfaceCPtr plane = planeElements[i];
         ASSERT_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
@@ -1735,7 +1735,7 @@ TEST_F(GridsTestFixture, RadialGrid_Created)
     // Check if grid elements have correct length and height
     /////////////////////////////////////////////////////////////
     // grid planes length should be 70.
-    for (GridPlaneSurfaceCPtr plane : planeElements)
+    for (GridPlanarSurfaceCPtr plane : planeElements)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid plane length should be accessible";
@@ -1799,10 +1799,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> planeElements;
+    bvector<GridPlanarSurfaceCPtr> planeElements;
     for (DgnElementId planeElementId : planeElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(planeElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
@@ -1839,7 +1839,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     // all plane elements rotation angle should be i * iteration_angle = i * 7 * msGeomConst_pi / 180
     for (size_t i = 0; i < planeElements.size(); ++i)
         {
-        GridPlaneSurfaceCPtr plane = planeElements[i];
+        GridPlanarSurfaceCPtr plane = planeElements[i];
 
         ASSERT_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1884,10 +1884,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> planeElements;
+    bvector<GridPlanarSurfaceCPtr> planeElements;
     for (DgnElementId planeElementId : planeElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(planeElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
@@ -1924,7 +1924,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     // all plane elements rotation angle should be newAngle + i * iteration_angle = msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180
     for (size_t i = 0; i < planeElements.size(); ++i)
         {
-        GridPlaneSurfaceCPtr plane = planeElements[i];
+        GridPlanarSurfaceCPtr plane = planeElements[i];
 
         ASSERT_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1972,10 +1972,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     GridAxisCPtr arcAxis = db.Elements().Get<GridAxis>(axesIds[1]);
 
     bvector<DgnElementId> planeElementIds = planeAxis->MakeIterator().BuildIdList<DgnElementId>();
-    bvector<GridPlaneSurfaceCPtr> planeElements;
+    bvector<GridPlanarSurfaceCPtr> planeElements;
     for (DgnElementId planeElementId : planeElementIds)
         {
-        GridPlaneSurfaceCPtr surface = db.Elements().Get<GridPlaneSurface>(planeElementId);
+        GridPlanarSurfaceCPtr surface = db.Elements().Get<GridPlanarSurface>(planeElementId);
         if (surface.IsNull())
             {
             ASSERT_TRUE(false) << "Grid surface is invalid. See GridsTestFixture:RadialGrid_Created";
@@ -2012,7 +2012,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     // all plane elements rotation angle should be newAngle + i * iteration_angle = msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180
     for (size_t i = 0; i < planeElements.size(); ++i)
         {
-        GridPlaneSurfaceCPtr plane = planeElements[i];
+        GridPlanarSurfaceCPtr plane = planeElements[i];
 
         ASSERT_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -2064,7 +2064,7 @@ TEST_F(GridsTestFixture, SketchGrid_Created)
     // Check if valid grid plane surfaces can be added to sketch grid
     /////////////////////////////////////////////////////////////
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 50, 20, 0 }, { 50, 70, 0 }, 90);
-    GridPlaneSurfacePtr plane = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
 
     ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
 
@@ -2134,11 +2134,11 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
     {
     // Check grid plane create from handler
-    GridPlaneSurfaceHandler& planeHandler = GridPlaneSurfaceHandler::GetHandler();
+    GridPlanarSurfaceHandler& planeHandler = GridPlanarSurfaceHandler::GetHandler();
     DgnClassId planeClassId = db.Domains().GetClassId(planeHandler);
     DgnElement::CreateParams planeParams(db, m_model->GetModelId(), planeClassId);
 
-    GridPlaneSurfacePtr invalidGridPlane_FromHandler = dynamic_cast<GridPlaneSurface *>(planeHandler.Create(planeParams).get());
+    GridPlanarSurfacePtr invalidGridPlane_FromHandler = dynamic_cast<GridPlanarSurface *>(planeHandler.Create(planeParams).get());
     ASSERT_TRUE(invalidGridPlane_FromHandler.IsValid()) << "element created from handler shouldn't be a nullptr";
 
     
@@ -2224,19 +2224,19 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     /////////////////////////////////////////////////////////////
     // Check grid plane from an empty curve vector
     CurveVectorPtr emptyVector = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
-    GridPlaneSurfacePtr invalidGridPlane_Empty = GridPlaneSurface::Create(*grid->GetSurfacesModel().get(), axis1, emptyVector);
+    GridPlanarSurfacePtr invalidGridPlane_Empty = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), axis1, emptyVector);
 
     ASSERT_TRUE(invalidGridPlane_Empty.IsNull()) << "Invalid grid plane surface has been created";
 
     // Check grid plane created from extrusion with arc as base
     DgnExtrusionDetail arcExtDetail = GeometryUtils::CreateArcExtrusionDetail(10 /*radius*/, msGeomConst_pi /*base angle*/, 10 /*height*/, 0 /*extend length*/);
-    GridPlaneSurfacePtr invalidGridPlane_Arc = GridPlaneSurface::Create(*grid->GetSurfacesModel().get(), axis1, arcExtDetail);
+    GridPlanarSurfacePtr invalidGridPlane_Arc = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), axis1, arcExtDetail);
 
     ASSERT_TRUE(invalidGridPlane_Arc.IsNull()) << "Invalid grid plane surface has been created";
 
     // Check grid plane created from extrusion with spline as base
     DgnExtrusionDetail splineExtDetail = GeometryUtils::CreateSplineExtrusionDetail({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } } /*poles*/, 10 /*height*/);
-    GridPlaneSurfacePtr invalidGridPlane_Spline = GridPlaneSurface::Create(*grid->GetSurfacesModel().get(), axis1, splineExtDetail);
+    GridPlanarSurfacePtr invalidGridPlane_Spline = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), axis1, splineExtDetail);
 
     ASSERT_TRUE(invalidGridPlane_Spline.IsNull()) << "Invalid grid plane surface has been created";
 
@@ -2246,7 +2246,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     invalidVector = CurveVector::Create (CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
     ICurvePrimitivePtr prim = ICurvePrimitive::CreateLineString (nonPlanarPoints, 4);
     invalidVector->push_back (prim);
-    GridPlaneSurfacePtr invalidPlaneSurface = GridPlaneSurface::Create (*grid->GetSurfacesModel (), axis1, invalidVector->Clone());
+    GridPlanarSurfacePtr invalidPlaneSurface = GridPlanarSurface::Create (*grid->GetSurfacesModel (), axis1, invalidVector->Clone());
 
     ASSERT_TRUE(invalidPlaneSurface.IsNull()) << "a grid plane with invalid geometry should not be created";
 
@@ -2280,7 +2280,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     bvector<DPoint3d> planarPoints = { { 100,100,0 },{ 200,100,0 },{ 200,220,0 },{ 100,200,0 } };
     CurveVectorPtr validVector = CurveVector::CreateLinear(planarPoints, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
 
-    GridPlaneSurfacePtr validPlaneSurface = GridPlaneSurface::Create(*grid->GetSurfacesModel(), axis1, validVector->Clone());
+    GridPlanarSurfacePtr validPlaneSurface = GridPlanarSurface::Create(*grid->GetSurfacesModel(), axis1, validVector->Clone());
 
     validPlaneSurface->Insert();
     ASSERT_TRUE(validPlaneSurface->GetElementId().IsValid()) << "failed to insert a valid-planar gridplanesurface";
@@ -2343,7 +2343,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     // Check if invalid geometry can't be set to grid surfaces
     /////////////////////////////////////////////////////////////
     // Check grid plane update through geometry builder
-    GridPlaneSurfacePtr planeSurfaceToUpdate = db.Elements().GetForEdit<GridPlaneSurface>(validPlaneSurface->GetElementId());
+    GridPlanarSurfacePtr planeSurfaceToUpdate = db.Elements().GetForEdit<GridPlanarSurface>(validPlaneSurface->GetElementId());
 
     Dgn::GeometrySourceP geomElem = planeSurfaceToUpdate->ToGeometrySourceP();
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
@@ -2351,7 +2351,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     builder->Append(*invalidVector->Clone(), Dgn::GeometryBuilder::CoordSystem::World);
     builder->Finish(*geomElem);
     planeSurfaceToUpdate->Update(&status);
-    ASSERT_TRUE(status != DgnDbStatus::Success) << "should fail to update non-planar GridPlaneSurface";
+    ASSERT_TRUE(status != DgnDbStatus::Success) << "should fail to update non-planar GridPlanarSurface";
     
     // Check invalid plane curve vector
     validPlaneSurface->SetCurveVector(*emptyVector.get());
@@ -2428,10 +2428,10 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
 
     GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
-    bvector<GridPlaneSurfacePtr> floorGridPlanes;
+    bvector<GridPlanarSurfacePtr> floorGridPlanes;
     for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
         {
-        GridPlaneSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlaneSurface>(planeId);
+        GridPlanarSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlanarSurface>(planeId);
         ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
         floorGridPlanes.push_back(floorSurface);
         }
@@ -2466,7 +2466,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     // Check intersection curves with orthogonal grid
     /////////////////////////////////////////////////////////////
     // Check intersection success
-    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+    for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
         BentleyStatus status = orthogonalGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
         ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
@@ -2475,7 +2475,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     db.SaveChanges();
 
     // Check if grid curves are all created and have valid geometry
-    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+    for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
         ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
         ASSERT_EQ(3, floorGridCurvesIterator.BuildIdList<DgnElementId>().size());
@@ -2556,10 +2556,10 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
 
     GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
-    bvector<GridPlaneSurfacePtr> floorGridPlanes;
+    bvector<GridPlanarSurfacePtr> floorGridPlanes;
     for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
         {
-        GridPlaneSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlaneSurface>(planeId);
+        GridPlanarSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlanarSurface>(planeId);
         ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
         floorGridPlanes.push_back(floorSurface);
         }
@@ -2589,7 +2589,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     // Check intersection curves with radial grid
     /////////////////////////////////////////////////////////////
     // Check intersection success
-    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+    for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
         BentleyStatus status = radialGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
         ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
@@ -2598,7 +2598,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     db.SaveChanges();
 
     // Check if grid curves are all created and have valid geometry
-    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+    for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
         ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
         ASSERT_EQ(2, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 4 after arced grid curves can be created
@@ -2687,10 +2687,10 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
 
     GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
-    bvector<GridPlaneSurfacePtr> floorGridPlanes;
+    bvector<GridPlanarSurfacePtr> floorGridPlanes;
     for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
         {
-        GridPlaneSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlaneSurface>(planeId);
+        GridPlanarSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlanarSurface>(planeId);
         ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
         floorGridPlanes.push_back(floorSurface);
         }
@@ -2710,7 +2710,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     db.SaveChanges();
 
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, -BUILDING_TOLERANCE }, { 25, 25, -BUILDING_TOLERANCE }, 30 + 2*BUILDING_TOLERANCE);
-    GridPlaneSurfacePtr plane = GridPlaneSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*sketchGrid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
     ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
     plane->Insert();
 
@@ -2728,7 +2728,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     // Check intersection curves with sketch grid
     /////////////////////////////////////////////////////////////
     // Check intersection success
-    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+    for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
         BentleyStatus status = sketchGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
         ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
@@ -2737,7 +2737,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     db.SaveChanges();
 
     // Check if grid curves are all created and have valid geometry
-    for (GridPlaneSurfacePtr floorGridSurface : floorGridPlanes)
+    for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
         ElementIterator floorGridCurvesIterator = floorGridSurface->MakeCreatedCurvesIterator();
         ASSERT_EQ(1, floorGridCurvesIterator.BuildIdList<DgnElementId>().size()); // TODO correct to 3 after arced and splined grid curves can be created

@@ -106,7 +106,7 @@ GridSurfaceCPtr otherSurface
         {
         CurveVectorPtr bodyThis = Dgn::PSolidGeom::PlanarSheetBodyToCurveVector (*(*brepsThis.begin ()));
         if (bodyThis.IsValid())
-            return bodyThis->PlaneSection (((GridPlaneSurface*)otherSurface.get ())->GetPlane ());
+            return bodyThis->PlaneSection (((GridPlanarSurface*)otherSurface.get ())->GetPlane ());
         }
     return nullptr;
     }
