@@ -84,6 +84,11 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         //bool IsValidForId(QvElem* elem, uint64_t id);
 
+        bool CanDisplay()
+            {
+            return m_renderSys != nullptr;
+            }
+
         ScalableMeshDisplayCacheManager();
 
         ~ScalableMeshDisplayCacheManager();

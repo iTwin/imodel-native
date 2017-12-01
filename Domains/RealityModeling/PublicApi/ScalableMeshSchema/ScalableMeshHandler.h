@@ -10,6 +10,9 @@
 
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
+
+
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMeshSchema/IMeshSpatialModel.h>
 #include <TerrainModel/TerrainModel.h>
@@ -52,15 +55,21 @@ private:
 
 public:
     int m_currentQuery;
+    int m_terrainQuery;
+    bvector<ClipVectorPtr> m_coverageClips;
+    bool m_hasCoverage;
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
-
+    bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_terrainMeshNodes;
+    bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_terrainOverviewNodes;
+    BentleyB0200::ScalableMesh::IScalableMeshPtr m_smPtr;
     ScalableMeshDrawingInfo(BentleyB0200::Dgn::ViewContextP viewContext)
         {
         //m_drawPurpose = viewContext->GetDrawPurpose();
         const DMatrix4d localToView(viewContext->GetViewport()->GetWorldToViewMap()->M0);
         memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));
         //m_range = viewContext->GetViewport()->GetViewCorners();
+        m_hasCoverage = false;
         }
 
     ~ScalableMeshDrawingInfo()
@@ -81,11 +90,19 @@ public:
     bool HasAppearanceChanged(const ScalableMeshDrawingInfoPtr& smDrawingInfoPtr)
         {
         return (0 != memcmp(&smDrawingInfoPtr->m_localToViewTransformation, &m_localToViewTransformation, sizeof(DMatrix4d))) ||
-            (0 != memcmp(&smDrawingInfoPtr->m_range, &m_range, sizeof(DRange3d)));
+            (0 != memcmp(&smDrawingInfoPtr->m_range, &m_range, sizeof(DRange3d))) || m_hasCoverage != smDrawingInfoPtr->m_hasCoverage	
+               || m_coverageClips != smDrawingInfoPtr->m_coverageClips;
         }
 
     const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}
 };
+
+enum class ClipMode
+    {
+    Clip = 0,
+    Mask
+    };
+
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   07/17
@@ -180,6 +197,24 @@ public:
     SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReadSceneFile(); //!< Read the scene file synchronously
 };
 
+
+//=======================================================================================
+// @bsiclass                                                  
+//=======================================================================================
+struct IScalableMeshLocationProvider : public RefCountedBase
+    {
+    protected:
+
+        virtual BentleyStatus _GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const = 0;
+
+    public:
+
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const;
+    };
+
+typedef RefCountedPtr<IScalableMeshLocationProvider> IScalableMeshLocationProviderPtr;
+
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -198,20 +233,46 @@ private:
     Transform                               m_modelUorToSmTransform;
     mutable bool                            m_tryOpen;
     mutable BentleyApi::Dgn::AxisAlignedBox3d       m_range;
-
+    mutable bool                                    m_displayTexture;       
+	mutable IScalableMeshTextureInfoPtr             m_textureInfo;
     mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
     mutable IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;
     mutable ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
     mutable DMatrix4d                               m_storageToUorsTransfo;
     mutable bool m_forceRedraw;
     mutable bset<uint64_t>                          m_activeClips;
-
+    mutable bset<uint64_t>                          m_notActiveClips;
     Utf8String                              m_path;
     bool                                    m_isProgressiveDisplayOn;
     bool                                    m_isInsertingClips;
+    int                                     m_startClipCount;
     ModelSpatialClassifiers                 m_classifiers;
+        bvector<ScalableMeshModel*>             m_terrainParts;
+        bmap<uint64_t, bpair<ClipMode, bool>>   m_currentClips;
+        
+        bool  m_subModel;
+        ScalableMeshModel* m_parentModel;
+        uint64_t m_associatedRegion;
 
+        bool m_loadedAllModels;
+        BeFileName m_basePath;
+
+        struct QueuedRegionOp
+            {
+            uint64_t id;
+            bvector<DPoint3d> regionData;
+            };
+
+    bvector<QueuedRegionOp> m_queuedRegions;
+
+    void Cleanup(bool isModelDelete);
+
+    void DrawBingLogo(ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
+		void InitializeTerrainRegions(Dgn::ViewContextR);
+		
+		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
+		
     void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
 protected:
     struct Properties
@@ -244,10 +305,15 @@ protected:
     bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
     BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override { classifiers = m_classifiers; return SUCCESS; }
     SCALABLEMESH_SCHEMA_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
+        virtual DgnDbStatus _OnDelete() override;
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
+        void RefreshClips();
+
+        BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
 public:
     //Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
+        SCALABLEMESH_SCHEMA_EXPORT static BentleyStatus SetLocationProvider(IScalableMeshLocationProvider& locationProviderPtr);
 
     //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
     ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
@@ -256,36 +322,92 @@ public:
 
     SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
 
+        SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb, WString terrainName, BeFileName terrainPath);
     void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
 
+        SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
     void SetFileNameProperty(BeFileNameCR smFilename);
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
 
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation);
     Utf8String GetPath() const { return m_path; }
 
+		SCALABLEMESH_SCHEMA_EXPORT void ClearExtraFiles();
     void SetClassifiers(Dgn::ModelSpatialClassifiersCR classifiers) { m_classifiers = classifiers; }
+		SCALABLEMESH_SCHEMA_EXPORT void CompactExtraFiles();
 
     //! A DgnDb can have only one terrain.
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
 
     SCALABLEMESH_SCHEMA_EXPORT static void GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models);
 
+        SCALABLEMESH_SCHEMA_EXPORT static void GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain, bool& hasCesium3DTiles);
+		
     SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
-    SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
+        SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh(bool wantGroup = true);        
 
     SCALABLEMESH_SCHEMA_EXPORT Transform GetUorsToStorage();
 
     SCALABLEMESH_SCHEMA_EXPORT void SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips);
 
-    SCALABLEMESH_SCHEMA_EXPORT void GetClipSetIds(bvector<uint64_t>& allShownIds);
+        SCALABLEMESH_SCHEMA_EXPORT void ClearOverviews(IScalableMeshPtr& targetSM);
 
-    SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
+        SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
 
-    SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);
+        SCALABLEMESH_SCHEMA_EXPORT void GetClipSetIds(bvector<uint64_t>& allShownIds);
 
-    SCALABLEMESH_SCHEMA_EXPORT void ClearOverviews(IScalableMeshPtr& targetSM);
+        SCALABLEMESH_SCHEMA_EXPORT void GetActiveClipSetIds(bset<uint64_t>& allShownIds);
 
-    SCALABLEMESH_SCHEMA_EXPORT void LoadOverviews(IScalableMeshPtr& targetSM);
+        SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
+
+        SCALABLEMESH_SCHEMA_EXPORT bool HasTerrain();
+
+        SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);  
+
+        SCALABLEMESH_SCHEMA_EXPORT void SetDisplayTexture(bool displayTexture);
+        
+        SCALABLEMESH_SCHEMA_EXPORT bool GetDisplayTexture() const { return m_displayTexture; }
+        
+        SCALABLEMESH_SCHEMA_EXPORT void ClearAllDisplayMem();
+                
+        SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
+        
+        IScalableMesh* GetScalableMeshHandle();
+
+        SCALABLEMESH_SCHEMA_EXPORT void ActivateClip(uint64_t id, ClipMode clip = ClipMode::Mask);
+
+        SCALABLEMESH_SCHEMA_EXPORT void DeactivateClip(uint64_t clipId);
+
+        SCALABLEMESH_SCHEMA_EXPORT void SetDefaultClipsActive();
+
+        SCALABLEMESH_SCHEMA_EXPORT void AddTerrainRegion(uint64_t id, ScalableMeshModel* terrainModel, const bvector<DPoint3d> region);
+
+        SCALABLEMESH_SCHEMA_EXPORT void FindTerrainRegion(uint64_t id, ScalableMeshModel*& terrainModel);
+
+        SCALABLEMESH_SCHEMA_EXPORT void RemoveRegion(uint64_t id);
+
+        SCALABLEMESH_SCHEMA_EXPORT void SetRegionVisibility(uint64_t id, bool isVisible);
+
+        SCALABLEMESH_SCHEMA_EXPORT void GetPathForTerrainRegion(BeFileNameR terrainName, uint64_t id, const WString& basePath);
+
+        SCALABLEMESH_SCHEMA_EXPORT bool HasQueuedTerrainRegions();
+
+        SCALABLEMESH_SCHEMA_EXPORT void SyncTerrainRegions(bvector<uint64_t>& newModelIds);
+
+        SCALABLEMESH_SCHEMA_EXPORT void QueueDeleteTerrainRegions(uint64_t id);
+
+        SCALABLEMESH_SCHEMA_EXPORT void QueueAddTerrainRegions(uint64_t id, const bvector<DPoint3d>& boundary);
+
+		SCALABLEMESH_SCHEMA_EXPORT void ActivateTerrainRegion(const BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel);
+
+		SCALABLEMESH_SCHEMA_EXPORT void UnlinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId);
+
+		SCALABLEMESH_SCHEMA_EXPORT void LinkTerrainRegion(const BentleyApi::Dgn::DgnElementId& blanketId, const BentleyApi::Dgn::DgnModelId& modelId, const bvector<DPoint3d> region, const Utf8String& blanketName);
+
+        SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
+
+        uint64_t GetAssociatedRegionId() const { return m_associatedRegion; }
 };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial
