@@ -163,6 +163,22 @@ public:
     RenderMode GetRenderMode() const {return m_renderMode;}
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
+    bool HiddenEdgesVisible() const
+        {
+        switch (m_renderMode)
+            {
+            case RenderMode::SolidFill:
+            case RenderMode::HiddenLine:
+                return m_hiddenEdges;
+
+            case RenderMode::SmoothShade:
+                return m_visibleEdges && m_hiddenEdges;
+
+            default:
+                return true;
+            }
+        }
+
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
@@ -2528,6 +2544,14 @@ struct HiliteSettings
         Thin, //!< A thin silhouette
         Thick //!< A thick silhouette
     };
+
+    struct Defaults
+    {
+        static ColorDef Color() {return ColorDef(0x23,0xbb,0xfc);};
+        static double VisibleRatio() {return 0.5;}
+        static double HiddenRatio() {return 0.0;}
+        static HiliteSettings::Silhouette Width() {return HiliteSettings::Silhouette::Thin;}
+    };
 private:
     ColorDef    m_color;
     double      m_visibleRatio = 0.25;
@@ -2536,7 +2560,7 @@ private:
 
     static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
 public:
-    explicit HiliteSettings(ColorDef color=ColorDef::Magenta(), double visibleRatio=0.5, double hiddenRatio=0.25, Silhouette silhouette=Silhouette::Thick)
+    explicit HiliteSettings(ColorDef color=Defaults::Color(), double visibleRatio=Defaults::VisibleRatio(), double hiddenRatio=Defaults::HiddenRatio(), Silhouette silhouette=Defaults::Width())
         : m_color(color), m_visibleRatio(visibleRatio), m_hiddenRatio(hiddenRatio), m_silhouette(silhouette)
         {
         Clamp(m_visibleRatio);
