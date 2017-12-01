@@ -429,6 +429,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         Json::Value* GetSMMasterHeaderInfo();
 
+        uint64_t GetRootTileID();
+
         Json::Value* DownloadNodeHeader(const uint64_t& id);
 
         unordered_map<uint64_t, Json::Value*>& GetJsonNodeHeaders()
@@ -700,7 +702,7 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
         bool IsBalanced() const { return m_masterHeader.m_balanced; }
         uint64_t GetSplitThreshold() const { return m_masterHeader.m_SplitTreshold; }
         uint64_t GetDepth() const { return m_masterHeader.m_depth; }
-        bool IsTextured() const { return m_masterHeader.m_textured != IndexTexture::None; }
+        bool IsTextured() const { return m_masterHeader.m_textured != SMTextureType::None; }
         uint64_t GetTerrainDepth() const { return m_masterHeader.m_terrainDepth; }
         double GetResolution() const { return m_masterHeader.m_resolution; }
         bool IsTerrain() const { return m_masterHeader.m_isTerrain; }

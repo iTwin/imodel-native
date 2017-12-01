@@ -157,6 +157,12 @@ enum class SMClipGeometryType
     Qty
     };
 
+enum class SMTextureType
+    {
+    None = 0,
+    Embedded,
+    Streaming
+    };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 

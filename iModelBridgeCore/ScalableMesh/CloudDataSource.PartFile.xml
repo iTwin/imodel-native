@@ -11,7 +11,8 @@
       <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" ApiNumber="B02">
         <SubPart PartName="AzureSDK" />
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
+        <SubPart PartName="BeJsonCpp"  PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
             <Assemblies>delivery/$(shlibprefix)CloudDataSource$(ApiNumber)$(shlibext)</Assemblies>            

@@ -46,9 +46,8 @@ private:
 
     void        InitializeRealityDataService();
     bool        IsTokenExpired();
-    void        UpdateToken();
-    Utf8String  GetBuddiUrl();
-    Utf8String  GetRootDocumentName();
+    void        UpdateToken();   
+    Utf8String  GetRootDocumentName();    
 
 protected:
 
@@ -59,6 +58,8 @@ protected:
     virtual Utf8String _GetToken();
 
 public:
+
+    static Utf8String GetBuddiUrl();
 
     explicit ScalableMeshRDSProvider(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
     virtual ~ScalableMeshRDSProvider();

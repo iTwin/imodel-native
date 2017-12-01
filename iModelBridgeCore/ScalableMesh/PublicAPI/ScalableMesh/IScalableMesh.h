@@ -17,6 +17,7 @@
 #include <Bentley/RefCounted.h>
 #include <ScalableMesh/IScalableMeshEdit.h>
 #include <ScalableMesh/IScalableMeshAnalysis.h>
+#include <ScalableMesh/IScalableMeshInfo.h>
 
 #undef static_assert
 
@@ -141,6 +142,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual bool          _IsTextured() = 0;
 
+        virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const = 0;
+        
         virtual bool          _IsCesium3DTiles() = 0;
 
         virtual Utf8String    _GetProjectWiseContextShareLink() = 0;
@@ -328,6 +331,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT bool          IsTerrain();
 
         BENTLEY_SM_EXPORT bool          IsTextured();
+
+        BENTLEY_SM_EXPORT StatusInt     GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const;        
 
         BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
 

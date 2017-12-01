@@ -229,6 +229,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual void CancelPreloadData() override;
 
+        virtual bool IsTextureAvailable() override;        
+
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;

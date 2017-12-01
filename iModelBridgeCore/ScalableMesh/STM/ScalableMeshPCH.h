@@ -62,6 +62,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform\ScanCriteria.h>
 #endif
 
+#include <DgnPlatform\ImageUtilities.h>
+
 #include <DgnPlatform\DgnPlatform.r.h>
 
 

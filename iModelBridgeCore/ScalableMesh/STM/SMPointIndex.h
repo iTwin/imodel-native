@@ -1458,9 +1458,9 @@ public:
     -----------------------------------------------------------------------------*/
     bool                IsBalanced() const;
 
-    IndexTexture                IsTextured() const;
+    SMTextureType       IsTextured() const;
 
-    void              SetTextured(IndexTexture textureState);
+    void              SetTextured(SMTextureType textureState);
 
     bool IsSingleFile() const;
     void SetSingleFile(bool singleFile);
