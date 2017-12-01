@@ -90,6 +90,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
 #define BRRA_CODESPEC_Alignment                                    "Alignment"
+#define BRRA_CODESPEC_HorizontalAlignment                          "HorizontalAlignment"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects

@@ -177,18 +177,26 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     AlignmentCategoryModel::SetUp(dgndb);
 
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), GetDefaultPartitionName());
-    if (DgnDbStatus::Success != status)
-        {
-        BeAssert(false);
-        }
-
     auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpec.IsValid());
     if (codeSpec.IsValid())
         {
         codeSpec->Insert();
         BeAssert(codeSpec->GetCodeSpecId().IsValid());
+        }
+
+    codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_HorizontalAlignment, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpec.IsValid());
+    if (codeSpec.IsValid())
+        {
+        codeSpec->Insert();
+        BeAssert(codeSpec->GetCodeSpecId().IsValid());
+        }
+
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), GetDefaultPartitionName());
+    if (DgnDbStatus::Success != status)
+        {
+        BeAssert(false);
         }
     }
 

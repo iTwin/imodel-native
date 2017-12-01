@@ -25,7 +25,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignment" description="Detailing of an Alignment horizontally (Top/Plan view).">
-        <BaseClass>bis:GeometricElement2d</BaseClass>
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -45,7 +45,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignmentModel" description="Container for Horizontal Alignments for all Alignments in a particular AlignmentModel.">
-        <BaseClass>bis:GeometricModel2d</BaseClass>
+        <BaseClass>bis:SpatialLocationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

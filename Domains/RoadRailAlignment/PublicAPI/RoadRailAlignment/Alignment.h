@@ -90,15 +90,16 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignmentsPortion)
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsPortionCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<HorizontalAlignmentsPortion>(id); }
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsPortionCPtr InsertPortion(AlignmentModelCR model);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::SpatialLocationPartitionCR alignmentPartition, Utf8StringCR name);
 }; // HorizontalAlignmentsPortion
 
 //=======================================================================================
 //! Horizontal piece of an Alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct HorizontalAlignment : Dgn::GeometricElement2d
+struct HorizontalAlignment : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignment, Dgn::GeometricElement2d);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignment, Dgn::SpatialLocationElement);
     friend struct HorizontalAlignmentHandler;
 
 private:
@@ -182,9 +183,9 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentsPortion, Horizonta
 //! ElementHandler for HorizontalAlignment Elements
 //! @ingroup GROUP_RoadRailAlignment
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentHandler : Dgn::dgn_ElementHandler::Geometric2d
+struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignment, HorizontalAlignment, HorizontalAlignmentHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignment, HorizontalAlignment, HorizontalAlignmentHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
 }; // HorizontalAlignmentHandler
 
 //=================================================================================

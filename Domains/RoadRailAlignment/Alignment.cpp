@@ -395,7 +395,7 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::GenerateAprox3dGeom()
     {
-    auto mainPairPtr = QueryMainPair();
+    /*auto mainPairPtr = QueryMainPair();
     if (mainPairPtr.IsNull())
         return DgnDbStatus::MissingId;
 
@@ -416,9 +416,17 @@ DgnDbStatus Alignment::GenerateAprox3dGeom()
         }
 
     if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
-        return DgnDbStatus::NoGeometry;
+        return DgnDbStatus::NoGeometry;*/
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode HorizontalAlignmentsPortion::CreateCode(SpatialLocationPartitionCR alignmentPartition, Utf8StringCR name)
+    {
+    return CodeSpec::CreateCode(BRRA_CODESPEC_HorizontalAlignment, alignmentPartition, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -432,7 +440,11 @@ HorizontalAlignmentsPortionCPtr HorizontalAlignmentsPortion::InsertPortion(Align
     if (model.QueryHorizontalPartition().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::Get(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        AlignmentCategory::Get(model.GetDgnDb()));
+    auto alignmentPartitionCode = model.GetModeledElement()->GetCode();
+    createParams.m_code = CreateCode(*dynamic_cast<SpatialLocationPartitionCP>(model.GetModeledElement().get()), alignmentPartitionCode.GetValueUtf8());
+
     HorizontalAlignmentsPortionPtr newPortionPtr(new HorizontalAlignmentsPortion(createParams));
     return model.GetDgnDb().Elements().Insert<HorizontalAlignmentsPortion>(*newPortionPtr);
     }
@@ -461,7 +473,7 @@ HorizontalAlignmentPtr HorizontalAlignment::Create(AlignmentCR alignment, CurveV
     auto breakDownModelCPtr = HorizontalAlignmentModel::Get(alignment.GetDgnDb(), horizontalModelId);
 
     CreateParams createParams(alignment.GetDgnDb(), breakDownModelCPtr->GetModelId(),
-        QueryClassId(alignment.GetDgnDb()), AlignmentCategory::GetHorizontal(alignment.GetDgnDb()));
+        QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
     return new HorizontalAlignment(createParams, alignment, horizontalGeometry);
     }
 
@@ -505,7 +517,7 @@ void HorizontalAlignment::SetGeometry(CurveVectorCR geometry)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus HorizontalAlignment::GenerateElementGeom()
     {
-    DPoint2d origin = { 0, 0 };
+    DPoint3d origin = { 0, 0, 0 };
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
     if (!geomBuilderPtr->Append(GetGeometry(), GeometryBuilder::CoordSystem::World))
         return DgnDbStatus::NoGeometry;
