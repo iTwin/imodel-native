@@ -440,7 +440,7 @@ bool MarkVisibility (double smoothAngle, PolyfaceHeaderR mesh, DVec3dCP silhouet
             ptrdiff_t signedVertexIndex = abs ((int)he.m_vertex0);
             if (smooth)
                 signedVertexIndex = - signedVertexIndex;
-            if (smooth)
+            if (signedVertexIndex > 0)
                 numPositiveIndex++;
             else
                 numNegativeIndex++;

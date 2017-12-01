@@ -3271,7 +3271,8 @@ double   totalSweepRadians,
 bool     reverse,
 double   nominalBaseCurveLength,
 bvector<DPoint3d> *startCapPointAccumulator,
-bvector<DPoint3d> *endCapPointAccumulator
+bvector<DPoint3d> *endCapPointAccumulator,
+bool forceDoublePointsVisible
 )
     {
     DVec3d axis = rotationAxis;
@@ -3314,14 +3315,13 @@ bvector<DPoint3d> *endCapPointAccumulator
         baseNormal.push_back (normalVector);
         }
     size_t lastIndex = n - 1;
-    if (s_forceDoublePointsVisible)
     baseCurveBreak.push_back (!IsSmoothClosure (
                 pointA[0], pointA[lastIndex],
                 tangentA[0], tangentA[lastIndex],
-                s_forceDoublePointsVisible
+                forceDoublePointsVisible
                 ));
     for (size_t i = 1; i < lastIndex; i++)
-        baseCurveBreak.push_back (IsVisibleJoint (pointA[i], pointA[i+1], tangentA[i], tangentA[i+1], s_forceDoublePointsVisible));
+        baseCurveBreak.push_back (IsVisibleJoint (pointA[i], pointA[i+1], tangentA[i], tangentA[i+1], forceDoublePointsVisible));
 
     baseCurveBreak.push_back (baseCurveBreak[0]);
     DPoint3dOps::Multiply (&workPoint, worldToLocal);
@@ -3838,7 +3838,7 @@ bool     capped
     double curveLength = curve.CurveLength ();
     bvector<DPoint3d> capA, capB;
     bool reverse = ComputeRotationalSweepLoopSense (points, origin, axis, totalSweepRadians);
-    AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB);
+    AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB, s_forceDoublePointsVisible);
 
     AddTriangulationPair (capA, !reverse, capB, reverse,
             capped,
@@ -3870,7 +3870,7 @@ bool     capped
 
         for (size_t i = 0; i < points.size (); i++)
             {
-            builder.AddRotationalSweepLoop (points[i], tangents[i], origin, axis, totalSweepRadians, reverse, curveLengths[i], &startCapPoints, &endCapPoints);
+            builder.AddRotationalSweepLoop (points[i], tangents[i], origin, axis, totalSweepRadians, reverse, curveLengths[i], &startCapPoints, &endCapPoints, s_forceDoublePointsVisible);
             DPoint3dOps::AppendDisconnect (&startCapPoints);
             DPoint3dOps::AppendDisconnect (&endCapPoints);
             }
