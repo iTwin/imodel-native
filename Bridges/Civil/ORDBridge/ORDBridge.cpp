@@ -151,34 +151,6 @@ SubjectCPtr ORDBridge::_InitializeJob()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-void ORDBridge::UpdateProjectExtents(SpatialModelR spatialModel)
-    {
-    DgnDbR db = spatialModel.GetDgnDb();
-
-    AxisAlignedBox3d modelExtents = spatialModel.QueryModelRange();
-    if (modelExtents.IsEmpty())
-        return;
-
-    modelExtents.Extend(0.5);
-
-    if (IsCreatingNewDgnDb())
-        {
-        db.GeoLocation().SetProjectExtents(modelExtents);
-        return;
-        }
-
-    // Make sure the project extents include the elements in the spatialModel, plus a margin
-    AxisAlignedBox3d currentProjectExtents = db.GeoLocation().GetProjectExtents();
-    if (!modelExtents.IsContained(currentProjectExtents))
-        {
-        currentProjectExtents.Extend(modelExtents);
-        db.GeoLocation().SetProjectExtents(currentProjectExtents);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
@@ -187,23 +159,15 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName());
     auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
 
-    ORDConverter::Params params(_GetParams().GetInputFileName(), jobSubject, *changeDetectorPtr, fileScopeId);
+    ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId);
 
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
     Transform _old, _new;
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
+    params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
 
     ORDConverter converter;
     converter.ConvertORDData(params);
-
-    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
-    auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(jobSubject, ORDBRIDGE_PhysicalModelName);
-
-    UpdateProjectExtents(*alignmentModelPtr);
-    UpdateProjectExtents(*physicalModelPtr);
-
-    RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(jobSubject, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
 
     // Infer deletions
     changeDetectorPtr->DeleteElementsNotSeenInScope(fileScopeId);

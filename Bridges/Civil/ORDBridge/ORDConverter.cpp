@@ -312,34 +312,6 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     if (bimHorizAlignmPtr->Insert().IsNull())
         return BentleyStatus::ERROR;
 
-    auto linearEntity3dPtr = cifAlignment.GetActiveLinearEntity3d();
-    if (linearEntity3dPtr.IsValid())
-        {
-        linearGeomPtr = linearEntity3dPtr->GetLinearGeometry();
-        if (linearGeomPtr.IsValid())
-            {
-            Bentley::CurveVectorPtr cifAlignment3dGeomPtr;
-            linearGeomPtr->GetCurveVector(cifAlignment3dGeomPtr);
-
-            CurveVectorPtr bimAlignment3dGeomPtr;
-            if (BentleyStatus::SUCCESS != Marshal(bimAlignment3dGeomPtr, *cifAlignment3dGeomPtr))
-                return BentleyStatus::ERROR;
-
-            auto geomBuilder = GeometryBuilder::Create(*bimAlignmentPtr);
-            if (!geomBuilder->Append(*bimAlignment3dGeomPtr, GeometryBuilder::CoordSystem::World))
-                return BentleyStatus::ERROR;
-
-            if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
-                return BentleyStatus::ERROR;
-            }
-        else
-            {
-            bimAlignmentPtr->GenerateAprox3dGeom();
-            }
-        }
-    else
-        bimAlignmentPtr->GenerateAprox3dGeom();
-
     auto cifStationingPtr = cifAlignment.GetStationing();
     if (cifStationingPtr.IsValid())
         {
@@ -828,23 +800,60 @@ Bentley::DgnModelP loadDgnModel(Bentley::DgnFileR dgnFile, ModelId rootModelId)
     return modelP;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& params, bool forceExtendExtents)
+    {
+    DgnDbR db = spatialModel.GetDgnDb();
+
+    AxisAlignedBox3d modelExtents = spatialModel.QueryModelRange();
+    if (modelExtents.IsEmpty())
+        return;
+
+    modelExtents.Extend(0.5);
+
+    if (params.isCreatingNewDgnDb && !forceExtendExtents)
+        {
+        db.GeoLocation().SetProjectExtents(modelExtents);
+        return;
+        }
+
+    // Make sure the project extents include the elements in the spatialModel, plus a margin
+    AxisAlignedBox3d currentProjectExtents = db.GeoLocation().GetProjectExtents();
+    if (!modelExtents.IsContained(currentProjectExtents))
+        {
+        currentProjectExtents.Extend(modelExtents);
+        db.GeoLocation().SetProjectExtents(currentProjectExtents);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::ConvertORDData(Params& params)
     {
-    DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;    
+    DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;
+
+    BentleyApi::BeFileName configFileName = params.iModelBridgeParamsCP->GetAssetsDir();
+    configFileName.AppendToPath(L"ImportConfig.xml");
+
+    converterLibraryParams.SetConfigFile(configFileName);
+    converterLibraryParams.SetWantThumbnails(true);
+
     DgnDbSync::DgnV8::ConverterLibrary converterLib(params.subjectCPtr->GetDgnDb(), converterLibraryParams);
     converterLib.SetJobSubject(*params.subjectCPtr);
     converterLib.SetSpatialParentSubject(*params.subjectCPtr);
     
+    BeFileName dgnFileName = params.iModelBridgeParamsCP->GetInputFileName();
+
     DgnV8Api::DgnFileStatus v8Status;
-    auto dgnFilePtr = converterLib.OpenDgnV8File(v8Status, params.dgnFileName);
+    auto dgnFilePtr = converterLib.OpenDgnV8File(v8Status, dgnFileName);
     if (dgnFilePtr.IsNull())
         return;
 
     bset<DgnFileP> dgnFileSet;
-    converterLibraryParams.AddDrawingOrSheetFile(params.dgnFileName);
+    converterLibraryParams.AddDrawingOrSheetFile(dgnFileName);
     dgnFileSet.insert(dgnFilePtr.get());
 
     converterLib.SetRootV8File(dgnFilePtr.get());
@@ -901,6 +910,22 @@ void ORDConverter::ConvertORDData(Params& params)
 
         converterLib.ConvertAllDrawingsAndSheets();
         converterLib.RemoveUnusedMaterials();
+
+        auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(*params.subjectCPtr, ORDBRIDGE_AlignmentModelName);
+        auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
+        auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(params.subjectCPtr->GetDgnDb(), horizontalAlignmentModelId);
+        auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*params.subjectCPtr, ORDBRIDGE_PhysicalModelName);
+
+        updateProjectExtents(*horizAlignmentModelCPtr, params, false);
+        updateProjectExtents(*physicalModelPtr, params, true);
+
+        if (params.isCreatingNewDgnDb)
+            {
+            RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
+            converterLib.OnCreateComplete();
+            }
+        else
+            converterLib.OnUpdateComplete();
         }
     }
 
