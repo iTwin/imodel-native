@@ -11,19 +11,21 @@
 #include "PropertyMap.h"
 #include "ClassMappingInfo.h"
 #include "IssueReporter.h"
-#include <Bentley/NonCopyableClass.h>
 #include "ClassMapColumnFactory.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct DbMap;
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
-struct ClassMapLoadContext : NonCopyableClass
+struct ClassMapLoadContext
     {
 private:
     std::set<ECN::ECClassCP> m_constraintClasses;
     
+    //not copyable
+    ClassMapLoadContext(ClassMapLoadContext const&) = delete;
+    ClassMapLoadContext& operator=(ClassMapLoadContext const) = delete;
+
 public:
     ClassMapLoadContext() {}
 
@@ -42,11 +44,7 @@ struct ECInstanceIdPropertyMap;
 struct ECClassIdPropertyMap;
 struct DbClassMapLoadContext;
 struct DbMapSaveContext;
-
-struct ClassMap;
-typedef RefCountedPtr<ClassMap> ClassMapPtr;
-typedef ClassMap const& ClassMapCR;
-typedef ClassMap const* ClassMapCP;
+struct TableSpaceSchemaManager;
 
 enum ObjectState
     {
@@ -54,10 +52,11 @@ enum ObjectState
     Modified, // loaded from disk but modified
     New //new object not yet persisted to disk
     };
+
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
-struct ClassMap : RefCountedBase
+struct ClassMap
     {
     friend struct ClassMapFactory;
 
@@ -87,11 +86,15 @@ struct ClassMap : RefCountedBase
             };
 
     protected:
-        struct ClassMappingContext final : NonCopyableClass
+        struct ClassMappingContext final
             {
             private:
                 SchemaImportContext& m_importCtx;
                 ClassMappingInfo const& m_classMappingInfo;
+
+                //not copyable
+                ClassMappingContext(ClassMappingContext const&) = delete;
+                ClassMappingContext& operator=(ClassMappingContext const&) = delete;
 
             public:
                 ClassMappingContext(SchemaImportContext& importCtx, ClassMappingInfo const& classMappingInfo)
@@ -105,6 +108,8 @@ struct ClassMap : RefCountedBase
     private:
         Type m_type;
         ECDb const& m_ecdb;
+        TableSpaceSchemaManager const& m_schemaManager;
+
         ECN::ECClassCR m_ecClass;
         const MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapContainer m_propertyMaps;
@@ -115,10 +120,9 @@ struct ClassMap : RefCountedBase
         ObjectState m_state;
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
         BentleyStatus AddOrUpdateTableList(DataPropertyMap const& propertyThatIsNotYetAdded);
-        ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
 
     protected:
-        ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+        ClassMap(ECDb const&, TableSpaceSchemaManager const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
 
         virtual ClassMappingStatus _Map(ClassMappingContext&);
         ClassMappingStatus DoMapPart1(ClassMappingContext&);
@@ -126,11 +130,11 @@ struct ClassMap : RefCountedBase
         ClassMappingStatus MapProperties(ClassMappingContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
-        ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         BentleyStatus MapSystemColumns();
 
     public:
+        ClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, manager, Type::Class, ecClass, mapStrat) {}
         virtual ~ClassMap() {}
         void Modified() { if (m_state == ObjectState::Persisted) m_state = ObjectState::Modified; }
 
@@ -162,7 +166,9 @@ struct ClassMap : RefCountedBase
 
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
-        DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
+        ECDb const& GetECDb() const { return m_ecdb; }
+        TableSpaceSchemaManager const& GetSchemaManager() const { return m_schemaManager; }
+
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update(SchemaImportContext& ctx);
@@ -171,8 +177,16 @@ struct ClassMap : RefCountedBase
         BentleyStatus SetOverflowTable(DbTable& overflowTable);
         ClassMapColumnFactory const& GetColumnFactory() const;
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }  
+
+        template<typename TClassMap>
+        static std::unique_ptr<TClassMap> Create(ECDb const& ecdb, TableSpaceSchemaManager const& tableSpaceManager, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) 
+            { 
+            return std::make_unique<TClassMap>(ecdb, tableSpaceManager, ecClass, mapStrategy);
+            }
+
     };
 
+    typedef ClassMap const& ClassMapCR;
 
 //=======================================================================================
 //! A class map indicating that the respective ECClass was @b not mapped to a DbTable
@@ -180,15 +194,12 @@ struct ClassMap : RefCountedBase
 //+===============+===============+===============+===============+===============+======
 struct NotMappedClassMap final : public ClassMap
     {
-    friend struct ClassMapFactory;
-
 private:
-    NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy) {}
-
     ClassMappingStatus _Map(ClassMappingContext&) override;
     BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
 
 public:
+    NotMappedClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy) : ClassMap(ecdb, manager, Type::NotMapped, ecClass, mapStrategy) {}
     ~NotMappedClassMap() {}
     };
 

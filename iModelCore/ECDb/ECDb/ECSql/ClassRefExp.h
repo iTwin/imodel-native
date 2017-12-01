@@ -109,7 +109,7 @@ public:
 private:
     Utf8String m_className;
     Utf8String m_schemaAlias;
-    Utf8String m_catalogName;
+    Utf8String m_tableSpace;
     std::shared_ptr<Info> m_info;
     
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
@@ -120,14 +120,14 @@ private:
     Utf8String _ToString () const override;
 
 public:
-    ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8StringCP catalogName, std::shared_ptr<Info> info, bool isPolymorphic = true, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall = nullptr);
+    ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8CP tableSpace, std::shared_ptr<Info> info, bool isPolymorphic = true, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall = nullptr);
     bool HasMetaInfo() const { return m_info != nullptr;}
     ClassNameExp::Info const& GetInfo() const { return *m_info;}
 
     Utf8String GetFullName() const;
+    Utf8StringCR GetTableSpace() const { return m_tableSpace; }
+    Utf8StringCR GetSchemaName() const { return m_schemaAlias; }
     Utf8StringCR GetClassName() const { return m_className;}
-    Utf8StringCR GetSchemaName() const { return m_schemaAlias;}
-    Utf8StringCR GetCatalogName() const { return m_catalogName;}
 
     MemberFunctionCallExp const* GetMemberFunctionCallExp() const
         {

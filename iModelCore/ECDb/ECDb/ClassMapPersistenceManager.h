@@ -10,25 +10,31 @@
 
 #include "ClassMap.h"
 
+struct TableSpaceSchemaManager;
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbClassMapLoadContext final : public NonCopyableClass
+struct DbClassMapLoadContext final
     {
     private:
         bool m_classMapExists = false;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         std::map<Utf8String, std::vector<DbColumn const*>> m_columnByAccessString;
 
-        static BentleyStatus ReadPropertyMaps(DbClassMapLoadContext&, ECDbCR, ECN::ECClassId);
+        //not copyable
+        DbClassMapLoadContext(DbClassMapLoadContext const&) = delete;
+        DbClassMapLoadContext& operator=(DbClassMapLoadContext const&) = delete;
+
+        static BentleyStatus ReadPropertyMaps(DbClassMapLoadContext&, ECDbCR, TableSpaceSchemaManager const&, ECN::ECClassId);
 
     public:
         DbClassMapLoadContext() {}
         ~DbClassMapLoadContext() {}
 
-        static BentleyStatus Load(DbClassMapLoadContext&, ClassMapLoadContext&, ECDbCR, ECN::ECClassCR);
+        static BentleyStatus Load(DbClassMapLoadContext&, ClassMapLoadContext&, ECDbCR, TableSpaceSchemaManager const&, ECN::ECClassCR);
 
         bool ClassMapExists() const { return m_classMapExists; }
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
@@ -41,12 +47,16 @@ struct DbClassMapLoadContext final : public NonCopyableClass
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbMapSaveContext final: public NonCopyableClass
+struct DbMapSaveContext final
     {
     private:
         ECDbCR m_ecdb;
-        std::map<ECN::ECClassId, ClassMapCP> m_savedClassMaps;
-        std::stack<ClassMapCP> m_editStack;
+        std::map<ECN::ECClassId, ClassMap const*> m_savedClassMaps;
+        std::stack<ClassMap const*> m_editStack;
+
+        //not copyable
+        DbMapSaveContext(DbMapSaveContext const&) = delete;
+        DbMapSaveContext& operator=(DbMapSaveContext const&) = delete;
 
     public:
         explicit DbMapSaveContext(ECDbCR ecdb) :m_ecdb(ecdb) {}
@@ -55,7 +65,7 @@ struct DbMapSaveContext final: public NonCopyableClass
         bool IsAlreadySaved(ClassMapCR) const;
         void BeginSaving(ClassMapCR);
         void EndSaving(ClassMapCR);
-        ClassMapCP GetCurrent() const { return m_editStack.top(); }
+        ClassMap const* GetCurrent() const { return m_editStack.top(); }
         BentleyStatus InsertClassMap(ECN::ECClassId, MapStrategyExtendedInfo const&);
         BentleyStatus TryGetPropertyPathId(PropertyPathId&, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist);
         ECDbCR GetECDb() const { return m_ecdb; }
@@ -65,11 +75,15 @@ struct DbMapSaveContext final: public NonCopyableClass
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbClassMapSaveContext final : public NonCopyableClass
+struct DbClassMapSaveContext final
     {
     private:
         DbMapSaveContext& m_classMapContext;
         ClassMapCR  m_classMap;
+
+        //not copyable
+        DbClassMapSaveContext(DbClassMapSaveContext const&) = delete;
+        DbClassMapSaveContext& operator=(DbClassMapSaveContext const&) = delete;
 
     public:
         explicit DbClassMapSaveContext(DbMapSaveContext& ctx);

@@ -15,7 +15,6 @@
 #include "../ECDbSystemSchemaHelper.h"
 #include "../ClassMap.h"
 
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -136,9 +135,6 @@ struct PropertyPath final
         BentleyStatus Resolve(ClassMap const& classMap, Utf8String* errorMessage = nullptr);
         bool IsResolved() const;
 
-        BentleyStatus TryGetQualifiedPath(Utf8StringR qualifiedPath) const;
-        static BentleyStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifiedPath, ECDbCR ecdb);
-
         Utf8String ToString(bool escape = false, bool includeArrayIndexes = true) const;
     };
 
@@ -150,7 +146,7 @@ struct ParameterExp;
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-struct Exp : NonCopyableClass
+struct Exp
     {
     public:
         enum class Type
@@ -208,7 +204,7 @@ struct Exp : NonCopyableClass
             Where,
             };
 
-        struct Collection final : NonCopyableClass
+        struct Collection final
             {
             friend struct Exp;
 
@@ -260,6 +256,11 @@ struct Exp : NonCopyableClass
 
             private:
                 std::vector<std::unique_ptr<Exp>> m_collection;
+
+                //not copyable
+                Collection(Collection const&) = delete;
+                Collection& operator=(Collection const&) = delete;
+
             public:
                 Collection() {}
                 ~Collection() {}
@@ -290,7 +291,7 @@ struct Exp : NonCopyableClass
         //=======================================================================================
         //! @bsiclass                                               Krischan.Eberle      03/2017
         //+===============+===============+===============+===============+===============+======
-        struct ECSqlRenderContext final : NonCopyableClass
+        struct ECSqlRenderContext final
             {
             public:
                 enum class Mode
@@ -313,6 +314,10 @@ struct Exp : NonCopyableClass
                 bmap<int, ParameterNameInfo> m_parameterIndexNameMap;
 
                 Utf8String m_ecsqlBuilder;
+
+                //not copyable
+                ECSqlRenderContext(ECSqlRenderContext const&) = delete;
+                ECSqlRenderContext& operator=(ECSqlRenderContext const&) = delete;
 
             public:
                 explicit ECSqlRenderContext(Mode mode = Mode::Default) : m_mode(mode) {}
@@ -350,6 +355,10 @@ struct Exp : NonCopyableClass
         Exp* m_parent = nullptr;
         mutable Exp::Collection m_children;
         bool m_isComplete = false;
+
+        //not copyable
+        Exp(Exp const&) = delete;
+        Exp& operator=(Exp const&) = delete;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
         virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const { return false; }

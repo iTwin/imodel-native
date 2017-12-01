@@ -102,14 +102,6 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
 
     BeAssert(!ecdb.IsReadonly());
 
-    //Upgrading would reimport ChangeSummaries ECSchema, so make sure the cache is there
-    if (BE_SQLITE_OK != ecdb.GetImpl().GetChangeSummaryManager().AttachChangeSummaryCacheFile(true))
-        {
-        LOG.error("Upgrade of file's " PROFILENAME " profile failed because the ChangeSummaries cache file could not be attached.");
-        ecdb.AbandonChanges();
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
     //let upgraders incrementally upgrade the profile
     //to the latest state
     if (BE_SQLITE_OK != RunUpgraders(ecdb))
@@ -156,7 +148,6 @@ DbResult ProfileManager::RunUpgraders(ECDbCR ecdb)
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ProfileUpgrader>> upgraders;
     upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
-    upgraders.push_back(std::make_unique<ProfileUpgrader_4002>());
 
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {
@@ -458,19 +449,11 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    //ec_TableSpace
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_TableSpace
-                           "(Id INTEGER PRIMARY KEY,"
-                           "Name TEXT UNIQUE NOT NULL COLLATE NOCASE)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
     //ec_Table
     stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Table
                            "(Id INTEGER PRIMARY KEY,"
                            "ParentTableId INTEGER REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE," //ECDb requires table names to be unique even across other db schema names
-                           "TableSpaceId INTEGER REFERENCES " TABLE_TableSpace "(Id) ON DELETE CASCADE,"
                            "Type INTEGER NOT NULL,"
                            "ExclusiveRootClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE SET NULL,"
                            "UpdatableViewName TEXT)"); //UpdatableViewName is not used anymore -> WIP_NEXTGEN_DELETE
@@ -478,8 +461,6 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON " TABLE_Table "(ParentTableId);"
-                           "CREATE INDEX ix_ec_Table_TableSpaceId ON " TABLE_Table "(TableSpaceId);"
-                           "CREATE INDEX ix_ec_Table_Type ON " TABLE_Table "(Type);"
                            "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON " TABLE_Table "(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

@@ -10,7 +10,6 @@
 #include <ECDb/ECSqlStatement.h>
 #include <json/json.h>
 #include <rapidjson/BeRapidJson.h>
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -136,7 +135,7 @@ struct JsonECSqlBinder final
 //! @ingroup ECDbGroup
 //! @bsiclass                                                               08/2012
 //+===============+===============+===============+===============+===============+======
-struct JsonECSqlSelectAdapter final: NonCopyableClass
+struct JsonECSqlSelectAdapter final
     {
     public:
         enum class MemberNameCasing
@@ -168,6 +167,10 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         ECSqlStatementCR m_ecsqlStatement;
         FormatOptions m_formatOptions;
    
+        //not copyable
+        JsonECSqlSelectAdapter(JsonECSqlSelectAdapter const&) = delete;
+        JsonECSqlSelectAdapter& operator=(JsonECSqlSelectAdapter const&) = delete;
+
     public:
 
         //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
@@ -269,13 +272,17 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
 //! @ingroup ECDbGroup
 // @bsiclass                                                                09/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonReader final : NonCopyableClass
+struct JsonReader final
     {
     private:
         ECDbCR m_ecdb;
         mutable ECSqlStatement m_statement;
         JsonECSqlSelectAdapter::FormatOptions m_formatOptions;
         bool m_isValid = false;
+
+        //not copyable
+        JsonReader(JsonReader const&) = delete;
+        JsonReader& operator=(JsonReader const&) = delete;
 
         BentleyStatus Initialize(ECN::ECClassCR);
         BentleyStatus Initialize(ECN::ECClassId);
@@ -315,7 +322,7 @@ struct JsonReader final : NonCopyableClass
 //! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON Format".
 //@bsiclass                                                                   02/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonInserter final : NonCopyableClass
+struct JsonInserter final
     {
     private:
         struct BindingInfo final
@@ -345,6 +352,10 @@ struct JsonInserter final : NonCopyableClass
         mutable ECSqlStatement m_statement;
         bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
         bool m_isValid = false;
+
+        //not copyable
+        JsonInserter(JsonInserter const&) = delete;
+        JsonInserter& operator=(JsonInserter const&) = delete;
 
         void Initialize(ECCrudWriteToken const* writeToken);
 
@@ -418,7 +429,7 @@ struct JsonInserter final : NonCopyableClass
 //! flexibility with the set of properties to be updated.
 //@bsiclass                                                           09/2017
 //+===============+===============+===============+===============+===============+======
-struct JsonUpdater final : NonCopyableClass
+struct JsonUpdater final
     {
     public:
         //=======================================================================================
@@ -528,6 +539,10 @@ struct JsonUpdater final : NonCopyableClass
         bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
         int m_idParameterIndex = 0;
         bool m_isValid = false;
+
+        //not copyable
+        JsonUpdater(JsonUpdater const&) = delete;
+        JsonUpdater& operator=(JsonUpdater const&) = delete;
 
         BentleyStatus Initialize(bvector<Utf8CP> const* propertyNames, ECCrudWriteToken const*);
 

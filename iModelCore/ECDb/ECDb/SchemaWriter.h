@@ -14,13 +14,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct SchemaWriter final : NonCopyableClass
+struct SchemaWriter final
     {
     private:
         ECDbCR m_ecdb;
         SchemaImportContext& m_ctx;
         ECN::CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
         std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
+
+        //not copyable
+        SchemaWriter(SchemaWriter const&) = delete;
+        SchemaWriter& operator=(SchemaWriter const&) = delete;
 
         BentleyStatus ImportSchema(SchemaCompareContext&, ECN::ECSchemaCR);
         BentleyStatus ImportClass(ECN::ECClassCR);

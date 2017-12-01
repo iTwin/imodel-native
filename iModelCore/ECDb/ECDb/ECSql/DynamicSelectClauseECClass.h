@@ -18,12 +18,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // clause is an ECProperty of the class.
 // @bsiclass                                                 Krischan.Eberle     10/2013
 //+===============+===============+===============+===============+===============+======
-struct DynamicSelectClauseECClass final : NonCopyableClass
+struct DynamicSelectClauseECClass final
     {
     private:
         ECN::ECSchemaPtr m_schema = nullptr;
         ECN::ECEntityClassP m_class = nullptr;
         bmap<Utf8String, DerivedPropertyExp const*, CompareIUtf8Ascii> m_selectClauseNames;
+
+        //not copyable
+        DynamicSelectClauseECClass(DynamicSelectClauseECClass const&) = delete;
+        DynamicSelectClauseECClass& operator=(DynamicSelectClauseECClass const&) = delete;
 
         ECSqlStatus Initialize();
 

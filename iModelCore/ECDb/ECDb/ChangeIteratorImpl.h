@@ -137,7 +137,7 @@ struct ChangeIterator::TableClassMap final
         ECDbCR m_ecdb;
         TableMap const& m_tableMap;
         ECN::ECClassCR m_class;
-        ClassMapCP m_classMap = nullptr;
+        ClassMap const* m_classMap = nullptr;
 
         bmap<Utf8String, ColumnMap*> m_columnMapByAccessString;
         bvector<EndTableRelationshipMap*> m_endTableRelMaps;
@@ -162,7 +162,7 @@ struct ChangeIterator::TableClassMap final
 
         TableMap const& GetTableMap() const { return m_tableMap; }
 
-        ClassMapCP GetClassMap() const { return m_classMap; }
+        ClassMap const* GetClassMap() const { return m_classMap; }
 
         bvector<EndTableRelationshipMap*> const& GetEndTableRelationshipMaps() const { return m_endTableRelMaps; }
 
@@ -172,7 +172,7 @@ struct ChangeIterator::TableClassMap final
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ChangeIterator::SqlChange final : NonCopyableClass
+struct ChangeIterator::SqlChange final
     {
     private:
         Changes::Change const& m_sqlChange;
@@ -181,6 +181,9 @@ struct ChangeIterator::SqlChange final : NonCopyableClass
         int m_nCols;
         DbOpcode m_dbOpcode;
         bset<int> m_primaryKeyColumnIndices;
+
+        SqlChange(SqlChange const&) = delete;
+        SqlChange& operator=(SqlChange const&) = delete;
 
     public:
         explicit SqlChange(Changes::Change const& change);

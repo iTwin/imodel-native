@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "RelationshipClassMap.h"
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -16,7 +15,7 @@ struct SchemaImportContext;
 //=======================================================================================
 // @bsiclass                                                Affan.Khan      07/2017
 //+===============+===============+===============+===============+===============+======
-struct ForeignKeyPartitionView final : NonCopyableClass
+struct ForeignKeyPartitionView final
     {
     enum class PersistedEnd
         {
@@ -45,7 +44,7 @@ struct ForeignKeyPartitionView final : NonCopyableClass
     //=======================================================================================
     // @bsiclass                                                Affan.Khan      07/2017
     //+===============+===============+===============+===============+===============+======
-    struct Partition final : NonCopyableClass
+    struct Partition final
         {
         friend struct ForeignKeyPartitionView;
         private:
@@ -65,7 +64,10 @@ struct ForeignKeyPartitionView final : NonCopyableClass
             bool m_persisted = false;
 
             explicit Partition(ForeignKeyPartitionView const&);
-        
+            //not copyable
+            Partition(Partition const&) = delete;
+            Partition& operator=(Partition const&) = delete;
+
             void UpdateHash();
             DbColumn const* GetColumn(ColumnId) const;
             BentleyStatus SetColumn(ColumnId, DbColumn const*);
@@ -108,6 +110,10 @@ struct ForeignKeyPartitionView final : NonCopyableClass
         bool m_updateFromECClassIdColumnOnInsert = true;
 
         ForeignKeyPartitionView(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
+        //not copyable
+        ForeignKeyPartitionView(ForeignKeyPartitionView const&) = delete;
+        ForeignKeyPartitionView& operator=(ForeignKeyPartitionView const&) = delete;
+
         static std::unique_ptr<ForeignKeyPartitionView> Create(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy, bool);
 
         BentleyStatus TryGetFromECClassIdColumn(DbColumn const*& column) const;
@@ -141,7 +147,7 @@ struct ForeignKeyPartitionView final : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                                Affan.Khan      07/2017
 //+===============+===============+===============+===============+===============+======
-struct FkRelationshipMappingInfo final : NonCopyableClass
+struct FkRelationshipMappingInfo final
     {
     public:
         struct Collection final
@@ -200,6 +206,10 @@ struct FkRelationshipMappingInfo final : NonCopyableClass
         bool m_fkConstraintCAIsRead = false;
         ForeignKeyConstraintCustomAttribute m_fkConstraintCA;
 
+        //not copyable
+        FkRelationshipMappingInfo(FkRelationshipMappingInfo const&) = delete;
+        FkRelationshipMappingInfo& operator=(FkRelationshipMappingInfo const&) = delete;
+
     public:
         FkRelationshipMappingInfo(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
 
@@ -217,7 +227,7 @@ struct FkRelationshipMappingInfo final : NonCopyableClass
 //======================================================================================
 // @bsiclass                                              Krischan.Eberle        07/2017
 //======================================================================================
-struct DbMappingManager final : NonCopyableClass
+struct DbMappingManager final
     {
     //=======================================================================================
     // @bsiclass                                                Affan.Khan      07/2016
@@ -232,7 +242,7 @@ struct DbMappingManager final : NonCopyableClass
                 };
 
         private:
-            struct Context final : NonCopyableClass
+            struct Context final
                 {
                 enum class Mode
                     {
@@ -246,12 +256,15 @@ struct DbMappingManager final : NonCopyableClass
 
                 Context(SchemaImportContext& importCtx, ClassMap& classMap) : m_importCtx(&importCtx), m_classMap(classMap) {}
                 Context(DbClassMapLoadContext const& loadCtx, ClassMap& classMap) : m_loadCtx(&loadCtx), m_classMap(classMap) {}
+                //not copyable
+                Context(Context const&) = delete;
+                Context& operator=(Context const&) = delete;
 
                 Mode GetMode() const { return m_importCtx != nullptr ? Mode::ImportingSchema : Mode::Loading; }
                 };
 
-            Classes();
-            ~Classes();
+            Classes() = delete;
+            ~Classes() = delete;
 
             static PropertyMap* ProcessProperty(Context&, ECN::ECPropertyCR);
             static RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(Context&, ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* compoundPropMap);
@@ -291,8 +304,8 @@ struct DbMappingManager final : NonCopyableClass
     struct FkRelationships final
         {
         private:
-            FkRelationships();
-            ~FkRelationships();
+            FkRelationships() = delete;
+            ~FkRelationships() = delete;
 
             static BentleyStatus AddIndexToRelationshipEnd(SchemaImportContext&, FkRelationshipMappingInfo const&, ForeignKeyPartitionView::Partition const&);
             static DbColumn* CreateForeignKeyColumn(FkRelationshipMappingInfo::ForeignKeyColumnInfo&, SchemaImportContext&, FkRelationshipMappingInfo const&, DbTable& fkTable, NavigationPropertyMap const&);
@@ -312,15 +325,15 @@ struct DbMappingManager final : NonCopyableClass
     //=======================================================================================
     // @bsiclass                                                Krischan.Eberle      01/2016
     //+===============+===============+===============+===============+===============+======
-    struct Tables final : NonCopyableClass
+    struct Tables final
         {
         private:
-            Tables();
-            ~Tables();
+            Tables() = delete;
+            ~Tables() = delete;
 
             static DbTable* FindOrCreateTable(SchemaImportContext&, ClassMap const&, ClassMappingInfo const&, DbTable::Type, DbTable const* primaryTable);
-            static DbTable* CreateTableForExistingTableStrategy(SchemaImportContext&, ClassMap const&, DbTableSpace const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
-            static DbTable* CreateTableForOtherStrategies(SchemaImportContext&, ClassMap const&, DbTableSpace const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+            static DbTable* CreateTableForExistingTableStrategy(SchemaImportContext&, ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
+            static DbTable* CreateTableForOtherStrategies(SchemaImportContext&, ClassMap const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
             static BentleyStatus CreateClassIdColumn(SchemaImportContext&, DbTable&, PersistenceType);
             static bool IsExclusiveRootClassOfTable(ClassMappingInfo const&);
             static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
@@ -332,6 +345,10 @@ struct DbMappingManager final : NonCopyableClass
             static DbTable* CreateOverflowTable(SchemaImportContext&, DbTable const&);
             static BentleyStatus CreateIndex(SchemaImportContext&, DbTable&, Utf8StringCR indexName, bool isUnique, std::vector<DbColumn const*> const&, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId, bool applyToSubclassesIfPartial = true);
         };
+
+private:
+    DbMappingManager() = delete;
+    ~DbMappingManager() = delete;
     };
 
 

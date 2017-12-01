@@ -480,7 +480,7 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
     if (nullptr != entityClass && nullptr != (relationship = GetRelationshipClassFromSameSchema(*entityClass, relationshipName)))
         return SUCCESS;
     
-    Utf8String sql("SELECT Id FROM ec_Class WHERE Name=?");
+    Utf8String sql("SELECT Id FROM main.ec_Class WHERE Name=?");
     CachedStatementPtr statement = db.GetImpl().GetCachedSqliteStatement(sql.c_str());
     BeAssert(statement.IsValid());
     if (nullptr == relationship)

@@ -31,7 +31,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::GetInstanceId(ECInstanceId& id) cons
     if (!m_isValid)
         return ERROR;
 
-    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper();
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().Main().GetSystemSchemaHelper();
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECPropertyCP prop = m_ecSqlStatement.GetColumnInfo(i).GetProperty();
@@ -446,7 +446,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
 
     bool isSingleClassSelectClause = true;
     ECClassCP targetClassInSelectClause = nullptr;
-    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper();
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().Main().GetSystemSchemaHelper();
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECSqlColumnInfo const& columnInfo = m_ecSqlStatement.GetColumnInfo(i);

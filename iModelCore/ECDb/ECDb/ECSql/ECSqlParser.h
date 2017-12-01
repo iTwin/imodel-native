@@ -67,12 +67,28 @@ private:
     ECDbCR m_ecdb;
 
     std::vector<std::unique_ptr<ParseArg>> m_finalizeParseArgs;
-    bmap<Utf8CP, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
+    bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex = 0;
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
     int m_aliasCount = 0;
 
+    std::vector<Utf8String> m_attachedTableSpaceCache;
+    bool m_isAttachedTableSpaceCacheSetup = false;
+
+    std::vector<Utf8String> const& GetAttachedTableSpaces() 
+        {
+        if (!m_isAttachedTableSpaceCacheSetup)
+            {
+            m_isAttachedTableSpaceCacheSetup = true;
+            if (SUCCESS != DbUtilities::GetTableSpaces(m_attachedTableSpaceCache, m_ecdb, true))
+                {
+                BeAssert(false);
+                }
+            }
+
+        return m_attachedTableSpaceCache;
+        }
 public:
     explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
     BentleyStatus FinalizeParsing(Exp& rootExp);
@@ -80,7 +96,7 @@ public:
     ParseArg const* CurrentArg() const;
     void PopArg();
 
-    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
+    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();

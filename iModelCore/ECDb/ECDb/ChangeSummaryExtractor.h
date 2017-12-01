@@ -15,6 +15,8 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct MainSchemaManager;
+
 //=======================================================================================
 // @bsiclass                                             Krischan.Eberle      11/2017
 //=======================================================================================
@@ -43,13 +45,39 @@ struct InstanceChange final
         bool IsIndirect() const { return m_isIndirect; }
     };
 
+struct ChangeSummaryManager;
+
 //=======================================================================================
 // @bsiclass                                            Krischan.Eberle      11/2017
 //=======================================================================================
-struct ChangeSummaryExtractor final : NonCopyableClass
+struct ChangeSummaryExtractor final
     {
     private:
         enum class ExtractMode { InstancesOnly, RelationshipInstancesOnly };
+
+        struct Context final
+            {
+            private:
+                ChangeSummaryManager& m_manager;
+                ECDb m_changeSummaryECDb;
+                ECSqlStatementCache m_changeSummaryStmtCache;
+                bool m_wasChangeSummaryFileAttached = false;
+
+            public:
+                explicit Context(ChangeSummaryManager& manager);
+                //Performs clean-up: 
+                //*saves changes to change summary ECDb and closes it
+                //*reattaches the change summary ECDb to the primary ECDb if it was attached before extraction
+                ~Context();
+
+                DbResult OpenChangeSummaryECDb();
+
+                ECDbCR GetChangeSummaryECDb() const { return m_changeSummaryECDb; }
+                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const { return m_changeSummaryStmtCache.GetPreparedStatement(m_changeSummaryECDb, ecsql); }
+                ECDbCR GetPrimaryECDb() const;
+                MainSchemaManager const& GetSchemaManager() const;
+                IssueReporter const& Issues() const;
+            };
 
         struct FkRelChangeExtractor final
             {
@@ -58,7 +86,7 @@ struct ChangeSummaryExtractor final : NonCopyableClass
 
             public:
                 explicit FkRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
-                BentleyStatus Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const&, ChangeIterator::TableClassMap::EndTableRelationshipMap const&) const;
+                BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, ChangeIterator::TableClassMap::EndTableRelationshipMap const&) const;
             };
 
         struct LinkTableRelChangeExtractor final
@@ -66,47 +94,46 @@ struct ChangeSummaryExtractor final : NonCopyableClass
             private:
                 ChangeSummaryExtractor const& m_extractor;
 
-                BentleyStatus GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd) const;
-                ECN::ECClassId GetRelEndClassId(ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId) const;
+                BentleyStatus GetRelEndInstanceKeys(Context&, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd) const;
+                ECN::ECClassId GetRelEndClassId(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId) const;
 
             public:
                 explicit LinkTableRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
-                BentleyStatus Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&) const;
+                BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&) const;
             };
 
-        ECDbCR m_ecdb;
-        ECSqlStatementCache m_stmtCache;
+        //not copyable
+        ChangeSummaryExtractor(ChangeSummaryExtractor const&) = delete;
+        ChangeSummaryExtractor& operator=(ChangeSummaryExtractor const&) = delete;
 
-        BentleyStatus Extract(ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
-        BentleyStatus ExtractInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
-        BentleyStatus ExtractRelInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
+        BentleyStatus Extract(Context&, ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
+        BentleyStatus ExtractInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
+        BentleyStatus ExtractRelInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
 
-        BentleyStatus RecordInstance(InstanceChange const&, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties) const;
-        BentleyStatus RecordRelInstance(InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey) const;
-        BentleyStatus RecordValue(bool& neededToRecord, InstanceChange const&, ChangeIterator::ColumnEntry const& columnEntry) const;       
+        BentleyStatus RecordInstance(Context&, InstanceChange const&, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties) const;
+        BentleyStatus RecordRelInstance(Context&, InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey) const;
+        BentleyStatus RecordValue(bool& neededToRecord, Context&, InstanceChange const&, ChangeIterator::ColumnEntry const& columnEntry) const;
 
-        InstanceChange QueryInstanceChange(ECInstanceId summaryId, ECInstanceKey const&) const;
-        ECInstanceId FindChangeId(ECInstanceId summaryId, ECInstanceKey const&) const;
-        bool ContainsChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(summaryId, keyOfChangedInstance).IsValid(); }
+        InstanceChange QueryInstanceChange(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
+        ECInstanceId FindChangeId(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
+        bool ContainsChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(ctx, summaryId, keyOfChangedInstance).IsValid(); }
 
 
-        BentleyStatus InsertSummary(ECInstanceKey& summaryKey) const;
-        DbResult InsertOrUpdate(InstanceChange const&) const;
-        DbResult Delete(ECInstanceId summaryId, ECInstanceKey const&) const;
+        BentleyStatus InsertSummary(ECInstanceKey& summaryKey, Context&) const;
+        DbResult InsertOrUpdate(Context&, InstanceChange const&) const;
+        DbResult Delete(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
 
-        DbResult InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue) const;
-        DbResult InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId) const;
-        DbResult InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId) const;
+        DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue) const;
+        DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId) const;
+        DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId) const;
 
         static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
          static bool RawIndirectToBool(int indirect) { return indirect != 0; }
         
     public:
-        explicit ChangeSummaryExtractor(ECDbCR ecdb) : m_ecdb(ecdb), m_stmtCache(15) {}
+        ChangeSummaryExtractor()  {}
 
-        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
-
-        void ClearCache() { m_stmtCache.Empty(); }
+        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ChangeSummaryManager&, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
     };
 
 

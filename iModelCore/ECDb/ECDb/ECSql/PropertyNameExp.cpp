@@ -103,7 +103,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::Completed;
 
     //determine whether the exp refers to a system property
-    m_sysPropInfo = &ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(GetPropertyMap().GetProperty());
+    m_sysPropInfo = &ctx.Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(GetPropertyMap().GetProperty());
     return FinalizeParseStatus::Completed;
     }
 

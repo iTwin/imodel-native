@@ -224,7 +224,7 @@ struct MemberFunctionCallExp final : ValueExp
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      10/2017
 //+===============+===============+===============+===============+===============+======
-struct FunctionSignature final : NonCopyableClass
+struct FunctionSignature final
     {
     enum class ValueType
         {
@@ -244,12 +244,16 @@ struct FunctionSignature final : NonCopyableClass
         Global
         };
 
-    struct Arg final : NonCopyableClass
+    struct Arg final
         {
         private:
             Utf8String m_name;
             ValueType m_type;
             bool m_optional= false;
+
+            //not copyable
+            Arg(Arg const&) = delete;
+            Arg& operator=(Arg const&) = delete;
 
         public:
             Arg(Utf8CP name, ValueType type, bool optional) :m_name(name), m_type(type), m_optional(optional) {}
@@ -266,7 +270,11 @@ struct FunctionSignature final : NonCopyableClass
         ValueType m_returnType;
         Utf8String m_description;
 
+
         FunctionSignature() : m_returnType(ValueType::Any) {}
+        //not copyable
+        FunctionSignature(FunctionSignature const&) = delete;
+        FunctionSignature& operator=(FunctionSignature const&) = delete;
 
         Arg const* FindArg(Utf8CP name) const;
         BentleyStatus SetName(Utf8CP name);
@@ -298,12 +306,15 @@ struct FunctionSignature final : NonCopyableClass
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      10/2017
 //+===============+===============+===============+===============+===============+======
-struct FunctionSignatureSet final : NonCopyableClass
+struct FunctionSignatureSet final
     {
     private:
         std::map<Utf8CP, std::unique_ptr<FunctionSignature>, CompareIUtf8Ascii> m_funtionSigs;
 
         FunctionSignatureSet() {}
+        //not copyable
+        FunctionSignatureSet(FunctionSignatureSet const&) = delete;
+        FunctionSignatureSet& operator=(FunctionSignatureSet const&) = delete;
 
         void Declare(Utf8CP signature, Utf8CP description = nullptr);
         void LoadDefinitions();

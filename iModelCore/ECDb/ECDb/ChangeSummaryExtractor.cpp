@@ -14,18 +14,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const& options) const
+BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeSummaryManager& manager, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const& options) const
     {
-    if (InsertSummary(summaryKey) != SUCCESS)
+    Context ctx(manager);
+    if (BE_SQLITE_OK != ctx.OpenChangeSummaryECDb())
+        return ERROR; //errors already logged in above call
+
+    if (InsertSummary(summaryKey, ctx) != SUCCESS)
         return ERROR;
 
     // Pass 1
-    if (SUCCESS != Extract(summaryKey.GetInstanceId(), changeSet, ExtractMode::InstancesOnly))
+    if (SUCCESS != Extract(ctx, summaryKey.GetInstanceId(), changeSet, ExtractMode::InstancesOnly))
         return ERROR;
 
     // Pass 2
     if (options.IncludeRelationshipInstances())
-        return Extract(summaryKey.GetInstanceId(), changeSet, ExtractMode::RelationshipInstancesOnly);
+        return Extract(ctx, summaryKey.GetInstanceId(), changeSet, ExtractMode::RelationshipInstancesOnly);
 
     return SUCCESS;
     }
@@ -33,9 +37,9 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, IChange
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode mode) const
+BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode mode) const
     {
-    ChangeIterator iter(m_ecdb, changeSet);
+    ChangeIterator iter(ctx.GetPrimaryECDb(), changeSet);
     for (ChangeIterator::RowEntry const& rowEntry : iter)
         {
         if (!rowEntry.IsMapped())
@@ -48,14 +52,14 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId summaryId, IChangeSet
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())
             {
-            LOG.errorv("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
+            ctx.Issues().Report("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
             BeAssert(false && "Could not determine the primary instance corresponding to a change.");
             return ERROR;
             }
 
         if (mode == ExtractMode::InstancesOnly && !primaryClass->IsRelationshipClass())
             {
-            if (SUCCESS != ExtractInstance(summaryId, rowEntry))
+            if (SUCCESS != ExtractInstance(ctx, summaryId, rowEntry))
                 return ERROR;
 
             continue;
@@ -63,7 +67,7 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId summaryId, IChangeSet
 
         if (mode == ExtractMode::RelationshipInstancesOnly)
             {
-            if (SUCCESS != ExtractRelInstance(summaryId, rowEntry))
+            if (SUCCESS != ExtractRelInstance(ctx, summaryId, rowEntry))
                 return ERROR;
 
             continue;
@@ -76,29 +80,34 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceId summaryId, IChangeSet
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::ExtractInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry) const
+BentleyStatus ChangeSummaryExtractor::ExtractInstance(Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry) const
     {
     InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(),
                                        RawIndirectToBool(rowEntry.GetIndirect()));
     bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
-    return RecordInstance(instance, rowEntry, recordOnlyIfUpdatedProperties);
+    return RecordInstance(ctx, instance, rowEntry, recordOnlyIfUpdatedProperties);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry) const
+BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry) const
     {
     ECClassCP primaryClass = rowEntry.GetPrimaryClass();
 
-    ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*primaryClass);
-    BeAssert(classMap != nullptr);
+    ClassMap const* classMap = ctx.GetSchemaManager().GetClassMap(*primaryClass);
+    if (classMap == nullptr)
+        {
+        ctx.Issues().Report("Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported.",
+                            primaryClass->GetFullName());
+        return ERROR;
+        }
 
     ClassMap::Type type = classMap->GetType();
     if (type == ClassMap::Type::RelationshipLinkTable)
         {
         LinkTableRelChangeExtractor linkTableExtractor(*this);
-        return linkTableExtractor.Extract(summaryId, rowEntry, classMap->GetAs<RelationshipClassLinkTableMap>());
+        return linkTableExtractor.Extract(ctx, summaryId, rowEntry, classMap->GetAs<RelationshipClassLinkTableMap>());
         }
 
     ChangeIterator::TableClassMap const* tableClassMap = rowEntry.GetTableMap()->GetTableClassMap(*primaryClass);
@@ -107,7 +116,7 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(ECInstanceId summaryId,
     FkRelChangeExtractor fkRelExtractor(*this);
     for (ChangeIterator::TableClassMap::EndTableRelationshipMap const* endTableRelMap : tableClassMap->GetEndTableRelationshipMaps())
         {
-        if (SUCCESS != fkRelExtractor.Extract(summaryId, rowEntry, *endTableRelMap))
+        if (SUCCESS != fkRelExtractor.Extract(ctx, summaryId, rowEntry, *endTableRelMap))
             return ERROR;
         }
 
@@ -115,49 +124,48 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(ECInstanceId summaryId,
     }
 
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::RecordRelInstance(InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey) const
+BentleyStatus ChangeSummaryExtractor::RecordRelInstance(Context& ctx, InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey) const
     {
-    if (SUCCESS != RecordInstance(instance, rowEntry, false)) // Even if any of the properties of the relationship is not updated, the relationship needs to be recorded since the source/target keys would have changed (to get here)
+    if (SUCCESS != RecordInstance(ctx, instance, rowEntry, false)) // Even if any of the properties of the relationship is not updated, the relationship needs to be recorded since the source/target keys would have changed (to get here)
         return ERROR;
 
-    if (BE_SQLITE_DONE != InsertPropertyValueChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_SourceECClassId, oldSourceKey.IsValid() ? oldSourceKey.GetClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetClassId() : ECClassId()))
+    if (BE_SQLITE_DONE != InsertPropertyValueChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_SourceECClassId, oldSourceKey.IsValid() ? oldSourceKey.GetClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetClassId() : ECClassId()))
         return ERROR;
 
-    if (BE_SQLITE_DONE != InsertPropertyValueChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_SourceECInstanceId, oldSourceKey.IsValid() ? oldSourceKey.GetInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetInstanceId() : ECInstanceId()))
+    if (BE_SQLITE_DONE != InsertPropertyValueChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_SourceECInstanceId, oldSourceKey.IsValid() ? oldSourceKey.GetInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetInstanceId() : ECInstanceId()))
         return ERROR;
 
-    if (BE_SQLITE_DONE != InsertPropertyValueChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_TargetECClassId, oldTargetKey.IsValid() ? oldTargetKey.GetClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetClassId() : ECClassId()))
+    if (BE_SQLITE_DONE != InsertPropertyValueChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_TargetECClassId, oldTargetKey.IsValid() ? oldTargetKey.GetClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetClassId() : ECClassId()))
         return ERROR;
 
-    return InsertPropertyValueChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_TargetECInstanceId, oldTargetKey.IsValid() ? oldTargetKey.GetInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetInstanceId() : ECInstanceId()) == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    return InsertPropertyValueChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), ECDBSYS_PROP_TargetECInstanceId, oldTargetKey.IsValid() ? oldTargetKey.GetInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetInstanceId() : ECInstanceId()) == BE_SQLITE_DONE ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::RecordInstance(InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties) const
+BentleyStatus ChangeSummaryExtractor::RecordInstance(Context& ctx, InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties) const
     {
     bool removeIfNotUpdatedProperties = false;
     if (recordOnlyIfUpdatedProperties)
-        removeIfNotUpdatedProperties = !ContainsChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
+        removeIfNotUpdatedProperties = !ContainsChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
 
-    DbResult stat = InsertOrUpdate(instance);
+    DbResult stat = InsertOrUpdate(ctx, instance);
     if (BE_SQLITE_DONE != stat)
         return ERROR;
 
     bool updatedProperties = false;
-    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetClass(instance.GetKeyOfChangedInstance().GetClassId());
+    ECN::ECClassCP ecClass = ctx.GetPrimaryECDb().Schemas().GetClass(instance.GetKeyOfChangedInstance().GetClassId());
     for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakeColumnIterator(*ecClass))
         {
         if (columnEntry.IsPrimaryKeyColumn())
             continue;  // Primary key columns need not be included in the values table
 
         bool isNoNeedToRecord = false;
-        if (SUCCESS != RecordValue(isNoNeedToRecord, instance, columnEntry))
+        if (SUCCESS != RecordValue(isNoNeedToRecord, ctx, instance, columnEntry))
             return ERROR;
 
         if (isNoNeedToRecord) //nothing had to be recorded;
@@ -170,13 +178,13 @@ BentleyStatus ChangeSummaryExtractor::RecordInstance(InstanceChange const& insta
         return SUCCESS;
 
     // If recording an update for the first time, and none of the properties have really been updated, remove record of the updated instance
-    return BE_SQLITE_DONE == Delete(instance.GetSummaryId(), instance.GetKeyOfChangedInstance()) ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == Delete(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance()) ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::RecordValue(bool& isNoNeedToRecord, InstanceChange const& instance, ChangeIterator::ColumnEntry const& columnEntry) const
+BentleyStatus ChangeSummaryExtractor::RecordValue(bool& isNoNeedToRecord, Context& ctx, InstanceChange const& instance, ChangeIterator::ColumnEntry const& columnEntry) const
     {
     DbOpcode dbOpcode = instance.GetDbOpcode();
 
@@ -197,18 +205,18 @@ BentleyStatus ChangeSummaryExtractor::RecordValue(bool& isNoNeedToRecord, Instan
         return SUCCESS;
         }
 
-    return BE_SQLITE_DONE == InsertPropertyValueChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), columnEntry.GetPropertyAccessString().c_str(), oldValue, newValue) ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == InsertPropertyValueChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance(), columnEntry.GetPropertyAccessString().c_str(), oldValue, newValue) ? SUCCESS : ERROR;
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
+InstanceChange ChangeSummaryExtractor::QueryInstanceChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
     InstanceChange instanceChange;
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT OpCode,IsIndirect FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT OpCode,IsIndirect FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -240,9 +248,9 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(ECInstanceId summaryI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Affan.Khan           10/2017
 //---------------------------------------------------------------------------------------
-ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
+ECInstanceId ChangeSummaryExtractor::FindChangeId(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "SELECT ECInstanceId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -262,9 +270,9 @@ ECInstanceId ChangeSummaryExtractor::FindChangeId(ECInstanceId summaryId, ECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Affan.Khan           11/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey) const
+BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey, Context& ctx) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_ChangeSummary "(ECInstanceId) VALUES(NULL)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_ChangeSummary "(ECInstanceId) VALUES(NULL)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -280,7 +288,7 @@ BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) const
+DbResult ChangeSummaryExtractor::InsertOrUpdate(Context& ctx, InstanceChange const& instance) const
     {
     /*
     * Here's the logic to consolidate new changes with the ones
@@ -300,10 +308,10 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
     if (op.IsNull()) // DbOpCode enum has changed -> fatal error code needs to be adjusted
         return BE_SQLITE_ERROR;
 
-    InstanceChange foundInstanceChange = QueryInstanceChange(instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
+    InstanceChange foundInstanceChange = QueryInstanceChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
     if (!foundInstanceChange.IsValid())
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, Summary.Id) VALUES(?,?,?,?,?)");
+        CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, Summary.Id) VALUES(?,?,?,?,?)");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -320,7 +328,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 
     if (foundInstanceChange.GetDbOpcode() == DbOpcode::Update && dbOpcode != DbOpcode::Update)
         {
-        CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "UPDATE " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " SET OpCode=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+        CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("UPDATE " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " SET OpCode=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -341,9 +349,9 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(InstanceChange const& instance) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryExtractor::Delete(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
+DbResult ChangeSummaryExtractor::Delete(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "DELETE FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("DELETE FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -360,11 +368,11 @@ DbResult ChangeSummaryExtractor::Delete(ECInstanceId summaryId, ECInstanceKey co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue) const
+DbResult ChangeSummaryExtractor::InsertPropertyValueChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue) const
     {
-    ECInstanceId changeId = FindChangeId(summaryId, keyOfChangedInstance);
+    ECInstanceId changeId = FindChangeId(ctx, summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -382,11 +390,11 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, Utf8CP accessString, ECClassId oldValue, ECClassId newValue) const
+DbResult ChangeSummaryExtractor::InsertPropertyValueChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, Utf8CP accessString, ECClassId oldValue, ECClassId newValue) const
     {
-    ECInstanceId changeId = FindChangeId(summaryId, keyOfChangedInstance);
+    ECInstanceId changeId = FindChangeId(ctx, summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -408,11 +416,11 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryExtractor::InsertPropertyValueChange(ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, Utf8CP accessString, ECInstanceId oldValue, ECInstanceId newValue) const
+DbResult ChangeSummaryExtractor::InsertPropertyValueChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance, Utf8CP accessString, ECInstanceId oldValue, ECInstanceId newValue) const
     {
-    ECInstanceId changeId = FindChangeId(summaryId, keyOfChangedInstance);
+    ECInstanceId changeId = FindChangeId(ctx, summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = m_stmtCache.GetPreparedStatement(m_ecdb, "INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -464,7 +472,7 @@ ECSqlStatus ChangeSummaryExtractor::BindDbValue(ECSqlStatement& stmt, int idx, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, ChangeIterator::TableClassMap::EndTableRelationshipMap const& endTableRelMap) const
+BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, ChangeIterator::TableClassMap::EndTableRelationshipMap const& endTableRelMap) const
     {
     // Check if the other end was/is valid to determine if there's really a relationship that was inserted/updated/deleted
     ChangeIterator::ColumnMap const& otherEndColumnMap = endTableRelMap.m_relatedInstanceIdColumnMap;
@@ -484,7 +492,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
         }
     ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
     
-    ECN::ECClassCP relClassRaw = m_extractor.m_ecdb.Schemas().GetClass(relClassId);
+    ECN::ECClassCP relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(relClassId);
     if (relClassRaw == nullptr || !relClassRaw->IsRelationshipClass())
         {
         BeAssert(false);
@@ -492,7 +500,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
         }
     ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
 
-    RelationshipClassEndTableMap const& relClassMap = m_extractor.m_ecdb.Schemas().GetDbMap().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
+    RelationshipClassEndTableMap const& relClassMap = ctx.GetSchemaManager().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
 
     // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
@@ -501,7 +509,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
 
     // Setup other end of relationship
     ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    DbColumn const* otherEndClassIdColumn = endTableRelMap.GetForeignEndClassIdColumn(m_extractor.m_ecdb, relClass);
+    DbColumn const* otherEndClassIdColumn = endTableRelMap.GetForeignEndClassIdColumn(ctx.GetPrimaryECDb(), relClass);
     if (otherEndClassIdColumn == nullptr)
         {
         BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
@@ -535,14 +543,14 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
 
         if (newOtherEndInstanceId.IsValid())
             {
-            newOtherEndClassId = DbSchemaPersistenceManager::QueryRowClassId(m_extractor.m_ecdb, otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
+            newOtherEndClassId = DbUtilities::QueryRowClassId(ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
                                                                          newOtherEndInstanceId);
             BeAssert(newOtherEndClassId.IsValid());
             }
 
         if (oldOtherEndInstanceId.IsValid())
             {
-            oldOtherEndClassId = DbSchemaPersistenceManager::QueryRowClassId(m_extractor.m_ecdb, otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
+            oldOtherEndClassId = DbUtilities::QueryRowClassId(ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
                                                                          oldOtherEndInstanceId);
             BeAssert(oldOtherEndClassId.IsValid());
             }
@@ -582,7 +590,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
         }
 
     InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()));
-    return m_extractor.RecordRelInstance(instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
+    return m_extractor.RecordRelInstance(ctx, instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
     }
 
 
@@ -594,23 +602,23 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(ECInstanceId
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::Extract(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& classMap) const
+BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::Extract(Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& classMap) const
     {
     InstanceChange instance(summaryId, ECInstanceKey(rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId()), rowEntry.GetDbOpcode(), RawIndirectToBool(rowEntry.GetIndirect()));
 
     ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
-    GetRelEndInstanceKeys(oldSourceInstanceKey, newSourceInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source);
+    GetRelEndInstanceKeys(ctx, oldSourceInstanceKey, newSourceInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Source);
 
     ECInstanceKey oldTargetInstanceKey, newTargetInstanceKey;
-    GetRelEndInstanceKeys(oldTargetInstanceKey, newTargetInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Target);
+    GetRelEndInstanceKeys(ctx, oldTargetInstanceKey, newTargetInstanceKey, summaryId, rowEntry, classMap, instance.GetKeyOfChangedInstance().GetInstanceId(), ECRelationshipEnd_Target);
 
-    return m_extractor.RecordRelInstance(instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
+    return m_extractor.RecordRelInstance(ctx, instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const
+BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInstanceKeys(Context& ctx, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const
     {
     oldInstanceKey = ECInstanceKey();
     newInstanceKey = ECInstanceKey();
@@ -635,14 +643,14 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInst
 
     if (newEndInstanceId.IsValid())
         {
-        ECClassId newClassId = GetRelEndClassId(summaryId, rowEntry, relClassMap, relInstanceId, relEnd, newEndInstanceId);
+        ECClassId newClassId = GetRelEndClassId(ctx, summaryId, rowEntry, relClassMap, relInstanceId, relEnd, newEndInstanceId);
         BeAssert(newClassId.IsValid());
         newInstanceKey = ECInstanceKey(newClassId, newEndInstanceId);
         }
 
     if (oldEndInstanceId.IsValid())
         {
-        ECClassId oldClassId = GetRelEndClassId(summaryId, rowEntry, relClassMap, relInstanceId, relEnd, oldEndInstanceId);
+        ECClassId oldClassId = GetRelEndClassId(ctx, summaryId, rowEntry, relClassMap, relInstanceId, relEnd, oldEndInstanceId);
         BeAssert(oldClassId.IsValid());
         oldInstanceKey = ECInstanceKey(oldClassId, oldEndInstanceId);
         }
@@ -653,7 +661,7 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClassId(ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId) const
+ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClassId(Context& ctx, ECInstanceId summaryId, ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId) const
     {
     ConstraintECClassIdPropertyMap const* classIdPropMap = relationshipClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
@@ -723,7 +731,7 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
             return ECClassId();
             }
         // Search in the end table
-        ECClassId classId = DbSchemaPersistenceManager::QueryRowClassId(m_extractor.m_ecdb, endTable.GetName(), classIdColumn->GetName(), endTable.GetPrimaryKeyConstraint()->GetColumns()[0]->GetName(), relEndInstanceId);
+        ECClassId classId = DbUtilities::QueryRowClassId(ctx.GetPrimaryECDb(), endTable.GetName(), classIdColumn->GetName(), endTable.GetPrimaryKeyConstraint()->GetColumns()[0]->GetName(), relEndInstanceId);
         BeAssert(classId.IsValid());
         return classId;
         }
@@ -734,5 +742,83 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
     BeAssert(classId.IsValid());
     return classId;
     }
+
+//****************************************************************************************************
+// ChangeSummaryExtractor::Context
+//****************************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    11/2017
+//---------------------------------------------------------------------------------------
+ChangeSummaryExtractor::Context::Context(ChangeSummaryManager& manager)
+    : m_manager(manager), m_changeSummaryStmtCache(15), m_wasChangeSummaryFileAttached(m_manager.IsChangeSummaryCacheAttached())
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    11/2017
+//---------------------------------------------------------------------------------------
+ChangeSummaryExtractor::Context::~Context()
+    {
+    if (!m_changeSummaryECDb.IsDbOpen())
+        return;
+
+    if (BE_SQLITE_OK != m_changeSummaryECDb.SaveChanges())
+        {
+        Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummaries ECDb %s", m_changeSummaryECDb.GetDbFileName());
+        BeAssert(false);
+        }
+
+    m_changeSummaryECDb.CloseDb();
+
+    if (m_wasChangeSummaryFileAttached)
+        {
+        if (BE_SQLITE_OK != m_manager.AttachChangeSummaryCacheFile(false))
+            {
+            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not re-attach ChangeSummaries ECDb to %s", GetPrimaryECDb().GetDbFileName());
+            BeAssert(false);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    11/2017
+//---------------------------------------------------------------------------------------
+DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
+    {
+    if (m_wasChangeSummaryFileAttached)
+        {
+        DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ChangeSummaries);
+        if (BE_SQLITE_OK != r)
+            {
+            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not detach ChangeSummaries cache file from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
+            return r;
+            }
+        }
+
+    BeAssert(!m_changeSummaryECDb.IsDbOpen());
+    BeFileName path = GetPrimaryECDb().GetChangeSummaryCachePath();
+    if (!path.DoesPathExist())
+        {
+        Issues().Report("Failed to extract ChangeSummaries from changeset: ChangeSummaries cache file %s not found.", path.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR_FileNotFound;
+        }
+
+    //Must open the cache file with "DoNotAttach" to avoid that a cache to the cache is being created
+    return m_changeSummaryECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeSummaryCacheMode::DoNotAttach));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    11/2017
+//---------------------------------------------------------------------------------------
+IssueReporter const& ChangeSummaryExtractor::Context::Issues() const { return GetPrimaryECDb().GetImpl().Issues(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    11/2017
+//---------------------------------------------------------------------------------------
+ECDbCR ChangeSummaryExtractor::Context::GetPrimaryECDb() const { return m_manager.GetECDb(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Krischan.Eberle    11/2017
+//---------------------------------------------------------------------------------------
+MainSchemaManager const& ChangeSummaryExtractor::Context::GetSchemaManager() const { return GetPrimaryECDb().Schemas().Main(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

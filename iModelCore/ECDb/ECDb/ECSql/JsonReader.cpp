@@ -14,10 +14,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // !Automatically resets a statement and clears its bindings once the scope is destructed
 // @bsiclass                                               Krischan.Eberle     09/2017
 //+===============+===============+===============+===============+===============+======
-struct StatementResetScope final : NonCopyableClass
+struct StatementResetScope final
     {
     private:
         ECSqlStatement& m_stmt;
+
+        //not copyable
+        StatementResetScope(StatementResetScope const&) = delete;
+        StatementResetScope& operator=(StatementResetScope const&) = delete;
 
     public:
         explicit StatementResetScope(ECSqlStatement& stmt) : m_stmt(stmt) {}

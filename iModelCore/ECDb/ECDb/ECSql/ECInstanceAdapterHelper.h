@@ -9,7 +9,6 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/ECInstanceId.h>
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -18,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! statement used by ECInstanceInserter, ECInstanceUpdater, ECInstanceDeleter
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct ECValueBindingInfo : NonCopyableClass
+struct ECValueBindingInfo
     {
     public:
         enum class Type
@@ -45,6 +44,10 @@ struct ECValueBindingInfo : NonCopyableClass
         int m_ecsqlParameterIndex = UNSET_PARAMETERINDEX;
         bool m_hasPropertyIndex = false;
         uint32_t m_propertyIndex = 0;
+
+        //not copyable
+        ECValueBindingInfo(ECValueBindingInfo const&) = delete;
+        ECValueBindingInfo& operator=(ECValueBindingInfo const&) = delete;
 
     protected:
         ECValueBindingInfo(Type type, int ecsqlParameterIndex) : m_type(type), m_ecsqlParameterIndex(ecsqlParameterIndex) {}
@@ -250,7 +253,7 @@ struct ECValueBindingInfoCollection final
 struct ECInstanceAdapterHelper final
     {
     public:
-        struct ECInstanceInfo final : NonCopyableClass
+        struct ECInstanceInfo final
             {
             private:
                 ECN::IECInstanceCP m_instance = nullptr;
@@ -258,6 +261,10 @@ struct ECInstanceAdapterHelper final
                 ECInstanceId m_instanceId;
                 ECInstanceId m_sourceId;
                 ECInstanceId m_targetId;
+
+                //not copyable
+                ECInstanceInfo(ECInstanceInfo const&) = delete;
+                ECInstanceInfo& operator=(ECInstanceInfo const&) = delete;
 
             public:
                 explicit ECInstanceInfo(ECN::IECInstanceCR instance, bool allowPointersIntoInstanceMemory)

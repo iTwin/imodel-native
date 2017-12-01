@@ -12,7 +12,17 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************************************************************************************** 
-//ECSchemaCompareContext
+//SchemaImportContext
+//****************************************************************************************** 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle      11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+MainSchemaManager const& SchemaImportContext::GetSchemaManager() const { return m_ecdb.Schemas().Main(); }
+
+
+//****************************************************************************************** 
+//SchemaCompareContext
 //****************************************************************************************** 
 
 //---------------------------------------------------------------------------------------
@@ -33,7 +43,7 @@ bool ValidateSchema(ECN::ECSchemaCR schema)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& schemaManager)
+BentleyStatus SchemaCompareContext::ReloadContextECSchemas()
     {
     //save names
     std::vector<Utf8String> existingSchemaNames, importingSchemaNames;
@@ -45,11 +55,11 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
 
     m_existingSchemas.clear();
     m_schemasToImport.clear();
-    schemaManager.GetECDb().ClearECDbCache();
+    m_mainSchemaManager.GetECDb().ClearECDbCache();
 
     for (Utf8StringCR name : existingSchemaNames)
         {
-        ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
+        ECSchemaCP schema = m_mainSchemaManager.GetSchema(name);
         if (schema == nullptr)
             {
             LOG.errorv("Schema import failed. Failed to read schema %s from ECDb.", name.c_str());
@@ -67,7 +77,7 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
 
     for (Utf8StringCR name : importingSchemaNames)
         {
-        ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
+        ECSchemaCP schema = m_mainSchemaManager.GetSchema(name);
         if (schema == nullptr)
             {
             LOG.errorv("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
@@ -90,7 +100,7 @@ BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaCompareContext::Prepare(SchemaManager const& schemaManager, bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
+BentleyStatus SchemaCompareContext::Prepare(bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
     {
     if (dependencyOrderedPrimarySchemas.empty())
         {
@@ -107,7 +117,7 @@ BentleyStatus SchemaCompareContext::Prepare(SchemaManager const& schemaManager, 
             continue;
 
         doneList.insert(schema->GetFullSchemaName());
-        if (ECSchemaCP existingSchema = schemaManager.GetSchema(schema->GetName().c_str(), true))
+        if (ECSchemaCP existingSchema = m_mainSchemaManager.GetSchema(schema->GetName()))
             {
             if (existingSchema == schema)
                 continue;
@@ -214,10 +224,10 @@ BentleyStatus SchemaPolicies::ReadPolicy(ECDbCR ecdb, ECN::ECSchemaCR schema, Sc
     if (it != m_optedInPolicies.end())
         {
         ecdb.GetImpl().Issues().Report("Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
-                                                      schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType), ecdb.Schemas().GetReader().GetSchemaName(it->second->GetOptingInSchemaId()).c_str());
+                                                      schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType), 
+                                                    SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), it->second->GetOptingInSchemaId()).c_str());
         return ERROR;
         }
-
 
     std::unique_ptr<SchemaPolicy> policy = nullptr;
     switch (policyType)
@@ -264,9 +274,9 @@ bool SchemaPolicies::IsOptedIn(SchemaPolicy const*& policy, SchemaPolicy::Type p
 //---------------------------------------------------------------------------------------
 std::vector<ECSchemaId> SchemaPolicies::GetSystemSchemaExceptions(ECDbCR ecdb)
     {
-    std::vector<Utf8CP> ecdbSchemaNames = ecdb.Schemas().GetReader().GetECDbSchemaNames();
+    std::vector<Utf8CP> ecdbSchemaNames = ecdb.Schemas().GetDispatcher().GetECDbSchemaNames();
     std::set<Utf8CP, CompareIUtf8Ascii> systemSchemaExceptions(ecdbSchemaNames.begin(), ecdbSchemaNames.end());
-    return SchemaPersistenceHelper::GetSchemaIds(ecdb, Utf8StringVirtualSet([&systemSchemaExceptions] (Utf8CP name) { return systemSchemaExceptions.find(name) != systemSchemaExceptions.end(); }));
+    return SchemaPersistenceHelper::GetSchemaIds(ecdb, DbTableSpace::Main(), Utf8StringVirtualSet([&systemSchemaExceptions] (Utf8CP name) { return systemSchemaExceptions.find(name) != systemSchemaExceptions.end(); }));
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,7 +356,8 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
         ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                      policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
+                                                      policyCA.GetClass().GetName().c_str(),
+                                                    SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
         return nullptr;
         }
 
@@ -356,13 +367,13 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
         if (tokenCount == 0 || tokenCount > 2)
             {
             ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                          policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
+                                                          policyCA.GetClass().GetName().c_str(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
             return nullptr;
             }
 
         if (tokenCount == 1 || tokenizedException[1].EqualsIAscii("*"))
             {
-            ECSchemaId exceptionSchemaId = ecdb.Schemas().GetReader().GetSchemaId(tokenizedException[0], SchemaLookupMode::AutoDetect);
+            ECSchemaId exceptionSchemaId = SchemaPersistenceHelper::GetSchemaId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), SchemaLookupMode::AutoDetect);
             // If schema id doesn't exist, the schema is not yet imported by this schema import. Exception can be ignored
             if (exceptionSchemaId.IsValid())
                 policy->m_schemaExceptions.insert(exceptionSchemaId);
@@ -389,7 +400,8 @@ BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::EC
         return SUCCESS;
 
     ecdb.GetImpl().Issues().Report("Failed to import ECClass '%s'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema %s",
-                                                  ecClass.GetFullName(), ecdb.Schemas().GetReader().GetSchemaName(GetOptingInSchemaId()).c_str());
+                                   ecClass.GetFullName(),
+                                   SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str());
 
     return ERROR;
     }
@@ -410,7 +422,8 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
         ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                      policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
+                                       policyCA.GetClass().GetName().c_str(), 
+                                       SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
         return nullptr;
         }
 
@@ -420,20 +433,21 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
         if (tokenCount == 0 || tokenCount > 2)
             {
             ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                          policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
+                                           policyCA.GetClass().GetName().c_str(), 
+                                           SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
             return nullptr;
             }
 
         if (tokenCount == 1 || tokenizedException[1].EqualsIAscii("*"))
             {
-            ECSchemaId exceptionSchemaId = ecdb.Schemas().GetReader().GetSchemaId(tokenizedException[0], SchemaLookupMode::AutoDetect);
+            ECSchemaId exceptionSchemaId = SchemaPersistenceHelper::GetSchemaId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), SchemaLookupMode::AutoDetect);
             // If schema id doesn't exist, the schema is not yet imported by this schema import. Exception can be ignored
             if (exceptionSchemaId.IsValid())
                 policy->m_schemaExceptions.insert(exceptionSchemaId);
             }
         else
             {
-            ECClassId exceptionClassId = ecdb.Schemas().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
+            ECClassId exceptionClassId = ecdb.Schemas().Main().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
 
             // If class id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionClassId.IsValid())
@@ -452,7 +466,7 @@ BentleyStatus NoAdditionalLinkTablesPolicy::Evaluate(ECDbCR ecdb, ECN::ECRelatio
         return SUCCESS;
 
     ecdb.GetImpl().Issues().Report("Failed to import ECRelationshipClass '%s'. It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema %s",
-                    relClass.GetFullName(), ecdb.Schemas().GetReader().GetSchemaName(GetOptingInSchemaId()).c_str());
+                                   relClass.GetFullName(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str());
 
     return ERROR;
     }
@@ -471,7 +485,8 @@ std::unique_ptr<SchemaPolicy> NoAdditionalForeignKeyConstraintsPolicy::Create(EC
     if (SUCCESS != policy->ReadExceptionsFromCA(ecdb, policyCA))
         {
         ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                      policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
+                                       policyCA.GetClass().GetName().c_str(), 
+                                       SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
         return nullptr;
         }
 
@@ -490,7 +505,8 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
         ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                      policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(m_optingInSchemaId).c_str());
+                                       policyCA.GetClass().GetName().c_str(), 
+                                       SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str());
         return ERROR;
         }
 
@@ -500,20 +516,20 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
         if (tokenCount == 0 || tokenCount > 3)
             {
             ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                          policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(m_optingInSchemaId).c_str());
+                                                          policyCA.GetClass().GetName().c_str(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str());
             return ERROR;
             }
 
         if (tokenCount == 1 || tokenizedException[1].EqualsIAscii("*"))
             {
-            ECSchemaId exceptionSchemaId = ecdb.Schemas().GetReader().GetSchemaId(tokenizedException[0], SchemaLookupMode::AutoDetect);
+            ECSchemaId exceptionSchemaId = SchemaPersistenceHelper::GetSchemaId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), SchemaLookupMode::AutoDetect);
             // If schema id doesn't exist, the schema is not yet imported by this schema import. Exception can be ignored
             if (exceptionSchemaId.IsValid())
                 m_schemaExceptions.insert(exceptionSchemaId);
             }
         else if (tokenCount == 2 || tokenizedException[2].EqualsIAscii("*"))
             {
-            ECClassId exceptionClassId = ecdb.Schemas().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
+            ECClassId exceptionClassId = ecdb.Schemas().Main().GetClassId(tokenizedException[0], tokenizedException[1], SchemaLookupMode::AutoDetect);
 
             // If class id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionClassId.IsValid())
@@ -521,7 +537,7 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
             }
         else
             {
-            ECPropertyId exceptionPropId = ecdb.Schemas().GetReader().GetPropertyId(tokenizedException[0], tokenizedException[1], tokenizedException[2], SchemaLookupMode::AutoDetect);
+            ECPropertyId exceptionPropId = SchemaPersistenceHelper::GetPropertyId(ecdb, DbTableSpace::Main(), tokenizedException[0].c_str(), tokenizedException[1].c_str(), tokenizedException[2].c_str(), SchemaLookupMode::AutoDetect);
             // If property id doesn't exist, the class is not yet imported by this schema import. Exception can be ignored
             if (exceptionPropId.IsValid())
                 m_propertyExceptions.insert(exceptionPropId);
@@ -540,7 +556,8 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::Evaluate(ECDbCR ecdb, ECN
         return SUCCESS;
 
     ecdb.GetImpl().Issues().Report("Failed to import ECClass '%s'. Its navigation property '%s' violates against the 'No additional foreign key constraints' policy which means that navigation properties may not define the 'ForeignKeyConstraint' custom attribute other than in the ECSchema %s",
-                                        navPropWithFkConstraintCA.GetClass().GetFullName(), navPropWithFkConstraintCA.GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(GetOptingInSchemaId()).c_str());
+                                   navPropWithFkConstraintCA.GetClass().GetFullName(), navPropWithFkConstraintCA.GetName().c_str(),
+                                   SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str());
 
     return ERROR;
     }

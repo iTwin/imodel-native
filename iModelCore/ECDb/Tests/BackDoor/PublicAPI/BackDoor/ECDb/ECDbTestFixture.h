@@ -54,12 +54,19 @@ private:
             TestHelper const& GetTestHelper() const { return m_testHelper; }
         };
 
-    struct SeedECDbManager final : NonCopyableClass
+    struct SeedECDbManager final
         {
     private:
         bmap<BeFileName, BeFileName> m_seedFilePathsBySchemaFileName;
 
+        //not copyable
+        SeedECDbManager(SeedECDbManager const&) = delete;
+        SeedECDbManager& operator=(SeedECDbManager const&) = delete;
+
     public:
+        SeedECDbManager() {}
+        ~SeedECDbManager() {}
+
         bool TryGet(BeFileName& seedPath, BeFileNameCR schemaFileName) const
             {
             auto it = m_seedFilePathsBySchemaFileName.find(schemaFileName);

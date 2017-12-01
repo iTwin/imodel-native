@@ -15,12 +15,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2014
 //+===============+===============+===============+===============+===============+======
-struct RelationshipConstraintMap : NonCopyableClass
+struct RelationshipConstraintMap
     {
     private:
         ECN::ECRelationshipConstraintCR m_constraint;
         ConstraintECInstanceIdPropertyMap const* m_ecInstanceIdPropMap = nullptr;
         ConstraintECClassIdPropertyMap const* m_ecClassIdPropMap = nullptr;
+
+        //not copyable
+        RelationshipConstraintMap(RelationshipConstraintMap const&) = delete;
+        RelationshipConstraintMap& operator=(RelationshipConstraintMap const&) = delete;
 
     public:
         explicit RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint) :  m_constraint(constraint) {}
@@ -45,7 +49,7 @@ struct RelationshipClassMap : ClassMap
         RelationshipConstraintMap m_sourceConstraintMap;
         RelationshipConstraintMap m_targetConstraintMap;
 
-        RelationshipClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
+        RelationshipClassMap(ECDb const&, TableSpaceSchemaManager const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
 
     public:
@@ -68,15 +72,14 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassEndTableMap final : RelationshipClassMap
     {
-    friend struct ClassMapFactory;
     private:
-        RelationshipClassEndTableMap(ECDb const& ecdb, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, Type::RelationshipEndTable, relClass, mapStrategy) {}
         ClassMappingStatus _Map(ClassMappingContext&) override;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         RelationshipClassEndTableMap const* GetBaseClassMap(SchemaImportContext* ctx = nullptr) const;
         ClassMappingStatus MapSubClass(RelationshipClassEndTableMap const& baseClassMap);
 
     public:
+        RelationshipClassEndTableMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, manager, Type::RelationshipEndTable, relClass, mapStrategy) {}
         ~RelationshipClassEndTableMap() {}
         ECN::ECRelationshipEnd GetForeignEnd() const;
         ECN::ECRelationshipEnd GetReferencedEnd() const;
@@ -98,7 +101,6 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
             };
 
     private:
-        RelationshipClassLinkTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         ClassMappingStatus _Map(ClassMappingContext&) override;
         ClassMappingStatus MapSubClass(ClassMappingContext&);
         ClassMappingStatus CreateConstraintPropMaps(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, bool addSourceECClassIdColumnToTable, bool addTargetECClassIdColumnToTable);
@@ -118,6 +120,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         static bool GetAllowDuplicateRelationshipsFlag(Nullable<bool> const& allowDuplicateRelationshipFlag) { return allowDuplicateRelationshipFlag.IsNull() ? false : allowDuplicateRelationshipFlag.Value(); }
 
     public:
+        RelationshipClassLinkTableMap(ECDb const&, TableSpaceSchemaManager const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         ~RelationshipClassLinkTableMap() {}
     };
 

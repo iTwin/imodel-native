@@ -23,6 +23,7 @@ struct SchemaImportToken;
 //! Enum which mirrors the ECEnumeration OpCode in the ECDbChangeSummaries ECSchema.
 //! The enum can be used when programmatically binding values to the OpCode in an ECSQL
 //! against the ECDbChangeSummaries ECSchema.
+//! @see @ref ECDbChangeSummaries
 // @bsienum                                              Krischan.Eberle      11/2017
 //+===============+===============+===============+===============+===============+======
 enum class ChangeOpCode
@@ -35,9 +36,10 @@ enum class ChangeOpCode
 
 //=======================================================================================
 //! The enum represents the values for the ChangedValueState argument of the ECSQL function
-//! @b ChangeSummary.
+//! @b Changes.
 //! The enum can be used when programmatically binding values to the ChangedValueState argument
-//! in an ECSQL using the ChangeSummary ECSQL function.
+//! in an ECSQL using the Changes ECSQL function.
+//! @see @ref ECDbChangeSummaries
 // @bsienum                                                             11/2017
 //+===============+===============+===============+===============+===============+======
 enum class ChangedValueState
@@ -80,7 +82,7 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
         {
         private:
-            ChangeSummaryCacheMode m_changeSummaryCacheMode = ChangeSummaryCacheMode::AttachAndCreateIfNotExists;
+            ChangeSummaryCacheMode m_changeSummaryCacheMode = ChangeSummaryCacheMode::DoNotAttach;
 
         public:
             explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
@@ -212,6 +214,8 @@ protected:
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT DbResult _VerifyProfileVersion(Db::OpenParams const&) override;
+    ECDB_EXPORT DbResult _OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const override;
+    ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
 
@@ -288,7 +292,11 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
+    //! @name ChangeSummaries
+    //! @{
+
     //! Determines whether the ChangeSummary cache file is attached to this %ECDb file or not.
+    //! @see @ref ECDbChangeSummaries
     ECDB_EXPORT bool IsChangeSummaryCacheAttached() const;
 
     //! Attaches the ChangeSummary cache file to this %ECDb file (if it isn't attached already).
@@ -299,15 +307,18 @@ public:
     //! is attached at opening time already.
     //!
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    //! @see @ref ECDbChangeSummaries
     ECDB_EXPORT DbResult AttachChangeSummaryCache() const;
 
     //! Gets the file path to the ChangeSummary cache file for this %ECDb file.
     //! @return Path to ChangeSummary cache file
+    //! @see @ref ECDbChangeSummaries
     ECDB_EXPORT BeFileName GetChangeSummaryCachePath() const;
 
     //! Gets the file path to the ChangeSummary cache file for the specified %ECDb path.
     //! @param[in] ecdbPath Path to %ECDb file for which ChangeSummary cache path is returned
     //! @return Path to ChangeSummary cache file
+    //! @see @ref ECDbChangeSummaries
     ECDB_EXPORT static BeFileName GetChangeSummaryCachePath(BeFileNameCR ecdbPath);
 
     //! Extracts and generates the change summary from the specified change set.
@@ -324,7 +335,10 @@ public:
     //! @param[in] changeSet Change set to generate the summary from
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
+    //! @see @ref ECDbChangeSummaries
     ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+    
+    //! @}
 
     //! Deletes orphaned ECInstances left over from operations specified by @p mode.
     //! @param[in] mode Purge mode
@@ -361,10 +375,34 @@ public:
     //!     - ECProperty is not mapped to a column at all
     //!     - Write token validation failed
     //! @see BeSQLite::BlobIO
-    ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const;
+    BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const
+        {
+        return OpenBlobIO(blobIO, nullptr, ecClass, propertyAccessString, ecInstanceId, writable, writeToken);
+        }
+
+    //! Opens a Blob for incremental I/O for the specified ECProperty.
+    //! @remarks The caller is responsible for closing/releasing the @p blobIO handle again.
+    //! @param[in,out] blobIO The handle to open
+    //! @param[in] tableSpace Table space containing the class - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one).
+    //! @param[in] ecClass The ECClass holding the Blob ECProperty
+    //! @param[in] propertyAccessString The access string in @p ecClass to the ECProperty holding the blob to be opened.
+    //! @param[in] ecInstanceId The ECInstanceId of the instance holding the blob.
+    //! @param[in] writable If true, blob is opened for read/write access, otherwise it is opened readonly.
+    //! @param[in] writeToken Token required if @p writable is true and if 
+    //!            the ECDb file was set-up with the option "ECSQL write token validation".
+    //!            If @p writable is false or if the option is not set, nullptr can be passed for @p writeToken.
+    //! @return SUCCESS in case of success. ERROR in these cases:
+    //!     - @p blobIO is already opened
+    //!     - @p ecClass is not mapped to a table
+    //!     - No ECProperty found in @p ecClass for @p propertyAccessString
+    //!     - ECProperty is not primitive and not of type ECN::PRIMITIVETYPE_Binary or ECN::PRIMITIVETYPE_IGeometry
+    //!     - ECProperty is not mapped to a column at all
+    //!     - Write token validation failed
+    //! @see BeSQLite::BlobIO
+    ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const;
 
     //! Clears the ECDb cache
-    ECDB_EXPORT void ClearECDbCache() const;
+    ECDB_EXPORT void ClearECDbCache(Utf8CP tableSpace = nullptr) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;

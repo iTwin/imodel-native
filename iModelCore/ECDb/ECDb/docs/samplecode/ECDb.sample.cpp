@@ -120,7 +120,7 @@ BentleyStatus ECDbSchemaManagerGetSchema()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_SchemaManagerGetSchema.sampleCode
 
     // Retrieve a schema
-    // (Passing false as third parameter indicates that classes of the schema should not be loaded along with the schema, 
+    // (Passing false as second parameter indicates that classes of the schema should not be loaded along with the schema, 
     // but be loaded on demand)
     ECSchemaCP fooSchema = ecdb.Schemas().GetSchema("fooschema", false);
     if (fooSchema == nullptr)

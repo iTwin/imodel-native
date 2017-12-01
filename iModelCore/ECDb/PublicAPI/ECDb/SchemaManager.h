@@ -11,12 +11,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#if !defined (DOCUMENTATION_GENERATOR)
-struct DbMap;
-struct SchemaReader;
-struct SchemaImportContext;
-#endif
-
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
 //! @ingroup ECDbGroup
@@ -72,11 +66,12 @@ enum class SchemaLookupMode
 //! @ingroup ECDbGroup
 // @bsimethod                                                  Affan.Khan        05/2012
 //+===============+===============+===============+===============+===============+======
-struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
+struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
     {
     public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
+
         //! Schema import options. Not needed by regular callers. They are specific to certain
         //! exceptional workflows and therefore only used by them.
         enum class SchemaImportOptions
@@ -85,24 +80,24 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
             DoNotFailSchemaValidationForLegacyIssues,
             Poisoning //!< Currently not supported. Poisoning concept is being revisited.
             };
+
+        struct Dispatcher;
 #endif
 
     private:
-        ECDb const& m_ecdb;
-        SchemaReader* m_schemaReader;
-        DbMap* m_dbMap;
-        BeMutex& m_mutex;
+        Dispatcher* m_dispatcher = nullptr;
 
-        BentleyStatus DoImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
-        BentleyStatus PersistSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECN::ECSchemaCP> const& schemasToImport) const;
-        ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
+        //not copyable
+        SchemaManager(SchemaManager const&) = delete;
+        SchemaManager& operator=(SchemaManager const&) = delete;
+
 
         //! Implementation of IECSchemaLocater
         ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
         //! Implementation of IECClassLocater
-        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return GetClass(schemaName, className); }
-        ECN::ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) override { return GetClassId(schemaName, className); }
+        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return GetClass(Utf8String(schemaName), Utf8String(className)); }
+        ECN::ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) override { return GetClassId(Utf8String(schemaName), Utf8String(className)); }
         
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -129,83 +124,96 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const;
+        BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const { return ImportSchemas(schemas, SchemaImportOptions::None, token); }
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //only for legacy support which cannot yet follow the strict BIS rules
         ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions, SchemaImportToken const* token = nullptr) const;
 #endif
 
+        //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
+        //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.
+        //! Consider retrieving single classes instead.
+        //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
+        //!                                   if they are loaded on-demand.
+        //! @param[in] tableSpace Table space containing the schemas - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
+        //! @return Vector of all ECSchemas stored in the file
+        ECDB_EXPORT bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities = true, Utf8CP tableSpace = nullptr) const;
+
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the schema - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return true if the ECDb file contains the ECSchema. false otherwise.
-        ECDB_EXPORT bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+        ECDB_EXPORT bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
         //! Get an ECSchema by name
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema
         //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the schema - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return The retrieved ECSchema or nullptr if not found
-        ECDB_EXPORT ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities = true, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
-
-        //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
-        //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
-        //!                                   if they are loaded on-demand.
-        //! @return Vector of all ECSchemas stored in the file
-        ECDB_EXPORT bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities = true) const;
+        ECDB_EXPORT ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities = true, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
         //! Gets the ECClass for the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p mode)
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the class - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+        ECDB_EXPORT ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
+
+        //! Gets the ECClass for the specified ECClassId.
+        //! @param[in] classId Id of the ECClass to retrieve
+        //! @param[in] tableSpace Table space containing the class - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
+        //! @return The retrieved ECClass or nullptr if not found
+        ECDB_EXPORT ECN::ECClassCP GetClass(ECN::ECClassId classId, Utf8CP tableSpace = nullptr) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p mode)
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the class - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-        ECDB_EXPORT ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+        ECDB_EXPORT ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
-        //! Gets the ECClass for the specified ECClassId.
-        //! @param[in] ecClassId Id of the ECClass to retrieve
-        ECDB_EXPORT ECN::ECClassCP GetClass(ECN::ECClassId ecClassId) const;
-
-        //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
+        //! Gets the derived classes of @p baseClass. The derived classes are loaded, if they are not yet.
         //! Callers should use this method in favor of ECN::ECClass::GetDerivedClasses to ensure
         //! that derived classes are actually loaded from the ECDb file.
         //! This method allows to just load the inheritance hierarchy of a given ECClass without having
         //! to load entire ECSchemas.
         //! @note This does not recurse into derived classes of derived classes. It just returns the first level
         //! of inheriting ECClasses.
-        //! @param[in] baseECClass ECClass to return derived classes for.
+        //! @param[in] baseClass ECClass to return derived classes for.
+        //! @param[in] tableSpace Table space containing the class hierarchy - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return Derived classes list
         //! @see ECN::ECClass::GetDerivedClasses
-        ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedClasses(ECN::ECClassCR baseECClass) const;
+        ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
 
         //! Gets the ECEnumeration for the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the enumeration (@see @p mode)
         //! @param[in] enumName Name of the ECEnumeration to be retrieved
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the enumeration - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return The retrieved ECEnumeration or nullptr if not found
-        ECDB_EXPORT ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+        ECDB_EXPORT ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
         //! Gets the KindOfQuantity for the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the KindOfQuantity (@see @p mode)
         //! @param[in] koqName Name of the KindOfQuantity to be retrieved
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the KindOfQuantity - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return The retrieved KindOfQuantity or nullptr if not found
-        ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+        ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
         //! Gets the PropertyCategory for the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the category (@see @p mode)
         //! @param[in] propertyCategoryName Name of the PropertyCategory to be retrieved
         //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the PropertyCategory - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
         //! @return The retrieved PropertyCategory or nullptr if not found
-        ECDB_EXPORT ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+        ECDB_EXPORT ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
@@ -231,11 +239,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! <b>this method does not have to be called</b>. ECDb maintains the cache tables autonomously.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
+        void ClearCache(Utf8CP tableSpace) const;
 
-        void ClearCache() const;
-        SchemaReader const& GetReader() const;
-        DbMap const& GetDbMap() const;
-        ECDb const& GetECDb() const;
+        Dispatcher const& GetDispatcher() const;
+        struct MainSchemaManager const& Main() const;
 #endif
     };
 

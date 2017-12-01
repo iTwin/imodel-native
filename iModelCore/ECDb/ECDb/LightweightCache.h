@@ -6,15 +6,18 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECDb/ECDb.h>
 #include "ECDbInternalTypes.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+struct TableSpaceSchemaManager;
 struct StorageDescription;
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct LightweightCache final: NonCopyableClass
+struct LightweightCache final
     {
     public:
         enum class RelationshipEnd
@@ -41,7 +44,8 @@ struct LightweightCache final: NonCopyableClass
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
 
     private:
-        ECDb const& m_ecdb;
+        TableSpaceSchemaManager const& m_schemaManager;
+
         mutable ClassIdsPerTableMap m_classIdsPerTable;
         mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
         mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_constraintClassIdsPerRelClassIds;
@@ -49,13 +53,17 @@ struct LightweightCache final: NonCopyableClass
         mutable RelationshipPerTable m_relationshipPerTable;
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
 
+        LightweightCache(LightweightCache const&) = delete;
+        LightweightCache& operator=(LightweightCache const&) = delete;
+
         ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId)  const;
         bset<DbTable const*> const& LoadTablesForClassId(ECN::ECClassId) const;
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
         
+        CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
     public:
-        explicit LightweightCache(ECDb const&);
+        explicit LightweightCache(TableSpaceSchemaManager const&);
         ~LightweightCache() {}
         std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
         bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;
@@ -103,7 +111,7 @@ struct Partition final
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription final : NonCopyableClass
+struct StorageDescription final
     {
     private:
         ECN::ECClassId m_classId;
@@ -114,6 +122,9 @@ struct StorageDescription final : NonCopyableClass
         size_t m_rootVerticalPartitionIndex;
 
         explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0), m_rootVerticalPartitionIndex(0) {}
+        //not copyable
+        StorageDescription(StorageDescription const&) = delete;
+        StorageDescription& operator=(StorageDescription const&) = delete;
 
         Partition* AddHorizontalPartition(DbTable const&, bool isRootPartition);
         Partition* AddVerticalPartition(DbTable const&, bool isRootPartition);

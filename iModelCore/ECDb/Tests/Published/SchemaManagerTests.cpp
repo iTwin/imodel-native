@@ -2427,20 +2427,6 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                   11/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, CreateECClassViewsForTempTableStrategy)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("CreateECClassViewsForTempTableStrategy.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ECClassId changeSummaryClassId = m_ecdb.Schemas().GetClassId("ECDbChangeSummaries", "ChangeSummary");
-    ASSERT_TRUE(changeSummaryClassId.IsValid());
-
-    bvector<ECClassId> classIds;
-    classIds.push_back(changeSummaryClassId);
-    ASSERT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                   01/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)

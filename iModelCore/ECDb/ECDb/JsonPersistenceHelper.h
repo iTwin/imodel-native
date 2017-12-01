@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! used as it might change.
 // @bsiclass                                                Krischan.Eberle      09/2017
 //+===============+===============+===============+===============+===============+======
-struct JsonPersistenceHelper : NonCopyableClass
+struct JsonPersistenceHelper
     {
     public:
         static constexpr Utf8CP PointXMemberName() { return "x"; }
@@ -28,8 +28,8 @@ struct JsonPersistenceHelper : NonCopyableClass
         static constexpr Utf8CP PointZMemberName() { return "z"; }
 
     private:
-        JsonPersistenceHelper();
-        ~JsonPersistenceHelper();
+        JsonPersistenceHelper() = delete;
+        ~JsonPersistenceHelper() = delete;
 
         static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinatePropName);
 

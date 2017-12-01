@@ -21,7 +21,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //no need to release a static non-POD variable (Bentley C++ coding standards)
 //static
-ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 0, 2);
+ProfileVersion const* ECDbTestFixture::s_expectedProfileVersion = new ProfileVersion(4, 0, 0, 1);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
@@ -246,7 +246,7 @@ BentleyStatus ECDbTestFixture::PopulateECDb(int instanceCountPerClass)
 
     if (instanceCountPerClass > 0)
         {
-        bvector<ECN::ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas(true);
+        bvector<ECN::ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas();
         for (ECSchemaCP schema : schemas)
             {
             if (schema->IsStandardSchema() || schema->IsSystemSchema() || 

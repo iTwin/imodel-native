@@ -40,7 +40,7 @@ private:
 
 public:
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 2); }
+    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 1); }
 
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no

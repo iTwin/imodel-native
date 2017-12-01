@@ -186,12 +186,12 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         "    BaseClassesOfEndClass(ClassId) AS  ("
         "    VALUES (:endClassId)"
         "    UNION "
-        "    SELECT BaseClassId FROM ec_ClassHasBaseClasses, BaseClassesOfEndClass WHERE ec_ClassHasBaseClasses.ClassId=BaseClassesOfEndClass.ClassId"
+        "    SELECT BaseClassId FROM main.ec_ClassHasBaseClasses, BaseClassesOfEndClass WHERE ec_ClassHasBaseClasses.ClassId=BaseClassesOfEndClass.ClassId"
         "    )"
         " SELECT DISTINCT ECRelationshipClass.Id AS RelationshipId, ForeignEndConstraint.RelationshipEnd As ForeignEndIsTarget "
-        " FROM ec_Class ECRelationshipClass "
-        " JOIN ec_RelationshipConstraint ForeignEndConstraint ON ForeignEndConstraint.RelationshipClassId = ECRelationshipClass.Id "
-        " JOIN ec_RelationshipConstraintClass ForeignEndConstraintClass ON ForeignEndConstraintClass.ConstraintId=ForeignEndConstraint.Id "
+        " FROM main.ec_Class ECRelationshipClass "
+        " JOIN main.ec_RelationshipConstraint ForeignEndConstraint ON ForeignEndConstraint.RelationshipClassId = ECRelationshipClass.Id "
+        " JOIN main.ec_RelationshipConstraintClass ForeignEndConstraintClass ON ForeignEndConstraintClass.ConstraintId=ForeignEndConstraint.Id "
         " JOIN BaseClassesOfEndClass"
         " WHERE ForeignEndConstraintClass.ClassId = :endClassId "
                                               "   OR (ForeignEndConstraint.IsPolymorphic = " SQLVAL_True " AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)");
@@ -297,13 +297,7 @@ BentleyStatus ECInstanceFinder::FindRelatedInstances
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceFinder::FindRelatedInstances
-(
-    ECInstanceKeyMultiMap* relatedInstanceKeyMap,
-    ECInstanceKeyMultiMap* relationshipInstanceKeyMap,
-    const ECInstanceKeyMultiMap& seedInstanceKeyMap,
-    int findRelatedDirections
-)
+BentleyStatus ECInstanceFinder::FindRelatedInstances(ECInstanceKeyMultiMap* relatedInstanceKeyMap, ECInstanceKeyMultiMap* relationshipInstanceKeyMap, ECInstanceKeyMultiMap const& seedInstanceKeyMap, int findRelatedDirections)
     {
     // Initialize incoming maps
     if (relationshipInstanceKeyMap != nullptr)
@@ -335,7 +329,7 @@ BentleyStatus ECInstanceFinder::FindRelatedInstances
 
             auto classP = queryableRelationship.GetRelationshipClass();
             POSTCONDITION(classP != nullptr, ERROR)
-                auto classMapP = m_ecDb.Schemas().GetDbMap().GetClassMap(*classP);
+            ClassMap const* classMapP = m_ecDb.Schemas().Main().GetClassMap(*classP);
             POSTCONDITION(classMapP != nullptr, ERROR)
                 if (classMapP->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
                     {

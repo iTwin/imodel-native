@@ -144,11 +144,15 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbSystemSchemaHelper final : NonCopyableClass
+struct ECDbSystemSchemaHelper final
     {
     public:
         ECDb const& m_ecdb;
         mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
+
+        //not copyable
+        ECDbSystemSchemaHelper(ECDbSystemSchemaHelper const&) = delete;
+        ECDbSystemSchemaHelper& operator=(ECDbSystemSchemaHelper const&) = delete;
 
         BentleyStatus InitializeCache() const;
 

@@ -208,7 +208,7 @@ using namespace connectivity;
 %type <pParseNode> all sql_not for_length upper_lower comparison cross_union
 %type <pParseNode> select_statement
 %type <pParseNode> function_args_commalist function_arg
-%type <pParseNode> table_node table_node_mf function_name table_primary_as_range_column opt_as
+%type <pParseNode> table_node table_node_separator table_node_mf function_name table_primary_as_range_column opt_as
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_collate_clause
@@ -2328,40 +2328,36 @@ derived_column:
         }
     ;
 
+table_node_separator:
+      '.' 
+    | ':'
+    ;
 
 table_node:
-        SQL_TOKEN_NAME '.' SQL_TOKEN_NAME 
+        SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME 
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
-     |  SQL_TOKEN_NAME ':' SQL_TOKEN_NAME 
+    |  SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME 
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
+            $$->append($2 = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
             $$->append($3);
+            $$->append($4 = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
+            $$->append($5);
         };
         
 
 table_node_mf:
-        SQL_TOKEN_NAME '.' SQL_TOKEN_NAME opt_member_func_call
+        table_node opt_member_func_call
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
-        }
-     | SQL_TOKEN_NAME ':' SQL_TOKEN_NAME opt_member_func_call
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
+            $$->append($2);
         };
 
 

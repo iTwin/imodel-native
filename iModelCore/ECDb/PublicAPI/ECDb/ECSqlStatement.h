@@ -30,14 +30,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @nosubgrouping
 // @bsiclass                                                 Krischan.Eberle    05/2013
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
     {
     public:
-
-    struct Impl;
+        struct Impl;
 
     private:
-        Impl* m_pimpl;
+        Impl* m_pimpl = nullptr;
+
+        //not copyable
+        ECSqlStatement(ECSqlStatement const&) = delete;
+        ECSqlStatement& operator=(ECSqlStatement const&) = delete;
 
     public:
         //! Initializes a new unprepared ECSqlStatement.
@@ -483,7 +486,7 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 //! With that enabled, %ECDb logs when a new statement was added to the cache and an existing one was removed from it.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
     {
     private:
         friend struct CachedECSqlStatement;
@@ -492,6 +495,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final : NonCopyableClass
         Utf8String m_name;
         mutable std::list<CachedECSqlStatementPtr> m_entries;
         uint32_t m_maxSize;
+
+        //not copyable
+        ECSqlStatementCache(ECSqlStatementCache const&) = delete;
+        ECSqlStatementCache& operator=(ECSqlStatementCache const&) = delete;
 
         CachedECSqlStatement* FindEntry(Utf8CP ecsql) const; // Requires m_mutex locked
         void AddStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP ecsql) const; // Requires m_mutex locked

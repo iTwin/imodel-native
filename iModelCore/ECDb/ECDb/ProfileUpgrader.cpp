@@ -12,46 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ProfileUpgrader_XXX *********************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    10/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
-    {
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE " TABLE_TableSpace
-                                        "(Id INTEGER PRIMARY KEY,"
-                                        "Name TEXT UNIQUE NOT NULL COLLATE NOCASE)"))
-        {
-        LOG.errorv("ECDb profile upgrade failed: Creating table " TABLE_TableSpace " failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("INSERT INTO " TABLE_TableSpace "(Name) VALUES('" TABLESPACE_Main "')"))
-        {
-        LOG.errorv("ECDb profile upgrade failed: Adding table space '" TABLESPACE_Main "' to table " TABLE_TableSpace " failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE " TABLE_Table " ADD COLUMN TableSpaceId INTEGER REFERENCES " TABLE_TableSpace "(Id) ON DELETE CASCADE"))
-        {
-        LOG.errorv("ECDb profile upgrade failed: Adding column TableSpaceId to table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_TableSpaceId ON " TABLE_Table "(TableSpaceId);"))
-        {
-        LOG.errorv("ECDb profile upgrade failed: Adding index ix_ec_Table_TableSpaceId on table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_Type ON " TABLE_Table "(Type);"))
-        {
-        LOG.errorv("ECDb profile upgrade failed: Adding index ix_ec_Table_Type on table ' " TABLE_Table "' failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    LOG.debug("ECDb profile upgrade: Created table ' " TABLE_TableSpace "' and Added column TableSpaceId to table ' " TABLE_Table "'.");
-    return BE_SQLITE_OK;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    10/2017
@@ -102,11 +62,6 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     schemaKey = SchemaKey("ECDbMeta", 1, 0, 0);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
-
-    schemaKey = SchemaKey("ECDbChangeSummaries", 1, 0, 0);
-    if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
-        return BE_SQLITE_ERROR;
-
 
     //import if already existing
     if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
@@ -168,10 +123,10 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00.01' alias='ecdbmap' /> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_ClassECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00.01'>"
+        "            <ClassMap xmlns='ECDbMap.02.00.00'>"
         "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
@@ -180,7 +135,7 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "    </ECEntityClass> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_RelationshipECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECRelationshipClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00.01'>"
+        "            <ClassMap xmlns='ECDbMap.02.00.00'>"
         "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"

@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! (PIMPL idiom)
 // @bsiclass                                                Krischan.Eberle      12/2014
 //+===============+===============+===============+===============+===============+======
-struct ECDb::Impl final : NonCopyableClass
+struct ECDb::Impl final
     {
 friend struct ECDb;
 
@@ -90,6 +90,10 @@ private:
         m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); 
         }
 
+    //not copyable
+    Impl(Impl const&) = delete;
+    Impl& operator=(Impl const&) = delete;
+
     DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
 
     SchemaManager const& Schemas() const { return *m_schemaManager; }
@@ -107,13 +111,16 @@ private:
 
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
-    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const*) const;
+    BentleyStatus OpenBlobIO(BlobIO&, Utf8CP tableSpace, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const*) const;
 
-    void ClearECDbCache() const;
+    void ClearECDbCache(Utf8CP tableSpace = nullptr) const;
     DbResult OnDbOpening() const;
     DbResult OnDbOpened(Db::OpenParams const&) const;
     DbResult OnDbCreated() const;
     void OnDbClose() const;
+    DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
+    DbResult OnDbDetached(Utf8CP tableSpaceName) const;
+
     DbResult OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifyProfileVersion(Db::OpenParams const& params) const { return ProfileManager::UpgradeProfile(m_ecdb, params); }

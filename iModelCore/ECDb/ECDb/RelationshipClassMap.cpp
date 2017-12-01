@@ -15,8 +15,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
-RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
-    : ClassMap(ecdb, type, ecRelClass, mapStrategy), m_sourceConstraintMap( ecRelClass.GetRelationshipClassCP()->GetSource()), m_targetConstraintMap( ecRelClass.GetRelationshipClassCP()->GetTarget())
+RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, Type type, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
+    : ClassMap(ecdb, manager, type, ecRelClass, mapStrategy), m_sourceConstraintMap( ecRelClass.GetRelationshipClassCP()->GetSource()), m_targetConstraintMap( ecRelClass.GetRelationshipClassCP()->GetTarget())
     {
     BeAssert(ecRelClass.IsRelationshipClass());
     }
@@ -73,7 +73,7 @@ RelationshipClassEndTableMap const* RelationshipClassEndTableMap::GetBaseClassMa
 
     BeAssert(GetClass().GetBaseClasses().size() == 1);
     ECRelationshipClassCP relationshipClass = static_cast<ECRelationshipClassCP>(GetClass().GetBaseClasses().front());
-    if (ClassMapCP classMap = GetDbMap().GetClassMap(*relationshipClass))
+    if (ClassMap const* classMap = GetSchemaManager().GetClassMap(*relationshipClass))
         return &classMap->GetAs<RelationshipClassEndTableMap>();
 
     BeAssert(false);
@@ -371,8 +371,8 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECDb const& ecdb, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
-    : RelationshipClassMap(ecdb, Type::RelationshipLinkTable, ecRelClass, mapStrategy)
+RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, ECN::ECClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy)
+    : RelationshipClassMap(ecdb, manager, Type::RelationshipLinkTable, ecRelClass, mapStrategy)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -399,8 +399,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     //*** root rel class
     //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
     //TODO: How should we handle this properly?
-    std::set<DbTable const*> sourceTables = GetDbMap().GetRelationshipConstraintPrimaryTables(ctx.GetImportCtx(), sourceConstraint);
-    std::set<DbTable const*> targetTables = GetDbMap().GetRelationshipConstraintPrimaryTables(ctx.GetImportCtx(), targetConstraint);
+    std::set<DbTable const*> sourceTables = ctx.GetImportCtx().GetSchemaManager().GetRelationshipConstraintPrimaryTables(ctx.GetImportCtx(), sourceConstraint);
+    std::set<DbTable const*> targetTables = ctx.GetImportCtx().GetSchemaManager().GetRelationshipConstraintPrimaryTables(ctx.GetImportCtx(), targetConstraint);
 
     if (sourceTables.empty() || targetTables.empty())
         {
@@ -430,8 +430,6 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     DbTable const* sourceTable = *sourceTables.begin();
     DbTable const* targetTable = *targetTables.begin();
 
-    const bool allTablesInSameTableSpace = sourceTable->GetTableSpace() == targetTable->GetTableSpace() && sourceTable->GetTableSpace() == GetPrimaryTable().GetTableSpace();
-
     bool createFkConstraints = true; // default
     if (ca.IsValid())
         {
@@ -443,24 +441,6 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
             createFkConstraints = createFkConstraintsVal.Value();
         }
 
-    if (createFkConstraints)
-        {
-        if (!allTablesInSameTableSpace)
-            {
-            Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as a link table with FK constraints. The relationship class and its constraint class map to different table spaces. FK constraints across tables spaces is not supported.",
-                            GetClass().GetFullName());
-            return ClassMappingStatus::Error;
-            }
-
-        //WIP: This is currently unsupported because we cannot recreate FKs (yet) when recreating the temp tables, because
-        //ECDb doesn't persist the FK infos in the ec_ tables
-        if (GetPrimaryTable().GetTableSpace().IsTemp())
-            {
-            Issues().Report("Failed to map ECRelationshipClass %s. It is mapped as a link table with FK constraints. It is mapped to the TEMP table space though for which foreign key constraints are not supported.",
-                            GetClass().GetFullName());
-            return ClassMappingStatus::Error;
-            }
-        }
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
     DetermineConstraintClassIdColumnHandling(addSourceECClassIdColumnToTable, sourceConstraint);
@@ -513,7 +493,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContex
         }
 
     ECClassCP baseClass = GetClass().GetBaseClasses()[0];
-    ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
+    ClassMap const* baseClassMap = ctx.GetImportCtx().GetSchemaManager().GetClassMap(*baseClass);
     if (baseClassMap == nullptr || baseClassMap->GetType() != ClassMap::Type::RelationshipLinkTable)
         {
         BeAssert(false && "Could not find class map of base ECRelationship class or is not of right type");
@@ -566,8 +546,8 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImpo
     DbColumn* endECClassIdColumn = nullptr;
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? GetRelationshipClass().GetSource() : GetRelationshipClass().GetTarget();
     ECClass const* foreignEndClass = foreignEndConstraint.GetConstraintClasses()[0];
-    ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
-    size_t foreignEndTableCount = GetDbMap().GetRelationshipConstraintTableCount(ctx, foreignEndConstraint);
+    ClassMap const* foreignEndClassMap = ctx.GetSchemaManager().GetClassMap(*foreignEndClass);
+    size_t foreignEndTableCount = ctx.GetSchemaManager().GetRelationshipConstraintTableCount(ctx, foreignEndConstraint);
 
     Utf8String columnName = DetermineConstraintECClassIdColumnName(ca, relationshipEnd);
     if (columnName.empty())

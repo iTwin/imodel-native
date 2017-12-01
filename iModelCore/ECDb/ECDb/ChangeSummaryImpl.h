@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
-struct InstancesTable final : NonCopyableClass
+struct InstancesTable final
     {
     private:
         ChangeSummaryCR m_changeSummary;
@@ -28,6 +28,10 @@ struct InstancesTable final : NonCopyableClass
         mutable Statement m_instancesTableSelect;
 
         const int m_nameSuffix;
+
+        //not copyable
+        InstancesTable(InstancesTable const&) = delete;
+        InstancesTable& operator=(InstancesTable const&) = delete;
 
         void CreateTable();
         void PrepareStatements();
@@ -61,7 +65,7 @@ struct InstancesTable final : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
-struct ValuesTable final: NonCopyableClass
+struct ValuesTable final
     {
     private:
         ChangeSummaryCR m_changeSummary;
@@ -69,6 +73,10 @@ struct ValuesTable final: NonCopyableClass
         InstancesTable const& m_instancesTable;
         Utf8String m_valuesTableNameNoPrefix;
         mutable Statement m_valuesTableInsert;
+
+        //not copyable
+        ValuesTable(ValuesTable const&) = delete;
+        ValuesTable& operator=(ValuesTable const&) = delete;
 
         void CreateTable();
         void ClearTable();
@@ -94,7 +102,7 @@ struct ValuesTable final: NonCopyableClass
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
-struct ChangeExtractor final : NonCopyableClass
+struct ChangeExtractor final
     {
     enum class ExtractOption
         {
@@ -108,6 +116,10 @@ struct ChangeExtractor final : NonCopyableClass
         ECDbCR m_ecdb;
         InstancesTable& m_instancesTable;
         ValuesTable& m_valuesTable;
+
+        //not copyable
+        ChangeExtractor(ChangeExtractor const&) = delete;
+        ChangeExtractor& operator=(ChangeExtractor const&) = delete;
 
         BentleyStatus FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption);
 
