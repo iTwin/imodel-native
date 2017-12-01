@@ -45,7 +45,7 @@ protected:
 
 
 public:
-    TableSpaceSchemaManager(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace), m_reader(ecdb, tableSpace), m_dbSchema(ecdb, tableSpace), m_lightweightCache(ecdb, *this) {}
+    TableSpaceSchemaManager(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace), m_reader(*this), m_dbSchema(*this), m_lightweightCache(*this) {}
     virtual ~TableSpaceSchemaManager() {}
 
     ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) const;

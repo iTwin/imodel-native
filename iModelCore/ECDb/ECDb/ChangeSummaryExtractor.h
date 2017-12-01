@@ -50,7 +50,7 @@ struct ChangeSummaryManager;
 //=======================================================================================
 // @bsiclass                                            Krischan.Eberle      11/2017
 //=======================================================================================
-struct ChangeSummaryExtractor final : NonCopyableClass
+struct ChangeSummaryExtractor final
     {
     private:
         enum class ExtractMode { InstancesOnly, RelationshipInstancesOnly };
@@ -101,6 +101,10 @@ struct ChangeSummaryExtractor final : NonCopyableClass
                 explicit LinkTableRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
                 BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&) const;
             };
+
+        //not copyable
+        ChangeSummaryExtractor(ChangeSummaryExtractor const&) = delete;
+        ChangeSummaryExtractor& operator=(ChangeSummaryExtractor const&) = delete;
 
         BentleyStatus Extract(Context&, ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
         BentleyStatus ExtractInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;

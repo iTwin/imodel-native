@@ -25,16 +25,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! (PIMPL idiom)
 //! @bsiclass                                                Krischan.Eberle      10/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlStatement::Impl final: NonCopyableClass
+struct ECSqlStatement::Impl final
     {
     private:
-        struct Diagnostics final : NonCopyableClass
+        struct Diagnostics final
             {
             private:
                 static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;
                 NativeLogging::ILogger& m_logger;
                 std::unique_ptr<StopWatch> m_timer;
                 Utf8CP m_ecsql;
+
+                //not copyable
+                Diagnostics(Diagnostics const&) = delete;
+                Diagnostics& operator=(Diagnostics const&) = delete;
 
                 void Log();
                 bool CanLog() const;
@@ -46,6 +50,10 @@ struct ECSqlStatement::Impl final: NonCopyableClass
         static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
 
         std::unique_ptr<IECSqlPreparedStatement> m_preparedStatement;
+
+        //not copyable
+        Impl(Impl const&) = delete;
+        Impl& operator=(Impl const&) = delete;
 
         IECSqlPreparedStatement& CreatePreparedStatement(ECDb const&, Exp const&);
 

@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle      06/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceInserter::Impl : NonCopyableClass
+struct ECInstanceInserter::Impl
     {
 private:
     ECDbCR m_ecdb;
@@ -24,6 +24,10 @@ private:
     ECSqlSystemPropertyBindingInfo* m_ecinstanceIdBindingInfo;
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
+
+    //not copyable
+    Impl(Impl const&) = delete;
+    Impl& operator=(Impl const&) = delete;
 
     void Initialize(ECCrudWriteToken const*);
 

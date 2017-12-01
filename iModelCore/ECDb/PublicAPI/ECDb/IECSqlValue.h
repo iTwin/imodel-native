@@ -22,9 +22,13 @@ struct IECSqlValueIterable;
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    03/2014
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue
     {
     private:
+        //not copyable
+        IECSqlValue(IECSqlValue const&) = delete;
+        IECSqlValue& operator=(IECSqlValue const&) = delete;
+
         virtual ECSqlColumnInfo const& _GetColumnInfo() const = 0;
 
         virtual bool _IsNull() const = 0;
@@ -216,15 +220,20 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
 //! @see IECSqlValue::GetArrayIterable, IECSqlValue::GetStructIterable
 // @bsiclass                                                 Krischan.Eberle    02/2017
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlValueIterable : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlValueIterable
     {
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         //=======================================================================================
         // @bsiclass                                                 Krischan.Eberle    02/2017
         //+===============+===============+===============+===============+===============+======
-        struct EXPORT_VTABLE_ATTRIBUTE IIteratorState : NonCopyableClass
+        struct EXPORT_VTABLE_ATTRIBUTE IIteratorState
             {
+            private:
+                //not copyable
+                IIteratorState(IIteratorState const&) = delete;
+                IIteratorState& operator=(IIteratorState const&) = delete;
+
             protected:
                 //not inlined to prevent being called outside ECDb
                 IIteratorState();
@@ -269,6 +278,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValueIterable : NonCopyableClass
             };
 
     private:
+        //not copyable
+        IECSqlValueIterable(IECSqlValueIterable const&) = delete;
+        IECSqlValueIterable& operator=(IECSqlValueIterable const&) = delete;
+
         virtual const_iterator _CreateIterator() const = 0;
 
     protected:

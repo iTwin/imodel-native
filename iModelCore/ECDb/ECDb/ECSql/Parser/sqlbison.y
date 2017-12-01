@@ -2338,16 +2338,16 @@ table_node:
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2);
+            $$->append($2 = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
     |  SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME 
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2);
+            $$->append($2 = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
             $$->append($3);
-            $$->append($4);
+            $$->append($4 = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
             $$->append($5);
         };
         

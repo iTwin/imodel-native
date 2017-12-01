@@ -17,13 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeSummaryManager& manager, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const& options) const
     {
     Context ctx(manager);
-    DbResult r = ctx.OpenChangeSummaryECDb();
-    if (BE_SQLITE_OK != r)
-        {
-        ctx.Issues().Report("Failed to extract ChangeSummary from changeset: Could not open change summary ECDb file %s: %s",
-                            ctx.GetPrimaryECDb().GetChangeSummaryCachePath().GetNameUtf8().c_str(), ctx.GetChangeSummaryECDb().GetLastError().c_str());
-        return ERROR;
-        }
+    if (BE_SQLITE_OK != ctx.OpenChangeSummaryECDb())
+        return ERROR; //errors already logged in above call
 
     if (InsertSummary(summaryKey, ctx) != SUCCESS)
         return ERROR;
@@ -763,6 +758,9 @@ ChangeSummaryExtractor::Context::Context(ChangeSummaryManager& manager)
 //---------------------------------------------------------------------------------------
 ChangeSummaryExtractor::Context::~Context()
     {
+    if (!m_changeSummaryECDb.IsDbOpen())
+        return;
+
     if (BE_SQLITE_OK != m_changeSummaryECDb.SaveChanges())
         {
         Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummaries ECDb %s", m_changeSummaryECDb.GetDbFileName());
@@ -797,7 +795,15 @@ DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
         }
 
     BeAssert(!m_changeSummaryECDb.IsDbOpen());
-    return m_changeSummaryECDb.OpenBeSQLiteDb(GetPrimaryECDb().GetChangeSummaryCachePath(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    BeFileName path = GetPrimaryECDb().GetChangeSummaryCachePath();
+    if (!path.DoesPathExist())
+        {
+        Issues().Report("Failed to extract ChangeSummaries from changeset: ChangeSummaries cache file %s not found.", path.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR_FileNotFound;
+        }
+
+    //Must open the cache file with "DoNotAttach" to avoid that a cache to the cache is being created
+    return m_changeSummaryECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeSummaryCacheMode::DoNotAttach));
     }
 
 //---------------------------------------------------------------------------------------

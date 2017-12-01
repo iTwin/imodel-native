@@ -24,7 +24,7 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
     if (memberFunctionCallExp == nullptr) 
         return GenerateViewSql(viewSql, ctx, classMap);
 
-    if (!memberFunctionCallExp->GetFunctionName().EqualsIAscii(ECSQLFUNC_ChangeSummary))
+    if (!memberFunctionCallExp->GetFunctionName().EqualsIAscii(ECSQLFUNC_Changes))
         {
         ctx.GetECDb().GetImpl().Issues().Report("Class exp has member function call %s which is not supported yet.", memberFunctionCallExp->GetFunctionName().c_str());
         return ERROR;
@@ -215,7 +215,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     if (!ctx.GetECDb().IsChangeSummaryCacheAttached())
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_ChangeSummary " the ChangeSummary ECDb must have been attached before.");
+        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the ChangeSummary ECDb must have been attached before.");
         return ERROR;
         }
 

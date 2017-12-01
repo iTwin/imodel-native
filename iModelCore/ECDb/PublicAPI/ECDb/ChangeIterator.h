@@ -35,7 +35,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsiclass                                               12/2016
 //=======================================================================================
-struct ChangeIterator final : NonCopyableClass
+struct ChangeIterator final
     {
     struct ColumnIterator;
     struct TableMap;
@@ -182,6 +182,10 @@ struct ChangeIterator final : NonCopyableClass
         ECDbCR m_ecdb;
         Changes m_changes;
         mutable std::unique_ptr<TableMapCollection> m_tableMaps;
+
+        //not copyable
+        ChangeIterator(ChangeIterator const&) = delete;
+        ChangeIterator& operator=(ChangeIterator const&) = delete;
 
     public:
         ECDB_EXPORT ChangeIterator(ECDbCR ecdb, Changes const& changes);

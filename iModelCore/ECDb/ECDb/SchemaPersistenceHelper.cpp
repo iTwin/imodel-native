@@ -28,7 +28,7 @@ ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, DbTableSpace const& t
     if (tableSpace.IsMain())
         sql.assign("SELECT Id FROM main." TABLE_Schema);
     else
-        sql.Sprintf("SELECT Id FROM [%s]." TABLE_Schema, tableSpace);
+        sql.Sprintf("SELECT Id FROM [%s]." TABLE_Schema, tableSpace.GetName().c_str());
 
     switch (mode)
         {
@@ -66,7 +66,7 @@ std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, DbTab
     if (tableSpace.IsMain())
         stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM main." TABLE_Schema " WHERE InVirtualSet(?,Name)");
     else
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Schema " WHERE InVirtualSet(?,Name)", tableSpace).c_str());
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Schema " WHERE InVirtualSet(?,Name)", tableSpace.GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return std::vector<ECSchemaId>();
@@ -92,7 +92,7 @@ Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, DbTableSpace cons
     if (tableSpace.IsMain())
         stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM main." TABLE_Schema " WHERE Id=?");
     else
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name FROM [%s]." TABLE_Schema " WHERE Id=?", tableSpace).c_str());
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name FROM [%s]." TABLE_Schema " WHERE Id=?", tableSpace.GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return Utf8String();
@@ -114,7 +114,7 @@ bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, DbTab
     if (tableSpace.IsMain())
         stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM main." TABLE_Schema " WHERE Name=?");
     else
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM [%s]." TABLE_Schema " WHERE Name=?", tableSpace).c_str());
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM [%s]." TABLE_Schema " WHERE Name=?", tableSpace.GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return false;
@@ -139,7 +139,7 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR ecdb, DbTableSpace const& t
     if (tableSpace.IsMain())
         stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM main." TABLE_Class " WHERE SchemaId=? AND Name=?");
     else
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Class " WHERE SchemaId=? AND Name=?", tableSpace).c_str());
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Class " WHERE SchemaId=? AND Name=?", tableSpace.GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return ECClassId();
@@ -166,7 +166,7 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR ecdb, DbTableSpace const& t
     if (tableSpace.IsMain())
         sql.assign("SELECT c.Id FROM main." TABLE_Class " c JOIN main." TABLE_Schema " s ON c.SchemaId = s.Id");
     else
-        sql.Sprintf("SELECT c.Id FROM [%s]." TABLE_Class " c JOIN [%s]." TABLE_Schema " s ON c.SchemaId = s.Id", tableSpace, tableSpace);
+        sql.Sprintf("SELECT c.Id FROM [%s]." TABLE_Class " c JOIN [%s]." TABLE_Schema " s ON c.SchemaId = s.Id", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
 
     switch (lookupMode)
         {
@@ -202,9 +202,9 @@ ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, DbTableSp
     {
     Utf8String sql;
     if (tableSpace.IsMain())
-        sql.assign("SELECT e.Id FROM main." TABLE_Enumeration " e, " TABLE_Schema " s");
+        sql.assign("SELECT e.Id FROM main." TABLE_Enumeration " e, main." TABLE_Schema " s");
     else
-        sql.Sprintf("SELECT e.Id FROM [%s]." TABLE_Enumeration " e, [%s]." TABLE_Schema " s", tableSpace, tableSpace);
+        sql.Sprintf("SELECT e.Id FROM [%s]." TABLE_Enumeration " e, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
 
     switch (lookupMode)
         {
@@ -242,9 +242,9 @@ KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, DbTab
     {
     Utf8String sql;
     if (tableSpace.IsMain())
-        sql.assign("SELECT koq.Id FROM main." TABLE_KindOfQuantity " koq, " TABLE_Schema " s");
+        sql.assign("SELECT koq.Id FROM main." TABLE_KindOfQuantity " koq, main." TABLE_Schema " s");
     else
-        sql.Sprintf("SELECT koq.Id FROM [%s]." TABLE_KindOfQuantity " koq, [%s]." TABLE_Schema " s", tableSpace, tableSpace);
+        sql.Sprintf("SELECT koq.Id FROM [%s]." TABLE_KindOfQuantity " koq, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
 
     switch (lookupMode)
         {
@@ -282,9 +282,9 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, D
     {
     Utf8String sql;
     if (tableSpace.IsMain())
-        sql.assign("SELECT cat.Id FROM main." TABLE_PropertyCategory " cat, " TABLE_Schema " s");
+        sql.assign("SELECT cat.Id FROM main." TABLE_PropertyCategory " cat, main." TABLE_Schema " s");
     else
-        sql.Sprintf("SELECT cat.Id FROM [%s]." TABLE_PropertyCategory " cat, [%s]." TABLE_Schema " s", tableSpace, tableSpace);
+        sql.Sprintf("SELECT cat.Id FROM [%s]." TABLE_PropertyCategory " cat, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
 
     switch (lookupMode)
         {
@@ -323,7 +323,7 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace co
     if (tableSpace.IsMain())
         stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM main." TABLE_Property " WHERE ClassId=? AND Name=?");
     else
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Property " WHERE ClassId=? AND Name=?", tableSpace).c_str());
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Property " WHERE ClassId=? AND Name=?", tableSpace.GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return ECPropertyId();
@@ -350,7 +350,10 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace co
     if (tableSpace.IsMain())
         sql.assign("SELECT p.Id FROM main." TABLE_Property " p JOIN main." TABLE_Class " c ON p.ClassId=c.Id JOIN main." TABLE_Schema " s ON c.SchemaId=s.Id");
     else
-        sql.Sprintf("SELECT p.Id FROM [%s]." TABLE_Property " p JOIN [%s]." TABLE_Class " c ON p.ClassId=c.Id JOIN [%s]." TABLE_Schema " s ON c.SchemaId=s.Id", tableSpace, tableSpace, tableSpace);
+        {
+        Utf8CP tableSpaceName = tableSpace.GetName().c_str();
+        sql.Sprintf("SELECT p.Id FROM [%s]." TABLE_Property " p JOIN [%s]." TABLE_Class " c ON p.ClassId=c.Id JOIN [%s]." TABLE_Schema " s ON c.SchemaId=s.Id", tableSpaceName, tableSpaceName, tableSpaceName);
+        }
 
     switch (mode)
         {

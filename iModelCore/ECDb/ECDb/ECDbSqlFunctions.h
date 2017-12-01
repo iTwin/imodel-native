@@ -10,7 +10,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define ECSQLFUNC_ChangeSummary "ChangeSummary"
+#define ECSQLFUNC_Changes "Changes"
 #define SQLFUNC_ChangedValue "ChangedValue"
 #define SQLFUNC_ChangedValueStateToOpCode "ChangedValueStateToOpCode"
 
@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! INT ChangedValueStateToOpCode(ChangedValueState TEXT|INT)
 //!
-//! @note Internal helper SQL function for ChangeSummary ECSQL function. Not intended for public use
+//! @note Internal helper SQL function for Changes ECSQL function. Not intended for public use
 // @bsiclass                                                   Affan.Khan        11/17
 //=======================================================================================
 struct ChangedValueStateToOpCodeSqlFunction final : ScalarFunction
@@ -38,7 +38,7 @@ struct ChangedValueStateToOpCodeSqlFunction final : ScalarFunction
 //=======================================================================================
 //! BLOB ChangedValue(InstanceChangeId INT, PropertyAccessString TEXT, ChangedValueState INT|TEXT, FallbackValue BLOB)
 //!
-//! @note Internal helper SQL function for ChangeSummary ECSQL function. Not intended for public use
+//! @note Internal helper SQL function for Changes ECSQL function. Not intended for public use
 // @bsiclass                                                   Affan.Khan         11/17
 //=======================================================================================
 struct ChangedValueSqlFunction final : ScalarFunction

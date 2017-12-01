@@ -44,8 +44,7 @@ struct LightweightCache final
         typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
 
     private:
-        ECDb const& m_ecdb;
-        TableSpaceSchemaManager const& m_manager;
+        TableSpaceSchemaManager const& m_schemaManager;
 
         mutable ClassIdsPerTableMap m_classIdsPerTable;
         mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
@@ -62,8 +61,9 @@ struct LightweightCache final
         std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
         
+        CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
     public:
-        explicit LightweightCache(ECDb const&, TableSpaceSchemaManager const&);
+        explicit LightweightCache(TableSpaceSchemaManager const&);
         ~LightweightCache() {}
         std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
         bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;
@@ -111,7 +111,7 @@ struct Partition final
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription final : NonCopyableClass
+struct StorageDescription final
     {
     private:
         ECN::ECClassId m_classId;
@@ -122,6 +122,9 @@ struct StorageDescription final : NonCopyableClass
         size_t m_rootVerticalPartitionIndex;
 
         explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0), m_rootVerticalPartitionIndex(0) {}
+        //not copyable
+        StorageDescription(StorageDescription const&) = delete;
+        StorageDescription& operator=(StorageDescription const&) = delete;
 
         Partition* AddHorizontalPartition(DbTable const&, bool isRootPartition);
         Partition* AddVerticalPartition(DbTable const&, bool isRootPartition);

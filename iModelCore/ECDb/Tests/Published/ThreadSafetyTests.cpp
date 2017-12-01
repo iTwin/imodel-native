@@ -17,7 +17,7 @@ THREAD_MAIN_IMPL __Run(void* args);
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct BeThread : NonCopyableClass
+struct BeThread final
     {
     friend THREAD_MAIN_IMPL __Run(void* args);
     enum class State
@@ -29,13 +29,18 @@ struct BeThread : NonCopyableClass
         };
 
     private:
-        struct __ThreadArg : NonCopyableClass, IConditionVariablePredicate
+        struct __ThreadArg : IConditionVariablePredicate
             {
             private:
                 std::function<void(void)> m_worker;
                 intptr_t m_threadId;
                 BeAtomic<State> m_stat;
                 BeConditionVariable m_conditionalVar;
+
+                //not copyable
+                __ThreadArg(__ThreadArg const&) = delete;
+                __ThreadArg& operator=(__ThreadArg const&) = delete;
+
             private:
                 bool _TestCondition(struct BeConditionVariable &cv) override
                     {
@@ -61,6 +66,9 @@ struct BeThread : NonCopyableClass
         const static int DEFAULT_STACK_SIZE = 1024 * 1024 * 8 * 2;
         mutable std::unique_ptr<__ThreadArg> m_arg;
         BeThread() {}
+        //not copyable
+        BeThread(BeThread const&) = delete;
+        BeThread& operator=(BeThread const&) = delete;
 
     public:
         BeThread(BeThread&& rhs) :m_arg(std::move(rhs.m_arg)) {}

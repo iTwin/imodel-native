@@ -56,7 +56,7 @@ struct ChangeExtractor;
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      07/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
 {
     //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
     enum class QueryDbOpcode
@@ -264,6 +264,10 @@ private:
     static int s_count;
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
     
+    //not copyable
+    ChangeSummary(ChangeSummary const&) = delete;
+    ChangeSummary& operator=(ChangeSummary const&) = delete;
+
     void Initialize();
     static void RegisterSqlFunctions(ECDbCR);
     static void UnregisterSqlFunctions(ECDbCR);

@@ -400,11 +400,15 @@ struct Point3dPropertyMap final : CompoundDataPropertyMap
 //=======================================================================================
 // @bsiclass                                                  Krischan.Eberle       10/16
 //+===============+===============+===============+===============+===============+======
-struct StructPropertyMapBuilder final : NonCopyableClass
+struct StructPropertyMapBuilder final
     {
     private:
         RefCountedPtr<StructPropertyMap> m_propMap;
         bool m_isFinished;
+
+        //not copyable
+        StructPropertyMapBuilder(StructPropertyMapBuilder const&) = delete;
+        StructPropertyMapBuilder& operator=(StructPropertyMapBuilder const&) = delete;
 
     public:
         StructPropertyMapBuilder(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructECPropertyCR prop);

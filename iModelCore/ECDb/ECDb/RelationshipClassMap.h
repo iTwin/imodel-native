@@ -15,12 +15,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2014
 //+===============+===============+===============+===============+===============+======
-struct RelationshipConstraintMap : NonCopyableClass
+struct RelationshipConstraintMap
     {
     private:
         ECN::ECRelationshipConstraintCR m_constraint;
         ConstraintECInstanceIdPropertyMap const* m_ecInstanceIdPropMap = nullptr;
         ConstraintECClassIdPropertyMap const* m_ecClassIdPropMap = nullptr;
+
+        //not copyable
+        RelationshipConstraintMap(RelationshipConstraintMap const&) = delete;
+        RelationshipConstraintMap& operator=(RelationshipConstraintMap const&) = delete;
 
     public:
         explicit RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint) :  m_constraint(constraint) {}

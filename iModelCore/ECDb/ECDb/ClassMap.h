@@ -86,11 +86,15 @@ struct ClassMap
             };
 
     protected:
-        struct ClassMappingContext final : NonCopyableClass
+        struct ClassMappingContext final
             {
             private:
                 SchemaImportContext& m_importCtx;
                 ClassMappingInfo const& m_classMappingInfo;
+
+                //not copyable
+                ClassMappingContext(ClassMappingContext const&) = delete;
+                ClassMappingContext& operator=(ClassMappingContext const&) = delete;
 
             public:
                 ClassMappingContext(SchemaImportContext& importCtx, ClassMappingInfo const& classMappingInfo)

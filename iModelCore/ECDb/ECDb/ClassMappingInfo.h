@@ -47,7 +47,7 @@ enum class RelationshipMappingType
 //! and relationships
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
-struct ClassMappingInfo final : NonCopyableClass
+struct ClassMappingInfo final
 {
 private:
     SchemaImportContext& m_ctx;
@@ -63,6 +63,10 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty = nullptr;
+
+    //not copyable
+    ClassMappingInfo(ClassMappingInfo const&) = delete;
+    ClassMappingInfo& operator=(ClassMappingInfo const&) = delete;
 
     BentleyStatus InitializeFromSchema();
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();

@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECSqlStatement.h>
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
@@ -23,7 +22,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      08/2013
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceECSqlSelectAdapter final : NonCopyableClass
+struct ECInstanceECSqlSelectAdapter final
     {
 private:
     typedef BentleyStatus(ECInstanceECSqlSelectAdapter::*ColumnHandler)(ECN::IECInstanceR instance, IECSqlValue const& value) const;
@@ -35,6 +34,10 @@ private:
     int m_sourceECClassIdColumnIndex;
     int m_targetECClassIdColumnIndex;
     bool m_isSingleClassSelectClause;
+
+    //not copyable
+    ECInstanceECSqlSelectAdapter(ECInstanceECSqlSelectAdapter const&) = delete;
+    ECInstanceECSqlSelectAdapter& operator=(ECInstanceECSqlSelectAdapter const&) = delete;
 
     BentleyStatus SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
@@ -94,7 +97,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceInserter final : NonCopyableClass
+struct ECInstanceInserter final
     {
 #if !defined (DOCUMENTATION_GENERATOR)
 public:
@@ -103,6 +106,10 @@ public:
 
 private:
     Impl* m_impl;
+
+    //not copyable
+    ECInstanceInserter(ECInstanceInserter const&) = delete;
+    ECInstanceInserter& operator=(ECInstanceInserter const&) = delete;
 
 public:
     //! Instantiates a new ECInstanceInserter.
@@ -174,7 +181,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceUpdater final : NonCopyableClass
+struct ECInstanceUpdater final
     {
 #if !defined (DOCUMENTATION_GENERATOR)
 public:
@@ -183,6 +190,10 @@ public:
 
 private:
     Impl const* m_impl;
+
+    //not copyable
+    ECInstanceUpdater(ECInstanceUpdater const&) = delete;
+    ECInstanceUpdater& operator=(ECInstanceUpdater const&) = delete;
 
 public:
     //! Instantiates a new ECInstanceUpdater.
@@ -261,13 +272,17 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      02/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceDeleter final : NonCopyableClass
+struct ECInstanceDeleter final
     {
 private:
     ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
     mutable ECSqlStatement m_statement;
     bool m_isValid;
+
+    //not copyable
+    ECInstanceDeleter(ECInstanceDeleter const&) = delete;
+    ECInstanceDeleter& operator=(ECInstanceDeleter const&) = delete;
 
     void Initialize(ECCrudWriteToken const*);
 

@@ -82,7 +82,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
     PERFLOG_START("ECDb", "Schema import> Synchronize existing tables");
 
     std::vector<Utf8String> tableNames;
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM main." TABLE_Table " WHERE Type=" SQLVAL_DbTable_Type_Existing);
+    CachedStatementPtr stmt = GetCachedStatement("SELECT Name FROM main." TABLE_Table " WHERE Type=" SQLVAL_DbTable_Type_Existing);
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -103,7 +103,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
         bset<Utf8StringCP, CompareIUtf8Ascii> oldColumnList;
         bmap<Utf8StringCP, SqliteColumnInfo const*, CompareIUtf8Ascii> newColumnList;
         std::vector<SqliteColumnInfo> dbColumnList;
-        if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(dbColumnList, m_ecdb, tableName))
+        if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(dbColumnList, m_schemaManager.GetECDb(), tableName))
             {
             BeAssert(false);
             return ERROR;
@@ -171,7 +171,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 BentleyStatus DbSchema::SaveOrUpdateTables() const
     {
     bset<Utf8String, CompareIUtf8Ascii> existingTables;
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM main." TABLE_Table);
+    CachedStatementPtr stmt = GetCachedStatement("SELECT Name FROM main." TABLE_Table);
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -231,7 +231,7 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main." TABLE_Table "(ParentTableId,Name,Type,ExclusiveRootClassId) VALUES(?,?,?,?)");
+    CachedStatementPtr stmt = GetCachedStatement("INSERT INTO main." TABLE_Table "(ParentTableId,Name,Type,ExclusiveRootClassId) VALUES(?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -249,7 +249,7 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const DbTableId tableId = DbUtilities::GetLastInsertedId<DbTableId>(m_ecdb);
+    const DbTableId tableId = DbUtilities::GetLastInsertedId<DbTableId>(m_schemaManager.GetECDb());
     if (!tableId.IsValid())
         return ERROR;
 
@@ -301,7 +301,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         }
 
     bset<Utf8String, CompareIUtf8Ascii> existingColumns;
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM main." TABLE_Column " WHERE TableId=?");
+    CachedStatementPtr stmt = GetCachedStatement("SELECT Name FROM main." TABLE_Column " WHERE TableId=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -346,7 +346,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main." TABLE_Column "(TableId,Name,Type,IsVirtual,Ordinal,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = GetCachedStatement("INSERT INTO main." TABLE_Column "(TableId,Name,Type,IsVirtual,Ordinal,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -373,7 +373,7 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const DbColumnId colId = DbUtilities::GetLastInsertedId<DbColumnId>(m_ecdb);
+    const DbColumnId colId = DbUtilities::GetLastInsertedId<DbColumnId>(m_schemaManager.GetECDb());
     if (!colId.IsValid())
         return ERROR;
 
@@ -386,7 +386,7 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::UpdateColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("UPDATE main." TABLE_Column " SET Name=?, Type=?, IsVirtual=?, Ordinal=?, NotNullConstraint=?, UniqueConstraint=?, CheckConstraint=?, DefaultConstraint=?, CollationConstraint=?, OrdinalInPrimaryKey=?, ColumnKind=? WHERE Id=?");
+    CachedStatementPtr stmt = GetCachedStatement("UPDATE main." TABLE_Column " SET Name=?, Type=?, IsVirtual=?, Ordinal=?, NotNullConstraint=?, UniqueConstraint=?, CheckConstraint=?, DefaultConstraint=?, CollationConstraint=?, OrdinalInPrimaryKey=?, ColumnKind=? WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -419,10 +419,10 @@ BentleyStatus DbSchema::UpdateColumn(DbColumn const& column, int columnOrdinal, 
 BentleyStatus DbSchema::LoadColumns(DbTable& table) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (m_tableSpace.IsMain())
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,Name,Type,IsVirtual,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind FROM main." TABLE_Column " WHERE TableId=? ORDER BY Ordinal");
+    if (m_schemaManager.GetTableSpace().IsMain())
+        stmt = GetCachedStatement("SELECT Id,Name,Type,IsVirtual,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind FROM main." TABLE_Column " WHERE TableId=? ORDER BY Ordinal");
     else
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id,Name,Type,IsVirtual,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind FROM [%s]." TABLE_Column " WHERE TableId=? ORDER BY Ordinal", m_tableSpace.GetName().c_str()).c_str());
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,Name,Type,IsVirtual,NotNullConstraint,UniqueConstraint,CheckConstraint,DefaultConstraint,CollationConstraint,OrdinalInPrimaryKey,ColumnKind FROM [%s]." TABLE_Column " WHERE TableId=? ORDER BY Ordinal", m_schemaManager.GetTableSpace().GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return ERROR;
@@ -517,10 +517,10 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
         return nullptr;
 
     CachedStatementPtr stmt = nullptr;
-    if (m_tableSpace.IsMain())
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM " TABLE_Table " WHERE Id=?");
+    if (m_schemaManager.GetTableSpace().IsMain())
+        stmt = GetCachedStatement("SELECT Name FROM " TABLE_Table " WHERE Id=?");
     else
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name FROM [%s]." TABLE_Table " WHERE Id=?", m_tableSpace.GetName().c_str()).c_str());
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT Name FROM [%s]." TABLE_Table " WHERE Id=?", m_schemaManager.GetTableSpace().GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return nullptr;
@@ -541,10 +541,10 @@ DbTable* DbSchema::LoadTable(DbTableId tableId) const
 DbTable* DbSchema::LoadTable(Utf8StringCR name) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (m_tableSpace.IsMain())
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,Type,ExclusiveRootClassId,ParentTableId FROM " TABLE_Table " WHERE Name=?");
+    if (m_schemaManager.GetTableSpace().IsMain())
+        stmt = GetCachedStatement("SELECT Id,Type,ExclusiveRootClassId,ParentTableId FROM " TABLE_Table " WHERE Name=?");
     else
-        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id,Type,ExclusiveRootClassId,ParentTableId FROM [%s]." TABLE_Table " WHERE Name=?", m_tableSpace.GetName().c_str()).c_str());
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,Type,ExclusiveRootClassId,ParentTableId FROM [%s]." TABLE_Table " WHERE Name=?", m_schemaManager.GetTableSpace().GetName().c_str()).c_str());
 
     if (stmt == nullptr)
         return nullptr;
@@ -627,12 +627,12 @@ BentleyStatus DbSchema::LoadIndexDefs(std::vector<std::pair<DbTable*, std::uniqu
 
     CachedStatementPtr stmt;
     if (Utf8String::IsNullOrEmpty(sqlWhereOrJoinClause))
-        stmt = GetECDb().GetImpl().GetCachedSqliteStatement(sql);
+        stmt = GetCachedStatement(sql);
     else
         {
         Utf8String extendedSql(sql);
         extendedSql.append(sqlWhereOrJoinClause);
-        stmt = GetECDb().GetImpl().GetCachedSqliteStatement(extendedSql.c_str());
+        stmt = GetCachedStatement(extendedSql.c_str());
         }
 
     if (stmt == nullptr)
@@ -656,7 +656,7 @@ BentleyStatus DbSchema::LoadIndexDefs(std::vector<std::pair<DbTable*, std::uniqu
             return ERROR;
             }
 
-        CachedStatementPtr indexColStmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT C.Name FROM main." TABLE_IndexColumn " I INNER JOIN main." TABLE_Column " C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
+        CachedStatementPtr indexColStmt = GetCachedStatement("SELECT C.Name FROM main." TABLE_IndexColumn " I INNER JOIN main." TABLE_Column " C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
         if (indexColStmt == nullptr)
             return ERROR;
 
@@ -683,7 +683,7 @@ BentleyStatus DbSchema::LoadIndexDefs(std::vector<std::pair<DbTable*, std::uniqu
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
     {
-    CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("INSERT INTO main." TABLE_Index "(TableId,Name,IsUnique,AddNotNullWhereExp,IsAutoGenerated,ClassId,AppliesToSubclassesIfPartial) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = GetCachedStatement("INSERT INTO main." TABLE_Index "(TableId,Name,IsUnique,AddNotNullWhereExp,IsAutoGenerated,ClassId,AppliesToSubclassesIfPartial) VALUES(?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -700,18 +700,18 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
     if (BE_SQLITE_DONE != stmt->Step())
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to persist definition for index %s on table %s: %s",
-                                         index.GetName().c_str(), index.GetTable().GetName().c_str(), GetECDb().GetLastError().c_str());
+        m_schemaManager.Issues().Report("Failed to persist definition for index %s on table %s: %s",
+                                         index.GetName().c_str(), index.GetTable().GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
         return ERROR;
         }
 
-    const BeInt64Id indexId = DbUtilities::GetLastInsertedId<BeInt64Id>(m_ecdb);
+    const BeInt64Id indexId = DbUtilities::GetLastInsertedId<BeInt64Id>(m_schemaManager.GetECDb());
     if (!indexId.IsValid())
         return ERROR;
 
     stmt = nullptr; //free resources
 
-    CachedStatementPtr indexColStmt = GetECDb().GetImpl().GetCachedSqliteStatement("INSERT INTO main." TABLE_IndexColumn "(IndexId,ColumnId,Ordinal) VALUES(?,?,?)");
+    CachedStatementPtr indexColStmt = GetCachedStatement("INSERT INTO main." TABLE_IndexColumn "(IndexId,ColumnId,Ordinal) VALUES(?,?,?)");
     if (indexColStmt == nullptr)
         return ERROR;
 
@@ -728,8 +728,8 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
         if (BE_SQLITE_DONE != indexColStmt->Step())
             {
-            m_ecdb.GetImpl().Issues().Report("Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
-                       index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_ecdb.GetLastError().c_str());
+            m_schemaManager.Issues().Report("Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
+                       index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
             return ERROR;
             }
 
@@ -760,6 +760,11 @@ DbTable const* DbSchema::GetNullTable() const
     BeAssert(m_nullTable != nullptr);
     return m_nullTable;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle  12/2017
+//---------------------------------------------------------------------------------------
+CachedStatementPtr DbSchema::GetCachedStatement(Utf8CP sql) const { return m_schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(sql); }
 
 //****************************************************************************************
 //DbSchema::TableCollection
@@ -806,7 +811,7 @@ DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, Db
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(m_ecdb, tableId, name, tableType, exclusiveRootClassId, parentTable);
+    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(tableId, name, tableType, exclusiveRootClassId, parentTable);
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -872,8 +877,8 @@ void DbSchema::TableCollection::Remove(Utf8StringCR tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
-    : m_ecdb(ecdb), m_id(id), m_name(name), m_type(type), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
+DbTable::DbTable(DbTableId id, Utf8StringCR name, Type type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+    : m_id(id), m_name(name), m_type(type), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
     {
     if (m_type != Type::Existing && m_type != Type::Virtual)
         m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(m_type));
@@ -1034,13 +1039,12 @@ DbColumn* DbTable::AddColumn(DbColumnId id, Utf8StringCR colName, DbColumn::Type
 
     if (!GetEditHandleR().CanEdit())
         {
-        IssueReporter const& issues = m_ecdb.GetImpl().Issues();
         if (m_type == Type::Existing)
-            issues.Report("Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
+            LOG.errorv("Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
         else
             {
             BeAssert(false && "Cannot add columns to read-only table.");
-            issues.Report("Cannot add columns to the table '%s'. Table is not in edit mode.", m_name.c_str());
+            LOG.errorv("Cannot add columns to the table '%s'. Table is not in edit mode.", m_name.c_str());
             }
 
         return nullptr;

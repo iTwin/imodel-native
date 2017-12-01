@@ -16,12 +16,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      09/2015
 //+===============+===============+===============+===============+===============+======
-struct IssueReporter final : NonCopyableClass
+struct IssueReporter final
     {
 private:
     static const NativeLogging::SEVERITY s_logSeverity = NativeLogging::LOG_ERROR;
     mutable BeMutex m_mutex;
     ECDb::IIssueListener const* m_issueListener = nullptr;
+
+    //not copyable
+    IssueReporter(IssueReporter const&) = delete;
+    IssueReporter& operator=(IssueReporter const&) = delete;
 
 public:
     IssueReporter() {}

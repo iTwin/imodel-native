@@ -90,11 +90,9 @@ bool DbUtilities::TableSpaceExists(ECDbCR ecdb, Utf8CP tableSpace)
     if (DbTableSpace::IsMain(tableSpace) || DbTableSpace::IsTemp(tableSpace))
         return true;
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT 1 FROM [%s].sqlite_master", tableSpace).c_str());
-    if (stmt == nullptr)
-        return false;
-
-    return stmt->Step() == BE_SQLITE_ROW;
+    //cannot use cached statement here as TryPrepare is not available there
+    Statement stmt;
+    return BE_SQLITE_OK == stmt.TryPrepare(ecdb, Utf8PrintfString("SELECT 1 FROM [%s].sqlite_master", tableSpace).c_str());
     }
 
 //---------------------------------------------------------------------------------------

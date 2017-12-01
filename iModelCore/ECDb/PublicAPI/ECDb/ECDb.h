@@ -36,9 +36,9 @@ enum class ChangeOpCode
 
 //=======================================================================================
 //! The enum represents the values for the ChangedValueState argument of the ECSQL function
-//! @b ChangeSummary.
+//! @b Changes.
 //! The enum can be used when programmatically binding values to the ChangedValueState argument
-//! in an ECSQL using the ChangeSummary ECSQL function.
+//! in an ECSQL using the Changes ECSQL function.
 //! @see @ref ECDbChangeSummaries
 // @bsienum                                                             11/2017
 //+===============+===============+===============+===============+===============+======

@@ -27,12 +27,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                            Krischan.Eberle      11/2017
 //=======================================================================================
-struct ChangeSummaryManager final : NonCopyableClass
+struct ChangeSummaryManager final
     {
     private:
         ECDbCR m_ecdb;
         ChangeSummaryExtractor m_extractor;
         mutable std::unique_ptr<ChangedValueSqlFunction> m_changedValueSqlFunction;
+
+        //not copyable
+        ChangeSummaryManager(ChangeSummaryManager const&) = delete;
+        ChangeSummaryManager& operator=(ChangeSummaryManager const&) = delete;
 
         DbResult CreateCacheFile(BeFileNameCR cachePath) const;
         DbResult AddMetadataToChangeSummaryCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;

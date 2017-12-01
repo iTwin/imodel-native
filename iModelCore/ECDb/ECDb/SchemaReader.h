@@ -79,17 +79,23 @@ struct PropertyCategoryDbEntry final
         PropertyCategoryDbEntry(ECN::PropertyCategoryId id, ECN::PropertyCategoryCR cat) : m_categoryId(id), m_cachedCategory(const_cast<ECN::PropertyCategoryP> (&cat)) {}
     };
 
+struct TableSpaceSchemaManager;
+
 //=======================================================================================
 // @bsimethod                                                    Affan.Khan        05/2012
 //+===============+===============+===============+===============+===============+======
 struct SchemaReader final
     {
     public:
-        struct Context final : NonCopyableClass
+        struct Context final
             {
             private:
                 std::vector<ECN::NavigationECProperty*> m_navProps;
                 std::vector<ECN::ECSchema*> m_schemasToLoadCAInstancesFor;
+
+                //not copyable
+                Context(Context const&) = delete;
+                Context& operator=(Context const&) = delete;
 
             public:
                 Context() {}
@@ -99,8 +105,7 @@ struct SchemaReader final
             };
 
     private:
-        ECDbCR m_ecdb;
-        DbTableSpace const& m_tableSpace;
+        TableSpaceSchemaManager const& m_schemaManager;
 
         mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
         mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
@@ -134,12 +139,16 @@ struct SchemaReader final
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
+        ECDbCR GetECDb() const;
+        DbTableSpace const& GetTableSpace() const;
+        CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
+
     public:
-        SchemaReader(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace) {}
+        SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaManager(manager) {}
         ~SchemaReader() {}
 
         BentleyStatus GetSchemas(bvector<ECN::ECSchemaCP>&, bool loadSchemaEntities) const;
-        bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetSchemaId(m_ecdb, m_tableSpace, schemaNameOrAlias.c_str(), mode).IsValid(); }
+        bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetSchemaId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), mode).IsValid(); }
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode) const;
         ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECSchemaId GetSchemaId(ECN::ECSchemaCR) const;
@@ -159,7 +168,7 @@ struct SchemaReader final
         ECN::PropertyCategoryId GetPropertyCategoryId(ECN::PropertyCategoryCR) const;
 
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
-        ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(m_ecdb, m_tableSpace, schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
+        ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
 

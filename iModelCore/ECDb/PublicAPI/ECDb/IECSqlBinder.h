@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    05/2013
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder
     {
 public:
     //=======================================================================================
@@ -38,6 +38,10 @@ public:
         };
 
 private:
+    //not copyable
+    IECSqlBinder(IECSqlBinder const&) = delete;
+    IECSqlBinder& operator=(IECSqlBinder const&) = delete;
+
     virtual ECSqlStatus _BindNull() = 0;
     virtual ECSqlStatus _BindBoolean(bool) = 0;
     virtual ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) = 0;

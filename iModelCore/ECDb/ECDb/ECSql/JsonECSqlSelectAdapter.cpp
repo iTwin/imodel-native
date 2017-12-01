@@ -18,11 +18,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! Helper class for the JsonECSqlSelectAdapter
 // @bsiclass                                                Ramanujam.Raman      10/2012
 //+===============+===============+===============+===============+===============+======
-struct ECSqlToJsonConverter final : NonCopyableClass
+struct ECSqlToJsonConverter final
     {
     private:
         ECSqlStatement const& m_stmt;
         JsonECSqlSelectAdapter::FormatOptions const& m_formatOptions;
+
+        //not copyable
+        ECSqlToJsonConverter(ECSqlToJsonConverter const&) = delete;
+        ECSqlToJsonConverter& operator=(ECSqlToJsonConverter const&) = delete;
 
         BentleyStatus PropertyValueToJson(JsonValueR, IECSqlValue const&) const;
         BentleyStatus PrimitiveToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;

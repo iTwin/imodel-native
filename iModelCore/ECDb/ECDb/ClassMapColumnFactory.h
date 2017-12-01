@@ -9,7 +9,6 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/ECDb.h>
 #include "DbSchema.h"
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -91,10 +90,10 @@ struct ColumnMapContext
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct ClassMapColumnFactory : NonCopyableClass
+struct ClassMapColumnFactory final
     {
     public:
-        struct ColumnResolutionScope
+        struct ColumnResolutionScope final
             {
             protected:
                 ClassMap const& m_classMap;
@@ -121,6 +120,11 @@ struct ClassMapColumnFactory : NonCopyableClass
         Nullable<uint32_t> m_maxSharedColumnCount;
         mutable bool m_areSharedColumnsReserved = false;
         mutable ColumnResolutionScope* m_columnResolutionScope = nullptr;
+
+        //not copyable
+        ClassMapColumnFactory(ClassMapColumnFactory const&) = delete;
+        ClassMapColumnFactory& operator=(ClassMapColumnFactory const&) = delete;
+
         DbColumn* HandleOverflowColumn(DbColumn* column) const;
         DbTable* GetEffectiveTable(SchemaImportContext&) const;
         DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
@@ -134,7 +138,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         static uint32_t MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
 
     public:
-        explicit ClassMapColumnFactory(ClassMap const& classMap);
+        explicit ClassMapColumnFactory(ClassMap const&);
         ~ClassMapColumnFactory() {};
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
         bool IsColumnInUse(DbColumn const& column) const;

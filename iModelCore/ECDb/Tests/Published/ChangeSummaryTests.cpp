@@ -223,8 +223,24 @@ struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture
 TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
-
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    //verify that the expected change summary cache file alias
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "pragma database_list"));
+    int attachedTableSpaceCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP tableSpaceName = stmt.GetValueText(1);
+        if (BeStringUtilities::StricmpAscii("main", tableSpaceName) == 0 || BeStringUtilities::StricmpAscii("temp", tableSpaceName) == 0)
+            continue;
+
+        attachedTableSpaceCount++;
+        ASSERT_STREQ("changesummaries", tableSpaceName);
+       }
+    ASSERT_EQ(1, attachedTableSpaceCount) << "Only changesummaries table space is expected to be attached";
+    }
 
     ECEnumeration const* opCodeECEnum = m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode");
     ASSERT_TRUE(opCodeECEnum != nullptr);
@@ -302,6 +318,51 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
     ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "Opening after cache was deleted with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  11/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('hello',123)"));
+
+    TestChangeSet revision1;
+    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
+
+    ASSERT_FALSE(m_ecdb.IsChangeSummaryCacheAttached());
+    ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema("ECDbChangeSummaries"));
+    ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema("ECDbChangeSummaries", SchemaLookupMode::ByName, "changesummaries"));
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChangeSummaries", "ChangeSummary") == nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChangeSummaries","ChangeSummary", SchemaLookupMode::ByName, "changesummaries") == nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode") == nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode", SchemaLookupMode::ByName, "changesummaries") == nullptr);
+
+
+    ECInstanceKey summaryKey;
+    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(summaryKey, revision1));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ChangedValue(1,'S','AfterInsert','Hello World') FROM ts.Foo1"));
+    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')"));
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
@@ -320,6 +381,7 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
                 <ECProperty propertyName="Origin" typeName="Point2d" />
             </ECEntityClass>
         </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -355,40 +417,6 @@ TEST_F(ChangeSummaryTestFixture, GeneralWorkflow)
 
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                  11/17
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?> 
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
-            <ECEntityClass typeName="Foo1">
-                <ECProperty propertyName="S" typeName="string" />
-                <ECProperty propertyName="I" typeName="int" />
-            </ECEntityClass>
-            <ECEntityClass typeName="Foo2">
-                <ECProperty propertyName="Dt" typeName="dateTime" />
-                <ECProperty propertyName="Origin" typeName="Point2d" />
-            </ECEntityClass>
-        </ECSchema>)xml")));
-
-    TestChangeTracker tracker(m_ecdb);
-    tracker.EnableTracking(true);
-
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('hello',123)"));
-
-    TestChangeSet revision1;
-    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
-
-    ECInstanceKey summaryKey;
-    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(summaryKey, revision1));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ChangedValue(1,'S','AfterInsert','Hello World') FROM ts.Foo1"));
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.ChangeSummary(1,'AfterInsert')"));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16
@@ -396,6 +424,7 @@ TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
 TEST_F(ChangeSummaryTestFixture, SchemaChange)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
 
     // Test1: Change to be_Prop table - should cause empty change summary without errors
     TestChangeTracker tracker(m_ecdb);
@@ -459,6 +488,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
                     </Target>
                 </ECRelationshipClass>
             </ECSchema>)")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
 
     ECInstanceKey i1, i2, i3, i4, i5, i6;
     {//---------------------------------------------------->>>
@@ -549,7 +579,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.ChangeSummary(?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Foo.Changes(?, ?)"));
     stmt.BindId(1, changeSummaryKey.GetInstanceId());
     stmt.BindInt(2, (int) ChangedValueState::BeforeUpdate);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -680,8 +710,8 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     m_ecdb.SaveChanges();
     {
     ECSqlStatement stmt;
-    //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2 FROM ts.Element.ChangeSummary(?1, ?2)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Element.ChangeSummary(?,?)"));
+    //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2 FROM ts.Element.Changes(?1, ?2)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Element.Changes(?,?)"));
 
     stmt.BindId(1, changeSummaryKey.GetInstanceId());
     stmt.BindInt(2, 1); //1: Insert TODO: Replace by OpCode enum
