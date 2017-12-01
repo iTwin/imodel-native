@@ -266,7 +266,7 @@ Dgn::DgnDbStatus      Grid::_OnUpdate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbStatus GridPortion::_OnDelete() const
+Dgn::DgnDbStatus Grid::_OnDelete() const
     {
     for (DgnElementId axisId : MakeAxesIterator().BuildIdList<DgnElementId>())
         GetDgnDb().Elements().Delete(axisId);

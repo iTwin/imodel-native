@@ -388,7 +388,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     // Check if grid is deleted correctly
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(DgnDbStatus::Success, orthogonalGridUnconstrained->Delete()) << "Error in deleting grid";
-    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridUnconstrained->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGrid>(orthogonalGridUnconstrained->GetElementId()).IsNull()) << "Grid has not been deleted";
 
     for (DgnElementId axisId : axesIds)
         {
@@ -797,7 +797,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     // Check if grid is deleted correctly
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(DgnDbStatus::Success, orthogonalGridUnconstrainedExtended->Delete()) << "Error in deleting grid";
-    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridUnconstrainedExtended->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGrid>(orthogonalGridUnconstrainedExtended->GetElementId()).IsNull()) << "Grid has not been deleted";
 
     for (DgnElementId axisId : axesIds)
         {
@@ -1119,7 +1119,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     // Check if grid is deleted correctly
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(DgnDbStatus::Success, orthogonalGridConstrained->Delete()) << "Error in deleting grid";
-    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridConstrained->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGrid>(orthogonalGridConstrained->GetElementId()).IsNull()) << "Grid has not been deleted";
 
     for (DgnElementId axisId : axesIds)
         {
@@ -1528,7 +1528,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     // Check if grid is deleted correctly
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(DgnDbStatus::Success, orthogonalGridConstrainedExtended->Delete()) << "Error in deleting grid";
-    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridConstrainedExtended->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGrid>(orthogonalGridConstrainedExtended->GetElementId()).IsNull()) << "Grid has not been deleted";
 
     for (DgnElementId axisId : axesIds)
         {
@@ -1841,7 +1841,7 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     // Check if grid is deleted correctly
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(DgnDbStatus::Success, radialGrid->Delete()) << "Error in deleting grid";
-    ASSERT_TRUE(db.Elements().Get<GridPortion>(radialGrid->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<Grid>(radialGrid->GetElementId()).IsNull()) << "Grid has not been deleted";
 
     for (DgnElementId axisId : axesIds)
         {
@@ -2217,7 +2217,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     // Check if grid is deleted correctly
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(DgnDbStatus::Success, sketchGrid->Delete()) << "Error in deleting grid";
-    ASSERT_TRUE(db.Elements().Get<GridPortion>(sketchGrid->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<Grid>(sketchGrid->GetElementId()).IsNull()) << "Grid has not been deleted";
     ASSERT_TRUE(db.Elements().Get<GridAxis>(gridAxis->GetElementId()).IsNull()) << "Grid axis has not been deleted";
 
     for (DgnElementId surfaceId : gridElementsAfterSplineInsert)
