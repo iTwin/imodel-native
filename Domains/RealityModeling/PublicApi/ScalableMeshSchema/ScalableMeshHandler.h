@@ -136,7 +136,6 @@ private:
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
     Utf8String _GetTileCacheKey() const override;
     bool _WantDebugRangeGraphics() const override;
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR args) const override;
 
 public:
     SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
@@ -163,7 +162,6 @@ private:
 
     //SceneInfo   m_sceneInfo;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    Dgn::TileTree::TriMeshTree::TriMeshPtr _CreateGeometry(Dgn::TileTree::TriMeshTree::TriMesh::CreateParams const& args, Dgn::Render::SystemP renderSys) override { return new SMGeometry(args, *this, renderSys); }
     Utf8CP _GetName() const override { return "3SM"; }
 
 public:

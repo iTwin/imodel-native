@@ -393,7 +393,7 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNode::_WantDebugRangeGraphics() const
     {
-    static bool s_debugRange = true;
+    static bool s_debugRange = false;
     return s_debugRange;
     }
 
@@ -432,47 +432,6 @@ bool SMNode::IsNotLoaded() const
     return false;
     }
 */
-
-/*---------------------------------------------------------------------------------**//**
- * Draw this node.
- * @bsimethod                                                    Mathieu.St-Pierre  08/17
- +---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
-    {
-    static bool s_debugTexture = false;
-    if (!s_debugTexture)
-        {
-        T_Super::_DrawGraphics(args);
-        return;
-        }
-
-    if (_WantDebugRangeGraphics())
-        AddDebugRangeGraphics(args);
-
-    for (auto& mesh : m_meshes)
-        {
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateSceneGraphic();
-
-        GraphicBuilder::TileCorners corners;
-        DPoint3d rangeCorners[8];
-        m_range.Get8Corners(rangeCorners);
-
-        memcpy(&corners.m_pts[0], &rangeCorners[4], sizeof(DPoint3d));
-        memcpy(&corners.m_pts[1], &rangeCorners[5], sizeof(DPoint3d));
-        memcpy(&corners.m_pts[2], &rangeCorners[6], sizeof(DPoint3d));
-        memcpy(&corners.m_pts[3], &rangeCorners[7], sizeof(DPoint3d));
-
-        auto& geom = static_cast<SMGeometry&>(*mesh);
-
-        GraphicParams params;
-        params.SetLineColor(ColorDef::Blue());
-        graphic->ActivateGraphicParams(params);
-        graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-        graphic->AddTile(*geom.m_texture, corners);
-
-        args.m_graphics.Add(*graphic->Finish());
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
@@ -861,7 +820,12 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
                 
         }
 
-    m_meshes.push_front(scene._CreateGeometry(trimesh, renderSys));
+    Dgn::TileTree::TriMeshTree::TriMeshList triMeshList;
+    scene._CreateGeometry(triMeshList, trimesh, renderSys);
+    for (auto& meshEntry : triMeshList)
+        {
+        m_meshes.push_front(meshEntry);
+        }
 
     delete [] trimesh.m_points;
     delete [] trimesh.m_vertIndex;
