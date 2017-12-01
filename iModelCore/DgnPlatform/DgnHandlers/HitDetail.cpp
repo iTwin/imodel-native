@@ -13,6 +13,7 @@
 void GeomDetail::Init()
     {
     m_primitive     = nullptr;
+    m_parentType    = HitParentGeomType::None;
     m_geomType      = HitGeomType::None;
     m_detailSource  = HitDetailSource::None;
     m_hitPriority   = HitPriority::Highest;
@@ -1060,14 +1061,6 @@ static inline double tenthOfPixel(double inValue) {return ((int) ((inValue * 10.
 static const double s_tooCloseTolerance = 1.0e-10;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool is2dHitCompare(HitDetailCR oHit1, HitDetailCR oHit2)
-    {
-    return (!oHit1.GetViewport().Is3dView() && !oHit2.GetViewport().Is3dView());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int doZCompareOfSurfaceAndEdge(HitDetailCR oHitSurf, HitDetailCR oHitEdge)
@@ -1113,7 +1106,7 @@ static int doZCompare(HitDetailCR oHit1, HitDetailCR oHit2)
     double  z2 = oHit2.GetGeomDetail().GetZValue();
 
     // For 2d hits z reflects display priority which should be checked before locate priority, etc. when a fill/surface hit is involved...
-    if (is2dHitCompare(oHit1, oHit2))
+    if (!oHit1.GetViewport().Is3dView())
         {
         // screen z values are sorted descending
         COMPARE_RELATIVE (z2, z1);
@@ -1132,6 +1125,11 @@ static int doZCompare(HitDetailCR oHit1, HitDetailCR oHit2)
     DVec3d  normal1 = oHit1.GetGeomDetail().GetSurfaceNormal();
     DVec3d  normal2 = oHit2.GetGeomDetail().GetSurfaceNormal();
 
+    // NOTE: Only surfaces display hidden edges...NEEDSWORK: Nothing is hidden by transparent display style (RenderMode::SmoothShade)...
+    bool hiddenEdgesVisible = oHit1.GetViewport().GetViewFlags().HiddenEdgesVisible();
+    bool isObscurableWireHit1 = (RenderMode::Wireframe != oHit1.GetViewport().GetViewFlags().GetRenderMode() && HitParentGeomType::Wire == oHit1.GetGeomDetail().GetParentGeomType());
+    bool isObscurableWireHit2 = (RenderMode::Wireframe != oHit2.GetViewport().GetViewFlags().GetRenderMode() && HitParentGeomType::Wire == oHit2.GetGeomDetail().GetParentGeomType());
+
     if (0.0 != normal1.Magnitude() && 0.0 != normal2.Magnitude())
         {
         // Both surface hits...if close let other criteria determine order...
@@ -1141,29 +1139,30 @@ static int doZCompare(HitDetailCR oHit1, HitDetailCR oHit2)
     else if (0.0 != normal1.Magnitude())
         {
         // 1st is surface hit...project 2nd hit into plane defined by surface normal...
-        int compareResult = doZCompareOfSurfaceAndEdge(oHit1, oHit2);
+        int compareResult = (hiddenEdgesVisible && !isObscurableWireHit2) ? 1 : doZCompareOfSurfaceAndEdge(oHit1, oHit2);
 
         return (0 == compareResult ? 0 : compareResult);
         }
     else if (0.0 != normal2.Magnitude())
         {
         // 2nd is surface hit...project 1st hit into plane defined by surface normal...
-        int compareResult = doZCompareOfSurfaceAndEdge(oHit2, oHit1);
+        int compareResult = (hiddenEdgesVisible && !isObscurableWireHit1) ? 1 : doZCompareOfSurfaceAndEdge(oHit2, oHit1);
 
         return (0 == compareResult ? 0 : -compareResult);
         }
     else
         {
-        bool isQvWireHit1 = (HitGeomType::Surface == oHit1.GetGeomDetail().GetGeomType() && NULL == oHit1.GetGeomDetail().GetCurvePrimitive());
-        bool isQvWireHit2 = (HitGeomType::Surface == oHit2.GetGeomDetail().GetGeomType() && NULL == oHit2.GetGeomDetail().GetCurvePrimitive());
+        // NOTE: I don't believe this case currently exists...silhouette hits are only created for cones/spheres and always have a curve primitive...
+        bool isSilhouetteHit1 = (HitGeomType::Surface == oHit1.GetGeomDetail().GetGeomType() && NULL == oHit1.GetGeomDetail().GetCurvePrimitive());
+        bool isSilhouetteHit2 = (HitGeomType::Surface == oHit2.GetGeomDetail().GetGeomType() && NULL == oHit2.GetGeomDetail().GetCurvePrimitive());
 
-        // NOTE: QV wireframe hits are only needed to locate silhouettes, make sure they always lose to a real edge hit since a robust z compare isn't possible...
-        if (isQvWireHit1 && !isQvWireHit2)
+        // NOTE: Likely silhouette hit, make sure it always loses to a real edge hit...
+        if (isSilhouetteHit1 && !isSilhouetteHit2)
             return 1;
-        if (isQvWireHit2 && !isQvWireHit1)
+        if (isSilhouetteHit2 && !isSilhouetteHit1)
             return -1;
         if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
-            return 0; // Both QV or real edge hits...if close let other criteria determine order...
+            return 0; // Both silhouette or real edge hits...if close let other criteria determine order...
         }
 
     // screen z values are sorted descending
@@ -1253,10 +1252,10 @@ int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriori
 #if defined (NOT_NOT_DUMP)
     printf("HIT LIST COUNT: %d\n", GetCount());
 
-    HitDetailP    thisPath;
+    HitDetailP    thisHit;
 
-    for (int i=0; NULL != (thisPath = (HitDetailP) GetHit(i)); i++)
-        printf("(%d) Elem: %I64d, GeomType: %d Z: %lf Normal: (%lf %lf %lf)\n", i, thisPath->GetHeadElem()->GetElementId(), thisPath->GetGeomDetail().GetGeomType(), thisPath->GetGeomDetail().GetZValue(), thisPath->GetGeomDetail().GetSurfaceNormal().x, thisPath->GetGeomDetail().GetSurfaceNormal().y, thisPath->GetGeomDetail().GetSurfaceNormal().z);
+    for (int i=0; NULL != (thisHit = (HitDetailP) GetHit(i)); i++)
+        printf("(%d) Elem: %llu, GeomType: %d Z: %lf Normal: (%lf %lf %lf)\n", i, (long long unsigned int) thisHit->GetElementId().GetValue(), thisHit->GetGeomDetail().GetGeomType(), thisHit->GetGeomDetail().GetZValue(), thisHit->GetGeomDetail().GetSurfaceNormal().x, thisHit->GetGeomDetail().GetSurfaceNormal().y, thisHit->GetGeomDetail().GetSurfaceNormal().z);
 
     printf("\n\n");
 #endif

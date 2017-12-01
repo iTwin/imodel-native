@@ -415,6 +415,7 @@ struct GeometryCollection
         DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSolid() const;            //!< solid and volumetric mesh check that avoids creating GeometricPrimitivePtr when possible.
+        DGNPLATFORM_EXPORT bool IsBRepPolyface() const;     //!< polyface representation of a BRep surface/solid that is only returned when the solid kernel is unavailable.
 
         DgnGeometryPartPtr GetGeometryPartPtr() const {return m_state->m_dgnDb.Elements().GetForEdit<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
         DgnGeometryPartCPtr GetGeometryPartCPtr() const {return m_state->m_dgnDb.Elements().Get<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
