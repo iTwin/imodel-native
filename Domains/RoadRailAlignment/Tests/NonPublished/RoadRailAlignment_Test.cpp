@@ -54,9 +54,6 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_DOUBLE_EQ(-10.0, point.y);
     ASSERT_DOUBLE_EQ(5.0, point.z);
 
-    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->GenerateAprox3dGeom());
-    ASSERT_TRUE(alignmentPtr->Update().IsValid());
-
     DistanceExpression distanceExp = alignmentPtr->ToDistanceExpression(point);
     ASSERT_DOUBLE_EQ(75.0, distanceExp.GetDistanceAlongFromStart());
     ASSERT_DOUBLE_EQ(10.0, distanceExp.GetLateralOffsetFromILinearElement().Value());
@@ -87,6 +84,15 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_DOUBLE_EQ(109.0, stationTranslatorPtr->ToStation(129).Value());
     ASSERT_DOUBLE_EQ(130.0, stationTranslatorPtr->ToStation(150).Value());
     ASSERT_TRUE(stationTranslatorPtr->ToStation(160).IsNull());
+
+    ASSERT_TRUE(stationTranslatorPtr->ToDistanceAlongFromStart(-1).IsNull());
+    ASSERT_DOUBLE_EQ(0.0, stationTranslatorPtr->ToDistanceAlongFromStart(1000.0).Value());
+    ASSERT_DOUBLE_EQ(29.0, stationTranslatorPtr->ToDistanceAlongFromStart(1029.0).Value());
+    ASSERT_DOUBLE_EQ(30.0, stationTranslatorPtr->ToDistanceAlongFromStart(10.0).Value());
+    ASSERT_DOUBLE_EQ(71.0, stationTranslatorPtr->ToDistanceAlongFromStart(10001.0).Value());
+    ASSERT_DOUBLE_EQ(129.0, stationTranslatorPtr->ToDistanceAlongFromStart(109.0).Value());
+    ASSERT_DOUBLE_EQ(150.0, stationTranslatorPtr->ToDistanceAlongFromStart(130.0).Value());
+    ASSERT_TRUE(stationTranslatorPtr->ToDistanceAlongFromStart(140.0).IsNull());
 
     // Delete-cascade
     ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->Delete());
@@ -128,9 +134,6 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
 
     auto verticalIds = alignmentPtr->QueryVerticalAlignmentIds();
     ASSERT_EQ(1, verticalIds.size());
-
-    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->GenerateAprox3dGeom());
-    ASSERT_TRUE(alignmentPtr->Update().IsValid());
 
     auto horizAlignPtr = HorizontalAlignment::GetForEdit(*projectPtr, alignmentPtr->QueryHorizontal()->GetElementId());
     ASSERT_EQ(DgnDbStatus::Success, horizAlignPtr->GenerateElementGeom());

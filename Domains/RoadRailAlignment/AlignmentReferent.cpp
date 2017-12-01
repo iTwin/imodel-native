@@ -59,6 +59,7 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, double dista
 AlignmentStationingTranslator::AlignmentStationingTranslator(AlignmentCR alignment)
     {
     m_stations = alignment.QueryOrderedStations();
+    m_length = alignment.GetLength();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,5 +95,30 @@ NullableDouble AlignmentStationingTranslator::ToStation(double distanceAlongFrom
         } while (true);
 
     BeAssert(false);
+    return NullableDouble();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+NullableDouble AlignmentStationingTranslator::ToDistanceAlongFromStart(double station) const
+    {
+    if (m_stations.empty())
+        return NullableDouble();
+
+    auto curStation = m_stations.begin();
+    do
+        {
+        if (curStation->GetStation() > station)
+            continue;
+
+        auto nextStation = curStation + 1;
+        double nextDistanceAlong = (nextStation == m_stations.end()) ? m_length : nextStation->GetDistanceAlongFromStart();
+        double endStation = curStation->GetStation() + (nextDistanceAlong - curStation->GetDistanceAlongFromStart());
+        if (endStation >= station)
+            return (station - curStation->GetStation() + curStation->GetDistanceAlongFromStart());
+
+        } while ((++curStation) != m_stations.end());
+
     return NullableDouble();
     }

@@ -77,6 +77,7 @@ struct AlignmentStationingTranslator : RefCountedBase
 {
 private:
     bvector<Alignment::DistanceAlongStationPair> m_stations;
+    double m_length;
 
     AlignmentStationingTranslator(AlignmentCR alignment);
 
@@ -84,6 +85,7 @@ public:
     ROADRAILALIGNMENT_EXPORT static AlignmentStationingTranslatorPtr Create(AlignmentCR alignment);
 
     ROADRAILALIGNMENT_EXPORT LinearReferencing::NullableDouble ToStation(double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT LinearReferencing::NullableDouble ToDistanceAlongFromStart(double station) const;
 }; // AlignmentStationingTranslator
 
 //=================================================================================
