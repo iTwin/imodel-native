@@ -123,7 +123,7 @@
 
 
     <ECEntityClass typeName="PlanGrid" modifier="Abstract" description="a plangrid is a grid whose surfaces are extruded in a common direction">
-      <BaseClass>bis:SpatialLocationPortion</BaseClass>
+      <BaseClass>Grid</BaseClass>
     </ECEntityClass>
   
     <ECEntityClass typeName="OrthogonalGrid" description="And OrthogonalGrid has all of its' surfaces orthogonal in either X or Y direction">
