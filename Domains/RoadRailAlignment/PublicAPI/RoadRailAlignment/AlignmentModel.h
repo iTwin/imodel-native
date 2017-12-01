@@ -38,7 +38,7 @@ public:
     }; // CreateParams
 
 protected:
-    explicit AlignmentModel(CreateParams const& params) : T_Super(params) {}
+    explicit AlignmentModel(CreateParams const& params) : T_Super(params) { SetIsPrivate(true); }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentModel)
@@ -52,9 +52,9 @@ public:
 //=======================================================================================
 //! Model to contain and manage a Horizontal Alignment element
 //=======================================================================================
-struct HorizontalAlignmentModel : Dgn::GeometricModel2d
+struct HorizontalAlignmentModel : Dgn::SpatialLocationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentModel, Dgn::GeometricModel2d);
+    DGNMODEL_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentModel, Dgn::SpatialLocationModel);
     friend struct HorizontalAlignmentModelHandler;
 
 public:
@@ -132,9 +132,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AlignmentModelHandler : Dgn::dgn_ModelHandler::Sp
 //=======================================================================================
 //! The ModelHandler for HorizontalAlignmentModel
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentModelHandler : Dgn::dgn_ModelHandler::Geometric2d
+struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentModelHandler : Dgn::dgn_ModelHandler::SpatialLocation
 {
-    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentModel, HorizontalAlignmentModel, HorizontalAlignmentModelHandler, Dgn::dgn_ModelHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentModel, HorizontalAlignmentModel, HorizontalAlignmentModelHandler, Dgn::dgn_ModelHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
 }; // HorizontalAlignmentModelHandler
 
 //=======================================================================================
