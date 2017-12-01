@@ -185,6 +185,74 @@ bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> 
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Mathieu.St-Pierre                       11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName listingFile)
+    {
+    std::ifstream f;
+    bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> resultList;
+    if (!ScalableMeshGTestUtil::GetDataPath(listingFile))
+        return resultList;
+    f.open(listingFile.c_str());
+    if (f.fail())
+        return resultList;
+    while (!f.eof())
+        {
+        std::string nameStr;
+        f >> nameStr;
+
+        DMatrix4d mat;
+        mat.InitIdentity();
+        for (size_t i = 0; i <4; ++i)
+            for (size_t j = 0; j <4; ++j)
+                f >> mat.coff[i][j];
+
+        int nOfClipPlanes;
+        f >> nOfClipPlanes;
+
+        bvector<DPoint4d> clipPlanes;
+        for (size_t i = 0; i < nOfClipPlanes; ++i)
+            {
+            DPoint4d pt;
+            f >> pt.x;
+            f >> pt.y;
+            f >> pt.z;
+            f >> pt.w;
+            clipPlanes.push_back(pt);
+            }
+
+        
+        /*
+        int nOfResultPts;
+        f >> nOfResultPts;
+        */
+        bvector<double> results(1);
+        //bvector<DPoint3d> resultPts;
+        for (size_t i = 0; i < 1; ++i)
+            {
+            f >> results[i];
+            /*
+            DPoint3d pt;
+            f >> pt.x;  
+            f >> pt.y;
+            f >> pt.z;
+            resultPts.push_back(pt);*/
+            }
+
+        BeFileName name;
+        ScalableMeshGTestUtil::GetDataPath(name);
+        name.AppendToPath(SM_DATA_PATH);
+        name.AppendToPath(WString(nameStr.c_str()).c_str());
+        std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>> entries(name, mat, clipPlanes, results);
+        resultList.push_back(entries);
+        }
+    return resultList;
+    }
+
+
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScalableMeshGTestUtil::InitScalableMesh()

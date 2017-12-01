@@ -28,16 +28,16 @@ struct IScalableMeshPublisher abstract : virtual public RefCountedBase
     /*__PUBLISH_SECTION_END__*/
     private:
         
-        virtual void _Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData) = 0;
+        virtual void _Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData, bool outputTexture) = 0;
 
-        virtual void _Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData) = 0;
+        virtual void _Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture) = 0;
 
     /*__PUBLISH_SECTION_START__*/
     public:
 
-        BENTLEY_SM_EXPORT void Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData);
+        BENTLEY_SM_EXPORT void Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData, bool outputTexture);
 
-        BENTLEY_SM_EXPORT void Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData);
+        BENTLEY_SM_EXPORT void Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture);
         
         BENTLEY_SM_EXPORT static IScalableMeshPublisherPtr Create(const SMPublishType& type);
     };

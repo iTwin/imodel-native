@@ -48,6 +48,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         
         virtual void CancelPreloadData() override;
 
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
+
         virtual bool IsTextureAvailable() override;
 
 		virtual bool DoesClipFileExist() const override;

@@ -97,6 +97,10 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         virtual BentleyStatus _GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const = 0;
 
+
+        virtual BentleyStatus _GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                       int                                                          queryId) const = 0;
+        
         virtual BentleyStatus _StopQuery(int queryId) = 0; 
 
         virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
@@ -128,6 +132,9 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         BENTLEY_SM_EXPORT BentleyStatus GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                         int                                                   queryId);
+
+        BENTLEY_SM_EXPORT BentleyStatus GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                                int                                                   queryId);        
 
         BENTLEY_SM_EXPORT BentleyStatus StopQuery(int queryId); 
 

@@ -15,10 +15,26 @@
     <ClCompile Include="SMUnitTestUtil.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="SMUnitTestDisplayQuery.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SMUnitTestUtil.h">
       <Filter>Includes</Filter>
     </ClInclude>
+    <ClInclude Include="SMUnitTestDisplayQuery.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="BuildTests_vancouver.mke" />
+    <None Include="filter_list.mki" />
+    <None Include="Prewire.mke" />
+    <None Include="RunScalableMeshUnitTests.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
   </ItemGroup>
 </Project>

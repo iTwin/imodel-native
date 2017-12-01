@@ -230,6 +230,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
 
         virtual void CancelPreloadData() override;
+        
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
 
         virtual bool IsTextureAvailable() override;        
 

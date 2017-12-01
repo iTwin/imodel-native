@@ -88,6 +88,7 @@ void IScalableMeshAnalysis::SetUnitToMeter(double val)
 ISMGridVolume::ISMGridVolume() 
     {
     m_direction = DVec3d::From(0, 0, 1); // fixed to Z for now
+    m_gridOrigin = DPoint3d::From(0, 0, 0);
     m_resolution = 1.0; // 1 meter
     m_gridSizeLimit = 5000;
     m_totalVolume = m_cutVolume = m_fillVolume = 0;
@@ -213,7 +214,14 @@ bool ScalableMeshAnalysis::_GetComputationRange(DRange3d& rangeInter, bool inWor
 
     rangeInter.IntersectionOf(rangeMesh, rangePolygon);
     if (rangeInter.IsNull())
-        return false; // no intersection
+        {
+        // polygon can be planar on Z, add some elevation
+        rangePolygon.low.z += -1.0;
+        rangePolygon.high.z += 1.0;
+        rangeInter.IntersectionOf(rangeMesh, rangePolygon);
+        if (rangeInter.IsNull()) // still null ???
+            return false; // no intersection
+        }
 
     if (bAlignZ) // align the bottom Z
         {
@@ -420,7 +428,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume3SM(const bvector<DPoin
                             {
                             // add the intersection with the polygon in the hit list
                             BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
-                            //_convertWorldTo3SM(polyHit);
                             rayInter.point = polyHit;
                             rayInter.rayFraction = rayFraction;
                             rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
@@ -456,6 +463,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume3SM(const bvector<DPoin
 
     // Sum the discrete volumes
     _FillGridVolumes(grid, intersected, m_unit2meter); // Sum the discrete volumes
+    grid.m_gridOrigin = grid.m_range.low; // the computation & range are in World
+
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
 #endif
@@ -576,8 +585,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
             intersected[i*m_ySize + j] = false;
             double y = range.low.y + m_yStep * j;
             DPoint3d sourceW = DPoint3d::From(x, y, zsource); // source is in world
-            //DPoint3d sourceW = source;
-            //_convert3SMToWorld(m_scmPtr, sourceW); // draping interface converts always from UorsTo3SM
 
             DPoint3d interP1;
             bool bret = draping1->IntersectRay(interP1, grid.m_direction, sourceW);
@@ -598,9 +605,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
                 }
             }
 #pragma omp critical
-            {
             progress += progressStep;
-            }
         }
     }
 
@@ -618,14 +623,15 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
             {
             if (intersected[i*m_ySize + j])
                 {
-                grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interPoints[i*m_ySize + j].x);
-                grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interPoints[i*m_ySize + j].y);
+                grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interPoints[i*m_ySize + j].x * m_unit2meter); // in meter
+                grid.m_VolSegments[i*m_ySize + j].VolumeRanges.push_back(interPoints[i*m_ySize + j].y * m_unit2meter); // in meter
                 }
             }
         }
 
     // Sum the discrete volumes
     _FillGridVolumes(grid, intersected, m_unit2meter);
+    grid.m_gridOrigin = grid.m_range.low; // the computation & range are in World
 
     delete[] intersected;
     delete[] interPoints;
@@ -763,9 +769,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
     double resUOR = (grid.m_isWorld ? resolution / m_unit2meter : resolution);
     if (!_InitGridFrom(grid, resUOR, range))
         return DTMStatusInt::DTM_ERROR; // could not initialize grid
-    //grid.m_resolution = resolution; // in meter
 
-    //DRange3d range = grid.m_range; // the intersection range (mesh inter region)
     int m_xSize, m_ySize;
     grid.GetGridSize(m_xSize, m_ySize);
     if (m_xSize <= 0 || m_ySize <= 0)
@@ -806,7 +810,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
 
 #pragma omp parallel num_threads(numProcs)
     {
-
 #pragma omp for
     for (int i = 0; i < m_xSize; i++)
         {
@@ -834,16 +837,14 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
             intersected[i*m_ySize + j] = false;
 
             double y = range.low.y + m_yStep * j;
-            DPoint3d source = DPoint3d::From(x, y, zsource);
-            DPoint3d sourceW = DPoint3d::From(x, y, zsource);
+            DPoint3d sourceW = DPoint3d::From(x, y, zsource); // world coords
 
-            //_convert3SMToWorld(sourceW); // Intersection interface needs 
             bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection> Hits;
             bool bret = draping1->IntersectRay(Hits, grid.m_direction, sourceW);
 
             if (bret && Hits.size() > 0)
                 {
-                    DRay3d ray = DRay3d::FromOriginAndVector(source, grid.m_direction);
+                    DRay3d ray = DRay3d::FromOriginAndVector(sourceW, grid.m_direction);
                     DPoint3d polyHit; polyHit.Zero();
                     double rayFraction = 0;
                     visitor->Reset();
@@ -860,7 +861,6 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
                             {
                             // add the intersection with the polygon in the hit list
                             BENTLEY_NAMESPACE_NAME::TerrainModel::DTMRayIntersection rayInter;
-                            //_convertWorldTo3SM(polyHit);
                             rayInter.point = polyHit;
                             rayInter.rayFraction = rayFraction * m_unit2meter;
                             rayInter.normal = -1.0 * grid.m_direction; // with inversed direction
@@ -898,6 +898,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolumeWorld(const bvector<DPo
         }
 
     _FillGridVolumes(grid, intersected, m_unit2meter); // Sum the discrete volumes
+    grid.m_gridOrigin = grid.m_range.low; // the computation & range are in World
+
 #ifdef SM_ANALYSIS_DEBUG
     DumpGrid(std::string("c:\\Dev\\logDebugGrid_sdk.txt"), grid);
 #endif

@@ -246,12 +246,17 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         /**----------------------------------------------------------------------------
         Preload data that will be required
         -----------------------------------------------------------------------------*/
-        virtual void PreloadData(const bvector<DRange3d>& tileRanges) = 0;
+        virtual void PreloadData(const bvector<DRange3d>& tileRanges) = 0;        
      
         /**----------------------------------------------------------------------------
         Preload data that will be required
         -----------------------------------------------------------------------------*/
         virtual void CancelPreloadData() = 0;
+
+        /**----------------------------------------------------------------------------
+        Compute raster tiles
+        -----------------------------------------------------------------------------*/
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) = 0;
 
         /**----------------------------------------------------------------------------
         Is texture data is available. Should always return true but for streamed 

@@ -10,6 +10,7 @@
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <TerrainModel/Core/IDTM.h>
+#include "SMUnitTestDisplayQuery.h"
 
 class ScalableMeshEnvironment : public ::testing::Environment
     {
@@ -114,6 +115,37 @@ public:
 
 };
 
+
+class ScalableMeshTestDisplayQuery : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>
+{
+protected:
+    BeFileName        m_filename;
+    DMatrix4d         m_rootToViewMatrix;    
+    bvector<DPoint4d> m_clipPlanes;
+    bvector<double>   m_expectedResults;
+
+public:
+
+    virtual void SetUp() {
+        auto paramList = GetParam();
+        m_filename = std::get<0>(paramList);
+        m_rootToViewMatrix = std::get<1>(paramList);
+        m_clipPlanes = std::get<2>(paramList);
+        m_expectedResults = std::get<3>(paramList);
+    }
+
+    virtual void TearDown() { }
+    BeFileName GetFileName() { return m_filename; }
+    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
+    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
+    bvector<double>& GetExpectedResults() { return m_expectedResults; }
+
+    ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
+
+
+};
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -187,6 +219,8 @@ INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTest, ::testing::ValuesIn(Scal
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
 
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));
+
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {
 	auto myScalableMesh = OpenMesh();
@@ -207,7 +241,7 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 }
 
 TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
-{
+{   
 	auto myScalableMesh = OpenMesh();
 	bvector<DPoint3d> sourcePts = GetData();
 	TerrainModel::DTMDrapedLinePtr result;
@@ -222,6 +256,48 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 		EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
 	}
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
+    {
+
+    /*
+    BeFileName GetFileName() { return m_filename; }
+    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
+    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
+    bvector<double>& GetExpectedResults() { return m_expectedResults; }
+    */
+
+
+    //auto myScalableMesh = OpenMesh();
+
+    /*
+    bvector<DPoint3d> sourcePts = GetData();
+    TerrainModel::DTMDrapedLinePtr result;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
+    ASSERT_EQ(result.IsValid(), true);
+    for (size_t i = 0; i < GetResult().size(); ++i)
+    {
+    DPoint3d pt;
+    result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
+    EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
+    EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
+    EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
+    }*/
+    
+
+    DisplayQueryTester queryTester;
+
+    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
+
+    EXPECT_EQ(result == true, true);
+
+    if (result)
+        queryTester.DoQuery();
+    }
+
 
 // Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
 // When calling from main function, we actually want to return an error.
@@ -274,3 +350,4 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 //
 //    return retCode;
 //    }
+
