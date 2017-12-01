@@ -526,7 +526,7 @@ struct MeshBuilderMap
     {
         friend struct MeshBuilderMap;
     private:
-        DisplayParamsCP     m_params;
+        DisplayParamsCPtr   m_params;
         uint16_t            m_order;
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
@@ -555,7 +555,7 @@ struct MeshBuilderMap
             if (m_hasNormals != rhs.m_hasNormals)
                 return !m_hasNormals;
 
-            BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+            BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
             return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
             }
     };
