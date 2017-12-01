@@ -4052,7 +4052,10 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
                     context.CookGeometryParams(geomParams, *graphic);
                     geom->AddToGraphic(*graphic);
-                    break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+
+                    if (iter.IsBRepPolyface())
+                        continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+                    break;
                     }
 
                 DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
@@ -4082,7 +4085,10 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
                     context.CookGeometryParams(geomParams, *graphic);
                     partGeom->AddToGraphic(*graphic);
-                    continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+
+                    if (partIter.IsBRepPolyface())
+                        continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+                    break;
                     }
 
                 return graphic->Finish(); // Done with part...
@@ -4336,6 +4342,14 @@ bool GeometryCollection::Iterator::IsSolid() const
         default:
             return false;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryCollection::Iterator::IsBRepPolyface() const
+    {
+    return (GeometryStreamIO::OpCode::BRepPolyface == m_egOp.m_opCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
