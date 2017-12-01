@@ -83,12 +83,10 @@ struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
     friend struct SheetAttachmentPicker;
-    friend struct BRepSilhouetteProcessor;
 
 private:
     bool m_doneSearching;
     bool m_unusableLStyleHit;
-    bool m_doLocateInteriors;
     TestLStylePhase m_testingLStyle;
     GeomDetail m_currGeomDetail;
     HitListP m_hitList;
@@ -109,6 +107,7 @@ private:
     void SetPickAperture(double val) {m_pickAperture=val; m_pickApertureSquared=val*val;}
     IPickGeomP _GetIPickGeom () override {return this;}
     StatusInt _OutputGeometry(GeometrySourceCR) override;
+    void _OnNewGeometry() override;
     bool _CheckStop() override;
     StatusInt _InitContextForView() override;
     StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override;
@@ -150,7 +149,6 @@ public:
     bool GetDoneSearching() {return m_doneSearching;}
     void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TestLStylePhase::None == phase) m_unusableLStyleHit = false;}
     DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
-    bool* GetLocateInteriors() {return &m_doLocateInteriors;}
 
     bool _IsSnap() const override;
     DPoint4dCR _GetPickPointView() const override {return m_pickPointView;}

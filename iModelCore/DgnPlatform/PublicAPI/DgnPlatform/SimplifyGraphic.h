@@ -224,6 +224,10 @@ virtual bool _ProcessBodyClipped(IBRepEntityCR, SimplifyGraphic&, ClipVectorCR) 
 virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 virtual bool _ProcessTriMeshClipped(Render::TriMeshArgsCR args, SimplifyGraphic&, ClipVectorCR) {return false; }
 
+//! Allow processor to initialize per-geometry state information before any _Process method is called.
+//! @remarks Can be used to allow a _Process method to distinguish between the natural geometry type and geometry output according to the UnhandledPreference.
+virtual void _OnNewGeometry() {}
+
 //! Allow processor to output graphics to it's own process methods.
 //! @param[in] context The current view context.
 //! @remarks The implementor is responsible for setting up the ViewContext. Might want to attach/detach a viewport, etc.

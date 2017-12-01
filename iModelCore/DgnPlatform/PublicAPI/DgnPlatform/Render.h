@@ -163,6 +163,22 @@ public:
     RenderMode GetRenderMode() const {return m_renderMode;}
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
+    bool HiddenEdgesVisible() const
+        {
+        switch (m_renderMode)
+            {
+            case RenderMode::SolidFill:
+            case RenderMode::HiddenLine:
+                return m_hiddenEdges;
+
+            case RenderMode::SmoothShade:
+                return m_visibleEdges && m_hiddenEdges;
+
+            default:
+                return true;
+            }
+        }
+
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
@@ -1313,17 +1329,17 @@ public:
 //=======================================================================================
 enum class GraphicType
 {
-    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: disabled.
+    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled.
     ViewBackground,
     //! Renders as if it were part of the scene. Coordinates: world. RenderMode: from view. Lighting: from view. Z-testing: enabled.
     //! Used for the scene itself, dynamics, and 'normal' decorations.
     Scene,
     //! Renders within the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
     WorldDecoration,
-    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the ACS triad and the grid.
     WorldOverlay,
-    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the locate circle.
     ViewOverlay
 };
@@ -2532,15 +2548,15 @@ struct HiliteSettings
     struct Defaults
     {
         static ColorDef Color() {return ColorDef(0x23,0xbb,0xfc);};
-        static double VisibleRatio() {return 0.5;}
+        static double VisibleRatio() {return 0.25;}
         static double HiddenRatio() {return 0.0;}
         static HiliteSettings::Silhouette Width() {return HiliteSettings::Silhouette::Thin;}
     };
 private:
     ColorDef    m_color;
-    double      m_visibleRatio = 0.5;
-    double      m_hiddenRatio = 0.0;
-    Silhouette  m_silhouette = Silhouette::Thick;
+    double      m_visibleRatio;
+    double      m_hiddenRatio;
+    Silhouette  m_silhouette;
 
     static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
 public:

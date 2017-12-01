@@ -4000,16 +4000,20 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 GraphicParams  graphicParams;
 
                 context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
-                graphicParams.SetWidth(graphicParams.GetWidth()+2); // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
+                graphicParams.SetWidth(graphicParams.GetWidth()+2);
+                graphicParams.SetLineTransparency(25);
 
-                graphic = context.CreateSceneGraphic();
-                graphic->ActivateGraphicParams(graphicParams);
+                bool isSnap = (hit.GetHitType() >= HitDetailType::Snap);
+                bool doSegmentFlash = false;
 
-                bool doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
-
-                if (!doSegmentFlash)
+                if (isSnap)
                     {
-                    switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
+                    SnapDetailCR snap = static_cast<SnapDetailCR>(hit);
+                    
+                    if (!snap.IsHot())
+                        graphicParams.SetLineTransparency(150);
+
+                    switch (snap.GetSnapMode())
                         {
                         case SnapMode::Center:
                         case SnapMode::Origin:
@@ -4021,6 +4025,9 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                             break;
                         }
                     }
+
+                graphic = context.CreateSceneGraphic();
+                graphic->ActivateGraphicParams(graphicParams);
 
                 DSegment3d      segment;
                 CurveVectorPtr  curve;
@@ -4052,7 +4059,10 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
                     context.CookGeometryParams(geomParams, *graphic);
                     geom->AddToGraphic(*graphic);
-                    break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+
+                    if (iter.IsBRepPolyface())
+                        continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+                    break;
                     }
 
                 DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
@@ -4082,7 +4092,10 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
                     context.CookGeometryParams(geomParams, *graphic);
                     partGeom->AddToGraphic(*graphic);
-                    continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+
+                    if (partIter.IsBRepPolyface())
+                        continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+                    break;
                     }
 
                 return graphic->Finish(); // Done with part...
@@ -4336,6 +4349,14 @@ bool GeometryCollection::Iterator::IsSolid() const
         default:
             return false;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryCollection::Iterator::IsBRepPolyface() const
+    {
+    return (GeometryStreamIO::OpCode::BRepPolyface == m_egOp.m_opCode);
     }
 
 /*---------------------------------------------------------------------------------**//**

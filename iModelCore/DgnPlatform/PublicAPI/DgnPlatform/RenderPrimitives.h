@@ -180,6 +180,8 @@ public:
         {
         return new DisplayParams(type, catId, subCatId, gradient, matId, lineColor, fillColor, width, linePixels, fillFlags, geomClass, ignoreLights, dgnDb, renderSys);
         }
+
+    DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 };
 
 //=======================================================================================
