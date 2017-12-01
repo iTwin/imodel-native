@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		1F104C421B4E99BA00E442C6 /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F104C411B4E99BA00E442C6 /* JavaScriptCore.framework */; };
+		1FDA2B3F1FCF46D300C5C88C /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FDA2B3E1FCF46D300C5C88C /* CFNetwork.framework */; };
+		1FDA2B401FCF46E500C5C88C /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FDA2B3E1FCF46D300C5C88C /* CFNetwork.framework */; };
 		214616431743AB0400C73C9F /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 214616421743AB0400C73C9F /* CoreVideo.framework */; };
 		214616451743AB0B00C73C9F /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 214616441743AB0B00C73C9F /* AVFoundation.framework */; };
 		214616461743C63200C73C9F /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 214616421743AB0400C73C9F /* CoreVideo.framework */; };
@@ -50,12 +52,12 @@
 
 /* Begin PBXFileReference section */
 		1F104C411B4E99BA00E442C6 /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		1FDA2B3E1FCF46D300C5C88C /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		214616421743AB0400C73C9F /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		214616441743AB0B00C73C9F /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		214616481743C73000C73C9F /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		217D92EE174D342E00447CD9 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		217D92F1174D349200447CD9 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
-		21B9D929174FE2F80081E08A /* DgnClientFxAssets.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = DgnClientFxAssets.bundle; sourceTree = "<group>"; };
 		21F58F5D1CC7CA5F00CF9914 /* SenTest_BaseClass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SenTest_BaseClass.h; sourceTree = "<group>"; };
 		21F58F5E1CC7CA5F00CF9914 /* SenTest_BaseClass.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SenTest_BaseClass.mm; sourceTree = "<group>"; };
 		23856D051A7F7A38006F6A5F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
@@ -87,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1FDA2B3F1FCF46D300C5C88C /* CFNetwork.framework in Frameworks */,
 				23856D061A7F7A38006F6A5F /* Security.framework in Frameworks */,
 				217D92EF174D342E00447CD9 /* AssetsLibrary.framework in Frameworks */,
 				214616451743AB0B00C73C9F /* AVFoundation.framework in Frameworks */,
@@ -104,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1FDA2B401FCF46E500C5C88C /* CFNetwork.framework in Frameworks */,
 				1F104C421B4E99BA00E442C6 /* JavaScriptCore.framework in Frameworks */,
 				217D92F2174D349200447CD9 /* MobileCoreServices.framework in Frameworks */,
 				217D92F0174D345B00447CD9 /* AssetsLibrary.framework in Frameworks */,
@@ -134,7 +138,6 @@
 			isa = PBXGroup;
 			children = (
 				23DDFB6E17B10D96003F8EF8 /* BeTestiOSAppData.xcappdata */,
-				21B9D929174FE2F80081E08A /* DgnClientFxAssets.bundle */,
 				88FA903714F584D60028AB2E /* BeTestiOS */,
 				88FA905514F584D70028AB2E /* BeTestiOSTests */,
 				88FA903014F584D60028AB2E /* Frameworks */,
@@ -154,6 +157,7 @@
 		88FA903014F584D60028AB2E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1FDA2B3E1FCF46D300C5C88C /* CFNetwork.framework */,
 				1F104C411B4E99BA00E442C6 /* JavaScriptCore.framework */,
 				217D92F1174D349200447CD9 /* MobileCoreServices.framework */,
 				217D92EE174D342E00447CD9 /* AssetsLibrary.framework */,
@@ -315,15 +319,15 @@
 			files = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/DgnClientFxAssets.bundle",
+				"$(SRCROOT)/Assets",
 			);
 			name = "Copy Assets";
 			outputPaths = (
-				$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/DgnClientFxAssets.bundle,
+				$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/Assets,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -RL DgnClientFxAssets.bundle $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/";
+			shellScript = "cp -RL Assets/* $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

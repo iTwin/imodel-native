@@ -18,7 +18,7 @@
     BeAssert (documentsManifest.DoesPathExist ());
     #endif
         
-    NSString* bundleDir      = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"DgnClientFxAssets.bundle"];
+    NSString* bundleDir      = [[NSBundle mainBundle] resourcePath];
     NSString* tempDir        = NSTemporaryDirectory ();
     NSArray*  appSupportUrls = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
     NSString* appBundleId    = [[NSBundle mainBundle] bundleIdentifier];
