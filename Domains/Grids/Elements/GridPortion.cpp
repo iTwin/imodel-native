@@ -254,12 +254,25 @@ Dgn::DgnDbStatus      GridPortion::_OnUpdate
     Dgn::DgnElementCR original
 )
     {
-    Dgn::DgnDbStatus status = T_Super::_OnUpdate (original);
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
     if (status == Dgn::DgnDbStatus::Success)
         {
-        return Validate ();
+        return Validate();
         }
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  11/17
+//---------------------------------------------------------------------------------------
+Dgn::DgnDbStatus GridPortion::_OnDelete() const
+    {
+    for (DgnElementId axisId : MakeAxesIterator().BuildIdList<DgnElementId>())
+        GetDgnDb().Elements().Delete(axisId);
+
+    GetSurfacesModel()->Delete();
+
+    return T_Super::_OnDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**

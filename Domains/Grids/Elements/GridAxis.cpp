@@ -131,4 +131,20 @@ Dgn::DgnElementCR original
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  11/17
+//---------------------------------------------------------------------------------------
+Dgn::DgnDbStatus GridAxis::_OnDelete() const
+    {
+    bvector<DgnElementId> surfaces = MakeIterator().BuildIdList<DgnElementId>();
+
+    DgnDbR db = GetDgnDb();
+
+    // Deletes surfaces
+    for (DgnElementId surfaceId : surfaces)
+        db.Elements().Delete(surfaceId);
+
+    return T_Super::_OnDelete();
+    }
+
 END_GRIDS_NAMESPACE

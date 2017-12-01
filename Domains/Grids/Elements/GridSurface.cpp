@@ -264,6 +264,25 @@ DgnDbStatus      GridSurface::_OnUpdate
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  11/17
+//---------------------------------------------------------------------------------------
+Dgn::DgnDbStatus GridSurface::_OnDelete() const
+    {
+    bvector<DgnElementId> curves = MakeCreatedCurvesIterator().BuildIdList<DgnElementId>();
+
+    DgnDbR db = GetDgnDb();
+
+    // Delete relationship with axis and axis itself
+    for (DgnElementId curveId : curves)
+        {
+        db.DeleteLinkTableRelationships(GRIDS_SCHEMA(GRIDS_REL_GridSurfaceCreatesGridCurve), BeSQLite::EC::ECInstanceId(GetElementId()), BeSQLite::EC::ECInstanceId(curveId));
+        db.Elements().Delete(curveId);
+        }
+
+    return T_Super::_OnDelete();
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------

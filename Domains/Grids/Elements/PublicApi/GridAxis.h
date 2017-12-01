@@ -45,6 +45,7 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 

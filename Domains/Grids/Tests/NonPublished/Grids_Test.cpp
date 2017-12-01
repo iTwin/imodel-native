@@ -254,7 +254,7 @@ RadialGridPortion::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForR
 //---------------------------------------------------------------------------------------
 // @betest                                      Jonas.Valiunas                  10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
+TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
     OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
@@ -383,6 +383,24 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_Created)
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetHeight(height)) << "Grid surface height should be accessible";
         ASSERT_EQ(70, height) << "Grid surface height is incorrect";
         }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is deleted correctly
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(DgnDbStatus::Success, orthogonalGridUnconstrained->Delete()) << "Error in deleting grid";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridUnconstrained->GetElementId()).IsNull()) << "Grid has not been deleted";
+
+    for (DgnElementId axisId : axesIds)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridAxis>(axisId).IsNull()) << "Grid axis has not been deleted";
+        }
+
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridSurface>(surface->GetElementId()).IsNull()) << "Grid surface has not been deleted";
+        }
+
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -645,7 +663,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
+TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
@@ -774,6 +792,24 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_Created)
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetHeight(height)) << "Grid surface height should be accessible";
         ASSERT_EQ(70 + 2 * BUILDING_TOLERANCE, height) << "Grid surface height is incorrect";
         }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is deleted correctly
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(DgnDbStatus::Success, orthogonalGridUnconstrainedExtended->Delete()) << "Error in deleting grid";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridUnconstrainedExtended->GetElementId()).IsNull()) << "Grid has not been deleted";
+
+    for (DgnElementId axisId : axesIds)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridAxis>(axisId).IsNull()) << "Grid axis has not been deleted";
+        }
+
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridSurface>(surface->GetElementId()).IsNull()) << "Grid surface has not been deleted";
+        }
+
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -949,7 +985,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 //---------------------------------------------------------------------------------------
 // @betest                                      Jonas.Valiunas                  10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
+TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
@@ -1078,6 +1114,24 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_Created)
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetHeight(height)) << "Grid surface height should be accessible";
         ASSERT_EQ(70, height) << "Grid surface height is incorrect";
         }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is deleted correctly
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(DgnDbStatus::Success, orthogonalGridConstrained->Delete()) << "Error in deleting grid";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridConstrained->GetElementId()).IsNull()) << "Grid has not been deleted";
+
+    for (DgnElementId axisId : axesIds)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridAxis>(axisId).IsNull()) << "Grid axis has not been deleted";
+        }
+
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridSurface>(surface->GetElementId()).IsNull()) << "Grid surface has not been deleted";
+        }
+
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1340,7 +1394,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
+TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     OrthogonalGridPortion::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
@@ -1469,6 +1523,24 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_Created)
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetHeight(height)) << "Grid surface height should be accessible";
         ASSERT_EQ(70 + 2 * BUILDING_TOLERANCE, height) << "Grid surface height is incorrect";
         }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is deleted correctly
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(DgnDbStatus::Success, orthogonalGridConstrainedExtended->Delete()) << "Error in deleting grid";
+    ASSERT_TRUE(db.Elements().Get<OrthogonalGridPortion>(orthogonalGridConstrainedExtended->GetElementId()).IsNull()) << "Grid has not been deleted";
+
+    for (DgnElementId axisId : axesIds)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridAxis>(axisId).IsNull()) << "Grid axis has not been deleted";
+        }
+
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridSurface>(surface->GetElementId()).IsNull()) << "Grid surface has not been deleted";
+        }
+
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1644,7 +1716,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F(GridsTestFixture, RadialGrid_Created)
+TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     RadialGridPortion::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
@@ -1764,6 +1836,24 @@ TEST_F(GridsTestFixture, RadialGrid_Created)
         ASSERT_EQ(BentleyStatus::SUCCESS, surface->TryGetHeight(height)) << "Grid surface height should be accessible";
         ASSERT_EQ(50, height) << "Grid surface height is incorrect";
         }
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is deleted correctly
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(DgnDbStatus::Success, radialGrid->Delete()) << "Error in deleting grid";
+    ASSERT_TRUE(db.Elements().Get<GridPortion>(radialGrid->GetElementId()).IsNull()) << "Grid has not been deleted";
+
+    for (DgnElementId axisId : axesIds)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridAxis>(axisId).IsNull()) << "Grid axis has not been deleted";
+        }
+
+    for (GridSurfaceCPtr surface : allElements)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridSurface>(surface->GetElementId()).IsNull()) << "Grid surface has not been deleted";
+        }
+
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2027,7 +2117,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+--------
-TEST_F(GridsTestFixture, SketchGrid_Created)
+TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
@@ -2122,6 +2212,20 @@ TEST_F(GridsTestFixture, SketchGrid_Created)
     ASSERT_EQ(3, gridElementsAfterSplineInsert.size());
     ASSERT_TRUE(gridElementsAfterSplineInsert.back().IsValid()) << "Grid's element ids should be valid";
     ASSERT_EQ(gridElementsAfterSplineInsert.back(), spline->GetElementId()) << "The grid element should be the inserted grid spline";
+
+    /////////////////////////////////////////////////////////////
+    // Check if grid is deleted correctly
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(DgnDbStatus::Success, sketchGrid->Delete()) << "Error in deleting grid";
+    ASSERT_TRUE(db.Elements().Get<GridPortion>(sketchGrid->GetElementId()).IsNull()) << "Grid has not been deleted";
+    ASSERT_TRUE(db.Elements().Get<GridAxis>(gridAxis->GetElementId()).IsNull()) << "Grid axis has not been deleted";
+
+    for (DgnElementId surfaceId : gridElementsAfterSplineInsert)
+        {
+        ASSERT_TRUE(db.Elements().Get<GridSurface>(surfaceId).IsNull()) << "Grid surface has not been deleted";
+        }
+
+    db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
