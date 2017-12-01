@@ -128,6 +128,23 @@ struct CachingDataSource :
             ICancellationTokenPtr ct
             );
 
+        AsyncTaskPtr<ObjectsResult> GetObjectInternal
+            (
+            ObjectIdCR objectId,
+            DataOrigin origin,
+            IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
+            ICancellationTokenPtr ct = nullptr
+            );
+
+        void GetObjectInBackgroundIfNeeded
+            (
+            ObjectIdCR objectId,
+            RetrieveOptions retrieveOptions,
+            IDataSourceCache::JsonFormat format,
+            CachingDataSource::ObjectsResult result,
+            ICancellationTokenPtr ct
+            );
+
         AsyncTaskPtr<DataOriginResult> CacheNavigationChildren
             (
             ObjectIdCR parentId,
@@ -219,7 +236,7 @@ struct CachingDataSource :
         WSCACHE_EXPORT AsyncTaskPtr<ObjectsResult> GetObject
             (
             ObjectIdCR objectId,
-            DataOrigin origin,
+            RetrieveOptions retrieveOptions,
             IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             ) override;

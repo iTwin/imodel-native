@@ -164,7 +164,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<ObjectsResult> GetObject
             (
             ObjectIdCR objectId,
-            DataOrigin origin,
+            RetrieveOptions retrieveOptions,
             IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             ) = 0;

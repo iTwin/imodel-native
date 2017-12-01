@@ -1694,15 +1694,40 @@ TEST_F(CachingDataSourceTests, CacheNavigation_NotCachedRootPassedToBeFullyCache
         EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     }
 
-TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObject)
+TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObjectAndReturnsError)
     {
     auto ds = GetTestDataSourceV1();
 
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId("TestSchema.TestClass", "Foo"), _, _))
-        .Times(1)
-        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
+    ObjectId objectId("TestSchema.TestClass", "Foo");
 
-    ds->GetObject(ObjectId("TestSchema.TestClass", "Foo"), CachingDataSource::DataOrigin::CachedOrRemoteData, IDataSourceCache::JsonFormat::Raw)->Wait();
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(objectId, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::CachedOrRemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_ObjectLinkedButNotCached_RetrievesRemoteObject)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, objectId));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(objectId, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::CachedOrRemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
     }
 
 TEST_F(CachingDataSourceTests, GetObject_ObjectNotCachedAndResponseHasInstance_ReturnsError)
@@ -2957,6 +2982,367 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_EQ(CachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
     EXPECT_EQ("Foo", result.GetValue().GetJson()[DataSourceCache_PROPERTY_RemoteId].asString());
     EXPECT_EQ("A", result.GetValue().GetJson()["TestProperty"].asString());
+    }
+
+//Cached Data
+
+TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseNotCachedBackgroundSync_ErrorDoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::Status::DataNotCached, result.GetError().GetStatus());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, {{ "TestProperty", "A" }});
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    StubInstances newInstances;
+    newInstances.Add(objectId, {{ "TestProperty", "B" }});
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(newInstances.ToWSObjectsResult())));
+
+    auto backgroundSync = SyncNotifier::Create();
+
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, backgroundSyncResult.GetValue());
+
+    auto cachedInstanceKey = ds->StartCacheTransaction().GetCache().FindInstance({ "TestSchema.TestClass", "Foo" });
+    EXPECT_TRUE(cachedInstanceKey.IsValid());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgroundSyncNotChanged_BackgroundSyncReturnsNotModified)
+    {
+    auto ds = GetTestDataSourceV1();
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::CachedData, result.GetValue().GetOrigin());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotModified, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgroundSyncError_BackgroundSyncReturnsError)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, {{ "TestProperty", "A" }});
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_FALSE(backgroundSyncResult.IsSuccess());
+    }
+
+// RemoteData
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteDataNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteDataBackgroundSync_DoesNotSyncInBackground)
+    {
+
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    //auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(nullptr, cache);
+    //auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    EXPECT_CALL(*cache, ReadInstanceCacheTag(_)).WillOnce(Return("TagA"));
+
+    EXPECT_CALL(*cache, UpdateInstance(_, _)).WillOnce(Return(CacheStatus::OK));
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    EXPECT_CALL(*cache, ReadInstance(_, _, _)).WillOnce(DoAll(SetArgReferee<1>("instance"), Return(CacheStatus::OK)));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+// CachedOrRemoteData
+
+TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCachedAndNetworkErrorBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCachedBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+// RemoteOrCachedData
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseNotCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataBackgroundSync_DoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_Default_CallsCommitLocalDeletionsBeforeGettingChanges)
