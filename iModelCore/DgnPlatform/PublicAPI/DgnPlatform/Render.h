@@ -1313,7 +1313,7 @@ public:
 //=======================================================================================
 enum class GraphicType
 {
-    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: disabled.
+    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled.
     ViewBackground,
     //! Renders as if it were part of the scene. Coordinates: world. RenderMode: from view. Lighting: from view. Z-testing: enabled.
     //! Used for the scene itself, dynamics, and 'normal' decorations.
