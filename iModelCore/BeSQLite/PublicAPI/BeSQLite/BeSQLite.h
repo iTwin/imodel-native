@@ -2338,6 +2338,8 @@ protected:
     //! @return Code indicating success or error.
     virtual DbResult _VerifyProfileVersion(OpenParams const& params) {return BE_SQLITE_OK;}
 
+    virtual DbResult _OnDbAttached(Utf8CP filename, Utf8CP dbAlias) const { return BE_SQLITE_OK; }
+    virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
 

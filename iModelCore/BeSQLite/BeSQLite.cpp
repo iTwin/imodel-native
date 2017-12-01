@@ -1790,6 +1790,9 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const
     if (wasActive)
         txn->Begin();
 
+    if (BE_SQLITE_OK == rc)
+        return _OnDbAttached(filename, alias);
+
     return rc;
     }
 
@@ -1812,7 +1815,10 @@ DbResult Db::DetachDb(Utf8CP alias) const
     if (wasActive)
         txn->Begin();
 
-    return  rc;
+    if (BE_SQLITE_OK == rc)
+        return _OnDbDetached(alias);
+
+    return rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
