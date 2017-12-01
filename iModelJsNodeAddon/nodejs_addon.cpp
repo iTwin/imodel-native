@@ -719,7 +719,6 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     //  Check if val is really a NodeAddonDgnDb peer object
     static bool HasInstance(Napi::Value val) {
-        Napi::Env env = val.Env();
         if (!val.IsObject())
             return false;
         Napi::Object obj = val.As<Napi::Object>();

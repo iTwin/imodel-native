@@ -10,5 +10,5 @@
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
   },
-  "types": "./imodeljs-nodeaddonapi.d.ts"
+  "types": "./${DECL_FILE_NAME}"
 }
