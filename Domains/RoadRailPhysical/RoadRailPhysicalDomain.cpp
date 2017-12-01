@@ -206,7 +206,7 @@ BentleyStatus create3dView(DefinitionModelR model, Utf8CP viewName,
     else
         {
         view.SetStandardViewRotation(StandardView::Top);
-        view.LookAtVolume(db.GeoLocation().GetProjectExtents());
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents());        
 
         if (!view.Insert().IsValid())
             return BentleyStatus::ERROR;
@@ -264,23 +264,16 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP 
 
     auto alignmentModelPtr =
         AlignmentModel::Query(subject, (alignmentPartitionName) ? alignmentPartitionName : RoadRailAlignmentDomain::GetDefaultPartitionName());
+    auto horizAlignmentModelId = HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
     auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject, (physicalPartitionName) ? physicalPartitionName :
         RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
     auto& subjectName = subject.GetCode().GetValue();
 
-#ifndef NDEBUG
-    Utf8String view2dName = "2D - " + subjectName.GetUtf8();
-    auto displayStyle2dPtr = getDisplayStyle2d(dgnDb.GetDictionaryModel());
-    auto drawingCategorySelectorPtr = getDrawingCategorySelector(dgnDb.GetDictionaryModel());
-    create2dView(dgnDb.GetDictionaryModel(), view2dName.c_str(), *drawingCategorySelectorPtr,
-        HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr), *displayStyle2dPtr);
-#endif
-
     auto displayStyle3dPtr = getDisplayStyle3d(dgnDb.GetDictionaryModel());
     auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel());
     auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName.GetUtf8());
-    model3dSelectorPtr->AddModel(alignmentModelPtr->GetModelId());
+    model3dSelectorPtr->AddModel(horizAlignmentModelId);
     model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
 
     auto& view3dName = subjectName;
