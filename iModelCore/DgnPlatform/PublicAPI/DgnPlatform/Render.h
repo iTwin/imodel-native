@@ -2530,7 +2530,7 @@ struct HiliteSettings
     };
 private:
     ColorDef    m_color;
-    double      m_visibleRatio = 0.5;
+    double      m_visibleRatio = 0.25;
     double      m_hiddenRatio = 0.0;
     Silhouette  m_silhouette = Silhouette::Thick;
 
