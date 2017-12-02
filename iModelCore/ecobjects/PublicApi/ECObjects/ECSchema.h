@@ -1718,7 +1718,9 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    //! Given a qualified class name, will parse out the schema's alias and the class name.
+    //! Given a qualified class name, will parse out the schema's alias and the class name. 
+    //!
+    //! If anything other than a qualified class name is provided it will it will be split on the first `:` found.
     //! @param[out] alias       The alias of the schema
     //! @param[out] className   The name of the class
     //! @param[in]  qualifiedClassName  The qualified name of the class, in the format of ns:className
