@@ -33,52 +33,6 @@ struct ECNameValidationTest;
 //! SchemaTest
 //=======================================================================================
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Caleb.Shafer                       11/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, ExpectReadOnly)
-    {
-    ECSchemaPtr schema;
-    ECEntityClassP domainClass;
-    ECEntityClassP derivedClass;
-    ECStructClassP structClass;
-    ECCustomAttributeClassP customAttributeClass;
-    ECEnumerationP enumeration;
-
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ASSERT_TRUE(schema.IsValid());
-
-    //Create Domain Class
-    schema->CreateEntityClass(domainClass, "DomainClass");
-    ASSERT_TRUE(domainClass != NULL);
-
-    //Create Derived Class
-    schema->CreateEntityClass(derivedClass, "DerivedClass");
-    ASSERT_TRUE(derivedClass != NULL);
-
-    //Create Struct
-    schema->CreateStructClass(structClass, "StructClass");
-    ASSERT_TRUE(structClass != NULL);
-
-    //Create Enumeration
-    schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(enumeration != nullptr);
-
-    //Add Property of Array type to structClass
-    PrimitiveArrayECPropertyP MyArrayProp;
-    structClass->CreatePrimitiveArrayProperty(MyArrayProp, "ArrayProperty");
-    ASSERT_TRUE(MyArrayProp != NULL);
-
-    //Create customAttributeClass
-    schema->CreateCustomAttributeClass(customAttributeClass, "CustomAttribute");
-    ASSERT_TRUE(customAttributeClass != NULL);
-
-    //Add Property Of Struct type to custom attribute
-    StructECPropertyP PropertyOfCustomAttribute;
-    customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, "PropertyOfCustomAttribute", *structClass);
-    ASSERT_TRUE(PropertyOfCustomAttribute != NULL);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Robert.Schili                       11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -128,43 +82,6 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
     ASSERT_TRUE(enumeration2 == nullptr);
 
     ASSERT_TRUE(schema->GetEnumerationCount() == 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Robert.Schili                      11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaTest, TestPrimitiveEnumerationProperty)
-    {
-    ECSchemaPtr schema;
-    ECEntityClassP domainClass;
-    ECEnumerationP enumeration;
-
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ASSERT_TRUE(schema.IsValid());
-
-    //Create Enumeration
-    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(enumeration != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-
-    status = schema->CreateEntityClass(domainClass, "Class");
-    ASSERT_TRUE(domainClass != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-
-    PrimitiveECPropertyP prop;
-    status = domainClass->CreateEnumerationProperty(prop, "MyProperty", *enumeration);
-    ASSERT_TRUE(prop != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-
-    ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(prop->GetEnumeration() == enumeration);
-
-    prop->SetType(PrimitiveType::PRIMITIVETYPE_Double);
-    ASSERT_TRUE(prop->GetEnumeration() == nullptr);
-
-    prop->SetType(*enumeration);
-    ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(prop->GetEnumeration() == enumeration);
     }
 
 bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
