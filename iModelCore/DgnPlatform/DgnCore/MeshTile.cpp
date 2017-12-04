@@ -2745,7 +2745,7 @@ static bool hasPartOrBRep(GeometrySourceCR source)
 template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    // If the geometry has a parasolid BRep (or a part that may contain a BREP (TFS# 775181)) then create a mark so that work is done in this threads lightweight partition and
+    // If the geometry has a parasolid BRep (or a part that may contain a BREP (TFS# 778151)) then create a mark so that work is done in this threads lightweight partition and
     // error handling works properly..
     PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
     if (hasPartOrBRep(source))

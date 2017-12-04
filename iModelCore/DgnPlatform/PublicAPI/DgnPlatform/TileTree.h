@@ -77,7 +77,6 @@ HTTP request caching:
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
@@ -319,6 +318,8 @@ public:
 
     //! When the range of the model changes, update this tile's range
     virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
+
+    virtual bool _IsPartial() const { return false; }
 };
 
 /*=================================================================================**//**
@@ -545,34 +546,6 @@ struct FileDataQuery
 };
 
 //=======================================================================================
-//! Describes a missing tile and its distance from the camera.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct MissingNode
-{
-private:
-    TileCPtr    m_tile;
-    double      m_distance;
-public:
-    MissingNode(TileCR tile, double distance) : m_tile(&tile), m_distance(distance) {}
-    MissingNode() {} // for bset use only...
-
-    TileCR GetTile() const { return *m_tile; }
-    double GetDistance() const { return m_distance; }
-    uint32_t GetDepth() const { return GetTile().GetDepth(); }
-
-    bool operator<(MissingNodeCR rhs) const
-        {
-        if (m_tile.get() == rhs.m_tile.get())
-            return false;
-        else if (GetDistance() != rhs.GetDistance())
-            return GetDistance() < rhs.GetDistance();
-        else
-            return GetDepth() < rhs.GetDepth();
-        }
-};
-
-//=======================================================================================
 //! A set of missing tiles intended to be queued for loading.
 //! Sorted according to priority for loading - tiles nearer the root or closer to the camera
 //! are loaded with priority.
@@ -581,12 +554,36 @@ public:
 //=======================================================================================
 struct MissingNodes
 {
+    struct Node
+    {
+        friend struct MissingNodes;
+    private:
+        TileCPtr    m_tile;
+        bool        m_prioritize;
+
+        Node(TileCR tile, bool prioritize) : m_tile(&tile), m_prioritize(prioritize) { }
+    public:
+        Node() { }
+
+        TileCR operator*() const { return *m_tile; }
+        TileCP operator->() const { return m_tile.get(); }
+
+        bool operator<(Node const& rhs) const
+            {
+            if (m_tile->GetDepth() != rhs.m_tile->GetDepth())
+                return m_tile->GetDepth() < rhs.m_tile->GetDepth();
+            else if (m_prioritize != rhs.m_prioritize)
+                return m_prioritize;
+            else
+                return m_tile.get() < rhs.m_tile.get();
+            }
+    };
 private:
-    typedef bset<MissingNode> Set;
+    typedef bset<Node> Set;
 
     Set m_set;
 public:
-    void Insert(TileCR tile, double distance);
+    void Insert(TileCR tile, bool prioritize);
     bool Contains(TileCR tile) const;
 
     bool empty() const { return m_set.empty(); }
