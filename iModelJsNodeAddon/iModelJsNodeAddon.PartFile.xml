@@ -49,12 +49,12 @@
       This encoded version number information drives a lot of downstream processing.
       Keep this consistent , including the logic in makePackages.mke/py and imodeljs-core/nodeaddon/NodeAddon.ts.
       -->
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dADDON_FLAVOR=Node" >
+  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
-        Delivery/iModelJsNodeAddon/Node/imodeljs.node
+        Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -63,13 +63,13 @@
   </Part>
 
   <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
-  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dADDON_FLAVOR=Electron" >
+  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
     <SubPart PartName="electron-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
-        Delivery/iModelJsNodeAddon/Electron/imodeljs.node
+        Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -77,12 +77,12 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dADDON_FLAVOR=Node" >
+  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
-        Delivery/iModelJsNodeAddon/Node/imodeljs.node
+        Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -90,12 +90,12 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-MacOS" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dADDON_FLAVOR=Node" >
+  <Part Name="iModelJsNodeAddonLib-MacOS" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
-        Delivery/iModelJsNodeAddon/Node/imodeljs.node
+        Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
