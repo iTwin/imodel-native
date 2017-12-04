@@ -2843,6 +2843,42 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
         PK_ENTITY_delete(1, &entityTransformTag);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getAdjustedRadialAngles
+(
+PK_FACE_t       faceTag,
+double&         radialAround,
+double&         radialAbout,
+bool            swapUV
+)
+    {
+    PK_UVBOX_t  uvBox;
+
+    if (SUCCESS != PK_FACE_find_uvbox (faceTag, &uvBox))
+        return false;
+
+    if (swapUV)
+        {
+        if (radialAround && (uvBox.param[3] - uvBox.param[1]) < radialAround + 5.0 * (msGeomConst_pi / 180.0))
+            radialAround = 0.0;
+
+        if (radialAbout && (uvBox.param[2] - uvBox.param[0]) < radialAbout + 5.0 * (msGeomConst_pi / 180.0))
+            radialAbout = 0.0;
+        }
+    else
+        {
+        if (radialAround && (uvBox.param[2] - uvBox.param[0]) < radialAround + 5.0 * (msGeomConst_pi / 180.0))
+            radialAround = 0.0;
+
+        if (radialAbout && (uvBox.param[3] - uvBox.param[1]) < radialAbout + 5.0 * (msGeomConst_pi / 180.0))
+            radialAbout = 0.0;
+        }
+
+    return (radialAround > 0.0 || radialAbout > 0.0);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Brien.Bastings                 11/2017
 //---------------------------------------------------------------------------------------
@@ -2860,28 +2896,38 @@ static bool setupHatchOptionsForFace(PK_TOPOL_render_line_o_t& options, PK_FACE_
     switch (surfaceClass)
         {
         case PK_CLASS_plane:
-            {
             return false; // Not hatched...
+
+        case PK_CLASS_cone:
+        case PK_CLASS_cyl:
+            {
+            options.radial = PK_render_radial_yes_c;
+            options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_around_start = msGeomConst_pi;
+
+            return getAdjustedRadialAngles(faceTag, options.radial_around, options.radial_about, false);
             }
 
-//        case PK_CLASS_cone:
-//        case PK_CLASS_cyl:
-//        case PK_CLASS_torus:
-//        case PK_CLASS_sphere:
-//            {
-//            NOTE: I think we'll want to setup radial hatch for these types...u/v parameter hatching probably not great for these...
-//            options.radial = PK_render_radial_yes_c;
-//
-//            options.radial_around = ?;
-//            options.radial_along  = ?;
-//            options.radial_about  = ?;
-//
-//            options.radial_around_start = ?;
-//            options.radial_along_start  = ?;
-//            options.radial_about_start  = ?;
-//
-//            return true;
-//            }
+        case PK_CLASS_torus:
+            {
+            options.radial = PK_render_radial_yes_c;
+            options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_about = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_around_start = msGeomConst_pi;
+
+            return getAdjustedRadialAngles(faceTag, options.radial_around, options.radial_about, true);
+            }
+
+        case PK_CLASS_sphere:
+            {
+            options.radial = PK_render_radial_yes_c;
+            options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_about = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_around_start = msGeomConst_pi;
+            options.radial_about_start = msGeomConst_pi;
+
+            return getAdjustedRadialAngles(faceTag, options.radial_around, options.radial_about, false);
+            }
 
         default:
             {
