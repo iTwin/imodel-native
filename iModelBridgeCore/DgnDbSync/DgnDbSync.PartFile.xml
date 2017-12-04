@@ -174,8 +174,27 @@
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
     </ProductDirectoryList>
 
+    <Part Name="BimDumperExe" BentleyBuildMakeFile="DgnV8/tfbimdumper/tfbimdumper.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnV8ConverterExe" />
+        <SubPart PartName="Common.Logging"    PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\tfbimdumper.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="HubManagerExe" BentleyBuildMakeFile="DgnV8/tfhubmanager/tfhubmanager.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnV8ConverterExe" />
+        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
+        <SubPart PartName="iModelHubClient"   PartFile="WSClient" Repository="WSClient" />
+        <SubPart PartName="Common.Logging"    PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\tfhubmanager.exe</Files>
+        </Bindings>
+    </Part>
 
     <Product Name="DgnV8Converter">
+        <SubPart PartName="BimDumperExe" />
+        <SubPart PartName="HubManagerExe" />
         <SubPart PartName="TiledDgnV8ConverterExe" />
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList" />
