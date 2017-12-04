@@ -126,7 +126,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     auto db = DgnDb::CreateDgnDb(&createStatus, _GetParams().GetBriefcaseName(), createProjectParams);
     if (!db.IsValid())
         {
-        LOG.fatalv(L"Failed to create repository [%s] with error %x", _GetParams().GetBriefcaseName().c_str(), createStatus);
+        LOG.fatalv(L"Failed to create repository [%s] with error %x", createStatus, _GetParams().GetBriefcaseName().c_str());
         return nullptr;
         }
 
